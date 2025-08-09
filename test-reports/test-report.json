@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-08-09T06:46:29.302Z",
+  "environment": "test",
+  "configuration": {
+    "coverage": true,
+    "parallel": false,
+    "suites_run": 3
+  },
+  "summary": {
+    "total_tests": 3,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 3,
+    "success_rate": 0,
+    "duration_ms": 18
+  },
+  "suites": [
+    {
+      "name": "Critical Endpoints (TDD)",
+      "status": "PASSED",
+      "tests": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 1,
+        "total": 1
+      },
+      "duration_ms": 0
+    },
+    {
+      "name": "API Critical Endpoints",
+      "status": "PASSED",
+      "tests": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 1,
+        "total": 1
+      },
+      "duration_ms": 0
+    },
+    {
+      "name": "Security Validation",
+      "status": "PASSED",
+      "tests": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 1,
+        "total": 1
+      },
+      "duration_ms": 0
+    }
+  ],
+  "coverage": {
+    "average": 0
+  }
+}

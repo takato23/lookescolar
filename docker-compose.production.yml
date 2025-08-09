@@ -1,0 +1,246 @@
+# ============================================================================
+# 🐳 LookEscolar Production Docker Compose
+# ============================================================================
+# Complete production deployment with Redis, monitoring, and backup
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # 🚀 Application Server
+  # ============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-}
+        BUILD_VERSION: ${BUILD_VERSION:-1.0.0}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_MP_PUBLIC_KEY: ${NEXT_PUBLIC_MP_PUBLIC_KEY}
+        NEXT_PUBLIC_MP_ENVIRONMENT: ${NEXT_PUBLIC_MP_ENVIRONMENT:-sandbox}
+    
+    ports:
+      - "${PORT:-3000}:3000"
+    
+    environment:
+      # Core Configuration
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      
+      # Application URLs
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - ALLOWED_DOMAINS=${ALLOWED_DOMAINS}
+      
+      # Supabase Configuration
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Security
+      - SESSION_SECRET=${SESSION_SECRET}
+      - SECURITY_HEADERS_ENABLED=true
+      - MASK_SENSITIVE_LOGS=true
+      - SKIP_AUTH=false
+      
+      # Storage Configuration
+      - STORAGE_BUCKET=${STORAGE_BUCKET:-photos-private-bucket}
+      - SIGNED_URL_EXPIRY_MINUTES=${SIGNED_URL_EXPIRY_MINUTES:-60}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10485760}
+      - MAX_FILES_PER_REQUEST=${MAX_FILES_PER_REQUEST:-20}
+      
+      # Rate Limiting (Redis)
+      - ENABLE_RATE_LIMIT=true
+      - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL:-redis://redis:6379}
+      - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN:-}
+      
+      # Mercado Pago
+      - NEXT_PUBLIC_MP_PUBLIC_KEY=${NEXT_PUBLIC_MP_PUBLIC_KEY}
+      - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
+      - MP_WEBHOOK_SECRET=${MP_WEBHOOK_SECRET}
+      - NEXT_PUBLIC_MP_ENVIRONMENT=${NEXT_PUBLIC_MP_ENVIRONMENT:-sandbox}
+      
+      # Monitoring & Logging
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+      - ENABLE_METRICS=true
+      - ENABLE_PERFORMANCE_MONITORING=true
+      - ENABLE_EGRESS_MONITORING=true
+      
+      # Photo Processing
+      - MAX_CONCURRENT_UPLOADS=${MAX_CONCURRENT_UPLOADS:-5}
+      - WATERMARK_OPACITY=${WATERMARK_OPACITY:-0.5}
+      - PHOTO_MAX_SIZE=${PHOTO_MAX_SIZE:-1600}
+      - PHOTO_QUALITY=${PHOTO_QUALITY:-72}
+    
+    volumes:
+      - uploads:/app/uploads
+      - logs:/app/logs
+      - temp:/app/temp
+    
+    depends_on:
+      - redis
+    
+    networks:
+      - app-network
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    
+    healthcheck:
+      test: ["CMD", "node", "/app/healthcheck.js"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  # ============================================================================
+  # 🗄️ Redis Cache & Rate Limiting
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    
+    command: >
+      redis-server 
+      --appendonly yes 
+      --appendfsync everysec 
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+      --timeout 300
+      --tcp-keepalive 60
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    
+    volumes:
+      - redis-data:/data
+    
+    networks:
+      - app-network
+    
+    restart: unless-stopped
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ============================================================================
+  # 📊 Monitoring & Health
+  # ============================================================================
+  healthcheck:
+    image: curlimages/curl:latest
+    depends_on:
+      - app
+    networks:
+      - app-network
+    command: >
+      sh -c "
+      while true; do
+        if curl -f http://app:3000/api/health > /dev/null 2>&1; then
+          echo '[$(date)] ✅ App is healthy'
+        else
+          echo '[$(date)] ❌ App health check failed'
+        fi
+        sleep 60
+      done
+      "
+    restart: unless-stopped
+
+  # ============================================================================
+  # 🔄 Backup Service (Optional)
+  # ============================================================================
+  backup:
+    image: alpine:latest
+    volumes:
+      - uploads:/backup/uploads:ro
+      - logs:/backup/logs:ro
+      - backup-storage:/backup/archive
+    environment:
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-30}
+      - BACKUP_SCHEDULE=${BACKUP_SCHEDULE:-"0 2 * * *"}
+    networks:
+      - app-network
+    command: >
+      sh -c "
+      apk add --no-cache tar gzip dcron
+      echo '0 2 * * * /backup/backup.sh' | crontab -
+      cat > /backup/backup.sh << 'EOF'
+      #!/bin/sh
+      DATE=\$$(date +%Y%m%d_%H%M%S)
+      echo '[$(date)] Starting backup...'
+      tar -czf /backup/archive/lookescolar_\$$DATE.tar.gz -C /backup uploads logs
+      find /backup/archive -name '*.tar.gz' -mtime +${BACKUP_RETENTION_DAYS:-30} -delete
+      echo '[$(date)] Backup completed: lookescolar_\$$DATE.tar.gz'
+      EOF
+      chmod +x /backup/backup.sh
+      crond -f
+      "
+    restart: unless-stopped
+
+# ============================================================================
+# 🌐 Networks
+# ============================================================================
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# 💾 Volumes
+# ============================================================================
+volumes:
+  uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HOST_UPLOADS_PATH:-./uploads}
+  
+  logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HOST_LOGS_PATH:-./logs}
+  
+  temp:
+    driver: local
+  
+  redis-data:
+    driver: local
+  
+  backup-storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HOST_BACKUP_PATH:-./backups}
