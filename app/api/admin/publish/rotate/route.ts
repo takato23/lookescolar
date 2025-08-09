@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { absoluteUrl } from '@/lib/absoluteUrl';
 import crypto from 'crypto';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import { AuthMiddleware, SecurityLogger } from '@/lib/middleware/auth.middleware';
 
 const schema = z.object({
   codeId: z.string().uuid('codeId inválido'),
@@ -12,7 +14,8 @@ function generateHexToken(bytes: number = 16): string {
   return crypto.randomBytes(bytes).toString('hex');
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
+  const requestId = `rotate_${Date.now()}`;
   try {
     const json = await request.json();
     const { codeId } = schema.parse(json);
@@ -45,6 +48,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo rotar token' }, { status: 500 });
     }
 
+    SecurityLogger.logSecurityEvent('code_token_rotated', { requestId, codeId }, 'info');
+
     const url = absoluteUrl(`/f/${token}`);
     return NextResponse.json({ token, url });
   } catch (error) {
@@ -52,5 +57,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
+
+export const POST = RateLimitMiddleware.withRateLimit(
+  AuthMiddleware.withAuth(handlePOST, 'admin')
+);
 
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { pdfService } from '@/lib/services/pdf.service';
 import { z } from 'zod';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import { AuthMiddleware, SecurityLogger } from '@/lib/middleware/auth.middleware';
 
 // Rate limiting para generación de PDFs
 const pdfLimiter = new Map<string, { count: number; resetTime: number }>();
@@ -35,16 +37,17 @@ const pdfOptionsSchema = z.object({
   includeWatermark: z.boolean().optional().default(false),
 });
 
-export async function GET(
+async function handleGET(
   request: NextRequest,
-  { params }: { params: Promise<{ eventId: string }> }
+  _authContext: any,
+  { params }: { params: { eventId: string } }
 ) {
-  const { eventId } = await params;
+  const { eventId } = params;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
 
   try {
-    // Verificar autenticación admin
+    // Verificar autenticación admin vía Supabase (redundante pero mantiene compat)
     const supabase = await createServerSupabaseClient();
     const {
       data: { user },
@@ -52,24 +55,13 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.log({
-        requestId,
-        event: 'pdf_generation_unauthorized',
-        eventId,
-        timestamp: new Date().toISOString(),
-      });
+      SecurityLogger.logSecurityEvent('pdf_generation_unauthorized', { requestId, eventId }, 'warning');
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     // Rate limiting
     if (!checkRateLimit(user.id)) {
-      console.log({
-        requestId,
-        event: 'pdf_generation_rate_limit',
-        userId: user.id,
-        eventId,
-        timestamp: new Date().toISOString(),
-      });
+      SecurityLogger.logSecurityEvent('pdf_generation_rate_limit', { requestId, userId: user.id, eventId }, 'warning');
       return NextResponse.json(
         { error: 'Demasiadas generaciones de PDF. Espere 5 minutos.' },
         { status: 429 }
@@ -94,12 +86,7 @@ export async function GET(
       .single();
 
     if (eventError || !event) {
-      console.log({
-        requestId,
-        event: 'pdf_generation_event_not_found',
-        eventId,
-        timestamp: new Date().toISOString(),
-      });
+      SecurityLogger.logSecurityEvent('pdf_generation_event_not_found', { requestId, eventId }, 'warning');
       return NextResponse.json(
         { error: 'Evento no encontrado' },
         { status: 404 }
@@ -107,13 +94,7 @@ export async function GET(
     }
 
     if (!event.active) {
-      console.log({
-        requestId,
-        event: 'pdf_generation_inactive_event',
-        eventId,
-        eventName: event.name,
-        timestamp: new Date().toISOString(),
-      });
+      SecurityLogger.logSecurityEvent('pdf_generation_inactive_event', { requestId, eventId, eventName: event.name }, 'warning');
       return NextResponse.json(
         { error: 'El evento no está activo' },
         { status: 400 }
@@ -135,12 +116,7 @@ export async function GET(
     });
 
     if (!optionsValidation.success) {
-      console.log({
-        requestId,
-        event: 'pdf_generation_options_invalid',
-        errors: optionsValidation.error.errors,
-        timestamp: new Date().toISOString(),
-      });
+      SecurityLogger.logSecurityEvent('pdf_generation_options_invalid', { requestId, errors: optionsValidation.error.errors }, 'warning');
       return NextResponse.json(
         {
           error: 'Opciones de PDF inválidas',
@@ -159,45 +135,20 @@ export async function GET(
       .eq('event_id', eventId);
 
     if (!subjectCount || subjectCount.length === 0) {
-      console.log({
-        requestId,
-        event: 'pdf_generation_no_subjects',
-        eventId,
-        eventName: event.name,
-        timestamp: new Date().toISOString(),
-      });
+      SecurityLogger.logSecurityEvent('pdf_generation_no_subjects', { requestId, eventId, eventName: event.name }, 'warning');
       return NextResponse.json(
         { error: 'El evento no tiene sujetos registrados' },
         { status: 400 }
       );
     }
 
-    console.log({
-      requestId,
-      event: 'pdf_generation_start',
-      userId: user.id,
-      eventId,
-      eventName: event.name,
-      subjectCount: subjectCount.length,
-      options,
-      timestamp: new Date().toISOString(),
-    });
+    SecurityLogger.logSecurityEvent('pdf_generation_start', { requestId, userId: user.id, eventId, eventName: event.name, subjectCount: subjectCount.length, options }, 'info');
 
     // Generar PDF
     const pdfBuffer = await pdfService.generateEventQRPDF(eventId, options);
     const duration = Date.now() - startTime;
 
-    console.log({
-      requestId,
-      event: 'pdf_generation_success',
-      userId: user.id,
-      eventId,
-      eventName: event.name,
-      subjectCount: subjectCount.length,
-      pdfSize: pdfBuffer.length,
-      duration,
-      timestamp: new Date().toISOString(),
-    });
+    SecurityLogger.logSecurityEvent('pdf_generation_success', { requestId, userId: user.id, eventId, eventName: event.name, subjectCount: subjectCount.length, pdfSize: pdfBuffer.length, duration }, 'info');
 
     // Generar nombre de archivo
     const eventDate = new Date(event.date).toISOString().split('T')[0];
@@ -218,15 +169,7 @@ export async function GET(
   } catch (error: any) {
     const duration = Date.now() - startTime;
 
-    console.error({
-      requestId,
-      event: 'pdf_generation_error',
-      eventId,
-      error: error.message,
-      stack: error.stack,
-      duration,
-      timestamp: new Date().toISOString(),
-    });
+    SecurityLogger.logSecurityEvent('pdf_generation_error', { requestId, eventId, error: error.message, duration }, 'error');
 
     // Error específico para PDFs demasiado grandes
     if (
@@ -250,12 +193,12 @@ export async function GET(
   }
 }
 
-// Endpoint POST para generar PDF con configuración avanzada
-export async function POST(
+async function handlePOST(
   request: NextRequest,
-  { params }: { params: Promise<{ eventId: string }> }
+  _authContext: any,
+  { params }: { params: { eventId: string } }
 ) {
-  const { eventId } = await params;
+  const { eventId } = params;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   try {
@@ -303,14 +246,7 @@ export async function POST(
       );
     }
 
-    console.log({
-      requestId,
-      event: 'pdf_generation_custom_start',
-      userId: user.id,
-      eventId,
-      options: validation.data,
-      timestamp: new Date().toISOString(),
-    });
+    SecurityLogger.logSecurityEvent('pdf_generation_custom_start', { requestId, userId: user.id, eventId, options: validation.data }, 'info');
 
     // Generar PDF con opciones personalizadas
     const pdfBuffer = await pdfService.generateEventQRPDF(
@@ -322,14 +258,7 @@ export async function POST(
     const eventDate = new Date(event.date).toISOString().split('T')[0];
     const filename = `QRs_Custom_${event.name.replace(/[^a-zA-Z0-9]/g, '_')}_${eventDate}.pdf`;
 
-    console.log({
-      requestId,
-      event: 'pdf_generation_custom_success',
-      userId: user.id,
-      eventId,
-      pdfSize: pdfBuffer.length,
-      timestamp: new Date().toISOString(),
-    });
+    SecurityLogger.logSecurityEvent('pdf_generation_custom_success', { requestId, userId: user.id, eventId, pdfSize: pdfBuffer.length }, 'info');
 
     return new NextResponse(pdfBuffer, {
       status: 200,
@@ -340,13 +269,7 @@ export async function POST(
       },
     });
   } catch (error: any) {
-    console.error({
-      requestId,
-      event: 'pdf_generation_custom_error',
-      eventId,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-    });
+    SecurityLogger.logSecurityEvent('pdf_generation_custom_error', { requestId, eventId, error: error.message }, 'error');
 
     return NextResponse.json(
       { error: 'Error generando PDF personalizado' },
@@ -354,3 +277,10 @@ export async function POST(
     );
   }
 }
+
+export const GET = RateLimitMiddleware.withRateLimit(
+  AuthMiddleware.withAuth(handleGET, 'admin')
+);
+export const POST = RateLimitMiddleware.withRateLimit(
+  AuthMiddleware.withAuth(handlePOST, 'admin')
+);

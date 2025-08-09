@@ -128,11 +128,13 @@ export async function GET(
             file_size,
             width,
             height,
-            created_at
+            created_at,
+            approved
           )
         `
         )
         .eq('subject_id', subjectId)
+        .eq('photos.approved', true)
         .range(offset, offset + limit - 1);
       if (photosError) {
         console.error('Error fetching photos:', photosError);
@@ -194,7 +196,8 @@ export async function GET(
       const { count } = await supabase
         .from('photo_subjects')
         .select('photo_id', { count: 'exact', head: true })
-        .eq('subject_id', subjectId);
+        .eq('subject_id', subjectId)
+        .eq('photos.approved', true);
       total = count || 0;
     }
 

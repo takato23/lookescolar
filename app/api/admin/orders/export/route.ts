@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import { AuthMiddleware, SecurityLogger } from '@/lib/middleware/auth.middleware';
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
+  const requestId = `export_${Date.now()}`;
   try {
     const { searchParams } = request.nextUrl;
     const eventId = searchParams.get('eventId');
@@ -114,6 +117,8 @@ export async function GET(request: NextRequest) {
         )
         .join('\n');
 
+    SecurityLogger.logSecurityEvent('orders_export_generated', { requestId, eventId, orderCount: orders?.length || 0 }, 'info');
+
     return new NextResponse(csv, {
       status: 200,
       headers: {
@@ -126,3 +131,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
+
+export const GET = RateLimitMiddleware.withRateLimit(
+  AuthMiddleware.withAuth(handleGET, 'admin')
+);

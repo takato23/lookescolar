@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "timestamp": "2025-08-09T06:46:29.323Z",
+    "timestamp": "2025-08-09T07:25:11.569Z",
     "environment": "test",
     "stage": "integration",
-    "execution_time_ms": 49493,
-    "node_version": "v23.9.0",
+    "execution_time_ms": 19084,
+    "node_version": "v22.16.0",
     "lookescolar_version": "0.1.0"
   },
   "preflight": {
@@ -12,7 +12,7 @@
     "details": {}
   },
   "test_execution": {
-    "timestamp": "2025-08-09T06:46:29.302Z",
+    "timestamp": "2025-08-09T07:25:11.555Z",
     "environment": "test",
     "configuration": {
       "coverage": true,
@@ -25,7 +25,7 @@
       "failed": 0,
       "skipped": 3,
       "success_rate": 0,
-      "duration_ms": 18
+      "duration_ms": 15
     },
     "suites": [
       {
