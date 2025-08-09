@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { SecurityLogger } from '@/lib/middleware/auth.middleware';
 
 const schema = z.object({
   token: z.string().min(20, 'Token inválido'),
@@ -18,6 +19,7 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const requestId = `public_selection_${Date.now()}`;
   try {
     // Rate limit suave por IP
     try {
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
     // 1) codes.token
     const { data: codeRow } = await supabase
       .from('codes' as any)
-      .select('id, event_id')
+      .select('id, event_id, is_published')
       .eq('token', token)
       .single();
 
@@ -49,13 +51,17 @@ export async function POST(request: NextRequest) {
     let validPhotoIds: string[] = [];
 
     if (codeRow) {
+      if (codeRow.is_published === false) {
+        return NextResponse.json({ error: 'Este enlace no está publicado' }, { status: 403 });
+      }
       eventId = codeRow.event_id as string;
-      // Validar que las fotos pertenezcan al mismo code_id
+      // Validar que las fotos pertenezcan al mismo code_id y que estén aprobadas
       const { data: photos } = await supabase
         .from('photos')
-        .select('id, code_id')
+        .select('id')
         .in('id', selectedPhotoIds)
-        .eq('code_id', codeRow.id);
+        .eq('code_id', codeRow.id)
+        .eq('approved', true);
       validPhotoIds = (photos || []).map((p) => p.id);
     } else {
       // 2) Fallback a subject_tokens
@@ -87,7 +93,15 @@ export async function POST(request: NextRequest) {
         .select('photo_id')
         .in('photo_id', selectedPhotoIds)
         .eq('subject_id', subjectId);
-      validPhotoIds = (psubs || []).map((r) => r.photo_id);
+      const candidateIds = (psubs || []).map((r) => r.photo_id);
+
+      // Filtrar por aprobadas
+      const { data: approvedPhotos } = await supabase
+        .from('photos')
+        .select('id')
+        .in('id', candidateIds)
+        .eq('approved', true);
+      validPhotoIds = (approvedPhotos || []).map((p) => p.id);
     }
 
     if (!eventId) {
@@ -130,6 +144,8 @@ export async function POST(request: NextRequest) {
       console.error('[Service] Error creando ítems de orden:', itemsErr);
       return NextResponse.json({ error: 'No se pudo crear el pedido' }, { status: 500 });
     }
+
+    SecurityLogger.logSecurityEvent('public_selection_created', { requestId, orderId, eventId, subjectId, numItems: validPhotoIds.length }, 'info');
 
     return NextResponse.json({ ok: true, orderId });
   } catch (error) {

@@ -7,13 +7,17 @@
   - [ ] Las respuestas públicas NO exponen `storage_path` ni `code_id`.
   - [ ] Todas las imágenes públicas provienen de `https://signed.local/` (mock) o patrón firmado.
 - [ ] Selection: POST `/api/public/selection { token, selectedPhotoIds:[...], package:"Combo A" }` → `{ ok:true, orderId }`.
-- [ ] Export: GET `/api/admin/orders/export?eventId=...` → CSV contiene fila con `SV-001`.
+  - [ ] Filtra solo fotos `approved=true` en ambos modos (code y subject).
+- [ ] Export: GET `/api/admin/orders/export?eventId=...` → CSV contiene fila con `SV-001` y requiere admin.
 - [ ] Unpublish: POST `/api/admin/publish/unpublish { codeId }` → luego la galería devuelve 403.
 
 # Checklist QA v1.1
 
+- [ ] Todas las rutas `/api/admin/*` requieren auth y aplican rate limiting.
 - [ ] Imágenes públicas servidas vía URLs firmadas generadas en servidor con `signedUrlForKey()` (sin fetch a `/api/storage/signed-url`).
 - [ ] Galería pública `/f/[token]` carga la primera página y continúa con infinite scroll hasta agotar (usa `page`/`limit` y `pagination.has_more`).
 - [ ] Doble envío bloqueado en selección pública (marcado en `localStorage` y botón deshabilitado durante envío).
 - [ ] Token despublicado devuelve 403 en API pública y UI muestra error amigable.
+- [ ] Watermark: tamaño máx 2048px y opacidad leída de `WATERMARK_OPACITY` (0..1).
+- [ ] Logs nivel info en: publicar, revocar, despublicar, generar watermarks, export CSV y PDF.
 

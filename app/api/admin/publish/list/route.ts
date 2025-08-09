@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import { AuthMiddleware } from '@/lib/middleware/auth.middleware';
 
-export async function GET(_request: NextRequest) {
+async function handleGET(_request: NextRequest) {
   try {
     const supabase = await createServerSupabaseServiceClient();
 
@@ -42,5 +44,9 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
+
+export const GET = RateLimitMiddleware.withRateLimit(
+  AuthMiddleware.withAuth(handleGET, 'admin')
+);
 
 
