@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [ tests/v1-ready ]
+  pull_request:
+    branches: [ tests/v1-ready ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+      - name: Setup env (test)
+        run: cp .env.test.example .env.test
+      - name: Diagnose
+        run: pnpm run diagnose || true
+      - name: Seed V1
+        run: pnpm run seed:v1
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          SUPABASE_SERVICE_ROLE_KEY: stub
+      - name: Run integration tests
+        run: pnpm run test:comprehensive:integration
+
+
