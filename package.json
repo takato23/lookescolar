@@ -21,6 +21,7 @@
     "test:mvp:quick": "npm run test __tests__/e2e/complete-mvp-workflow.test.ts && npm run test __tests__/api-critical-endpoints.test.ts",
     "test:components": "vitest __tests__/components/",
     "test:apis": "vitest __tests__/api-critical-endpoints.test.ts",
+    "guard:background": "tsx scripts/background-guard.ts",
     "db:migrate": "supabase db push",
     "db:reset": "supabase db reset",
     "db:seed": "tsx scripts/seed.ts",
