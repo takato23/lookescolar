@@ -77,10 +77,23 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
 async function downloadFromStorage(supabase: any, storagePath: string): Promise<Buffer> {
   const bucket = process.env.STORAGE_BUCKET || 'photos';
   const path = storagePath.startsWith('/') ? storagePath.slice(1) : storagePath;
-  const { data, error } = await supabase.storage.from(bucket).download(path);
-  if (error) throw error;
-  const arrBuf = await data.arrayBuffer();
-  return Buffer.from(arrBuf);
+  
+  try {
+    const { data, error } = await supabase.storage.from(bucket).download(path);
+    if (error) {
+      console.error(`Error downloading ${path} from bucket ${bucket}:`, error);
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+    if (!data) {
+      throw new Error('No data received from storage');
+    }
+    const arrBuf = await data.arrayBuffer();
+    return Buffer.from(arrBuf);
+  } catch (err) {
+    console.error(`Storage download error for ${path}:`, err);
+    throw err;
+  }
 }
+
 
 

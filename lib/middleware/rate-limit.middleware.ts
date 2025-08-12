@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
+import crypto from 'crypto';
 
 // Configuración de límites por endpoint según CLAUDE.md
 const RATE_LIMITS = {
@@ -8,6 +9,8 @@ const RATE_LIMITS = {
   '/api/family/gallery': { requests: 30, windowMs: 60 * 1000 }, // 30 req/min
   '/api/payments/webhook': { requests: 100, windowMs: 60 * 1000 }, // 100 req/min
   '/api/admin/tagging': { requests: 20, windowMs: 60 * 1000 }, // 20 req/min
+  '/api/admin/qr/decode': { requests: 30, windowMs: 60 * 1000 }, // 30 req/min for QR operations
+  '/api/admin/students': { requests: 60, windowMs: 60 * 1000 }, // 60 req/min for student lookups
   '/api/family/orders': { requests: 15, windowMs: 60 * 1000 }, // 15 req/min
   default: { requests: 100, windowMs: 60 * 1000 }, // Default: 100 req/min
 } as const;

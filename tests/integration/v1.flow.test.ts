@@ -42,11 +42,13 @@ describe('V1 Flow Integración (estable)', () => {
   }, 30000);
 
   it('1) Anchor-detect: POST /api/admin/anchor-detect { eventId } → detected>=2', async () => {
-    const { POST } = await import('@/app/api/admin/anchor-detect/route');
     vi.doMock('@/lib/middleware/auth.middleware', () => ({
       AuthMiddleware: { withAuth: (h: any) => (req: any) => h(req, { isAdmin: true }) },
+      withAuth: (h: any) => (req: any) => h(req, { isAdmin: true }),
       SecurityLogger: { logResourceAccess: vi.fn(), logSecurityEvent: vi.fn() },
+      RateLimitMiddleware: { withRateLimit: (h: any) => h },
     }));
+    const { POST } = await import('@/app/api/admin/anchor-detect/route');
 
     const req = new Request('http://localhost/api/admin/anchor-detect', { method: 'POST', body: JSON.stringify({ eventId: ctx.eventId, onlyMissing: false }) }) as any;
     const res = await (POST as any)(req);
@@ -56,10 +58,12 @@ describe('V1 Flow Integración (estable)', () => {
   });
 
   it('2) Group: POST /api/admin/group { eventId } → assigned>0, unassigned>=1', async () => {
-    const { POST } = await import('@/app/api/admin/group/route');
     vi.doMock('@/lib/middleware/auth.middleware', () => ({
       AuthMiddleware: { withAuth: (h: any) => (req: any) => h(req, { isAdmin: true }) },
+      withAuth: (h: any) => (req: any) => h(req, { isAdmin: true }),
+      RateLimitMiddleware: { withRateLimit: (h: any) => h },
     }));
+    const { POST } = await import('@/app/api/admin/group/route');
     const req = new Request('http://localhost/api/admin/group', { method: 'POST', body: JSON.stringify({ eventId: ctx.eventId, dryRun: false }) }) as any;
     const res = await (POST as any)(req);
     const data = await res.json();

@@ -1,146 +1,360 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import SubjectsSection from './subjects-section';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Calendar,
+  MapPin,
+  DollarSign,
+  Camera,
+  Users,
+  ShoppingCart,
+  ArrowLeft,
+  Upload,
+  QrCode,
+  Package,
+  Edit3,
+  Eye,
+  AlertCircle,
+  RefreshCw,
+  Home,
+} from 'lucide-react';
 
-export default async function EventDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const supabase = await createServerSupabaseClient();
+export default function EventDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params?.id as string;
+  const [event, setEvent] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Obtener evento
-  const { data: event, error: eventError } = await supabase
-    .from('events')
-    .select('*')
-    .eq('id', id)
-    .single();
+  useEffect(() => {
+    if (id) {
+      fetchEvent();
+    }
+  }, [id]);
 
-  if (eventError || !event) {
-    notFound();
+  const fetchEvent = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/admin/events/${id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch event');
+      }
+      
+      const data = await response.json();
+      setEvent(data.event);
+    } catch (err) {
+      console.error('Error fetching event:', err);
+      setError(err instanceof Error ? err.message : 'Error loading event');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="gradient-mesh min-h-screen">
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex items-center justify-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-primary-500" />
+            <span className="ml-2 text-lg">Cargando evento...</span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  // Obtener estadísticas
-  const { count: subjectsCount } = await supabase
-    .from('subjects')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', id);
-
-  const { count: photosCount } = await supabase
-    .from('photos')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', id);
-
-  const { count: ordersCount } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', id)
-    .eq('status', 'completed');
+  if (error || !event) {
+    return (
+      <div className="gradient-mesh min-h-screen">
+        <div className="container mx-auto px-6 py-8">
+          <Card variant="glass" className="border-red-200 bg-red-50/50">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+                <div>
+                  <p className="font-medium text-red-700">Error al cargar el evento</p>
+                  <p className="text-sm text-red-600">{error || 'Evento no encontrado'}</p>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                className="mt-4"
+                onClick={() => router.push('/admin/events')}
+              >
+                Volver a eventos
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <Link
-            href="/admin/events"
-            className="mb-4 inline-block text-white/70 transition-colors hover:text-white"
-          >
-            ← Volver a eventos
-          </Link>
-          <h1 className="mb-2 text-4xl font-bold text-white">{event.school}</h1>
-          <div className="flex items-center space-x-4 text-white/70">
-            <span aria-label="fecha del evento">
-              📅 {new Date(event.date).toLocaleDateString('es-AR')}
-            </span>
-            <span
-              className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
-                event.active
-                  ? 'border border-green-500/50 bg-green-500/20 text-green-200'
-                  : 'border border-gray-500/50 bg-gray-500/20 text-gray-200'
-              }`}
-            >
-              {event.active ? 'Activo' : 'Inactivo'}
-            </span>
+    <div className="gradient-mesh min-h-screen">
+      <div className="container mx-auto space-y-8 px-6 py-8">
+        {/* Header with Breadcrumbs */}
+        <div className="relative animate-fade-in">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
+          <div className="relative">
+            {/* Breadcrumbs */}
+            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+              <Link
+                href="/admin"
+                className="flex items-center gap-1 transition-colors hover:text-primary-600"
+              >
+                <Home className="h-4 w-4" />
+                Dashboard
+              </Link>
+              <span>/</span>
+              <Link
+                href="/admin/events"
+                className="transition-colors hover:text-primary-600"
+              >
+                Eventos
+              </Link>
+              <span>/</span>
+              <span className="text-foreground font-medium">
+                {event.school || event.name}
+              </span>
+            </nav>
+
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/admin/events')}
+                  className="rounded-full p-2"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="text-gradient mb-2 text-3xl font-bold md:text-4xl">
+                    {event.school || event.name}
+                  </h1>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(event.date).toLocaleDateString('es-AR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </div>
+                    {event.location && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        {event.location}
+                      </div>
+                    )}
+                    <Badge variant={event.active ? 'secondary' : 'outline'}>
+                      {event.active ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/admin/events/${id}/edit`)}
+                >
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={fetchEvent}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Actualizar
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex space-x-3">
-          <Link
-            href={`/admin/events/${id}/edit`}
-            className="rounded-xl px-4 py-2 text-white/70 transition-all duration-200 hover:bg-white/10 hover:text-white"
-          >
-            Editar
-          </Link>
+
+        {/* Stats Cards */}
+        <div className="grid animate-slide-up grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <Card variant="glass" className="group hover:scale-105 transition-transform cursor-pointer"
+                onClick={() => router.push(`/admin/photos?event=${id}`)}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Fotos</p>
+                  <p className="text-2xl font-bold">{event.stats?.totalPhotos || 0}</p>
+                  {event.stats?.untaggedPhotos > 0 && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      {event.stats.untaggedPhotos} sin etiquetar
+                    </p>
+                  )}
+                </div>
+                <Camera className="h-8 w-8 text-blue-500 opacity-50 group-hover:opacity-100" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="glass" className="group hover:scale-105 transition-transform cursor-pointer">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Familias</p>
+                  <p className="text-2xl font-bold">{event.stats?.totalSubjects || 0}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Con tokens</p>
+                </div>
+                <Users className="h-8 w-8 text-purple-500 opacity-50 group-hover:opacity-100" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="glass" className="group hover:scale-105 transition-transform cursor-pointer"
+                onClick={() => router.push(`/admin/orders?event=${id}`)}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pedidos</p>
+                  <p className="text-2xl font-bold">{event.stats?.totalOrders || 0}</p>
+                  {event.stats?.pendingOrders > 0 && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      {event.stats.pendingOrders} pendientes
+                    </p>
+                  )}
+                </div>
+                <ShoppingCart className="h-8 w-8 text-green-500 opacity-50 group-hover:opacity-100" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="glass" className="group hover:scale-105 transition-transform">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Ingresos</p>
+                  <p className="text-2xl font-bold">
+                    ${(event.stats?.revenue || 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Total recaudado</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-green-500 opacity-50 group-hover:opacity-100" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="glass">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Precio/Foto</p>
+                  <p className="text-2xl font-bold">
+                    ${event.photo_price || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Por unidad</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-blue-500 opacity-50" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-        <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-          <div className="mb-2 text-3xl">👥</div>
-          <div className="mb-1 text-2xl font-bold text-white">
-            {subjectsCount || 0}
-          </div>
-          <div className="text-white/70">Alumnos</div>
-        </div>
-
-        <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-          <div className="mb-2 text-3xl">📸</div>
-          <div className="mb-1 text-2xl font-bold text-white">
-            {photosCount || 0}
-          </div>
-          <div className="text-white/70">Fotos</div>
-        </div>
-
-        <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-          <div className="mb-2 text-3xl">🛍️</div>
-          <div className="mb-1 text-2xl font-bold text-white">
-            {ordersCount || 0}
-          </div>
-          <div className="text-white/70">Pedidos</div>
-        </div>
-
-        {/* Precio por foto no disponible en el esquema actual */}
-      </div>
-
-      {/* Tabs */}
-      <div className="space-y-8">
-        {/* Sujetos Section */}
-        <SubjectsSection eventId={id} />
 
         {/* Quick Actions */}
-        <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
-          <h2 className="mb-4 text-xl font-semibold text-white">
-            Acciones Rápidas
-          </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Link
-              href={`/admin/photos?event=${id}`}
-              className="flex transform items-center space-x-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 p-4 text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-            >
-              <span className="text-2xl">📤</span>
-              <span className="font-medium">Subir Fotos</span>
-            </Link>
+        <Card variant="glass" className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <CardHeader>
+            <CardTitle>Acciones Rápidas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-blue-50 hover:border-blue-300 group"
+                onClick={() => router.push(`/admin/photos?event=${id}`)}
+              >
+                <Upload className="mb-2 h-6 w-6 text-blue-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Subir Fotos</span>
+                <span className="text-xs text-muted-foreground">Con watermark</span>
+              </Button>
 
-            <Link
-              href={`/admin/events/${id}/qr`}
-              className="flex transform items-center space-x-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 p-4 text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-            >
-              <span className="text-2xl">📄</span>
-              <span className="font-medium">Generar PDF QRs</span>
-            </Link>
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-purple-50 hover:border-purple-300 group"
+                onClick={() => router.push(`/admin/photos?event=${id}&view=gallery`)}
+              >
+                <Eye className="mb-2 h-6 w-6 text-purple-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Ver Galería</span>
+                <span className="text-xs text-muted-foreground">Todas las fotos</span>
+              </Button>
 
-            <Link
-              href={`/admin/orders?event=${id}`}
-              className="flex transform items-center space-x-3 rounded-xl bg-gradient-to-r from-green-600 to-teal-600 p-4 text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-            >
-              <span className="text-2xl">📦</span>
-              <span className="font-medium">Ver Pedidos</span>
-            </Link>
-          </div>
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-amber-50 hover:border-amber-300 group"
+                onClick={() => router.push(`/admin/events/${id}/qr`)}
+              >
+                <QrCode className="mb-2 h-6 w-6 text-amber-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Generar QRs</span>
+                <span className="text-xs text-muted-foreground">PDF para imprimir</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-green-50 hover:border-green-300 group"
+                onClick={() => router.push(`/admin/orders?event=${id}`)}
+              >
+                <Package className="mb-2 h-6 w-6 text-green-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Ver Pedidos</span>
+                <span className="text-xs text-muted-foreground">Gestionar ventas</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Subjects Section */}
+        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <SubjectsSection eventId={id} />
         </div>
+
+        {/* Photos Preview Section */}
+        {event.stats?.totalPhotos > 0 && (
+          <Card variant="glass" className="animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Fotos del Evento</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push(`/admin/photos?event=${id}`)}
+                >
+                  Ver todas
+                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                <Camera className="mx-auto h-12 w-12 mb-3 opacity-50" />
+                <p>{event.stats.totalPhotos} fotos subidas</p>
+                {event.stats.untaggedPhotos > 0 && (
+                  <p className="text-sm text-amber-600 mt-2">
+                    {event.stats.untaggedPhotos} fotos necesitan ser etiquetadas
+                  </p>
+                )}
+                <Button
+                  variant="secondary"
+                  className="mt-4"
+                  onClick={() => router.push(`/admin/photos?event=${id}`)}
+                >
+                  Gestionar Fotos
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

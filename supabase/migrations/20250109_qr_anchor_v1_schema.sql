@@ -42,3 +42,4 @@ alter table public.courses enable row level security;
 alter table public.codes enable row level security;
 
 
+

@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { ShoppingCartIcon, HeartIcon, CheckCircleIcon } from 'lucide-react';
+import { ShoppingCartIcon, HeartIcon, CheckCircleIcon, XIcon, ZoomInIcon, AlertCircleIcon } from 'lucide-react';
+import { PublicHero } from '@/components/public/PublicHero'
+import { PhotoCard as PublicPhotoCard } from '@/components/public/PhotoCard'
+import { PhotoModal as PublicPhotoModal } from '@/components/public/PhotoModal'
+import { StickyCTA } from '@/components/public/StickyCTA'
+import { EmptyState } from '@/components/public/EmptyState'
 
 async function submitSelection(payload: {
   token: string;
@@ -54,7 +59,8 @@ export default function SimpleGalleryPage() {
   const [pkg, setPkg] = useState<string>('Combo A');
   const [sending, setSending] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
-  const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+  const [zoomIndex, setZoomIndex] = useState<number | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (token) {
@@ -174,9 +180,12 @@ export default function SimpleGalleryPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
-        <div className="text-center">
-          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
-          <p className="text-gray-600">Cargando fotos...</p>
+        <div className="text-center space-y-4">
+          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
+          <div>
+            <p className="text-lg font-medium text-gray-700">Cargando tu galería...</p>
+            <p className="text-sm text-gray-500 mt-1">Esto puede tomar unos segundos</p>
+          </div>
         </div>
       </div>
     );
@@ -184,226 +193,244 @@ export default function SimpleGalleryPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
-        <div className="rounded-lg bg-white p-8 shadow-lg">
-          <h2 className="mb-4 text-xl font-bold text-red-600">Error</h2>
-          <p className="text-gray-700">{error}</p>
-          <p className="mt-4 text-sm text-gray-500">
-            Verifica que tu enlace sea correcto o contacta con el fotógrafo.
-          </p>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 px-4">
+        <div className="rounded-xl bg-white p-8 shadow-xl max-w-md w-full">
+          <div className="flex items-start space-x-3">
+            <AlertCircleIcon className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">No pudimos cargar tu galería</h2>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-gray-700">Posibles soluciones:</p>
+                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                  <li>Verifica que el enlace sea correcto</li>
+                  <li>Asegúrate de usar el QR o código proporcionado</li>
+                  <li>Contacta con el fotógrafo si el problema persiste</li>
+                </ul>
+              </div>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 w-full rounded-lg bg-purple-600 px-4 py-2 text-white font-medium hover:bg-purple-700 transition-colors"
+              >
+                Intentar de nuevo
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  // Precios mockeados locales (si hay lista en el futuro, reemplazar)
+  const priceText = pkg ? (pkg === 'Combo A' ? '$' + 1000 : pkg === 'Combo B' ? '$' + 1800 : 'sin precio online') : 'sin precio online';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50">
+      <div aria-live="polite" className="sr-only">{submitted ? '¡Listo! Recibimos tu selección.' : ''}</div>
+      
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tu Galería Privada</h1>
+            {subject?.event && (
+              <p className="text-lg text-gray-600">
+                {subject.event.name} • {subject.event.school_name}
+              </p>
+            )}
+            <div className="mt-4 flex items-center justify-center space-x-6 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span className="text-gray-600">{photos.length} fotos disponibles</span>
+              </div>
+              {selectedPhotos.size > 0 && (
+                <div className="flex items-center space-x-2">
+                  <ShoppingCartIcon className="h-4 w-4 text-purple-600" />
+                  <span className="font-medium text-purple-600">{selectedPhotos.size} seleccionadas</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {submitted && (
-        <div className="bg-emerald-50 border-b border-emerald-200 py-3 text-center text-emerald-700">
-          Selección recibida. Podés guardar este link para consultar más tarde.
+        <div className="mx-auto max-w-2xl px-4 py-6">
+          <div className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 p-1">
+            <div className="rounded-lg bg-white p-6">
+              <div className="flex items-start space-x-3">
+                <CheckCircleIcon className="h-8 w-8 text-green-500 flex-shrink-0" />
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">¡Selección enviada con éxito!</h2>
+                  <p className="text-gray-600 mb-4">
+                    Hemos recibido tu selección de fotos. El fotógrafo se pondrá en contacto contigo pronto.
+                  </p>
+                  <button 
+                    onClick={() => setSubmitted(false)} 
+                    className="rounded-lg bg-purple-600 px-6 py-2 text-white font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    Ver galería nuevamente
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-800">
-              Galería de {subject?.name}
-            </h1>
-            {subject?.event && (
-              <p className="mt-2 text-gray-600">
-                {subject.event.name} - {subject.event.school_name}
-              </p>
-            )}
-            {subject?.grade_section && (
-              <p className="text-sm text-gray-500">
-                Grado: {subject.grade_section}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Stats Bar */}
-      <div className="bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-6">
-              <span className="text-sm font-medium text-gray-700">
-                {photos.length} fotos disponibles
-              </span>
-              <span className="text-sm font-medium text-purple-600">
-                {favorites.size} favoritas
-              </span>
-            </div>
-            <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
-              <ShoppingCartIcon className="h-5 w-5 text-purple-600" />
-              <span className="font-bold text-purple-600">
-                {selectedPhotos.size} seleccionadas
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Gallery */}
-      <div className="container mx-auto px-4 py-8">
+      {/* Main Gallery */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {photos.length === 0 ? (
-          <div className="rounded-lg bg-white p-12 text-center shadow-lg">
-            <p className="text-xl text-gray-600">
-              No hay fotos asignadas todavía.
-            </p>
-            <p className="mt-2 text-gray-500">
-              El fotógrafo está procesando las imágenes. Vuelve a verificar más
-              tarde.
-            </p>
-          </div>
+          <EmptyState />
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {photos.map((photo) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {photos.map((photo, idx) => (
               <div
                 key={photo.id}
-                className="group relative overflow-hidden rounded-lg bg-white shadow-md transition-all hover:shadow-xl"
+                className="group relative overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-lg transition-all duration-200"
               >
                 {/* Image */}
-                <div className="aspect-square">
+                <div className="aspect-square relative bg-gray-100">
                   <img
                     src={photo.preview_url}
                     alt={photo.filename}
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
+                  
+                  {/* Zoom button on hover */}
+                  <button
+                    onClick={() => setZoomIndex(idx)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-colors opacity-0 group-hover:opacity-100"
+                    aria-label="Ver foto en tamaño completo"
+                  >
+                    <ZoomInIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                  </button>
                 </div>
 
                 {/* Watermark Badge */}
-                <div className="absolute left-2 top-2 rounded-full bg-black/50 px-2 py-1 text-xs font-bold text-white">
+                <div className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
                   MUESTRA
                 </div>
 
-                {/* Actions Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover:bg-black/20">
-                  <div className="flex gap-2 opacity-0 transition-all group-hover:opacity-100">
-                    {/* Favorite Button */}
-                    <button
-                      onClick={() => toggleFavorite(photo.id)}
-                      className={`rounded-full p-2 transition-all ${
-                        favorites.has(photo.id)
-                          ? 'bg-red-500 text-white'
-                          : 'bg-white text-gray-700 hover:bg-red-100'
-                      }`}
-                    >
-                      <HeartIcon
-                        className="h-5 w-5"
-                        fill={favorites.has(photo.id) ? 'white' : 'none'}
-                      />
-                    </button>
+                {/* Action Buttons */}
+                <div className="absolute bottom-2 right-2 flex gap-2">
+                  {/* Favorite Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(photo.id);
+                    }}
+                    className={`rounded-full p-2 shadow-lg transition-all transform hover:scale-110 ${
+                      favorites.has(photo.id)
+                        ? 'bg-red-500 text-white'
+                        : 'bg-white/90 backdrop-blur text-gray-700 hover:bg-red-50'
+                    }`}
+                    aria-label={favorites.has(photo.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                  >
+                    <HeartIcon
+                      className="h-4 w-4 sm:h-5 sm:w-5"
+                      fill={favorites.has(photo.id) ? 'currentColor' : 'none'}
+                    />
+                  </button>
 
-                    {/* Select Button */}
-                    <button
-                      aria-label={selectedPhotos.has(photo.id) ? 'Quitar selección' : 'Seleccionar foto'}
-                      tabIndex={0}
-                      onClick={() => togglePhotoSelection(photo.id)}
-                      className={`rounded-full p-2 transition-all ${
-                        selectedPhotos.has(photo.id)
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-white text-gray-700 hover:bg-purple-100'
-                      }`}
-                    >
-                      {selectedPhotos.has(photo.id) ? (
-                        <CheckCircleIcon className="h-5 w-5" />
-                      ) : (
-                        <ShoppingCartIcon className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
+                  {/* Select Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePhotoSelection(photo.id);
+                    }}
+                    className={`rounded-full p-2 shadow-lg transition-all transform hover:scale-110 ${
+                      selectedPhotos.has(photo.id)
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white/90 backdrop-blur text-gray-700 hover:bg-purple-50'
+                    }`}
+                    aria-label={selectedPhotos.has(photo.id) ? 'Quitar de la selección' : 'Agregar a la selección'}
+                  >
+                    {selectedPhotos.has(photo.id) ? (
+                      <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    ) : (
+                      <ShoppingCartIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Selected Indicator */}
                 {selectedPhotos.has(photo.id) && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-purple-500 p-1 text-center text-xs font-bold text-white">
-                    SELECCIONADA
+                  <div className="absolute top-2 right-2">
+                    <div className="bg-purple-600 text-white rounded-full p-1 shadow-lg">
+                      <CheckCircleIcon className="h-5 w-5" />
+                    </div>
                   </div>
                 )}
               </div>
             ))}
           </div>
         )}
-        {/* Lazy load trigger */}
-        {hasMore && (
-          <div
-            ref={sentinelRef}
-            aria-label="Cargador infinito"
-            className="h-10 w-full"
-          />
-        )}
+        
+        {/* Loading more indicator */}
         {isLoadingMore && (
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="animate-pulse overflow-hidden rounded-lg bg-white shadow-sm">
                 <div className="aspect-square bg-gray-200" />
-                <div className="space-y-2 p-3">
-                  <div className="h-3 rounded bg-gray-200" />
-                  <div className="h-3 w-2/3 rounded bg-gray-200" />
-                </div>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Floating Actions */}
-      <div className="fixed bottom-6 right-6 flex flex-col items-end gap-2">
-        <div className="rounded-full bg-white/90 p-2 shadow">
-          <select
-            aria-label="Seleccionar paquete"
-            className="rounded-full border px-3 py-1 text-sm"
-            value={pkg}
-            onChange={(e) => setPkg(e.target.value)}
+        
+        {/* Infinite scroll trigger */}
+        {hasMore && (
+          <div
+            ref={sentinelRef}
+            className="h-20 flex items-center justify-center"
           >
-            <option value="Combo A">Combo A</option>
-            <option value="Combo B">Combo B</option>
-            <option value="Solo Digital">Solo Digital</option>
-          </select>
-        </div>
-        {selectedPhotos.size > 0 && !submitted && (
-          <button
-            aria-label="Enviar selección"
-            onClick={handleSend}
-            className="flex items-center gap-3 rounded-full bg-purple-600 px-6 py-3 text-white shadow-lg transition-all hover:bg-purple-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            disabled={sending}
-          >
-            <ShoppingCartIcon className="h-6 w-6" />
-            <span className="font-bold">
-              {sending ? 'Enviando…' : `Enviar selección (${selectedPhotos.size})`}
-            </span>
-          </button>
+            {isLoadingMore && (
+              <div className="flex items-center space-x-2 text-gray-500">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-500 border-t-transparent"></div>
+                <span className="text-sm">Cargando más fotos...</span>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Instructions */}
-      <div className="container mx-auto px-4 pb-8">
-        <div className="rounded-lg bg-white/80 p-6 backdrop-blur-sm">
-          <h3 className="mb-3 text-lg font-bold text-gray-800">
-            Instrucciones:
-          </h3>
-          <ul className="space-y-2 text-sm text-gray-600">
-            <li>
-              • Las fotos muestran una marca de agua "MUESTRA" para protección
-            </li>
-            <li>• Marca tus fotos favoritas con el ❤️</li>
-            <li>• Selecciona las fotos que quieres comprar con el 🛒</li>
-            <li>
-              • Una vez seleccionadas, procede al carrito para realizar tu
-              pedido
-            </li>
-            <li>
-              • Recibirás las fotos originales sin marca de agua después del
-              pago
-            </li>
-          </ul>
-        </div>
-      </div>
+      {/* Sticky CTA */}
+      {!submitted && selectedPhotos.size > 0 && (
+        <StickyCTA
+          selectedCount={selectedPhotos.size}
+          pkg={pkg}
+          setPkg={setPkg}
+          onContinue={handleSend}
+          disabled={sending || selectedPhotos.size === 0 || !pkg}
+          priceText={priceText}
+        />
+      )}
+
+      {/* Photo Modal */}
+      {zoomIndex !== null && photos[zoomIndex] && (
+        <PublicPhotoModal
+          photo={{
+            id: photos[zoomIndex].id,
+            preview_url: photos[zoomIndex].preview_url,
+            filename: photos[zoomIndex].filename
+          }}
+          isOpen={true}
+          onClose={() => setZoomIndex(null)}
+          onPrev={() => setZoomIndex((i) => (i === null || i === 0 ? i : i - 1))}
+          onNext={() => setZoomIndex((i) => (i === null || i === photos.length - 1 ? i : i + 1))}
+          hasNext={zoomIndex < photos.length - 1}
+          hasPrev={zoomIndex > 0}
+          currentIndex={zoomIndex + 1}
+          totalPhotos={photos.length}
+          isSelected={selectedPhotos.has(photos[zoomIndex].id)}
+          isFavorite={favorites.has(photos[zoomIndex].id)}
+          onToggleSelection={() => togglePhotoSelection(photos[zoomIndex].id)}
+          onToggleFavorite={() => toggleFavorite(photos[zoomIndex].id)}
+        />
+      )}
     </div>
   );
 }

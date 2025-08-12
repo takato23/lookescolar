@@ -35,24 +35,36 @@ export async function processAndUploadImage(
     const width = metadata.width || 0;
     const height = metadata.height || 0;
 
-    // Crear preview con watermark
+    // Crear preview con watermark más prominente para tienda online
     const watermarkText = 'LOOK ESCOLAR';
-    const fontSize = Math.max(30, Math.floor(Math.min(width, height) / 20));
+    const fontSize = Math.max(40, Math.floor(Math.min(width, height) / 15)); // Texto más grande
 
-    // Crear SVG para el watermark
+    // Crear SVG para el watermark con mayor densidad y visibilidad
+    const patternSize = 250; // Patrón más pequeño = más repeticiones
     const watermarkSvg = Buffer.from(`
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="watermark" x="0" y="0" width="300" height="300" patternUnits="userSpaceOnUse">
-            <text x="150" y="150" 
+          <pattern id="watermark" x="0" y="0" width="${patternSize}" height="${patternSize}" patternUnits="userSpaceOnUse">
+            <text x="${patternSize/2}" y="${patternSize/2}" 
               font-family="Arial, sans-serif" 
               font-size="${fontSize}" 
               font-weight="bold"
               fill="white" 
+              fill-opacity="0.4" 
+              text-anchor="middle"
+              transform="rotate(-45 ${patternSize/2} ${patternSize/2})">
+              ${watermarkText}
+            </text>
+            <!-- Agregar texto adicional para mayor protección -->
+            <text x="${patternSize/2}" y="${patternSize/2 + fontSize + 10}" 
+              font-family="Arial, sans-serif" 
+              font-size="${Math.floor(fontSize * 0.7)}" 
+              font-weight="normal"
+              fill="white" 
               fill-opacity="0.3" 
               text-anchor="middle"
-              transform="rotate(-45 150 150)">
-              ${watermarkText}
+              transform="rotate(-45 ${patternSize/2} ${patternSize/2 + fontSize + 10})">
+              VISTA PREVIA
             </text>
           </pattern>
         </defs>

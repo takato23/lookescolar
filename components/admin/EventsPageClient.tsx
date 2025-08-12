@@ -6,6 +6,8 @@ import { EventCard } from '@/components/admin/EventCard';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 interface EventsPageClientProps {
   events: any[] | null;
@@ -13,6 +15,45 @@ interface EventsPageClientProps {
 }
 
 export function EventsPageClient({ events, error }: EventsPageClientProps) {
+  const router = useRouter();
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+
+  const handleDeleteEvent = async (event: any) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${event.school}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    setDeletingEventId(event.id);
+    
+    try {
+      const response = await fetch(`/api/admin/events/${event.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al eliminar el evento');
+      }
+
+      // Refresh the page to show updated events list
+      router.refresh();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert(error instanceof Error ? error.message : 'Error al eliminar el evento');
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
+
+  const handleEditEvent = (event: any) => {
+    // TODO: Implement edit functionality
+    console.log('Edit event:', event);
+    alert('Funcionalidad de edición pendiente de implementar');
+  };
+
+  const handleViewEvent = (event: any) => {
+    router.push(`/admin/events/${event.id}`);
+  };
   return (
     <div className="gradient-mesh min-h-screen">
       <div className="container mx-auto space-y-8 px-6 py-8">
@@ -107,7 +148,12 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                   className="animate-slide-up"
                   style={{ animationDelay: `${0.1 + index * 0.1}s` }}
                 >
-                  <EventCard event={event} />
+                  <EventCard 
+                    event={event} 
+                    onDelete={handleDeleteEvent}
+                    onEdit={handleEditEvent}
+                    onView={handleViewEvent}
+                  />
                 </div>
               ))}
             </div>

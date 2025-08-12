@@ -118,7 +118,7 @@ export default function AdminLayout({
           <div className="flex items-center space-x-4">
             <div className="spinner-glass"></div>
             <span className="text-foreground text-lg font-medium">
-              Verificando autenticación...
+              Verificando autenticacion...
             </span>
           </div>
         </div>

@@ -58,3 +58,4 @@ export async function decodeQR(buffer: Buffer): Promise<QRResult> {
 }
 
 
+

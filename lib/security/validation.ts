@@ -55,6 +55,8 @@ export const photoAssignmentSchema = z.object({
 export const searchParamsSchema = z.object({
   event_id: z.string().uuid().optional(),
   subject_id: z.string().uuid().optional(),
+  // Allow filtering by a specific code_id or the literal string 'null' to represent unassigned
+  code_id: z.union([z.string().uuid(), z.literal('null')]).optional(),
   approved: z.enum(['true', 'false']).optional(),
   tagged: z.enum(['true', 'false']).optional(),
   limit: z.coerce.number().min(1).max(100).optional().default(50),

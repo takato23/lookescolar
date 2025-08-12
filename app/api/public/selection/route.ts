@@ -5,9 +5,9 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
 const schema = z.object({
-  token: z.string().min(20, 'Token inválido'),
-  selectedPhotoIds: z.array(z.string().uuid('ID de foto inválido')).min(1),
-  package: z.string().min(1),
+  token: z.string(),
+  selectedPhotoIds: z.array(z.string().uuid()),
+  package: z.string(),
   contact: z
     .object({
       name: z.string().min(1).optional(),
@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { token, selectedPhotoIds, package: pkg, contact } = schema.parse(body);
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+    const { token, selectedPhotoIds, package: pkg, contact } = parsed.data;
 
     const supabase = await createServerSupabaseServiceClient();
 

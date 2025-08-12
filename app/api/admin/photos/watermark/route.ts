@@ -8,7 +8,9 @@ const schema = z.object({
   eventId: z.string().uuid().optional(),
 });
 
-function watermarkSvg(width: number, height: number, text = 'MUESTRA') {
+const WATERMARK_TEXT = process.env.WATERMARK_TEXT || 'LOOK ESCOLAR';
+
+function watermarkSvg(width: number, height: number, text = WATERMARK_TEXT) {
   const fontSize = Math.round(Math.min(width, height) / 10);
   return `
   <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -18,23 +20,20 @@ function watermarkSvg(width: number, height: number, text = 'MUESTRA') {
   </svg>`;
 }
 
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { photoIds, eventId } = schema.parse(body);
+    const { eventId } = await request.json();
+    if (!eventId) return NextResponse.json({ error: 'eventId required' }, { status: 400 });
 
     const supabase = await createServerSupabaseServiceClient();
-    const bucket = process.env.STORAGE_BUCKET || 'photos-bucket';
+    const bucket = process.env.STORAGE_BUCKET;
+    if (!bucket) return NextResponse.json({ error: 'STORAGE_BUCKET not set' }, { status: 500 });
 
     // Selección de fotos
     let photos: any[] = [];
-    if (photoIds?.length) {
-      const { data } = await supabase
-        .from('photos')
-        .select('id, storage_path, preview_path, watermark_path')
-        .in('id', photoIds);
-      photos = data || [];
-    } else if (eventId) {
+    if (eventId) {
       const { data } = await supabase
         .from('photos')
         .select('id, storage_path, preview_path, watermark_path')
@@ -42,10 +41,12 @@ export async function POST(request: NextRequest) {
         .limit(1000);
       photos = data || [];
     } else {
-      return NextResponse.json({ error: 'photoIds o eventId requeridos' }, { status: 400 });
+      return NextResponse.json({ error: 'eventId required' }, { status: 400 });
     }
 
     const results: Array<{ id: string; ok: boolean; error?: string }> = [];
+    let count = 0;
+    let skipped = 0;
 
     for (const p of photos) {
       try {
@@ -57,38 +58,64 @@ export async function POST(request: NextRequest) {
 
         // crear watermark preview
         const meta = await sharp(buf).metadata();
-        const maxSide = 2048;
         const width = meta.width || 1200;
         const height = meta.height || 800;
-        const scale = Math.min(1, maxSide / Math.max(width, height));
+
+        const MAX_SIDE = 1600;
+        let processingBuf = buf;
+        if (width > MAX_SIDE || height > MAX_SIDE) {
+          const scale = MAX_SIDE / Math.max(width, height);
+          const newW = Math.round(width * scale);
+          const newH = Math.round(height * scale);
+          processingBuf = await sharp(buf)
+            .resize({ width: newW, height: newH, fit: 'inside' })
+            .toBuffer();
+        }
+
         const newW = Math.round(width * scale);
         const newH = Math.round(height * scale);
 
-        const wm = Buffer.from(watermarkSvg(newW, newH));
-        const out = await sharp(buf)
-          .resize({ width: newW, height: newH, fit: 'inside', withoutEnlargement: true })
-          .composite([{ input: wm, gravity: 'center' }])
-          .jpeg({ quality: 80 })
+        const base = path
+          .replace(/^events\//, '')
+          .replace(/\.[^.]+$/, '')
+          .replace(/[^a-zA-Z0-9/_-]+/g, '_');
+        const previewKey = `previews/${base}.webp`;
+        const watermarkKey = `watermarks/${base}.webp`;
+
+        // Generate separate preview without watermark:
+        const previewBuf = await sharp(processingBuf)
+          .webp({ quality: 75 })
           .toBuffer();
 
-        const targetKey = `previews/${path.replace(/^events\//, '')}.jpg`;
-        const { error: upErr } = await supabase.storage
-          .from(bucket)
-          .upload(targetKey, out, { contentType: 'image/jpeg', upsert: true });
-        if (upErr) throw upErr;
+        // Watermark version:
+        const wm = Buffer.from(watermarkSvg(newW, newH));
+        const watermarkBuf = await sharp(processingBuf)
+          .composite([{ input: wm, gravity: 'center' }])
+          .webp({ quality: 80 })
+          .toBuffer();
+
+        const up1 = await supabase.storage.from(bucket).upload(previewKey, previewBuf, { contentType: 'image/webp', upsert: true });
+        if (up1.error) throw up1.error;
+        const up2 = await supabase.storage.from(bucket).upload(watermarkKey, watermarkBuf, { contentType: 'image/webp', upsert: true });
+        if (up2.error) throw up2.error;
 
         await supabase
           .from('photos')
-          .update({ watermark_path: targetKey, preview_path: targetKey })
+          .update({ 
+            preview_path: previewKey, 
+            watermark_path: watermarkKey 
+          })
           .eq('id', p.id);
 
         results.push({ id: p.id, ok: true });
+        count++;
       } catch (e: any) {
         results.push({ id: p.id, ok: false, error: e?.message ?? String(e) });
+        skipped++;
       }
     }
 
-    return NextResponse.json({ ok: true, processed: results.length, results });
+    return NextResponse.json({ processed: count, skipped: skipped });
   } catch (error) {
     console.error('[Service] Watermark error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

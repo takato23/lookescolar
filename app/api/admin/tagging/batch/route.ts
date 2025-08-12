@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { withAuth } from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
+import { logger } from '@/lib/utils/logger';
 
 // Enhanced schemas for batch operations
 const BatchAssignSchema = z.object({
@@ -14,6 +16,13 @@ const BatchAssignSchema = z.object({
     )
     .min(1)
     .max(100), // Limit to 100 assignments per batch
+});
+
+// New simplified schema for QR tagging workflow
+const QRTaggingBatchSchema = z.object({
+  eventId: z.string().uuid(),
+  photoIds: z.array(z.string().uuid()).min(1).max(50), // Batch of photo IDs
+  studentId: z.string().uuid(), // Single student to assign all photos to
 });
 
 const BatchUnassignSchema = z.object({
@@ -40,25 +49,184 @@ const BulkAssignSchema = z.object({
 });
 
 // POST: Batch assign photos to subjects
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async function(request: NextRequest) {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   try {
-    const supabase = createClient(true); // Service role for admin operations
+    const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
 
-    // Validate schema
-    const { eventId, assignments } = BatchAssignSchema.parse(body);
+    logger.info('Batch tagging request received', {
+      requestId,
+      bodyKeys: Object.keys(body),
+    });
+
+    // Try QR tagging schema first (simplified workflow)
+    let isQRTagging = false;
+    let eventId: string, assignments: Array<{photoId: string, subjectId: string}>;
+
+    try {
+      const qrData = QRTaggingBatchSchema.parse(body);
+      isQRTagging = true;
+      eventId = qrData.eventId;
+      // Convert to assignments format
+      assignments = qrData.photoIds.map(photoId => ({
+        photoId,
+        subjectId: qrData.studentId,
+      }));
+
+      logger.info('Using QR tagging workflow', {
+        requestId,
+        eventId,
+        studentId: `stu_${qrData.studentId.substring(0, 8)}***`,
+        photoCount: qrData.photoIds.length,
+      });
+    } catch {
+      // Fall back to standard batch schema
+      const batchData = BatchAssignSchema.parse(body);
+      eventId = batchData.eventId;
+      assignments = batchData.assignments;
+
+      logger.info('Using standard batch workflow', {
+        requestId,
+        eventId,
+        assignmentCount: assignments.length,
+      });
+    }
+
+    // Validate photos exist and belong to event
+    const photoIds = assignments.map(a => a.photoId);
+    const { data: photos, error: photosError } = await supabase
+      .from('photos')
+      .select('id, approved, event_id')
+      .eq('event_id', eventId)
+      .in('id', photoIds);
+
+    if (photosError) {
+      logger.error('Error validating photos', {
+        requestId,
+        error: photosError.message,
+        eventId,
+        photoCount: photoIds.length,
+      });
+      
+      return NextResponse.json(
+        { error: 'Failed to validate photos', details: photosError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!photos || photos.length !== photoIds.length) {
+      const foundIds = photos?.map(p => p.id) || [];
+      const missingIds = photoIds.filter(id => !foundIds.includes(id));
+      
+      logger.warn('Some photos not found or not in event', {
+        requestId,
+        eventId,
+        expectedCount: photoIds.length,
+        foundCount: photos?.length || 0,
+        missingCount: missingIds.length,
+      });
+
+      return NextResponse.json(
+        { 
+          error: 'Some photos not found or do not belong to this event',
+          details: {
+            expected: photoIds.length,
+            found: photos?.length || 0,
+            missing: missingIds.length,
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check for unapproved photos
+    const unapprovedPhotos = photos.filter(p => !p.approved);
+    if (unapprovedPhotos.length > 0) {
+      logger.warn('Cannot tag unapproved photos', {
+        requestId,
+        eventId,
+        unapprovedCount: unapprovedPhotos.length,
+        unapprovedIds: unapprovedPhotos.map(p => p.id.substring(0, 8) + '***'),
+      });
+
+      return NextResponse.json(
+        {
+          error: 'Cannot tag unapproved photos',
+          details: {
+            unapprovedCount: unapprovedPhotos.length,
+            message: 'All photos must be approved before tagging',
+          }
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate assignments
+    const { data: existingAssignments } = await supabase
+      .from('photo_subjects')
+      .select('photo_id, subject_id')
+      .in('photo_id', photoIds);
+
+    const duplicates = assignments.filter(assignment => 
+      existingAssignments?.some(existing => 
+        existing.photo_id === assignment.photoId && 
+        existing.subject_id === assignment.subjectId
+      )
+    );
+
+    if (duplicates.length > 0) {
+      logger.warn('Duplicate assignments detected', {
+        requestId,
+        duplicateCount: duplicates.length,
+        totalAssignments: assignments.length,
+      });
+    }
+
+    // Filter out duplicates for processing
+    const newAssignments = assignments.filter(assignment => 
+      !existingAssignments?.some(existing => 
+        existing.photo_id === assignment.photoId && 
+        existing.subject_id === assignment.subjectId
+      )
+    );
+
+    if (newAssignments.length === 0) {
+      logger.info('No new assignments to process (all duplicates)', {
+        requestId,
+        originalCount: assignments.length,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'All photos were already assigned to the specified subjects',
+        data: {
+          assignedCount: 0,
+          duplicateCount: assignments.length,
+          skippedCount: 0,
+        },
+      });
+    }
 
     // Start transaction for atomicity
     const { data, error } = await supabase.rpc('batch_assign_photos', {
       p_event_id: eventId,
-      p_assignments: assignments.map((a) => ({
+      p_assignments: newAssignments.map((a) => ({
         photo_id: a.photoId,
         subject_id: a.subjectId,
       })),
     });
 
     if (error) {
-      console.error('Error in batch assign:', error);
+      logger.error('Error in batch assign RPC', {
+        requestId,
+        error: error.message,
+        eventId,
+        assignmentCount: newAssignments.length,
+      });
+
       return NextResponse.json(
         { error: 'Failed to assign photos in batch', details: error.message },
         { status: 500 }
@@ -66,11 +234,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Update photo_subjects table for many-to-many relationships
-    const photoSubjectInserts = assignments.map((assignment) => ({
+    const photoSubjectInserts = newAssignments.map((assignment) => ({
       photo_id: assignment.photoId,
       subject_id: assignment.subjectId,
       tagged_at: new Date().toISOString(),
-      tagged_by: 'system', // In real implementation, use actual user ID
+      tagged_by: 'admin', // TODO: Get actual user ID from auth
     }));
 
     const { error: photoSubjectsError } = await supabase
@@ -78,8 +246,13 @@ export async function POST(request: NextRequest) {
       .insert(photoSubjectInserts);
 
     if (photoSubjectsError) {
-      console.error('Error inserting photo_subjects:', photoSubjectsError);
-      // Don't fail the entire operation for this
+      logger.error('Error inserting photo_subjects', {
+        requestId,
+        error: photoSubjectsError.message,
+        insertCount: photoSubjectInserts.length,
+      });
+      
+      // This is a secondary operation, don't fail the entire operation
     }
 
     // Get updated statistics
@@ -91,12 +264,29 @@ export async function POST(request: NextRequest) {
 
     const totalPhotos = stats?.length || 0;
     const taggedPhotos = stats?.filter((p) => p.subject_id).length || 0;
+    const duration = Date.now() - startTime;
+
+    logger.info('Batch tagging completed successfully', {
+      requestId,
+      eventId,
+      assignedCount: newAssignments.length,
+      duplicateCount: duplicates.length,
+      totalPhotos,
+      taggedPhotos,
+      duration,
+      workflowType: isQRTagging ? 'qr_tagging' : 'standard_batch',
+    });
 
     return NextResponse.json({
       success: true,
-      message: `Successfully assigned ${assignments.length} photos`,
+      message: isQRTagging 
+        ? `Successfully assigned ${newAssignments.length} photos to student` 
+        : `Successfully assigned ${newAssignments.length} photos in batch`,
       data: {
-        assignedCount: assignments.length,
+        assignedCount: newAssignments.length,
+        duplicateCount: duplicates.length,
+        skippedCount: assignments.length - newAssignments.length - duplicates.length,
+        workflowType: isQRTagging ? 'qr_tagging' : 'standard_batch',
         stats: {
           totalPhotos,
           taggedPhotos,
@@ -106,29 +296,59 @@ export async function POST(request: NextRequest) {
               ? Math.round((taggedPhotos / totalPhotos) * 100)
               : 0,
         },
+        metadata: {
+          processingTimeMs: duration,
+          requestId,
+        },
       },
     });
   } catch (error) {
+    const duration = Date.now() - startTime;
+
     if (error instanceof z.ZodError) {
+      logger.warn('Invalid request data for batch tagging', {
+        requestId,
+        errors: error.errors,
+        duration,
+      });
+
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Error in batch assign:', error);
+    logger.error('Error in batch assign operation', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration,
+    });
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: 'Failed to process batch tagging request',
+        requestId,
+      },
       { status: 500 }
     );
   }
-}
+});
 
 // DELETE: Batch unassign photos
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAuth(async function(request: NextRequest) {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   try {
-    const supabase = createClient(true);
+    const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
+
+    logger.info('Batch unassign request received', {
+      requestId,
+      photoCount: body.photoIds?.length,
+      eventId: body.eventId,
+    });
 
     // Validate schema
     const { eventId, photoIds } = BatchUnassignSchema.parse(body);
@@ -141,16 +361,40 @@ export async function DELETE(request: NextRequest) {
       .in('id', photoIds);
 
     if (photosError) {
-      console.error('Error verifying photos:', photosError);
+      logger.error('Error verifying photos for unassign', {
+        requestId,
+        error: photosError.message,
+        eventId,
+        photoCount: photoIds.length,
+      });
+
       return NextResponse.json(
-        { error: 'Failed to verify photos' },
+        { error: 'Failed to verify photos', details: photosError.message },
         { status: 500 }
       );
     }
 
     if (!photos || photos.length !== photoIds.length) {
+      const foundIds = photos?.map(p => p.id) || [];
+      const missingIds = photoIds.filter(id => !foundIds.includes(id));
+
+      logger.warn('Some photos not found for unassign', {
+        requestId,
+        eventId,
+        expectedCount: photoIds.length,
+        foundCount: photos?.length || 0,
+        missingCount: missingIds.length,
+      });
+
       return NextResponse.json(
-        { error: 'Some photos do not exist or do not belong to this event' },
+        { 
+          error: 'Some photos do not exist or do not belong to this event',
+          details: {
+            expected: photoIds.length,
+            found: photos?.length || 0,
+            missing: missingIds.length,
+          }
+        },
         { status: 400 }
       );
     }
@@ -162,9 +406,15 @@ export async function DELETE(request: NextRequest) {
       .in('photo_id', photoIds);
 
     if (deleteError) {
-      console.error('Error removing photo assignments:', deleteError);
+      logger.error('Error removing photo assignments', {
+        requestId,
+        error: deleteError.message,
+        photoCount: photoIds.length,
+        eventId,
+      });
+
       return NextResponse.json(
-        { error: 'Failed to unassign photos' },
+        { error: 'Failed to unassign photos', details: deleteError.message },
         { status: 500 }
       );
     }
@@ -176,7 +426,11 @@ export async function DELETE(request: NextRequest) {
       .in('id', photoIds);
 
     if (updateError) {
-      console.error('Error clearing photo subjects:', updateError);
+      logger.warn('Error clearing photo subjects (non-critical)', {
+        requestId,
+        error: updateError.message,
+        photoCount: photoIds.length,
+      });
       // Don't fail for this - photo_subjects is the primary relationship
     }
 
@@ -189,6 +443,16 @@ export async function DELETE(request: NextRequest) {
 
     const totalPhotos = stats?.length || 0;
     const taggedPhotos = stats?.filter((p) => p.subject_id).length || 0;
+    const duration = Date.now() - startTime;
+
+    logger.info('Batch unassign completed successfully', {
+      requestId,
+      eventId,
+      unassignedCount: photoIds.length,
+      totalPhotos,
+      taggedPhotos,
+      duration,
+    });
 
     return NextResponse.json({
       success: true,
@@ -204,29 +468,60 @@ export async function DELETE(request: NextRequest) {
               ? Math.round((taggedPhotos / totalPhotos) * 100)
               : 0,
         },
+        metadata: {
+          processingTimeMs: duration,
+          requestId,
+        },
       },
     });
   } catch (error) {
+    const duration = Date.now() - startTime;
+
     if (error instanceof z.ZodError) {
+      logger.warn('Invalid request data for batch unassign', {
+        requestId,
+        errors: error.errors,
+        duration,
+      });
+
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error('Error in batch unassign:', error);
+    logger.error('Error in batch unassign operation', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration,
+    });
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: 'Failed to process batch unassign request',
+        requestId,
+      },
       { status: 500 }
     );
   }
-}
+});
 
 // PUT: Bulk assign photos based on criteria
-export async function PUT(request: NextRequest) {
+export const PUT = withAuth(async function(request: NextRequest) {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   try {
-    const supabase = createClient(true);
+    const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
+
+    logger.info('Bulk assign request received', {
+      requestId,
+      eventId: body.eventId,
+      subjectId: body.subjectId ? `sub_${body.subjectId.substring(0, 8)}***` : undefined,
+      hasFilterCriteria: !!body.filterCriteria,
+    });
 
     // Validate schema
     const {
@@ -326,13 +621,22 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.error('Error in bulk assign:', error);
+    logger.error('Error in bulk assign operation', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration: Date.now() - startTime,
+    });
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: 'Failed to process bulk assign request',
+        requestId,
+      },
       { status: 500 }
     );
   }
-}
+});
 
 // Rate limiting configuration
 export const runtime = 'nodejs';

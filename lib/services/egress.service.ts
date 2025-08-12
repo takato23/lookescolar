@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/utils/logger';
+import 'server-only';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

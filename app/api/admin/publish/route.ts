@@ -13,6 +13,7 @@ function generateHexToken(bytes: number = 16): string {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin') || 'http://localhost:3000';
   try {
     const json = await request.json();
     const { codeId } = schema.parse(json);
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const url = absoluteUrl(`/f/${token}`);
+    const url = `${origin}/f/${token}`;
     return NextResponse.json({ token, url });
   } catch (error) {
     console.error('[Service] Admin publish error:', error);
