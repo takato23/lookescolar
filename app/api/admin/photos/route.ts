@@ -10,8 +10,9 @@ import {
   SECURITY_CONSTANTS,
 } from '@/lib/security/validation';
 import { z } from 'zod';
-import { getPhotoStatsByEvent } from '@/lib/services/photo-stats.service';
 import { signedUrlForKey } from '@/lib/storage/signedUrl';
+
+export const dynamic = 'force-dynamic';
 
 async function handleGET(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
@@ -54,28 +55,41 @@ async function handleGET(request: NextRequest) {
     // Usar service client para consultas
     const serviceClient = await createServerSupabaseServiceClient();
 
-    // Validar y sanitizar parámetros
+    // Validar y sanitizar parámetros mínimos requeridos
     const { searchParams } = new URL(request.url);
     const getParam = (key: string): string | undefined => {
       const v = searchParams.get(key);
       return v === null || v === '' ? undefined : v;
     };
 
+    // Pagination params
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '24');
+    const offset = (page - 1) * limit;
+
+    // Optional filters (keep backwards compatibility but do not require)
     const status = getParam('status');
     const approvedFromStatus =
       status === 'approved' ? 'true' : status === 'pending' ? 'false' : undefined;
     const taggedFromStatus =
       status === 'tagged' ? 'true' : status === 'untagged' ? 'false' : undefined;
 
+    const search = getParam('search');
+    const dateFrom = getParam('date_from');
+    const dateTo = getParam('date_to');
+    const sortBy = getParam('sort_by') || 'created_at';
+    const sortOrder = getParam('sort_order') || 'desc';
+
     const rawParams = {
-      event_id: getParam('event_id'),
+      event_id: getParam('event_id') || getParam('eventId'),
+      code_id: getParam('code_id') || undefined,
       approved: approvedFromStatus,
       tagged: getParam('tagged') ?? taggedFromStatus,
-      limit: getParam('limit'),
-      offset: getParam('offset'),
+      limit: limit.toString(),
+      offset: offset.toString(),
     };
 
-    // Validate with schema
+    // Validate known params with schema and enforce event_id required for this endpoint
     const validationResult = searchParamsSchema.safeParse(rawParams);
     if (!validationResult.success) {
       return NextResponse.json(
@@ -86,37 +100,26 @@ async function handleGET(request: NextRequest) {
         { status: 400 }
       );
     }
+    const { event_id: eventId, code_id: codeId, approved, tagged, limit: parsedLimit, offset: parsedOffset } =
+      validationResult.data as any;
+    
+    // event_id is now OPTIONAL - if not provided, show all photos
 
-    const {
-      event_id: eventId,
-      approved,
-      tagged,
-      limit,
-      offset,
-    } = validationResult.data;
+    if (process.env.NODE_ENV === 'development') {
+      // Debug log solo en dev
+      // eslint-disable-next-line no-console
+      console.debug('photos_query', { eventId: eventId || 'ALL', codeId, page, limit, offset });
+    }
 
     let query = serviceClient
       .from('photos')
       .select(
-        `
-        id,
-        event_id,
-        storage_path,
-        preview_path,
-        original_filename,
-        approved,
-        subject_id,
-        width,
-        height,
-        file_size,
-        mime_type,
-        created_at,
-        updated_at
-      `
-      )
-      .order('created_at', { ascending: false });
-
-    // Si hay event_id, filtrar por evento (validado como UUID)
+        `id, event_id, original_filename, storage_path, preview_path, watermark_path, approved, created_at, 
+         photo_subjects(subject_id, subjects(id, name))`,
+        { count: 'exact' }
+      );
+    
+    // Only filter by event_id if provided
     if (eventId) {
       query = query.eq('event_id', eventId);
     }
@@ -128,16 +131,36 @@ async function handleGET(request: NextRequest) {
       query = query.eq('approved', false);
     }
 
-    if (tagged === 'true') {
-      query = query.not('subject_id', 'is', null);
-    } else if (tagged === 'false') {
-      query = query.is('subject_id', null);
+    // Filter by tagged status - we'll handle this in the application layer
+    // since Supabase doesn't support complex joins easily in this context
+
+    // NOTA: code_id ya no existe en la tabla photos
+    // El filtrado por código se manejará a nivel de aplicación
+    // basándose en las relaciones con photo_subjects
+    
+    // Apply search filter
+    if (search) {
+      query = query.ilike('original_filename', `%${search}%`);
     }
+    
+    // Apply date filters
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom);
+    }
+    if (dateTo) {
+      query = query.lte('created_at', dateTo);
+    }
+    
+    // Apply sorting
+    const validSortColumns = ['created_at', 'original_filename'];
+    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const ascending = sortOrder === 'asc';
+    query = query.order(sortColumn, { ascending });
 
     // Aplicar paginación
-    query = query.range(offset, offset + limit - 1);
+    query = query.range(parsedOffset, parsedOffset + parsedLimit - 1);
 
-    const { data: photos, error } = await query;
+    const { data: photos, error, count } = await query;
 
     if (error) {
       console.error('Error fetching photos:', error);
@@ -158,73 +181,62 @@ async function handleGET(request: NextRequest) {
       'info'
     );
 
-    // Procesar datos para incluir información de etiquetado
-    const processedPhotos = await Promise.all(
-      (photos || []).map(async (photo) => {
+    // Procesar datos y firmar preview_url server-side
+    let processedPhotos = await Promise.all(
+      (photos || []).map(async (photo: any) => {
         let preview_url: string | null = null;
         try {
-          const key = (photo as any).preview_path || photo.storage_path;
-          if (key) {
-            preview_url = await signedUrlForKey(key, 3600);
+          // Intentar en orden: preview_path, watermark_path, storage_path
+          const preferredKey = photo.preview_path || photo.watermark_path || photo.storage_path;
+          if (preferredKey) {
+            preview_url = await signedUrlForKey(preferredKey, 3600);
           }
-        } catch (e) {
-          console.error('[AdminPhotos] Error firmando URL', e);
+        } catch (err) {
+          console.warn('Failed to generate signed URL for photo:', photo.id, err);
           preview_url = null;
         }
-
+        
+        // Extract subject information from the joined data
+        const subjects = photo.photo_subjects?.map((ps: any) => ({
+          id: ps.subjects?.id,
+          name: ps.subjects?.name,
+        })).filter((s: any) => s.id) || [];
+        
         return {
           id: photo.id,
           event_id: photo.event_id,
-          filename: photo.original_filename,
           original_filename: photo.original_filename,
           storage_path: photo.storage_path,
-          preview_path: (photo as any).preview_path,
+          preview_path: photo.preview_path ?? null,
+          watermark_path: photo.watermark_path ?? null,
           preview_url,
-          signed_url: preview_url,
           approved: photo.approved,
-          tagged: !!photo.subject_id,
-          width: photo.width,
-          height: photo.height,
-          file_size: photo.file_size,
-          mime_type: photo.mime_type,
           created_at: photo.created_at,
-          updated_at: photo.updated_at,
-          subject: photo.subject_id
-            ? {
-                id: photo.subject_id,
-                name: 'Sujeto asignado',
-              }
-            : null,
+          subjects, // Include subjects array
+          tagged: subjects.length > 0, // Photo is tagged if it has subjects
         };
       })
     );
 
-    // Get optimized statistics using the stats service
-    const stats = await getPhotoStatsByEvent(eventId, true);
+    // Apply tagged filter in application layer if needed
+    if (tagged === 'true') {
+      processedPhotos = processedPhotos.filter(photo => photo.tagged);
+    } else if (tagged === 'false') {
+      processedPhotos = processedPhotos.filter(photo => !photo.tagged);
+    }
 
-    SecurityLogger.logSecurityEvent(
-      'photos_response',
-      {
-        requestId,
-        userId: effectiveUserId,
-        photosCount: processedPhotos.length,
-        statsTotal: stats.total,
-      },
-      'info'
-    );
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.debug('photos_query_result', { count: processedPhotos.length });
+    }
 
     return NextResponse.json(
       {
         success: true,
         photos: processedPhotos,
-        meta: {
-          ...stats,
-          limit,
-          offset,
-        },
+        counts: { total: count || 0 },
       },
       {
-        // Agregar headers de cache para mejorar performance
         headers: {
           'Cache-Control': 'private, max-age=30, stale-while-revalidate=60',
         },

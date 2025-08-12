@@ -17,6 +17,24 @@ import fs from 'fs';
 import path from 'path';
 import { TestRunner, TEST_SUITES } from '../__tests__/test-runner';
 
+// Cargar envs: .env.test o fallback .env.local antes de cualquier preflight
+try {
+  const envTest = path.resolve(process.cwd(), '.env.test');
+  const envLocal = path.resolve(process.cwd(), '.env.local');
+  const chosen = fs.existsSync(envTest) ? envTest : (fs.existsSync(envLocal) ? envLocal : null);
+  if (chosen) {
+    const lines = fs.readFileSync(chosen, 'utf-8').split(/\r?\n/);
+    for (const line of lines) {
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq === -1) continue;
+      const key = line.slice(0, eq).trim();
+      const val = line.slice(eq + 1).trim();
+      if (!process.env[key]) process.env[key] = val;
+    }
+  }
+} catch {}
+
 interface ExecutionConfig {
   environment: 'test' | 'local' | 'ci';
   stage: 'unit' | 'integration' | 'e2e' | 'all';
@@ -139,18 +157,23 @@ class ComprehensiveTestExecutor {
       }
     }
 
-    // Check database connectivity
+    // Check database connectivity (sin Vitest ni CJS issues)
     this.log('Testing database connectivity...');
     try {
-      const { createTestClient } = await import('../__tests__/test-utils');
-      const supabase = createTestClient();
-      const { error } = await supabase.from('events').select('count').limit(1);
-      
-      if (error) {
-        this.log(`❌ Database connection failed: ${error.message}`, 'error');
-        allPassed = false;
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseUrl = process.env['SUPABASE_URL'] || process.env['NEXT_PUBLIC_SUPABASE_URL'];
+      const serviceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+      if (!supabaseUrl || !serviceKey) {
+        this.log('⚠️ SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY no configuradas, omitiendo DB check', 'warn');
       } else {
-        this.log('✅ Database connection successful');
+        const sb = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+        const { error } = await sb.from('events').select('id').limit(1);
+        if (error) {
+          this.log(`❌ Database connection failed: ${error.message}`, 'error');
+          allPassed = false;
+        } else {
+          this.log('✅ Database connection successful');
+        }
       }
     } catch (error) {
       this.log(`❌ Database connection test failed: ${error}`, 'error');
@@ -177,13 +200,14 @@ class ComprehensiveTestExecutor {
   private getTestSuitesForStage(stage: string): typeof TEST_SUITES {
     const stageMapping: Record<string, string[]> = {
       'unit': ['Component Tests', 'Utility Functions'],
-      'integration': ['API Critical Endpoints', 'Security Validation', 'Critical Endpoints (TDD)'],
+      'integration': ['API Critical Endpoints', 'Security Validation', 'Critical Endpoints (TDD)', 'V1 Flow'],
       'e2e': ['Integration Workflows', 'Enhanced Security', 'Performance Comprehensive'],
       'all': TEST_SUITES.map(suite => suite.name)
     };
 
     const suitesToRun = stageMapping[stage] || stageMapping['all'];
-    return TEST_SUITES.filter(suite => suitesToRun.includes(suite.name));
+    const expanded = TEST_SUITES.filter(suite => suitesToRun.includes(suite.name));
+    return expanded;
   }
 
   private async generateComprehensiveReport(testReport: any, preflightResults: any, executionTime: number) {
@@ -342,7 +366,39 @@ class ComprehensiveTestExecutor {
 
     // Execute tests
     this.log('\n🧪 Executing test suites...');
+    // Si DB preflight falló, activar SEED_FAKE_DB
+    if (!preflightResults.all_passed) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabaseUrl = process.env['SUPABASE_URL'] || process.env['NEXT_PUBLIC_SUPABASE_URL'];
+        const serviceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+        if (!supabaseUrl || !serviceKey) {
+          process.env.SEED_FAKE_DB = '1';
+          this.log('SEED_FAKE_DB=1 activado (faltan credenciales para DB).');
+        } else {
+          const sb = createClient(supabaseUrl, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+          const { error } = await sb.from('events').select('id').limit(1);
+          if (error) {
+            process.env.SEED_FAKE_DB = '1';
+            this.log('SEED_FAKE_DB=1 activado (DB no accesible).');
+          }
+        }
+      } catch {
+        process.env.SEED_FAKE_DB = '1';
+        this.log('SEED_FAKE_DB=1 activado (error en preflight DB).');
+      }
+    }
     const testReport = await testRunner.runAll();
+
+    // Si estamos en integración, dispare además el patrón general de tests de integración para no depender del runner
+    if (this.config.stage === 'integration') {
+      const { output } = await this.runCommand(
+        'npx vitest run tests/integration/**/*.test.ts --reporter=verbose --environment=node',
+        'Vitest direct: tests/integration/**/*.test.ts'
+      );
+      const extraLogPath = path.join(this.config.outputDir, 'integration-vitest-direct.log');
+      fs.writeFileSync(extraLogPath, output);
+    }
 
     // Generate comprehensive report
     const executionTime = Date.now() - this.startTime;

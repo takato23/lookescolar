@@ -11,7 +11,7 @@ async function getEvents() {
         : '/api/admin/events-simple';
 
     const response = await fetch(
-      path.startsWith('/') ? absoluteUrl(path) : path,
+      path.startsWith('/') ? await absoluteUrl(path) : path,
       {
       cache: 'no-store',
       headers: {

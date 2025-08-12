@@ -1,263 +1,152 @@
-error supabase:
-ERROR:  42601: syntax error at or near "NOT"
-LINE 237: ALTER TABLE subject_tokens ADD CONSTRAINT IF NOT EXISTS subject_tokens_min_length 
-                                                       ^
+ LookEscolar — Hotfix & Simplificación del flujo de fotos (prioridad alta)
+Contexto
+La vista /admin/photos debe ser lo más simple posible: crear evento → subir fotos → watermark → agrupar por QR → publicar → links/QR para familias (checkout con MercadoPago). Ahora mismo hay errores 400/500 y la UI se volvió confusa.
 
-                                     ----
+Bugs a corregir (bloqueantes)
+DELETE /api/admin/photos devuelve 400 al “Eliminar todas”
 
-                                     error consola:
-                                     santiagobalosky@MacBook-Pro-de-Santiago LookEscolar % npm run build 
+Back: en app/api/admin/photos/route.ts agregar soporte a dos formas de borrar:
 
-> lookescolar@0.1.0 build
-> next build
+{"photoIds": string[]} (borra seleccionadas)
 
- ⚠ Invalid next.config.js options detected: 
- ⚠     Unrecognized key(s) in object: 'removeTestFiles' at "compiler"
- ⚠     Expected object, received boolean at "experimental.serverActions"
- ⚠     Unrecognized key(s) in object: 'fontLoaders', 'runtime', 'modularizeImports' at "experimental"
- ⚠     Unrecognized key(s) in object: 'swcMinify', 'optimizeFonts'
- ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
- ⚠ The "experimental.esmExternals" option has been modified. experimental.esmExternals is not recommended to be modified as it may disrupt module resolution. It should be removed from your next.config.js.
- ⚠ Warning: Found multiple lockfiles. Selecting /Users/santiagobalosky/package-lock.json.
-   Consider removing the lockfiles at:
-   * /Users/santiagobalosky/LookEscolar/package-lock.json
+{"eventId": UUID, "codeId": UUID | "null"} (borra por filtro actual; codeId:"null" = sin carpeta)
 
-   ▲ Next.js 15.4.5
-   - Environments: .env.local
-   - Experiments (use with caution):
-     · runtime: "nodejs"
-     ✓ optimizeCss
-     · fontLoaders
-     · esmExternals: "loose"
-     ✓ serverActions
-     · modularizeImports
+Validar con Zod, responder 200 { success:true, deleted:number }. Nunca 500 por inputs inválidos; devolver 400 JSON legible.
 
-   Creating an optimized production build ...
-   Using tsconfig file: ./tsconfig.json
+Front: en PhotoGalleryModern y app/admin/photos/page.tsx, si el usuario elige “Eliminar todas” con selección vacía, enviar el filtro actual (eventId, codeId) en el body. Deshabilitar el botón si no hay eventId.
 
-> Build error occurred
-[Error: The key "NODE_ENV" under "env" in next.config.js is not allowed. https://nextjs.org/docs/messages/env-key-not-allowed]
-santiagobalosky@MacBook-Pro-de-Santiago LookEscolar % npm run typecheck
+Fotos/folders no cargan por 400 (falta eventId)
 
-> lookescolar@0.1.0 typecheck
-> tsc --noEmit
+Regla global: nunca llamar /api/admin/photos sin event_id.
 
-__tests__/mercadopago-integration.test.ts:182:19 - error TS1005: ',' expected.
+Crear helper buildPhotosUrl({ eventId, codeId='null', limit=100 }) que siempre incluya event_id y:
 
-182                 }))
-                      ~
+codeId==='null' → code_id=null
 
-__tests__/mercadopago-integration.test.ts:183:15 - error TS1005: ',' expected.
+codeId=UUID → code_id=<uuid>
 
-183               }))
-                  ~
+En /admin/photos, si no hay eventId en la URL:
 
-__tests__/mercadopago-integration.test.ts:186:10 - error TS1005: ',' expected.
+Crear “Evento rápido” (POST /api/admin/events-simple o /api/admin/quick-setup) → eventId
 
-186         }))
-             ~
+router.replace('/admin/photos?eventId=<id>&codeId=null') y recién ahí cargar fotos.
 
-__tests__/mercadopago-integration.test.ts:186:11 - error TS1005: ';' expected.
+PhotosSidebarFolders no debe pedir /api/admin/publish/list hasta tener eventId.
 
-186         }))
-              ~
+/api/admin/publish/list?eventId=... no debe 500
 
-__tests__/mercadopago-integration.test.ts:187:8 - error TS1005: ')' expected.
+En su route: validar eventId (UUID). Si falta o es inválido, devolver 200 [] (o { rows: [] } si está en modo legacy), no 500.
 
-187       };
-           ~
+UX: Carpetas (eventos/códigos) y acciones
+Volver a mostrar “Carpetas” + crear evento/carpeta
 
-__tests__/mercadopago-integration.test.ts:194:5 - error TS1128: Declaration or statement expected.
+Sidebar (components/admin/PhotosSidebarFolders.tsx):
 
-194     });
-        ~
+Nodo raíz: Evento seleccionado.
 
-__tests__/mercadopago-integration.test.ts:194:6 - error TS1128: Declaration or statement expected.
+Primer ítem fijo: “Sin carpeta” → codeId='null'.
 
-194     });
-         ~
+Listado de códigos del evento (desde GET /api/admin/publish/list?eventId=…), con photos_count, chip “Publicado”.
 
-__tests__/mercadopago-integration.test.ts:205:19 - error TS1005: ',' expected.
+Botones:
 
-205                 }))
-                      ~
+“Nuevo evento” → POST /api/admin/events { name } → redirect a ?eventId=<id>&codeId=null.
 
-__tests__/mercadopago-integration.test.ts:206:15 - error TS1005: ',' expected.
+“Nueva carpeta” (código manual) → POST /api/admin/subjects (o el endpoint equivalente existente) para crear un code con code_value autogenerado y token. Refrescar lista.
 
-206               }))
-                  ~
+Menú 3 puntos por carpeta: Publicar/Despublicar/Revocar, Copiar link, Ver QR, Descargar ZIP.
 
-__tests__/mercadopago-integration.test.ts:209:10 - error TS1005: ',' expected.
+Deduplicar eventos por id. No renderizar nada hasta tener eventId.
 
-209         }))
-             ~
+UI: simplificar navegación
+Reducir admin a 3 entradas básicas (lo demás a Avanzado)
 
-__tests__/mercadopago-integration.test.ts:209:11 - error TS1005: ';' expected.
+En el sidebar admin: dejar Dashboard, Fotos, Pedidos. Mover el resto bajo un acordeón “Avanzado”.
 
-209         }))
-              ~
+En Dashboard dejar una tarjeta “Flujo rápido” (lleva a /admin/quick-flow).
 
-__tests__/mercadopago-integration.test.ts:210:7 - error TS1128: Declaration or statement expected.
+Procesamiento/seguridad de imágenes
+Previews de baja calidad con watermark
 
-210       };
-          ~
+En el pipeline de watermark/preview:
 
-__tests__/mercadopago-integration.test.ts:217:5 - error TS1128: Declaration or statement expected.
+Generar thumbnail webp máx. 1200px (lado mayor), quality ~70, watermark “Look Escolar” (opacidad ~0.25, centrada/repetida).
 
-217     });
-        ~
+Guardar preview_path y servir siempre previews firmadas (signed URL) desde preview_path (o watermark_path), no el original.
 
-__tests__/mercadopago-integration.test.ts:217:6 - error TS1128: Declaration or statement expected.
+En la pública /f/[token]/simple-page: usar esas previews; nunca firmar el original salvo post-compra.
 
-217     });
-         ~
+Flujo “Publicar rápido” (encadenado)
+Un botón que haga todo
 
-__tests__/mercadopago-integration.test.ts:228:19 - error TS1005: ',' expected.
+En /admin/photos y /admin/quick-flow:
 
-228                 }))
-                      ~
+Upload múltiple → devolver photoIds.
 
-__tests__/mercadopago-integration.test.ts:229:15 - error TS1005: ',' expected.
+POST /api/admin/photos/watermark { photoIds }.
 
-229               }))
-                  ~
+POST /api/admin/anchor-detect { eventId, onlyMissing:true }.
 
-__tests__/mercadopago-integration.test.ts:232:10 - error TS1005: ',' expected.
+POST /api/admin/group { eventId }.
 
-232         }))
-             ~
+POST /api/admin/publish { eventId }.
 
-__tests__/mercadopago-integration.test.ts:232:11 - error TS1005: ';' expected.
+GET /api/admin/publish/list?eventId=… → modal “Listo para compartir” con:
 
-232         }))
-              ~
+Link /f/<token>/simple-page>
 
-__tests__/mercadopago-integration.test.ts:233:7 - error TS1128: Declaration or statement expected.
+Botón Copiar
 
-233       };
-          ~
+Ver QR
 
-__tests__/mercadopago-integration.test.ts:241:5 - error TS1128: Declaration or statement expected.
+Abrir como padre
 
-241     });
-        ~
+Toasts encadenados: “Subiendo…”, “Aplicando watermark…”, “Agrupando por QR…”, “Publicando…”, “Listo: links”.
 
-__tests__/mercadopago-integration.test.ts:241:6 - error TS1128: Declaration or statement expected.
+Checkout familia (MercadoPago)
+Confirmar checkout end-to-end
 
-241     });
-         ~
+Pública /f/<token>/simple-page: seleccionar fotos → Carrito → POST /api/payments/create-preference → redirigir a MP (sandbox) → páginas de success/pending/failure ya existentes.
 
-__tests__/mercadopago-integration.test.ts:242:3 - error TS1128: Declaration or statement expected.
+Si MP no está configurado en .env, mostrar banner “Modo prueba” pero no bloquear publicación.
 
-242   });
-      ~
+Accesibilidad y detalles visuales
+Ajustes rápidos de UI ya detectados
 
-__tests__/mercadopago-integration.test.ts:242:4 - error TS1128: Declaration or statement expected.
+En PhotoGalleryModern: tipografía de preview/checkbox legible (no blanco sobre blanco), hover con scale 1.01 sin desbordar, rounded-xl overflow-hidden, bg-card text-card-foreground.
 
-242   });
-       ~
+Empty states: “Aún no hay fotos. Arrastrá o Subí fotos.”
 
-__tests__/mercadopago-integration.test.ts:253:17 - error TS1005: ',' expected.
+QA — Checklist de verificación (manual, 3 minutos)
+/admin/photos sin query → crea evento y redirige a ?eventId=<uuid>&codeId=null sin 400.
 
-253               }))
-                    ~
+Subo 3 fotos → veo thumbnails con watermark.
 
-__tests__/mercadopago-integration.test.ts:254:13 - error TS1005: ',' expected.
+“Publicar rápido” → obtengo tokens y puedo abrir /f/<token>/simple-page.
 
-254             }))
-                ~
+En sidebar, “Sin carpeta” y carpetas con photos_count. “Nueva carpeta” crea un código y aparece en la lista.
 
-__tests__/mercadopago-integration.test.ts:259:10 - error TS1005: ',' expected.
+“Eliminar todas” en “Sin carpeta” → DELETE /api/admin/photos con { eventId, codeId:'null' } → 200 y recarga.
 
-259         }))
-             ~
+Checkout con MP sandbox llega a success/pending.
 
-__tests__/mercadopago-integration.test.ts:259:11 - error TS1005: ';' expected.
+Notas de implementación
+Loggear en dev (console.debug) URL finales de fetch de fotos: deben incluir siempre event_id y code_id.
 
-259         }))
-              ~
+Respetar shape backend actual:
 
-__tests__/mercadopago-integration.test.ts:260:7 - error TS1128: Declaration or statement expected.
+/api/admin/photos → { success, photos: [...], counts? }
 
-260       };
-          ~
+/api/admin/publish/list?eventId=… → array simple (si falta eventId, legacy { rows: [] })
 
-__tests__/mercadopago-integration.test.ts:269:5 - error TS1128: Declaration or statement expected.
+Cualquier validación inválida → 400 JSON, nunca HTML 500.
 
-269     });
-        ~
+Si algo no se puede completar en un solo PR, dividir en:
 
-__tests__/mercadopago-integration.test.ts:269:6 - error TS1128: Declaration or statement expected.
+Bugfix crítico (DELETE + fetch con eventId)
 
-269     });
-         ~
+Sidebar & crear evento/carpeta
 
-__tests__/mercadopago-integration.test.ts:282:17 - error TS1005: ',' expected.
+Publicar rápido + previews
 
-282               }))
-                    ~
-
-__tests__/mercadopago-integration.test.ts:283:13 - error TS1005: ',' expected.
-
-283             }))
-                ~
-
-__tests__/mercadopago-integration.test.ts:285:10 - error TS1005: ',' expected.
-
-285         }))
-             ~
-
-__tests__/mercadopago-integration.test.ts:285:11 - error TS1005: ';' expected.
-
-285         }))
-              ~
-
-__tests__/mercadopago-integration.test.ts:286:7 - error TS1128: Declaration or statement expected.
-
-286       };
-          ~
-
-__tests__/mercadopago-integration.test.ts:295:5 - error TS1128: Declaration or statement expected.
-
-295     });
-        ~
-
-__tests__/mercadopago-integration.test.ts:295:6 - error TS1128: Declaration or statement expected.
-
-295     });
-         ~
-
-__tests__/mercadopago-integration.test.ts:349:3 - error TS1128: Declaration or statement expected.
-
-349   });
-      ~
-
-__tests__/mercadopago-integration.test.ts:349:4 - error TS1128: Declaration or statement expected.
-
-349   });
-       ~
-
-__tests__/mercadopago-integration.test.ts:432:1 - error TS1128: Declaration or statement expected.
-
-432 });
-    ~
-
-__tests__/mercadopago-integration.test.ts:432:2 - error TS1128: Declaration or statement expected.
-
-432 });
-     ~
-
-__tests__/storage.service.test.ts:59:1 - error TS1005: ',' expected.
-
-59 }
-   ~
-
-
-Found 42 errors in 2 files.
-
-Errors  Files
-    41  __tests__/mercadopago-integration.test.ts:182
-     1  __tests__/storage.service.test.ts:59
-santiagobalosky@MacBook-Pro-de-Santiago LookEscolar % pm run test:security
-zsh: command not found: pm
-santiagobalosky@MacBook-Pro-de-Santiago LookEscolar %                   
+Checkout QA

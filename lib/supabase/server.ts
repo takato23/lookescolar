@@ -2,8 +2,14 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import 'server-only';
 
-// Crea un cliente de Supabase para uso en el servidor con validación de envs
+/**
+ * Creates a Supabase client for server-side usage with anon key.
+ * Uses cookie-based auth for SSR.
+ * @returns {Promise<SupabaseClient<Database>>} Supabase client
+ * @throws {Error} If env vars missing
+ */
 export async function createServerSupabaseClient(): Promise<
   SupabaseClient<Database>
 > {
@@ -37,7 +43,12 @@ export async function createServerSupabaseClient(): Promise<
   });
 }
 
-// Crea un cliente de servicio (service role) para tareas administrativas del servidor
+/**
+ * Creates a Supabase service role client for admin tasks.
+ * Bypasses RLS for privileged operations.
+ * @returns {Promise<SupabaseClient<Database>>} Service role client
+ * @throws {Error} If env vars missing
+ */
 export async function createServerSupabaseServiceClient(): Promise<
   SupabaseClient<Database>
 > {

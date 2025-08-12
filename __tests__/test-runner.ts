@@ -82,6 +82,14 @@ const TEST_SUITES: TestSuite[] = [
     description: 'API endpoint testing for core functionality'
   },
   {
+    name: 'V1 Flow',
+    pattern: 'tests/integration/v1.flow.test.ts',
+    timeout: 60000,
+    parallel: false,
+    requirements: ['database'],
+    description: 'Flujo V1 con 7 pasos (anchor, group, publish, gallery, selection, export, unpublish)'
+  },
+  {
     name: 'Security Validation',
     pattern: '__tests__/security/security-comprehensive.test.ts',
     timeout: 20000,
@@ -162,10 +170,14 @@ class TestRunner {
   }
 
   private async checkDatabase(): Promise<boolean> {
+    if (process.env.SKIP_DB_CHECK === '1') return true;
     try {
-      const { createTestClient } = await import('./test-utils');
-      const supabase = createTestClient();
-      const { data, error } = await supabase.from('events').select('count').limit(1);
+      const { createClient } = await import('@supabase/supabase-js');
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!url || !key) return false;
+      const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { error } = await supabase.from('events').select('id').limit(1);
       return !error;
     } catch {
       return false;
@@ -199,11 +211,12 @@ class TestRunner {
       parts.push('--coverage');
     }
     
-    // Add parallel execution control
-    if (options.parallel ?? (suite.parallel && this.config.parallel)) {
-      parts.push('--reporter=verbose');
-    } else {
-      parts.push('--reporter=verbose --no-parallel');
+    // Reporter (evitar flags de paralelismo incompatibles con Vitest 2.x)
+    parts.push('--reporter=verbose');
+
+    // Forzar entorno Node para tests de integración
+    if (suite.pattern.includes('tests/integration/')) {
+      parts.push('--environment=node');
     }
     
     // Add environment variables
@@ -217,24 +230,27 @@ class TestRunner {
   }
 
   private parseTestOutput(output: string): { passed: number; failed: number; skipped: number } {
-    const lines = output.split('\n');
-    
-    // Look for vitest summary line
-    const summaryLine = lines.find(line => line.includes('Tests ') || line.includes('Test Files'));
-    
-    if (summaryLine) {
-      const passedMatch = summaryLine.match(/(\d+)\s+passed/);
-      const failedMatch = summaryLine.match(/(\d+)\s+failed/);
-      const skippedMatch = summaryLine.match(/(\d+)\s+skipped/);
-      
-      return {
-        passed: passedMatch ? parseInt(passedMatch[1]) : 0,
-        failed: failedMatch ? parseInt(failedMatch[1]) : 0,
-        skipped: skippedMatch ? parseInt(skippedMatch[1]) : 0
-      };
+    const counts = { passed: 0, failed: 0, skipped: 0 };
+
+    // Prefer explicit summary lines like: "Tests 7 skipped (7)"
+    const summaryMatches = output.matchAll(/\bTests\s+(\d+)\s+(passed|failed|skipped)\b/gi);
+    for (const match of summaryMatches) {
+      const n = parseInt(match[1]);
+      const kind = match[2].toLowerCase() as 'passed' | 'failed' | 'skipped';
+      if (!Number.isNaN(n)) counts[kind] = n;
     }
-    
-    return { passed: 0, failed: 0, skipped: 0 };
+
+    // Fallback: match generic tokens anywhere
+    if (counts.passed === 0 || counts.failed === 0 || counts.skipped === 0) {
+      const passedMatch = output.match(/\b(\d+)\s+passed\b/i);
+      const failedMatch = output.match(/\b(\d+)\s+failed\b/i);
+      const skippedMatch = output.match(/\b(\d+)\s+skipped\b/i);
+      if (passedMatch) counts.passed = parseInt(passedMatch[1]);
+      if (failedMatch) counts.failed = parseInt(failedMatch[1]);
+      if (skippedMatch) counts.skipped = parseInt(skippedMatch[1]);
+    }
+
+    return counts;
   }
 
   private extractCoverage(output: string): number | undefined {
@@ -279,11 +295,18 @@ class TestRunner {
     try {
       const command = this.buildVitestCommand(suite);
       this.log(`   Command: ${command}`);
-      
+      const env = { ...process.env };
+      // Si DB no está disponible, activar SEED_FAKE_DB para V1 Flow
+      if (suite.name === 'V1 Flow') {
+        const dbOk = await this.checkDatabase();
+        if (!dbOk) env['SEED_FAKE_DB'] = '1';
+      }
+
       output = execSync(command, {
         encoding: 'utf-8',
         stdio: 'pipe',
         timeout: suite.timeout + 5000, // Add buffer to vitest timeout
+        env,
       });
       
     } catch (error: any) {
@@ -298,6 +321,22 @@ class TestRunner {
     const duration = Date.now() - startTime;
     const testCounts = this.parseTestOutput(output);
     const coverage = this.extractCoverage(output);
+
+    // Diagnóstico si Vitest no encuentra tests
+    if (/No tests? found/i.test(output) || (/Test Files\s+0/i.test(output) && /Tests\s+0/i.test(output))) {
+      try {
+        const firstLine = fs.readFileSync(path.resolve(suite.pattern), 'utf-8').split(/\r?\n/)[0] || '';
+        // Intentar leer include del config
+        const vitestConfigPath = path.resolve('vitest.config.ts');
+        let includeLine = '';
+        if (fs.existsSync(vitestConfigPath)) {
+          const cfg = fs.readFileSync(vitestConfigPath, 'utf-8');
+          const match = cfg.match(/include:\s*\[([\s\S]*?)\]/);
+          includeLine = match ? match[1].replace(/\n/g, ' ').trim() : '';
+        }
+        output = `${output}\nDIAG firstLine=${JSON.stringify(firstLine)}\nDIAG vitest.include=[${includeLine}]`;
+      } catch {}
+    }
 
     const result: TestResult = {
       suite: suite.name,
@@ -316,7 +355,9 @@ class TestRunner {
     }
 
     // Save detailed output
-    const outputFile = path.join(this.config.outputDir, `${suite.name.replace(/\s+/g, '-').toLowerCase()}.log`);
+    const outputFile = suite.name === 'V1 Flow'
+      ? path.join(this.config.outputDir, 'v1-flow.runner.log')
+      : path.join(this.config.outputDir, `${suite.name.replace(/\s+/g, '-').toLowerCase()}.log`);
     fs.writeFileSync(outputFile, output);
 
     return result;

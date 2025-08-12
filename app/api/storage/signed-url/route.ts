@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Compat desarrollo: usar helper centralizado
-    const url = await signedUrlForKey(path, 3600);
-    return NextResponse.json({ url, deprecated: true });
+    const signedUrl = await signedUrlForKey(path, 3600);
+    return NextResponse.json({ signedUrl, deprecated: true });
   } catch (error) {
     console.error('Error en signed URL:', error);
     return NextResponse.json(
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Deprecated. Use server helper.' }, { status: 403 });
     }
 
-    const url = await signedUrlForKey(path, 3600);
-    return NextResponse.json({ url, deprecated: true });
+    const signedUrl = await signedUrlForKey(path, 3600);
+    return NextResponse.json({ signedUrl, deprecated: true });
   } catch (error) {
     console.error('Error en signed URL:', error);
     return NextResponse.json(

@@ -326,6 +326,18 @@ export default function AdminDashboard() {
                   onClick={() => router.push('/admin/orders')}
                 />
               </SimpleTooltip>
+              <SimpleTooltip text="Flujo rápido de trabajo" side="top">
+                <StatsCard
+                  title="Flujo rápido"
+                  value="4 pasos"
+                  description="Generar, subir, agrupar, publicar"
+                  trend={'neutral'}
+                  trendValue={'Atajo' }
+                  icon={<Zap className="h-5 w-5" />}
+                  className="cursor-pointer hover:scale-105"
+                  onClick={() => router.push('/admin/quick-flow')}
+                />
+              </SimpleTooltip>
             </>
           ) : (
             // Error state

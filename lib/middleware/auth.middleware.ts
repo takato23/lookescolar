@@ -39,6 +39,26 @@ export class SecurityLogger {
       console.log(`[${log.level.toUpperCase()}]`, log.event, log);
     }
   }
+
+  static logResourceAccess(
+    resource: string,
+    authContext: { isAdmin: boolean; user?: any },
+    request: NextRequest
+  ): void {
+    this.logSecurityEvent(
+      'resource_access',
+      {
+        resource,
+        userId: authContext.user?.id || 'unknown',
+        isAdmin: authContext.isAdmin,
+        method: request.method,
+        url: request.url,
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        userAgent: request.headers.get('user-agent') || 'unknown',
+      },
+      'info'
+    );
+  }
 }
 
 // Authentication result type
@@ -302,4 +322,70 @@ export function validateCSRFToken(request: NextRequest): boolean {
 // Generate CSRF token
 export function generateCSRFToken(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+// Export AuthMiddleware class for compatibility
+export class AuthMiddleware {
+  static async withAuth<T extends any[], R>(
+    handler: (request: NextRequest, auth: { isAdmin: boolean; user?: any }, ...args: T) => Promise<NextResponse<R>>,
+    role?: string
+  ) {
+    return async (request: NextRequest, ...args: T): Promise<NextResponse<R | { error: string }>> => {
+      const authResult = await authenticateAdmin(request);
+
+      if (!authResult.authenticated) {
+        return NextResponse.json(
+          { error: authResult.error || 'Authentication required' },
+          {
+            status: 401,
+            headers: {
+              'X-Request-Id': authResult.requestId,
+            },
+          }
+        );
+      }
+
+      const auth = {
+        isAdmin: authResult.user?.role === 'admin' || process.env.NODE_ENV === 'development',
+        user: authResult.user,
+      };
+
+      // Add user info to request headers for handler to use
+      const modifiedRequest = request.clone();
+      modifiedRequest.headers.set('x-user-id', authResult.user!.id);
+      modifiedRequest.headers.set('x-user-email', authResult.user!.email);
+      modifiedRequest.headers.set('x-request-id', authResult.requestId);
+
+      try {
+        const response = await handler(modifiedRequest, auth, ...args);
+
+        // Add request ID to response headers
+        response.headers.set('X-Request-Id', authResult.requestId);
+
+        return response;
+      } catch (error) {
+        SecurityLogger.logSecurityEvent(
+          'handler_error',
+          {
+            requestId: authResult.requestId,
+            userId: authResult.user!.id,
+            endpoint: request.url,
+            method: request.method,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
+          'error'
+        );
+
+        return NextResponse.json(
+          { error: 'Internal server error' },
+          {
+            status: 500,
+            headers: {
+              'X-Request-Id': authResult.requestId,
+            },
+          }
+        );
+      }
+    };
+  }
 }

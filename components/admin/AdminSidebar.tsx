@@ -51,6 +51,7 @@ const navItems: NavItem[] = [
     icon: Camera,
     description: 'Subir y gestionar imágenes',
     shortcut: '⌘3',
+    badge: 'NEW',
   },
   {
     href: '/admin/tagging',

@@ -29,7 +29,7 @@ export SUPABASE_ACCESS_TOKEN="tu-token-aqui"
 ## Paso 3: Vincular el Proyecto
 
 ```bash
-supabase link --project-ref exaighpowgvbdappydyx
+supabase link --project-ref [your-project-ref]
 ```
 
 Si te pide contraseña de la base de datos, usa la que está en tu dashboard de Supabase.
@@ -70,7 +70,7 @@ Si no tienes acceso al dashboard para crear un token, puedes aplicar las migraci
 
 ### Opción Manual - SQL Editor
 
-1. Ve a: [https://supabase.com/dashboard/project/exaighpowgvbdappydyx/sql](https://supabase.com/dashboard/project/exaighpowgvbdappydyx/sql)
+1. Ve a: https://supabase.com/dashboard/project/[your-project-ref]/sql
 
 2. Ejecuta el contenido de:
    - `scripts/apply-payment-settings-migration.sql`
@@ -80,7 +80,7 @@ Si no tienes acceso al dashboard para crear un token, puedes aplicar las migraci
 Si tienes la contraseña de Postgres:
 
 ```bash
-psql "postgresql://postgres.[project-ref]:[password]@aws-0-us-east-1.pooler.supabase.com:6543/postgres" -f scripts/apply-payment-settings-migration.sql
+psql "postgresql://postgres.[your-project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres" -f scripts/apply-payment-settings-migration.sql
 ```
 
 ## 📝 Notas

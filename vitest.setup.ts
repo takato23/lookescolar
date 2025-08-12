@@ -68,6 +68,149 @@ beforeAll(async () => {
 
   process.env['TEST_ADMIN_EMAIL'] = process.env['TEST_ADMIN_EMAIL'] || 'admin@lookescolar.test';
   process.env['TEST_ADMIN_PASSWORD'] = process.env['TEST_ADMIN_PASSWORD'] || 'test-admin-password-123';
+
+  // Mocks adicionales para dependencias pesadas si estamos en modo fake DB
+  if (process.env['SEED_FAKE_DB'] === '1') {
+    vi.mock('exifr', () => ({ parse: async () => ({}) }));
+    vi.mock('zxing-wasm', () => ({
+      BrowserMultiFormatReader: class {
+        decode() {
+          return { getText: () => 'SV-001' } as any;
+        }
+      },
+      RGBLuminanceSource: class {},
+      BinaryBitmap: class {},
+      HybridBinarizer: class {},
+    }));
+  }
+
+  // Modo SEED_FAKE_DB: mock de Supabase y Next.js usando fixtures JSON
+  if (process.env['SEED_FAKE_DB'] === '1') {
+    // Mock Next.js server primitives
+    vi.mock('next/server', () => {
+      class NextResponse extends Response {
+        static json(body: unknown, init?: { status?: number; headers?: HeadersInit }) {
+          const headers = new Headers(init?.headers || {});
+          headers.set('content-type', 'application/json');
+          return new NextResponse(JSON.stringify(body), { status: init?.status ?? 200, headers });
+        }
+      }
+      class NextRequest extends Request {
+        nextUrl: URL;
+        constructor(input: any, init?: RequestInit) {
+          const url = typeof input === 'string' ? input : input?.url || '';
+          super(url || input, init);
+          this.nextUrl = new URL(url || this.url);
+        }
+      }
+      return { NextResponse, NextRequest } as any;
+    });
+
+    // Middlewares (auth y rate limit) en modo passthrough
+    vi.mock('@/lib/middleware/auth.middleware', () => ({
+      AuthMiddleware: { withAuth: (h: any) => (req: any, ...rest: any[]) => h(req, { isAdmin: true }, ...rest) },
+      withAuth: (h: any) => (req: any, ...rest: any[]) => h(req, { isAdmin: true }, ...rest),
+      SecurityLogger: { logResourceAccess: vi.fn(), logSecurityEvent: vi.fn() },
+    }));
+    vi.mock('@/lib/middleware/rate-limit.middleware', () => ({
+      RateLimitMiddleware: { withRateLimit: (h: any) => (req: any, ...rest: any[]) => h(req, ...rest) },
+    }));
+
+    vi.mock('@supabase/supabase-js', () => {
+      // Cargar fixtures y utilidades DENTRO del factory para evitar problemas de scope/hoisting
+      const fixturePath = path.resolve(process.cwd(), 'tests/fixtures/seed-v1.json');
+      let dataset: any = { events: [], courses: [], codes: [], photos: [], orders: [], order_items: [], tokens: [] };
+      if (fs.existsSync(fixturePath)) {
+        dataset = JSON.parse(fs.readFileSync(fixturePath, 'utf-8'));
+      }
+      type Row = Record<string, unknown>;
+      function tableData(name: string): Row[] {
+        const map: Record<string, Row[]> = {
+          events: dataset.events,
+          courses: dataset.courses,
+          codes: dataset.codes,
+          photos: dataset.photos,
+          orders: dataset.orders,
+          order_items: dataset.order_items,
+          tokens: dataset.tokens,
+        };
+        if (!Object.prototype.hasOwnProperty.call(map, name)) {
+          // eslint-disable-next-line no-console
+          console.error(`[Service] MockSupabase: tabla desconocida: ${name}`);
+          (map as any)[name] = [];
+        }
+        return map[name] || [];
+      }
+      return {
+        createClient: (_url: string, _key: string) => {
+          const from = (table: string) => {
+            let rows = JSON.parse(JSON.stringify(tableData(table)));
+            const chain: any = {
+                select: (_cols?: string) => chain,
+                insert: (payload: any) => {
+                  const arr = Array.isArray(payload) ? payload : [payload];
+                  rows = rows.concat(arr.map((x: any) => JSON.parse(JSON.stringify(x))));
+                  dataset[table] = rows;
+                  return Promise.resolve({ data: arr, error: null });
+                },
+                update: (payload: any) => {
+                  return {
+                    eq: (col: string, val: any) => {
+                      rows = rows.map((r: any) => (r[col] === val ? { ...r, ...payload } : r));
+                      dataset[table] = rows;
+                      return Promise.resolve({ data: rows, error: null });
+                    },
+                  };
+                },
+                delete: () => ({ eq: (_c: string, _v: any) => Promise.resolve({ data: null, error: null }) }),
+                eq: (col: string, val: any) => {
+                  rows = rows.filter((r: any) => r[col] === val);
+                  return chain;
+                },
+                in: (col: string, vals: any[]) => {
+                  rows = rows.filter((r: any) => vals.includes(r[col]));
+                  return chain;
+                },
+                not: (col: string, op: string, val: any) => {
+                  if (op === 'is' && val === null) {
+                    rows = rows.filter((r: any) => r[col] !== null && typeof r[col] !== 'undefined');
+                  }
+                  return chain;
+                },
+                order: (col: string, opts?: { ascending?: boolean }) => {
+                  const asc = opts?.ascending !== false;
+                  rows = rows.sort((a: any, b: any) => (a[col] > b[col] ? 1 : -1) * (asc ? 1 : -1));
+                  return chain;
+                },
+                range: (_from: number, _to: number) => chain,
+                limit: (_n: number) => chain,
+                single: () => Promise.resolve({ data: rows[0] || null, error: null }),
+                maybeSingle: () => Promise.resolve({ data: rows[0] || null, error: null }),
+                then: (res: any) => res({ data: rows, error: null }),
+            } as any;
+            return chain;
+          };
+          const api = {
+            from,
+            storage: {
+              from: (_bucket: string) => ({
+                createSignedUrl: async (key: string, expiresSec: number) => ({
+                  data: { signedUrl: `https://signed.local/${encodeURIComponent(key)}?exp=${expiresSec}`, path: key, expiresIn: expiresSec },
+                  error: null,
+                }),
+                download: async (_path: string) => {
+                  // Devolver blob vacío con arrayBuffer para compat
+                  const blob = new Blob([]);
+                  return { data: blob, error: null } as any;
+                },
+              }),
+            },
+          };
+          return api as any;
+        },
+      };
+    });
+  }
 });
 
 // Cleanup después de cada test

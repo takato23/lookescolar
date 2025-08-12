@@ -1,133 +1,126 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
+import { z } from 'zod';
 
-export async function POST(request: NextRequest) {
+const schema = z.union([
+  z.object({ photoId: z.string().uuid(), codeId: z.string().uuid() }),
+  z.object({ items: z.array(z.object({ photoId: z.string().uuid(), codeId: z.string().uuid() })).min(1).max(500) })
+]);
+
+async function handlePOST(request: NextRequest) {
+  const requestId = request.headers.get('x-request-id') || 'unknown';
   try {
-    // En desarrollo, no verificar autenticación
-    if (process.env.NODE_ENV !== 'development') {
-      // TODO: Verificar autenticación en producción
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const body = await request.json();
-    const { photo_id, subject_id } = body;
-
-    if (!photo_id || !subject_id) {
-      return NextResponse.json(
-        { error: 'Photo ID y Subject ID son requeridos' },
-        { status: 400 }
-      );
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      SecurityLogger.logSecurityEvent('tagging_validation_error', { requestId, issues: parsed.error.issues }, 'warning');
+      return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createServerSupabaseServiceClient();
 
-    // Verificar si ya existe la relación
-    const { data: existing } = await supabase
-      .from('photo_subjects')
-      .select('id')
-      .eq('photo_id', photo_id)
-      .eq('subject_id', subject_id)
-      .single();
-
-    if (existing) {
-      return NextResponse.json({
-        success: true,
-        message: 'La foto ya está asignada a este estudiante',
-      });
-    }
-
-    // Crear la relación
-    const { data, error } = await supabase
-      .from('photo_subjects')
-      .insert({
-        photo_id,
-        subject_id,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error asignando foto:', error);
-      return NextResponse.json(
-        { error: 'Error al asignar la foto' },
-        { status: 500 }
-      );
-    }
-
-    // Actualizar el estado tagged de la foto
-    await supabase.from('photos').update({ tagged: true }).eq('id', photo_id);
-
-    return NextResponse.json({
-      success: true,
-      data,
-    });
-  } catch (error) {
-    console.error('Error en tagging API:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    // En desarrollo, no verificar autenticación
-    if (process.env.NODE_ENV !== 'development') {
-      // TODO: Verificar autenticación en producción
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { photo_id, subject_id } = body;
-
-    if (!photo_id || !subject_id) {
-      return NextResponse.json(
-        { error: 'Photo ID y Subject ID son requeridos' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createClient();
-
-    // Eliminar la relación
-    const { error } = await supabase
-      .from('photo_subjects')
-      .delete()
-      .eq('photo_id', photo_id)
-      .eq('subject_id', subject_id);
-
-    if (error) {
-      console.error('Error eliminando asignación:', error);
-      return NextResponse.json(
-        { error: 'Error al eliminar la asignación' },
-        { status: 500 }
-      );
-    }
-
-    // Verificar si la foto tiene otras asignaciones
-    const { data: otherAssignments } = await supabase
-      .from('photo_subjects')
-      .select('id')
-      .eq('photo_id', photo_id);
-
-    // Si no hay más asignaciones, marcar la foto como no etiquetada
-    if (!otherAssignments || otherAssignments.length === 0) {
-      await supabase
+    let updated = 0;
+    if ('items' in parsed.data) {
+      for (const { photoId, codeId } of parsed.data.items) {
+        const { data, error } = await supabase
+          .from('photos')
+          .update({ code_id: codeId })
+          .eq('id', photoId)
+          .select('id')
+          .single();
+        if (error) {
+          SecurityLogger.logSecurityEvent('tagging_update_error', { requestId, photoId, error: error.message }, 'warning');
+          continue; // skip this one, continue others
+        }
+        if (data?.id) updated += 1;
+      }
+    } else {
+      const { photoId, codeId } = parsed.data;
+      const { data, error } = await supabase
         .from('photos')
-        .update({ tagged: false })
-        .eq('id', photo_id);
+        .update({ code_id: codeId })
+        .eq('id', photoId)
+        .select('id')
+        .single();
+      if (error) {
+        SecurityLogger.logSecurityEvent('tagging_update_error', { requestId, photoId, error: error.message }, 'warning');
+        return NextResponse.json({ error: 'Photo not found or cannot update' }, { status: 404 });
+      }
+      if (data?.id) updated += 1;
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Asignación eliminada correctamente',
-    });
-  } catch (error) {
-    console.error('Error en tagging API:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
+    SecurityLogger.logSecurityEvent('tagging_updated', { requestId, updated }, 'info');
+    return NextResponse.json({ updated });
+  } catch (error: any) {
+    SecurityLogger.logSecurityEvent('tagging_error', { requestId, error: error?.message || 'unknown' }, 'error');
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const dir = path.resolve(process.cwd(), 'test-reports/photo-flow');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(path.join(dir, `tagging.log`), `[${new Date().toISOString()}] ${requestId} ${error?.message || 'unknown'}\n`, { flag: 'a' });
+    } catch {}
+    // Return 400 instead of 500 to avoid exposing internal errors
+    return NextResponse.json({ error: error?.message || 'Bad request' }, { status: 400 });
   }
 }
+
+export const POST = withAuth(handlePOST);
+
+async function handleDELETE(request: NextRequest) {
+  const requestId = request.headers.get('x-request-id') || 'unknown';
+  try {
+    const DeleteSchema = z.object({ 
+      photoId: z.string().uuid(), 
+      subjectId: z.string().uuid().optional(),
+      codeId: z.string().uuid().optional() 
+    });
+    const body = await request.json();
+    const parsed = DeleteSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
+    }
+    const { photoId, subjectId, codeId } = parsed.data;
+
+    const supabase = await createServerSupabaseServiceClient();
+
+    // If subjectId provided, remove from photo_subjects table
+    if (subjectId) {
+      const { error } = await supabase
+        .from('photo_subjects')
+        .delete()
+        .eq('photo_id', photoId)
+        .eq('subject_id', subjectId);
+      if (error) throw new Error(error.message);
+      
+      SecurityLogger.logSecurityEvent('photo_subject_untagged', { requestId, photoId, subjectId }, 'info');
+    }
+    
+    // If codeId provided, remove code_id from photos table
+    if (codeId) {
+      const { error } = await supabase
+        .from('photos')
+        .update({ code_id: null })
+        .eq('id', photoId)
+        .eq('code_id', codeId);
+      if (error) throw new Error(error.message);
+      
+      SecurityLogger.logSecurityEvent('photo_code_untagged', { requestId, photoId, codeId }, 'info');
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error: any) {
+    SecurityLogger.logSecurityEvent('tagging_delete_error', { requestId, error: error?.message || 'unknown' }, 'error');
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const dir = path.resolve(process.cwd(), 'test-reports/photo-flow');
+      await fs.mkdir(dir, { recursive: true });
+      await fs.writeFile(path.join(dir, `tagging.log`), `[${new Date().toISOString()}] ${requestId} ${error?.message || 'unknown'}\n`, { flag: 'a' });
+    } catch {}
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export const DELETE = withAuth(handleDELETE);

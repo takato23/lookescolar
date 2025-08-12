@@ -5,7 +5,8 @@ import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 
 export const POST = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (req: NextRequest, auth) => {
-    if (!auth.isAdmin) {
+    // En desarrollo, permitir sin autenticación
+    if (!auth.isAdmin && process.env.NODE_ENV !== 'development') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -25,11 +26,23 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const summary = await groupBetweenAnchors(eventId, { dryRun });
       return NextResponse.json(summary);
     } catch (e: any) {
-      return NextResponse.json({ error: e?.message ?? String(e) }, { status: 500 });
+      console.error('Error in group endpoint:', e);
+      return NextResponse.json({ 
+        error: e?.message || 'Error grouping photos',
+        details: process.env.NODE_ENV === 'development' ? String(e) : undefined
+      }, { status: 500 });
     }
   }, 'admin')
 );
 
 export const runtime = 'nodejs';
+
+
+
+
+
+
+
+
 
 

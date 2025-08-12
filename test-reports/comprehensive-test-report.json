@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "timestamp": "2025-08-09T06:46:29.323Z",
+    "timestamp": "2025-08-09T07:58:04.819Z",
     "environment": "test",
     "stage": "integration",
-    "execution_time_ms": 49493,
-    "node_version": "v23.9.0",
+    "execution_time_ms": 35309,
+    "node_version": "v22.14.0",
     "lookescolar_version": "0.1.0"
   },
   "preflight": {
@@ -12,20 +12,20 @@
     "details": {}
   },
   "test_execution": {
-    "timestamp": "2025-08-09T06:46:29.302Z",
+    "timestamp": "2025-08-09T07:58:03.694Z",
     "environment": "test",
     "configuration": {
       "coverage": true,
       "parallel": false,
-      "suites_run": 3
+      "suites_run": 4
     },
     "summary": {
-      "total_tests": 3,
+      "total_tests": 0,
       "passed": 0,
       "failed": 0,
-      "skipped": 3,
+      "skipped": 0,
       "success_rate": 0,
-      "duration_ms": 18
+      "duration_ms": 21891
     },
     "suites": [
       {
@@ -34,10 +34,10 @@
         "tests": {
           "passed": 0,
           "failed": 0,
-          "skipped": 1,
-          "total": 1
+          "skipped": 0,
+          "total": 0
         },
-        "duration_ms": 0
+        "duration_ms": 17
       },
       {
         "name": "API Critical Endpoints",
@@ -45,10 +45,21 @@
         "tests": {
           "passed": 0,
           "failed": 0,
-          "skipped": 1,
-          "total": 1
+          "skipped": 0,
+          "total": 0
         },
-        "duration_ms": 0
+        "duration_ms": 9139
+      },
+      {
+        "name": "V1 Flow",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 6347
       },
       {
         "name": "Security Validation",
@@ -56,10 +67,10 @@
         "tests": {
           "passed": 0,
           "failed": 0,
-          "skipped": 1,
-          "total": 1
+          "skipped": 0,
+          "total": 0
         },
-        "duration_ms": 0
+        "duration_ms": 5496
       }
     ],
     "coverage": {

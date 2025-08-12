@@ -34,18 +34,18 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'exaighpowgvbdappydyx.supabase.co',
+        hostname: process.env.SUPABASE_HOST || 'exaighpowgvbdappydyx.supabase.co',
         port: '',
         pathname: '/storage/v1/object/**',
       },
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: `*.${process.env.SUPABASE_HOST || 'supabase.co'}`,
         pathname: '/storage/v1/object/public/**',
       },
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: `*.${process.env.SUPABASE_HOST || 'supabase.co'}`,
         pathname: '/storage/v1/object/sign/**',
       },
     ],

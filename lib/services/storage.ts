@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { egressService } from './egress.service';
 import { logger } from '@/lib/utils/logger';
+import 'server-only';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +14,8 @@ const supabase = createClient(
   }
 );
 
-const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'photos-bucket';
+// Default to 'photos' to match current environment and setup route
+const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'photos';
 const DEFAULT_URL_EXPIRY = 60 * 60; // 1 hora en segundos
 
 export interface SignedUrlOptions {

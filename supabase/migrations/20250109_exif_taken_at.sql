@@ -5,3 +5,4 @@ alter table public.photos
 create index if not exists idx_photos_exif on public.photos(exif_taken_at);
 
 
+

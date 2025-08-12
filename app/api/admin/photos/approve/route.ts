@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
+// Support both POST and PATCH methods
 export async function POST(request: NextRequest) {
   try {
     const { photoIds, approved } = await request.json();
@@ -40,4 +41,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// PATCH method for compatibility with frontend
+export async function PATCH(request: NextRequest) {
+  return POST(request);
 }

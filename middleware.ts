@@ -43,6 +43,12 @@ const TRUSTED_IPS = [
   // Agregar IPs de desarrollo/admin si es necesario
 ];
 
+/**
+ * Global middleware for security, performance, and logging.
+ * Applies to matched routes: API, admin, family portals.
+ * @param {NextRequest} request - Incoming request
+ * @returns {Promise<NextResponse>} Processed response or redirect
+ */
 export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
@@ -204,7 +210,9 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
- * Obtiene la IP real del cliente considerando proxies
+ * Gets the real client IP considering proxies and CDNs.
+ * @param {NextRequest} request - Incoming request
+ * @returns {string} Client IP or 'unknown'
  */
 function getClientIP(request: NextRequest): string {
   // Headers comunes de proxies/CDNs
@@ -230,7 +238,10 @@ function getClientIP(request: NextRequest): string {
 }
 
 /**
- * Genera headers CORS según el origin
+ * Generates CORS headers based on origin.
+ * @param {NextRequest} request - Incoming request
+ * @param {string|null} referer - Referer header
+ * @returns {Record<string, string>} CORS headers
  */
 function getCorsHeaders(request: NextRequest, referer?: string | null): Record<string, string> {
   const origin = request.headers.get('origin');
@@ -260,7 +271,8 @@ function getCorsHeaders(request: NextRequest, referer?: string | null): Record<s
 }
 
 /**
- * Genera headers de seguridad
+ * Generates security headers.
+ * @returns {Record<string, string>} Security headers
  */
 function getSecurityHeaders(): Record<string, string> {
   const headers: Record<string, string> = {
@@ -286,7 +298,11 @@ function getSecurityHeaders(): Record<string, string> {
 }
 
 /**
- * Valida anti-hotlinking
+ * Validates anti-hotlinking for protected routes.
+ * @param {NextRequest} request - Incoming request
+ * @param {string|null} referer - Referer header
+ * @param {string} [clientIP] - Client IP
+ * @returns {{allowed: boolean; reason?: string}} Validation result
  */
 function validateAntiHotlinking(
   request: NextRequest, 
@@ -334,7 +350,10 @@ function validateAntiHotlinking(
 }
 
 /**
- * Verifica si el User-Agent está bloqueado
+ * Checks if User-Agent is blocked (malicious bots).
+ * Allows known good bots like Googlebot.
+ * @param {string} userAgent - User-Agent header
+ * @returns {boolean} True if blocked
  */
 function isBlockedUserAgent(userAgent: string): boolean {
   const blockedPatterns = [
@@ -368,7 +387,9 @@ function isBlockedUserAgent(userAgent: string): boolean {
 }
 
 /**
- * Enmascara IP para logging seguro
+ * Masks IP for secure logging (IPv4/IPv6).
+ * @param {string} [ip] - IP address
+ * @returns {string} Masked IP
  */
 function maskIP(ip?: string): string {
   if (!ip || ip === 'unknown') {
@@ -390,7 +411,9 @@ function maskIP(ip?: string): string {
 }
 
 /**
- * Enmascara User-Agent para logging seguro
+ * Masks User-Agent for secure logging.
+ * @param {string} ua - User-Agent string
+ * @returns {string} Masked User-Agent
  */
 function maskUserAgent(ua: string): string {
   if (ua.length <= 20) {
@@ -401,7 +424,9 @@ function maskUserAgent(ua: string): string {
 }
 
 /**
- * Enmascara URL para logging seguro
+ * Masks URL for secure logging.
+ * @param {string} url - URL to mask
+ * @returns {string} Masked URL
  */
 function maskUrl(url: string): string {
   try {

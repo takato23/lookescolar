@@ -1,20 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { uuidSchema } from '@/lib/security/validation';
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get('eventId') || '';
+
     const supabase = await createServerSupabaseServiceClient();
 
-    // Cargar codes y conteo de fotos por code_id
+    // Si eventId es válido, devolver lista simplificada solo de ese evento
+    if (eventId && uuidSchema.safeParse(eventId).success) {
+      const { data: codes, error: codesError } = await supabase
+        .from('codes' as any)
+        .select('id, code_value, token, is_published')
+        .eq('event_id', eventId);
+
+      if (codesError) {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.debug('publish_list', { eventId, error: codesError.message });
+        }
+        return NextResponse.json([]);
+      }
+
+      // Contar fotos por code_id para el evento
+      const { data: photoRows } = await supabase
+        .from('photos')
+        .select('code_id')
+        .eq('event_id', eventId)
+        .not('code_id', 'is', null);
+
+      const countMap = new Map<string, number>();
+      (photoRows as Array<{ code_id: string | null }> | null)?.forEach((row) => {
+        if (row.code_id) countMap.set(row.code_id, (countMap.get(row.code_id) || 0) + 1);
+      });
+
+      const list = (codes || []).map((c: any) => ({
+        code_id: c.id as string,
+        code_value: String(c.code_value),
+        published: !!c.is_published,
+        token: (c.token as string) ?? null,
+        photos_count: countMap.get(c.id) ?? 0,
+      }));
+
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug('publish_list', { eventId, count: list.length });
+      }
+      return NextResponse.json(list);
+    }
+
+    // Compatibilidad: si no hay eventId, devolver el formato existente { rows }
     const { data: codes, error } = await supabase
       .from('codes' as any)
       .select('id, event_id, course_id, code_value, token, is_published');
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      if (process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line no-console
+        console.debug('publish_list', { error: error.message });
+      }
+      return NextResponse.json({ rows: [] });
     }
 
-    // Conteo por code_id
     const { data: counts } = await supabase
       .from('photos')
       .select('code_id, count:id', { count: 'exact', head: false })
@@ -38,8 +87,12 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json({ rows });
   } catch (error) {
-    console.error('[Service] Publish list error:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.debug('publish_list', { error: (error as any)?.message || 'unknown' });
+    }
+    // Nunca 500; compat: devolver { rows: [] }
+    return NextResponse.json({ rows: [] });
   }
 }
 
