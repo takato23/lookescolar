@@ -15,8 +15,8 @@ export class SecurityLogger {
     metadata: Record<string, any>,
     level: 'info' | 'warning' | 'error' = 'info'
   ): void {
-    const log = {
-      requestId: metadata.requestId || generateRequestId(),
+    const log: any = {
+      requestId: metadata['requestId'] || generateRequestId(),
       timestamp: new Date().toISOString(),
       level,
       event,
@@ -24,11 +24,11 @@ export class SecurityLogger {
     };
 
     // Mask sensitive data
-    if (log.token) {
-      log.token = SecurityValidator.maskSensitiveData(log.token, 'token');
+    if (log['token']) {
+      log['token'] = SecurityValidator.maskSensitiveData(log['token'], 'token');
     }
-    if (log.signedUrl) {
-      log.signedUrl = SecurityValidator.maskSensitiveData(log.signedUrl, 'url');
+    if (log['signedUrl']) {
+      log['signedUrl'] = SecurityValidator.maskSensitiveData(log['signedUrl'], 'url');
     }
 
     // In production, use a proper logging service
@@ -212,9 +212,9 @@ async function checkAdminRole(userId: string): Promise<boolean> {
     // Option 1: Check user metadata for admin role
     const {
       data: { user },
-      error: userError,
+      error: _userError,
     } = await supabase.auth.getUser();
-    if (user?.user_metadata?.role === 'admin') {
+    if (user?.user_metadata?.['role'] === 'admin') {
       return true;
     }
 
@@ -228,7 +228,7 @@ async function checkAdminRole(userId: string): Promise<boolean> {
     // return !!adminData && !adminError;
 
     // For now, you might want to use an environment variable for allowed admin emails
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
+    const adminEmails = process.env['ADMIN_EMAILS']?.split(',') || [];
     const {
       data: { user: currentUser },
     } = await supabase.auth.getUser();
@@ -247,13 +247,13 @@ async function checkAdminRole(userId: string): Promise<boolean> {
 }
 
 // Higher-order function to wrap API routes with authentication
-export function withAuth<T extends any[], R>(
-  handler: (request: NextRequest, ...args: T) => Promise<NextResponse<R>>
+export function withAuth(
+  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse<any>>
 ) {
   return async (
     request: NextRequest,
-    ...args: T
-  ): Promise<NextResponse<R | { error: string }>> => {
+    ...args: any[]
+  ): Promise<NextResponse<any>> => {
     const authResult = await authenticateAdmin(request);
 
     if (!authResult.authenticated) {
@@ -268,14 +268,8 @@ export function withAuth<T extends any[], R>(
       );
     }
 
-    // Add user info to request headers for handler to use
-    const modifiedRequest = request.clone();
-    modifiedRequest.headers.set('x-user-id', authResult.user!.id);
-    modifiedRequest.headers.set('x-user-email', authResult.user!.email);
-    modifiedRequest.headers.set('x-request-id', authResult.requestId);
-
     try {
-      const response = await handler(modifiedRequest, ...args);
+      const response = await handler(request, ...args);
 
       // Add request ID to response headers
       response.headers.set('X-Request-Id', authResult.requestId);
@@ -326,9 +320,9 @@ export function generateCSRFToken(): string {
 
 // Export AuthMiddleware class for compatibility
 export class AuthMiddleware {
-  static async withAuth<T extends any[], R>(
+  static withAuth<T extends any[], R>(
     handler: (request: NextRequest, auth: { isAdmin: boolean; user?: any }, ...args: T) => Promise<NextResponse<R>>,
-    role?: string
+    _role?: string
   ) {
     return async (request: NextRequest, ...args: T): Promise<NextResponse<R | { error: string }>> => {
       const authResult = await authenticateAdmin(request);
@@ -350,14 +344,8 @@ export class AuthMiddleware {
         user: authResult.user,
       };
 
-      // Add user info to request headers for handler to use
-      const modifiedRequest = request.clone();
-      modifiedRequest.headers.set('x-user-id', authResult.user!.id);
-      modifiedRequest.headers.set('x-user-email', authResult.user!.email);
-      modifiedRequest.headers.set('x-request-id', authResult.requestId);
-
       try {
-        const response = await handler(modifiedRequest, auth, ...args);
+        const response = await handler(request, auth, ...args);
 
         // Add request ID to response headers
         response.headers.set('X-Request-Id', authResult.requestId);

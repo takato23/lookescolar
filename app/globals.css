@@ -40,10 +40,10 @@
     --surface-strong: 229 229 229;      /* Strong surface */
     
     /* Text Colors with AAA Compliance */
-    --text-primary: 23 23 23;           /* Primary text (AAA: 15.8:1) */
-    --text-secondary: 115 115 115;      /* Secondary text (AAA: 7.1:1) */
-    --text-tertiary: 163 163 163;       /* Tertiary text (AA: 4.9:1) */
-    --text-disabled: 212 212 212;       /* Disabled text (AA: 3.2:1) */
+    --text-primary: 15 15 20;           /* Primary text (AAA: 17.2:1) */
+    --text-secondary: 64 64 80;         /* Secondary text (AAA: 8.5:1) */
+    --text-tertiary: 115 115 130;       /* Tertiary text (AA: 5.2:1) */
+    --text-disabled: 180 180 190;       /* Disabled text (AA: 3.8:1) */
     
     /* Interactive States */
     --interactive-hover: 0 0 0 0.04;    /* 4% black overlay */
@@ -190,7 +190,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: rgb(var(--background));
-    color: rgb(var(--text-primary));
+    color: rgb(var(--foreground));
     line-height: 1.6;
   }
   
@@ -670,6 +670,53 @@
   .text-shadow-soft {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
+
+  /* Enhanced text contrast and shadows */
+  .text-enhanced {
+    color: #1f2937; /* gray-800 - much darker */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-weight: 500;
+  }
+
+  .text-menu-enhanced {
+    color: #111827; /* gray-900 - very dark */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-button-enhanced {
+    color: #374151; /* gray-700 - dark but readable */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    font-weight: 600;
+  }
+
+  /* Button text with better contrast */
+  .btn-text-enhanced {
+    color: #1f2937 !important;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8), 0 0 1px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+  }
+
+  /* Light text with dark shadow */
+  .text-light-enhanced {
+    color: #f9fafb; /* gray-50 */
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.6);
+    font-weight: 600;
+  }
+
+  /* Specific button text improvements */
+  .btn-refresh-text {
+    color: #1f2937 !important; /* gray-800 - very dark */
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7), 0 0 1px rgba(0, 0, 0, 0.4);
+    font-weight: 600;
+  }
+
+  /* Mobile compact buttons */
+  .btn-mobile-compact {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    min-height: 40px;
+  }
   
   /* Accessible animations */
   .animate-float {
@@ -899,6 +946,83 @@
   /* Active states for mobile touch */
   .hover\:scale-105:active {
     transform: scale(0.98);
+  }
+
+  /* Enhanced mobile optimizations */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    font-size: 16px; /* Prevent zoom on iOS inputs */
+  }
+
+  /* Mobile-first typography */
+  .text-display {
+    @apply text-4xl; /* Smaller display text on mobile */
+  }
+
+  .text-headline {
+    @apply text-2xl; /* Smaller headlines on mobile */
+  }
+
+  /* Mobile grid optimizations */
+  .mobile-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .mobile-grid-1 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Mobile spacing */
+  .mobile-px {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .mobile-py {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  /* Mobile touch targets */
+  .mobile-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.75rem;
+  }
+
+  /* Mobile modal optimizations */
+  .mobile-modal {
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+    width: 100vw;
+  }
+
+  /* Mobile navigation */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding: env(safe-area-inset-bottom) 0 0 0;
+  }
+
+  /* Mobile header optimizations */
+  .mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: env(safe-area-inset-top);
   }
 }
 

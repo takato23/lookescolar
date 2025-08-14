@@ -265,7 +265,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
-        <span className="ml-3 text-white">Cargando datos de tagging...</span>
+        <span className="ml-3 text-foreground">Cargando datos de tagging...</span>
       </div>
     );
   }
@@ -273,7 +273,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
   if (!data) {
     return (
       <div className="py-12 text-center">
-        <p className="text-white/70">Error cargando datos de tagging</p>
+        <p className="text-muted-foreground">Error cargando datos de tagging</p>
       </div>
     );
   }
@@ -288,7 +288,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
 
       {/* Controles */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="text-white/70">
+        <div className="text-muted-foreground">
           {selectedPhotos.length > 0 && (
             <span>
               {selectedPhotos.length} foto
@@ -304,7 +304,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
           {selectedPhotos.length > 0 && (
             <button
               onClick={handleClearSelection}
-              className="rounded-lg bg-gray-500/20 px-4 py-2 text-white transition-colors hover:bg-gray-500/30"
+              className="rounded-lg bg-gray-500/20 px-4 py-2 text-foreground transition-colors hover:bg-gray-500/30"
             >
               Limpiar Selección
             </button>
@@ -313,7 +313,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
           {data.untaggedPhotos.length > 0 && (
             <button
               onClick={handleSelectAll}
-              className="rounded-lg bg-blue-500/20 px-4 py-2 text-white transition-colors hover:bg-blue-500/30"
+              className="rounded-lg bg-blue-500/20 px-4 py-2 text-foreground transition-colors hover:bg-blue-500/30"
             >
               Seleccionar Todo
             </button>
@@ -323,7 +323,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
             <button
               onClick={handleUndo}
               disabled={processing}
-              className="rounded-lg bg-yellow-500/20 px-4 py-2 text-white transition-colors hover:bg-yellow-500/30 disabled:opacity-50"
+              className="rounded-lg bg-yellow-500/20 px-4 py-2 text-foreground transition-colors hover:bg-yellow-500/30 disabled:opacity-50"
             >
               Deshacer (Ctrl+Z)
             </button>
@@ -345,7 +345,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Lado izquierdo: Fotos sin asignar */}
         <div className="space-y-4">
-          <h2 className="flex items-center text-xl font-semibold text-white">
+          <h2 className="flex items-center text-xl font-semibold text-foreground">
             <span className="mr-3 h-3 w-3 rounded-full bg-orange-400"></span>
             Fotos Sin Asignar ({data.untaggedPhotos.length})
           </h2>
@@ -360,7 +360,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
 
         {/* Lado derecho: Lista de alumnos */}
         <div className="space-y-4">
-          <h2 className="flex items-center text-xl font-semibold text-white">
+          <h2 className="flex items-center text-xl font-semibold text-foreground">
             <span className="mr-3 h-3 w-3 rounded-full bg-green-400"></span>
             Alumnos ({data.subjects.length})
           </h2>
@@ -377,8 +377,8 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
 
       {/* Instrucciones */}
       <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 backdrop-blur-sm">
-        <h3 className="mb-2 font-medium text-white">Instrucciones:</h3>
-        <ul className="space-y-1 text-sm text-white/70">
+        <h3 className="mb-2 font-medium text-foreground">Instrucciones:</h3>
+        <ul className="space-y-1 text-sm text-muted-foreground">
           <li>
             • Click en fotos para seleccionar (Ctrl/Cmd + Click para selección
             múltiple)

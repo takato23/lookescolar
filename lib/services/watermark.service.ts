@@ -1,5 +1,8 @@
 import sharp from 'sharp';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { signedUrlForKey } from '@/lib/storage/signedUrl';
+const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
 interface ProcessImageResult {
   success: boolean;
@@ -89,7 +92,7 @@ export async function processAndUploadImage(
 
     // Subir imagen original (sin watermark) al bucket privado
     const { error: originalError } = await supabase.storage
-      .from('photos')
+      .from(ORIGINAL_BUCKET)
       .upload(originalPath, buffer, {
         contentType: `image/${fileExtension}`,
         upsert: false,
@@ -99,9 +102,9 @@ export async function processAndUploadImage(
       throw new Error(`Error subiendo original: ${originalError.message}`);
     }
 
-    // Subir preview con watermark
+    // Subir preview con watermark (público)
     const { error: previewError } = await supabase.storage
-      .from('photos')
+      .from(PREVIEW_BUCKET)
       .upload(previewPath, processedImage, {
         contentType: 'image/webp',
         upsert: false,
@@ -109,7 +112,7 @@ export async function processAndUploadImage(
 
     if (previewError) {
       // Si falla el preview, eliminar el original
-      await supabase.storage.from('photos').remove([originalPath]);
+      await supabase.storage.from(ORIGINAL_BUCKET).remove([originalPath]);
       throw new Error(`Error subiendo preview: ${previewError.message}`);
     }
 
@@ -150,21 +153,9 @@ export async function getSignedUrl(
   expiresIn: number = 3600
 ): Promise<string | null> {
   try {
-    const supabase = await createServerSupabaseServiceClient();
-
-    const { data, error } = await supabase.storage
-      .from('photos')
-      .createSignedUrl(path, expiresIn);
-
-    if (error) {
-      console.error('Error generando URL firmada', {
-        path,
-        error: error.message,
-      });
-      return null;
-    }
-
-    return data.signedUrl;
+    // Delegar al helper centralizado que determina el bucket por el path
+    const url = await signedUrlForKey(path, expiresIn);
+    return url;
   } catch (error) {
     console.error('Error en getSignedUrl', { path, error });
     return null;

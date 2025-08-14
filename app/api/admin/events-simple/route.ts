@@ -9,10 +9,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
 
-    // Get events with all necessary fields - SIMPLIFIED to avoid errors
+    // Get events with minimal fields to avoid schema drift issues
     const { data: events, error } = await supabase
       .from('events')
-      .select('id, name, location, date, status, created_at')
+      .select('id, name, date, created_at')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -34,11 +34,12 @@ export async function GET(request: NextRequest) {
       return {
         id: event.id,
         name: event.name || 'Sin nombre',
-        school: event.name || 'Sin nombre', // Map name to school for compatibility
-        location: event.location,
+        school: (event as any).school || event.name || 'Sin nombre',
+        location: (event as any).school || '',
         date: event.date || event.created_at,
-        active: event.status === 'active',
-        photo_price: 0, // Default value since column doesn't exist
+        // Default to true to keep UI behavior simple across schema variations
+        active: true,
+        photo_price: 0, // Default value
         created_at: event.created_at,
         photo_count: 0 // We'll load this separately if needed
       };
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
 
-    const { name, location, date } = body;
+    const { name, schoolName, date } = body;
 
     if (!name || !date) {
       return NextResponse.json(
@@ -85,14 +86,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Insert with compatibility: prefer setting 'location' to satisfy NOT NULL
+    const insertData: any = { name, date, location: schoolName || name };
+
     const { data: event, error } = await supabase
       .from('events')
-      .insert({
-        name,
-        location: location || null,
-        date,
-        status: 'active',
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -108,8 +107,9 @@ export async function POST(request: NextRequest) {
       success: true,
       event: {
         ...event,
-        school: event.name, // Map for compatibility
-        active: event.status === 'active',
+        school: event.school || event.name, // Map for compatibility
+        location: event.school || '',
+        active: true,
       },
     });
   } catch (error) {

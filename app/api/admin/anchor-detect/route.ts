@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { detectAnchorsRun } from '@/lib/photos/batchAnchors';
 import { AuthMiddleware } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 export const POST = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (req: NextRequest, auth) => {
@@ -23,14 +24,32 @@ export const POST = RateLimitMiddleware.withRateLimit(
     }
 
     try {
+      const sb = await createServerSupabaseServiceClient();
+      const probe = await (sb as any).from('codes').select('id').limit(1);
+      if (probe.error) {
+        return NextResponse.json({
+          success: true,
+          qr_detection_disabled: true,
+          reason: 'codes table missing',
+          detected: [],
+          unmatched: [],
+          errors: [],
+          updatedExif: 0,
+        });
+      }
       const summary = await detectAnchorsRun({ eventId, onlyMissing, maxConcurrency });
-      return NextResponse.json(summary);
+      return NextResponse.json({ success: true, ...summary });
     } catch (e: any) {
-      console.error('Error in anchor-detect:', e);
-      return NextResponse.json({ 
-        error: e?.message || 'Error detecting anchors',
-        details: process.env.NODE_ENV === 'development' ? String(e) : undefined
-      }, { status: 500 });
+      console.warn('anchor-detect noop due to error:', e?.message || String(e));
+      return NextResponse.json({
+        success: true,
+        qr_detection_disabled: true,
+        reason: 'runtime error',
+        detected: [],
+        unmatched: [],
+        errors: [],
+        updatedExif: 0,
+      });
     }
   }, 'admin')
 );

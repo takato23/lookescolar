@@ -1,84 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { withAuth } from '@/lib/middleware/auth.middleware';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    // En producción, verificar autenticación
-    if (process.env.NODE_ENV === 'production') {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-      }
-    }
-
-    const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get('event_id');
-    if (!eventId) {
-      return NextResponse.json(
-        { error: 'Event ID requerido' },
-        { status: 400 }
-      );
-    }
-
-    const { data: subjects, error } = await supabase
-      .from('subjects')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('[Service] Error obteniendo alumnos:', error);
-      return NextResponse.json(
-        { error: 'Error obteniendo alumnos' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        subjects: (subjects || []).map((s: any) => ({
-          id: s.id,
-          name: s.name ?? 'Sin nombre',
-          grade_section: s.grade_section ?? null,
-          token: s.token ?? null,
-          event_id: s.event_id,
-          created_at: s.created_at,
-        })),
-      },
-      {
-        headers: {
-          'Cache-Control': 'private, max-age=30, stale-while-revalidate=120',
-        },
-      }
-    );
-  } catch (error) {
-    console.error('[Service] Error en GET /api/admin/subjects-simple:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
-
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
-
-export async function GET(request: NextRequest) {
-  try {
-    const supabase = await createServerSupabaseClient();
-
-    // Verificar autenticación
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    const supabase = await createServerSupabaseServiceClient();
 
     // Obtener parámetros
     const { searchParams } = new URL(request.url);
@@ -139,4 +65,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

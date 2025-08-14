@@ -111,17 +111,24 @@ async function handleGET(request: NextRequest) {
       console.debug('photos_query', { eventId: eventId || 'ALL', codeId, page, limit, offset });
     }
 
-    let query = serviceClient
+    const buildBaseQuery = () => serviceClient
       .from('photos')
       .select(
-        `id, event_id, original_filename, storage_path, preview_path, watermark_path, approved, created_at, 
+        `id, event_id, original_filename, storage_path, preview_path, approved, created_at, file_size, width, height,
          photo_subjects(subject_id, subjects(id, name))`,
         { count: 'exact' }
       );
+    let query = buildBaseQuery();
     
     // Only filter by event_id if provided
     if (eventId) {
       query = query.eq('event_id', eventId);
+    }
+    // Filter by code_id when provided (supports 'null' to mean unassigned)
+    if (codeId === 'null') {
+      query = query.is('code_id', null as any);
+    } else if (codeId) {
+      query = query.eq('code_id', codeId);
     }
 
     // Aplicar filtros validados
@@ -134,9 +141,8 @@ async function handleGET(request: NextRequest) {
     // Filter by tagged status - we'll handle this in the application layer
     // since Supabase doesn't support complex joins easily in this context
 
-    // NOTA: code_id ya no existe en la tabla photos
-    // El filtrado por código se manejará a nivel de aplicación
-    // basándose en las relaciones con photo_subjects
+    // Nota: si la columna code_id no existe en el esquema, el filtro anterior será ignorado por Supabase
+    // y el resultado seguirá siendo consistente (sin error) en entornos legacy
     
     // Apply search filter
     if (search) {
@@ -160,7 +166,38 @@ async function handleGET(request: NextRequest) {
     // Aplicar paginación
     query = query.range(parsedOffset, parsedOffset + parsedLimit - 1);
 
-    const { data: photos, error, count } = await query;
+    let { data: photos, error, count } = await query;
+
+    // Fallback: if schema lacks code_id (legacy), retry without code filter instead of 500
+    if (error && codeId) {
+      const message = (error as any)?.message || '';
+      const details = JSON.stringify(error);
+      if (/code_id/i.test(message) || /code_id/i.test(details)) {
+        try {
+          let fallback = buildBaseQuery();
+          if (eventId) fallback = fallback.eq('event_id', eventId);
+          if (approved === 'true') {
+            fallback = fallback.eq('approved', true);
+          } else if (approved === 'false') {
+            fallback = fallback.eq('approved', false);
+          }
+          if (search) fallback = fallback.ilike('original_filename', `%${search}%`);
+          if (dateFrom) fallback = fallback.gte('created_at', dateFrom);
+          if (dateTo) fallback = fallback.lte('created_at', dateTo);
+          const validSortColumns = ['created_at', 'original_filename'];
+          const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+          const ascending = sortOrder === 'asc';
+          fallback = fallback.order(sortColumn, { ascending });
+          fallback = fallback.range(parsedOffset, parsedOffset + parsedLimit - 1);
+          const rerun = await fallback;
+          photos = rerun.data as any;
+          count = (rerun as any).count as any;
+          error = null as any;
+        } catch (_) {
+          // keep original error
+        }
+      }
+    }
 
     if (error) {
       console.error('Error fetching photos:', error);
@@ -212,6 +249,9 @@ async function handleGET(request: NextRequest) {
           preview_url,
           approved: photo.approved,
           created_at: photo.created_at,
+          file_size: photo.file_size ?? (photo.file_size_bytes ?? null),
+          width: photo.width ?? null,
+          height: photo.height ?? null,
           subjects, // Include subjects array
           tagged: subjects.length > 0, // Photo is tagged if it has subjects
         };
@@ -264,12 +304,22 @@ export const GET = process.env.NODE_ENV === 'development'
   : withAuth(handleGET);
 
 // DELETE - Borrar múltiples fotos
-const deletePhotosSchema = z.object({
+// Support two deletion modes:
+// 1. By photo IDs: { photoIds: string[] }
+// 2. By filter: { eventId: string, codeId: string | "null" }
+const deleteByIdsSchema = z.object({
   photoIds: z
     .array(z.string().uuid())
     .min(1)
     .max(SECURITY_CONSTANTS.MAX_BATCH_SIZE),
 });
+
+const deleteByFilterSchema = z.object({
+  eventId: z.string().uuid(),
+  codeId: z.union([z.string().uuid(), z.literal('null')]),
+});
+
+const deletePhotosSchema = z.union([deleteByIdsSchema, deleteByFilterSchema]);
 
 async function handleDELETE(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
@@ -290,7 +340,53 @@ async function handleDELETE(request: NextRequest) {
       );
     }
 
-    const { photoIds } = validation.data;
+    let photoIds: string[] = [];
+    const supabase = await createServerSupabaseServiceClient();
+
+    // Determine deletion mode
+    if ('photoIds' in validation.data) {
+      // Mode 1: Delete by specific photo IDs
+      photoIds = validation.data.photoIds;
+    } else {
+      // Mode 2: Delete by filter (eventId + codeId)
+      const { eventId, codeId } = validation.data;
+      
+      // Build query to get photo IDs by filter
+      let query = supabase
+        .from('photos')
+        .select('id')
+        .eq('event_id', eventId);
+      
+      // Handle codeId filter
+      if (codeId === 'null') {
+        // Photos without folder (null code_id)
+        query = query.is('code_id', null);
+      } else {
+        // Photos in specific folder
+        query = query.eq('code_id', codeId);
+      }
+      
+      const { data: photosToDelete, error: queryError } = await query;
+      
+      if (queryError) {
+        console.error('Error querying photos by filter:', queryError);
+        return NextResponse.json(
+          { error: 'Error finding photos to delete' },
+          { status: 500 }
+        );
+      }
+      
+      if (!photosToDelete || photosToDelete.length === 0) {
+        // No photos match the filter - return success with 0 deleted
+        return NextResponse.json({
+          success: true,
+          message: 'No photos found matching the filter',
+          deleted: 0,
+        });
+      }
+      
+      photoIds = photosToDelete.map(p => p.id);
+    }
 
     SecurityLogger.logSecurityEvent(
       'photo_deletion_attempt',
@@ -302,7 +398,7 @@ async function handleDELETE(request: NextRequest) {
       'info'
     );
 
-    const supabase = await createServerSupabaseServiceClient();
+    // Reuse previously created supabase service client
 
     // Obtener paths de las fotos para borrar del storage
     const { data: photos, error: fetchError } = await supabase
@@ -335,14 +431,40 @@ async function handleDELETE(request: NextRequest) {
       }
     });
 
-    // Borrar archivos del storage
+    // Borrar archivos del storage, respetando el bucket correcto
     if (filesToDelete.length > 0) {
-      const { error: storageError } = await supabase.storage
-        .from('photos')
-        .remove(filesToDelete);
+      const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+      const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
-      if (storageError) {
-        console.error('Error borrando archivos del storage:', storageError);
+      const originals: string[] = [];
+      const previews: string[] = [];
+
+      for (const path of filesToDelete) {
+        if ((/(^|\/)previews\//.test(path)) || /watermark/i.test(path)) {
+          previews.push(path);
+        } else {
+          originals.push(path);
+        }
+      }
+
+      // Remove previews
+      if (previews.length > 0) {
+        const { error: storageErrorPrev } = await supabase.storage
+          .from(PREVIEW_BUCKET)
+          .remove(previews);
+        if (storageErrorPrev) {
+          console.error('Error borrando previews del storage:', storageErrorPrev);
+        }
+      }
+
+      // Remove originals
+      if (originals.length > 0) {
+        const { error: storageErrorOrig } = await supabase.storage
+          .from(ORIGINAL_BUCKET)
+          .remove(originals);
+        if (storageErrorOrig) {
+          console.error('Error borrando originales del storage:', storageErrorOrig);
+        }
       }
     }
 

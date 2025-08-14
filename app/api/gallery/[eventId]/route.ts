@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { storageService } from '@/lib/services/storage';
+import { signedUrlForKey } from '@/lib/storage/signedUrl';
 
 const eventIdSchema = z.object({
   eventId: z.string().uuid('Invalid event ID format'),
@@ -110,7 +110,7 @@ export async function GET(
     const offset = (page - 1) * limit;
     const { data: photos, error: photosError } = await supabase
       .from('photos')
-      .select('id, storage_path, width, height, created_at')
+      .select('id, storage_path, preview_path, watermark_path, width, height, created_at')
       .eq('event_id', eventId)
       .eq('approved', true)
       .order('created_at', { ascending: false })
@@ -124,14 +124,12 @@ export async function GET(
       );
     }
 
-    // Generar URLs firmadas para todas las fotos
+    // Generar URLs firmadas priorizando watermark/preview (baja calidad)
     const photosWithUrls = await Promise.all(
       (photos || []).map(async (photo) => {
         try {
-          const signedUrl = await storageService.getSignedUrl(
-            photo.storage_path,
-            3600 // 1 hora de expiración
-          );
+          const key = (photo as any).watermark_path || (photo as any).preview_path || photo.storage_path;
+          const signedUrl = await signedUrlForKey(key, 3600);
 
           return {
             id: photo.id,
@@ -142,10 +140,7 @@ export async function GET(
             signed_url: signedUrl,
           };
         } catch (error) {
-          console.error(
-            `Error generating signed URL for photo ${photo.id}:`,
-            error
-          );
+          console.error('[Service] PublicGallery signed URL error:', error);
           return null;
         }
       })

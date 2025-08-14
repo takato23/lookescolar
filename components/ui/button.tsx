@@ -13,7 +13,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     | 'glass'
     | 'link'
     | 'minimal';
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   fullWidth?: boolean;
   icon?: React.ReactNode;
@@ -146,11 +146,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     // Size styles with proper touch targets
     const sizes = {
+      xs: 'px-2 py-1.5 text-xs rounded-md gap-1 min-h-[32px] h-8', // Compact controls for móvil
       sm: 'px-3 py-2 text-sm rounded-md gap-1.5 min-h-[40px]', // Slightly smaller but still accessible
       md: 'px-4 py-2.5 text-sm rounded-lg gap-2 min-h-[44px]', // WCAG AA minimum
       lg: 'px-6 py-3 text-base rounded-lg gap-2 min-h-[48px]', // Comfortable
       xl: 'px-8 py-4 text-lg rounded-xl gap-3 min-h-[52px]', // Desktop optimized
-    };
+    } as const;
 
     const buttonClasses = clsx(
       baseClasses,

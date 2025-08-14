@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { processAndUploadImage } from '@/lib/services/watermark.service';
-import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
+import { getSignedUrl } from '@/lib/services/watermark.service';
+import { SecurityLogger, generateRequestId, withAuth } from '@/lib/middleware/auth.middleware';
 import { decodeQR, normalizeCode } from '@/lib/qr/decoder';
 import { tokenService } from '@/lib/services/token.service';
+export const runtime = 'nodejs';
 
 // Expected QR format: STUDENT:ID:NAME:EVENT_ID
 const QR_PATTERN = /^STUDENT:([a-f0-9-]{36}):([^:]+):([a-f0-9-]{36})$/i;
@@ -91,13 +92,17 @@ async function assignPhotoToStudent(
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const requestId = generateRequestId();
     console.log('[simple-upload] Starting upload process, requestId:', requestId);
     
     const formData = await request.formData();
     const files = formData.getAll('files') as File[];
+    const formEventIdRaw = formData.get('event_id');
+    const formEventId = typeof formEventIdRaw === 'string' ? formEventIdRaw : null;
+    const queryEventIdRaw = request.nextUrl.searchParams.get('eventId');
+    const queryEventId = typeof queryEventIdRaw === 'string' ? queryEventIdRaw : null;
 
     console.log('[simple-upload] Received files:', files.length);
 
@@ -179,43 +184,111 @@ export async function POST(request: NextRequest) {
           // Continue with upload even if QR detection fails
         }
 
-        // Procesar y subir imagen con watermark
-        // Use event from QR if detected, otherwise no event
-        const eventId = qrDetectionResult?.eventId || null;
-        const uploadResult = await processAndUploadImage(
-          buffer,
-          file.name,
-          eventId
-        );
+        // Procesar y subir imagen con preview + watermark (Quick Share)
+        // Prefer eventId enviado por el cliente (form), luego query param, luego QR si existe
+        let finalEventId: string | null = (formEventId && isValidUUID(formEventId))
+          ? formEventId
+          : (queryEventId && isValidUUID(queryEventId))
+            ? queryEventId
+            : (qrDetectionResult?.eventId || null);
 
-        if (uploadResult.success && uploadResult.data) {
-          // Use QR detected event or fallback to temporary event
-          let finalEventId = qrDetectionResult?.eventId;
-          
-          if (!finalEventId) {
-            // Usar el primer evento disponible como temporal
-            const { data: events } = await supabase
-              .from('events')
-              .select('id')
-              .limit(1);
+          // Sin eventos: trabajar sin asignar (event_id = null)
+          // Usar prefijo de storage 'shared'
 
-            finalEventId = events?.[0]?.id || 'ca9cdc39-2f26-468a-a0ca-0d3e7a6be9f6';
+          // Use separate buckets for originals (private) and previews (public)
+          const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+          const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
+          const sharp = (await import('sharp')).default;
+          // Construir paths determinísticos
+          const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+          const baseNoExt = file.name.replace(/\.[^.]+$/, '');
+          const safeBase = baseNoExt
+            .normalize('NFKD')
+            .replace(/[^a-zA-Z0-9_-]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .slice(0, 120) || 'photo';
+
+          const containerPrefix = finalEventId ? `events/${finalEventId}` : 'shared';
+          const originalPath = `${containerPrefix}/${safeBase}.${ext}`;
+
+          // Subir original al bucket (privado). Upsert por simplicidad en MVP
+          // Ensure buckets exist (idempotent in Supabase API)
+          try {
+            await supabase.storage.createBucket(ORIGINAL_BUCKET, { public: false });
+          } catch {}
+          try {
+            await supabase.storage.createBucket(PREVIEW_BUCKET, { public: true });
+          } catch {}
+
+          const upOriginal = await supabase.storage
+            .from(ORIGINAL_BUCKET)
+            .upload(originalPath, buffer, { contentType: file.type || `image/${ext}`, upsert: true });
+          if (upOriginal.error) {
+            throw new Error(`Error subiendo original: ${upOriginal.error.message}`);
           }
 
-          // Guardar en la base de datos
+          // Determinar tamaño y crear preview con watermark (esquina inferior derecha, 60% opacidad)
+          // If we have an event, try to fetch name/school to include in watermark
+          let wmLabel = 'Look Escolar';
+          if (finalEventId) {
+            try {
+              const { data: evInfo } = await supabase
+                .from('events' as any)
+                .select('name, school_name')
+                .eq('id', finalEventId)
+                .single();
+              const e: any = evInfo as any;
+              if (e?.name || e?.school_name) {
+                wmLabel = `${e.school_name || ''}${e.school_name && e.name ? ' · ' : ''}${e.name || ''}`.trim() || wmLabel;
+              }
+            } catch {}
+          }
+          const meta = await sharp(buffer).metadata();
+          const srcW = meta.width || 0;
+          const srcH = meta.height || 0;
+          const MAX_SIDE = 1200;
+          const scale = Math.min(1, MAX_SIDE / Math.max(srcW, srcH || 1));
+          const newW = Math.max(1, Math.round(srcW * scale));
+          const newH = Math.max(1, Math.round(srcH * scale));
+          const fontSize = Math.max(18, Math.floor(Math.min(newW, newH) / 20));
+          const margin = Math.max(12, Math.floor(fontSize * 0.6));
+          const wmSvg = Buffer.from(`
+            <svg width="${newW}" height="${newH}" xmlns="http://www.w3.org/2000/svg">
+              <text x="${newW - margin}" y="${newH - margin}" 
+                font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold"
+                fill="white" fill-opacity="0.6" stroke="black" stroke-width="2" stroke-opacity="0.3"
+                text-anchor="end" dominant-baseline="auto">${wmLabel}</text>
+            </svg>
+          `);
+
+          const previewBuffer = await sharp(buffer)
+            .resize(newW, newH, { fit: 'inside', withoutEnlargement: true })
+            .composite([{ input: wmSvg }])
+            .webp({ quality: 60 })
+            .toBuffer();
+
+          const previewPath = `${containerPrefix}/previews/${safeBase}.webp`;
+          const upPrev = await supabase.storage
+            .from(PREVIEW_BUCKET)
+            .upload(previewPath, previewBuffer, { contentType: 'image/webp', upsert: true });
+          if (upPrev.error) {
+            await supabase.storage.from(ORIGINAL_BUCKET).remove([originalPath]);
+            throw new Error(`Error subiendo preview: ${upPrev.error.message}`);
+          }
+
+          // Guardar en la base de datos (sin exponer original públicamente)
           const { data: photo, error: dbError } = await supabase
             .from('photos')
             .insert({
-              storage_path: uploadResult.data.storage_path,
-              preview_path: uploadResult.data.preview_path,
+              storage_path: originalPath,
+              preview_path: previewPath,
               original_filename: file.name,
               file_size: file.size,
               mime_type: file.type,
-              width: uploadResult.data.width,
-              height: uploadResult.data.height,
-              approved: true, // Auto-aprobar en upload simple
-              event_id: finalEventId,
-              // No incluir 'tagged' porque no es una columna de la tabla
+              width: srcW,
+              height: srcH,
+              approved: true,
+              event_id: finalEventId ?? null,
             })
             .select()
             .single();
@@ -263,12 +336,13 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          results.push({
+           results.push({
             id: photo.id,
+            photoId: photo.id,
             filename: file.name,
-            preview_path: uploadResult.data.preview_path,
-            storage_path: uploadResult.data.storage_path,
+            preview_path: photo.preview_path,
             success: true,
+            event_id: finalEventId ?? null,
             qr_detected: qrDetectionResult ? {
               student_name: qrDetectionResult.studentName,
               student_id: `${qrDetectionResult.studentId.substring(0, 8)}***`,
@@ -289,8 +363,8 @@ export async function POST(request: NextRequest) {
               requestId,
               photoId: photo.id,
               filename: file.name,
-              storagePath: uploadResult.data.storage_path,
-              previewPath: uploadResult.data.preview_path,
+               storagePath: '[hidden]',
+               previewPath: photo.preview_path,
               size: file.size,
               mimeType: file.type,
               qrDetected: qrDetectionResult ? true : false,
@@ -298,13 +372,12 @@ export async function POST(request: NextRequest) {
               autoAssigned: assignmentResult?.success || false,
               tokenGenerated: tokenGenerationResult ? true : false,
               tokenIsNew: tokenGenerationResult?.isNew || false,
-              eventId: `${finalEventId.substring(0, 8)}***`,
+              eventId: finalEventId ? `${finalEventId.substring(0, 8)}***` : null,
             },
             'info'
           );
-        } else {
-          throw new Error(uploadResult.error || 'Error procesando imagen');
-        }
+        // Nota: antiguo flujo con processAndUploadImage removido. Si llegáramos aquí, sería un estado inconsistente.
+        // Mantenemos sin rama else para evitar errores de compilación.
       } catch (error) {
         console.error('Error procesando archivo:', {
           filename: file.name,
@@ -360,6 +433,10 @@ export async function POST(request: NextRequest) {
       total: validFiles.length,
       successful: results.length,
       failed: errors.length,
+      eventId: (() => {
+        const first = results[0] as any;
+        return first?.event_id || formEventId;
+      })(),
       qr_detection: {
         detected: qrDetectedCount,
         auto_assigned: autoAssignedCount,
@@ -380,7 +457,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET para verificar fotos sin evento
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseServiceClient();
 
@@ -409,3 +486,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const POST = process.env.NODE_ENV === 'development' ? handlePOST : withAuth(handlePOST);
+export const GET = process.env.NODE_ENV === 'development' ? handleGET : withAuth(handleGET);

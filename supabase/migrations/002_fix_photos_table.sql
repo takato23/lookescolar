@@ -8,7 +8,8 @@ DROP TABLE IF EXISTS photos CASCADE;
 -- Recrear la tabla photos con TODOS los campos necesarios
 CREATE TABLE photos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    -- Permitir fotos sin evento para flujo mínimo (shared)
+    event_id UUID REFERENCES events(id) ON DELETE CASCADE,
     subject_id UUID REFERENCES subjects(id) ON DELETE SET NULL,
     
     -- Nombres y paths de archivos

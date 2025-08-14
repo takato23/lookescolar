@@ -80,20 +80,29 @@ export function PhotoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm" role="dialog" aria-modal onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      {/* Close button */}
+    <div className="fixed inset-0 z-50 bg-black/98 
+                    flex items-center justify-center
+                    mobile:items-stretch mobile:justify-stretch"
+         onTouchStart={onTouchStart}
+         onTouchEnd={onTouchEnd} 
+         role="dialog" 
+         aria-modal="true">
+      {/* Close button - Mobile optimized */}
       <button 
-        className="absolute right-4 top-4 rounded-full bg-white/10 backdrop-blur p-2 text-white hover:bg-white/20 transition-colors" 
+        className="absolute right-4 top-4 z-60
+                   mobile:right-3 mobile:top-3 mobile:bg-black/50 mobile:p-3
+                   rounded-full bg-white/10 backdrop-blur p-2 text-white hover:bg-white/20 transition-colors
+                   mobile-touch-target" 
         onClick={onClose} 
         aria-label="Cerrar"
       >
-        <XIcon className="h-6 w-6" />
+        <XIcon className="h-6 w-6 mobile:h-5 mobile:w-5" />
       </button>
       
-      {/* Navigation buttons */}
+      {/* Navigation buttons - Hidden on mobile, touch areas instead */}
       {hasPrev && (
         <button 
-          className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 backdrop-blur p-3 text-white hover:bg-white/20 transition-colors" 
+          className="hidden lg:block absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 backdrop-blur p-3 text-white hover:bg-white/20 transition-colors mobile-touch-target" 
           onClick={onPrev} 
           aria-label="Foto anterior"
         >
@@ -102,32 +111,57 @@ export function PhotoModal({
       )}
       {hasNext && (
         <button 
-          className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 backdrop-blur p-3 text-white hover:bg-white/20 transition-colors" 
+          className="hidden lg:block absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 backdrop-blur p-3 text-white hover:bg-white/20 transition-colors mobile-touch-target" 
           onClick={onNext} 
           aria-label="Foto siguiente"
         >
           <ChevronRightIcon className="h-6 w-6" />
         </button>
       )}
+
+      {/* Mobile touch areas for navigation */}
+      <div className="lg:hidden absolute inset-0 flex z-10">
+        {hasPrev && (
+          <button 
+            className="flex-1 opacity-0 active:opacity-10 active:bg-white transition-opacity"
+            onClick={onPrev}
+            aria-label="Foto anterior"
+          />
+        )}
+        {hasNext && (
+          <button 
+            className="flex-1 opacity-0 active:opacity-10 active:bg-white transition-opacity"
+            onClick={onNext}
+            aria-label="Foto siguiente"
+          />
+        )}
+      </div>
       
-      {/* Photo counter */}
-      {currentIndex && totalPhotos && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 backdrop-blur px-4 py-2">
-          <span className="text-white font-medium">{currentIndex} / {totalPhotos}</span>
+      {/* Photo counter - Mobile optimized */}
+      {currentIndex !== undefined && totalPhotos && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50
+                        mobile:top-3 mobile:bg-black/50 mobile:px-3 mobile:py-1 mobile:rounded-full
+                        rounded-full bg-white/10 backdrop-blur px-4 py-2">
+          <span className="text-white font-medium text-sm mobile:text-xs">
+            {currentIndex + 1} de {totalPhotos}
+          </span>
         </div>
       )}
       
-      {/* Main content */}
-      <div className="mx-4 w-full max-w-5xl">
-        <div className="relative">
+      {/* Main content - Mobile optimized */}
+      <div className="mx-4 w-full max-w-5xl z-20
+                      mobile:mx-0 mobile:max-w-none mobile:h-full mobile:flex mobile:items-center mobile:justify-center">
+        <div className="relative mobile:w-full mobile:h-full mobile:flex mobile:items-center mobile:justify-center">
           {/* Photo */}
-          <div className="relative aspect-[4/5] max-h-[80vh]">
+          <div className="relative aspect-[4/5] max-h-[80vh]
+                          mobile:aspect-auto mobile:max-h-none mobile:w-full mobile:h-full mobile:max-w-full">
             {photo.preview_url ? (
               <Image 
                 src={photo.preview_url} 
                 alt={photo.filename || 'Foto'} 
                 fill 
-                className="rounded-lg object-contain"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 80vw"
+                className="rounded-lg object-contain mobile:object-contain mobile:rounded-none"
                 priority
               />
             ) : (
