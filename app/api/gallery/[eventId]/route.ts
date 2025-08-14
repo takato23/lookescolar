@@ -76,10 +76,10 @@ export async function GET(
     // Crear cliente Supabase con service role
     const supabase = await createServerSupabaseServiceClient();
 
-    // Verificar que el evento existe y está activo
+    // Verificar que el evento existe, está activo y permite galería pública
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, name, school, date, active, created_at')
+      .select('id, name, school, date, active, created_at, public_gallery_enabled')
       .eq('id', eventId)
       .eq('active', true)
       .single();
@@ -88,6 +88,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Event not found or not available' },
         { status: 404 }
+      );
+    }
+
+    if (!event.public_gallery_enabled) {
+      console.warn('[Service] Public gallery access blocked: public_gallery_disabled', { eventId });
+      return NextResponse.json(
+        { error: 'Public gallery is not enabled for this event' },
+        { status: 403 }
       );
     }
 
