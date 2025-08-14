@@ -53,6 +53,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { SessionMode } from './SessionMode';
 import { cn } from "@/lib/utils";
 import { buildPhotosUrl } from "@/lib/utils/photos-url-builder";
 import QRScannerModal, { type StudentInfo } from "./QRScannerModal";
@@ -60,6 +61,7 @@ import TaggingModal from "./TaggingModal";
 import { PhotoModal as PublicPhotoModal } from "@/components/public/PhotoModal";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+
 
 // Types adapted for LookEscolar
 interface PhotoItem {
@@ -116,6 +118,8 @@ interface PhotoGalleryModernProps {
   externalSelectedEvent?: string | null;
   externalCodeId?: string | null; // 'null' string to represent unassigned
   onCountsChanged?: () => void;
+  compact?: boolean; // Modo compacto (móvil)
+  hideHeader?: boolean; // Ocultar encabezado principal
 }
 
 // Photo Card Component
@@ -177,7 +181,7 @@ const PhotoCard: React.FC<{
             src={imageSrc}
             alt={photo.original_filename}
             className={cn(
-              "w-full h-full object-cover transition-opacity duration-200",
+              "w-full h-full object-cover transition-opacity duration-200 contrast-125",
               imageLoadState === 'loading' ? "opacity-0" : "opacity-100"
             )}
             onLoad={handleImageLoad}
@@ -310,6 +314,7 @@ const PhotoCard: React.FC<{
       onDragEnd={() => { setIsDragging(false); handleDragEnd?.(); }}
       className={cn(
         "relative overflow-hidden rounded-xl border bg-card text-card-foreground transition-all duration-200 group cursor-pointer hover:shadow-lg",
+        "mobile:rounded-lg mobile:border-2", // Simpler styling on mobile
         isSelected ? "ring-2 ring-primary shadow-lg border-primary" : "hover:border-gray-400",
         isDragging ? "scale-[1.02] shadow-2xl cursor-grabbing" : "",
         "draggable"
@@ -348,21 +353,21 @@ const PhotoCard: React.FC<{
         
         {/* Selection checkbox + visual tick overlay */}
         <div
-          className="absolute top-2 left-2 z-20"
+          className="absolute top-1 left-1 z-20"
           data-no-drag="true"
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => e.preventDefault()}
         >
           <div 
-            className="bg-white/90 backdrop-blur-sm rounded-lg p-1 shadow-md"
+            className="bg-white/80 backdrop-blur-sm rounded p-px shadow-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <Checkbox
               checked={isSelected}
-              onCheckedChange={(checked) => {
+              onCheckedChange={() => {
                 onSelect(photo.id);
               }}
-              className="h-6 w-6 rounded-md border-2 border-gray-400 bg-white shadow-sm cursor-pointer hover:border-primary transition-colors data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary"
+              className="h-3 w-3 sm:h-3.5 sm:w-3.5 rounded border border-gray-400 bg-white shadow-sm cursor-pointer hover:border-primary transition-colors data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary"
               onClick={(e) => e.stopPropagation()}
               aria-label="Seleccionar foto"
             />
@@ -370,14 +375,14 @@ const PhotoCard: React.FC<{
         </div>
 
         {/* Status badges */}
-        <div className="absolute top-2 right-2 flex flex-col gap-1">
+        <div className="absolute top-1 right-1 flex flex-col gap-0.5">
           {photo.approved && (
-            <Badge className="rounded px-2 py-0.5 text-xs bg-emerald-600 text-white dark:bg-emerald-500">
+            <Badge className="rounded px-1.5 py-0.5 text-[10px] bg-emerald-600 text-white dark:bg-emerald-500 dark:text-foreground">
               Aprobada
             </Badge>
           )}
           {photo.tagged && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
               Etiquetada
             </Badge>
           )}
@@ -385,44 +390,63 @@ const PhotoCard: React.FC<{
 
         {/* Selected tick in corner removed to avoid confusion with left checkbox */}
 
-        {/* Actions overlay */}
+        {/* Actions overlay - Hidden on mobile, visible on hover for desktop */}
         <div
-          className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 cursor-default pointer-events-none"
+          className="hidden lg:flex absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 cursor-default pointer-events-none"
           data-no-drag="true"
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => e.preventDefault()}
         >
-          <div className="flex gap-2 pointer-events-auto">
+          <div className="flex gap-1 pointer-events-auto">
             <Button
               size="sm"
               variant="secondary"
+              className="p-1 h-6 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onApprove(photo.id);
               }}
             >
-              {photo.approved ? <XIcon className="w-4 h-4" /> : <CheckIcon className="w-4 h-4" />}
+              {photo.approved ? <XIcon className="w-3 h-3" /> : <CheckIcon className="w-3 h-3" />}
             </Button>
             <Button 
               size="sm" 
               variant="secondary"
+              className="p-1 h-6 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onTag();
               }}
             >
-              <TagIcon className="w-4 h-4" />
+              <TagIcon className="w-3 h-3" />
             </Button>
             <Button 
               size="sm" 
               variant="secondary"
+              className="p-1 h-6 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onDownload();
               }}
             >
-              <DownloadIcon className="w-4 h-4" />
+              <DownloadIcon className="w-3 h-3" />
             </Button>
+          </div>
+        </div>
+
+        {/* Mobile action indicators */}
+        <div className="lg:hidden absolute top-2 right-2 z-10 pointer-events-none">
+          <div className="flex flex-col gap-1">
+            {photo.approved && (
+              <div className="bg-green-500 text-white rounded-full p-1">
+                <CheckIcon className="w-3 h-3" />
+              </div>
+            )}
+            {photo.tagged && (
+              <div className="bg-blue-500 text-white rounded-full p-1">
+                <TagIcon className="w-3 h-3" />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -460,6 +484,8 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   externalSelectedEvent = null,
   externalCodeId = null,
   onCountsChanged,
+  compact = false,
+  hideHeader = false,
 }) => {
   const [photos, setPhotos] = useState<PhotoItem[]>(initialPhotos);
   const [events, setEvents] = useState<FolderItem[]>(initialEvents);
@@ -494,6 +520,12 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   const [moveSelectedCodeId, setMoveSelectedCodeId] = useState<string>("");
   const [movePhotoIds, setMovePhotoIds] = useState<string[]>([]);
 
+  // Add state for selected events
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
+
+  // Session Mode State
+  const [isSessionMode, setIsSessionMode] = useState(false);
+
   // Filter photos based on search, event, and status
   const filteredPhotos = useMemo(() => {
     return photos.filter(photo => {
@@ -509,24 +541,24 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     });
   }, [photos, searchQuery, selectedEvent, filterStatus]);
 
-  // Load photos for selected event (server-side filtering)
+  // Load photos for selected event or general gallery (server-side filtering)
   const fetchPhotosForEvent = useCallback(async () => {
     const effectiveEvent = typeof externalSelectedEvent !== 'undefined' ? externalSelectedEvent : selectedEvent;
     
-    // Guard: no eventId = no fetch
-    if (!effectiveEvent) {
-      console.debug('[photos] No eventId, skipping fetch');
-      setPhotos([]);
-      return;
-    }
-    
     try {
       // Use buildPhotosUrl helper to ensure event_id is always included
-      const url = buildPhotosUrl({
-        eventId: effectiveEvent,
-        codeId: externalCodeId === 'null' ? 'null' : externalCodeId || undefined,
-        limit: 100
-      });
+      let url = '';
+      if (effectiveEvent) {
+        url = buildPhotosUrl({
+          eventId: effectiveEvent,
+          codeId: externalCodeId === 'null' ? 'null' : (externalCodeId ?? null),
+          limit: 100
+        });
+      } else {
+        const usp = new URLSearchParams();
+        usp.set('limit', '100');
+        url = `/api/admin/photos?${usp.toString()}`;
+      }
       
       console.debug('[photos] Fetching:', url);
       const resp = await fetch(url);
@@ -556,19 +588,16 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     void fetchPhotosForEvent();
   }, [fetchPhotosForEvent]);
 
-  // Load codes for selected event
+  // Load codes: if there is a selected event, fetch for that event; otherwise fetch all
   const fetchCodesForEvent = useCallback(async () => {
-    if (!selectedEvent) {
-      setCodes([]);
-      return;
-    }
     try {
-      const resp = await fetch(`/api/admin/publish/list?eventId=${selectedEvent}`);
+      const url = selectedEvent ? `/api/admin/publish/list?eventId=${selectedEvent}` : `/api/admin/publish/list`;
+      const resp = await fetch(url);
       const data = await resp.json();
       const arr = Array.isArray(data) ? data : (data.rows || data.data || []);
       const rows: CodeRow[] = arr.map((c: any) => ({
         id: (c.id ?? c.code_id) as string,
-        event_id: selectedEvent,
+        event_id: (selectedEvent ?? (c.event_id as string)) as string,
         course_id: (c.course_id as string) ?? null,
         code_value: String(c.code_value),
         token: (c.token as string) ?? null,
@@ -673,9 +702,11 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   // Add state:
   const [autoProcess, setAutoProcess] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('autoProcess') !== 'false';
+      const val = localStorage.getItem('autoProcess');
+      if (val === 'true') return true;
+      if (val === 'false') return false;
     }
-    return true;
+    return false;
   });
 
   // Effect to persist:
@@ -693,9 +724,9 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     
     setIsUploading(true);
     try {
-      await onPhotoUpload?.(Array.from(files), eventId);
-      toast.success(`${files.length} fotos subidas correctamente`);
-      if (autoProcess) {
+      await onPhotoUpload?.(Array.from(files), eventId || undefined as unknown as string);
+      toast.success(`${files.length} fotos enviadas. Verificando procesamiento...`);
+      if (autoProcess && eventId) {
         const t = toast.loading('Procesando fotos...');
         try {
           // Watermark
@@ -742,8 +773,9 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           toast.warning('Procesamiento parcial completado', { id: t });
         }
       }
-      onRefresh?.();
-      onCountsChanged?.();
+      // Forzar refresh de lista para reflejar realmente lo subido
+      await onRefresh?.();
+      await onCountsChanged?.();
     } catch (error: any) {
       console.error('Upload error:', error);
       toast.error(error.message || 'Error al subir las fotos');
@@ -754,19 +786,80 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
 
   // Handle delete selected
   const handleDeleteSelected = useCallback(async () => {
-    if (selectedPhotos.length === 0) return;
+    // If no photos selected and user clicks "Delete All", delete by current filter
+    if (selectedPhotos.length === 0) {
+      // Allow deleting all visible even without event: fall back to current list
 
-    if (confirm(`¿Estás seguro de eliminar ${selectedPhotos.length} fotos?`)) {
-      try {
-        await onPhotoDelete?.(selectedPhotos);
-        setPhotos(prev => prev.filter(photo => !selectedPhotos.includes(photo.id)));
-        toast.success(`${selectedPhotos.length} fotos eliminadas`);
-        setSelectedPhotos([]);
-      } catch (error) {
-        toast.error('Error al eliminar las fotos');
+      const photosCount = photos.length;
+      if (photosCount === 0) {
+        toast.info('No hay fotos para eliminar');
+        return;
+      }
+
+      if (confirm(`¿Estás seguro de eliminar TODAS las ${photosCount} fotos de esta vista?`)) {
+        try {
+          if (selectedEvent) {
+            // Preferred: Delete by filter (eventId + codeId)
+            const response = await fetch('/api/admin/photos', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                eventId: selectedEvent,
+                codeId: externalCodeId ?? 'null'
+              })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              throw new Error(result.error || 'Error al eliminar fotos');
+            }
+            toast.success(`${result.deleted} fotos eliminadas`);
+            setPhotos([]);
+            onRefresh?.();
+          } else {
+            // Fallback: delete by ids currently loaded in view (chunked)
+            const ids = photos.map((p) => p.id);
+            if (ids.length === 0) {
+              toast.info('No hay fotos para eliminar');
+              return;
+            }
+            const MAX_BATCH = 50;
+            let totalDeleted = 0;
+            for (let i = 0; i < ids.length; i += MAX_BATCH) {
+              const chunk = ids.slice(i, i + MAX_BATCH);
+              const response = await fetch('/api/admin/photos', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photoIds: chunk })
+              });
+              const result = await response.json().catch(() => ({}));
+              if (!response.ok) {
+                throw new Error(result?.error || 'Error al eliminar fotos');
+              }
+              totalDeleted += Number(result?.deleted || chunk.length);
+            }
+            toast.success(`${totalDeleted} fotos eliminadas`);
+            setPhotos([]);
+            onRefresh?.();
+          }
+        } catch (error) {
+          console.error('Error deleting photos by filter:', error);
+          toast.error('Error al eliminar las fotos');
+        }
+      }
+    } else {
+      // Delete specific selected photos
+      if (confirm(`¿Estás seguro de eliminar ${selectedPhotos.length} fotos seleccionadas?`)) {
+        try {
+          await onPhotoDelete?.(selectedPhotos);
+          setPhotos(prev => prev.filter(photo => !selectedPhotos.includes(photo.id)));
+          toast.success(`${selectedPhotos.length} fotos eliminadas`);
+          setSelectedPhotos([]);
+        } catch (error) {
+          toast.error('Error al eliminar las fotos');
+        }
       }
     }
-  }, [selectedPhotos, onPhotoDelete]);
+  }, [selectedPhotos, selectedEvent, externalCodeId, photos.length, onPhotoDelete, onRefresh]);
 
   // QR Tagging Functions
   const handleStartQRTagging = useCallback(() => {
@@ -824,6 +917,44 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       setIsAssigningPhotos(false);
     }
   }, [currentStudent, selectedPhotos, onPhotoTag]);
+
+  // Session Mode Functions
+  const handleSessionPhotoAssign = useCallback(async (photoIds: string[], subjectId: string) => {
+    try {
+      // Call the tagging function for each photo
+      for (const photoId of photoIds) {
+        await onPhotoTag?.(photoId, subjectId);
+      }
+
+      // Update local state to reflect the tagging
+      setPhotos(prev => prev.map(photo => 
+        photoIds.includes(photo.id) 
+          ? { 
+              ...photo, 
+              tagged: true,
+              subject: {
+                id: subjectId,
+                name: 'Asignado' // This will be updated when photos refresh
+              }
+            }
+          : photo
+      ));
+
+      // Refresh to get updated data
+      await onRefresh?.();
+    } catch (error) {
+      console.error('Error assigning photos in session mode:', error);
+      throw error;
+    }
+  }, [onPhotoTag, onRefresh]);
+
+  const handleToggleSessionMode = useCallback(() => {
+    setIsSessionMode(prev => !prev);
+    if (isSessionMode) {
+      // Exiting session mode
+      setSelectedPhotos([]);
+    }
+  }, [isSessionMode]);
 
   // Drag & Drop Functions
   const handleDragStart = useCallback((photoId: string, e: React.DragEvent) => {
@@ -995,23 +1126,18 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         // eslint-disable-next-line no-console
         console.debug('[MOVE] payload', { photoIds: movePhotoIds, codeId });
       }
-      await Promise.all(
-        movePhotoIds.map(async (pid) => {
-          const resp = await fetch(`/api/admin/photos/${pid}/move`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ codeId }),
-          });
-          if (!resp.ok) {
-            try {
-              const j = await resp.json();
-              throw new Error(j?.error || 'Error moviendo foto');
-            } catch (e: any) {
-              throw new Error(e?.message || 'Error moviendo foto');
-            }
-          }
-        })
-      );
+      // Process moves sequentially to surface first error clearly
+      for (const pid of movePhotoIds) {
+        const resp = await fetch(`/api/admin/photos/${pid}/move`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codeId }),
+        });
+        if (!resp.ok) {
+          const j = await resp.json().catch(() => ({}));
+          throw new Error(j?.error || 'Error moviendo foto');
+        }
+      }
       setPhotos(prev => prev.map(p => movePhotoIds.includes(p.id) ? { ...p, code_id: codeId } : p));
       toast.success(`Movida(s) ${movePhotoIds.length} foto(s)`);
       onCountsChanged?.();
@@ -1067,79 +1193,97 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   const effectiveSelectedEvent = typeof externalSelectedEvent !== 'undefined' ? externalSelectedEvent : selectedEvent;
   const currentEvent = events.find(e => e.id === effectiveSelectedEvent);
   const codesForCurrentEvent = useMemo(() => {
+    if (!effectiveSelectedEvent) return codes; // show all codes when no event is selected
     return codes.filter(c => c.event_id === effectiveSelectedEvent);
   }, [codes, effectiveSelectedEvent]);
 
   return (
-    <div className="w-full space-y-6">
+    <div className={cn("w-full", compact ? "space-y-2" : "space-y-6", "mobile:space-y-3")}> 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      {!hideHeader && (
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Fotos</h1>
-          <p className="text-gray-500">
+          <h1 className="text-lg lg:text-3xl font-bold">Gestión de fotos</h1>
+          <p className="text-gray-500 text-xs lg:text-sm">
             {currentEvent ? `${currentEvent.name} - ` : ''}{filteredPhotos.length} fotos
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Switch
             id="auto-process"
             checked={autoProcess}
             onCheckedChange={setAutoProcess}
           />
-          <Label htmlFor="auto-process">Procesar automáticamente</Label>
+          <Label htmlFor="auto-process" className="text-xs lg:text-sm">Auto-proceso</Label>
           <Button
             variant="outline"
+            size="xs"
             onClick={onRefresh}
+            title={autoProcess ? 'Auto-marcado, QR y agrupación activados' : 'Solo subida manual'}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Actualizar
           </Button>
-          {effectiveSelectedEvent && (
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-              <UploadIcon className="w-4 h-4 mr-2" />
-              {isUploading ? 'Subiendo...' : 'Subir fotos'}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="xs"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            <UploadIcon className="w-4 h-4 mr-2" />
+            {isUploading ? 'Subiendo...' : 'Subir fotos'}
+          </Button>
           
-          {/* QR Tagging Toggle */}
-          {!isQRTagMode ? (
-            <Button
-              variant="secondary"
-              onClick={handleStartQRTagging}
-              className="bg-purple-100 text-purple-700 hover:bg-purple-200"
-            >
-              <QrCode className="w-4 h-4 mr-2" />
-              Modo QR
-            </Button>
-          ) : (
+          {/* Mode Toggles */}
+          {!isQRTagMode && !isSessionMode ? (
+            <>
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={handleStartQRTagging}
+                className="bg-purple-100 text-purple-700 hover:bg-purple-200"
+              >
+                <QrCode className="w-4 h-4 mr-2" />
+                Modo QR
+              </Button>
+              <Button
+                variant="secondary"
+                size="xs"
+                onClick={handleToggleSessionMode}
+                className="bg-orange-100 text-orange-700 hover:bg-orange-200"
+              >
+                <UserIcon className="w-4 h-4 mr-2" />
+                Modo Sesión
+              </Button>
+            </>
+          ) : isQRTagMode ? (
             <Button
               variant="outline"
+              size="xs"
               onClick={handleStopQRTagging}
               className="border-purple-300 text-purple-700 hover:bg-purple-50"
             >
               <XIcon className="w-4 h-4 mr-2" />
               Salir QR
             </Button>
-          )}
-          {selectedPhotos.length > 0 && !isQRTagMode && (
+          ) : null}
+          {selectedPhotos.length > 0 && !isQRTagMode && !isSessionMode && (
             <>
               <Button
                 variant="outline"
+                size="xs"
                 onClick={() => handleBulkApprove(true)}
               >
                 <CheckIcon className="w-4 h-4 mr-2" />
                 Aprobar ({selectedPhotos.length})
               </Button>
-              <Button variant="outline" onClick={openMoveModalForSelection}>
+              <Button variant="outline" size="xs" onClick={openMoveModalForSelection}>
                 <MoveIcon className="w-4 h-4 mr-2" />
                 Mover a…
               </Button>
               <Button
                 variant="outline"
+                size="xs"
                 onClick={handleDownloadSelected}
               >
                 <DownloadIcon className="w-4 h-4 mr-2" />
@@ -1147,6 +1291,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               </Button>
               <Button
                 variant="danger"
+                size="xs"
                 onClick={handleDeleteSelected}
               >
                 <TrashIcon className="w-4 h-4 mr-2" />
@@ -1154,6 +1299,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               </Button>
               <Button
                 variant="outline"
+                size="xs"
                 onClick={() => setSelectedPhotos([])}
               >
                 <XIcon className="w-4 h-4 mr-2" />
@@ -1168,6 +1314,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               {!currentStudent && (
                 <Button
                   variant="primary"
+                  size="xs"
                   onClick={() => setShowQRScanner(true)}
                 >
                   <QrCode className="w-4 h-4 mr-2" />
@@ -1178,6 +1325,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               {currentStudent && selectedPhotos.length > 0 && (
                 <Button
                   variant="primary"
+                  size="xs"
                   onClick={handleAssignPhotosToStudent}
                   disabled={isAssigningPhotos}
                   className="bg-green-600 hover:bg-green-700"
@@ -1199,6 +1347,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               {currentStudent && (
                 <Button
                   variant="outline"
+                  size="xs"
                   onClick={() => setShowQRScanner(true)}
                   className="border-purple-300 text-purple-700"
                 >
@@ -1210,6 +1359,38 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           )}
         </div>
       </div>
+      )}
+
+      {/* Session Mode */}
+      {(() => {
+        const eventId = externalSelectedEvent || selectedEvent || events[0]?.id;
+        return eventId ? (
+          <div className="flex items-center gap-2">
+            {!isSessionMode ? (
+              <Button 
+                variant="outline" 
+            size="xs" 
+                className="h-8 text-xs bg-white border-gray-300 hover:bg-gray-50"
+                onClick={handleToggleSessionMode}
+              >
+                <UserIcon className="w-3 h-3 mr-1" />
+                Sesión
+              </Button>
+            ) : (
+              <div className="flex-1">
+                <SessionMode
+                  eventId={eventId}
+                  isActive={isSessionMode}
+                  onToggle={handleToggleSessionMode}
+                  selectedPhotos={selectedPhotos}
+                  onPhotoAssign={handleSessionPhotoAssign}
+                  onClearSelection={() => setSelectedPhotos([])}
+                />
+              </div>
+            )}
+          </div>
+        ) : null;
+      })()}
 
       {/* QR Tagging Status Panel */}
       {isQRTagMode && (
@@ -1272,85 +1453,109 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         </motion.div>
       )}
 
-      {/* Controls */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Buscar fotos..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+      {/* Controls mejorados */}
+      <div className={cn("space-y-3", compact && "space-y-2")}>
+        {/* Barra de búsqueda */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Buscar fotos por nombre o estudiante..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={cn("pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500", compact ? "h-8 text-sm" : "h-10")}
+              />
+            </div>
+          </div>
+          
+          {/* Vista toggle */}
+          <div className="flex items-center border border-gray-300 rounded-lg bg-white p-1">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="xs"
+              onClick={() => setViewMode('grid')}
+              className={cn('rounded-r-none h-7', viewMode === 'grid' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100')}
+              aria-label="Vista en grilla"
+            >
+              <GridIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="xs"
+              onClick={() => setViewMode('list')}
+              className={cn('rounded-l-none -ml-px h-7', viewMode === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100')}
+              aria-label="Vista en lista"
+            >
+              <ListIcon className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant={filterStatus === 'all' ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilterStatus('all')}
-          >
-            Todas
-          </Button>
-          <Button
-            variant={filterStatus === 'approved' ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilterStatus('approved')}
-          >
-            Aprobadas
-          </Button>
-          <Button
-            variant={filterStatus === 'pending' ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilterStatus('pending')}
-          >
-            Pendientes
-          </Button>
-          <Button
-            variant={filterStatus === 'tagged' ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilterStatus('tagged')}
-          >
-            Etiquetadas
-          </Button>
-        </div>
 
-        <div className="flex items-center rounded-lg p-0.5 bg-transparent">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className={cn('rounded-r-none', viewMode==='grid' ? 'ring-2 ring-offset-0' : '')}
-          >
-            <GridIcon className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-            className={cn('rounded-l-none -ml-px', viewMode==='list' ? 'ring-2 ring-offset-0' : '')}
-          >
-            <ListIcon className="w-4 h-4" />
-          </Button>
-        </div>
+        {/* Filtros y acciones */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Filtros:</span>
+            <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-1">
+              <Button
+                variant={filterStatus === 'all' ? "default" : "ghost"}
+                size="xs"
+                className={cn("font-medium h-7", filterStatus === 'all' ? "bg-gray-800 text-white" : "text-gray-600 hover:bg-gray-200")}
+                onClick={() => setFilterStatus('all')}
+              >
+                Todas
+              </Button>
+              <Button
+                variant={filterStatus === 'approved' ? "default" : "ghost"}
+                size="xs"
+                className={cn("font-medium h-7", filterStatus === 'approved' ? "bg-green-600 text-white" : "text-gray-600 hover:bg-green-100")}
+                onClick={() => setFilterStatus('approved')}
+              >
+                Aprobadas
+              </Button>
+              <Button
+                variant={filterStatus === 'pending' ? "default" : "ghost"}
+                size="xs"
+                className={cn("font-medium h-7", filterStatus === 'pending' ? "bg-orange-600 text-white" : "text-gray-600 hover:bg-orange-100")}
+                onClick={() => setFilterStatus('pending')}
+              >
+                Pendientes
+              </Button>
+              <Button
+                variant={filterStatus === 'tagged' ? "default" : "ghost"}
+                size="xs"
+                className={cn("font-medium h-7", filterStatus === 'tagged' ? "bg-purple-600 text-white" : "text-gray-600 hover:bg-purple-100")}
+                onClick={() => setFilterStatus('tagged')}
+              >
+                Etiquetadas
+              </Button>
+            </div>
+          </div>
 
-        {filteredPhotos.length > 0 && (
-          <Button
-            variant="outline"
-            onClick={handleSelectAll}
-          >
-            <CheckIcon className="w-4 h-4 mr-2" />
-            {selectedPhotos.length === filteredPhotos.length ? 'Deseleccionar' : 'Seleccionar todas'}
-          </Button>
-        )}
+          {/* Selección masiva */}
+          {filteredPhotos.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {selectedPhotos.length > 0 && `${selectedPhotos.length} seleccionadas`}
+              </span>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={handleSelectAll}
+                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 font-medium"
+              >
+                <CheckIcon className="w-4 h-4 mr-1" />
+                {selectedPhotos.length === filteredPhotos.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Optional external layout: hide built-in sidebar when requested */}
       {hideSidebar ? (
         <div>
-          <ScrollArea className="h-[calc(100vh-300px)]">
+          <ScrollArea className={cn(compact ? "h-[calc(100dvh-220px)]" : "h-[calc(100vh-300px)]")}>
             {filteredPhotos.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
@@ -1361,17 +1566,17 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                    externalCodeId === 'null' ? 'No hay fotos sin carpeta. Subí fotos o elegí otra carpeta.' :
                    'Sube algunas fotos para comenzar'}
                 </p>
-                {currentEvent && (
-                  <Button onClick={() => fileInputRef.current?.click()} aria-label="Subir fotos">
-                    <UploadIcon className="w-4 h-4 mr-2" />
-                    Subir fotos
-                  </Button>
-                )}
+                <Button onClick={() => fileInputRef.current?.click()} aria-label="Subir fotos">
+                  <UploadIcon className="w-4 h-4 mr-2" />
+                  Subir fotos
+                </Button>
               </div>
             ) : (
               <div className={cn(
                 viewMode === 'grid' 
-                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
+                  ? (compact 
+                      ? "grid gap-1 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                      : "grid gap-2 mobile:grid-cols-3 mobile:gap-0.5 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5 lg:gap-3 xl:grid-cols-6 xl:gap-4")
                   : "space-y-2"
               )}>
                 <AnimatePresence>
@@ -1419,13 +1624,13 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5">
         {/* Sidebar */}
         <div className="space-y-4">
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3">Eventos</h3>
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
+          <Card className="p-1">
+            <h3 className="text-xs font-medium mb-0.5">Carpetas</h3>
+            <ScrollArea className="h-auto max-h-[150px]">
+              <div className="space-y-1">
                 <Button
                   variant={selectedEvent === null ? "default" : "ghost"}
-                  className="w-full justify-start"
+                  className="w-full justify-start py-1 min-h-[28px] text-xs font-medium text-gray-900"
                   onClick={() => setSelectedEvent(null)}
                 >
                   <ImageIcon className="w-4 h-4 mr-2" />
@@ -1434,10 +1639,20 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 {events.map(event => (
                   <div key={event.id} className="relative">
                     <div className="flex items-center">
+                      <Checkbox
+                        checked={selectedEvents.includes(event.id)}
+                        onCheckedChange={(isChecked) => {
+                          setSelectedEvents(prev =>
+                            isChecked
+                              ? [...prev, event.id]
+                              : prev.filter(id => id !== event.id)
+                          );
+                        }}
+                      />
                       <Button
                         variant={selectedEvent === event.id ? "default" : "ghost"}
                         className={cn(
-                          "w-full justify-start text-left transition-all duration-200",
+                          "w-full justify-start text-left transition-all duration-200 py-1 min-h-[28px] text-xs font-medium text-gray-900",
                           isDragMode ? "" : "",
                         )}
                         onClick={() => setSelectedEvent(event.id)}
@@ -1448,9 +1663,9 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                           ""
                         )} />
                         <div className="flex-1 min-w-0 text-left">
-                          <div className="truncate">{event.name}</div>
+                          <div className="text-sm font-medium break-words">{event.name}</div>
                           {event.school_name && (
-                            <div className="text-xs opacity-70 truncate">{event.school_name}</div>
+                            <div className="text-xs opacity-70 break-words">{event.school_name}</div>
                           )}
                         </div>
                         {event.photo_count !== undefined && (
@@ -1557,7 +1772,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
 
         {/* Main Content */}
         <div className="lg:col-span-3">
-          <ScrollArea className="h-[calc(100vh-300px)]">
+          <ScrollArea className={cn(compact ? "h-[calc(100dvh-220px)]" : "h-[calc(100vh-300px)]")}> 
             {filteredPhotos.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
                 <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
@@ -1567,19 +1782,19 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                    !selectedEvent ? 'Selecciona un evento para ver las fotos' :
                    'Sube algunas fotos para comenzar'}
                 </p>
-                 {selectedEvent && (
-                  <Button onClick={() => fileInputRef.current?.click()} aria-label="Subir fotos">
-                    <UploadIcon className="w-4 h-4 mr-2" />
-                    Subir fotos
-                  </Button>
-                )}
+                <Button onClick={() => fileInputRef.current?.click()} aria-label="Subir fotos">
+                  <UploadIcon className="w-4 h-4 mr-2" />
+                  Subir fotos
+                </Button>
               </div>
             ) : (
-              <div className={cn(
-                viewMode === 'grid' 
-                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
-                  : "space-y-2"
-              )}>
+      <div className={cn(
+        viewMode === 'grid' 
+          ? (compact 
+              ? "grid gap-1 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              : "grid gap-2 mobile:grid-cols-2 mobile:gap-1 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5 lg:gap-3 xl:grid-cols-6 xl:gap-4")
+          : "space-y-2"
+      )}>
                 <AnimatePresence>
                   {filteredPhotos.map((photo, idx) => (
                     <PhotoCard
@@ -1739,6 +1954,33 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Batch Delete Events */}
+      {selectedEvents.length > 0 && (
+        <Button
+          variant="danger"
+          size="sm"
+          onClick={async () => {
+            if (!confirm(`Eliminar ${selectedEvents.length} eventos seleccionados?`)) return;
+            try {
+              await Promise.all(
+                selectedEvents.map(async (id) => {
+                  const res = await fetch(`/api/admin/events/${id}`, { method: 'DELETE' });
+                  if (!res.ok) throw new Error('Error eliminando evento');
+                })
+              );
+              setEvents(prev => prev.filter(e => !selectedEvents.includes(e.id)));
+              if (selectedEvents.includes(selectedEvent ?? '')) setSelectedEvent(null);
+              setSelectedEvents([]);
+              toast.success(`${selectedEvents.length} eventos eliminados`);
+            } catch {
+              toast.error('Error al eliminar eventos');
+            }
+          }}
+        >
+          Eliminar seleccionados ({selectedEvents.length})
+        </Button>
+      )}
     </div>
   );
 };

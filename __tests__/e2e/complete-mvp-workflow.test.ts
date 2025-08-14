@@ -9,7 +9,7 @@ import type { Database } from '@/types/database';
 
 // Test configuration
 const TEST_CONFIG = {
-  baseUrl: 'http://localhost:3000',
+  baseUrl: process.env.BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000',
   admin: {
     email: 'test-admin@lookescolar.com',
     password: 'TestAdmin123!@#'

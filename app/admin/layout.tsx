@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import { MobileNavigation, adminNavigationItems } from '@/components/ui/mobile-navigation';
+import { MobileOptimizations } from '@/components/family/MobileOptimizations';
 
 export default function AdminLayout({
   children,
@@ -133,25 +135,54 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="gradient-mesh-dark dark:gradient-mesh min-h-screen">
-      <div className="relative flex">
-        {/* Sidebar - Now responsive */}
-        <AdminSidebar
-          isMobileOpen={isMobileMenuOpen}
-          onMobileToggle={toggleMobileMenu}
+    <MobileOptimizations>
+      <div className="gradient-mesh-dark dark:gradient-mesh min-h-screen">
+        {/* Mobile Navigation */}
+        <MobileNavigation
+          items={adminNavigationItems}
+          user={user ? {
+            name: user.email?.split('@')[0],
+            email: user.email,
+          } : undefined}
+          onLogout={async () => {
+            const { authClient } = await import('@/lib/supabase/auth-client');
+            await authClient.logout();
+            router.replace('/login');
+          }}
+          className="lg:hidden"
         />
 
-        {/* Main Content */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Header - With mobile menu button */}
-          <AdminHeader user={user} onMobileMenuToggle={toggleMobileMenu} />
+        <div className="relative flex">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block">
+            <AdminSidebar
+              isMobileOpen={isMobileMenuOpen}
+              onMobileToggle={toggleMobileMenu}
+            />
+          </div>
 
-          {/* Page Content - Add padding for mobile */}
-          <main className="flex-1 overflow-x-hidden">
-            <div className="w-full">{children}</div>
-          </main>
+          {/* Main Content */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {/* Desktop Header */}
+            <div className="hidden lg:block">
+              <AdminHeader user={user} onMobileMenuToggle={toggleMobileMenu} />
+            </div>
+
+            {/* Page Content - Adjusted for mobile navigation */}
+            <main className="flex-1 overflow-x-hidden min-h-screen">
+              {/* Mobile content with proper spacing */}
+              <div className="lg:hidden pt-14 pb-20 px-2 min-h-screen overflow-y-auto">
+                {children}
+              </div>
+              
+              {/* Desktop content */}
+              <div className="hidden lg:block">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </MobileOptimizations>
   );
 }

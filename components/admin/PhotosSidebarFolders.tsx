@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FolderIcon, SearchIcon, MoreVerticalIcon, Trash2Icon } from 'lucide-react';
+import { SearchIcon, MoreVerticalIcon, Trash2Icon } from 'lucide-react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export interface SidebarEvent {
   id: string;
@@ -40,71 +41,49 @@ interface PhotosSidebarFoldersProps {
   refreshKey?: number;
 }
 
-function groupCodesByCourse(rows: SidebarCodeRow[]): Record<string, SidebarCodeRow[]> {
-  const by: Record<string, SidebarCodeRow[]> = {};
-  for (const c of rows) {
-    const key = c.course_id || '__no_course__';
-    if (!by[key]) by[key] = [];
-    by[key].push(c);
-  }
-  return by;
-}
-
-export default function PhotosSidebarFolders({ events, selected, onSelect, refreshKey }: PhotosSidebarFoldersProps) {
+export default function PhotosSidebarFolders({ events: _events, selected, onSelect, refreshKey, onCountsChanged }: PhotosSidebarFoldersProps) {
   const [query, setQuery] = useState('');
-  const [openEventId, setOpenEventId] = useState<string | null>(selected.eventId ?? null);
   const [codesCache, setCodesCache] = useState<Record<string, SidebarCodeRow[]>>({});
+  const [newFolderName, setNewFolderName] = useState('');
 
-  const filteredEvents = useMemo(() => {
-    // De-duplicar por id y luego filtrar por query
-    const uniqueById = Array.from(new Map(events.map(e => [e.id, e])).values());
-    if (!query) return uniqueById;
-    const q = query.toLowerCase();
-    return uniqueById.filter((e) => e.name.toLowerCase().includes(q));
-  }, [events, query]);
+  // Eventos ocultos en esta vista simplificada; solo mostramos todas las carpetas
 
   const fetchCodes = useCallback(
-    async (eventId: string) => {
-      // Guard: no eventId = no fetch
-      if (!eventId) {
-        return;
-      }
-      
+    async (eventId?: string | null) => {
       try {
-        const resp = await fetch(`/api/admin/publish/list?eventId=${eventId}`);
+        const url = eventId ? `/api/admin/publish/list?eventId=${eventId}` : `/api/admin/publish/list`;
+        const resp = await fetch(url);
         const data = await resp.json();
         const arr = Array.isArray(data) ? data : (data.rows || data.data || []);
-        const rows: SidebarCodeRow[] = arr.map((c: any) => ({
+        const rows: SidebarCodeRow[] = arr
+          .filter((c: any) => !eventId || c.event_id === eventId)
+          .map((c: any) => ({
           id: (c.id ?? c.code_id) as string,
-          event_id: eventId,
+          event_id: (c.event_id as string) || (eventId as string),
           course_id: (c.course_id as string) ?? null,
           code_value: String(c.code_value),
           token: (c.token as string) ?? null,
           is_published: Boolean(c.is_published ?? c.published),
           photos_count: Number(c.photos_count ?? 0),
         }));
-        setCodesCache((prev) => ({ ...prev, [eventId]: rows }));
+        const cacheKey = eventId || '__all__';
+        setCodesCache((prev) => ({ ...prev, [cacheKey]: rows }));
       } catch {
-        setCodesCache((prev) => ({ ...prev, [eventId]: [] }));
+        const cacheKey = eventId || '__all__';
+        setCodesCache((prev) => ({ ...prev, [cacheKey]: [] }));
       }
     },
     []
   );
 
-  // When event selection changes, auto open that event and ensure codes loaded
+  // When selection changes, ensure we always have the global list
   useEffect(() => {
-    if (selected.eventId) {
-      setOpenEventId(selected.eventId);
-      // Only fetch codes if we have an eventId
-      void fetchCodes(selected.eventId);
-    }
+    void fetchCodes(null);
   }, [selected.eventId, fetchCodes]);
 
-  // External refresh trigger: re-fetch codes for currently open event
+  // External refresh trigger: re-fetch the global list
   useEffect(() => {
-    if (openEventId) {
-      void fetchCodes(openEventId);
-    }
+    void fetchCodes(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
@@ -117,7 +96,7 @@ export default function PhotosSidebarFolders({ events, selected, onSelect, refre
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data?.error || 'No se pudo publicar');
-      if (openEventId) await fetchCodes(openEventId);
+      await fetchCodes(null);
     } catch {}
   };
 
@@ -129,7 +108,7 @@ export default function PhotosSidebarFolders({ events, selected, onSelect, refre
         body: JSON.stringify({ codeId }),
       });
       if (!resp.ok) throw new Error('No se pudo despublicar');
-      if (openEventId) await fetchCodes(openEventId);
+      await fetchCodes(null);
     } catch {}
   };
 
@@ -141,46 +120,24 @@ export default function PhotosSidebarFolders({ events, selected, onSelect, refre
         body: JSON.stringify({ codeId }),
       });
       if (!resp.ok) throw new Error('No se pudo revocar');
-      if (openEventId) await fetchCodes(openEventId);
+      await fetchCodes(null);
     } catch {}
   };
 
-  const handleDeleteEvent = async (eventId: string, eventName: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${eventName}"? Esta acción no se puede deshacer y eliminará todas las fotos asociadas.`)) {
-      return;
-    }
-
+  const handleDeleteCode = useCallback(async (_eventId: string, codeId: string, label: string) => {
     try {
-      const response = await fetch(`/api/admin/events/${eventId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar el evento');
-      }
-
-      toast.success('Evento eliminado correctamente');
-      
-      // Clear selection if the deleted event was selected
-      if (selected.eventId === eventId) {
-        onSelect({ eventId: null, courseId: null, codeId: null });
-      }
-      
-      // Close the event if it was open
-      if (openEventId === eventId) {
-        setOpenEventId(null);
-      }
-      
-      // Trigger a refresh
-      await fetchCodes();
-      if (onCountsChanged) {
-        onCountsChanged();
-      }
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      toast.error('Error al eliminar el evento');
+      if (!confirm(`¿Eliminar la carpeta "${label}"? Las fotos quedarán como 'Sin carpeta'.`)) return;
+      const resp = await fetch(`/api/admin/codes/${codeId}`, { method: 'DELETE' });
+      const j = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(j?.error || 'No se pudo eliminar la carpeta');
+      // refresh codes for current event
+      await fetchCodes(null);
+      toast.success('Carpeta eliminada');
+      onCountsChanged?.();
+    } catch (e: any) {
+      toast.error(e?.message || 'Error al eliminar la carpeta');
     }
-  };
+  }, [fetchCodes, onCountsChanged]);
 
   const handleDownloadZip = async (code: SidebarCodeRow) => {
     try {
@@ -211,152 +168,208 @@ export default function PhotosSidebarFolders({ events, selected, onSelect, refre
     } catch {}
   };
 
+  const handleCreateFolder = async (name: string) => {
+    try {
+      const body: any = { codeValue: name };
+      if (selected.eventId) body.eventId = selected.eventId;
+      const resp = await fetch(`/api/admin/codes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(j?.error || 'No se pudo crear la carpeta');
+      setNewFolderName('');
+      await fetchCodes(null);
+      onCountsChanged?.();
+      toast.success(`Carpeta "${name}" creada exitosamente`);
+    } catch (e: any) {
+      toast.error(e?.message || 'Error creando carpeta');
+    }
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* New folder input - mejorado */}
+      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+        <h4 className="text-sm font-semibold text-gray-800 mb-2">Nueva Carpeta</h4>
+        <div className="flex gap-2">
+          <Input
+            aria-label="Nombre de carpeta"
+            placeholder="Nombre de la carpeta..."
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const name = newFolderName.trim();
+                if (name) {
+                  handleCreateFolder(name);
+                } else {
+                  toast.error('Por favor ingresa un nombre para la carpeta');
+                }
+              }
+            }}
+            className="placeholder:text-gray-500 text-gray-900 font-medium border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+          />
+          <Button
+            onClick={() => {
+              const name = newFolderName.trim();
+              if (!name) {
+                toast.error('Por favor ingresa un nombre para la carpeta');
+                return;
+              }
+              handleCreateFolder(name);
+            }}
+            disabled={!newFolderName.trim()}
+            className="bg-blue-600 text-white font-semibold hover:bg-blue-700 border-0 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            Crear
+          </Button>
+        </div>
+      </div>
       <div className="relative">
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
-          aria-label="Buscar evento"
-          placeholder="Buscar evento..."
-          className="pl-9"
+          aria-label="Buscar carpeta"
+          placeholder="Buscar carpeta..."
+          className="pl-9 placeholder:text-gray-500 text-gray-900 font-medium"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <Card className="p-2">
-        <ScrollArea className="h-[calc(100vh-240px)]">
-          <div className="space-y-1">
-            {filteredEvents.map((event) => {
-              const isOpen = openEventId === event.id;
-              const codes = codesCache[event.id] || [];
-              const courses = groupCodesByCourse(codes);
-              return (
-                <div key={event.id} className="border-b last:border-b-0">
-                  <div className="flex items-center group">
-                    <button
-                      className="flex-1 flex items-center gap-2 py-2 px-2 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded"
-                      aria-expanded={isOpen}
-                      onClick={async () => {
-                        const next = isOpen ? null : event.id;
-                        setOpenEventId(next);
-                        if (next) await fetchCodes(next);
-                      }}
-                    >
-                      <FolderIcon className="w-4 h-4" />
-                      <span className="flex-1 text-left truncate">{event.name}</span>
-                      <Badge variant="secondary">{event.photo_count ?? 0}</Badge>
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label={`Acciones para ${event.name}`}
-                        >
-                          <MoreVerticalIcon className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem onClick={() => onSelect({ eventId: event.id, courseId: null, codeId: null })}>
-                          Ver todas las fotos
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(event.id)}>
-                          Copiar ID
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          className="text-red-600 focus:text-red-600"
-                          onClick={() => handleDeleteEvent(event.id, event.name)}
-                        >
-                          <Trash2Icon className="w-4 h-4 mr-2" />
-                          Eliminar evento
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  {isOpen && (
-                    <div className="pb-2">
-                      <div className="px-2 py-1 space-y-1">
-                        <Button
-                          variant={selected.eventId === event.id && selected.codeId === 'null' ? 'default' : 'ghost'}
-                          className="w-full justify-start text-sm"
-                          onClick={() => onSelect({ eventId: event.id, codeId: 'null' })}
-                          aria-label={`Ver fotos sin carpeta en ${event.name}`}
-                        >
-                          📁 Sin carpeta
-                        </Button>
-                        <Button
-                          variant={selected.eventId === event.id && !selected.courseId && !selected.codeId ? 'default' : 'ghost'}
-                          className="w-full justify-start text-sm"
-                          onClick={() => onSelect({ eventId: event.id, courseId: null, codeId: null })}
-                          aria-label={`Ver todas las fotos del evento ${event.name}`}
-                        >
-                          📷 Todo el evento
-                        </Button>
-                      </div>
-                      <div className="pl-2">
-                        {Object.entries(courses).map(([courseId, rows]) => (
-                          <div key={`${event.id}-${courseId}`} className="mb-1">
-                            <div className="px-2 py-1 text-xs font-medium text-gray-500">
-                              {courseId === '__no_course__' ? 'Curso sin nombre' : `Curso ${courseId}`}
-                            </div>
-                            <div className="space-y-1">
-                              {rows.map((code) => (
-                                <div key={code.id} className="flex items-center">
-                                  <Button
-                                    variant={selected.codeId === code.id ? 'default' : 'ghost'}
-                                    className="w-full justify-start"
-                                    onClick={() => onSelect({ eventId: event.id, courseId: code.course_id, codeId: code.id })}
-                                    aria-label={`Filtrar código ${code.code_value}`}
-                                  >
-                                    <span className="font-mono">{code.code_value}</span>
-                                    <Badge variant="outline" className="ml-2">{code.photos_count}</Badge>
-                                    {code.is_published ? (
-                                      <Badge className="ml-2 bg-green-100 text-green-800">Publicado</Badge>
-                                    ) : (
-                                      <Badge className="ml-2 bg-gray-100">No publicado</Badge>
-                                    )}
-                                  </Button>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" aria-label={`Acciones para ${code.code_value}`}>
-                                        <MoreVerticalIcon className="w-4 h-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56">
-                                      {code.is_published ? (
-                                        <DropdownMenuItem onClick={() => void handleUnpublish(code.id)}>Despublicar</DropdownMenuItem>
-                                      ) : (
-                                        <DropdownMenuItem onClick={() => void handlePublish(code.id)}>Publicar</DropdownMenuItem>
-                                      )}
-                                      <DropdownMenuItem onClick={() => void handleRevoke(code.id)}>Revocar token</DropdownMenuItem>
-                                      {code.token && (
-                                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(`${window.location.origin}/f/${code.token}`)}>Copiar link</DropdownMenuItem>
-                                      )}
-                                      {code.token && (
-                                        <DropdownMenuItem onClick={() => window.open(`/api/qr?token=${code.token}`, '_blank')}>Ver QR</DropdownMenuItem>
-                                      )}
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => void handleDownloadZip(code)}>Descargar ZIP</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              ))}
-                            </div>
+      <Card className="p-0 border border-gray-200">
+        <div className="p-3 border-b border-gray-100 bg-gray-50">
+          <h4 className="text-sm font-semibold text-gray-800">Todas las Carpetas</h4>
+          <p className="text-xs text-gray-600 mt-1">
+            {(codesCache['__all__'] || []).filter((c) => !query || String(c.code_value).toLowerCase().includes(query.toLowerCase())).length} carpetas disponibles
+          </p>
+        </div>
+        <ScrollArea className="h-[calc(100vh-280px)]">
+          <div className="p-2 space-y-1">
+            {/* Vista mejorada: organizar carpetas */}
+            <div className="space-y-2">
+              {(codesCache['__all__'] || [])
+                .filter((c) => !query || String(c.code_value).toLowerCase().includes(query.toLowerCase()))
+                .sort((a, b) => a.code_value.localeCompare(b.code_value))
+                .map((code) => (
+                  <div key={`all-${code.id}`} className="group border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+                    <div className="flex items-center p-2">
+                      <Button
+                        variant={selected.codeId === code.id ? 'default' : 'ghost'}
+                        className={cn(
+                          "flex-1 justify-start h-auto p-2 text-left",
+                          selected.codeId === code.id 
+                            ? "bg-blue-50 text-blue-900 border-blue-200" 
+                            : "hover:bg-gray-50"
+                        )}
+                        onClick={() => onSelect({ eventId: code.event_id, courseId: null, codeId: code.id })}
+                        aria-label={`Abrir carpeta ${code.code_value}`}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                        }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          const photoId = e.dataTransfer.getData('text/plain');
+                          if (!photoId) return;
+                          try {
+                            const res = await fetch(`/api/admin/photos/${photoId}/move`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ codeId: code.id }),
+                            });
+                            const j = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(j?.error || 'No se pudo mover la foto');
+                            toast.success('Foto movida');
+                            onCountsChanged?.();
+                          } catch (err: any) {
+                            toast.error(err?.message || 'Error al mover la foto');
+                          }
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm truncate" title={code.code_value}>
+                            {code.code_value}
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge 
+                              variant="secondary" 
+                              className="text-xs bg-gray-100 text-gray-700"
+                            >
+                              {code.photos_count} fotos
+                            </Badge>
+                            {code.is_published ? (
+                              <Badge className="text-xs bg-green-100 text-green-800 border-green-200">
+                                Publicado
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-300">
+                                No publicado
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </Button>
+                      
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                            aria-label={`Acciones para ${code.code_value}`}
+                          >
+                            <MoreVerticalIcon className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          {code.is_published ? (
+                            <DropdownMenuItem onClick={() => void handleUnpublish(code.id)}>
+                              Despublicar
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => void handlePublish(code.id)}>
+                              Publicar
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => void handleRevoke(code.id)}>
+                            Revocar token
+                          </DropdownMenuItem>
+                          {code.token && (
+                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(`${window.location.origin}/f/${code.token}`)}>
+                              Copiar enlace
+                            </DropdownMenuItem>
+                          )}
+                          {code.token && (
+                            <DropdownMenuItem onClick={() => window.open(`/api/qr?token=${code.token}`, '_blank')}>
+                              Ver código QR
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => void handleDownloadZip(code)}>
+                            Descargar ZIP
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600 focus:text-red-600"
+                            onClick={() => void handleDeleteCode(code.event_id, code.id, code.code_value)}
+                          >
+                            <Trash2Icon className="w-4 h-4 mr-2" />
+                            Eliminar carpeta
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                ))}
+            </div>
           </div>
         </ScrollArea>
       </Card>
     </div>
   );
 }
+
+// (intencionalmente sin helpers globales; la lógica vive dentro del componente)
 
 

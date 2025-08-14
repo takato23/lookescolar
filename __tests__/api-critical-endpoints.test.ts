@@ -7,7 +7,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = process.env['BASE_URL'] || process.env['NEXT_PUBLIC_BASE_URL'] || 'http://localhost:3000';
 
 // Mock fetch for testing
 const mockFetch = (url: string, options: any = {}) => {

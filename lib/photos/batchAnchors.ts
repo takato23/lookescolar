@@ -7,16 +7,16 @@ type RunOpts = { eventId: string; maxConcurrency?: number; onlyMissing?: boolean
 export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissing = true }: RunOpts) {
   const supabase = await createServerSupabaseServiceClient();
 
-  const { data: photos, error } = await supabase
+  const { data: photos, error } = await (supabase as any)
     .from('photos')
     .select('id, storage_path, code_id, is_anchor, anchor_raw, created_at')
     .eq('event_id', eventId)
     .order('created_at', { ascending: true });
   if (error) throw error;
 
-  const targets = (photos ?? []).filter((p) => (onlyMissing ? !p.is_anchor && !p.code_id : true));
+  const targets = (photos ?? []).filter((p: any) => (onlyMissing ? !p.is_anchor && !p.code_id : true));
 
-  const { data: codes } = await supabase
+  const { data: codes } = await (supabase as any)
     .from('codes')
     .select('id, code_value')
     .eq('event_id', eventId);
@@ -39,7 +39,7 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
 
           const exifDate = await extractEXIFDate(buf);
           if (exifDate) {
-            await supabase
+            await (supabase as any)
               .from('photos')
               .update({ exif_taken_at: exifDate.toISOString() })
               .eq('id', p.id);
@@ -52,13 +52,13 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
 
           const codeId = codeMap.get(codeVal) ?? null;
           if (codeId) {
-            await supabase
+            await (supabase as any)
               .from('photos')
               .update({ is_anchor: true, anchor_raw: codeVal, code_id: codeId })
               .eq('id', p.id);
             results.detected.push({ photo_id: p.id, code_value: codeVal, code_id: codeId });
           } else {
-            await supabase
+            await (supabase as any)
               .from('photos')
               .update({ is_anchor: true, anchor_raw: codeVal })
               .eq('id', p.id);
@@ -75,7 +75,10 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
 }
 
 async function downloadFromStorage(supabase: any, storagePath: string): Promise<Buffer> {
-  const bucket = process.env.STORAGE_BUCKET || 'photos';
+  const bucket =
+    process.env['STORAGE_BUCKET_ORIGINAL'] ||
+    process.env['STORAGE_BUCKET'] ||
+    'photo-private';
   const path = storagePath.startsWith('/') ? storagePath.slice(1) : storagePath;
   
   try {

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     // Si eventId es válido, devolver lista simplificada solo de ese evento
     if (eventId && uuidSchema.safeParse(eventId).success) {
       const { data: codes, error: codesError } = await supabase
-        .from('codes' as any)
+        .from('codes')
         .select('id, code_value, token, is_published')
         .eq('event_id', eventId);
 
@@ -51,41 +51,48 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(list);
     }
 
-    // Compatibilidad: si no hay eventId, devolver el formato existente { rows }
-    const { data: codes, error } = await supabase
-      .from('codes' as any)
-      .select('id, event_id, course_id, code_value, token, is_published');
+    // Si no hay eventId, devolver todas las carpetas con conteo de fotos
+    const { data: allCodes, error: allCodesErr } = await supabase
+      .from('codes')
+      .select('id, code_value, token, is_published, event_id');
 
-    if (error) {
+    if (allCodesErr) {
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
-        console.debug('publish_list', { error: error.message });
+        console.debug('publish_list', { error: allCodesErr.message });
       }
-      return NextResponse.json({ rows: [] });
+      return NextResponse.json([]);
     }
 
-    const { data: counts } = await supabase
-      .from('photos')
-      .select('code_id, count:id', { count: 'exact', head: false })
-      .not('code_id', 'is', null)
-      .group('code_id');
+    // Contar por code_id si existe la columna; si no, ignorar silenciosamente
+    let allPhotoRows: Array<{ code_id: string | null }> | null = null;
+    try {
+      const { data: rows, error: rowsErr } = await supabase
+        .from('photos' as any)
+        .select('code_id')
+        .not('code_id', 'is', null as any);
+      if (!rowsErr) {
+        allPhotoRows = rows as any;
+      }
+    } catch {
+      // schema sin code_id: mantén allPhotoRows en null para conteo 0
+    }
 
     const countMap = new Map<string, number>();
-    (counts as any[] | null)?.forEach((row) => {
-      if (row.code_id) countMap.set(row.code_id as string, Number(row.count) || 0);
+    (allPhotoRows as Array<{ code_id: string | null }> | null)?.forEach((row) => {
+      if (row.code_id) countMap.set(row.code_id, (countMap.get(row.code_id) || 0) + 1);
     });
 
-    const rows = (codes || []).map((c: any) => ({
-      id: c.id as string,
-      event_id: c.event_id as string,
-      course_id: (c.course_id as string) ?? null,
+    const list = (allCodes || []).map((c: any) => ({
+      code_id: c.id as string,
       code_value: String(c.code_value),
+      published: !!c.is_published,
       token: (c.token as string) ?? null,
-      is_published: !!c.is_published,
       photos_count: countMap.get(c.id) ?? 0,
+      event_id: c.event_id as string,
     }));
 
-    return NextResponse.json({ rows });
+    return NextResponse.json(list);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console

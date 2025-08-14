@@ -47,7 +47,7 @@ async function handlePOST(request: NextRequest) {
     }
     const { photoIds, as } = parsed.data;
 
-    const { data: photos, error } = await supabase
+    const { data: photos, error } = await (supabase as any)
       .from('photos')
       .select('id, original_filename, storage_path, preview_path, watermark_path')
       .in('id', photoIds);
@@ -79,7 +79,7 @@ async function handlePOST(request: NextRequest) {
 
     // as === 'zip' → stream a ZIP
     // Lazy import archiver to reduce cold-start
-    const archiver = (await import('archiver')).default;
+    const archiver: any = (await import('archiver')).default;
     const archive = archiver('zip', { zlib: { level: 9 } });
     const stream = new PassThrough();
 
@@ -90,18 +90,26 @@ async function handlePOST(request: NextRequest) {
     archive.pipe(stream);
 
     // Append files by downloading from Supabase storage
-    let bucket = process.env.STORAGE_BUCKET || 'photos';
+    const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+    const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
     for (const p of photos) {
       const preferredKey = (p as any).watermark_path || (p as any).preview_path || p.storage_path;
       if (!preferredKey) continue;
       const filename = p.original_filename || `${p.id}.jpg`;
 
-      let downloadRes = await supabase.storage.from(bucket).download(preferredKey);
-      // Fallback to legacy bucket if missing
-      if (downloadRes.error && downloadRes.error.status === 404 && bucket !== 'photos-bucket') {
-        const alt = await supabase.storage.from('photos-bucket').download(preferredKey);
-        if (!alt.error) {
-          bucket = 'photos-bucket';
+      // Decide bucket per key. Previews/watermarks -> PREVIEW bucket; originals -> ORIGINAL bucket
+      let bucketForKey = /(^|\/)previews\//.test(preferredKey) || /watermark/i.test(preferredKey)
+        ? PREVIEW_BUCKET
+        : ORIGINAL_BUCKET;
+
+      let downloadRes = await (supabase as any).storage.from(bucketForKey).download(preferredKey);
+      // Fallback to the other bucket on 404 in case of misplaced asset
+      if (downloadRes.error && ((downloadRes.error as any).status === 404)) {
+        const altBucket = bucketForKey === ORIGINAL_BUCKET ? PREVIEW_BUCKET : ORIGINAL_BUCKET;
+        const alt = await (supabase as any).storage.from(altBucket).download(preferredKey);
+        if (!alt.error && alt.data) {
+          SecurityLogger.logSecurityEvent('download_fallback_bucket', { requestId, from: bucketForKey, to: altBucket, key: preferredKey }, 'warning');
+          bucketForKey = altBucket;
           downloadRes = alt;
         }
       }
@@ -126,7 +134,7 @@ async function handlePOST(request: NextRequest) {
       console.debug('download_zip', { requestId, files: photos.length });
     }
 
-    return new Response(stream as any, {
+    return new NextResponse(stream as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',

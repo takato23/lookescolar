@@ -14,8 +14,8 @@ const supabase = createClient(
   }
 );
 
-// Default to 'photos' to match current environment and setup route
-const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'photos';
+// Default to private originals bucket
+const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'photo-private';
 const DEFAULT_URL_EXPIRY = 60 * 60; // 1 hora en segundos
 
 export interface SignedUrlOptions {

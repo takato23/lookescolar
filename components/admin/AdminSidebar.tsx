@@ -5,19 +5,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   BarChart3,
-  Calendar,
   Camera,
-  Tag,
-  Package,
-  Users,
-  QrCode,
-  PanelsTopLeft,
-  Share2,
   LucideIcon,
-  Settings,
-  HelpCircle,
-  Menu,
   X,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -30,7 +22,8 @@ interface NavItem {
   shortcut?: string;
 }
 
-const navItems: NavItem[] = [
+// Main navigation items - only the essentials
+const mainNavItems: NavItem[] = [
   {
     href: '/admin',
     label: 'Dashboard',
@@ -39,75 +32,19 @@ const navItems: NavItem[] = [
     shortcut: '⌘1',
   },
   {
-    href: '/admin/events',
-    label: 'Eventos',
-    icon: Calendar,
-    description: 'Sesiones fotográficas y citas',
-    shortcut: '⌘2',
-  },
-  {
     href: '/admin/photos',
     label: 'Fotos',
     icon: Camera,
     description: 'Subir y gestionar imágenes',
-    shortcut: '⌘3',
-    badge: 'NEW',
-  },
-  {
-    href: '/admin/tagging',
-    label: 'Etiquetado',
-    icon: Tag,
-    description: 'Asignar fotos a estudiantes',
-    shortcut: '⌘4',
-  },
-  {
-    href: '/admin/codes',
-    label: 'Códigos',
-    icon: QrCode,
-    description: 'Generación y PDF de tarjetas',
-  },
-  {
-    href: '/admin/grouping',
-    label: 'Agrupar (QR)',
-    icon: PanelsTopLeft,
-    description: 'Agrupa de ancla a ancla',
-  },
-  {
-    href: '/admin/publish',
-    label: 'Publicación',
-    icon: Share2,
-    description: 'Tokens y enlaces públicos',
-  },
-  {
-    href: '/admin/orders',
-    label: 'Pedidos',
-    icon: Package,
-    description: 'Ventas y entregas',
-    shortcut: '⌘5',
-  },
-  {
-    href: '/admin/subjects',
-    label: 'Estudiantes',
-    icon: Users,
-    description: 'Gestionar alumnos y familias',
-    shortcut: '⌘6',
+    shortcut: '⌘2',
   },
 ];
 
-const secondaryItems: NavItem[] = [
-  {
-    href: '/admin/settings',
-    label: 'Configuración',
-    icon: Settings,
-    description: 'Preferencias del sistema',
-  },
-  {
-    href: '/admin/help',
-    label: 'Ayuda',
-    icon: HelpCircle,
-    description: 'Soporte y documentación',
-  },
-];
+// Advanced navigation items - hidden for simplified UI
+const advancedNavItems: NavItem[] = [];
+
+// Secondary items - hidden for simplified UI
+const secondaryItems: NavItem[] = [];
 
 interface AdminSidebarProps {
   isMobileOpen?: boolean;
@@ -120,6 +57,7 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   useEffect(() => {
     setIsOpen(isMobileOpen);
@@ -186,8 +124,8 @@ export default function AdminSidebar({
           </div>
 
           {/* Quick stats */}
-          <div className="mt-4 grid grid-cols-2 gap-3 lg:mt-6 lg:gap-4">
-            <div className="glass-card from-primary/15 to-primary/25 border-primary/30 hover:border-primary/50 shadow-primary/20 hover:shadow-primary/30 rounded-xl border bg-gradient-to-br p-4 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
+          <div className="mt-4 grid grid-cols-2 gap-2 lg:mt-4 lg:gap-3">
+            <div className="glass-card from-primary/15 to-primary/25 border-primary/30 hover:border-primary/50 shadow-primary/20 hover:shadow-primary/30 rounded-lg border bg-gradient-to-br p-3 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
               <div className="text-foreground text-2xl font-bold drop-shadow-md">
                 12
               </div>
@@ -195,7 +133,7 @@ export default function AdminSidebar({
                 Eventos
               </div>
             </div>
-            <div className="glass-card from-success/15 to-success/25 border-success/30 hover:border-success/50 shadow-success/20 hover:shadow-success/30 rounded-xl border bg-gradient-to-br p-4 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
+            <div className="glass-card from-success/15 to-success/25 border-success/30 hover:border-success/50 shadow-success/20 hover:shadow-success/30 rounded-lg border bg-gradient-to-br p-3 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
               <div className="text-foreground text-2xl font-bold drop-shadow-md">
                 847
               </div>
@@ -208,12 +146,13 @@ export default function AdminSidebar({
 
         {/* Primary Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-4 lg:px-5 lg:py-6">
-          <div className="mb-8">
+          {/* Main Navigation */}
+          <div className="mb-6">
             <h2 className="mb-4 px-3 text-xs font-bold uppercase tracking-widest text-neutral-600 drop-shadow-sm dark:text-neutral-400">
-              Navegación Rápida
+              Navegación Principal
             </h2>
             <ul className="space-y-1.5">
-              {navItems.map((item) => {
+              {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
 
@@ -249,10 +188,10 @@ export default function AdminSidebar({
                         <div className="flex items-center justify-between">
                           <span
                             className={clsx(
-                              'truncate font-medium drop-shadow-sm transition-all',
+                              'truncate transition-all',
                               active
-                                ? 'text-base drop-shadow-md'
-                                : 'text-sm group-hover:text-base'
+                                ? 'text-base text-menu-enhanced drop-shadow-md font-semibold'
+                                : 'text-sm text-button-enhanced group-hover:text-base'
                             )}
                           >
                             {item.label}
@@ -268,8 +207,8 @@ export default function AdminSidebar({
                             className={clsx(
                               'mt-1 truncate text-xs transition-opacity',
                               active
-                                ? 'text-neutral-600 opacity-90 dark:text-neutral-400'
-                                : 'text-neutral-500 opacity-80 group-hover:opacity-100 dark:text-neutral-500'
+                                ? 'text-enhanced opacity-90'
+                                : 'text-button-enhanced opacity-80 group-hover:opacity-100'
                             )}
                           >
                             {item.description}
@@ -295,7 +234,94 @@ export default function AdminSidebar({
             </ul>
           </div>
 
-          {/* Secondary Navigation */}
+          {/* Advanced Navigation Accordion - hidden if no items */}
+          {advancedNavItems.length > 0 && (
+          <div className="mb-6">
+            <button
+              onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+              className="mb-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest text-neutral-600 transition-colors hover:bg-muted/40 dark:text-neutral-400"
+            >
+              <span>Avanzado</span>
+              {isAdvancedOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
+            
+            {isAdvancedOpen && (
+              <ul className="space-y-1.5">
+                {advancedNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
+
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={handleLinkClick}
+                        className={clsx(
+                          'group relative flex items-center gap-3.5 overflow-hidden rounded-xl px-4 py-3.5 transition-all duration-200',
+                          active
+                            ? 'from-primary/20 to-primary/10 shadow-glow-primary border-l-primary border-l-4 bg-gradient-to-r font-semibold text-primary-900 dark:text-primary-100'
+                            : 'hover:bg-muted/40 text-neutral-700 hover:-translate-y-[1px] hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
+                          !active && 'hover:shadow-3d-sm active:translate-y-0'
+                        )}
+                      >
+                        {active && (
+                          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary-200/30 via-transparent to-primary-100/30 dark:from-primary-700/20 dark:to-primary-600/20" />
+                        )}
+
+                        <Icon
+                          className={clsx(
+                            'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
+                            active
+                              ? 'text-primary drop-shadow-md'
+                              : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
+                          )}
+                        />
+
+                        <div className="relative z-10 min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={clsx(
+                                'truncate font-medium drop-shadow-sm transition-all',
+                                active
+                                  ? 'text-base drop-shadow-md'
+                                  : 'text-sm group-hover:text-base'
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                          </div>
+                          {item.description && (
+                            <p
+                              className={clsx(
+                                'mt-1 truncate text-xs transition-opacity',
+                                active
+                                  ? 'text-neutral-600 opacity-90 dark:text-neutral-400'
+                                  : 'text-neutral-500 opacity-80 group-hover:opacity-100 dark:text-neutral-500'
+                              )}
+                            >
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {active && (
+                          <div className="bg-primary/90 shadow-glow-primary relative z-10 h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full" />
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+          )}
+
+          {/* Secondary Navigation - hidden if no items */}
+          {secondaryItems.length > 0 && (
           <div>
             <h2 className="text-muted-foreground/80 mb-4 px-3 text-xs font-bold uppercase tracking-widest">
               Configuración
@@ -342,6 +368,7 @@ export default function AdminSidebar({
               })}
             </ul>
           </div>
+          )}
         </nav>
 
         {/* Footer */}

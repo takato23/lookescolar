@@ -131,7 +131,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
 );
 
 export const DELETE = RateLimitMiddleware.withRateLimit(
-  withAuth(async (_req: NextRequest, { params }: { params: { id: string } }) => {
+  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
     const id = params.id;
     if (!id) {
       return NextResponse.json({ error: 'Falta id de evento' }, { status: 400 });
@@ -139,7 +139,9 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
 
     const supabase = await createServerSupabaseServiceClient();
 
-    // Safety: no borrar si tiene fotos o sujetos
+    const force = req.nextUrl.searchParams.get('force') === 'true';
+
+    // Safety: validar fotos y sujetos
     const { count: photoCount, error: photoErr } = await supabase
       .from('photos')
       .select('*', { count: 'exact', head: true })
@@ -147,10 +149,6 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
 
     if (photoErr) {
       return NextResponse.json({ error: 'No se pudo validar fotos' }, { status: 500 });
-    }
-
-    if ((photoCount ?? 0) > 0) {
-      return NextResponse.json({ error: 'No se puede eliminar: el evento tiene fotos asociadas' }, { status: 409 });
     }
 
     const { count: subjectCount, error: subjectErr } = await supabase
@@ -162,8 +160,29 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
       return NextResponse.json({ error: 'No se pudo validar sujetos' }, { status: 500 });
     }
 
-    if ((subjectCount ?? 0) > 0) {
-      return NextResponse.json({ error: 'No se puede eliminar: el evento tiene sujetos asociados' }, { status: 409 });
+    if ((photoCount ?? 0) > 0 || (subjectCount ?? 0) > 0) {
+      if (!force) {
+        return NextResponse.json(
+          { error: 'No se puede eliminar: el evento tiene fotos o sujetos asociados' },
+          { status: 409 }
+        );
+      }
+
+      // Eliminación forzada
+      const { error: delPhotosErr } = await supabase.from('photos').delete().eq('event_id', id);
+      if (delPhotosErr) {
+        return NextResponse.json({ error: 'No se pudieron eliminar las fotos' }, { status: 500 });
+      }
+
+      const { error: delSubjectsErr } = await supabase.from('subjects').delete().eq('event_id', id);
+      if (delSubjectsErr) {
+        return NextResponse.json({ error: 'No se pudieron eliminar los sujetos' }, { status: 500 });
+      }
+
+      const { error: delCodesErr } = await supabase.from('codes' as any).delete().eq('event_id', id);
+      if (delCodesErr) {
+        return NextResponse.json({ error: 'No se pudieron eliminar las carpetas' }, { status: 500 });
+      }
     }
 
     const { error } = await supabase.from('events').delete().eq('id', id);

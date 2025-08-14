@@ -8,6 +8,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { FolderIcon } from 'lucide-react';
 import { buildPhotosUrl } from '@/lib/utils/photos-url-builder';
 // import { cn } from '@/lib/utils';
 
@@ -54,22 +55,26 @@ export default function ModernPhotosPage() {
   const selectedCourseId = params.get('courseId');
   const selectedCodeId = params.get('codeId');
 
-  // Load photos - can work without eventId (shows all photos)
+  // Mostrar galería general si no hay eventId
+
+  // Load photos - soporta sin eventId (galería general)
   const loadPhotos = useCallback(async () => {
     try {
       setLoading(true);
-      
-      let url: string;
+      let url = '';
       if (selectedEventId) {
-        // Load photos for specific event
         url = buildPhotosUrl({
           eventId: selectedEventId,
-          codeId: selectedCodeId || undefined,
+          codeId: selectedCodeId ?? null,
           limit: 100
         });
       } else {
-        // Load ALL photos (galería general)
-        url = '/api/admin/photos?limit=100';
+        const usp = new URLSearchParams();
+        usp.set('limit', '100');
+        if (selectedCodeId) {
+          usp.set('code_id', selectedCodeId);
+        }
+        url = `/api/admin/photos?${usp.toString()}`;
       }
       
       const response = await fetch(url);
@@ -190,6 +195,20 @@ export default function ModernPhotosPage() {
       throw new Error(result.error || 'Error uploading photos');
     }
 
+    // Show quick navigation after upload
+    if (result?.success && result?.uploaded?.length > 0) {
+      const ev = result.uploaded[0]?.event_id || eventId;
+      if (ev) {
+        // Ensure we are pointing to the event and to unassigned by default
+        router.replace(`/admin/photos?eventId=${ev}&codeId=null`);
+      } else {
+        // No event: show general gallery focusing on unassigned (sin carpeta)
+        const usp = new URLSearchParams();
+        usp.set('codeId', 'null');
+        router.replace(`/admin/photos?${usp.toString()}`);
+      }
+    }
+
     // Show QR detection stats if available
     if (result.qr_detection) {
       const { detected, auto_assigned } = result.qr_detection;
@@ -201,16 +220,24 @@ export default function ModernPhotosPage() {
     await loadPhotos();
   };
 
-  // Handle photo deletion
+  // Handle photo deletion (chunked to respect API batch limits)
   const handlePhotoDelete = async (photoIds: string[]) => {
-    const response = await fetch('/api/admin/photos', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photoIds }),
-    });
+    const MAX_BATCH = 50; // mirror server SECURITY_CONSTANTS.MAX_BATCH_SIZE
+    const chunks: string[][] = [];
+    for (let i = 0; i < photoIds.length; i += MAX_BATCH) {
+      chunks.push(photoIds.slice(i, i + MAX_BATCH));
+    }
 
-    if (!response.ok) {
-      throw new Error('Error deleting photos');
+    for (const chunk of chunks) {
+      const response = await fetch('/api/admin/photos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoIds: chunk }),
+      });
+      if (!response.ok) {
+        const j = await response.json().catch(() => ({}));
+        throw new Error(j?.error || 'Error deleting photos');
+      }
     }
   };
 
@@ -240,16 +267,12 @@ export default function ModernPhotosPage() {
     }
   };
 
-  // Don't force event creation - let user work without events
-  useEffect(() => {
-    setIsInitializing(false);
-  }, []);
+  // Sin autogenerar eventos
+  useEffect(() => { setIsInitializing(false); }, []);
 
-  // Load photos after initialization (with or without eventId)
+  // Load photos after initialization
   useEffect(() => {
-    if (!isInitializing) {
-      loadPhotos();
-    }
+    if (!isInitializing) loadPhotos();
   }, [isInitializing, selectedEventId, selectedCodeId, loadPhotos]);
 
   useEffect(() => {
@@ -276,48 +299,186 @@ export default function ModernPhotosPage() {
   // No longer require eventId - show general gallery
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="grid md:grid-cols-[280px_1fr] gap-8">
-        <div>
-          <PhotosSidebarFolders
-            events={events}
-            selected={{ eventId: selectedEventId, courseId: selectedCourseId, codeId: selectedCodeId }}
-            onSelect={handleSelectFromSidebar}
-            onCountsChanged={loadPhotos}
-          />
-        </div>
-        <div className="space-y-4">
-          {/* QR Status Panel */}
-          {selectedEventId && (
-            <Card className="p-3 flex items-center justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">QR detectados: {qrStats?.detected ?? '-'}</Badge>
-                <Badge variant="secondary">Para revisar: {qrStats?.unmatched ?? '-'}</Badge>
-                <Badge variant="secondary">Asignadas: {qrStats?.assigned ?? '-'}</Badge>
-                <Badge variant="secondary">Sin carpeta: {qrStats?.unassigned ?? '-'}</Badge>
-                <Badge variant="secondary">Anclas sin código: {qrStats?.anchors_unmatched ?? '-'}</Badge>
-                <Button variant="ghost" size="sm" onClick={() => handleSelectFromSidebar({ codeId: null })}>Ver sin carpeta</Button>
+    <div className="min-h-screen">
+      {/* Mobile Layout */}
+      <div className="lg:hidden">
+        <div className="p-2 space-y-3">
+          {/* Mobile header - mejorado */}
+          <div className="bg-white rounded-lg p-3 shadow-sm border">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-xl font-bold text-gray-900">
+                Fotos ({photos.length})
+              </h1>
+              {selectedEventId && (
+                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                  {events.find(e => e.id === selectedEventId)?.name || 'Evento'}
+                </Badge>
+              )}
+            </div>
+            
+            {/* Controles móviles viven dentro de PhotoGalleryModern */}
+          </div>
+          
+          {/* Mobile folders - organizado */}
+          <div className="bg-white rounded-lg shadow-sm border">
+            <details className="group">
+              <summary className="p-3 cursor-pointer text-gray-700 font-semibold text-sm flex items-center justify-between hover:bg-gray-50 rounded-t-lg transition-colors">
+                <div className="flex items-center">
+                  <FolderIcon className="w-4 h-4 mr-2" />
+                  Carpetas y Eventos
+                </div>
+                <div className="transform transition-transform group-open:rotate-180">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </summary>
+              <div className="p-3 pt-0 border-t border-gray-100">
+                <PhotosSidebarFolders
+                  events={events}
+                  selected={{ eventId: selectedEventId, courseId: selectedCourseId, codeId: selectedCodeId }}
+                  onSelect={handleSelectFromSidebar}
+                  onCountsChanged={loadPhotos}
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={refreshQRStats} aria-label="Refrescar estado QR">Refrescar</Button>
-                <Button size="sm" onClick={handleRegroupNow} aria-label="Reagrupar ahora">Reagrupar ahora</Button>
+            </details>
+          </div>
+
+          {/* QR Status - only if event selected and has data */}
+          {selectedEventId && (qrStats?.detected || 0) > 0 && (
+            <div className="bg-blue-50 rounded-lg border p-2">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="text-center">
+                  <div className="font-semibold text-blue-700">{qrStats?.detected ?? 0}</div>
+                  <div className="text-blue-600">QR detectados</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-semibold text-orange-700">{qrStats?.unassigned ?? 0}</div>
+                  <div className="text-orange-600">Sin carpeta</div>
+                </div>
               </div>
-            </Card>
+              {(qrStats?.unassigned ?? 0) > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2 h-8 text-xs"
+                  onClick={() => handleSelectFromSidebar({ eventId: selectedEventId, codeId: 'null' })}
+                >
+                  Ver sin carpeta
+                </Button>
+              )}
+            </div>
           )}
 
-          <PhotoGalleryModern
-            initialPhotos={photos}
-            initialEvents={events}
-            onPhotoUpload={handlePhotoUpload}
-            onPhotoDelete={handlePhotoDelete}
-            onPhotoApprove={handlePhotoApprove}
-            onPhotoTag={handlePhotoTag}
-            onRefresh={loadPhotos}
-            hideSidebar
-            externalSelectedEvent={selectedEventId}
-            externalCodeId={selectedCodeId ?? null}
-            onCountsChanged={loadPhotos}
-          />
+          {/* Mobile Photo Gallery */}
+          <div className="min-h-[60vh]">
+            <PhotoGalleryModern
+              initialPhotos={photos}
+              initialEvents={events}
+              onCountsChanged={loadPhotos}
+              onPhotoUpload={handlePhotoUpload}
+              onPhotoDelete={handlePhotoDelete}
+              hideSidebar
+              hideHeader
+              compact
+              externalSelectedEvent={selectedEventId}
+              externalCodeId={selectedCodeId ?? null}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:block">
+        <div className="container mx-auto p-6">
+          {/* Header mejorado para escritorio */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Gestión de Fotos</h1>
+                <p className="text-gray-600 mt-1">
+                  {selectedEventId ? events.find(e => e.id === selectedEventId)?.name + ' • ' : ''}
+                  {photos.length} fotos en total
+                </p>
+              </div>
+              {/* Controles de filtros/selectores viven dentro de PhotoGalleryModern */}
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-[320px_1fr] gap-8">
+            <div className="space-y-4">
+              {/* Sidebar mejorada */}
+              <Card className="p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <FolderIcon className="w-5 h-5 mr-2" />
+                  Carpetas y Eventos
+                </h3>
+                <PhotosSidebarFolders
+                  events={events}
+                  selected={{ eventId: selectedEventId, courseId: selectedCourseId, codeId: selectedCodeId }}
+                  onSelect={handleSelectFromSidebar}
+                  onCountsChanged={loadPhotos}
+                />
+              </Card>
+            </div>
+            
+            <div className="space-y-4">
+              {/* QR Status Panel mejorado */}
+              {selectedEventId && (
+                <Card className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="font-semibold text-gray-900">Estado del Evento</h3>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          QR detectados: {qrStats?.detected ?? '-'}
+                        </Badge>
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                          Para revisar: {qrStats?.unmatched ?? '-'}
+                        </Badge>
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          Asignadas: {qrStats?.assigned ?? '-'}
+                        </Badge>
+                        <Badge variant="outline" className="bg-red-50 text-red-700">
+                          Sin carpeta: {qrStats?.unassigned ?? '-'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleSelectFromSidebar({ eventId: selectedEventId, codeId: 'null' })}
+                        className="text-blue-700 border-blue-200 hover:bg-blue-50"
+                      >
+                        Ver sin carpeta
+                      </Button>
+                      <Button size="sm" onClick={refreshQRStats} aria-label="Refrescar estado QR">
+                        Refrescar
+                      </Button>
+                      <Button size="sm" onClick={handleRegroupNow} aria-label="Reagrupar ahora">
+                        Reagrupar ahora
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              <PhotoGalleryModern
+                initialPhotos={photos}
+                initialEvents={events}
+                onPhotoUpload={handlePhotoUpload}
+                onPhotoDelete={handlePhotoDelete}
+                onPhotoApprove={handlePhotoApprove}
+                onPhotoTag={handlePhotoTag}
+                onRefresh={loadPhotos}
+                hideSidebar
+                externalSelectedEvent={selectedEventId}
+                externalCodeId={selectedCodeId ?? null}
+                onCountsChanged={loadPhotos}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
