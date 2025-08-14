@@ -47,7 +47,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   const [error, setError] = useState<string | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  const { items, addItem, getTotalItems, openCart } = useCartStore();
+  const { items, addItem, getTotalItems } = useCartStore();
 
   const fetchPhotos = useCallback(
     async (page: number = 1, append: boolean = false) => {

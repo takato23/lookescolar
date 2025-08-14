@@ -83,6 +83,7 @@ export default function FamilyLayout({ children, params }: FamilyLayoutProps) {
         </div>
       </footer>
     </div>
+    </MobileOptimizations>
   );
 }
 
