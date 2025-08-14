@@ -178,6 +178,22 @@ export default function EventDetailPage() {
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Actualizar
                 </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push(`/gallery/${id}`)}
+                  aria-label="Vista cliente"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Vista cliente
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push(`/admin/publish`)}
+                  aria-label="Compartir salón"
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Compartir salón
+                </Button>
               </div>
             </div>
           </div>

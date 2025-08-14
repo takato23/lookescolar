@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { PhotoCard } from './PhotoCard';
 import { PhotoModal } from './PhotoModal';
 import { Button } from '@/components/ui/button';
+import { useCartStore } from '@/lib/stores/cart-store';
 
 interface Photo {
   id: string;
@@ -44,6 +45,9 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  const { items, addItem, getTotalItems, openCart } = useCartStore();
 
   const fetchPhotos = useCallback(
     async (page: number = 1, append: boolean = false) => {
@@ -158,8 +162,17 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
         <h2 className="text-2xl font-bold text-gray-800">
           📸 Fotos del Evento
         </h2>
-        <div className="rounded-full bg-white/70 px-4 py-2 text-sm text-gray-600 backdrop-blur-sm">
-          {pagination.total} fotos disponibles
+        <div className="flex items-center gap-2">
+          <div className="rounded-full bg-white/70 px-4 py-2 text-sm text-gray-600 backdrop-blur-sm">
+            {pagination.total} fotos disponibles
+          </div>
+          <Button
+            onClick={() => setIsCheckoutOpen(true)}
+            aria-label="Abrir carrito"
+            className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+          >
+            Ver carrito ({getTotalItems()})
+          </Button>
         </div>
       </div>
 
@@ -172,6 +185,23 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
               index={index}
               onClick={() => openModal(index)}
             />
+            <div className="mt-2 flex items-center justify-between">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  addItem({
+                    photoId: photo.id,
+                    filename: photo.storage_path.split('/').pop() || 'Foto',
+                    price: 0,
+                    watermarkUrl: photo.signed_url,
+                  });
+                }}
+                aria-label="Agregar foto al carrito"
+              >
+                Agregar al carrito
+              </Button>
+            </div>
           </div>
         ))}
       </div>
@@ -212,6 +242,66 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
           currentIndex={selectedPhotoIndex + 1}
           totalPhotos={photos.length}
         />
+      )}
+
+      {/* Simple public checkout modal */}
+      {isCheckoutOpen && (
+        <div
+          role="dialog"
+          aria-label="Carrito público"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsCheckoutOpen(false)} />
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Carrito</h3>
+              <Button variant="ghost" size="sm" onClick={() => setIsCheckoutOpen(false)} aria-label="Cerrar carrito">
+                Cerrar
+              </Button>
+            </div>
+            {items.length === 0 ? (
+              <p className="text-sm text-gray-600">No hay fotos en el carrito.</p>
+            ) : (
+              <div className="space-y-2">
+                {items.map((it) => (
+                  <div key={it.photoId} className="flex items-center justify-between text-sm">
+                    <span className="truncate">{it.filename}</span>
+                    <span className="text-gray-600">x{it.quantity}</span>
+                  </div>
+                ))}
+                <Button
+                  className="w-full"
+                  aria-label="Ir al checkout"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/gallery/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          eventId,
+                          contactInfo: { name: 'Cliente', email: 'cliente@example.com' },
+                          items: items.map((it) => ({ photoId: it.photoId, quantity: it.quantity, priceType: 'base' })),
+                        }),
+                      });
+                      if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'Error en checkout público');
+                      }
+                      const data = await response.json();
+                      window.location.href = data.redirectUrl;
+                    } catch (err) {
+                      console.error('[Service] Public checkout error:', err);
+                      alert('No se pudo iniciar el pago');
+                    }
+                  }}
+                >
+                  Continuar al pago
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Loading more indicator */}

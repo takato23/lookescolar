@@ -314,6 +314,28 @@ export function EventCard({
                 Fotos
               </Button>
             </Link>
+            <Link href={`/gallery/${event.id}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                aria-label="Vista cliente"
+              >
+                <Eye className="mr-1 h-3 w-3" />
+                Vista cliente
+              </Button>
+            </Link>
+            <Link href={`/admin/publish`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                aria-label="Compartir salón"
+              >
+                <QrCode className="mr-1 h-3 w-3" />
+                Compartir salón
+              </Button>
+            </Link>
             <Button
               variant="ghost"
               size="sm"
