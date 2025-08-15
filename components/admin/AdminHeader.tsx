@@ -102,10 +102,10 @@ export default function AdminHeader({
           </button>
 
           <div>
-            <h1 className="text-foreground mb-1 text-xl font-bold tracking-tight drop-shadow-lg sm:text-2xl lg:text-3xl">
+            <h1 className="mb-1 text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl text-menu-enhanced">
               {getPageTitle()}
             </h1>
-            <p className="text-muted-foreground hidden text-xs font-medium drop-shadow-sm sm:block sm:text-sm">
+            <p className="hidden text-xs font-medium sm:block sm:text-sm text-button-enhanced">
               {new Date().toLocaleDateString('es-AR', {
                 weekday: 'long',
                 year: 'numeric',

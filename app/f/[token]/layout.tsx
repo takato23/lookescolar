@@ -1,6 +1,8 @@
 import { ReactNode, Suspense } from 'react';
 import { FamilyHeader } from '@/components/family/FamilyHeader';
 import { FamilyNavigation } from '@/components/family/FamilyNavigation';
+import { MobileNavigation } from '@/components/ui/mobile-navigation';
+import { MobileOptimizations } from '@/components/family/MobileOptimizations';
 
 interface FamilyLayoutProps {
   children: ReactNode;
@@ -8,27 +10,41 @@ interface FamilyLayoutProps {
 }
 
 export default function FamilyLayout({ children, params }: FamilyLayoutProps) {
+  // Navegación móvil desactivada si la fuente de ítems no está disponible en el server
+  const navigationItems: any[] = [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      {/* Background pattern */}
-      <div className="fixed inset-0 opacity-30">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,_white,_rgba(255,255,255,0))]" />
-      </div>
+    <MobileOptimizations>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        {/* Background pattern */}
+        <div className="fixed inset-0 opacity-30">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,_white,_rgba(255,255,255,0))]" />
+        </div>
 
-      {/* Header with subject info */}
-      <Suspense fallback={<FamilyHeaderSkeleton />}>
-        <FamilyHeader token={params.token} />
-      </Suspense>
+        {/* Mobile Navigation */}
+        <MobileNavigation
+          items={navigationItems}
+          className="lg:hidden"
+        />
 
-      {/* Navigation */}
-      <Suspense fallback={<div className="h-16" />}>
-        <FamilyNavigation token={params.token} />
-      </Suspense>
+        {/* Desktop Header with subject info */}
+        <div className="hidden lg:block">
+          <Suspense fallback={<FamilyHeaderSkeleton />}>
+            <FamilyHeader token={params.token} />
+          </Suspense>
+        </div>
 
-      {/* Main content */}
-      <main className="relative z-10 mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-        {children}
-      </main>
+        {/* Desktop Navigation */}
+        <div className="hidden lg:block">
+          <Suspense fallback={<div className="h-16" />}>
+            <FamilyNavigation token={params.token} />
+          </Suspense>
+        </div>
+
+        {/* Main content - Adjusted for mobile navigation */}
+        <main className="relative z-10 mx-auto max-w-6xl px-4 py-6 pb-24 pt-20 sm:px-6 lg:px-8 lg:pt-6 lg:pb-6">
+          {children}
+        </main>
 
       {/* Footer */}
       <footer className="relative z-10 mt-16 border-t border-purple-200 bg-white/50 py-8 backdrop-blur-sm">
@@ -64,6 +80,7 @@ export default function FamilyLayout({ children, params }: FamilyLayoutProps) {
         </div>
       </footer>
     </div>
+    </MobileOptimizations>
   );
 }
 

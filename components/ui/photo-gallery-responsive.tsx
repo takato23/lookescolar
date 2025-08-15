@@ -140,16 +140,17 @@ export function PhotoGalleryResponsive({
     };
   }, []);
 
-  // Photo grid responsive breakpoints
+  // Photo grid responsive breakpoints - Mobile-first with compact desktop
   const getGridClasses = () => {
     return clsx(
-      'grid gap-2', // Mobile: small gaps
-      'grid-cols-2', // Mobile: 2 columns
-      'sm:gap-3 sm:grid-cols-3', // Small: 3 columns, larger gaps
-      'md:gap-4 md:grid-cols-4', // Medium: 4 columns
-      'lg:gap-6 lg:grid-cols-5', // Large: 5 columns
-      'xl:gap-8 xl:grid-cols-6', // Extra large: 6 columns
-      '2xl:grid-cols-7' // 2XL: 7 columns for very wide screens
+      'grid gap-1', // Mobile: very small gaps for more content
+      'grid-cols-2', // Mobile: 2 columns (optimal for thumb browsing)
+      'xs:gap-2', // Extra small: slightly larger gaps
+      'sm:gap-2 sm:grid-cols-3', // Small: 3 columns, compact gaps
+      'md:gap-3 md:grid-cols-4', // Medium: 4 columns, moderate gaps
+      'lg:gap-3 lg:grid-cols-6', // Large: 6 columns (more compact)
+      'xl:gap-4 xl:grid-cols-7', // Extra large: 7 columns, small gaps
+      '2xl:gap-4 2xl:grid-cols-8' // 2XL: 8 columns for efficiency
     );
   };
 
@@ -303,26 +304,63 @@ export function PhotoGalleryResponsive({
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal - Mobile Optimized */}
       {modalPhoto && enableModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4">
-          {/* Close Button */}
-          <Button
-            variant="glass"
-            size="lg"
-            icon={<X className="h-6 w-6" />}
-            onClick={closeModal}
-            className="z-60 touch-target-lg absolute right-4 top-4"
-            aria-label="Cerrar vista ampliada"
+        <div className="fixed inset-0 z-50 bg-black/98">
+          {/* Mobile Modal Header */}
+          <div className="absolute top-0 left-0 right-0 z-60 bg-gradient-to-b from-black/80 to-transparent p-4 pt-8">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="glass"
+                size="lg"
+                icon={<X className="h-6 w-6" />}
+                onClick={closeModal}
+                className="mobile-touch-target bg-black/40 text-white border-white/20"
+                aria-label="Cerrar vista ampliada"
+              />
+              <div className="text-white text-center">
+                <p className="text-sm font-medium">
+                  {currentModalIndex + 1} de {photos.length}
+                </p>
+              </div>
+              <div className="w-12" /> {/* Spacer for centering */}
+            </div>
+          </div>
+
+          {/* Modal Image Container - Full screen on mobile */}
+          <div className="flex items-center justify-center h-full w-full px-4 py-16 md:py-8">
+            <div className="relative max-h-full max-w-full">
+              <Image
+                src={modalPhoto.src}
+                alt={modalPhoto.alt}
+                width={modalPhoto.width}
+                height={modalPhoto.height}
+                className="max-h-[80vh] max-w-full object-contain md:max-h-[85vh]"
+                priority
+              />
+            </div>
+          </div>
+
+          {/* Touch Navigation Areas - Mobile */}
+          <button
+            onClick={() => navigateModal('prev')}
+            className="absolute left-0 top-16 bottom-16 w-1/3 z-50 opacity-0 active:opacity-20 active:bg-white/10 transition-opacity md:hidden"
+            aria-label="Foto anterior"
+          />
+          
+          <button
+            onClick={() => navigateModal('next')}
+            className="absolute right-0 top-16 bottom-16 w-1/3 z-50 opacity-0 active:opacity-20 active:bg-white/10 transition-opacity md:hidden"
+            aria-label="Foto siguiente"
           />
 
-          {/* Navigation Buttons */}
+          {/* Desktop Navigation Buttons */}
           <Button
             variant="glass"
             size="lg"
             icon={<ChevronLeft className="h-6 w-6" />}
             onClick={() => navigateModal('prev')}
-            className="z-60 touch-target-lg absolute left-4 top-1/2 -translate-y-1/2"
+            className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-60 mobile-touch-target bg-black/40 text-white border-white/20"
             aria-label="Foto anterior"
           />
 
@@ -331,28 +369,53 @@ export function PhotoGalleryResponsive({
             size="lg"
             icon={<ChevronRight className="h-6 w-6" />}
             onClick={() => navigateModal('next')}
-            className="z-60 touch-target-lg absolute right-4 top-1/2 -translate-y-1/2"
+            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-60 mobile-touch-target bg-black/40 text-white border-white/20"
             aria-label="Foto siguiente"
           />
 
-          {/* Modal Image */}
-          <div className="relative max-h-full max-w-full">
-            <Image
-              src={modalPhoto.src}
-              alt={modalPhoto.alt}
-              width={modalPhoto.width}
-              height={modalPhoto.height}
-              className="max-h-[90vh] max-w-full object-contain"
-              priority
-            />
+          {/* Mobile Photo Info */}
+          <div className="absolute bottom-0 left-0 right-0 z-60 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8">
+            <div className="text-center">
+              <p className="text-white text-sm mb-2">{modalPhoto.alt}</p>
+              <div className="flex items-center justify-center space-x-4">
+                <Button
+                  variant="glass"
+                  size="sm"
+                  icon={<Heart className="h-4 w-4" />}
+                  className="bg-black/40 text-white border-white/20"
+                  aria-label="Me gusta"
+                />
+                <Button
+                  variant="glass"
+                  size="sm"
+                  icon={<Download className="h-4 w-4" />}
+                  className="bg-black/40 text-white border-white/20"
+                  aria-label="Descargar"
+                />
+                <Button
+                  variant="glass"
+                  size="sm"
+                  icon={<Share2 className="h-4 w-4" />}
+                  className="bg-black/40 text-white border-white/20"
+                  aria-label="Compartir"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Photo Info */}
-          <div className="absolute bottom-4 left-4 right-4 text-center">
-            <p className="text-body mb-2 text-white">{modalPhoto.alt}</p>
-            <p className="text-caption text-white/70">
-              {currentModalIndex + 1} de {photos.length}
-            </p>
+          {/* Swipe indicators for mobile */}
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex space-x-2 md:hidden">
+            {photos.map((_, index) => (
+              <div
+                key={index}
+                className={clsx(
+                  'w-2 h-2 rounded-full transition-all duration-200',
+                  index === currentModalIndex
+                    ? 'bg-white scale-125'
+                    : 'bg-white/40'
+                )}
+              />
+            ))}
           </div>
         </div>
       )}

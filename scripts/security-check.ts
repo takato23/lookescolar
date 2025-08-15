@@ -214,13 +214,13 @@ class SecurityAuditor {
         return;
       }
 
-      const photosBucket = buckets?.find(b => b.name === 'photos-private');
+      const photosBucket = buckets?.find(b => b.name === 'photo-private');
       
       if (!photosBucket) {
         this.addResult({
-          name: 'Bucket photos-private',
+          name: 'Bucket photo-private',
           status: 'FAIL',
-          message: 'Bucket photos-private no encontrado',
+          message: 'Bucket photo-private no encontrado',
           critical: true
         });
       } else if (photosBucket.public) {
@@ -242,7 +242,7 @@ class SecurityAuditor {
       // Test signed URL generation
       try {
         const { data: signedUrlData } = await this.supabase.storage
-          .from('photos-private')
+          .from('photo-private')
           .createSignedUrl('test/nonexistent.jpg', 60);
         
         if (signedUrlData?.signedUrl) {

@@ -23,6 +23,7 @@ import {
   AlertCircle,
   RefreshCw,
   Home,
+  Mail,
 } from 'lucide-react';
 
 export default function EventDetailPage() {
@@ -177,6 +178,22 @@ export default function EventDetailPage() {
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Actualizar
                 </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push(`/gallery/${id}`)}
+                  aria-label="Vista cliente"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Vista cliente
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push(`/admin/publish`)}
+                  aria-label="Compartir salón"
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Compartir salón
+                </Button>
               </div>
             </div>
           </div>
@@ -270,7 +287,7 @@ export default function EventDetailPage() {
             <CardTitle>Acciones Rápidas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <Button
                 variant="outline"
                 className="h-auto flex-col py-4 hover:bg-blue-50 hover:border-blue-300 group"
@@ -297,8 +314,18 @@ export default function EventDetailPage() {
                 onClick={() => router.push(`/admin/events/${id}/qr`)}
               >
                 <QrCode className="mb-2 h-6 w-6 text-amber-600 group-hover:scale-110 transition-transform" />
-                <span className="font-medium">Generar QRs</span>
-                <span className="text-xs text-muted-foreground">PDF para imprimir</span>
+                <span className="font-medium">QRs (Opcional)</span>
+                <span className="text-xs text-muted-foreground">PDF para escuela</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-orange-50 hover:border-orange-300 group"
+                onClick={() => router.push(`/admin/events/${id}/secuencial`)}
+              >
+                <Edit3 className="mb-2 h-6 w-6 text-orange-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Secuencial</span>
+                <span className="text-xs text-muted-foreground">Sin QR</span>
               </Button>
 
               <Button
@@ -309,6 +336,61 @@ export default function EventDetailPage() {
                 <Package className="mb-2 h-6 w-6 text-green-600 group-hover:scale-110 transition-transform" />
                 <span className="font-medium">Ver Pedidos</span>
                 <span className="text-xs text-muted-foreground">Gestionar ventas</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* School Distribution Section */}
+        <Card variant="glass" className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          <CardHeader>
+            <CardTitle>Distribución Escolar</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Exporta tokens/links para que la escuela distribuya a los padres
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-blue-50 hover:border-blue-300 group"
+                onClick={() => {
+                  // Export tokens as CSV for school distribution
+                  fetch(`/api/admin/events/${id}/tokens/export`)
+                    .then(res => res.blob())
+                    .then(blob => {
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `tokens-${event?.name || id}.csv`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                    })
+                    .catch(err => console.error('Error exporting tokens:', err));
+                }}
+              >
+                <Download className="mb-2 h-6 w-6 text-blue-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Exportar CSV</span>
+                <span className="text-xs text-muted-foreground">Lista para escuela</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-green-50 hover:border-green-300 group"
+                onClick={() => {
+                  // Generate and send email template
+                  fetch(`/api/admin/events/${id}/tokens/email-template`)
+                    .then(res => res.json())
+                    .then(data => {
+                      navigator.clipboard.writeText(data.template);
+                      alert('Plantilla de email copiada al portapapeles');
+                    })
+                    .catch(err => console.error('Error getting email template:', err));
+                }}
+              >
+                <Mail className="mb-2 h-6 w-6 text-green-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Plantilla Email</span>
+                <span className="text-xs text-muted-foreground">Para envío masivo</span>
               </Button>
             </div>
           </CardContent>

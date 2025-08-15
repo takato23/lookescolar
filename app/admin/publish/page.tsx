@@ -28,7 +28,21 @@ export default function PublishPage() {
       const res = await fetch('/api/admin/publish/list');
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Error');
-      setRows(json.rows || []);
+
+      // El endpoint puede devolver un array directo o un objeto con { rows }
+      const arr = Array.isArray(json) ? json : (json?.rows || json?.data || []);
+
+      const mapped: CodeRow[] = (arr as any[]).map((c) => ({
+        id: (c.id ?? c.code_id) as string,
+        event_id: (c.event_id as string) ?? '',
+        course_id: (c.course_id as string) ?? null,
+        code_value: String(c.code_value ?? ''),
+        token: (c.token as string) ?? null,
+        is_published: Boolean(c.is_published ?? c.published ?? false),
+        photos_count: Number(c.photos_count ?? 0),
+      }));
+
+      setRows(mapped);
     } catch (e) {
       console.error('[Service] Error cargando publicación:', e);
     } finally {

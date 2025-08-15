@@ -1,268 +1,276 @@
-import { NextResponse } from 'next/server';
-
-export async function GET() {
-  return NextResponse.json([]);
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    await request.json();
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: true });
-  }
-}
-
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import type { Tables } from '@/types/database';
+import type { OrderWithDetails, OrdersResponse } from '@/types/admin-api';
+
+type RawOrder = Tables<'orders'> & {
+	subjects?: {
+		id: string;
+		name: string;
+		type?: 'student' | 'couple' | 'family';
+		events?: {
+			id: string;
+			name: string;
+			school: string;
+			date: string;
+		} | null;
+	} | null;
+	order_items?: Array<{
+		id: string;
+		quantity: number | null;
+		photos?: {
+			id: string;
+			original_filename?: string | null;
+			storage_path: string;
+		} | null;
+		price_list_items?: {
+			id: string;
+			name?: string | null;
+			price_cents: number;
+		} | null;
+	}>;
+	payments?: Array<{
+		id: string;
+		mp_payment_id: string;
+		mp_status: string;
+		mp_status_detail?: string | null;
+		mp_payment_type?: string | null;
+		amount_cents?: number | null;
+		processed_at?: string | null;
+	}>;
+};
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
-    
-    // Get all orders with related data
+    const hasService = Boolean(process.env['SUPABASE_SERVICE_ROLE_KEY']);
+    const hasAnon = Boolean(
+      process.env['NEXT_PUBLIC_SUPABASE_URL'] &&
+        process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
+    );
+
+    // Fallback de desarrollo si no hay credenciales
+    if (!hasService && !hasAnon) {
+      console.error(
+        '[Service] Orders API sin credenciales de Supabase. Devolviendo lista vacía.'
+      );
+      const stats: OrdersResponse['stats'] = {
+        total: 0,
+        by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
+        total_revenue_cents: 0,
+        filtered_by: {
+          event_id: request.nextUrl.searchParams.get('event') || null,
+          status: request.nextUrl.searchParams.get('status'),
+        },
+      };
+      return NextResponse.json<OrdersResponse>({
+        orders: [],
+        stats,
+        generated_at: new Date().toISOString(),
+      });
+    }
+
+    const supabase = hasService
+      ? await createServiceClient()
+      : await createClient();
+
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
-      .select(`
-        *,
-        subjects (
-          id,
-          name,
-          type,
-          events (
-            id,
-            name,
-            school,
-            date
-          )
-        ),
-        order_items (
-          id,
-          quantity,
-          unit_price,
-          subtotal,
-          photos (
-            id,
-            original_filename,
-            storage_path
-          )
-        ),
-        payments (
-          id,
-          mp_payment_id,
-          mp_status,
-          mp_status_detail,
-          mp_payment_type,
-          amount_cents,
-          processed_at
-        )
-      `)
+      .select(
+        'id, created_at, status, customer_name, customer_email, customer_phone, mp_payment_id, notes, total_cents, subject_id, event_id'
+      )
       .order('created_at', { ascending: false });
-      
+
     if (ordersError) {
-      console.error('Error fetching orders:', ordersError);
-      return NextResponse.json(
-        { error: 'Failed to fetch orders' },
-        { status: 500 }
-      );
+      console.error('[Service] Error obteniendo pedidos:', ordersError);
+      const safeStats: OrdersResponse['stats'] = {
+        total: 0,
+        by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
+        total_revenue_cents: 0,
+        filtered_by: {
+          event_id: request.nextUrl.searchParams.get('event') || null,
+          status: request.nextUrl.searchParams.get('status'),
+        },
+      };
+      return NextResponse.json<OrdersResponse>({
+        orders: [],
+        stats: safeStats,
+        generated_at: new Date().toISOString(),
+      });
     }
-    
-    // Calculate stats
-    const stats = {
-      total: orders?.length || 0,
+
+    // Si no hay pedidos, responder rápido
+    if (!orders || orders.length === 0) {
+      const emptyStats: OrdersResponse['stats'] = {
+        total: 0,
+        by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
+        total_revenue_cents: 0,
+        filtered_by: {
+          event_id: request.nextUrl.searchParams.get('event') || null,
+          status: request.nextUrl.searchParams.get('status'),
+        },
+      };
+      return NextResponse.json<OrdersResponse>({
+        orders: [],
+        stats: emptyStats,
+        generated_at: new Date().toISOString(),
+      });
+    }
+
+    const orderIds = (orders ?? []).map((o) => o.id);
+    const subjectIds = Array.from(
+      new Set((orders ?? []).map((o) => o.subject_id).filter(Boolean))
+    ) as string[];
+    const eventIds = Array.from(
+      new Set((orders ?? []).map((o) => o.event_id).filter(Boolean))
+    ) as string[];
+
+    // Cargar subjects
+    const subjectById = new Map<string, { id: string; name: string }>();
+    if (subjectIds.length > 0) {
+      const { data: subjects } = await supabase
+        .from('subjects')
+        .select('id, name')
+        .in('id', subjectIds);
+      (subjects ?? []).forEach((s) => subjectById.set(s.id, s));
+    }
+
+    // Cargar events
+    const eventById = new Map<string, { id: string; school: string; date: string }>();
+    if (eventIds.length > 0) {
+      const { data: events } = await supabase
+        .from('events')
+        .select('id, school, date')
+        .in('id', eventIds);
+      (events ?? []).forEach((e) => eventById.set(e.id, e));
+    }
+
+    // Cargar items
+    let items: Array<{ id: string; order_id: string; quantity: number | null; photo_id: string; price_list_item_id: string }> = [];
+    if (orderIds.length > 0) {
+      const res = await supabase
+        .from('order_items')
+        .select('id, order_id, quantity, photo_id, price_list_item_id')
+        .in('order_id', orderIds);
+      items = res.data ?? [];
+    }
+
+    const photoIds = Array.from(new Set((items ?? []).map((it) => it.photo_id))).filter(Boolean) as string[];
+    const priceItemIds = Array.from(
+      new Set((items ?? []).map((it) => it.price_list_item_id))
+    ).filter(Boolean) as string[];
+
+    const photoById = new Map<string, { id: string; storage_path: string }>();
+    if (photoIds.length > 0) {
+      const { data: photos } = await supabase
+        .from('photos')
+        .select('id, storage_path')
+        .in('id', photoIds);
+      (photos ?? []).forEach((p) => photoById.set(p.id, p));
+    }
+
+    const priceItemById = new Map<string, { id: string; name: string | null; price_cents: number }>();
+    if (priceItemIds.length > 0) {
+      const { data: priceItems } = await supabase
+        .from('price_list_items')
+        .select('id, name, price_cents')
+        .in('id', priceItemIds);
+      (priceItems ?? []).forEach((pi) => priceItemById.set(pi.id, pi));
+    }
+
+    const stats: OrdersResponse['stats'] = {
+      total: orders?.length ?? 0,
       by_status: {
         pending: 0,
         approved: 0,
         delivered: 0,
         failed: 0,
-        cancelled: 0,
-        rejected: 0
       },
-      total_revenue_cents: 0
+      total_revenue_cents: 0,
+      filtered_by: {
+        event_id: request.nextUrl.searchParams.get('event') || null,
+        status: request.nextUrl.searchParams.get('status'),
+      },
     };
-    
-    // Process orders and calculate stats
-    const processedOrders = (orders || []).map(order => {
-      // Update stats
-      const status = order.status as keyof typeof stats.by_status;
-      if (status in stats.by_status) {
-        stats.by_status[status]++;
-      }
-      
-      // Calculate revenue (only for approved and delivered orders)
+
+    const processedOrders: OrderWithDetails[] = (orders ?? []).map((order) => {
+      const totalItems = (items ?? [])
+        .filter((it) => it.order_id === order.id)
+        .reduce((sum, it) => sum + (it.quantity ?? 0), 0);
+
       if (order.status === 'approved' || order.status === 'delivered') {
-        stats.total_revenue_cents += order.total_amount_cents || 0;
+        stats.total_revenue_cents += order.total_cents ?? 0;
       }
-      
-      // Format order for frontend
-      const totalItems = order.order_items?.reduce(
-        (sum: number, item: any) => sum + item.quantity,
-        0
-      ) || 0;
-      
+      const statusKey = (order.status ?? 'pending') as keyof typeof stats.by_status;
+      if (statusKey in stats.by_status) stats.by_status[statusKey]++;
+
+      const orderItems: OrderWithDetails['items'] = (items ?? [])
+        .filter((it) => it.order_id === order.id)
+        .map((it) => {
+          const priceItem = priceItemById.get(it.price_list_item_id);
+          const photo = photoById.get(it.photo_id);
+          return {
+            id: it.id,
+            quantity: it.quantity ?? 0,
+            price_cents: priceItem?.price_cents ?? 0,
+            label: priceItem?.name ?? 'Foto',
+            photo: photo ? { id: photo.id, storage_path: photo.storage_path } : null,
+          };
+        });
+
+      const s = order.subject_id ? subjectById.get(order.subject_id) : undefined;
+      const e = order.event_id ? eventById.get(order.event_id) : undefined;
+
       return {
         id: order.id,
-        contact_name: order.contact_name,
-        contact_email: order.contact_email,
-        contact_phone: order.contact_phone,
-        status: order.status,
-        mp_payment_id: order.mp_payment_id,
-        mp_status: order.payments?.[0]?.mp_status || order.mp_status,
-        notes: order.notes,
-        created_at: order.created_at,
-        delivered_at: order.delivery_date,
-        approved_at: order.approved_at,
-        total_amount_cents: order.total_amount_cents || 0,
+        contact_name: order.customer_name ?? '',
+        contact_email: order.customer_email ?? '',
+        contact_phone: order.customer_phone ?? null,
+        status: (order.status as OrderWithDetails['status']) ?? 'pending',
+        mp_payment_id: order.mp_payment_id ?? null,
+        mp_status: null,
+        notes: order.notes ?? null,
+        created_at: order.created_at ?? new Date(0).toISOString(),
+        delivered_at: null,
+        total_amount_cents: order.total_cents ?? 0,
         total_items: totalItems,
-        event: order.subjects?.events ? {
-          id: order.subjects.events.id,
-          name: order.subjects.events.name,
-          school: order.subjects.events.school,
-          date: order.subjects.events.date
-        } : null,
-        subject: order.subjects ? {
-          id: order.subjects.id,
-          name: order.subjects.name,
-          type: order.subjects.type
-        } : null,
-        items: (order.order_items || []).map((item: any) => ({
-          id: item.id,
-          quantity: item.quantity,
-          price_cents: item.unit_price,
-          label: item.photos?.original_filename || 'Foto',
-          photo: item.photos ? {
-            id: item.photos.id,
-            storage_path: item.photos.storage_path
-          } : null
-        })),
-        payment: order.payments?.[0] || null
+        event: e
+          ? {
+              id: e.id,
+              name: e.school, // fallback
+              school: e.school,
+              date: e.date,
+            }
+          : null,
+        subject: s
+          ? {
+              id: s.id,
+              name: s.name,
+              type: 'student',
+            }
+          : null,
+        items: orderItems,
       };
     });
-    
-    return NextResponse.json({
-      orders: processedOrders,
-      stats
-    });
-    
-  } catch (error) {
-    console.error('Error in orders API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
 
-// Export orders as CSV
-export async function POST(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') || 'csv';
-    
-    if (format !== 'csv') {
-      return NextResponse.json(
-        { error: 'Only CSV export is supported' },
-        { status: 400 }
-      );
-    }
-    
-    const supabase = createClient();
-    
-    // Get all orders for export
-    const { data: orders, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        subjects (name, type, events (name, school)),
-        order_items (quantity),
-        payments (mp_payment_id, mp_status, processed_at)
-      `)
-      .order('created_at', { ascending: false });
-      
-    if (error) {
-      console.error('Error fetching orders for export:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch orders' },
-        { status: 500 }
-      );
-    }
-    
-    // Generate CSV
-    const headers = [
-      'ID Pedido',
-      'Fecha',
-      'Estado',
-      'Cliente',
-      'Email',
-      'Teléfono',
-      'Evento',
-      'Colegio',
-      'Sujeto',
-      'Tipo',
-      'Cantidad Items',
-      'Total',
-      'ID Pago MP',
-      'Estado MP',
-      'Fecha Pago',
-      'Fecha Entrega'
-    ];
-    
-    const rows = (orders || []).map(order => {
-      const totalItems = order.order_items?.reduce(
-        (sum: number, item: any) => sum + item.quantity,
-        0
-      ) || 0;
-      
-      return [
-        order.id,
-        new Date(order.created_at).toLocaleDateString('es-AR'),
-        order.status,
-        order.contact_name || '',
-        order.contact_email || '',
-        order.contact_phone || '',
-        order.subjects?.events?.name || '',
-        order.subjects?.events?.school || '',
-        order.subjects?.name || '',
-        order.subjects?.type || '',
-        totalItems,
-        (order.total_amount_cents / 100).toFixed(2),
-        order.payments?.[0]?.mp_payment_id || '',
-        order.payments?.[0]?.mp_status || '',
-        order.payments?.[0]?.processed_at 
-          ? new Date(order.payments[0].processed_at).toLocaleDateString('es-AR')
-          : '',
-        order.delivery_date
-          ? new Date(order.delivery_date).toLocaleDateString('es-AR')
-          : ''
-      ];
+    return NextResponse.json<OrdersResponse>({
+      orders: processedOrders,
+      stats,
+      generated_at: new Date().toISOString(),
     });
-    
-    // Build CSV content
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => 
-        row.map(cell => 
-          typeof cell === 'string' && cell.includes(',')
-            ? `"${cell.replace(/"/g, '""')}"`
-            : cell
-        ).join(',')
-      )
-    ].join('\n');
-    
-    // Return CSV file
-    return new NextResponse(csvContent, {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': `attachment; filename="orders-${new Date().toISOString().split('T')[0]}.csv"`
-      }
-    });
-    
   } catch (error) {
-    console.error('Error exporting orders:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('[Service] Error en Orders API:', error);
+    const stats: OrdersResponse['stats'] = {
+      total: 0,
+      by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
+      total_revenue_cents: 0,
+      filtered_by: {
+        event_id: request.nextUrl.searchParams.get('event') || null,
+        status: request.nextUrl.searchParams.get('status'),
+      },
+    };
+    return NextResponse.json<OrdersResponse>({
+      orders: [],
+      stats,
+      generated_at: new Date().toISOString(),
+    });
   }
 }

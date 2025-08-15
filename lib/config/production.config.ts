@@ -145,7 +145,7 @@ export function createProductionConfig(): ProductionConfig {
     },
 
     // Storage
-    storageBucket: getEnvVar('STORAGE_BUCKET', 'photos-private-bucket'),
+    storageBucket: getEnvVar('STORAGE_BUCKET', 'photo-private'),
     signedUrlExpiryMinutes: getEnvNumber('SIGNED_URL_EXPIRY_MINUTES', 60),
     maxFileSize: getEnvNumber('MAX_FILE_SIZE', 10485760), // 10MB
     maxFilesPerRequest: getEnvNumber('MAX_FILES_PER_REQUEST', 20),

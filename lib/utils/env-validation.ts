@@ -33,7 +33,16 @@ const ProductionEnvSchema = z.object({
     .min(32, 'MP webhook secret must be at least 32 characters'),
 
   // Storage
-  STORAGE_BUCKET: z.string().min(1, 'Storage bucket name is required'),
+  STORAGE_BUCKET_ORIGINAL: z
+    .string()
+    .min(1, 'Originals bucket name is required')
+    .optional(),
+  STORAGE_BUCKET_PREVIEW: z
+    .string()
+    .min(1, 'Preview bucket name is required')
+    .optional(),
+  // Legacy alias for backwards compatibility
+  STORAGE_BUCKET: z.string().min(1).optional(),
 
   // Rate Limiting
   UPSTASH_REDIS_REST_URL: z
@@ -157,6 +166,49 @@ export function validateEnvironment(): EnvironmentValidationResult {
         'SIGNED_URL_EXPIRY_MINUTES should be 120 minutes or less in production'
       );
     }
+
+    // Bucket configuration checks
+    const origBucket = env['STORAGE_BUCKET_ORIGINAL'];
+    const previewBucket = env['STORAGE_BUCKET_PREVIEW'];
+    const legacyBucket = env['STORAGE_BUCKET'];
+
+    if (!origBucket || !previewBucket) {
+      result.warnings.push(
+        'Missing STORAGE_BUCKET_ORIGINAL and/or STORAGE_BUCKET_PREVIEW; using defaults. Configure both explicitly in production.'
+      );
+      if (legacyBucket) {
+        result.warnings.push(
+          'Using deprecated STORAGE_BUCKET; define STORAGE_BUCKET_ORIGINAL and STORAGE_BUCKET_PREVIEW.'
+        );
+      } else {
+        result.critical.push(
+          'Storage buckets not fully configured; define STORAGE_BUCKET_ORIGINAL and STORAGE_BUCKET_PREVIEW.'
+        );
+        result.isValid = false;
+      }
+    }
+
+    const effectiveOriginal = origBucket || legacyBucket || 'photo-private';
+    if (!effectiveOriginal.includes('private')) {
+      result.critical.push(
+        'STORAGE_BUCKET_ORIGINAL (or legacy STORAGE_BUCKET) should be a private bucket (include "private" in its name)'
+      );
+      result.isValid = false;
+    }
+
+    if (previewBucket) {
+      if (previewBucket === effectiveOriginal) {
+        result.critical.push(
+          'STORAGE_BUCKET_PREVIEW must be different from STORAGE_BUCKET_ORIGINAL'
+        );
+        result.isValid = false;
+      }
+      if (previewBucket.includes('private')) {
+        result.warnings.push(
+          'STORAGE_BUCKET_PREVIEW points to a private bucket; previews should be served from a public bucket'
+        );
+      }
+    }
   }
 
   // Performance warnings
@@ -190,8 +242,18 @@ export function validateCriticalSecuritySettings(): string[] {
   }
 
   // Validate storage security
-  if (!env['STORAGE_BUCKET'] || !env['STORAGE_BUCKET'].includes('private')) {
-    issues.push('Storage bucket should be private');
+  const origBucket = env['STORAGE_BUCKET_ORIGINAL'] || env['STORAGE_BUCKET'];
+  if (!origBucket || !origBucket.includes('private')) {
+    issues.push('Originals storage bucket must be private');
+  }
+  const previewBucket = env['STORAGE_BUCKET_PREVIEW'];
+  if (previewBucket) {
+    if (previewBucket === origBucket) {
+      issues.push('Preview and original buckets must be different');
+    }
+    if (previewBucket.includes('private')) {
+      issues.push('Preview bucket should be public (not a private bucket)');
+    }
   }
 
   // Validate rate limiting

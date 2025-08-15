@@ -13,11 +13,11 @@ const UpdateOrderSchema = z.object({
 // PUT - Actualizar estado de pedido (solo para admin)
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
-  const { id: orderId } = await params;
+  const { id: orderId } = params;
 
   try {
     // Verificar autenticación admin
@@ -50,7 +50,7 @@ export async function PUT(
     }
 
     const { status, notes } = validation.data;
-    const supabase = createServiceClient();
+    const supabase = await createServiceClient();
 
     // Verificar que el pedido existe y está en estado approved
     const { data: existingOrder, error: fetchError } = await supabase
@@ -135,10 +135,10 @@ export async function PUT(
 // GET - Obtener detalles de un pedido específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const requestId = crypto.randomUUID();
-  const { id: orderId } = await params;
+  const { id: orderId } = params;
 
   try {
     // Verificar autenticación admin
@@ -159,7 +159,7 @@ export async function GET(
       );
     }
 
-    const supabase = createServiceClient();
+    const supabase = await createServiceClient();
 
     // Obtener pedido con relaciones completas
     const { data: order, error } = await supabase

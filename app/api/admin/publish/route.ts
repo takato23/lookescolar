@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { absoluteUrl } from '@/lib/absoluteUrl';
 import crypto from 'crypto';
 
-const schema = z.object({
+const schemaByCode = z.object({
   codeId: z.string().uuid('codeId inválido'),
+});
+const schemaByEvent = z.object({
+  eventId: z.string().uuid('eventId inválido'),
 });
 
 function generateHexToken(bytes: number = 16): string {
@@ -16,7 +18,21 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin') || 'http://localhost:3000';
   try {
     const json = await request.json();
-    const { codeId } = schema.parse(json);
+
+    // Validar payload: o viene codeId o eventId
+    let codeId: string | null = null;
+    let eventId: string | null = null;
+    const codeParse = schemaByCode.safeParse(json);
+    if (codeParse.success) {
+      codeId = codeParse.data.codeId;
+    } else {
+      const eventParse = schemaByEvent.safeParse(json);
+      if (eventParse.success) {
+        eventId = eventParse.data.eventId;
+      } else {
+        return NextResponse.json({ error: 'Se requiere codeId o eventId válido' }, { status: 400 });
+      }
+    }
 
     // Extiende el tipo para incluir tabla codes sin usar any
     type AugmentedDb = typeof import('@/types/database').Database & {
@@ -25,6 +41,31 @@ export async function POST(request: NextRequest) {
 
     const base = await createServerSupabaseServiceClient();
     const supabase = (base as unknown) as import('@supabase/supabase-js').SupabaseClient<AugmentedDb>;
+
+    // Resolver codeId: si vino eventId, buscar o crear un code para el evento
+    if (!codeId && eventId) {
+      // Buscar cualquier code existente del evento
+      const { data: anyCode } = await supabase
+        .from('codes' as any)
+        .select('id, token, is_published')
+        .eq('event_id', eventId)
+        .limit(1)
+        .maybeSingle();
+      if (anyCode?.id) {
+        codeId = anyCode.id as string;
+      } else {
+        // Crear code simple
+        const { data: created, error: createErr } = await supabase
+          .from('codes' as any)
+          .insert({ event_id: eventId, code_value: 'COMPARTIDO' })
+          .select('id')
+          .single();
+        if (createErr || !created) {
+          return NextResponse.json({ error: 'No se pudo crear el código para publicar' }, { status: 500 });
+        }
+        codeId = created.id as string;
+      }
+    }
 
     // Buscar el code
     const { data: code, error: codeErr } = await supabase
@@ -63,8 +104,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const url = `${origin}/f/${token}`;
-    return NextResponse.json({ token, url });
+    const url = `${origin}/f/${token}/simple-page`;
+    return NextResponse.json({ success: true, token, url });
   } catch (error) {
     console.error('[Service] Admin publish error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

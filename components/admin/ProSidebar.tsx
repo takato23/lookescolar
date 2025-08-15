@@ -4,20 +4,12 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  Calendar,
   Camera,
-  Users,
-  Tag,
-  Package,
   Settings,
   LogOut,
   ChevronRight,
   ChevronDown,
-  Activity,
-  BarChart3,
   Upload,
-  FolderOpen,
-  Search,
   Command,
   Keyboard,
 } from 'lucide-react';
@@ -31,7 +23,7 @@ interface SidebarItem {
   label: string;
   icon: any;
   href: string;
-  badge?: number;
+  badge?: number | undefined;
   children?: SidebarItem[];
   shortcut?: string;
 }
@@ -45,11 +37,11 @@ export function ProSidebar({
   collapsed = false,
   onToggleCollapse,
 }: ProSidebarProps) {
-  const [expandedItems, setExpandedItems] = useState<string[]>(['workflow']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { pendingOrders, activeEvents, todayUploads } = useDashboardStats();
+  const { todayUploads } = useDashboardStats();
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -60,78 +52,25 @@ export function ProSidebar({
       shortcut: '⌘+D',
     },
     {
-      id: 'workflow',
-      label: 'Workflow',
-      icon: Activity,
-      href: '#',
-      children: [
-        {
-          id: 'events',
-          label: 'Eventos',
-          icon: Calendar,
-          href: '/admin/events',
-          badge: activeEvents,
-          shortcut: '⌘+E',
-        },
-        {
-          id: 'photos',
-          label: 'Fotos',
-          icon: Camera,
-          href: '/admin/photos',
-          shortcut: '⌘+P',
-        },
-        {
-          id: 'upload',
-          label: 'Subir Fotos',
-          icon: Upload,
-          href: '/admin/photos?action=upload',
-          badge: todayUploads > 0 ? todayUploads : undefined,
-          shortcut: '⌘+U',
-        },
-        {
-          id: 'tagging',
-          label: 'Etiquetar',
-          icon: Tag,
-          href: '/admin/tagging',
-          shortcut: '⌘+T',
-        },
-      ],
+      id: 'photos',
+      label: 'Fotos',
+      icon: Camera,
+      href: '/admin/photos',
+      shortcut: '⌘+P',
     },
     {
-      id: 'management',
-      label: 'Gestión',
-      icon: FolderOpen,
-      href: '#',
-      children: [
-        {
-          id: 'subjects',
-          label: 'Alumnos',
-          icon: Users,
-          href: '/admin/subjects',
-          shortcut: '⌘+A',
-        },
-        {
-          id: 'orders',
-          label: 'Pedidos',
-          icon: Package,
-          href: '/admin/orders',
-          badge: pendingOrders,
-          shortcut: '⌘+O',
-        },
-      ],
-    },
-    {
-      id: 'analytics',
-      label: 'Analytics',
-      icon: BarChart3,
-      href: '/admin/analytics',
-      shortcut: '⌘+R',
+      id: 'upload',
+      label: 'Subir Fotos',
+      icon: Upload,
+      href: '/admin/photos?action=upload',
+      badge: todayUploads > 0 ? todayUploads : undefined,
+      shortcut: '⌘+U',
     },
     {
       id: 'settings',
       label: 'Configuración',
       icon: Settings,
-      href: '/admin/settings',
+      href: '/admin/settings/mercadopago',
       shortcut: '⌘+,',
     },
   ];
@@ -144,7 +83,7 @@ export function ProSidebar({
     );
   };
 
-  const handleNavigation = (href: string, shortcut?: string) => {
+  const handleNavigation = (href: string) => {
     if (href !== '#') {
       router.push(href);
     }
@@ -185,7 +124,7 @@ export function ProSidebar({
             if (hasChildren) {
               toggleExpanded(item.id);
             } else {
-              handleNavigation(item.href, item.shortcut);
+              handleNavigation(item.href);
             }
           }}
         >

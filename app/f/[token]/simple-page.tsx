@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ShoppingCartIcon, HeartIcon, CheckCircleIcon, XIcon, ZoomInIcon, AlertCircleIcon } from 'lucide-react';
 import { PublicHero } from '@/components/public/PublicHero'
 import { PhotoCard as PublicPhotoCard } from '@/components/public/PhotoCard'
 import { PhotoModal as PublicPhotoModal } from '@/components/public/PhotoModal'
 import { StickyCTA } from '@/components/public/StickyCTA'
+import { CartButton, ShoppingCart as FamilyCartDrawer } from '@/components/family/ShoppingCart'
+import { useCartStore } from '@/lib/stores/cart-store'
 import { EmptyState } from '@/components/public/EmptyState'
 
 async function submitSelection(payload: {
@@ -45,6 +47,7 @@ interface Subject {
 
 export default function SimpleGalleryPage() {
   const params = useParams();
+  const router = useRouter();
   const token = params.token as string;
 
   const [loading, setLoading] = useState(true);
@@ -61,6 +64,7 @@ export default function SimpleGalleryPage() {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [zoomIndex, setZoomIndex] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const { addItem, getTotalItems, openCart } = useCartStore();
 
   useEffect(() => {
     if (token) {
@@ -229,7 +233,7 @@ export default function SimpleGalleryPage() {
       <div aria-live="polite" className="sr-only">{submitted ? '¡Listo! Recibimos tu selección.' : ''}</div>
       
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
+      <div className="bg-white/60 backdrop-blur-md shadow-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Tu Galería Privada</h1>
@@ -243,6 +247,7 @@ export default function SimpleGalleryPage() {
                 <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                 <span className="text-gray-600">{photos.length} fotos disponibles</span>
               </div>
+              <CartButton />
               {selectedPhotos.size > 0 && (
                 <div className="flex items-center space-x-2">
                   <ShoppingCartIcon className="h-4 w-4 text-purple-600" />
@@ -340,7 +345,16 @@ export default function SimpleGalleryPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      const wasSelected = selectedPhotos.has(photo.id);
                       togglePhotoSelection(photo.id);
+                      if (!wasSelected) {
+                        addItem({
+                          photoId: photo.id,
+                          filename: photo.filename,
+                          price: 0,
+                          watermarkUrl: photo.preview_url,
+                        });
+                      }
                     }}
                     className={`rounded-full p-2 shadow-lg transition-all transform hover:scale-110 ${
                       selectedPhotos.has(photo.id)

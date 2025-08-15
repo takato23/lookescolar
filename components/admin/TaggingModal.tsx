@@ -74,12 +74,11 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
           : '/api/admin/students';
         
         let response = await fetch(url);
-
-        // Fallback: si la ruta aún no existe, usar subjects-simple temporalmente
+        // Fallback legacy eliminado: usar /api/admin/subjects
         if (response.status === 404) {
           const fallbackUrl = selectedEvent
-            ? `/api/admin/subjects-simple?event_id=${selectedEvent}`
-            : '/api/admin/subjects-simple';
+            ? `/api/admin/subjects?event_id=${selectedEvent}`
+            : '/api/admin/subjects';
           response = await fetch(fallbackUrl);
         }
 

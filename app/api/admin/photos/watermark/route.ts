@@ -63,17 +63,15 @@ export async function POST(request: NextRequest) {
 
         const MAX_SIDE = 1600;
         let processingBuf = buf;
-        if (width > MAX_SIDE || height > MAX_SIDE) {
-          const scale = MAX_SIDE / Math.max(width, height);
-          const newW = Math.round(width * scale);
-          const newH = Math.round(height * scale);
+        const maxSide = Math.max(width, height);
+        const scale = maxSide > MAX_SIDE ? MAX_SIDE / maxSide : 1;
+        const newW = Math.round(width * scale);
+        const newH = Math.round(height * scale);
+        if (scale < 1) {
           processingBuf = await sharp(buf)
             .resize({ width: newW, height: newH, fit: 'inside' })
             .toBuffer();
         }
-
-        const newW = Math.round(width * scale);
-        const newH = Math.round(height * scale);
 
         const base = path
           .replace(/^events\//, '')
