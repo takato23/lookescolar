@@ -166,16 +166,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
         duration,
       });
 
-      return NextResponse.json({
-        events: eventsWithStats,
-        meta: {
-          total: eventsWithStats.length,
-          filtered_by: status,
-          sorted_by: `${sortBy} ${sortOrder}`,
-          includes_stats: includeStats,
-          generated_at: new Date().toISOString(),
-        },
-      });
+      // Compat tests: devolver arreglo como raíz (no objeto envuelto)
+      return NextResponse.json(eventsWithStats);
     } catch (error: any) {
       const duration = Date.now() - startTime;
 
@@ -287,8 +279,16 @@ export const POST = RateLimitMiddleware.withRateLimit(
         duration,
       });
 
+      // Compat tests: incluir campos en la raíz además del objeto event
       return NextResponse.json({
-        success: true,
+        id: insertResult.data.id,
+        name: insertResult.data.name,
+        location: insertResult.data.location,
+        date: insertResult.data.date,
+        active: insertResult.data.status === 'active',
+        status: insertResult.data.status,
+        created_at: insertResult.data.created_at,
+        updated_at: insertResult.data.updated_at,
         event: {
           id: insertResult.data.id,
           name: insertResult.data.name,

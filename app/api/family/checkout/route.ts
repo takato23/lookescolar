@@ -103,25 +103,7 @@ export async function POST(request: NextRequest) {
     // 1. Verificar token válido y obtener sujeto
     const { data: tokenData } = await supabase
       .from('subject_tokens')
-      .select(
-        `
-        subject_id,
-        expires_at,
-        subjects:subject_id (
-          id,
-          event_id,
-          first_name,
-          last_name,
-          type,
-          events:event_id (
-            id,
-            name,
-            school_name,
-            status
-          )
-        )
-      `
-      )
+      .select(`subject_id, expires_at, subjects:subject_id ( id, event_id, first_name, last_name, type, events:event_id ( id, name, school_name, status ) )`)
       .eq('token', token)
       .single();
 
