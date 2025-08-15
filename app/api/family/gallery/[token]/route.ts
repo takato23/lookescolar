@@ -39,8 +39,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
         // Verificar que es una familia con token válido (ya verificado por AuthMiddleware)
         if (!authContext.isFamily || !authContext.subject) {
           return NextResponse.json(
-            { error: 'Family token access required' },
-            { status: 403 }
+            { error: 'Invalid token or access denied' },
+            { status: 401 }
           );
         }
 
