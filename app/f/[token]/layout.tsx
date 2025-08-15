@@ -1,7 +1,7 @@
 import { ReactNode, Suspense } from 'react';
 import { FamilyHeader } from '@/components/family/FamilyHeader';
 import { FamilyNavigation } from '@/components/family/FamilyNavigation';
-import { MobileNavigation, familyNavigationItems } from '@/components/ui/mobile-navigation';
+import { MobileNavigation } from '@/components/ui/mobile-navigation';
 import { MobileOptimizations } from '@/components/family/MobileOptimizations';
 
 interface FamilyLayoutProps {
@@ -10,11 +10,8 @@ interface FamilyLayoutProps {
 }
 
 export default function FamilyLayout({ children, params }: FamilyLayoutProps) {
-  // Update navigation items with current token
-  const navigationItems = familyNavigationItems.map(item => ({
-    ...item,
-    href: item.href.replace('/f', `/f/${params.token}`)
-  }));
+  // Navegación móvil desactivada si la fuente de ítems no está disponible en el server
+  const navigationItems: any[] = [];
 
   return (
     <MobileOptimizations>
