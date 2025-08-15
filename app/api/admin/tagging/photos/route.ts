@@ -31,7 +31,7 @@ const PhotoFilterSchema = z.object({
     })
     .optional(),
   include_signed_urls: z.boolean().default(true),
-  url_expires_in: z.number().min(300).max(7200).default(3600), // 5min to 2 hours
+  url_expires_in: z.number().min(300).max(3600).default(900), // 5–60 min, default 15 min
 });
 
 export async function GET(request: NextRequest) {

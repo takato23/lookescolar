@@ -217,7 +217,7 @@ async function handlePOST(request: NextRequest) {
             await supabase.storage.createBucket(ORIGINAL_BUCKET, { public: false });
           } catch {}
           try {
-            await supabase.storage.createBucket(PREVIEW_BUCKET, { public: true });
+            await supabase.storage.createBucket(PREVIEW_BUCKET, { public: false });
           } catch {}
 
           const upOriginal = await supabase.storage

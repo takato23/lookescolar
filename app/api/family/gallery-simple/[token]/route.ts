@@ -144,9 +144,10 @@ export async function GET(
     // Generar URLs firmadas para cada foto
     const photosWithUrls = await Promise.all(
       (photos || []).map(async (photo: any) => {
-        // preferir watermark/preview si existen, fallback storage_path
-        const key = photo.watermark_path || photo.preview_path || photo.storage_path;
-        const preview_url = key ? await signedUrlForKey(key, 3600) : null;
+        // preferir watermark/preview únicamente; nunca exponer original en UI
+        const key = photo.watermark_path || photo.preview_path;
+        const preview_url = key ? await signedUrlForKey(key, 900) : null;
+        if (!preview_url) return null;
         return {
           id: photo.id,
           filename: (photo as any).original_filename ?? null,

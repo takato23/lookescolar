@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validar path de almacenamiento
-    if (!SecurityValidator.isValidStoragePath(path)) {
+    if (!SecurityValidator.isValidStoragePath(path) || /(^|\/)events\//.test(path) && !/(^|\/)previews\//.test(path) && !/watermark/i.test(path)) {
       return NextResponse.json({ error: 'Path inválido' }, { status: 400 });
     }
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Compat desarrollo: usar helper centralizado
-    const signedUrl = await signedUrlForKey(path, 3600);
+    const signedUrl = await signedUrlForKey(path, 900);
     return NextResponse.json({ signedUrl, deprecated: true });
   } catch (error) {
     console.error('Error en signed URL:', error);
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Deprecated. Use server helper.' }, { status: 403 });
     }
 
-    const signedUrl = await signedUrlForKey(path, 3600);
+    const signedUrl = await signedUrlForKey(path, 900);
     return NextResponse.json({ signedUrl, deprecated: true });
   } catch (error) {
     console.error('Error en signed URL:', error);
