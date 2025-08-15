@@ -1,7 +1,7 @@
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { SecurityLogger } from '@/lib/middleware/auth.middleware';
 
-export async function signedUrlForKey(key: string, expiresSec = 3600): Promise<string> {
+export async function signedUrlForKey(key: string, expiresSec = 900): Promise<string> {
   const sb = await createServerSupabaseServiceClient();
   const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
   const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';

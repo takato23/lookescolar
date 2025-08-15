@@ -114,12 +114,12 @@ export async function GET(request: NextRequest) {
       (photosResult.data || []).map(async (photo: any) => {
         let preview_url = null;
 
-        if (photo.storage_path) {
+        // Generar URL firmada solo para preview_path si existe (nunca original)
+        if (photo.preview_path) {
           const { data: signedUrl } = await supabase.storage
             .from('photos')
-            .createSignedUrl(photo.storage_path, 3600); // 1 hora
-
-          preview_url = signedUrl?.signedUrl;
+            .createSignedUrl(photo.preview_path, 900);
+          preview_url = signedUrl?.signedUrl ?? null;
         }
 
         // Formatear los sujetos etiquetados

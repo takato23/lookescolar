@@ -223,10 +223,10 @@ async function handleGET(request: NextRequest) {
       (photos || []).map(async (photo: any) => {
         let preview_url: string | null = null;
         try {
-          // Intentar en orden: preview_path, watermark_path, storage_path
-          const preferredKey = photo.preview_path || photo.watermark_path || photo.storage_path;
+          // Intentar en orden: preview_path, watermark_path (nunca original)
+          const preferredKey = photo.preview_path || photo.watermark_path;
           if (preferredKey) {
-            preview_url = await signedUrlForKey(preferredKey, 3600);
+            preview_url = await signedUrlForKey(preferredKey, 900);
           }
         } catch (err) {
           console.warn('Failed to generate signed URL for photo:', photo.id, err);

@@ -136,8 +136,11 @@ export async function GET(
     const photosWithUrls = await Promise.all(
       (photos || []).map(async (photo) => {
         try {
-          const key = (photo as any).watermark_path || (photo as any).preview_path || photo.storage_path;
-          const signedUrl = await signedUrlForKey(key, 3600);
+          const key = (photo as any).watermark_path || (photo as any).preview_path;
+          if (!key) {
+            return null;
+          }
+          const signedUrl = await signedUrlForKey(key, 900);
 
           return {
             id: photo.id,
