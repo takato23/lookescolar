@@ -1,21 +1,20 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { PublicGallery } from '@/components/gallery/PublicGallery';
 import { GalleryHeader } from '@/components/gallery/GalleryHeader';
 import { ContactForm } from '@/components/gallery/ContactForm';
 
 interface PublicGalleryPageProps {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 }
 
 export default async function PublicGalleryPage({
   params,
 }: PublicGalleryPageProps) {
-  const { eventId } = params;
+  const { eventId } = await params;
 
   // Validar que eventId tiene formato UUID
   const uuidRegex =
@@ -24,23 +23,8 @@ export default async function PublicGalleryPage({
     notFound();
   }
 
-  // Verificar que el evento existe y está activo (SSR)
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookies().getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookies().set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  // Verificar que el evento existe y está activo (SSR con service client)
+  const supabase = await createServerSupabaseServiceClient();
 
   const { data: event, error } = await supabase
     .from('events')
@@ -206,24 +190,9 @@ function GallerySkeleton() {
 
 // Metadata para SEO
 export async function generateMetadata({ params }: PublicGalleryPageProps) {
-  const { eventId } = params;
+  const { eventId } = await params;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookies().getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookies().set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+  const supabase = await createServerSupabaseServiceClient();
 
   const { data: event } = await supabase
     .from('events')
