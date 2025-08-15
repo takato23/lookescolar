@@ -1,19 +1,17 @@
-1- aplica los edits y agrega las dependencias de CSV EXCEL
+1- dejar claro el flujo de asignar fotos o carpetas para que usuarios pueda ingresar. Acutalmente tengo 2actualziar "subir fotos" "modo QR" "modo sesion"
 
-2- Conecta holisticamente los pedidos con la galeria de los padres ylos pedidos de MP. Ahora estan las credencialesd e prueba.
+Si toco una foto, puedo decsragarla, verla, moverla, seleccionarla o tocar "tag"
 
-3- Entre a /admin/events. Explicame el funcionamiento de esto, y como se relaciona con las carpetas (como se defirencia tambien). Como se tiene que conectar holsicmante cone l resto, para que se conecte a las otos 
+Al querer taggear, recibo:
 
-Cuando toco "fotos" o "vista cliente"  obtengo:
-
-page.tsx:209  Server   Error: Route "/gallery/[eventId]" used `params.eventId`. `params` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
-    at Module.generateMetadata (page.tsx:209:11)
-
-page.tsx:217  Server   Error: Route "/gallery/[eventId]" used `cookies().getAll()`. `cookies()` should be awaited before using its value. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
-    at Object.getAll (page.tsx:217:28)
+TaggingModal.tsx:136 Error tagging photo: Error: Error tagging photo
+    at handlePhotoTag (page.tsx:266:13)
+    at async PhotoGalleryModern.useCallback[handleManualTag] (PhotoGalleryModern.tsx:1169:7)
+    at async handleTag (TaggingModal.tsx:132:7)
 
 
+    ----
 
------
+3- Crea otro archivo .md con cada link de acceso que no estamos mostrando (porm ejemplo /admin/...) y los de la galeria de los usuarios
 
-Crea un archivo MD con el estado actual de la aplicacion, completo, que tneemos implemetnado, oculto, que nos falta, y comoo entendes vos el flujo de trabajo que queremos obtener y que estamos haciendo para. Esto lo va a revisar un grupo de expertos que esta trbaando conmigo
+4- Sigo veindo las fotos en alta calidad cuando las veo en la galeria del admin. Tenemos qeu ahorrar espacio en supabase
