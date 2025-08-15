@@ -53,12 +53,16 @@ export function SessionMode({
   const [loading, setLoading] = useState(false);
   const [assignedCount, setAssignedCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'created_at'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   
   // Manual student entry state
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentGrade, setNewStudentGrade] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkText, setBulkText] = useState('');
 
   // Load subjects when session mode is activated
   const loadSubjects = useCallback(async () => {
@@ -66,7 +70,8 @@ export function SessionMode({
     
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/subjects-simple?event_id=${eventId}`);
+      const params = new URLSearchParams({ event_id: eventId, sort: sortBy, order: sortOrder });
+      const response = await fetch(`/api/admin/subjects?${params.toString()}`);
       const data = await response.json();
       
       if (data.success && data.subjects) {
@@ -81,7 +86,7 @@ export function SessionMode({
     } finally {
       setLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, sortBy, sortOrder]);
 
   useEffect(() => {
     if (isActive) {
@@ -189,8 +194,57 @@ export function SessionMode({
   };
 
   const handleBulkAddStudents = () => {
-    // For future implementation - CSV upload or bulk text entry
-    toast.info('Función de carga masiva próximamente');
+    setShowBulkModal(true);
+  };
+
+  const parseBulkText = (text: string): Array<{ name: string; grade_section?: string | null }> => {
+    return text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        // Formatos posibles: "Nombre - Grado" o "Nombre, Grado" o solo "Nombre"
+        const byDash = line.split(' - ');
+        const byComma = line.split(',');
+        if (byDash.length >= 2) return { name: byDash[0].trim(), grade_section: byDash.slice(1).join(' - ').trim() };
+        if (byComma.length >= 2) return { name: byComma[0].trim(), grade_section: byComma.slice(1).join(',').trim() };
+        return { name: line };
+      });
+  };
+
+  const submitBulk = async () => {
+    const rows = parseBulkText(bulkText);
+    if (rows.length === 0) {
+      toast.error('Pegá una lista con al menos un nombre');
+      return;
+    }
+    try {
+      setAddingStudent(true);
+      const response = await fetch('/api/admin/subjects/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: rows.map(r => ({ ...r, event_id: eventId })) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Error en carga masiva');
+
+      const created = (data.created || []).map((c: any) => ({
+        id: c.id as string,
+        name: c.name as string,
+        grade_section: rows.find(r => r.name === c.name)?.grade_section ?? undefined,
+        event_id: eventId,
+      }));
+
+      setSubjects(prev => [...prev, ...created]);
+      setShowBulkModal(false);
+      setBulkText('');
+      toast.success(`Se agregaron ${created.length} alumnos`);
+    } catch (e: any) {
+      console.error('Error bulk adding students:', e);
+      toast.error(e?.message || 'Error en carga masiva');
+    } finally {
+      setAddingStudent(false);
+    }
   };
 
   if (!isActive) {
@@ -230,19 +284,37 @@ export function SessionMode({
               </p>
             </div>
           </div>
-                      <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setShowAddStudentModal(true)} size="sm">
-                <UserPlusIcon className="w-4 h-4 mr-1" />
-                + Alumno
-              </Button>
-              <Button variant="outline" onClick={handleReset} size="sm">
-                <RotateCcwIcon className="w-4 h-4 mr-1" />
-                Reset
-              </Button>
-              <Button variant="outline" onClick={onToggle} size="sm">
-                Finalizar Sesión
-              </Button>
-            </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600" htmlFor="sort-mode">Orden</label>
+            <select
+              id="sort-mode"
+              aria-label="Ordenar por"
+              className="rounded-md border px-2 py-1 text-sm"
+              value={`${sortBy}:${sortOrder}`}
+              onChange={(e) => {
+                const [s, o] = e.target.value.split(':') as ['name' | 'created_at', 'asc' | 'desc'];
+                setSortBy(s);
+                setSortOrder(o);
+                loadSubjects();
+              }}
+            >
+              <option value="name:asc">Nombre (A-Z)</option>
+              <option value="name:desc">Nombre (Z-A)</option>
+              <option value="created_at:desc">Recientes primero</option>
+              <option value="created_at:asc">Antiguos primero</option>
+            </select>
+            <Button variant="outline" onClick={() => setShowAddStudentModal(true)} size="sm">
+              <UserPlusIcon className="w-4 h-4 mr-1" />
+              + Alumno
+            </Button>
+            <Button variant="outline" onClick={handleReset} size="sm">
+              <RotateCcwIcon className="w-4 h-4 mr-1" />
+              Reset
+            </Button>
+            <Button variant="outline" onClick={onToggle} size="sm">
+              Finalizar Sesión
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
@@ -279,7 +351,7 @@ export function SessionMode({
                   <UserPlusIcon className="w-4 h-4 mr-2" />
                   Agregar Alumno
                 </Button>
-                <Button variant="outline" onClick={handleBulkAddStudents}>
+                <Button variant="outline" onClick={handleBulkAddStudents} aria-label="Abrir carga masiva de alumnos">
                   <UsersIcon className="w-4 h-4 mr-2" />
                   Carga Masiva
                 </Button>
@@ -377,7 +449,7 @@ export function SessionMode({
 
       {/* Add Student Modal */}
       <Dialog open={showAddStudentModal} onOpenChange={setShowAddStudentModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" aria-label="Agregar nuevo alumno" aria-describedby="add-student-desc">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlusIcon className="w-5 h-5 text-blue-600" />
@@ -385,7 +457,7 @@ export function SessionMode({
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4" id="add-student-desc">
             <div className="space-y-2">
               <Label htmlFor="student-name">Nombre del Alumno *</Label>
               <Input
@@ -399,6 +471,7 @@ export function SessionMode({
                     handleAddStudent();
                   }
                 }}
+                aria-label="Nombre del alumno"
               />
             </div>
             
@@ -415,18 +488,20 @@ export function SessionMode({
                     handleAddStudent();
                   }
                 }}
+                aria-label="Grado o sección del alumno"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddStudentModal(false)}>
+            <Button variant="outline" onClick={() => setShowAddStudentModal(false)} aria-label="Cancelar agregado de alumno">
               Cancelar
             </Button>
             <Button 
               onClick={handleAddStudent}
               disabled={!newStudentName.trim() || addingStudent}
               className="bg-blue-600 hover:bg-blue-700"
+              aria-label="Confirmar agregado de alumno"
             >
               {addingStudent ? (
                 <>
@@ -439,6 +514,31 @@ export function SessionMode({
                   Agregar Alumno
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Add Modal */}
+      <Dialog open={showBulkModal} onOpenChange={setShowBulkModal}>
+        <DialogContent className="sm:max-w-lg" aria-label="Carga masiva de alumnos">
+          <DialogHeader>
+            <DialogTitle>Cargar lista de alumnos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">Pegá una lista. Formatos admitidos por línea: "Nombre", "Nombre - Grado", "Nombre, Grado".</p>
+            <textarea
+              aria-label="Lista de alumnos"
+              className="w-full min-h-[200px] rounded-md border p-2"
+              placeholder={"Juan Pérez - 5A\nMaría García, 5A\nCarlos López"}
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkModal(false)} aria-label="Cancelar carga masiva">Cancelar</Button>
+            <Button onClick={submitBulk} disabled={addingStudent} aria-label="Confirmar carga masiva">
+              {addingStudent ? 'Procesando...' : 'Cargar lista'}
             </Button>
           </DialogFooter>
         </DialogContent>
