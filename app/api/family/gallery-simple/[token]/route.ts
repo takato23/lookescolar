@@ -6,17 +6,18 @@ import { bumpRequest, bumpUnique } from '@/lib/metrics/egress';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     // rate limit por token + IP
     const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
-    const key = `gal-simple:${params.token}:${ip}`;
+    const { token } = await params;
+    const key = `gal-simple:${token}:${ip}`;
     const { allowed } = await Soft60per10m.check(key);
     if (!allowed) {
       return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 });
     }
-    const { token } = params;
+    // token ya resuelto arriba
 
     // Validar token formato básico
     if (!token || token.length < 20) {
@@ -78,10 +79,10 @@ export async function GET(
     if (eventId) {
       const { data: eventData } = await supabase
         .from('events')
-        .select('id, name, school')
+        .select('id, name, school_name')
         .eq('id', eventId)
         .single();
-      if (eventData) eventInfo = { id: eventData.id, name: eventData.name, school_name: (eventData as any).school };
+      if (eventData) eventInfo = { id: (eventData as any).id, name: (eventData as any).name, school_name: (eventData as any).school_name };
     }
 
     // Paginación
