@@ -69,12 +69,14 @@ export class FamilyService {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
-          getAll() {
-            return cookies().getAll();
+          async getAll() {
+            const store = await cookies();
+            return store.getAll();
           },
-          setAll(cookiesToSet) {
+          async setAll(cookiesToSet) {
+            const store = await cookies();
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookies().set(name, value, options)
+              store.set(name, value, options)
             );
           },
         },
