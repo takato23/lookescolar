@@ -17,7 +17,7 @@ import {
   ArrowLeft,
   Upload,
   QrCode,
-  Package,
+  Box as Download,
   Edit3,
   Eye,
   AlertCircle,

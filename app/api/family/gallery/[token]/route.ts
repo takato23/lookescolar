@@ -76,8 +76,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
           // Generar URL firmada para la foto
           const signedUrl = await storageService.getSignedUrl(
             photoInfo.photo.storage_path,
-            3600
-          ); // 1 hora
+            900
+          ); // 15 min
 
           // Trackear view
           await familyService.trackPhotoView(photo_id, subject.id);
@@ -102,7 +102,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
           photos.map(async (assignment) => {
             const signedUrl = await storageService.getSignedUrl(
               assignment.photo.storage_path,
-              3600 // 1 hora de expiración
+              900 // 15 min de expiración
             );
 
             return {
@@ -139,7 +139,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
                   id: subject.event.id,
                   name: subject.event.name,
                   date: subject.event.date,
-                  school_name: subject.event.school_name,
+                  school_name: subject.event.school || subject.event.school_name,
                   photo_prices: subject.event.photo_prices,
                 }
               : null,
