@@ -14,7 +14,8 @@ export interface Subject {
     id: string;
     name: string;
     date: string;
-    school_name: string;
+    school?: string;
+    school_name?: string;
     status: string;
     photo_prices: Record<string, number>;
   };
@@ -97,19 +98,7 @@ export class FamilyService {
     try {
       const { data, error } = await this.supabase
         .from('subjects')
-        .select(
-          `
-          *,
-          event:events (
-            id,
-            name,
-            date,
-            school_name,
-            status,
-            photo_prices
-          )
-        `
-        )
+        .select(`*, event:events ( id, name, date, school, status, photo_prices )`)
         .eq('token', token)
         .gt('token_expires_at', new Date().toISOString())
         .single();
