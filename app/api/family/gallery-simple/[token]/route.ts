@@ -78,10 +78,10 @@ export async function GET(
     if (eventId) {
       const { data: eventData } = await supabase
         .from('events')
-        .select('id, name, school_name')
+        .select('id, name, school')
         .eq('id', eventId)
         .single();
-      if (eventData) eventInfo = eventData as any;
+      if (eventData) eventInfo = { id: eventData.id, name: eventData.name, school_name: (eventData as any).school };
     }
 
     // Paginación
