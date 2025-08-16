@@ -443,12 +443,12 @@ export const config = {
     // Aplicar a todas las rutas de API
     '/api/:path*',
     
-    // Aplicar a rutas específicas de la app
+    // Aplicar a rutas específicas de la app (pero NO a estáticos de Next)
     '/admin/:path*',
     '/f/:path*',
     
-    // Excluir explícitamente rutas que no necesitan middleware
-    // Incluye archivos estáticos, imágenes, y rutas especiales del navegador
-    '/((?!_next/static|_next/image|favicon.ico|\.well-known|robots\.txt|sitemap\.xml).*)',
+    // Excluir explícitamente archivos estáticos y assets de Next
+    // Importante: evitar interceptar `/_next/*` para no romper CSS/JS
+    '/((?!_next/|_next/static|_next/image|favicon.ico|\.well-known|robots\.txt|sitemap\.xml).*)',
   ],
 };
