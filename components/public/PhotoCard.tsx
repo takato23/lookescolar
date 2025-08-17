@@ -40,6 +40,7 @@ export function PhotoCard({ photo, selected, onToggle, onZoom }: PhotoCardProps)
             onLoad={() => setLoaded(true)}
             onError={() => setError(true)}
             loading="lazy"
+            decoding="async"
           />
         )}
 
