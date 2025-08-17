@@ -49,6 +49,9 @@ export function ShoppingCart({ onCheckout, className }: ShoppingCartProps) {
           isOpen ? "translate-x-0" : "translate-x-full",
           className
         )}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Carrito de compras"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">

@@ -25,6 +25,8 @@ import {
   Home,
   Mail,
   Package,
+  Wrench,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 export default function EventDetailPage() {
@@ -338,6 +340,28 @@ export default function EventDetailPage() {
                 <span className="font-medium">Ver Pedidos</span>
                 <span className="text-xs text-muted-foreground">Gestionar ventas</span>
               </Button>
+
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-rose-50 hover:border-rose-300 group"
+                onClick={async () => {
+                  try {
+                    const res = await fetch('/api/admin/photos/repair-previews', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ eventId: id }),
+                    });
+                    if (!res.ok) throw new Error('Error reparando previews');
+                    alert('Reparador ejecutado: previews/watermarks regenerados');
+                  } catch (e) {
+                    alert('No se pudo ejecutar el reparador');
+                  }
+                }}
+              >
+                <Wrench className="mb-2 h-6 w-6 text-rose-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Reparar previews</span>
+                <span className="text-xs text-muted-foreground">Watermark fuerte</span>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -392,6 +416,19 @@ export default function EventDetailPage() {
                 <Mail className="mb-2 h-6 w-6 text-green-600 group-hover:scale-110 transition-transform" />
                 <span className="font-medium">Plantilla Email</span>
                 <span className="text-xs text-muted-foreground">Para envío masivo</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-auto flex-col py-4 hover:bg-indigo-50 hover:border-indigo-300 group"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/gallery/${id}`);
+                  alert('Link público copiado');
+                }}
+              >
+                <LinkIcon className="mb-2 h-6 w-6 text-indigo-600 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Copiar Link Público</span>
+                <span className="text-xs text-muted-foreground">/gallery/{id}</span>
               </Button>
             </div>
           </CardContent>

@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+const BLUR_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
+
 interface Photo {
   id: string;
   storage_path: string;
@@ -67,6 +70,7 @@ export function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
       {/* Main image container */}
       <div
         className={`relative ${calculateHeight()} overflow-hidden rounded-xl bg-gray-100 shadow-md transition-shadow duration-300 hover:shadow-xl`}
+        aria-label="Miniatura de foto con marca de agua"
       >
         {!imageLoaded && !imageError && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -102,6 +106,9 @@ export function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             quality={75}
             loading="lazy"
+            decoding="async"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
           />
         )}
 

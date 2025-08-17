@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { ShoppingCartIcon, HeartIcon, CheckCircleIcon, XIcon, ZoomInIcon, AlertCircleIcon } from 'lucide-react';
 import { PublicHero } from '@/components/public/PublicHero'
@@ -64,7 +65,10 @@ export default function SimpleGalleryPage() {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [zoomIndex, setZoomIndex] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const { addItem, getTotalItems, openCart } = useCartStore();
+  const { addItem, getTotalItems, openCart, items, clearCart } = useCartStore();
+
+  const BLUR_DATA_URL =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
 
   useEffect(() => {
     if (token) {
@@ -297,12 +301,16 @@ export default function SimpleGalleryPage() {
               >
                 {/* Image */}
                 <div className="aspect-square relative bg-gray-100">
-                  <img
+                  <Image
                     src={photo.preview_url}
                     alt={photo.filename}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
                   />
                   
                   {/* Zoom button on hover */}
@@ -422,6 +430,33 @@ export default function SimpleGalleryPage() {
           priceText={priceText}
         />
       )}
+
+      {/* Cart Drawer for checkout */}
+      <FamilyCartDrawer
+        onCheckout={async () => {
+          try {
+            const response = await fetch('/api/family/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token,
+                contactInfo: { name: 'Cliente', email: 'cliente@example.com' },
+                items: items.map((it) => ({ photoId: it.photoId, quantity: it.quantity, priceType: 'base' })),
+              }),
+            });
+            if (!response.ok) {
+              const data = await response.json();
+              throw new Error(data.error || 'Error en checkout');
+            }
+            const data = await response.json();
+            clearCart();
+            window.location.href = data.redirectUrl;
+          } catch (err) {
+            console.error('[Service] Family checkout error:', err);
+            alert('No se pudo iniciar el pago');
+          }
+        }}
+      />
 
       {/* Photo Modal */}
       {zoomIndex !== null && photos[zoomIndex] && (

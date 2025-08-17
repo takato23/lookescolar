@@ -86,7 +86,8 @@ export function PhotoModal({
          onTouchStart={onTouchStart}
          onTouchEnd={onTouchEnd} 
          role="dialog" 
-         aria-modal="true">
+         aria-modal="true"
+         aria-label="Visor de foto">
       {/* Close button - Mobile optimized */}
       <button 
         className="absolute right-4 top-4 z-60
