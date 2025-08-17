@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Loader2, Zap, CheckCircle2, Copy, QrCode, ExternalLink } from 'lucide-react';
+import { Loader2, Zap, CheckCircle2, Copy, QrCode, ExternalLink, Wrench } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +40,19 @@ export default function QuickPublishButton({ eventId, photoIds, onComplete }: Qu
     setCurrentStep('upload');
     
     try {
+      // Step 0: Reparar previews con watermark fuerte (opcional)
+      try {
+        const rep = await fetch('/api/admin/photos/repair-previews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId }),
+        });
+        if (rep.ok) {
+          const repJson = await rep.json();
+          toast.success(`Previews reparadas: ${repJson.results?.filter((r: any)=>r.repaired).length ?? 0}`);
+        }
+      } catch {}
+
       // Step 1: Apply watermark to photos
       setCurrentStep('watermark');
       toast.info('Aplicando watermark a las fotos...');
