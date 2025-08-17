@@ -65,7 +65,7 @@ async function handlePOST(request: NextRequest) {
       if (!firstPhoto) {
         return NextResponse.json({ error: 'No photo found' }, { status: 404 });
       }
-      const key = firstPhoto.watermark_path || firstPhoto.preview_path || firstPhoto.storage_path;
+      const key = firstPhoto.watermark_path || firstPhoto.preview_path;
       if (!key) {
         return NextResponse.json({ error: 'No valid path for photo' }, { status: 404 });
       }
@@ -93,7 +93,7 @@ async function handlePOST(request: NextRequest) {
     const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
     const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
     for (const p of photos) {
-      const preferredKey = (p as any).watermark_path || (p as any).preview_path || p.storage_path;
+      const preferredKey = (p as any).watermark_path || (p as any).preview_path;
       if (!preferredKey) continue;
       const filename = p.original_filename || `${p.id}.jpg`;
 

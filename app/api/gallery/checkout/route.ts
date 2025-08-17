@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
 import {
   createPaymentPreference,
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { eventId, contactInfo, items } = validation.data;
-    const supabase = createServiceClient();
+    const supabase = await createServiceClient();
 
     console.info(`[${requestId}] Public checkout started`, {
       eventId,

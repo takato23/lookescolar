@@ -6,10 +6,11 @@ import { MobileOptimizations } from '@/components/family/MobileOptimizations';
 
 interface FamilyLayoutProps {
   children: ReactNode;
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
-export default function FamilyLayout({ children, params }: FamilyLayoutProps) {
+export default async function FamilyLayout({ children, params }: FamilyLayoutProps) {
+  const { token } = await params;
   // Navegación móvil desactivada si la fuente de ítems no está disponible en el server
   const navigationItems: any[] = [];
 
@@ -30,14 +31,14 @@ export default function FamilyLayout({ children, params }: FamilyLayoutProps) {
         {/* Desktop Header with subject info */}
         <div className="hidden lg:block">
           <Suspense fallback={<FamilyHeaderSkeleton />}>
-            <FamilyHeader token={params.token} />
+            <FamilyHeader token={token} />
           </Suspense>
         </div>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:block">
           <Suspense fallback={<div className="h-16" />}>
-            <FamilyNavigation token={params.token} />
+            <FamilyNavigation token={token} />
           </Suspense>
         </div>
 

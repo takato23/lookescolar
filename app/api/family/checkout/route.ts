@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { token, contactInfo, items } = validation.data;
-    const supabase = createServiceClient();
+    const supabase = await createServiceClient();
 
     console.info(`[${requestId}] Checkout started`, {
       token: 'tok_***',
@@ -103,25 +103,7 @@ export async function POST(request: NextRequest) {
     // 1. Verificar token válido y obtener sujeto
     const { data: tokenData } = await supabase
       .from('subject_tokens')
-      .select(
-        `
-        subject_id,
-        expires_at,
-        subjects:subject_id (
-          id,
-          event_id,
-          first_name,
-          last_name,
-          type,
-          events:event_id (
-            id,
-            name,
-            school_name,
-            status
-          )
-        )
-      `
-      )
+      .select(`subject_id, expires_at, subjects:subject_id ( id, event_id, first_name, last_name, type, events:event_id ( id, name, school, status ) )`)
       .eq('token', token)
       .single();
 
@@ -354,7 +336,7 @@ export async function POST(request: NextRequest) {
       })),
       event: {
         name: event.name,
-        school: event.school_name,
+        school: event.school,
       },
     });
   } catch (error) {

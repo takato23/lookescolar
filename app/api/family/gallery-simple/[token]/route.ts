@@ -6,20 +6,40 @@ import { bumpRequest, bumpUnique } from '@/lib/metrics/egress';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   try {
     // rate limit por token + IP
     const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
-    const key = `gal-simple:${params.token}:${ip}`;
+    const { token } = await params;
+    const key = `gal-simple:${token}:${ip}`;
     const { allowed } = await Soft60per10m.check(key);
     if (!allowed) {
       return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 });
     }
-    const { token } = params;
+    // token ya resuelto arriba
 
     // Validar token formato básico
     if (!token || token.length < 20) {
+      // Soporte de mock en desarrollo
+      const { searchParams } = new URL(request.url);
+      if (process.env.NODE_ENV !== 'production' && searchParams.get('mock') === '1') {
+        const mockPhotos = Array.from({ length: 12 }).map((_, i) => ({
+          id: `mock-${i + 1}`,
+          filename: `mock-${i + 1}.jpg`,
+          preview_url: `https://picsum.photos/seed/lookescolar-${i}/600/600?grayscale`,
+          size: 150_000,
+          width: 600,
+          height: 600,
+          created_at: new Date().toISOString(),
+        }));
+        return NextResponse.json({
+          success: true,
+          subject: { id: 'mock', name: 'Tu galería', grade_section: null, event: null },
+          photos: mockPhotos,
+          pagination: { page: 1, limit: 12, total: 12, total_pages: 1, has_more: false },
+        });
+      }
       return NextResponse.json({ error: 'Token inválido' }, { status: 400 });
     }
 
@@ -78,10 +98,10 @@ export async function GET(
     if (eventId) {
       const { data: eventData } = await supabase
         .from('events')
-        .select('id, name, school_name')
+        .select('id, name, school_name:school')
         .eq('id', eventId)
         .single();
-      if (eventData) eventInfo = eventData as any;
+      if (eventData) eventInfo = { id: (eventData as any).id, name: (eventData as any).name, school_name: (eventData as any).school_name };
     }
 
     // Paginación
@@ -99,7 +119,7 @@ export async function GET(
       // Intentar con filtro approved=true; si falla, repetir sin filtro
       let res = await supabase
         .from('photos')
-        .select('id, event_id, original_filename, storage_path, file_size, width, height, created_at, code_id')
+        .select('id, event_id, original_filename, storage_path, preview_path, watermark_path, file_size, width, height, created_at, code_id')
         .eq('code_id', codeId)
         .eq('approved', true)
         .order('created_at', { ascending: true })
@@ -107,7 +127,7 @@ export async function GET(
       if (res.error) {
         const res2 = await supabase
           .from('photos')
-          .select('id, event_id, original_filename, storage_path, file_size, width, height, created_at, code_id')
+          .select('id, event_id, original_filename, storage_path, preview_path, watermark_path, file_size, width, height, created_at, code_id')
           .eq('code_id', codeId)
           .order('created_at', { ascending: true })
           .range(offset, offset + limit - 1);
@@ -116,37 +136,42 @@ export async function GET(
         photos = (res.data as any[]) || [];
       }
     } else if (mode === 'subject' && subjectId) {
-      const { data: psubs, error: photosError } = await supabase
+      const { data: rows, error: photosError } = await supabase
         .from('photo_subjects')
         .select(
           `
-          photos (
+          photos!inner (
             id,
             event_id,
             original_filename,
             storage_path,
+            preview_path,
+            watermark_path,
             file_size,
             width,
             height,
-            created_at
+            created_at,
+            approved
           )
         `
         )
         .eq('subject_id', subjectId)
+        .eq('photos.approved', true)
         .range(offset, offset + limit - 1);
       if (photosError) {
         console.error('Error fetching photos:', photosError);
         return NextResponse.json({ error: 'Error obteniendo fotos' }, { status: 500 });
       }
-      photos = (psubs || []).map((row: any) => row.photos).filter(Boolean);
+      photos = (rows ?? []).map((r: any) => r.photos).filter(Boolean);
     }
 
     // Generar URLs firmadas para cada foto
     const photosWithUrls = await Promise.all(
       (photos || []).map(async (photo: any) => {
-        // preferir watermark/preview si existen, fallback storage_path
-        const key = photo.watermark_path || photo.preview_path || photo.storage_path;
-        const preview_url = key ? await signedUrlForKey(key, 3600) : null;
+        // preferir watermark/preview únicamente; nunca exponer original en UI
+        const key = photo.watermark_path || photo.preview_path;
+        const preview_url = key ? await signedUrlForKey(key, 900) : null;
+        if (!preview_url) return null;
         return {
           id: photo.id,
           filename: (photo as any).original_filename ?? null,
@@ -193,8 +218,9 @@ export async function GET(
     } else if (mode === 'subject' && subjectId) {
       const { count } = await supabase
         .from('photo_subjects')
-        .select('photo_id', { count: 'exact', head: true })
-        .eq('subject_id', subjectId);
+        .select('photo_id, photos!inner(id)', { count: 'exact', head: true })
+        .eq('subject_id', subjectId)
+        .eq('photos.approved', true);
       total = count || 0;
     }
 

@@ -392,7 +392,7 @@ export default function QuickFlowPage() {
                 <div className="p-3 text-sm text-muted-foreground">Sin códigos cargados todavía.</div>
               ) : (
                 codes.map((c) => {
-                  const url = c.token ? `${typeof window !== 'undefined' ? window.location.origin : ''}/f/${c.token}` : ''
+                  const url = c.token ? `${typeof window !== 'undefined' ? window.location.origin : ''}/f/${c.token}/simple-page` : ''
                   return (
                     <div key={c.id} className="grid grid-cols-12 items-center gap-2 px-3 py-2 text-sm">
                       <div className="col-span-3 font-medium">{c.code_value}</div>
@@ -424,7 +424,7 @@ export default function QuickFlowPage() {
                             <a className="inline-flex items-center rounded-md border px-2 py-1 text-sm" href={`/api/qr?token=${encodeURIComponent(c.token)}`} target="_blank" rel="noreferrer" aria-label={`Ver QR ${c.code_value}`}>
                               <QrCode className="mr-1 h-4 w-4" /> QR del link
                             </a>
-                            <a className="inline-flex items-center rounded-md border px-2 py-1 text-sm" href={`/f/${c.token}`} target="_blank" rel="noreferrer" aria-label={`Abrir link ${c.code_value}`}>
+                            <a className="inline-flex items-center rounded-md border px-2 py-1 text-sm" href={`/f/${c.token}/simple-page`} target="_blank" rel="noreferrer" aria-label={`Abrir link ${c.code_value}`}>
                               <ExternalLink className="mr-1 h-4 w-4" /> Abrir
                             </a>
                           </>

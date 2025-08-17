@@ -150,7 +150,7 @@ export default function PublishPage() {
             <div className="p-6 text-sm text-muted-foreground">Sin resultados</div>
           ) : (
             filtered.map((r) => {
-              const url = r.token ? `${window.location.origin}/f/${r.token}` : '';
+              const url = r.token ? `${window.location.origin}/f/${r.token}/simple-page` : '';
               return (
                 <div key={r.id} className="grid grid-cols-12 items-center gap-2 border-t px-4 py-3 text-sm">
                   <div className="col-span-3 font-medium">{r.code_value}</div>
@@ -180,7 +180,7 @@ export default function PublishPage() {
                               <Copy className="mr-1 h-4 w-4" /> Copiar link
                             </Button>
                             <a
-                              href={`/f/${r.token}`}
+                              href={`/f/${r.token}/simple-page`}
                               target="_blank"
                               rel="noreferrer"
                               aria-label={`Abrir enlace público ${r.code_value}`}

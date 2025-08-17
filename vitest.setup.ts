@@ -65,9 +65,27 @@ beforeAll(async () => {
   process.env['MP_ACCESS_TOKEN'] = process.env['MP_ACCESS_TOKEN'] || 'stub';
   process.env['MP_WEBHOOK_SECRET'] = process.env['MP_WEBHOOK_SECRET'] || 'stub';
   process.env['NEXT_PUBLIC_APP_URL'] = process.env['NEXT_PUBLIC_APP_URL'] || 'http://localhost:3000';
+  process.env['BASE_URL'] = process.env['BASE_URL'] || process.env['NEXT_PUBLIC_BASE_URL'] || 'http://localhost:3000';
 
   process.env['TEST_ADMIN_EMAIL'] = process.env['TEST_ADMIN_EMAIL'] || 'admin@lookescolar.test';
   process.env['TEST_ADMIN_PASSWORD'] = process.env['TEST_ADMIN_PASSWORD'] || 'test-admin-password-123';
+
+  // Wrapper de fetch para normalizar URLs relativas en entorno de test (jsdom)
+  try {
+    const base = process.env['BASE_URL'] || process.env['NEXT_PUBLIC_BASE_URL'] || 'http://localhost:3000';
+    const originalFetch: any = (globalThis as any).fetch;
+    if (typeof originalFetch === 'function') {
+      (globalThis as any).fetch = ((input: any, init?: any) => {
+        const urlStr = typeof input === 'string' ? input : (input?.url ?? input);
+        if (typeof urlStr === 'string' && !/^https?:\/\//i.test(urlStr)) {
+          const sanitizedPath = urlStr.replace(/^\/+/, '/');
+          const absolute = new URL(sanitizedPath, base).toString();
+          return originalFetch(absolute, init);
+        }
+        return originalFetch(input, init);
+      }) as any;
+    }
+  } catch {}
 
   // Mocks adicionales para dependencias pesadas si estamos en modo fake DB
   if (process.env['SEED_FAKE_DB'] === '1') {

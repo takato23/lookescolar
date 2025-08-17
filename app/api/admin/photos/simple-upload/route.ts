@@ -217,7 +217,7 @@ async function handlePOST(request: NextRequest) {
             await supabase.storage.createBucket(ORIGINAL_BUCKET, { public: false });
           } catch {}
           try {
-            await supabase.storage.createBucket(PREVIEW_BUCKET, { public: true });
+            await supabase.storage.createBucket(PREVIEW_BUCKET, { public: false });
           } catch {}
 
           const upOriginal = await supabase.storage
@@ -287,7 +287,7 @@ async function handlePOST(request: NextRequest) {
               mime_type: file.type,
               width: srcW,
               height: srcH,
-              approved: true,
+              approved: process.env.PHOTOS_DEFAULT_APPROVED === 'true',
               event_id: finalEventId ?? null,
             })
             .select()
