@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+const BLUR_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
+
 interface Photo {
   id: string;
   storage_path: string;
@@ -104,6 +107,8 @@ export function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
             quality={75}
             loading="lazy"
             decoding="async"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
           />
         )}
 

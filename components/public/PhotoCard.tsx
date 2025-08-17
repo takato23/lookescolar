@@ -3,6 +3,9 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 
+const BLUR_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg=='
+
 interface PublicPhoto {
   id: string
   preview_url: string
@@ -41,6 +44,8 @@ export function PhotoCard({ photo, selected, onToggle, onZoom }: PhotoCardProps)
             onError={() => setError(true)}
             loading="lazy"
             decoding="async"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
           />
         )}
 
