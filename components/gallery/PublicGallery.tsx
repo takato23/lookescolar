@@ -177,9 +177,9 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
       </div>
 
       {/* Masonry Grid */}
-      <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
+      <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4" role="grid" aria-label="Galería de fotos">
         {photos.map((photo, index) => (
-          <div key={photo.id} className="break-inside-avoid">
+          <div key={photo.id} className="break-inside-avoid" role="gridcell">
             <PhotoCard
               photo={photo}
               index={index}
@@ -198,6 +198,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
                   });
                 }}
                 aria-label="Agregar foto al carrito"
+                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
               >
                 Agregar al carrito
               </Button>

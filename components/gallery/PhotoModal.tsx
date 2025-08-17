@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
@@ -35,6 +35,7 @@ export function PhotoModal({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [imageError, setImageError] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   // Reset state when modal opens/closes or photo changes
   useEffect(() => {
@@ -43,6 +44,8 @@ export function PhotoModal({
       setZoomLevel(1);
       setImageError(false);
       document.body.style.overflow = 'hidden';
+      // Enfocar botón de cierre para accesibilidad
+      setTimeout(() => closeButtonRef.current?.focus(), 0);
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -116,12 +119,16 @@ export function PhotoModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
       onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="photo-modal-title"
+      aria-describedby="photo-modal-help"
     >
       {/* Header */}
       <div className="absolute left-0 right-0 top-0 z-10 bg-gradient-to-b from-black/50 to-transparent p-4">
         <div className="flex items-center justify-between text-white">
           <div className="flex items-center space-x-4">
-            <h3 className="text-lg font-medium">
+            <h3 id="photo-modal-title" className="text-lg font-medium">
               Foto {currentIndex} de {totalPhotos}
             </h3>
             <div className="text-sm opacity-75">
@@ -166,6 +173,8 @@ export function PhotoModal({
               onClick={onClose}
               className="h-10 w-10 border-none bg-transparent p-0 text-xl text-white hover:bg-white/10"
               title="Cerrar (tecla Escape)"
+              aria-label="Cerrar visor de foto"
+              ref={closeButtonRef}
             >
               ×
             </Button>
@@ -251,7 +260,7 @@ export function PhotoModal({
       {/* Bottom info */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-4">
         <div className="text-center text-white">
-          <p className="text-sm opacity-75">
+          <p id="photo-modal-help" className="text-sm opacity-75">
             Usa las flechas del teclado para navegar • ESC para cerrar • +/-
             para zoom
           </p>
