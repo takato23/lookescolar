@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { token, contactInfo, items } = validation.data;
-    const supabase = createServiceClient();
+    const supabase = await createServiceClient();
 
     console.info(`[${requestId}] Checkout started`, {
       token: 'tok_***',

@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Home,
   Mail,
+  Package,
 } from 'lucide-react';
 
 export default function EventDetailPage() {
@@ -202,7 +203,7 @@ export default function EventDetailPage() {
         {/* Stats Cards */}
         <div className="grid animate-slide-up grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Card variant="glass" className="group hover:scale-105 transition-transform cursor-pointer"
-                onClick={() => router.push(`/admin/photos?event=${id}`)}>
+                onClick={() => router.push(`/admin/photos?eventId=${id}`)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -291,7 +292,7 @@ export default function EventDetailPage() {
               <Button
                 variant="outline"
                 className="h-auto flex-col py-4 hover:bg-blue-50 hover:border-blue-300 group"
-                onClick={() => router.push(`/admin/photos?event=${id}`)}
+                onClick={() => router.push(`/admin/photos?eventId=${id}`)}
               >
                 <Upload className="mb-2 h-6 w-6 text-blue-600 group-hover:scale-110 transition-transform" />
                 <span className="font-medium">Subir Fotos</span>
@@ -301,7 +302,7 @@ export default function EventDetailPage() {
               <Button
                 variant="outline"
                 className="h-auto flex-col py-4 hover:bg-purple-50 hover:border-purple-300 group"
-                onClick={() => router.push(`/admin/photos?event=${id}&view=gallery`)}
+                onClick={() => router.push(`/admin/photos?eventId=${id}&view=gallery`)}
               >
                 <Eye className="mb-2 h-6 w-6 text-purple-600 group-hover:scale-110 transition-transform" />
                 <span className="font-medium">Ver Galería</span>
@@ -410,7 +411,7 @@ export default function EventDetailPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push(`/admin/photos?event=${id}`)}
+                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
                 >
                   Ver todas
                   <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
@@ -429,7 +430,7 @@ export default function EventDetailPage() {
                 <Button
                   variant="secondary"
                   className="mt-4"
-                  onClick={() => router.push(`/admin/photos?event=${id}`)}
+                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
                 >
                   Gestionar Fotos
                 </Button>

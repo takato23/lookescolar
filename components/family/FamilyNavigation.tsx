@@ -1,15 +1,22 @@
 import { familyService } from '@/lib/services/family.service';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 interface FamilyNavigationProps {
   token: string;
 }
 
 export async function FamilyNavigation({ token }: FamilyNavigationProps) {
-  const subject = await familyService.validateToken(token);
+  // Evitar logs si es token de código
+  const sb = await createServerSupabaseServiceClient();
+  const { data: codeTok } = await sb
+    .from('codes' as any)
+    .select('id')
+    .eq('token', token)
+    .single();
+  if (codeTok) return null;
 
-  if (!subject) {
-    return null;
-  }
+  const subject = await familyService.validateToken(token);
+  if (!subject) return null;
 
   // Obtener pedido activo para mostrar estado
   const activeOrder = await familyService.getActiveOrder(subject.id);

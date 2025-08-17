@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useRouter } from 'next/navigation';
 
 interface Event {
   id: string;
@@ -14,19 +17,17 @@ interface Event {
 interface GalleryHeaderProps {
   event: Event;
   photoCount: number;
+  formattedDate?: string;
 }
 
-export function GalleryHeader({ event, photoCount }: GalleryHeaderProps) {
+export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeaderProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [token, setToken] = useState('');
+  const router = useRouter();
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-AR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  // Evitar toLocaleDateString en servidor para no causar hydration mismatch.
+  // Si viene `formattedDate` desde el server, usar ese string directamente.
 
   const handleShare = async (platform: 'whatsapp' | 'email' | 'copy') => {
     const url = window.location.href;
@@ -81,7 +82,7 @@ export function GalleryHeader({ event, photoCount }: GalleryHeaderProps) {
           <p className="text-muted-foreground text-lg md:text-xl">
             📍 {event.school}
           </p>
-          <p className="text-muted-foreground">📅 {formatDate(event.date)}</p>
+          <p className="text-muted-foreground">📅 {formattedDate ?? event.date}</p>
         </div>
       </div>
 
@@ -94,6 +95,15 @@ export function GalleryHeader({ event, photoCount }: GalleryHeaderProps) {
             {photoCount === 1 ? 'foto disponible' : 'fotos disponibles'}
           </span>
         </div>
+
+        {/* Ver mis fotos (familias) */}
+        <Button
+          onClick={() => setOpenDialog(true)}
+          className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+          aria-label="Abrir diálogo para ver mis fotos"
+        >
+          Ver mis fotos
+        </Button>
 
         {/* Share button */}
         <div className="relative">
@@ -163,6 +173,44 @@ export function GalleryHeader({ event, photoCount }: GalleryHeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Dialog para token de familia */}
+      <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent aria-label="Ingresar token de familia" aria-describedby="token-desc">
+          <DialogHeader>
+            <DialogTitle>Ver mis fotos</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p id="token-desc" className="text-sm text-gray-600">
+              Ingresa tu token privado para acceder a tu galería familiar.
+            </p>
+            <Input
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="Pega tu token aquí"
+              aria-label="Token privado"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setOpenDialog(false)}
+                aria-label="Cancelar"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!token || token.length < 20) return;
+                  router.push(`/f/${token}`);
+                }}
+                aria-label="Ir a mi galería"
+              >
+                Continuar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Click outside handler for share menu */}
       {showShareMenu && (

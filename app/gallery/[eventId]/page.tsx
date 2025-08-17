@@ -6,14 +6,10 @@ import { GalleryHeader } from '@/components/gallery/GalleryHeader';
 import { ContactForm } from '@/components/gallery/ContactForm';
 
 interface PublicGalleryPageProps {
-  params: Promise<{
-    eventId: string;
-  }>;
+  params: Promise<{ eventId: string }>;
 }
 
-export default async function PublicGalleryPage({
-  params,
-}: PublicGalleryPageProps) {
+export default async function PublicGalleryPage({ params }: PublicGalleryPageProps) {
   const { eventId } = await params;
 
   // Validar que eventId tiene formato UUID
@@ -26,11 +22,13 @@ export default async function PublicGalleryPage({
   // Verificar que el evento existe y está activo (SSR con service client)
   const supabase = await createServerSupabaseServiceClient();
 
+  type EventRow = { id: string; name: string; school: string; date: string; status: string; created_at: string };
+
   const { data: event, error } = await supabase
     .from('events')
-    .select('id, name, school, date, active, created_at')
+    .select('id, name, school, date, status, created_at')
     .eq('id', eventId)
-    .eq('active', true)
+    .eq('status', 'active')
     .single();
 
   if (error || !event) {
@@ -49,7 +47,16 @@ export default async function PublicGalleryPage({
       <div className="container mx-auto max-w-7xl px-4 py-8">
         {/* Header con información del evento */}
         <Suspense fallback={<HeaderSkeleton />}>
-          <GalleryHeader event={event} photoCount={photoCount || 0} />
+          <GalleryHeader
+            event={event as EventRow}
+            photoCount={photoCount || 0}
+            formattedDate={new Date(event.date).toLocaleDateString('es-AR', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          />
         </Suspense>
 
         {/* Galería de fotos */}
@@ -196,9 +203,9 @@ export async function generateMetadata({ params }: PublicGalleryPageProps) {
 
   const { data: event } = await supabase
     .from('events')
-    .select('name, school, date')
+    .select('name, school, date, status')
     .eq('id', eventId)
-    .eq('active', true)
+    .eq('status', 'active')
     .single();
 
   if (!event) {

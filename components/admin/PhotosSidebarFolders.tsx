@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SearchIcon, MoreVerticalIcon, Trash2Icon } from 'lucide-react';
+import { SearchIcon, MoreVerticalIcon, Trash2Icon, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -190,9 +190,19 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
 
   return (
     <div className="space-y-4">
-      {/* New folder input - mejorado */}
+      {/* Nueva carpeta / evento rápido */}
       <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-        <h4 className="text-sm font-semibold text-gray-800 mb-2">Nueva Carpeta</h4>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-semibold text-gray-800">Nueva carpeta</h4>
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label="Crear carpeta"
+            onClick={() => handleCreateFolder(`Carpeta ${new Date().toLocaleDateString('es-AR')}`)}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Crear carpeta
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Input
             aria-label="Nombre de carpeta"
@@ -223,7 +233,7 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
             disabled={!newFolderName.trim()}
             className="bg-blue-600 text-white font-semibold hover:bg-blue-700 border-0 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            Crear
+            Crear carpeta
           </Button>
         </div>
       </div>
@@ -336,7 +346,7 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
                             Revocar token
                           </DropdownMenuItem>
                           {code.token && (
-                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(`${window.location.origin}/f/${code.token}`)}>
+                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(`${window.location.origin}/f/${code.token}/simple-page`)}>
                               Copiar enlace
                             </DropdownMenuItem>
                           )}
