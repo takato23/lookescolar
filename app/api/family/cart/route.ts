@@ -201,7 +201,7 @@ async function calculateTotal(
     event: {
       id: subject.event.id,
       name: subject.event.name,
-      school_name: subject.event.school_name,
+      school_name: subject.event.school_name || (subject.event as any).school,
     },
     pricing: {
       base_price: basePrice,

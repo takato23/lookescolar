@@ -356,6 +356,8 @@ function validateAntiHotlinking(
  * @returns {boolean} True if blocked
  */
 function isBlockedUserAgent(userAgent: string): boolean {
+  // En desarrollo no bloquear por User-Agent para facilitar pruebas locales
+  if (process.env.NODE_ENV !== 'production') return false;
   const blockedPatterns = [
     /bot.*bot/i, // Bots maliciosos
     /crawler/i,

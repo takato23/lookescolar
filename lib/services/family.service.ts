@@ -1,5 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 export interface Subject {
   id: string;
@@ -31,6 +30,8 @@ export interface PhotoAssignment {
     event_id: string;
     filename: string;
     storage_path: string;
+    preview_path?: string;
+    watermark_path?: string;
     created_at: string;
     status: string;
   };
@@ -65,23 +66,10 @@ export class FamilyService {
   private supabase;
 
   constructor() {
-    this.supabase = createServerClient(
+    this.supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          async getAll() {
-            const store = await cookies();
-            return store.getAll();
-          },
-          async setAll(cookiesToSet) {
-            const store = await cookies();
-            cookiesToSet.forEach(({ name, value, options }) =>
-              store.set(name, value, options)
-            );
-          },
-        },
-      }
+      { auth: { persistSession: false, autoRefreshToken: false } }
     );
   }
 
@@ -96,29 +84,55 @@ export class FamilyService {
     }
 
     try {
-      const { data, error } = await this.supabase
-        .from('subjects')
-        .select(`*, event:events ( id, name, date, school_name, status, photo_prices )`)
+      // 1) Resolver token → subject
+      const nowIso = new Date().toISOString();
+      const { data: tokenRow, error: tokenError } = await this.supabase
+        .from('subject_tokens')
+        .select('subject_id, expires_at')
         .eq('token', token)
-        .gt('token_expires_at', new Date().toISOString())
+        .gt('expires_at', nowIso)
+        .limit(1)
+        .maybeSingle();
+
+      if (tokenError || !tokenRow) {
+        console.warn(
+          `Token validation failed: ${tokenError?.message || 'Token not found/expired'} - Token: tok_***`
+        );
+        return null;
+      }
+
+      // 2) Cargar sujeto + evento básico
+      const { data: subjectData, error: subjectError } = await this.supabase
+        .from('subjects')
+        .select(`id, event_id, name, parent_name, parent_email, created_at, event:events ( id, name, date )`)
+        .eq('id', tokenRow.subject_id)
         .single();
 
-      if (error || !data) {
-        console.warn(
-          `Token validation failed: ${error?.message || 'Token not found'} - Token: tok_***`
-        );
+      if (subjectError || !subjectData) {
+        console.warn(`Token validation failed: subject not found - Token: tok_***`);
         return null;
       }
 
-      // Verificar que el evento esté activo
-      if (data.event?.status !== 'active') {
-        console.warn(
-          `Event not active for token - Event: ${data.event?.id}, Status: ${data.event?.status}`
-        );
-        return null;
-      }
-
-      return data as Subject;
+      // 3) Devolver en el shape esperado
+      return {
+        id: subjectData.id,
+        event_id: subjectData.event_id,
+        name: subjectData.name,
+        parent_name: subjectData.parent_name,
+        parent_email: subjectData.parent_email,
+        token,
+        token_expires_at: tokenRow.expires_at,
+        created_at: subjectData.created_at,
+        event: subjectData.event
+          ? {
+              id: subjectData.event.id,
+              name: subjectData.event.name,
+              date: subjectData.event.date,
+              status: 'active',
+              photo_prices: {},
+            }
+          : undefined,
+      } as Subject;
     } catch (error) {
       console.error('Error validating token:', error);
       return null;
@@ -160,6 +174,8 @@ export class FamilyService {
             event_id,
             filename,
             storage_path,
+            preview_path,
+            watermark_path,
             created_at,
             status
           )
@@ -325,6 +341,8 @@ export class FamilyService {
             event_id,
             filename,
             storage_path,
+            preview_path,
+            watermark_path,
             created_at,
             status
           )
@@ -449,8 +467,7 @@ export class FamilyService {
           parent_email,
           event:events (
             id,
-            name,
-            photo_prices
+            name
           )
         `
         )
@@ -461,7 +478,7 @@ export class FamilyService {
         throw new Error('Subject not found');
       }
 
-      const eventPrices = subject.data.event?.photo_prices || { base: 1000 };
+      const eventPrices = (subject.data as any)?.event?.photo_prices || { base: 1000 };
       const totalAmount = this.calculateCartTotal(items, eventPrices);
 
       // Crear pedido en transacción

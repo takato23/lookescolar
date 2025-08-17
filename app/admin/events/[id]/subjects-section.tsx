@@ -40,24 +40,10 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
   const loadSubjects = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .select(
-          `*, subject_tokens:subject_tokens!subject_tokens_subject_id_fkey(token, expires_at)`
-        )
-        .eq('event_id', eventId)
-        .order('grade', { ascending: true })
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      const withToken = (data || []).map((s: any) => ({
-        ...s,
-        token: s.subject_tokens?.[0]?.token as string | undefined,
-        token_expires_at: s.subject_tokens?.[0]?.expires_at as
-          | string
-          | undefined,
-      }));
-      setSubjects(withToken);
+      const resp = await fetch(`/api/admin/subjects?event_id=${eventId}`);
+      if (!resp.ok) throw new Error('Error al cargar alumnos');
+      const j = await resp.json();
+      setSubjects(j.subjects || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -73,25 +59,12 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
       const token = generateSecureToken();
       const tokenExpiresAt = getTokenExpiryDate(30);
 
-      const { data: inserted, error } = await supabase
-        .from('subjects')
-        .insert({
-          event_id: eventId,
-          name: formData.name.trim(),
-          grade: formData.grade.trim() || null,
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      await supabase.from('subject_tokens').insert({
-        subject_id: inserted.id,
-        token,
-        expires_at: tokenExpiresAt.toISOString(),
+      const resp = await fetch('/api/admin/subjects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formData.name.trim(), event_id: eventId }),
       });
-
-      if (error) throw error;
+      if (!resp.ok) throw new Error('Error creando alumno');
 
       setFormData({ name: '', grade: '', bulkText: '' });
       setShowAddForm(false);
@@ -122,21 +95,13 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
         return;
       }
 
-      const { data: inserted, error } = await supabase
-        .from('subjects')
-        .insert(subjectsToAdd)
-        .select('id');
-
-      if (error) throw error;
-
-      const tokensPayload = (inserted || []).map((row) => ({
-        subject_id: row.id,
-        token: generateSecureToken(),
-        expires_at: getTokenExpiryDate(30).toISOString(),
-      }));
-
-      if (tokensPayload.length > 0) {
-        await supabase.from('subject_tokens').insert(tokensPayload);
+      for (const s of subjectsToAdd) {
+        const resp = await fetch('/api/admin/subjects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: s.name, event_id: s.event_id }),
+        });
+        if (!resp.ok) throw new Error('Error creando alumnos');
       }
 
       setFormData({ name: '', grade: '', bulkText: '' });
@@ -161,13 +126,13 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
       const newToken = generateSecureToken();
       const tokenExpiresAt = getTokenExpiryDate(30);
 
-      const { error } = await supabase.from('subject_tokens').insert({
-        subject_id: subjectId,
-        token: newToken,
-        expires_at: tokenExpiresAt.toISOString(),
+      // Usa API para compatibilidad
+      const resp = await fetch('/api/admin/subjects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: '__rotate__', event_id: eventId }),
       });
-
-      if (error) throw error;
+      if (!resp.ok) throw new Error('Error rotando token');
       await loadSubjects();
     } catch (err: any) {
       setError(err.message);

@@ -10,6 +10,10 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  Calendar,
+  ShoppingCart,
+  QrCode,
+  Settings,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -32,11 +36,39 @@ const mainNavItems: NavItem[] = [
     shortcut: '⌘1',
   },
   {
-    href: '/admin/photos',
-    label: 'Fotos',
-    icon: Camera,
-    description: 'Subir y gestionar imágenes',
+    href: '/admin/events',
+    label: 'Eventos',
+    icon: Calendar,
+    description: 'Gestionar eventos y salones',
     shortcut: '⌘2',
+  },
+  {
+    href: '/admin/photos',
+    label: 'Carpetas',
+    icon: Camera,
+    description: 'Carpetas y fotos por evento',
+    shortcut: '⌘3',
+  },
+  {
+    href: '/admin/orders',
+    label: 'Pedidos',
+    icon: ShoppingCart,
+    description: 'Pedidos y ventas',
+    shortcut: '⌘4',
+  },
+  {
+    href: '/admin/publish',
+    label: 'Publicar',
+    icon: QrCode,
+    description: 'Compartir con familias',
+    shortcut: '⌘5',
+  },
+  {
+    href: '/admin/settings',
+    label: 'Ajustes',
+    icon: Settings,
+    description: 'Configuración del sistema',
+    shortcut: '⌘6',
   },
 ];
 

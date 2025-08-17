@@ -287,7 +287,7 @@ async function handlePOST(request: NextRequest) {
               mime_type: file.type,
               width: srcW,
               height: srcH,
-              approved: true,
+              approved: process.env.PHOTOS_DEFAULT_APPROVED === 'true',
               event_id: finalEventId ?? null,
             })
             .select()

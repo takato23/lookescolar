@@ -133,7 +133,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     setSelectedPhotoIndex(newIndex);
   };
 
-  if (loading) {
+  if (loading && !galleryData) {
     return <GalleryLoadingSkeleton />;
   }
 
@@ -307,16 +307,14 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
       {/* Loading more indicator */}
       {loadingMore && (
         <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={`skeleton-${i}`} className="break-inside-avoid">
-              <div
-                className="animate-pulse rounded-xl bg-gray-200"
-                style={{
-                  height: `${Math.floor(Math.random() * 200) + 200}px`,
-                }}
-              />
-            </div>
-          ))}
+          {Array.from({ length: 8 }).map((_, i) => {
+            const aspectClass = i % 3 === 0 ? 'aspect-square' : i % 3 === 1 ? 'aspect-[4/3]' : 'aspect-[3/4]';
+            return (
+              <div key={`skeleton-${i}`} className="break-inside-avoid">
+                <div className={`animate-pulse rounded-xl bg-gray-200 ${aspectClass}`} />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -331,16 +329,14 @@ function GalleryLoadingSkeleton() {
         <div className="h-8 w-32 rounded-full bg-gray-200" />
       </div>
       <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="break-inside-avoid">
-            <div
-              className="rounded-xl bg-gray-200"
-              style={{
-                height: `${Math.floor(Math.random() * 200) + 200}px`,
-              }}
-            />
-          </div>
-        ))}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const aspectClass = i % 3 === 0 ? 'aspect-square' : i % 3 === 1 ? 'aspect-[4/3]' : 'aspect-[3/4]';
+          return (
+            <div key={i} className="break-inside-avoid">
+              <div className={`rounded-xl bg-gray-200 ${aspectClass}`} />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
