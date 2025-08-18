@@ -1,5 +1,7 @@
 'use client';
 import * as React from 'react';
+import { CommandPalette } from './CommandPalette';
+import { useCommandPalette } from './useCommandPalette';
 
 // Estilos para animaciones, efectos avanzados y dark mode
 const customStyles = `
@@ -19,6 +21,37 @@ const customStyles = `
   /* Theme transition para switching suave */
   * {
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Command Palette animations */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes zoom-in-95 {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .animate-in {
+    animation-duration: 0.2s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+  }
+  
+  .fade-in {
+    animation-name: fade-in;
+  }
+  
+  .zoom-in-95 {
+    animation-name: zoom-in-95;
   }
   
   /* LIGHT MODE - Liquid Glass Effect */
@@ -123,6 +156,7 @@ const fotos: PhotoItem[] = [
 
 export default function MockAdmin() {
   const [isDark, setIsDark] = React.useState(false);
+  const { isOpen: isCommandPaletteOpen, closePalette } = useCommandPalette();
 
   // Auto-detectar preferencia del sistema al cargar
   React.useEffect(() => {
@@ -174,6 +208,14 @@ export default function MockAdmin() {
         
         {/* Mobile Navigation Bottom Bar */}
         <MobileBottomNav />
+        
+        {/* Command Palette */}
+        <CommandPalette 
+          isOpen={isCommandPaletteOpen}
+          onClose={closePalette}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
+        />
       </div>
     </>
   );
@@ -193,10 +235,18 @@ function TopBar({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: () 
           </div>
         </div>
         <div className="flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
-          <input 
-            placeholder="Buscar..." 
-            className="hidden md:block h-10 w-80 rounded-xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-700/60 px-4 outline-none focus:ring-2 focus:ring-blue-200/50 dark:focus:ring-blue-400/50 focus:border-blue-300/50 dark:focus:border-blue-400/50 elevated-panel backdrop-blur-sm placeholder-neutral-400 dark:placeholder-neutral-500 text-neutral-800 dark:text-neutral-200" 
-          />
+          <div className="relative group">
+            <input 
+              placeholder="Buscar con ⌘K..." 
+              className="hidden md:block h-10 w-80 rounded-xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-700/60 px-4 outline-none focus:ring-2 focus:ring-blue-200/50 dark:focus:ring-blue-400/50 focus:border-blue-300/50 dark:focus:border-blue-400/50 elevated-panel backdrop-blur-sm placeholder-neutral-400 dark:placeholder-neutral-500 text-neutral-800 dark:text-neutral-200 cursor-pointer" 
+              readOnly
+              onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <kbd className="bg-neutral-200 dark:bg-neutral-600 px-1.5 py-0.5 rounded text-xs font-mono">⌘</kbd>
+              <kbd className="bg-neutral-200 dark:bg-neutral-600 px-1.5 py-0.5 rounded text-xs font-mono">K</kbd>
+            </div>
+          </div>
           
           {/* Theme Toggle Button */}
           <button 
