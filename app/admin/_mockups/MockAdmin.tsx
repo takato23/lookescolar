@@ -285,11 +285,15 @@ function Sidebar() {
       <nav className="space-y-2">
         {items.map((it) => (
           <a key={it.label} href={`#${it.label.toLowerCase()}`} className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/30 dark:hover:to-purple-900/30 transition-all duration-200 border border-transparent hover:border-blue-200/50 dark:hover:border-blue-400/30 hover:elevated-panel">
-            <div className={`size-10 rounded-xl bg-gradient-to-br ${it.color} flex items-center justify-center text-white elevated-panel group-hover:elevated-panel-lg group-hover:scale-105 transition-all duration-200`}>
+            <div className={`size-10 rounded-xl flex items-center justify-center elevated-panel group-hover:elevated-panel-lg group-hover:scale-105 transition-all duration-200 ${
+              typeof it.icon === 'string' 
+                ? `bg-gradient-to-br ${it.color} text-white`
+                : 'bg-white/80 dark:bg-slate-700/80 border border-white/20 dark:border-white/10'
+            }`}>
               {typeof it.icon === 'string' ? (
                 <span className="text-lg">{it.icon}</span>
               ) : (
-                <div className="flex items-center justify-center">{it.icon}</div>
+                <div className="flex items-center justify-center scale-110">{it.icon}</div>
               )}
             </div>
             <div className="flex-1 min-w-0">
