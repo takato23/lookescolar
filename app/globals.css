@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Liquid Glass Effects */
+@import url('../styles/liquid-glass/effects.css');
+@import url('../styles/liquid-glass/typography.css');
+
 @layer base {
   :root {
     /* Premium Color System with WCAG AAA Compliance */
