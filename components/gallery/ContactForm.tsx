@@ -126,12 +126,12 @@ Saludos.`;
   return (
     <div className="space-y-6" id="contacto">
       {/* Quick contact buttons */}
-      <div className="rounded-3xl bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 p-8 text-center text-white shadow-2xl">
+      <div className="rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-8 text-center shadow-lg">
         <div className="mx-auto max-w-2xl">
-          <h2 className="mb-4 text-3xl font-bold">
+          <h2 className="mb-4 text-3xl font-bold text-gray-900">
             ¿Te gustaron las fotos? 📸
           </h2>
-          <p className="mb-6 text-lg opacity-90">
+          <p className="mb-6 text-lg text-gray-700">
             Contacta con Melisa para obtener las fotos originales en alta
             calidad, sin marca de agua y listas para imprimir.
           </p>
@@ -139,7 +139,8 @@ Saludos.`;
           <div className="mb-6 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button
               onClick={handleWhatsAppContact}
-              className="inline-flex transform items-center justify-center rounded-full bg-white px-6 py-3 font-semibold text-purple-600 shadow-lg transition-colors duration-200 hover:-translate-y-1 hover:bg-purple-50 hover:shadow-xl"
+              className="inline-flex items-center justify-center rounded-lg bg-green-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
+              aria-label="Contactar por WhatsApp"
             >
               <span className="mr-2">💬</span>
               Escribir por WhatsApp
@@ -147,14 +148,16 @@ Saludos.`;
 
             <Button
               onClick={() => setShowForm(!showForm)}
-              className="inline-flex items-center justify-center rounded-full border-2 border-white bg-transparent px-6 py-3 font-semibold text-white transition-colors hover:bg-white hover:text-purple-600"
+              variant="outline"
+              className="inline-flex items-center justify-center rounded-lg border-indigo-300 px-6 py-3 font-semibold text-indigo-700 transition-colors hover:bg-indigo-50"
+              aria-label={showForm ? 'Ocultar formulario de contacto' : 'Mostrar formulario de contacto'}
             >
               <span className="mr-2">📧</span>
               {showForm ? 'Ocultar formulario' : 'Enviar Email detallado'}
             </Button>
           </div>
 
-          <div className="text-sm opacity-80">
+          <div className="text-sm text-gray-600">
             <p>
               📍 {schoolName} • 📊 {totalPhotos} fotos disponibles
             </p>
@@ -192,7 +195,7 @@ Saludos.`;
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-colors focus:border-purple-500 focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
                     placeholder="Tu nombre y apellido"
                   />
                 </div>
@@ -211,7 +214,7 @@ Saludos.`;
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 transition-colors focus:border-purple-500 focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -266,7 +269,7 @@ Saludos.`;
                   value={formData.message}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 transition-colors focus:border-purple-500 focus:ring-2 focus:ring-purple-500"
+                  className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500"
                   placeholder="Cualquier información adicional, preferencias de entrega, etc."
                 />
               </div>
@@ -275,7 +278,8 @@ Saludos.`;
                 <Button
                   type="submit"
                   disabled={isSubmitting || !formData.name || !formData.email}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Enviar formulario de contacto"
                 >
                   {isSubmitting ? (
                     <>
@@ -293,7 +297,9 @@ Saludos.`;
                 <Button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="rounded-xl bg-gray-100 px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                  variant="outline"
+                  className="rounded-lg px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  aria-label="Cancelar formulario"
                 >
                   Cancelar
                 </Button>
