@@ -27,26 +27,24 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 31536000, // 1 year cache
+    minimumCacheTTL: 60, // Reduced cache for signed URLs (1 minute)
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Disable optimization for signed URLs (they have expiring tokens)
+    unoptimized: false,
+    loader: 'default',
     // Supabase storage configuration
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: process.env.SUPABASE_HOST || 'exaighpowgvbdappydyx.supabase.co',
+        hostname: 'exaighpowgvbdappydyx.supabase.co',
         port: '',
         pathname: '/storage/v1/object/**',
       },
       {
         protocol: 'https',
-        hostname: `*.${process.env.SUPABASE_HOST || 'supabase.co'}`,
-        pathname: '/storage/v1/object/public/**',
-      },
-      {
-        protocol: 'https',
-        hostname: `*.${process.env.SUPABASE_HOST || 'supabase.co'}`,
-        pathname: '/storage/v1/object/sign/**',
+        hostname: '*.supabase.co',
+        pathname: '/storage/v1/object/**',
       },
     ],
   },
