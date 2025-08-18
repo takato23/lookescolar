@@ -62,7 +62,7 @@ export default function AdminDashboard() {
 
   return (
     <div
-      className="gradient-mesh min-h-screen"
+      className="liquid-glass-app min-h-screen"
       ref={containerRef}
       style={pullStyle}
     >
@@ -73,97 +73,89 @@ export default function AdminDashboard() {
         pullDistance={pullDistance}
       />
 
-      <div className="container mx-auto space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:space-y-8 lg:py-8">
-        {/* Header with Gradient */}
+      <div className="container mx-auto space-y-6 lg:space-y-8 p-6">
+        {/* Header with Liquid Glass Gradient */}
         <div className="relative mb-6 animate-fade-in sm:mb-8 lg:mb-12">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
-          <div className="relative flex items-center justify-between">
-            <div>
-              <h1 className="text-gradient text-shadow-soft mb-2 text-2xl font-bold sm:mb-3 sm:text-3xl md:text-4xl lg:text-5xl">
-                Dashboard
-              </h1>
-              <p className="text-muted-foreground hidden max-w-2xl text-sm sm:block sm:text-base lg:text-lg">
-                Bienvenida, Melisa. Gestiona tu negocio fotográfico con
-                elegancia y eficiencia.
-              </p>
-              {lastUpdated && (
-                <p className="text-muted-foreground mt-2 text-sm">
-                  Última actualización:{' '}
-                  {lastUpdated.toLocaleTimeString('es-AR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+          <div className="relative liquid-card p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="liquid-title mb-2 text-2xl sm:mb-3 sm:text-3xl md:text-4xl lg:text-5xl">
+                  Panel de Administración
+                </h1>
+                <p className="liquid-subtitle hidden max-w-2xl text-sm sm:block sm:text-base lg:text-lg">
+                  Bienvenida, Melisa. Gestiona tu negocio fotográfico con
+                  elegancia y eficiencia.
                 </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <SimpleTooltip
-                text="Actualizar todos los datos del dashboard"
-                side="bottom"
-              >
-                <Button
-                  variant="glass-primary"
-                  onClick={refreshAll}
-                  disabled={isLoading}
-                  className="hidden items-center gap-2 md:flex"
-                  aria-label="Actualizar dashboard"
+                {lastUpdated && (
+                  <p className="liquid-description mt-2 text-sm">
+                    Última actualización:{' '}
+                    {lastUpdated.toLocaleTimeString('es-AR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <SimpleTooltip
+                  text="Actualizar todos los datos del dashboard"
+                  side="bottom"
                 >
-                  <RefreshCw
-                    className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
-                  />
-                  Actualizar
-                </Button>
-              </SimpleTooltip>
+                  <button
+                    onClick={refreshAll}
+                    disabled={isLoading}
+                    className="liquid-button hidden items-center gap-2 md:flex px-4 py-2"
+                    aria-label="Actualizar dashboard"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`}
+                    />
+                    <span className="liquid-button-text">Actualizar</span>
+                  </button>
+                </SimpleTooltip>
 
-              {/* Mobile refresh button */}
-              <SimpleTooltip text="Actualizar" side="bottom">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={refreshAll}
-                  disabled={isLoading}
-                  className="p-2 md:hidden"
-                  aria-label="Actualizar dashboard"
-                >
-                  <RefreshCw
-                    className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`}
-                  />
-                </Button>
-              </SimpleTooltip>
+                {/* Mobile refresh button */}
+                <SimpleTooltip text="Actualizar" side="bottom">
+                  <button
+                    onClick={refreshAll}
+                    disabled={isLoading}
+                    className="liquid-button p-2 md:hidden"
+                    aria-label="Actualizar dashboard"
+                  >
+                    <RefreshCw
+                      className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`}
+                    />
+                  </button>
+                </SimpleTooltip>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Error notification */}
         {error && (
-          <Card
-            variant="glass"
-            className="border-red-200 bg-red-50/50 dark:bg-red-900/20"
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-red-100 p-2 dark:bg-red-900/50">
-                  <RefreshCw className="h-4 w-4 text-red-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-red-700">
-                    Error al cargar datos
-                  </p>
-                  <p className="text-xs text-red-600">
-                    Algunos datos podrían estar desactualizados.
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={refreshAll}
-                  className="text-red-600 hover:bg-red-100"
-                >
-                  Reintentar
-                </Button>
+          <div className="liquid-card border-red-200 bg-red-50/50 dark:bg-red-900/20 p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-red-100 p-2 dark:bg-red-900/50">
+                <RefreshCw className="h-4 w-4 text-red-600" />
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-700">
+                  Error al cargar datos
+                </p>
+                <p className="text-xs text-red-600">
+                  Algunos datos podrían estar desactualizados.
+                </p>
+              </div>
+              <button
+                onClick={refreshAll}
+                className="liquid-button text-red-600 hover:bg-red-100 px-3 py-1 text-sm"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Quick Actions - Mobile First (solo visible en mobile) */}
