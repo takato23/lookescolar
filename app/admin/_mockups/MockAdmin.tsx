@@ -4,6 +4,7 @@ import { CommandPalette } from './CommandPalette';
 import { useCommandPalette } from './useCommandPalette';
 import { Logo } from './LogoComponent';
 import { ThemeToggle } from './ThemeToggle';
+import { DashboardIcon, EventsIcon, FoldersIcon } from './LiquidIcons';
 
 // Estilos para animaciones, efectos avanzados y dark mode
 const customStyles = `
@@ -122,6 +123,7 @@ const customStyles = `
 
 type Stat = { label: string; value: string; hint?: string };
 type Action = { label: string; sub?: string; color: string; icon: JSX.Element };
+type SidebarItem = { label: string; badge: string; icon: string | JSX.Element; color: string };
 type EventItem = { estado: 'Activo' | 'Próximo'; titulo: string; fecha: string; colegio: string; created: string };
 type PhotoItem = { name: string; date: string; size: string; status: 'Aprobada' | 'Pendiente' };
 
@@ -271,9 +273,9 @@ function TopBar({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: () 
 
 function Sidebar() {
   const items = [
-    { label: 'Dashboard', badge: '↳ resumen', icon: '📊', color: 'from-blue-500 to-blue-600' },
-    { label: 'Eventos', badge: '↳ gestión', icon: '📅', color: 'from-purple-500 to-pink-500' },
-    { label: 'Carpetas', badge: '↳ por evento', icon: '📂', color: 'from-yellow-500 to-orange-500' },
+    { label: 'Dashboard', badge: '↳ resumen', icon: <DashboardIcon size={20} />, color: 'from-blue-500 to-blue-600' },
+    { label: 'Eventos', badge: '↳ gestión', icon: <EventsIcon size={20} />, color: 'from-purple-500 to-pink-500' },
+    { label: 'Carpetas', badge: '↳ por evento', icon: <FoldersIcon size={20} />, color: 'from-yellow-500 to-orange-500' },
     { label: 'Pedidos', badge: '↳ ventas', icon: '🛒', color: 'from-emerald-500 to-green-600' },
     { label: 'Publicar', badge: '↳ compartir', icon: '👥', color: 'from-cyan-500 to-blue-500' },
     { label: 'Ajustes', badge: '↳ sistema', icon: '⚙️', color: 'from-gray-500 to-slate-600' }
@@ -284,7 +286,11 @@ function Sidebar() {
         {items.map((it) => (
           <a key={it.label} href={`#${it.label.toLowerCase()}`} className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/30 dark:hover:to-purple-900/30 transition-all duration-200 border border-transparent hover:border-blue-200/50 dark:hover:border-blue-400/30 hover:elevated-panel">
             <div className={`size-10 rounded-xl bg-gradient-to-br ${it.color} flex items-center justify-center text-white elevated-panel group-hover:elevated-panel-lg group-hover:scale-105 transition-all duration-200`}>
-              <span className="text-lg">{it.icon}</span>
+              {typeof it.icon === 'string' ? (
+                <span className="text-lg">{it.icon}</span>
+              ) : (
+                <div className="flex items-center justify-center">{it.icon}</div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-bold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
