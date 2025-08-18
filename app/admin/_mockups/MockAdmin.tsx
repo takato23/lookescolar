@@ -290,8 +290,8 @@ function Sidebar() {
                 <span className="text-lg">{it.icon}</span>
               </div>
             ) : (
-              <div className="w-12 h-12 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
-                <div className="scale-150">{it.icon}</div>
+              <div className="w-16 h-16 flex items-center justify-center group-hover:scale-110 transition-all duration-200">
+                <div className="scale-[2]">{it.icon}</div>
               </div>
             )}
             <div className="flex-1 min-w-0">
