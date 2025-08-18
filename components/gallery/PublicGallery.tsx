@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { PhotoCard } from './PhotoCard';
-import { PhotoModal } from './PhotoModal';
+import { PhotoCard } from '@/components/public/PhotoCard';
+import { PhotoModal } from '@/components/public/PhotoModal';
 import { Button } from '@/components/ui/button';
-import { useCartStore } from '@/lib/stores/cart-store';
+import { useCartStore } from '@/store/useCartStore';
 
 interface Photo {
   id: string;
@@ -39,15 +39,13 @@ interface PublicGalleryProps {
 
 export function PublicGallery({ eventId }: PublicGalleryProps) {
   const [galleryData, setGalleryData] = useState<GalleryData | null>(null);
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(
-    null
-  );
+  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'todas' | 'tu-hijo' | 'seleccionadas' | 'ordenar'>('todas');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  const { items, addItem, getTotalItems } = useCartStore();
+  const { items, openCart } = useCartStore();
 
   const fetchPhotos = useCallback(
     async (page: number = 1, append: boolean = false) => {
@@ -108,29 +106,30 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     }
   };
 
-  const openModal = (index: number) => {
-    setSelectedPhotoIndex(index);
+  const openModal = (photoId: string) => {
+    setSelectedPhotoId(photoId);
   };
 
   const closeModal = () => {
-    setSelectedPhotoIndex(null);
+    setSelectedPhotoId(null);
   };
 
-  const navigateModal = (direction: 'prev' | 'next') => {
-    if (!galleryData || selectedPhotoIndex === null) return;
-
-    const totalPhotos = galleryData.photos.length;
-    let newIndex = selectedPhotoIndex;
-
-    if (direction === 'prev') {
-      newIndex =
-        selectedPhotoIndex > 0 ? selectedPhotoIndex - 1 : totalPhotos - 1;
-    } else {
-      newIndex =
-        selectedPhotoIndex < totalPhotos - 1 ? selectedPhotoIndex + 1 : 0;
+  // Filtrar fotos basado en el tab activo
+  const getFilteredPhotos = () => {
+    if (!galleryData) return [];
+    
+    switch (activeTab) {
+      case 'seleccionadas':
+        return galleryData.photos.filter(photo => 
+          items.some(item => item.photoId === photo.id)
+        );
+      case 'tu-hijo':
+      case 'ordenar':
+        // Por ahora devolvemos todas, pero se puede implementar filtrado específico
+        return galleryData.photos;
+      default:
+        return galleryData.photos;
     }
-
-    setSelectedPhotoIndex(newIndex);
   };
 
   if (loading && !galleryData) {
@@ -148,6 +147,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   }
 
   const { photos, pagination } = galleryData;
+  const filteredPhotos = getFilteredPhotos();
 
   if (photos.length === 0) {
     return (
@@ -155,55 +155,52 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     );
   }
 
+  const tabs = [
+    { id: 'todas' as const, label: 'Todas', count: photos.length },
+    { id: 'tu-hijo' as const, label: 'Tu hijo', count: 0 },
+    { id: 'seleccionadas' as const, label: 'Seleccionadas', count: items.length },
+    { id: 'ordenar' as const, label: 'Ordenar ↓', count: null }
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Stats header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">
-          📸 Fotos del Evento
-        </h2>
-        <div className="flex items-center gap-2">
-          <div className="rounded-full bg-white/70 px-4 py-2 text-sm text-gray-600 backdrop-blur-sm">
-            {pagination.total} fotos disponibles
-          </div>
-          <Button
-            onClick={() => setIsCheckoutOpen(true)}
-            aria-label="Abrir carrito"
-            className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+      {/* Tabs navegación */}
+      <div className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`
+              flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all
+              ${activeTab === tab.id
+                ? 'bg-white text-gray-900 shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+              }
+            `}
+            aria-label={`Filtrar por ${tab.label}`}
           >
-            Ver carrito ({getTotalItems()})
-          </Button>
-        </div>
+            {tab.label}
+            {tab.count !== null && (
+              <span className={`ml-1 ${activeTab === tab.id ? 'text-gray-600' : 'text-gray-400'}`}>
+                ({tab.count})
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Masonry Grid */}
-      <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4" role="grid" aria-label="Galería de fotos">
-        {photos.map((photo, index) => (
-          <div key={photo.id} className="break-inside-avoid" role="gridcell">
-            <PhotoCard
-              photo={photo}
-              index={index}
-              onClick={() => openModal(index)}
-            />
-            <div className="mt-2 flex items-center justify-between">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  addItem({
-                    photoId: photo.id,
-                    filename: photo.storage_path.split('/').pop() || 'Foto',
-                    price: 0,
-                    watermarkUrl: photo.signed_url,
-                  });
-                }}
-                aria-label="Agregar foto al carrito"
-                className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
-              >
-                Agregar al carrito
-              </Button>
-            </div>
-          </div>
+      {/* Grid de fotos */}
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" role="grid" aria-label="Galería de fotos">
+        {filteredPhotos.map((photo) => (
+          <PhotoCard
+            key={photo.id}
+            photo={{
+              id: photo.id,
+              signed_url: photo.signed_url
+            }}
+            price={1000}
+            onOpenModal={openModal}
+          />
         ))}
       </div>
 
@@ -213,18 +210,18 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
           <Button
             onClick={handleLoadMore}
             disabled={loadingMore}
-            className="transform rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:-translate-y-1 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl"
+            className="transform rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 px-8 py-4 font-bold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
           >
             {loadingMore ? (
               <>
                 <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Cargando...
+                Cargando más fotos...
               </>
             ) : (
               <>
-                Ver más fotos
-                <span className="ml-2">
-                  ({pagination.total - photos.length} restantes)
+                ✨ Ver más fotos ✨
+                <span className="ml-2 bg-white/20 px-2 py-1 rounded-full text-sm">
+                  {pagination.total - photos.length} más
                 </span>
               </>
             )}
@@ -233,86 +230,32 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
       )}
 
       {/* Photo Modal */}
-      {selectedPhotoIndex !== null && (
+      {selectedPhotoId && (
         <PhotoModal
-          photo={photos[selectedPhotoIndex]}
-          isOpen={selectedPhotoIndex !== null}
+          isOpen={true}
           onClose={closeModal}
-          onPrevious={() => navigateModal('prev')}
-          onNext={() => navigateModal('next')}
-          currentIndex={selectedPhotoIndex + 1}
-          totalPhotos={photos.length}
+          photo={photos.find(p => p.id === selectedPhotoId) || null}
+          photos={photos.map(p => ({ id: p.id, signed_url: p.signed_url }))}
+          price={1000}
         />
-      )}
-
-      {/* Simple public checkout modal */}
-      {isCheckoutOpen && (
-        <div
-          role="dialog"
-          aria-label="Carrito público"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        >
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsCheckoutOpen(false)} />
-          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Carrito</h3>
-              <Button variant="ghost" size="sm" onClick={() => setIsCheckoutOpen(false)} aria-label="Cerrar carrito">
-                Cerrar
-              </Button>
-            </div>
-            {items.length === 0 ? (
-              <p className="text-sm text-gray-600">No hay fotos en el carrito.</p>
-            ) : (
-              <div className="space-y-2">
-                {items.map((it) => (
-                  <div key={it.photoId} className="flex items-center justify-between text-sm">
-                    <span className="truncate">{it.filename}</span>
-                    <span className="text-gray-600">x{it.quantity}</span>
-                  </div>
-                ))}
-                <Button
-                  className="w-full"
-                  aria-label="Ir al checkout"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/gallery/checkout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          eventId,
-                          contactInfo: { name: 'Cliente', email: 'cliente@example.com' },
-                          items: items.map((it) => ({ photoId: it.photoId, quantity: it.quantity, priceType: 'base' })),
-                        }),
-                      });
-                      if (!response.ok) {
-                        const data = await response.json();
-                        throw new Error(data.error || 'Error en checkout público');
-                      }
-                      const data = await response.json();
-                      window.location.href = data.redirectUrl;
-                    } catch (err) {
-                      console.error('[Service] Public checkout error:', err);
-                      alert('No se pudo iniciar el pago');
-                    }
-                  }}
-                >
-                  Continuar al pago
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
       )}
 
       {/* Loading more indicator */}
       {loadingMore && (
-        <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
-          {Array.from({ length: 8 }).map((_, i) => {
-            const aspectClass = i % 3 === 0 ? 'aspect-square' : i % 3 === 1 ? 'aspect-[4/3]' : 'aspect-[3/4]';
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => {
+            const gradients = [
+              'from-orange-300 to-yellow-400',
+              'from-cyan-300 to-blue-400', 
+              'from-purple-300 to-pink-400',
+              'from-green-300 to-emerald-400',
+              'from-rose-300 to-red-400',
+              'from-indigo-300 to-purple-400'
+            ];
+            const gradient = gradients[i % gradients.length];
             return (
-              <div key={`skeleton-${i}`} className="break-inside-avoid">
-                <div className={`animate-pulse rounded-xl bg-gray-200 ${aspectClass}`} />
+              <div key={`skeleton-${i}`} className="aspect-square">
+                <div className={`animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
               </div>
             );
           })}
@@ -323,18 +266,31 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
 }
 
 function GalleryLoadingSkeleton() {
+  const gradients = [
+    'from-orange-300 to-yellow-400',
+    'from-cyan-300 to-blue-400', 
+    'from-purple-300 to-pink-400',
+    'from-green-300 to-emerald-400',
+    'from-rose-300 to-red-400',
+    'from-indigo-300 to-purple-400'
+  ];
+
   return (
-    <div className="animate-pulse space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="h-8 w-48 rounded-lg bg-gray-200" />
-        <div className="h-8 w-32 rounded-full bg-gray-200" />
+    <div className="space-y-6">
+      {/* Tabs skeleton */}
+      <div className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex-1 h-12 animate-pulse rounded-xl bg-gray-200" />
+        ))}
       </div>
-      <div className="columns-1 gap-6 space-y-6 sm:columns-2 lg:columns-3 xl:columns-4">
-        {Array.from({ length: 12 }).map((_, i) => {
-          const aspectClass = i % 3 === 0 ? 'aspect-square' : i % 3 === 1 ? 'aspect-[4/3]' : 'aspect-[3/4]';
+      
+      {/* Grid skeleton */}
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => {
+          const gradient = gradients[i % gradients.length];
           return (
-            <div key={i} className="break-inside-avoid">
-              <div className={`rounded-xl bg-gray-200 ${aspectClass}`} />
+            <div key={i} className="aspect-square">
+              <div className={`animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
             </div>
           );
         })}
@@ -351,18 +307,18 @@ interface GalleryErrorStateProps {
 function GalleryErrorState({ error, onRetry }: GalleryErrorStateProps) {
   return (
     <div className="py-16 text-center">
-      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-pink-500">
-        <span className="text-3xl text-white">⚠️</span>
+      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-red-400 via-orange-400 to-yellow-400 shadow-lg">
+        <span className="text-4xl">😕</span>
       </div>
-      <h3 className="mb-4 text-xl font-semibold text-gray-800">
-        No pudimos cargar las fotos
+      <h3 className="mb-4 text-2xl font-bold text-gray-800">
+        ¡Ups! No pudimos cargar las fotos
       </h3>
-      <p className="mx-auto mb-6 max-w-md text-gray-600">{error}</p>
+      <p className="mx-auto mb-6 max-w-md text-gray-600 text-lg">{error}</p>
       <Button
         onClick={onRetry}
-        className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl"
+        className="rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-8 py-4 font-bold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
       >
-        Intentar de nuevo
+        ✨ Intentar de nuevo ✨
       </Button>
     </div>
   );
@@ -377,13 +333,16 @@ function GalleryEmptyState({
 }: GalleryEmptyStateProps) {
   return (
     <div className="py-16 text-center">
-      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-gray-400 to-gray-500">
-        <span className="text-3xl text-white">📷</span>
+      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 shadow-lg">
+        <span className="text-4xl">📸</span>
       </div>
-      <h3 className="mb-4 text-xl font-semibold text-gray-800">
-        Sin fotos disponibles
+      <h3 className="mb-4 text-2xl font-bold text-gray-800">
+        ¡Aún no hay fotos aquí!
       </h3>
-      <p className="mx-auto max-w-md text-gray-600">{message}</p>
+      <p className="mx-auto max-w-md text-gray-600 text-lg">{message}</p>
+      <p className="mx-auto mt-4 max-w-md text-sm text-gray-500">
+        Las fotos aparecerán aquí cuando estén disponibles ✨
+      </p>
     </div>
   );
 }

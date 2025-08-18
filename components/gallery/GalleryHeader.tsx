@@ -68,29 +68,29 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
   };
 
   return (
-    <div className="space-y-6 text-center">
+    <div className="space-y-8 text-center">
       {/* Main header */}
-      <div className="space-y-4">
-        <div className="shadow-3d inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500">
-          <span className="text-3xl text-white">📸</span>
+      <div className="space-y-6">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-sm">
+          <span className="text-2xl text-white">📸</span>
         </div>
 
-        <div className="space-y-2">
-          <h1 className="text-display text-foreground text-3xl font-bold leading-tight md:text-4xl lg:text-5xl">
+        <div className="space-y-3">
+          <h1 className="text-3xl font-semibold leading-tight text-gray-900 md:text-4xl lg:text-5xl">
             {event.name}
           </h1>
-          <p className="text-muted-foreground text-lg md:text-xl">
-            📍 {event.school}
+          <p className="text-lg text-gray-600 md:text-xl">
+            {event.school}
           </p>
-          <p className="text-muted-foreground">📅 {formattedDate ?? event.date}</p>
+          <p className="text-base text-gray-500">{formattedDate ?? event.date}</p>
         </div>
       </div>
 
       {/* Stats and actions */}
-      <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
+      <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
         {/* Photo count badge */}
-        <div className="glass-card border-primary/30 from-primary/10 to-secondary/10 text-foreground shadow-3d-sm inline-flex items-center rounded-full border bg-gradient-to-r px-4 py-2">
-          <span className="text-sm font-medium">
+        <div className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50/80 px-4 py-2 shadow-sm">
+          <span className="text-sm font-medium text-gray-700">
             {photoCount}{' '}
             {photoCount === 1 ? 'foto disponible' : 'fotos disponibles'}
           </span>
@@ -99,7 +99,7 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
         {/* Ver mis fotos (familias) */}
         <Button
           onClick={() => setOpenDialog(true)}
-          className="rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white"
+          className="rounded-full bg-indigo-600 text-white shadow-sm transition-colors hover:bg-indigo-700"
           aria-label="Abrir diálogo para ver mis fotos"
         >
           Ver mis fotos
@@ -109,7 +109,8 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
         <div className="relative">
           <Button
             onClick={() => setShowShareMenu(!showShareMenu)}
-            className="text-foreground shadow-3d-sm hover:shadow-3d inline-flex items-center rounded-full border border-white/20 bg-white/70 px-4 py-2 backdrop-blur-md transition-all duration-200 hover:-translate-y-[1px]"
+            variant="outline"
+            className="inline-flex items-center rounded-full border-gray-300 bg-white px-4 py-2 text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50"
           >
             <span className="mr-2">📤</span>
             Compartir galería
@@ -117,24 +118,24 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
 
           {/* Share menu */}
           {showShareMenu && (
-            <div className="glass-ultra shadow-3d absolute right-0 top-full z-10 mt-2 min-w-[220px] rounded-xl border border-white/10 py-2 ring-1 ring-white/10 backdrop-blur-2xl">
+            <div className="absolute right-0 top-full z-10 mt-2 min-w-[220px] rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
               <button
                 onClick={() => handleShare('whatsapp')}
-                className="hover:bg-accent/10 flex w-full items-center space-x-3 px-4 py-2 text-left text-sm"
+                className="flex w-full items-center space-x-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-green-500">💬</span>
                 <span>Compartir por WhatsApp</span>
               </button>
               <button
                 onClick={() => handleShare('email')}
-                className="hover:bg-accent/10 flex w-full items-center space-x-3 px-4 py-2 text-left text-sm"
+                className="flex w-full items-center space-x-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-blue-500">📧</span>
                 <span>Compartir por Email</span>
               </button>
               <button
                 onClick={() => handleShare('copy')}
-                className="hover:bg-accent/10 flex w-full items-center space-x-3 px-4 py-2 text-left text-sm"
+                className="flex w-full items-center space-x-3 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-gray-500">📋</span>
                 <span>Copiar enlace</span>
@@ -145,27 +146,27 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
       </div>
 
       {/* Photographer branding */}
-      <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-purple-50/50 to-pink-50/30 p-6 backdrop-blur-sm dark:from-neutral-800/40 dark:to-neutral-800/20">
+      <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-6">
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center space-x-4">
-            <div className="shadow-3d-sm flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600 shadow-sm">
               <span className="text-lg font-semibold text-white">M</span>
             </div>
             <div className="text-left">
-              <h3 className="text-foreground font-semibold">
+              <h3 className="font-semibold text-gray-900">
                 Melisa - Look Escolar
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-gray-600">
                 Fotografía Profesional
               </p>
             </div>
           </div>
 
           <div className="flex flex-col items-center gap-2 text-sm sm:flex-row">
-            <span className="text-muted-foreground">¿Te gustan las fotos?</span>
+            <span className="text-gray-600">¿Te gustan las fotos?</span>
             <a
               href="#contacto"
-              className="shadow-3d-sm hover:shadow-3d inline-flex items-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 font-medium text-white transition-all duration-200 hover:-translate-y-[1px] hover:from-purple-600 hover:to-pink-600"
+              className="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
             >
               <span className="mr-1">💬</span>
               Contactar
