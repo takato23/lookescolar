@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
-import crypto from 'crypto';
 
 // Configuración de límites por endpoint según CLAUDE.md
 const RATE_LIMITS = {
@@ -413,7 +412,10 @@ export const RateLimitMiddleware = {
       request: NextRequest,
       ...args: Args
     ): Promise<NextResponse> => {
-      const requestId = crypto.randomUUID();
+      const requestId =
+        (globalThis.crypto && 'randomUUID' in globalThis.crypto
+          ? (globalThis.crypto as Crypto).randomUUID()
+          : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`);
       const result = await rateLimitMiddleware(request, requestId);
 
       if (!result.allowed) {
