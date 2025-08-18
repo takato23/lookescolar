@@ -3,6 +3,7 @@ import * as React from 'react';
 import { CommandPalette } from './CommandPalette';
 import { useCommandPalette } from './useCommandPalette';
 import { Logo } from './LogoComponent';
+import { ThemeToggle } from './ThemeToggle';
 
 // Estilos para animaciones, efectos avanzados y dark mode
 const customStyles = `
@@ -250,13 +251,11 @@ function TopBar({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: () 
           </div>
           
           {/* Theme Toggle Button */}
-          <button 
-            onClick={onToggleTheme}
-            className="size-10 grid place-items-center rounded-xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-600/80 transition-all duration-200 elevated-panel"
-            aria-label="Toggle theme"
-          >
-            <span className="text-lg">{isDark ? '☀️' : '🌙'}</span>
-          </button>
+          <ThemeToggle 
+            isDark={isDark}
+            onToggle={onToggleTheme}
+            className="elevated-panel hover:elevated-panel-lg"
+          />
           
           <button className="size-10 grid place-items-center rounded-xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-600/80 transition-all duration-200 elevated-panel">
             <span className="text-lg">👤</span>
