@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 
-// Agregar estilos para animaciones personalizadas
+// Estilos para animaciones y efectos avanzados
 const customStyles = `
   @keyframes spin-slow {
     from { transform: rotate(0deg); }
@@ -9,6 +9,43 @@ const customStyles = `
   }
   .animate-spin-slow {
     animation: spin-slow 3s linear infinite;
+  }
+  
+  /* Liquid Glass Effect para iOS-style header */
+  .liquid-glass {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.72);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  
+  /* Elevated panels con shadow layers */
+  .elevated-panel {
+    box-shadow: 
+      0 1px 3px 0 rgba(0, 0, 0, 0.1),
+      0 1px 2px 0 rgba(0, 0, 0, 0.06),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+  
+  .elevated-panel-lg {
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .elevated-panel-xl {
+    box-shadow: 
+      0 10px 15px -3px rgba(0, 0, 0, 0.1),
+      0 4px 6px -2px rgba(0, 0, 0, 0.05),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
   }
 `;
 
@@ -63,7 +100,7 @@ export default function MockAdmin() {
         
         <TopBar />
         <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-6 py-4 lg:py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-6 pt-6 lg:pt-8 pb-4 lg:pb-6">
             {/* Sidebar - Hidden on mobile, use mobile navigation instead */}
             <div className="hidden lg:block">
               <Sidebar />
@@ -86,10 +123,10 @@ export default function MockAdmin() {
 
 function TopBar() {
   return (
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-neutral-200/60 shadow-sm">
+    <header className="sticky top-0 z-50 liquid-glass">
       <div className="mx-auto max-w-7xl px-4 lg:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="size-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white grid place-items-center text-sm font-bold shadow-lg">
+          <div className="size-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white grid place-items-center text-sm font-bold elevated-panel-lg">
             😊
           </div>
           <div className="leading-tight">
@@ -100,12 +137,12 @@ function TopBar() {
         <div className="flex items-center gap-3 text-sm text-neutral-500">
           <input 
             placeholder="Buscar..." 
-            className="hidden md:block h-10 w-80 rounded-xl border border-neutral-200 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 shadow-sm" 
+            className="hidden md:block h-10 w-80 rounded-xl border border-white/20 bg-white/60 px-4 outline-none focus:ring-2 focus:ring-blue-200/50 focus:border-blue-300/50 elevated-panel backdrop-blur-sm placeholder-neutral-400" 
           />
-          <button className="size-10 grid place-items-center rounded-xl border border-neutral-200 bg-white/80 hover:bg-blue-50 transition-colors shadow-sm">
+          <button className="size-10 grid place-items-center rounded-xl border border-white/20 bg-white/60 hover:bg-white/80 transition-all duration-200 elevated-panel">
             <span className="text-lg">👤</span>
           </button>
-          <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+          <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 hover:scale-105">
             admin ▼
           </button>
         </div>
@@ -124,11 +161,11 @@ function Sidebar() {
     { label: 'Ajustes', badge: '↳ sistema', icon: '⚙️', color: 'from-gray-500 to-slate-600' }
   ];
   return (
-    <aside className="rounded-2xl border border-neutral-200 bg-white/80 backdrop-blur-sm p-4 shadow-lg">
+    <aside className="rounded-2xl border border-neutral-200/60 bg-white/85 backdrop-blur-sm p-4 elevated-panel-xl">
       <nav className="space-y-2">
         {items.map((it) => (
-          <a key={it.label} href={`#${it.label.toLowerCase()}`} className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 border border-transparent hover:border-blue-200/50">
-            <div className={`size-10 rounded-xl bg-gradient-to-br ${it.color} flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-200`}>
+          <a key={it.label} href={`#${it.label.toLowerCase()}`} className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 border border-transparent hover:border-blue-200/50 hover:elevated-panel">
+            <div className={`size-10 rounded-xl bg-gradient-to-br ${it.color} flex items-center justify-center text-white elevated-panel group-hover:elevated-panel-lg group-hover:scale-105 transition-all duration-200`}>
               <span className="text-lg">{it.icon}</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -142,7 +179,7 @@ function Sidebar() {
           </a>
         ))}
       </nav>
-      <div className="mt-6 rounded-xl bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200/60 p-4 text-xs">
+      <div className="mt-6 rounded-xl bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200/60 p-4 text-xs elevated-panel">
         <div className="font-semibold text-emerald-700 flex items-center gap-2">
           <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
           Sistema Activo
@@ -155,8 +192,8 @@ function Sidebar() {
 
 function HeaderGradient() {
   return (
-    <section className="rounded-2xl border border-blue-200/50 bg-white/80 backdrop-blur-sm p-6 shadow-xl">
-      <div className="rounded-xl bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 p-6 relative overflow-hidden">
+    <section className="rounded-2xl border border-blue-200/50 bg-white/90 backdrop-blur-sm p-6 elevated-panel-xl">
+      <div className="rounded-xl bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 p-6 relative overflow-hidden elevated-panel">
         <div className="absolute top-2 right-2 text-2xl animate-spin-slow">🌟</div>
         <div className="absolute bottom-2 left-2 text-xl animate-bounce delay-300">✨</div>
         <div className="text-sm text-blue-600 font-medium">lunes, 18 de agosto de 2025</div>
@@ -172,7 +209,7 @@ function HeaderGradient() {
 function DashboardSection() {
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-blue-200/50 bg-white/80 backdrop-blur-sm p-6 shadow-lg">
+      <div className="rounded-2xl border border-blue-200/50 bg-white/90 backdrop-blur-sm p-6 elevated-panel-xl">
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="text-sm text-blue-600 font-medium flex items-center gap-2">
@@ -192,10 +229,10 @@ function DashboardSection() {
             ];
             const icons = ['⭐', '💰', '⏳', '📸'];
             return (
-              <div key={s.label} className="group rounded-2xl border border-neutral-200 bg-white p-5 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+              <div key={s.label} className="group rounded-2xl border border-neutral-200/60 bg-white/95 p-5 elevated-panel hover:elevated-panel-lg transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm text-neutral-600 font-medium">{s.label}</div>
-                  <div className={`size-8 rounded-lg bg-gradient-to-br ${colors[i]} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-200`}>
+                  <div className={`size-8 rounded-lg bg-gradient-to-br ${colors[i]} flex items-center justify-center text-white elevated-panel group-hover:elevated-panel-lg group-hover:scale-110 transition-all duration-200`}>
                     <span className="text-sm">{icons[i]}</span>
                   </div>
                 </div>
@@ -209,9 +246,9 @@ function DashboardSection() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {actions.map((a) => (
-          <button key={a.label} className={`group rounded-2xl border border-neutral-200 bg-gradient-to-br ${a.color} text-white p-5 shadow-sm transition hover:shadow-md`}>
+          <button key={a.label} className={`group rounded-2xl border border-neutral-200/60 bg-gradient-to-br ${a.color} text-white p-5 elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 hover:-translate-y-1 hover:scale-105`}>
             <div className="flex items-center gap-4">
-              <div className="size-11 grid place-items-center rounded-xl bg-white/20">{a.icon}</div>
+              <div className="size-11 grid place-items-center rounded-xl bg-white/20 elevated-panel group-hover:elevated-panel-lg transition-all duration-200">{a.icon}</div>
               <div className="text-left">
                 <div className="font-semibold">{a.label}</div>
                 <div className="text-sm opacity-90">{a.sub}</div>
@@ -221,20 +258,20 @@ function DashboardSection() {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur">
-        <div className="p-5">
-          <div className="text-sm text-neutral-500 mb-3">Actividad Reciente</div>
+      <div className="rounded-2xl border border-neutral-200/60 bg-white/90 backdrop-blur-sm elevated-panel-xl">
+        <div className="p-6">
+          <div className="text-sm text-neutral-500 mb-4 font-medium">Actividad Reciente</div>
           <ul className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <li key={i} className="flex items-center justify-between rounded-xl border border-neutral-200 bg-white p-3">
+              <li key={i} className="flex items-center justify-between rounded-xl border border-neutral-200/60 bg-white/80 p-3 elevated-panel hover:elevated-panel-lg transition-all duration-200">
                 <div className="flex items-center gap-3">
-                  <span className="size-8 grid place-items-center rounded-lg bg-neutral-100">•</span>
+                  <span className="size-8 grid place-items-center rounded-lg bg-neutral-100 elevated-panel text-neutral-600">•</span>
                   <div>
-                    <div className="text-sm text-neutral-800">Actualización #{i + 1}</div>
+                    <div className="text-sm text-neutral-800 font-medium">Actualización #{i + 1}</div>
                     <div className="text-xs text-neutral-500">Hace unos segundos</div>
                   </div>
                 </div>
-                <span className="text-neutral-300">→</span>
+                <span className="text-neutral-400 hover:text-neutral-600 transition-colors">→</span>
               </li>
             ))}
           </ul>
@@ -250,18 +287,18 @@ function EventsSection() {
       <h2 className="text-xl font-semibold text-neutral-800">Eventos</h2>
       <div className="space-y-4">
         {eventos.map((e, i) => (
-          <article key={i} className="rounded-2xl border border-neutral-200 bg-white/80 backdrop-blur p-4">
+          <article key={i} className="rounded-2xl border border-neutral-200/60 bg-white/90 backdrop-blur-sm p-5 elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 hover:-translate-y-0.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">{e.estado}</span>
-                <span className="px-2 py-0.5 text-xs rounded-full bg-orange-50 text-orange-700 border border-orange-200">Próximo</span>
+                <span className="px-3 py-1 text-xs rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 elevated-panel font-medium">{e.estado}</span>
+                <span className="px-3 py-1 text-xs rounded-full bg-orange-50 text-orange-700 border border-orange-200 elevated-panel font-medium">Próximo</span>
               </div>
-              <button className="h-8 rounded-xl border border-neutral-200 bg-white px-3 text-sm">Previews</button>
+              <button className="h-9 rounded-xl border border-neutral-200/60 bg-white/80 px-4 text-sm elevated-panel hover:elevated-panel-lg transition-all duration-200 font-medium">Previews</button>
             </div>
-            <div className="mt-2 text-lg font-semibold text-neutral-800">{e.titulo}</div>
-            <div className="mt-1 text-sm text-neutral-500">📅 {e.fecha}</div>
-            <div className="mt-1 text-sm text-neutral-500">🏫 {e.colegio}</div>
-            <div className="mt-2 text-xs text-neutral-400">{e.created}</div>
+            <div className="mt-3 text-lg font-bold text-neutral-800">{e.titulo}</div>
+            <div className="mt-2 text-sm text-neutral-600">📅 {e.fecha}</div>
+            <div className="mt-1 text-sm text-neutral-600">🏫 {e.colegio}</div>
+            <div className="mt-3 text-xs text-neutral-400 font-medium">{e.created}</div>
           </article>
         ))}
       </div>
@@ -274,23 +311,23 @@ function PhotosSection() {
     <section className="space-y-4" id="fotos">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-neutral-800">Gestión de fotos</h2>
-        <div className="flex items-center gap-2">
-          <button className="h-9 rounded-xl border border-neutral-200 bg-white px-3 text-sm">Actualizar</button>
-          <button className="h-9 rounded-xl border border-neutral-200 bg-white px-3 text-sm">Subir fotos</button>
+        <div className="flex items-center gap-3">
+          <button className="h-9 rounded-xl border border-neutral-200/60 bg-white/80 px-4 text-sm elevated-panel hover:elevated-panel-lg transition-all duration-200 font-medium">Actualizar</button>
+          <button className="h-9 rounded-xl border border-blue-200/60 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 text-sm elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 font-medium">Subir fotos</button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {fotos.map((p, i) => (
-          <div key={i} className="group rounded-xl border border-neutral-200 bg-white p-2 hover:shadow-sm transition">
-            <div className="relative aspect-[4/3] rounded-lg bg-neutral-100 overflow-hidden grid place-items-center text-neutral-400">
+          <div key={i} className="group rounded-xl border border-neutral-200/60 bg-white/95 p-3 elevated-panel hover:elevated-panel-lg transition-all duration-200 hover:-translate-y-1">
+            <div className="relative aspect-[4/3] rounded-lg bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden grid place-items-center text-neutral-400 elevated-panel">
               {/* placeholder de imagen */}
-              <div className="size-10 rounded-full bg-neutral-200" />
-              <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">{p.status}</span>
+              <div className="size-10 rounded-full bg-neutral-200 elevated-panel" />
+              <span className="absolute top-2 left-2 px-2 py-1 rounded-md text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 elevated-panel font-medium">{p.status}</span>
               <input type="checkbox" className="absolute top-2 right-2 size-4 accent-indigo-600" />
             </div>
-            <div className="px-1 py-2">
-              <div className="truncate text-sm text-neutral-800">{p.name}</div>
-              <div className="text-xs text-neutral-500">{p.size} • {p.date}</div>
+            <div className="px-1 py-3">
+              <div className="truncate text-sm text-neutral-800 font-medium">{p.name}</div>
+              <div className="text-xs text-neutral-500 mt-1">{p.size} • {p.date}</div>
             </div>
           </div>
         ))}
@@ -322,16 +359,16 @@ function MobileBottomNav() {
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-t border-neutral-200 px-2 py-2 shadow-lg">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 liquid-glass border-t border-white/20 px-3 py-3 elevated-panel-xl">
       <div className="flex items-center justify-around">
         {mobileItems.map((item) => (
           <a
             key={item.label}
             href={item.href}
-            className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors min-w-0"
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl hover:bg-white/40 transition-all duration-200 min-w-0 elevated-panel hover:elevated-panel-lg"
           >
             <span className="text-lg">{item.icon}</span>
-            <span className="text-xs font-medium text-neutral-600 truncate">{item.label}</span>
+            <span className="text-xs font-medium text-neutral-700 truncate">{item.label}</span>
           </a>
         ))}
       </div>
