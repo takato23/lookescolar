@@ -1,6 +1,17 @@
 'use client';
 import * as React from 'react';
 
+// Agregar estilos para animaciones personalizadas
+const customStyles = `
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+`;
+
 type Stat = { label: string; value: string; hint?: string };
 type Action = { label: string; sub?: string; color: string; icon: JSX.Element };
 type EventItem = { estado: 'Activo' | 'Próximo'; titulo: string; fecha: string; colegio: string; created: string };
@@ -39,39 +50,64 @@ const fotos: PhotoItem[] = [
 
 export default function MockAdmin() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(40%_60%_at_20%_0%,rgba(124,58,237,0.12),transparent),radial-gradient(40%_60%_at_100%_0%,rgba(59,130,246,0.10),transparent)]">
-      <TopBar />
-      <div className="mx-auto max-w-7xl px-4 lg:px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 py-6">
-          <Sidebar />
-          <main className="space-y-10">
-            <HeaderGradient />
-            <DashboardSection />
-            <EventsSection />
-            <PhotosSection />
-          </main>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-green-50 relative overflow-hidden">
+        {/* Elementos decorativos de fondo */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 right-20 text-6xl text-yellow-300/30 animate-bounce hidden lg:block">⭐</div>
+          <div className="absolute top-40 left-10 text-4xl text-blue-300/40 animate-pulse hidden lg:block">💫</div>
+          <div className="absolute bottom-32 right-32 text-5xl text-green-300/30 animate-bounce delay-1000 hidden lg:block">🌟</div>
+          <div className="absolute bottom-20 left-20 text-3xl text-purple-300/40 animate-pulse delay-500 hidden lg:block">✨</div>
         </div>
+        
+        <TopBar />
+        <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 lg:gap-6 py-4 lg:py-6">
+            {/* Sidebar - Hidden on mobile, use mobile navigation instead */}
+            <div className="hidden lg:block">
+              <Sidebar />
+            </div>
+            <main className="space-y-6 lg:space-y-8 pb-20 lg:pb-0">
+              <HeaderGradient />
+              <DashboardSection />
+              <EventsSection />
+              <PhotosSection />
+            </main>
+          </div>
+        </div>
+        
+        {/* Mobile Navigation Bottom Bar */}
+        <MobileBottomNav />
       </div>
-    </div>
+    </>
   );
 }
 
 function TopBar() {
   return (
-    <header className="sticky top-0 z-30 backdrop-blur bg-white/60 border-b border-neutral-200/60">
-      <div className="mx-auto max-w-7xl px-4 lg:px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="size-8 rounded-xl bg-indigo-600 text-white grid place-items-center text-sm font-bold">LE</div>
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-neutral-200/60 shadow-sm">
+      <div className="mx-auto max-w-7xl px-4 lg:px-6 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="size-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white grid place-items-center text-sm font-bold shadow-lg">
+            😊
+          </div>
           <div className="leading-tight">
-            <div className="font-semibold">LookEscolar</div>
-            <div className="text-xs text-neutral-500">Studio Profesional</div>
+            <div className="font-bold text-lg text-neutral-800">LookEscolar</div>
+            <div className="text-xs text-neutral-500 font-medium">Panel de Administración</div>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-neutral-500">
-          <input placeholder="Buscar..." className="hidden md:block h-9 w-72 rounded-xl border border-neutral-200 bg-white/70 px-3 outline-none focus:ring-2 focus:ring-indigo-200" />
-          <div className="size-9 grid place-items-center rounded-xl border border-neutral-200 bg-white/70">⟳</div>
-          <div className="size-9 grid place-items-center rounded-xl border border-neutral-200 bg-white/70">⚙️</div>
-          <div className="size-9 grid place-items-center rounded-xl border border-neutral-200 bg-white/70">👤</div>
+        <div className="flex items-center gap-3 text-sm text-neutral-500">
+          <input 
+            placeholder="Buscar..." 
+            className="hidden md:block h-10 w-80 rounded-xl border border-neutral-200 bg-white/80 px-4 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300 shadow-sm" 
+          />
+          <button className="size-10 grid place-items-center rounded-xl border border-neutral-200 bg-white/80 hover:bg-blue-50 transition-colors shadow-sm">
+            <span className="text-lg">👤</span>
+          </button>
+          <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105">
+            admin ▼
+          </button>
         </div>
       </div>
     </header>
@@ -80,26 +116,38 @@ function TopBar() {
 
 function Sidebar() {
   const items = [
-    { label: 'Dashboard', badge: '↳ resumen' },
-    { label: 'Eventos', badge: '↳ gestión' },
-    { label: 'Carpetas', badge: '↳ por evento' },
-    { label: 'Pedidos', badge: '↳ ventas' },
-    { label: 'Publicar', badge: '↳ compartir' },
-    { label: 'Ajustes', badge: '↳ sistema' }
+    { label: 'Dashboard', badge: '↳ resumen', icon: '📊', color: 'from-blue-500 to-blue-600' },
+    { label: 'Eventos', badge: '↳ gestión', icon: '📅', color: 'from-purple-500 to-pink-500' },
+    { label: 'Carpetas', badge: '↳ por evento', icon: '📂', color: 'from-yellow-500 to-orange-500' },
+    { label: 'Pedidos', badge: '↳ ventas', icon: '🛒', color: 'from-emerald-500 to-green-600' },
+    { label: 'Publicar', badge: '↳ compartir', icon: '👥', color: 'from-cyan-500 to-blue-500' },
+    { label: 'Ajustes', badge: '↳ sistema', icon: '⚙️', color: 'from-gray-500 to-slate-600' }
   ];
   return (
-    <aside className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur p-3">
-      <nav className="space-y-1">
+    <aside className="rounded-2xl border border-neutral-200 bg-white/80 backdrop-blur-sm p-4 shadow-lg">
+      <nav className="space-y-2">
         {items.map((it) => (
-          <a key={it.label} href={`#${it.label.toLowerCase()}`} className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-neutral-50">
-            <span className="font-medium text-neutral-800">{it.label}</span>
-            <span className="text-xs text-neutral-500">{it.badge}</span>
+          <a key={it.label} href={`#${it.label.toLowerCase()}`} className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 border border-transparent hover:border-blue-200/50">
+            <div className={`size-10 rounded-xl bg-gradient-to-br ${it.color} flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-200`}>
+              <span className="text-lg">{it.icon}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-neutral-800 group-hover:text-blue-700 transition-colors">
+                {it.label}
+              </div>
+              <div className="text-xs text-neutral-500 group-hover:text-blue-600 transition-colors">
+                {it.badge}
+              </div>
+            </div>
           </a>
         ))}
       </nav>
-      <div className="mt-6 rounded-xl border border-neutral-200 p-3 text-xs text-neutral-500">
-        <div className="font-medium text-neutral-700">Sistema Activo</div>
-        <div>v2.0.0 • Seguro • Privado</div>
+      <div className="mt-6 rounded-xl bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200/60 p-4 text-xs">
+        <div className="font-semibold text-emerald-700 flex items-center gap-2">
+          <span className="size-2 bg-emerald-500 rounded-full animate-pulse"></span>
+          Sistema Activo
+        </div>
+        <div className="text-emerald-600 mt-1">v2.0.0 • Seguro • Privado</div>
       </div>
     </aside>
   );
@@ -107,10 +155,15 @@ function Sidebar() {
 
 function HeaderGradient() {
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur p-5">
-      <div className="rounded-xl bg-[linear-gradient(120deg,rgba(99,102,241,0.10),rgba(168,85,247,0.10))] p-5">
-        <div className="text-sm text-neutral-500">lunes, 18 de agosto de 2025</div>
-        <h1 id="dashboard" className="mt-1 text-2xl font-semibold text-neutral-800">Panel de Administración</h1>
+    <section className="rounded-2xl border border-blue-200/50 bg-white/80 backdrop-blur-sm p-6 shadow-xl">
+      <div className="rounded-xl bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 p-6 relative overflow-hidden">
+        <div className="absolute top-2 right-2 text-2xl animate-spin-slow">🌟</div>
+        <div className="absolute bottom-2 left-2 text-xl animate-bounce delay-300">✨</div>
+        <div className="text-sm text-blue-600 font-medium">lunes, 18 de agosto de 2025</div>
+        <h1 id="dashboard" className="mt-2 text-3xl font-bold text-neutral-800 lg:text-4xl">
+          Panel de Administración
+        </h1>
+        <p className="mt-2 text-neutral-600">Gestiona tu estudio fotográfico escolar de manera eficiente</p>
       </div>
     </section>
   );
@@ -119,21 +172,38 @@ function HeaderGradient() {
 function DashboardSection() {
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl border border-neutral-200 bg-white/70 backdrop-blur p-5">
-        <div className="flex items-center justify-between">
+      <div className="rounded-2xl border border-blue-200/50 bg-white/80 backdrop-blur-sm p-6 shadow-lg">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="text-sm text-neutral-500">Dashboard Profesional</div>
-            <h2 className="text-xl font-semibold text-neutral-800">Resumen de hoy</h2>
+            <div className="text-sm text-blue-600 font-medium flex items-center gap-2">
+              <span className="text-lg">📈</span>
+              Dashboard Profesional
+            </div>
+            <h2 className="text-xl font-bold text-neutral-800 lg:text-2xl">Resumen de hoy</h2>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-neutral-200 bg-white p-4">
-              <div className="text-sm text-neutral-500">{s.label}</div>
-              <div className="mt-1 text-2xl font-semibold text-neutral-800">{s.value}</div>
-              {s.hint && <div className="text-xs text-neutral-500 mt-1">{s.hint}</div>}
-            </div>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((s, i) => {
+            const colors = [
+              'from-yellow-400 to-orange-500',
+              'from-green-400 to-emerald-500', 
+              'from-orange-400 to-red-500',
+              'from-blue-400 to-purple-500'
+            ];
+            const icons = ['⭐', '💰', '⏳', '📸'];
+            return (
+              <div key={s.label} className="group rounded-2xl border border-neutral-200 bg-white p-5 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm text-neutral-600 font-medium">{s.label}</div>
+                  <div className={`size-8 rounded-lg bg-gradient-to-br ${colors[i]} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform duration-200`}>
+                    <span className="text-sm">{icons[i]}</span>
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-neutral-800 mb-1">{s.value}</div>
+                {s.hint && <div className="text-xs text-neutral-500">{s.hint}</div>}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -241,4 +311,30 @@ function IconUsers() {
 }
 function IconBox() {
   return (<svg viewBox="0 0 24 24" className="size-5"><path fill="currentColor" d="M21 8.5V18a2 2 0 0 1-1.2 1.8l-6.8 3.1a2 2 0 0 1-1.6 0L3.6 19.8A2 2 0 0 1 2.4 18V8.5l8.8 4V22l.8.4l.8-.4V12.5zM12 2l9 4.2l-9 4.2L3 6.2z"/></svg>);
+}
+
+function MobileBottomNav() {
+  const mobileItems = [
+    { label: 'Dashboard', icon: '📊', href: '#dashboard' },
+    { label: 'Eventos', icon: '📅', href: '#eventos' },
+    { label: 'Fotos', icon: '📸', href: '#fotos' },
+    { label: 'Más', icon: '⚙️', href: '#' }
+  ];
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-md border-t border-neutral-200 px-2 py-2 shadow-lg">
+      <div className="flex items-center justify-around">
+        {mobileItems.map((item) => (
+          <a
+            key={item.label}
+            href={item.href}
+            className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl hover:bg-blue-50 transition-colors min-w-0"
+          >
+            <span className="text-lg">{item.icon}</span>
+            <span className="text-xs font-medium text-neutral-600 truncate">{item.label}</span>
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
 }
