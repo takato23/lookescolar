@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { CommandPalette } from './CommandPalette';
 import { useCommandPalette } from './useCommandPalette';
+import { Logo } from './LogoComponent';
 
 // Estilos para animaciones, efectos avanzados y dark mode
 const customStyles = `
@@ -226,12 +227,12 @@ function TopBar({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: () 
     <header className="sticky top-0 z-50 liquid-glass">
       <div className="mx-auto max-w-7xl px-4 lg:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="size-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white grid place-items-center text-sm font-bold elevated-panel-lg">
-            😊
+          <div className="size-10 lg:size-12 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/30 dark:to-purple-900/30 border border-blue-200/50 dark:border-blue-700/50 grid place-items-center elevated-panel-lg hover:elevated-panel-xl transition-all duration-300 hover:scale-105 group">
+            <Logo variant="blue" size="md" className="group-hover:scale-110 transition-transform duration-300" />
           </div>
           <div className="leading-tight">
-            <div className="font-bold text-lg text-neutral-800 dark:text-neutral-100">LookEscolar</div>
-            <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Panel de Administración</div>
+            <div className="font-extrabold text-lg tracking-tight leading-tight text-neutral-800 dark:text-neutral-100">LookEscolar</div>
+            <div className="text-xs text-neutral-500 dark:text-neutral-400 font-semibold leading-relaxed">Panel de Administración</div>
           </div>
         </div>
         <div className="flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
@@ -260,7 +261,7 @@ function TopBar({ isDark, onToggleTheme }: { isDark: boolean; onToggleTheme: () 
           <button className="size-10 grid place-items-center rounded-xl border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-700/60 hover:bg-white/80 dark:hover:bg-slate-600/80 transition-all duration-200 elevated-panel">
             <span className="text-lg">👤</span>
           </button>
-          <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 hover:scale-105">
+          <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold tracking-tight leading-tight elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 hover:scale-105">
             admin ▼
           </button>
         </div>
@@ -287,10 +288,10 @@ function Sidebar() {
               <span className="text-lg">{it.icon}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="font-semibold text-neutral-800 dark:text-neutral-100 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
+              <div className="font-bold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
                 {it.label}
               </div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-relaxed">
                 {it.badge}
               </div>
             </div>
@@ -298,11 +299,11 @@ function Sidebar() {
         ))}
       </nav>
       <div className="mt-6 rounded-xl bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 border border-emerald-200/60 dark:border-emerald-700/60 p-4 text-xs elevated-panel">
-        <div className="font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+        <div className="font-bold tracking-tight leading-tight text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
           <span className="size-2 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse"></span>
           Sistema Activo
         </div>
-        <div className="text-emerald-600 dark:text-emerald-400 mt-1">v2.0.0 • Seguro • Privado</div>
+        <div className="text-emerald-600 dark:text-emerald-400 mt-1 leading-relaxed">v2.0.0 • Seguro • Privado</div>
       </div>
     </aside>
   );
@@ -315,10 +316,10 @@ function HeaderGradient() {
         <div className="absolute top-2 right-2 text-2xl animate-spin-slow">🌟</div>
         <div className="absolute bottom-2 left-2 text-xl animate-bounce delay-300">✨</div>
         <div className="text-sm text-blue-600 dark:text-blue-300 font-medium">lunes, 18 de agosto de 2025</div>
-        <h1 id="dashboard" className="mt-2 text-3xl font-bold text-neutral-800 dark:text-neutral-100 lg:text-4xl">
+        <h1 id="dashboard" className="mt-2 text-3xl font-extrabold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 sm:text-4xl lg:text-5xl">
           Panel de Administración
         </h1>
-        <p className="mt-2 text-neutral-600 dark:text-neutral-300">Gestiona tu estudio fotográfico escolar de manera eficiente</p>
+        <p className="mt-2 text-neutral-600 dark:text-neutral-300 leading-relaxed">Gestiona tu estudio fotográfico escolar de manera eficiente</p>
       </div>
     </section>
   );
@@ -330,11 +331,11 @@ function DashboardSection() {
       <div className="rounded-2xl border border-blue-200/50 dark:border-blue-700/50 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-6 elevated-panel-xl">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="text-sm text-blue-600 dark:text-blue-300 font-medium flex items-center gap-2">
+                          <div className="text-sm text-blue-600 dark:text-blue-300 font-semibold leading-snug flex items-center gap-2">
               <span className="text-lg">📈</span>
               Dashboard Profesional
             </div>
-            <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-100 lg:text-2xl">Resumen de hoy</h2>
+            <h2 className="text-xl font-extrabold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 sm:text-2xl lg:text-3xl">Resumen de hoy</h2>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -349,13 +350,13 @@ function DashboardSection() {
             return (
               <div key={s.label} className="group rounded-2xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/95 dark:bg-slate-700/95 p-5 elevated-panel hover:elevated-panel-lg transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm text-neutral-600 dark:text-neutral-300 font-medium">{s.label}</div>
+                  <div className="text-sm text-neutral-600 dark:text-neutral-300 font-semibold leading-snug">{s.label}</div>
                   <div className={`size-8 rounded-lg bg-gradient-to-br ${colors[i]} flex items-center justify-center text-white elevated-panel group-hover:elevated-panel-lg group-hover:scale-110 transition-all duration-200`}>
                     <span className="text-sm">{icons[i]}</span>
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-neutral-800 dark:text-neutral-100 mb-1">{s.value}</div>
-                {s.hint && <div className="text-xs text-neutral-500 dark:text-neutral-400">{s.hint}</div>}
+                <div className="text-3xl font-extrabold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 mb-1">{s.value}</div>
+                {s.hint && <div className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">{s.hint}</div>}
               </div>
             );
           })}
@@ -368,8 +369,8 @@ function DashboardSection() {
             <div className="flex items-center gap-4">
               <div className="size-11 grid place-items-center rounded-xl bg-white/20 elevated-panel group-hover:elevated-panel-lg transition-all duration-200">{a.icon}</div>
               <div className="text-left">
-                <div className="font-semibold">{a.label}</div>
-                <div className="text-sm opacity-90">{a.sub}</div>
+                <div className="font-bold tracking-tight leading-tight">{a.label}</div>
+                <div className="text-sm opacity-90 leading-snug">{a.sub}</div>
               </div>
             </div>
           </button>
@@ -378,15 +379,15 @@ function DashboardSection() {
 
       <div className="rounded-2xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm elevated-panel-xl">
         <div className="p-6">
-          <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-4 font-medium">Actividad Reciente</div>
+          <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-4 font-semibold leading-snug">Actividad Reciente</div>
           <ul className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
               <li key={i} className="flex items-center justify-between rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/80 dark:bg-slate-700/80 p-3 elevated-panel hover:elevated-panel-lg transition-all duration-200">
                 <div className="flex items-center gap-3">
                   <span className="size-8 grid place-items-center rounded-lg bg-neutral-100 dark:bg-neutral-700 elevated-panel text-neutral-600 dark:text-neutral-300">•</span>
                   <div>
-                    <div className="text-sm text-neutral-800 dark:text-neutral-200 font-medium">Actualización #{i + 1}</div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400">Hace unos segundos</div>
+                    <div className="text-sm text-neutral-800 dark:text-neutral-200 font-semibold leading-snug">Actualización #{i + 1}</div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">Hace unos segundos</div>
                   </div>
                 </div>
                 <span className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">→</span>
@@ -402,7 +403,7 @@ function DashboardSection() {
 function EventsSection() {
   return (
     <section className="space-y-4" id="eventos">
-      <h2 className="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Eventos</h2>
+      <h2 className="text-xl font-bold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 sm:text-2xl">Eventos</h2>
       <div className="space-y-4">
         {eventos.map((e, i) => (
           <article key={i} className="rounded-2xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm p-5 elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 hover:-translate-y-0.5">
@@ -411,12 +412,12 @@ function EventsSection() {
                 <span className="px-3 py-1 text-xs rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 elevated-panel font-medium">{e.estado}</span>
                 <span className="px-3 py-1 text-xs rounded-full bg-orange-50 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-700 elevated-panel font-medium">Próximo</span>
               </div>
-              <button className="h-9 rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/80 dark:bg-slate-700/80 px-4 text-sm elevated-panel hover:elevated-panel-lg transition-all duration-200 font-medium text-neutral-700 dark:text-neutral-200">Previews</button>
+              <button className="h-9 rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/80 dark:bg-slate-700/80 px-4 text-sm elevated-panel hover:elevated-panel-lg transition-all duration-200 font-semibold leading-snug text-neutral-700 dark:text-neutral-200">Previews</button>
             </div>
-            <div className="mt-3 text-lg font-bold text-neutral-800 dark:text-neutral-100">{e.titulo}</div>
-            <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">📅 {e.fecha}</div>
-            <div className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">🏫 {e.colegio}</div>
-            <div className="mt-3 text-xs text-neutral-400 dark:text-neutral-500 font-medium">{e.created}</div>
+            <div className="mt-3 text-lg font-extrabold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 sm:text-xl">{e.titulo}</div>
+            <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">📅 {e.fecha}</div>
+            <div className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">🏫 {e.colegio}</div>
+            <div className="mt-3 text-xs text-neutral-400 dark:text-neutral-500 font-semibold leading-relaxed">{e.created}</div>
           </article>
         ))}
       </div>
@@ -428,10 +429,10 @@ function PhotosSection() {
   return (
     <section className="space-y-4" id="fotos">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-neutral-800 dark:text-neutral-100">Gestión de fotos</h2>
+        <h2 className="text-xl font-bold tracking-tight leading-tight text-neutral-800 dark:text-neutral-100 sm:text-2xl">Gestión de fotos</h2>
         <div className="flex items-center gap-3">
-          <button className="h-9 rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/80 dark:bg-slate-700/80 px-4 text-sm elevated-panel hover:elevated-panel-lg transition-all duration-200 font-medium text-neutral-700 dark:text-neutral-200">Actualizar</button>
-          <button className="h-9 rounded-xl border border-blue-200/60 dark:border-blue-700/60 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 text-sm elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 font-medium">Subir fotos</button>
+          <button className="h-9 rounded-xl border border-neutral-200/60 dark:border-neutral-700/60 bg-white/80 dark:bg-slate-700/80 px-4 text-sm elevated-panel hover:elevated-panel-lg transition-all duration-200 font-semibold leading-snug text-neutral-700 dark:text-neutral-200">Actualizar</button>
+          <button className="h-9 rounded-xl border border-blue-200/60 dark:border-blue-700/60 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 text-sm elevated-panel-lg hover:elevated-panel-xl transition-all duration-200 font-bold tracking-tight leading-tight">Subir fotos</button>
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -444,8 +445,8 @@ function PhotosSection() {
               <input type="checkbox" className="absolute top-2 right-2 size-4 accent-indigo-600 dark:accent-indigo-400" />
             </div>
             <div className="px-1 py-3">
-              <div className="truncate text-sm text-neutral-800 dark:text-neutral-200 font-medium">{p.name}</div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{p.size} • {p.date}</div>
+              <div className="truncate text-sm text-neutral-800 dark:text-neutral-200 font-semibold leading-snug">{p.name}</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">{p.size} • {p.date}</div>
             </div>
           </div>
         ))}
@@ -486,7 +487,7 @@ function MobileBottomNav() {
             className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl hover:bg-white/40 dark:hover:bg-slate-700/40 transition-all duration-200 min-w-0 elevated-panel hover:elevated-panel-lg"
           >
             <span className="text-lg">{item.icon}</span>
-            <span className="text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate">{item.label}</span>
+            <span className="text-[10px] font-semibold leading-tight text-neutral-700 dark:text-neutral-200 truncate sm:text-xs">{item.label}</span>
           </a>
         ))}
       </div>
