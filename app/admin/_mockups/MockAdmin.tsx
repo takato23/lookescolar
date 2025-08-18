@@ -288,12 +288,12 @@ function Sidebar() {
             <div className={`size-10 rounded-xl flex items-center justify-center elevated-panel group-hover:elevated-panel-lg group-hover:scale-105 transition-all duration-200 ${
               typeof it.icon === 'string' 
                 ? `bg-gradient-to-br ${it.color} text-white`
-                : 'bg-white/80 dark:bg-slate-700/80 border border-white/20 dark:border-white/10'
+                : 'bg-transparent'
             }`}>
               {typeof it.icon === 'string' ? (
                 <span className="text-lg">{it.icon}</span>
               ) : (
-                <div className="flex items-center justify-center scale-110">{it.icon}</div>
+                <div className="flex items-center justify-center scale-125">{it.icon}</div>
               )}
             </div>
             <div className="flex-1 min-w-0">
