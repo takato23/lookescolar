@@ -58,40 +58,22 @@ export const createPaymentPreference = async (
     const client = getMPClient();
     const preference = new Preference(client);
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
+    // Preferencia mínima para debugging
     const preferenceData = {
       items: params.items,
-      payer: {
-        name: params.payer.name,
-        email: params.payer.email,
-        phone: params.payer.phone
-          ? {
-              number: params.payer.phone,
-            }
-          : undefined,
-      },
       back_urls: {
         success: `${baseUrl}/f/success`,
         failure: `${baseUrl}/f/error`,
         pending: `${baseUrl}/f/pending`,
       },
-      auto_return: 'approved' as const,
       external_reference: params.orderId,
-      notification_url: `${baseUrl}/api/payments/webhook`,
-      metadata: {
-        order_id: params.orderId,
-        created_at: new Date().toISOString(),
-      },
-      expires: true,
-      expiration_date_from: new Date().toISOString(),
-      expiration_date_to: new Date(
-        Date.now() + 24 * 60 * 60 * 1000
-      ).toISOString(), // 24h expiration
-      statement_descriptor: 'LOOK ESCOLAR', // Descriptor en el resumen de la tarjeta
     };
 
+    console.log('[MP DEBUG] Enviando preferenceData:', JSON.stringify(preferenceData, null, 2));
     const result = await preference.create({ body: preferenceData });
+    console.log('[MP DEBUG] Respuesta MP:', { id: result.id, hasInitPoint: !!result.init_point, hasSandboxInitPoint: !!result.sandbox_init_point });
 
     if (!result.id || !result.init_point || !result.sandbox_init_point) {
       throw new Error('Respuesta incompleta de MercadoPago');

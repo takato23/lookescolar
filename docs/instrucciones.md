@@ -1,176 +1,84 @@
-# Propósito
-Implementar una plataforma simple de galerías escolares: permitir que fotógrafas suban fotos, se muestren solo como previsualizaciones con marcas de agua, se compartan links de galería (públicos o privados), y habilitar pagos vía Mercado Pago con un carrito simple.
-## Checklist inicial (conceptual)
-1. Definir modelos y estructura mínima de base de datos para eventos, fotos y órdenes.
-2. Implementar endpoints esenciales para previews, carrito, órdenes, administración y webhooks.
-3. Generar previews de imágenes con marcas de agua según especificaciones.
-4. Integrar y validar pagos con Mercado Pago, incluyendo gestión de órdenes y callback vía webhook.
-5. Construir UI básica para galería, carrito, pagos y administración, asegurando la privacidad de originales.
-6. Validar respuestas y metadatos con pruebas de cobertura y ejemplo de flujos.
----
-# Instrucciones
-- En `/gallery/{eventId}` mostrar una grilla de previews con marca de agua diagonal, repetida, texto “LOOK ESCOLAR” y “VISTA PREVIA”, opacidad ~0.4. Las imágenes deben pesar entre 120-250 KB (WebP), máximo 1600px lado mayor. Nunca mostrar imágenes originales.
-- Cada preview debe tener un botón “Agregar al carrito”. Mostrar un carrito fijo (resumen) con total y botón de acción “Pagar con Mercado Pago”.
-- Al pagar: crear una orden en la base (`pending`), generar la preferencia en Mercado Pago, redirigir a `init_point`. Guardar el `preferenceId` y usar `external_reference=orderId`.
-- Implementar webhook: validar firma, buscar orden por `external_reference`, actualizar estado a `paid` o `rejected` de manera idempotente.
-- En `/f/{token}` (galería privada por token), misma UI y funcionamiento, pero solo mostrar previews del sujeto correspondiente.
-- Upload en `/admin`: subir fotos del evento, generar previews con marca de agua fuerte (nunca originales accesibles públicamente).
-- En admin, agregar botón para “Reparar previews” por evento (usa el endpoint existente) y otro para “Reagrupar por QR” (anchor-detect + group).
-- Crea endpoints, modelos y lógica mínima necesaria para lograr el flujo de punta a punta; prioriza soluciones pragmáticas.
-- Después de cada cambio importante (endpoints, lógica de pago, upload o webhook), valida si el resultado coincide con los criterios funcionales y de seguridad definidos.
----
-# Criterios de validación final
-- **Cobertura:** Flujos y endpoints clave con ejemplos incluidos. Plan de UI básico detallado.
-- **Formato:** Secciones claras y accionables. Los errores deben ser por datos o entorno, nunca por falta de definición.
----
-# Formatos de respuesta requeridos
-## 1. Endpoints
-```json
-[
-{
-"method": "GET",
-"path": "/gallery/{eventId}",
-"response": {
-"previews": [{
-"photoId": "string",
-"previewUrl": "string (watermarked)",
-"dimensions": {"width": 1600, "height": 1067},
-"sizeKB": 180,
-"watermark": {
-"text": ["LOOK ESCOLAR", "VISTA PREVIA"],
-"diagonal": true,
-"repeat": true,
-"opacity": 0.4
-}
-}]
-},
-"errors": [
-{"code": "EVENT_NOT_FOUND", "message": "El evento no existe"}
-]
-},
-{
-"method": "POST",
-"path": "/cart/add",
-"body": { "userToken": "string", "photoId": "string" },
-"response": {"ok": true, "cart": [{"photoId": "string"}]},
-"errors": [
-{"code": "PHOTO_NOT_FOUND", "message": "La foto no existe"}
-]
-},
-{
-"method": "POST",
-"path": "/order/create",
-"body": {
-"userToken": "string",
-"items": [{"photoId": "string"}]
-},
-"response": {
-"orderId": "string",
-"preferenceId": "string",
-"status": "pending",
-"init_point": "string-url"
-},
-"errors": [
-{"code": "CART_EMPTY", "message": "No hay ítems en el carrito"}
-]
-},
-{
-"method": "POST",
-"path": "/mp/webhook",
-"body": {
-"external_reference": "string-orderId",
-"signature": "string",
-"status": "paid | rejected"
-},
-"response": {"result": "ok"},
-"errors": [
-{"code": "INVALID_SIGNATURE", "message": "Firma inválida"},
-{"code": "ORDER_NOT_FOUND", "message": "Orden no encontrada"}
-]
-},
-{
-"method": "POST",
-"path": "/admin/upload",
-"body": {"eventId": "string", "files": ["binary"]},
-"response": {
-"uploaded": [
-{
-"photoId": "string",
-"previewUrl": "string (watermarked)"
-}
-]
-},
-"errors": [
-{"code": "INVALID_FILE", "message": "Formato de archivo inválido"}
-]
-},
-{
-"method": "POST",
-"path": "/admin/repair-previews",
-"body": {"eventId": "string"},
-"response": {"status": "ok"},
-"errors": []
-},
-{
-"method": "POST",
-"path": "/admin/group-by-qr",
-"body": {"eventId": "string"},
-"response": {"status": "ok"},
-"errors": []
-},
-{
-"method": "GET",
-"path": "/f/{token}",
-"response": {
-"previews": [{
-"photoId": "string",
-"previewUrl": "string (watermarked)"
-}]
-},
-"errors": [
-{"code": "INVALID_TOKEN", "message": "Token inválido o expirado"}
-]
-}
-]
-```
-## 2. Metadata de Previews
-```json
-{
-"photoId": "string",
-"previewUrl": "string (url)",
-"watermark": {
-"text": ["LOOK ESCOLAR", "VISTA PREVIA"],
-"diagonal": true,
-"repeat": true,
-"opacity": 0.4
-},
-"sizeKB": 180,
-"dimensions": { "width": 1600, "height": 1067 }
-}
-```
-## 3. Ejemplo de Payload de Webhook
-```json
-{
-"external_reference": "order_123456",
-"signature": "sha256:abcdef...",
-"status": "paid"
-}
-```
-## 4. Resultados de Validación
-```json
-{
-"coverage": {
-"endpointsTested": ["/gallery/{eventId}", "/f/{token}", "/order/create", "/mp/webhook", "..."],
-"uiPlanReviewed": true
-},
-"format": {
-"sections": ["Flujos", "Endpoints", "UI"],
-"result": "ok"
-},
-"errors": []
-}
-```
-- Si es necesario definir nuevos endpoints o respuestas, sigue estos formatos estructurales.
-- Prioriza respuestas JSON claras, errores explícitos y metadatos relevantes.
-- Si algún paso esencial no se cubre correctamente, auto-corrige y vuelve a validar el resultado antes de finalizar.
-Request changes (optional)
+Necesito que me expliques el diseño en detalle y que me digas exactamente qué archivos y componentes intervienen, así te doy feedback y podemos implementarlo sin trabas.
+
+1) Objetivo (en tus palabras)
+	•	Qué tiene que lograr la galería (familias y pública) en una frase cada una.
+	•	Qué cambia respecto a lo actual (2–4 bullets).
+
+2) Wireframe simple (mobile primero + desktop)
+	•	Un diagrama sencillo (ASCII o imagen) con:
+	•	Header (título, breadcrumbs si corresponde).
+	•	Grid/listado (cómo se ve cada card).
+	•	CTA flotante del carrito.
+	•	Modal de imagen (acciones dentro).
+	•	Estados vacíos/errores y “cargando”.
+	•	Aclarar espaciados, tamaños de fuente y jerarquía visual.
+
+3) Piezas de UI y archivos (lista exacta)
+
+Especificá rutas y archivos (existentes o nuevos) y su rol:
+	•	Página pública /gallery/[eventId]
+	•	app/gallery/[eventId]/page.tsx (container y data fetching)
+	•	components/public/PublicGallery.tsx (layout)
+	•	components/public/PhotoCard.tsx (card con watermark + srcset/blur)
+	•	components/public/PhotoModal.tsx (zoom + “Agregar al carrito”)
+	•	components/cart/CartDrawer.tsx (carrito)
+	•	components/common/SkeletonGrid.tsx (loading)
+	•	components/common/EmptyState.tsx (vacío/error)
+	•	Página por token /f/[token]
+	•	app/f/[token]/simple-page.tsx (container)
+	•	Reutiliza los mismos componentes que la pública cuando aplique.
+	•	Store/estado
+	•	stores/cart.store.ts (qué keys/acciones expone)
+
+Indicá si alguno de estos ya existe con otro nombre y cuál reemplaza a cuál.
+
+4) Props/contratos de cada componente (breve)
+
+Para cada componente, listá props clave y eventos. Ejemplo:
+	•	PhotoCard
+	•	photo: { id, previewUrl, watermarkUrl, width, height, approved }
+	•	onSelect(photoId) / onOpen(photoId)
+	•	CartDrawer
+	•	items: Array<{ photoId, qty, unitPrice }>
+	•	onCheckout() → redirige a MP
+
+5) Comportamiento y flujo
+	•	Añadir al carrito: desde card y desde modal (qué feedback se muestra).
+	•	Carrito: ver, cambiar cantidades, subtotal/total, moneda.
+	•	Checkout MP: qué endpoint llama y qué hace la UI mientras redirige.
+	•	Post-pago: a qué páginas llega (success/pending/failure) y qué mensaje exacto ve el usuario.
+
+6) Imágenes (lo más importante)
+	•	Siempre previews con watermark fuerte diagonal y repetido (“LOOK ESCOLAR – VISTA PREVIA”).
+	•	Nunca originales.
+	•	srcset/sizes para móvil, decoding="async", blur placeholder.
+	•	Tamaño objetivo y peso aproximado (p. ej. 1600px máx; 120–250 KB; WebP).
+	•	Política de expiración de URLs firmadas (p. ej. ≤ 15 min).
+
+7) Accesibilidad y rendimiento (específico)
+	•	Roles ARIA en grid, modal, drawer; foco accesible.
+	•	Skeletons/empty states, manejo de errores (texto exacto en español).
+	•	Scroll/restauración de posición al volver del modal.
+
+8) Endpoints exactos que usa cada pantalla
+
+Para cada vista, listá las llamadas con ejemplo:
+	•	GET /api/gallery/{eventId}?page=&limit= → shape esperado de respuesta.
+	•	GET /api/family/gallery-simple/{token} → shape.
+	•	POST /api/family/cart?action=calculate|validate → body y respuesta.
+	•	POST /api/family/checkout → body y respuesta (con redirectUrl).
+	•	Cualquier otro (price-list, etc.).
+
+9) Textos finales (copys)
+	•	Títulos, botones, vacíos (“Aún no hay fotos disponibles”), errores y toasts.
+	•	Texto del watermark (confirmar exactamente: “LOOK ESCOLAR – VISTA PREVIA”).
+
+10) Aceptación (checklist corto)
+	•	Solo previews con watermark; no originales.
+	•	Móvil fluido: carga con blur + tamaños responsivos.
+	•	Agregar varias fotos al carrito y total correcto.
+	•	Redirección a MP y retorno con orden actualizada por webhook.
+	•	Estados vacíos/errores visibles y en español.
+	•	Accesible: modal/drawer con foco y Escape funcionando.
+
+Extra: Si podés, adjuntá un árbol de archivos final (file tree) y marcá qué es nuevo y qué se borra. Con eso te doy OK y lo implementamos directo.

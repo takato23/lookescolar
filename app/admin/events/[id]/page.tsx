@@ -32,7 +32,7 @@ import {
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params?.id as string;
+  const id = params['id'] as string;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
