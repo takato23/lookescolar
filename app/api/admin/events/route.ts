@@ -15,6 +15,11 @@ import {
   createPaginationMeta,
   logDevRequest,
 } from '@/lib/utils/api-response';
+import {
+  normalizeEvent,
+  prepareEventInsert,
+  detectSchemaVersion,
+} from '@/lib/utils/schema-compatibility';
 
 export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (request: NextRequest, authContext) => {

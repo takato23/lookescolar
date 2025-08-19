@@ -74,7 +74,15 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
           }
         }
 
-        const data: GalleryData = await response.json();
+        const apiResponse = await response.json();
+        
+        // La API devuelve { data: { event, photos }, pagination }
+        // Necesitamos reestructurar para que coincida con GalleryData
+        const data: GalleryData = {
+          event: apiResponse.data.event,
+          photos: apiResponse.data.photos || [],
+          pagination: apiResponse.pagination || { page: 1, limit: 24, total: 0, has_more: false, total_pages: 1 }
+        };
 
         setGalleryData((prevData) => {
           if (append && prevData) {
