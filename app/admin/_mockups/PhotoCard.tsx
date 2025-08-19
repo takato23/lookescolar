@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import LiquidGlass from 'liquid-glass-react';
 import { CheckIcon } from './icons';
 
 export type PhotoStatus = 'approved' | 'pending' | 'tagged';
@@ -54,32 +53,23 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const statusConfig = getStatusConfig(photo.status);
   
   return (
-    <LiquidGlass
-      displacementScale={45}
-      blurAmount={0.06}
-      elasticity={0.3}
-      cornerRadius={16}
-      overLight={true}
-      saturation={140}
-      aberrationIntensity={2}
-      className={`relative group shadow-sm overflow-hidden border-2 transition-all duration-200 hover:shadow-lg ${
-        selected ? 'border-blue-400 ring-2 ring-blue-300/50' : 'border-gray-300/50'
+    <div 
+      className={`relative group rounded-2xl shadow-sm bg-white/95 backdrop-blur-sm overflow-hidden border-2 transition-all duration-200 hover:shadow-lg hover:bg-white ${
+        selected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
       }`}
+      aria-selected={selected}
       onClick={(e: React.MouseEvent) => {
         e.stopPropagation();
         onToggleSelection(photo.id);
       }}
     >
-      <div 
-        className="relative bg-white/50"
-        aria-selected={selected}
-      >
       {/* Image container */}
       <div className="relative aspect-square bg-gray-100">
         {/* Checkbox - Top Left */}
         <button
           onClick={(e) => {
             e.stopPropagation();
+            onToggleSelection(photo.id);
           }}
           className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-md border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
             selected
@@ -136,6 +126,5 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
         </div>
       </div>
     </div>
-    </LiquidGlass>
   );
 };

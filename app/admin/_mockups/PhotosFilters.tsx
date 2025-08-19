@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import LiquidGlass from 'liquid-glass-react';
 import { SearchIcon, GridIcon, ListIcon, CheckIcon } from './icons';
 import { PhotoStatus } from './PhotoCard';
 
@@ -51,16 +50,7 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
   };
 
   return (
-    <LiquidGlass
-      displacementScale={35}
-      blurAmount={0.1}
-      elasticity={0.25}
-      cornerRadius={0}
-      overLight={true}
-      saturation={130}
-      aberrationIntensity={1.5}
-      className="sticky top-0 z-40 border-b border-gray-200/50"
-    >
+    <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
       <div className="space-y-4 p-4">
       {/* Title */}
       <div className="flex items-center justify-between">
@@ -157,6 +147,6 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
         )}
       </div>
     </div>
-    </LiquidGlass>
+    </div>
   );
 };

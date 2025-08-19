@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import LiquidGlass from 'liquid-glass-react';
 import { MenuIcon, SearchIcon, BellIcon } from './icons';
 
 interface MobileNavProps {
@@ -14,16 +13,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   className = "" 
 }) => {
   return (
-    <LiquidGlass
-      displacementScale={25}
-      blurAmount={0.08}
-      elasticity={0.2}
-      cornerRadius={0}
-      overLight={true}
-      saturation={120}
-      aberrationIntensity={1}
-      className={`border-b border-gray-200/50 ${className}`}
-    >
+    <div className={`bg-white/90 backdrop-blur-md border-b border-gray-200/50 ${className}`}>
       <nav className="flex items-center justify-between p-4">
         {/* Left side - Menu */}
         <button 
@@ -58,6 +48,6 @@ export const MobileNav: React.FC<MobileNavProps> = ({
           </button>
         </div>
       </nav>
-    </LiquidGlass>
+    </div>
   );
 };
