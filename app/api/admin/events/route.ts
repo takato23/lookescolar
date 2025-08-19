@@ -8,6 +8,13 @@ import {
   SecurityLogger,
 } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  parsePaginationParams,
+  createPaginationMeta,
+  logDevRequest,
+} from '@/lib/utils/api-response';
 
 export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (request: NextRequest, authContext) => {

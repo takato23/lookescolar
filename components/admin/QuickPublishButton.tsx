@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { generateFamilyGalleryLink } from '@/lib/utils/gallery-links';
 import { Loader2, Zap, CheckCircle2, Copy, QrCode, ExternalLink, Wrench } from 'lucide-react';
 import {
   Dialog,
@@ -146,7 +147,11 @@ export default function QuickPublishButton({ eventId, photoIds, onComplete }: Qu
       // Generate links for each code
       const results: PublishResult[] = publishedCodes.map((code: any) => ({
         token: code.token,
-        link: `${window.location.origin}/f/${code.token}/simple-page`,
+        link: generateFamilyGalleryLink({
+          token: code.token,
+          eventId: code.event_id || eventId,
+          origin: window.location.origin
+        }),
         codeId: code.code_id || code.id,
       }));
       

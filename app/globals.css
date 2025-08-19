@@ -7,6 +7,8 @@
 /* Liquid Glass Effects */
 @import url('../styles/liquid-glass/effects.css');
 @import url('../styles/liquid-glass/typography.css');
+@import url('../styles/liquid-glass/liquid-glass-enhanced.css');
+@import url('../styles/liquid-glass/liquid-glass-improved.css');
 
 @layer base {
   :root {
@@ -87,60 +89,60 @@
   }
 
   .dark {
-    /* Dark Mode with Better Contrast */
-    --background: 16 16 20;              /* Deeper dark for better depth */
-    --foreground: 248 248 252;          /* Brighter white for better readability */
-    --card: 24 24 30;                   /* Subtle card background */
-    --card-foreground: 245 245 250;     /* High contrast text */
-    --popover: 28 28 34;
-    --popover-foreground: 245 245 250;
+    /* Improved Background Colors - Using comfortable dark grays instead of pure black */
+    --background: 26 26 32;              /* Comfortable dark gray (was 16 16 20) */
+    --foreground: 248 250 252;           /* High contrast white text */
+    --card: 32 32 40;                    /* Lighter card background (was 24 24 30) */
+    --card-foreground: 248 250 252;      /* Excellent contrast card text */
+    --popover: 36 36 44;                 /* Slightly lighter popover background */
+    --popover-foreground: 248 250 252;   /* High contrast popover text */
     
-    /* Brand Colors (Softer for dark mode) */
-    --primary: 99 119 237;             /* Softer indigo-blue */
-    --primary-foreground: 24 24 27;     /* Match background */
-    --primary-strong: 129 140 248;      /* Gentle highlight */
+    /* Improved Brand Colors for Dark Mode */
+    --primary: 107 127 255;              /* Slightly brighter primary */
+    --primary-foreground: 26 26 32;      /* Dark text on primary */
+    --primary-strong: 139 152 255;       /* More visible strong primary */
     
-    --secondary: 147 91 214;            /* Muted purple */
-    --secondary-foreground: 24 24 27;
-    --secondary-strong: 167 111 234;    /* Softer purple */
+    --secondary: 157 101 224;            /* Brighter purple */
+    --secondary-foreground: 26 26 32;    /* Dark text on secondary */
+    --secondary-strong: 177 121 244;     /* More vibrant strong secondary */
     
-    --accent: 236 184 51;               /* Warmer, less harsh gold */
-    --accent-foreground: 24 24 27;
+    --accent: 246 194 61;                /* Warmer, more visible gold */
+    --accent-foreground: 26 26 32;       /* Dark text on accent */
     
-    /* Semantic Colors (Dark adjusted) */
-    --success: 34 197 94;
-    --success-strong: 74 222 128;
-    --warning: 251 191 36;
-    --warning-strong: 252 211 77;
-    --error: 248 113 113;
-    --error-strong: 252 165 165;
+    /* Enhanced Semantic Colors */
+    --success: 44 207 104;               /* Brighter success green */
+    --success-strong: 84 232 138;        /* More vibrant strong success */
+    --warning: 255 201 46;               /* Brighter warning yellow */
+    --warning-strong: 255 221 87;        /* More visible strong warning */
+    --error: 255 123 123;                /* Brighter error red */
+    --error-strong: 255 175 175;         /* More visible strong error */
     
-    /* Surface Colors */
-    --surface: 36 36 40;                /* Softer surface */
-    --surface-variant: 42 42 46;        /* Subtle variation */
-    --surface-strong: 52 52 56;         /* Less harsh contrast */
+    /* Enhanced Surface Colors with Better Separation */
+    --surface: 42 42 50;                 /* More visible surface (was 36 36 40) */
+    --surface-variant: 48 48 56;         /* Better variant visibility (was 42 42 46) */
+    --surface-strong: 58 58 66;          /* Stronger contrast (was 52 52 56) */
     
-    /* Text Colors with Better Contrast */
-    --text-primary: 245 245 250;        /* Brighter primary text */
-    --text-secondary: 200 200 210;      /* Much more readable secondary */
-    --text-tertiary: 160 160 170;       /* Better tertiary contrast */
-    --text-disabled: 100 100 110;       /* More visible disabled */
+    /* Improved Text Colors with WCAG AA+ Compliance */
+    --text-primary: 248 250 252;         /* Excellent primary text contrast */
+    --text-secondary: 210 214 220;       /* Much better secondary text (was 200 200 210) */
+    --text-tertiary: 170 176 185;        /* Better tertiary contrast (was 160 160 170) */
+    --text-disabled: 120 126 135;        /* More visible disabled text (was 100 100 110) */
     
-    /* Interactive States */
-    --interactive-hover: 255 255 255 0.04;
-    --interactive-active: 255 255 255 0.08;
-    --interactive-focus: 107 127 255;
+    /* Enhanced Interactive States */
+    --interactive-hover: 255 255 255 0.06;    /* Slightly more visible hover */
+    --interactive-active: 255 255 255 0.10;   /* More noticeable active state */
+    --interactive-focus: 107 127 255;          /* Bright focus color */
     
-    /* Borders */
-    --border: 52 52 56;                 /* Softer border */
-    --border-strong: 72 72 76;          /* Less harsh strong border */
-    --input-border: 72 72 76;
-    --input-border-focus: 99 119 237;
+    /* Enhanced Border Colors for Better Definition */
+    --border: 58 58 66;                  /* More visible borders (was 52 52 56) */
+    --border-strong: 80 82 90;           /* Much stronger borders (was 72 72 76) */
+    --input-border: 80 82 90;            /* Better input visibility */
+    --input-border-focus: 107 127 255;   /* Focus remains vibrant */
     
-    /* Enhanced Liquid Glass Effects (Dark) */
-    --glass-bg: rgba(24, 24, 30, 0.65);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 120px rgba(99, 119, 237, 0.1);
+    /* Improved Glass Effects for Dark Mode */
+    --glass-bg: rgba(32, 32, 40, 0.75);       /* More opaque glass background */
+    --glass-border: rgba(255, 255, 255, 0.15); /* More visible glass border */
+    --glass-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 120px rgba(107, 127, 255, 0.12);
   }
 
   /* Night Mode: variante de dark con más contraste y acentos cálidos */

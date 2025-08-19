@@ -31,8 +31,8 @@ import { cn } from "@/lib/utils";
 import { buildPhotosUrl } from "@/lib/utils/photos-url-builder";
 import QRScannerModal, { type StudentInfo } from "./QRScannerModal";
 import TaggingModal from "./TaggingModal";
-import { PhotoModal as PublicPhotoModal } from "@/components/public/PhotoModal";
-import LiquidGlass from 'liquid-glass-react';
+import { PhotoModal as GalleryPhotoModal } from "@/components/gallery/PhotoModal";
+// Using CSS liquid glass styles instead of liquid-glass-react library
 
 // Theme Context
 import { createContext, useContext, ReactNode } from 'react';
@@ -197,82 +197,68 @@ const LiquidPhotoCard: React.FC<{
 
   if (viewMode === 'list') {
     return (
-      <LiquidGlass 
-        displacementScale={15}
-        blurAmount={0.04}
-        saturation={105}
-        aberrationIntensity={0.4}
-        elasticity={0.2}
-        cornerRadius={12}
-        overLight={theme === 'light'}
-        className="cursor-pointer transform hover:scale-[1.02] transition-transform duration-300"
-      >
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg cursor-pointer transform hover:scale-[1.02] transition-all duration-300">
         <div className="p-4 flex items-center space-x-4">
-          <div className="relative w-16 h-16 bg-gradient-to-br from-white/10 to-white/5 rounded-xl flex items-center justify-center">
-            {photo.preview_url && imageLoadState === 'loaded' ? (
+          <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden">
+            {photo.preview_url ? (
               <img
                 src={photo.preview_url}
                 alt={photo.original_filename}
                 className="w-full h-full object-cover rounded-xl"
-                onLoad={() => setImageLoadState('loaded')}
-                onError={() => setImageLoadState('error')}
+                onLoad={() => {
+                  console.log('Image loaded:', photo.original_filename);
+                  setImageLoadState('loaded');
+                }}
+                onError={(e) => {
+                  console.log('Image error:', photo.original_filename, e);
+                  setImageLoadState('error');
+                }}
+                style={{ display: imageLoadState === 'error' ? 'none' : 'block' }}
               />
-            ) : (
+            ) : null}
+            {(!photo.preview_url || imageLoadState === 'error') && (
               <ImageIcon size={24} className="text-white/70" />
             )}
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className={`font-medium text-sm truncate drop-shadow-sm ${
-              theme === 'dark' ? 'text-slate-100' : 'text-white'
-            }`}>
+            <h3 className="font-medium text-sm truncate text-gray-800 dark:text-gray-200">
               {photo.original_filename}
             </h3>
             <div className="flex items-center space-x-2 mt-1">
               <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${statusColor}`}>
                 {statusText}
               </span>
-              <span className={`text-xs ${
-                theme === 'dark' ? 'text-slate-400' : 'text-white/70'
-              }`}>{Math.round(photo.file_size / 1024)} KB</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                {Math.round(photo.file_size / 1024)} KB
+              </span>
             </div>
           </div>
 
-          {/* Liquid Glass Checkbox */}
-          <LiquidGlass 
-            displacementScale={isSelected ? 12 : 8}
-            blurAmount={0.03}
-            saturation={isSelected ? 115 : 105}
-            aberrationIntensity={isSelected ? 0.6 : 0.3}
-            elasticity={0.3}
-            cornerRadius={6}
-            overLight={!isSelected}
+          {/* Simple Checkbox */}
+          <div 
+            className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-sm ${
+              isSelected 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+            }`}
             onClick={(e) => {
               e.stopPropagation();
               onSelect(photo.id);
             }}
-            className="cursor-pointer transform hover:scale-110 transition-transform"
           >
-            <div className="w-6 h-6 flex items-center justify-center p-1">
-              {isSelected && (
-                <CheckIcon size={14} className="text-purple-600 drop-shadow-md animate-pulse" />
-              )}
-            </div>
-          </LiquidGlass>
+            {isSelected && (
+              <CheckIcon size={14} />
+            )}
+          </div>
         </div>
-      </LiquidGlass>
+      </div>
     );
   }
 
   return (
-    <LiquidGlass 
-      displacementScale={25}
-      blurAmount={0.06}
-      saturation={105}
-      aberrationIntensity={0.8}
-      elasticity={0.2}
-      cornerRadius={16}
-      overLight={theme === 'light'}
+    <div 
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl cursor-pointer transform hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden"
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest('[data-checkbox]')) {
@@ -281,108 +267,73 @@ const LiquidPhotoCard: React.FC<{
           onOpenPreview();
         }
       }}
-      className="cursor-pointer transform hover:scale-105 active:scale-95 transition-transform duration-300"
     >
       <div className="overflow-hidden">
         <div className="relative aspect-square">
-          {/* Liquid Glass Checkbox */}
+          {/* Simple Checkbox */}
           <div className="absolute top-3 left-3 z-10">
-            <LiquidGlass 
-              displacementScale={isSelected ? 12 : 8}
-              blurAmount={isSelected ? 0.03 : 0.02}
-              saturation={isSelected ? 115 : 105}
-              aberrationIntensity={isSelected ? 0.6 : 0.3}
-              elasticity={0.3}
-              cornerRadius={6}
-              overLight={!isSelected}
+            <div 
+              className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-lg ${
+                isSelected 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-white/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 backdrop-blur-sm'
+              }`}
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(photo.id);
               }}
-              className="cursor-pointer transform hover:scale-110 transition-transform"
             >
-              <div data-checkbox className="w-6 h-6 flex items-center justify-center p-1">
-                {isSelected && (
-                  <CheckIcon size={14} className="text-purple-600 drop-shadow-md animate-pulse" />
-                )}
-              </div>
-            </LiquidGlass>
+              {isSelected && (
+                <CheckIcon size={14} />
+              )}
+            </div>
           </div>
 
-          {/* Liquid Glass Status Badge */}
+          {/* Status Badge with Better Contrast */}
           <div className="absolute top-3 right-3 z-10">
-            <LiquidGlass 
-              displacementScale={10}
-              blurAmount={0.02}
-              saturation={110}
-              aberrationIntensity={0.4}
-              elasticity={0.3}
-              cornerRadius={999}
-              overLight={false}
-            >
-              <div className={`px-3 py-1 text-white text-xs font-semibold ${statusColor} rounded-full`}>
-                {statusText}
-              </div>
-            </LiquidGlass>
+            <div className={`px-2 py-1 text-white text-xs font-medium ${statusColor} rounded-full shadow-lg`}>
+              {statusText}
+            </div>
           </div>
 
           {/* Photo Content */}
           <div className="w-full h-full flex items-center justify-center relative">
-            {photo.preview_url && imageLoadState === 'loaded' ? (
+            {photo.preview_url ? (
               <img
                 src={photo.preview_url}
                 alt={photo.original_filename}
                 className="w-full h-full object-cover"
                 onLoad={() => setImageLoadState('loaded')}
                 onError={() => setImageLoadState('error')}
+                style={{ display: imageLoadState === 'error' ? 'none' : 'block' }}
               />
-            ) : (
-              <LiquidGlass 
-                displacementScale={15}
-                blurAmount={0.04}
-                saturation={105}
-                aberrationIntensity={0.5}
-                elasticity={0.3}
-                cornerRadius={12}
-                overLight={theme === 'light'}
-                className="transform hover:scale-105 transition-transform duration-300"
-              >
+            ) : null}
+            {(!photo.preview_url || imageLoadState === 'error') && (
+              <div className="liquid-card transform hover:scale-105 transition-transform duration-300">
                 <div className="w-16 h-16 flex items-center justify-center p-4">
                   <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
                 </div>
-              </LiquidGlass>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Photo Info with Liquid Glass */}
-        <LiquidGlass 
-          displacementScale={12}
-          blurAmount={0.03}
-          saturation={105}
-          aberrationIntensity={0.4}
-          elasticity={0.2}
-          cornerRadius={0}
-          overLight={theme === 'light'}
-        >
+        {/* Photo Info with Better Contrast */}
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-b-2xl">
           <div className="p-3">
-            <div className={`font-medium text-sm mb-1 drop-shadow-sm truncate ${
-              theme === 'dark' ? 'text-slate-100' : 'text-white'
-            }`}>
+            <div className="font-medium text-sm mb-1 truncate text-gray-800 dark:text-gray-200">
               {photo.original_filename}
             </div>
-            <div className={`flex justify-between text-xs ${
-              theme === 'dark' ? 'text-slate-300' : 'text-white/80'
-            }`}>
-              <span className="drop-shadow-sm">{Math.round(photo.file_size / 1024)} KB</span>
-              <span className="drop-shadow-sm">
+            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+              <span>{Math.round(photo.file_size / 1024)} KB</span>
+              <span>
                 {new Date(photo.created_at).toLocaleDateString()}
               </span>
             </div>
           </div>
-        </LiquidGlass>
+        </div>
       </div>
-    </LiquidGlass>
+    </div>
   );
 };
 
@@ -438,6 +389,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
   // Update photos when initialPhotos changes
   useEffect(() => {
+    console.log('PhotoGalleryLiquid: initialPhotos changed', initialPhotos.length, initialPhotos);
     setPhotos(initialPhotos);
   }, [initialPhotos]);
 
@@ -453,7 +405,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
   // Filtered photos
   const filteredPhotos = useMemo(() => {
-    return photos.filter(photo => {
+    const filtered = photos.filter(photo => {
       // Search filter
       if (searchQuery && !photo.original_filename.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
@@ -466,6 +418,8 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
       return true;
     });
+    console.log('PhotoGalleryLiquid: filteredPhotos', filtered.length, filtered);
+    return filtered;
   }, [photos, searchQuery, filterStatus]);
 
   // Selection handlers
@@ -549,7 +503,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : 'bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600'} transition-colors duration-500 overflow-hidden`}>
+    <div className={`liquid-glass-app ${compact ? 'min-h-0' : 'min-h-screen'} ${theme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : compact ? 'bg-transparent' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'} transition-colors duration-500 ${compact ? '' : 'overflow-hidden'}`}>
       
       {!hideHeader && (
         <>
@@ -558,32 +512,16 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
             <div className="max-w-7xl mx-auto min-h-screen">
               
               {/* Header with Liquid Glass */}
-              <LiquidGlass 
-                displacementScale={20}
-                blurAmount={0.05}
-                saturation={100}
-                aberrationIntensity={0.5}
-                elasticity={0.2}
-                cornerRadius={0}
-                overLight={theme === 'light'}
-                className="w-full sticky top-0 z-40"
-              >
+              <div className="liquid-card w-full sticky top-0 z-40">
                 <div className="flex items-center justify-between p-6">
                   <div className="flex items-center space-x-4">
-                    <LiquidGlass 
-                      displacementScale={10}
-                      blurAmount={0.02}
-                      saturation={100}
-                      elasticity={0.3}
-                      cornerRadius={8}
-                      overLight={theme === 'light'}
-                    >
+                    <div className="liquid-button">
                       <div className="w-8 h-8 flex items-center justify-center p-2">
                         <FolderIcon className={`w-full h-full drop-shadow-sm ${
                           theme === 'dark' ? 'text-slate-200' : 'text-white'
                         }`} />
                       </div>
-                    </LiquidGlass>
+                    </div>
                     <h1 className={`text-2xl font-bold drop-shadow-sm ${
                       theme === 'dark' ? 'text-slate-100' : 'text-white'
                     }`}>
@@ -592,16 +530,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   </div>
                   
                   {/* Theme Toggle */}
-                  <LiquidGlass 
-                    displacementScale={15}
-                    blurAmount={0.03}
-                    saturation={110}
-                    aberrationIntensity={0.5}
-                    elasticity={0.3}
-                    cornerRadius={8}
-                    overLight={theme === 'light'}
+                  <div 
+                    className="liquid-button cursor-pointer transform hover:scale-110 transition-transform duration-200"
                     onClick={toggleTheme}
-                    className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                   >
                     <div className="w-10 h-10 flex items-center justify-center p-2">
                       {theme === 'dark' ? (
@@ -610,24 +541,15 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         <Moon size={20} className="text-white drop-shadow-md" />
                       )}
                     </div>
-                  </LiquidGlass>
+                  </div>
                 </div>
-              </LiquidGlass>
+              </div>
 
               {/* Search and Filters */}
               <div className="p-6 space-y-4">
                 
                 {/* Search Bar */}
-                <LiquidGlass 
-                  displacementScale={15}
-                  blurAmount={0.05}
-                  saturation={105}
-                  aberrationIntensity={0.3}
-                  elasticity={0.2}
-                  cornerRadius={999}
-                  overLight={theme === 'light'}
-                  className="w-full relative"
-                >
+                <div className="liquid-card w-full relative">
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none z-10">
                       <SearchIcon size={20} className={theme === 'dark' ? 'text-slate-300' : 'text-white/80'} />
@@ -644,31 +566,22 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       }`}
                     />
                   </div>
-                </LiquidGlass>
+                </div>
 
                 {/* Filter Pills */}
                 <div className="flex items-center justify-center">
-                  <LiquidGlass 
-                    displacementScale={18}
-                    blurAmount={0.04}
-                    saturation={105}
-                    aberrationIntensity={0.4}
-                    elasticity={0.2}
-                    cornerRadius={999}
-                    overLight={theme === 'light'}
-                    className="inline-flex"
-                  >
+                  <div className="liquid-card inline-flex">
                     <div className="flex items-center space-x-1 p-2">
                       {filterOptions.map((filter) => (
-                        <LiquidGlass 
+                        <div 
                           key={filter.value}
-                          displacementScale={filterStatus === filter.value ? 12 : 8}
-                          blurAmount={filterStatus === filter.value ? 0.03 : 0.02}
-                          saturation={filterStatus === filter.value ? 110 : 100}
-                          aberrationIntensity={filterStatus === filter.value ? 0.5 : 0.2}
-                          elasticity={0.3}
-                          cornerRadius={999}
-                          overLight={theme === 'light'}
+                          data-displacement={filterStatus === filter.value ? 12 : 8}
+                          data-blur={filterStatus === filter.value ? 0.03 : 0.02}
+                          data-saturation={filterStatus === filter.value ? 110 : 100}
+                          data-aberration={filterStatus === filter.value ? 0.5 : 0.2}
+                          data-elasticity={0.3}
+                          data-radius={999}
+                          data-light={theme === 'light'}
                           onClick={() => setFilterStatus(filter.value)}
                           className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
                         >
@@ -679,50 +592,50 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           }`}>
                             {filter.label}
                           </div>
-                        </LiquidGlass>
+                        </div>
                       ))}
                       <div className="ml-2 flex items-center space-x-2">
-                        <LiquidGlass 
-                          displacementScale={8}
-                          blurAmount={0.02}
-                          saturation={105}
-                          elasticity={0.3}
-                          cornerRadius={8}
-                          overLight={theme === 'light'}
+                        <div 
+                          data-displacement={8}
+                          data-blur={0.02}
+                          data-saturation={105}
+                          data-elasticity={0.3}
+                          data-radius={8}
+                          data-light={theme === 'light'}
                           onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                           className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                         >
                           <div className="p-2 text-white/80 hover:text-white transition-colors">
                             <GridIcon size={18} />
                           </div>
-                        </LiquidGlass>
+                        </div>
                       </div>
                     </div>
-                  </LiquidGlass>
+                  </div>
                 </div>
 
                 {/* Select All Toggle */}
                 <div className="flex items-center justify-center">
-                  <LiquidGlass 
-                    displacementScale={15}
-                    blurAmount={0.04}
-                    saturation={110}
-                    aberrationIntensity={0.5}
-                    elasticity={0.3}
-                    cornerRadius={16}
-                    overLight={theme === 'light'}
+                  <div 
+                    data-displacement={15}
+                    data-blur={0.04}
+                    data-saturation={110}
+                    data-aberration={0.5}
+                    data-elasticity={0.3}
+                    data-radius={16}
+                    data-light={theme === 'light'}
                     onClick={toggleSelectAll}
                     className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
                   >
                     <div className="flex items-center space-x-3 p-3">
-                      <LiquidGlass 
-                        displacementScale={allVisibleSelected ? 12 : 8}
-                        blurAmount={0.03}
-                        saturation={allVisibleSelected ? 115 : 105}
-                        aberrationIntensity={allVisibleSelected ? 0.6 : 0.3}
-                        elasticity={0.3}
-                        cornerRadius={6}
-                        overLight={!allVisibleSelected}
+                      <div 
+                        data-displacement={allVisibleSelected ? 12 : 8}
+                        data-blur={0.03}
+                        data-saturation={allVisibleSelected ? 115 : 105}
+                        data-aberration={allVisibleSelected ? 0.6 : 0.3}
+                        data-elasticity={0.3}
+                        data-radius={6}
+                        data-light={!allVisibleSelected}
                       >
                         <div className={`w-6 h-6 flex items-center justify-center transition-all ${
                           allVisibleSelected
@@ -731,12 +644,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         }`}>
                           {allVisibleSelected && <CheckIcon size={14} className="drop-shadow-sm" />}
                         </div>
-                      </LiquidGlass>
+                      </div>
                       <span className={`font-medium drop-shadow-sm ${
                         theme === 'dark' ? 'text-slate-200' : 'text-white'
                       }`}>Seleccionar todas</span>
                     </div>
-                  </LiquidGlass>
+                  </div>
                 </div>
 
               </div>
@@ -781,31 +694,31 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <LiquidGlass 
-                    displacementScale={20}
-                    blurAmount={0.06}
-                    saturation={105}
-                    aberrationIntensity={0.6}
-                    elasticity={0.3}
-                    cornerRadius={16}
-                    overLight={theme === 'light'}
+                  <div 
+                    data-displacement={20}
+                    data-blur={0.06}
+                    data-saturation={105}
+                    data-aberration={0.6}
+                    data-elasticity={0.3}
+                    data-radius={16}
+                    data-light={theme === 'light'}
                     className="text-center"
                   >
                     <div className="p-12">
-                      <LiquidGlass 
-                        displacementScale={15}
-                        blurAmount={0.04}
-                        saturation={105}
-                        aberrationIntensity={0.4}
-                        elasticity={0.3}
-                        cornerRadius={999}
-                        overLight={theme === 'light'}
+                      <div 
+                        data-displacement={15}
+                        data-blur={0.04}
+                        data-saturation={105}
+                        data-aberration={0.4}
+                        data-elasticity={0.3}
+                        data-radius={999}
+                        data-light={theme === 'light'}
                         className="inline-block mb-4"
                       >
                         <div className="w-20 h-20 flex items-center justify-center p-5">
                           <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
                         </div>
-                      </LiquidGlass>
+                      </div>
                       <h3 className={`text-xl font-semibold mb-2 drop-shadow-sm ${
                         theme === 'dark' ? 'text-slate-200' : 'text-white'
                       }`}>No se encontraron fotos</h3>
@@ -818,7 +731,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         }
                       </p>
                     </div>
-                  </LiquidGlass>
+                  </div>
                 )}
               </div>
             </div>
@@ -829,46 +742,46 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
             <div className="p-4 space-y-4">
               
               {/* Mobile Header */}
-              <LiquidGlass 
-                displacementScale={15}
-                blurAmount={0.04}
-                saturation={105}
-                aberrationIntensity={0.4}
-                elasticity={0.2}
-                cornerRadius={16}
-                overLight={theme === 'light'}
+              <div 
+                data-displacement={15}
+                data-blur={0.04}
+                data-saturation={105}
+                data-aberration={0.4}
+                data-elasticity={0.2}
+                data-radius={16}
+                data-light={theme === 'light'}
                 className="w-full"
               >
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center space-x-3">
-                    <LiquidGlass 
-                      displacementScale={8}
-                      blurAmount={0.02}
-                      saturation={100}
-                      elasticity={0.3}
-                      cornerRadius={8}
-                      overLight={theme === 'light'}
+                    <div 
+                      data-displacement={8}
+                      data-blur={0.02}
+                      data-saturation={100}
+                      data-elasticity={0.3}
+                      data-radius={8}
+                      data-light={theme === 'light'}
                     >
                       <div className="w-8 h-8 flex items-center justify-center p-2">
                         <FolderIcon className={`w-full h-full drop-shadow-sm ${
                           theme === 'dark' ? 'text-slate-200' : 'text-white'
                         }`} />
                       </div>
-                    </LiquidGlass>
+                    </div>
                     <h1 className={`text-lg font-semibold drop-shadow-sm ${
                       theme === 'dark' ? 'text-slate-100' : 'text-white'
                     }`}>Fotos ({filteredPhotos.length})</h1>
                   </div>
                   
                   {/* Theme Toggle */}
-                  <LiquidGlass 
-                    displacementScale={12}
-                    blurAmount={0.03}
-                    saturation={110}
-                    aberrationIntensity={0.4}
-                    elasticity={0.3}
-                    cornerRadius={8}
-                    overLight={theme === 'light'}
+                  <div 
+                    data-displacement={12}
+                    data-blur={0.03}
+                    data-saturation={110}
+                    data-aberration={0.4}
+                    data-elasticity={0.3}
+                    data-radius={8}
+                    data-light={theme === 'light'}
                     onClick={toggleTheme}
                     className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                   >
@@ -879,19 +792,19 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         <Moon size={16} className="text-white drop-shadow-md" />
                       )}
                     </div>
-                  </LiquidGlass>
+                  </div>
                 </div>
-              </LiquidGlass>
+              </div>
 
               {/* Mobile Search */}
-              <LiquidGlass 
-                displacementScale={12}
-                blurAmount={0.04}
-                saturation={105}
-                aberrationIntensity={0.3}
-                elasticity={0.2}
-                cornerRadius={999}
-                overLight={theme === 'light'}
+              <div 
+                data-displacement={12}
+                data-blur={0.04}
+                data-saturation={105}
+                data-aberration={0.3}
+                data-elasticity={0.2}
+                data-radius={999}
+                data-light={theme === 'light'}
                 className="w-full relative"
               >
                                   <div className="relative">
@@ -910,31 +823,31 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       }`}
                     />
                   </div>
-              </LiquidGlass>
+              </div>
 
               {/* Mobile Filter Pills */}
               <div className="flex items-center justify-center">
-                <LiquidGlass 
-                  displacementScale={15}
-                  blurAmount={0.03}
-                  saturation={105}
-                  aberrationIntensity={0.4}
-                  elasticity={0.2}
-                  cornerRadius={999}
-                  overLight={theme === 'light'}
+                <div 
+                  data-displacement={15}
+                  data-blur={0.03}
+                  data-saturation={105}
+                  data-aberration={0.4}
+                  data-elasticity={0.2}
+                  data-radius={999}
+                  data-light={theme === 'light'}
                   className="inline-flex"
                 >
                   <div className="flex items-center space-x-1 p-2">
                     {filterOptions.map((filter) => (
-                      <LiquidGlass 
+                      <div 
                         key={filter.value}
-                        displacementScale={filterStatus === filter.value ? 10 : 6}
-                        blurAmount={0.02}
-                        saturation={filterStatus === filter.value ? 110 : 100}
-                        aberrationIntensity={filterStatus === filter.value ? 0.4 : 0.2}
-                        elasticity={0.3}
-                        cornerRadius={999}
-                        overLight={theme === 'light'}
+                        data-displacement={filterStatus === filter.value ? 10 : 6}
+                        data-blur={0.02}
+                        data-saturation={filterStatus === filter.value ? 110 : 100}
+                        data-aberration={filterStatus === filter.value ? 0.4 : 0.2}
+                        data-elasticity={0.3}
+                        data-radius={999}
+                        data-light={theme === 'light'}
                         onClick={() => setFilterStatus(filter.value)}
                         className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
                       >
@@ -945,50 +858,50 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         }`}>
                           {filter.label}
                         </div>
-                      </LiquidGlass>
+                      </div>
                     ))}
                     <div className="ml-2">
-                      <LiquidGlass 
-                        displacementScale={6}
-                        blurAmount={0.02}
-                        saturation={105}
-                        elasticity={0.3}
-                        cornerRadius={8}
-                        overLight={theme === 'light'}
+                      <div 
+                        data-displacement={6}
+                        data-blur={0.02}
+                        data-saturation={105}
+                        data-elasticity={0.3}
+                        data-radius={8}
+                        data-light={theme === 'light'}
                         onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
                         className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                       >
                         <div className="p-2 text-white/80 hover:text-white transition-colors">
                           <GridIcon size={14} />
                         </div>
-                      </LiquidGlass>
+                      </div>
                     </div>
                   </div>
-                </LiquidGlass>
+                </div>
               </div>
 
               {/* Mobile Select All */}
               <div className="flex items-center justify-center">
-                <LiquidGlass 
-                  displacementScale={12}
-                  blurAmount={0.03}
-                  saturation={110}
-                  aberrationIntensity={0.4}
-                  elasticity={0.3}
-                  cornerRadius={16}
-                  overLight={theme === 'light'}
+                <div 
+                  data-displacement={12}
+                  data-blur={0.03}
+                  data-saturation={110}
+                  data-aberration={0.4}
+                  data-elasticity={0.3}
+                  data-radius={16}
+                  data-light={theme === 'light'}
                   onClick={toggleSelectAll}
                   className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
                 >
                   <div className="flex items-center space-x-3 p-3">
-                    <LiquidGlass 
-                      displacementScale={allVisibleSelected ? 8 : 6}
-                      blurAmount={0.02}
-                      saturation={allVisibleSelected ? 115 : 105}
-                      aberrationIntensity={allVisibleSelected ? 0.5 : 0.3}
-                      elasticity={0.3}
-                      cornerRadius={6}
-                      overLight={!allVisibleSelected}
+                    <div 
+                      data-displacement={allVisibleSelected ? 8 : 6}
+                      data-blur={0.02}
+                      data-saturation={allVisibleSelected ? 115 : 105}
+                      data-aberration={allVisibleSelected ? 0.5 : 0.3}
+                      data-elasticity={0.3}
+                      data-radius={6}
+                      data-light={!allVisibleSelected}
                     >
                       <div className={`w-5 h-5 flex items-center justify-center transition-all ${
                         allVisibleSelected
@@ -997,12 +910,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       }`}>
                         {allVisibleSelected && <CheckIcon size={12} className="drop-shadow-sm" />}
                       </div>
-                    </LiquidGlass>
+                    </div>
                     <span className={`text-sm font-medium drop-shadow-sm ${
                       theme === 'dark' ? 'text-slate-200' : 'text-white'
                     }`}>Seleccionar todas</span>
                   </div>
-                </LiquidGlass>
+                </div>
               </div>
 
               {/* Mobile Photos Grid */}
@@ -1041,31 +954,31 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <LiquidGlass 
-                    displacementScale={15}
-                    blurAmount={0.05}
-                    saturation={105}
-                    aberrationIntensity={0.5}
-                    elasticity={0.3}
-                    cornerRadius={16}
-                    overLight={theme === 'light'}
+                  <div 
+                    data-displacement={15}
+                    data-blur={0.05}
+                    data-saturation={105}
+                    data-aberration={0.5}
+                    data-elasticity={0.3}
+                    data-radius={16}
+                    data-light={theme === 'light'}
                     className="text-center"
                   >
                     <div className="p-8">
-                      <LiquidGlass 
-                        displacementScale={12}
-                        blurAmount={0.03}
-                        saturation={105}
-                        aberrationIntensity={0.4}
-                        elasticity={0.3}
-                        cornerRadius={999}
-                        overLight={theme === 'light'}
+                      <div 
+                        data-displacement={12}
+                        data-blur={0.03}
+                        data-saturation={105}
+                        data-aberration={0.4}
+                        data-elasticity={0.3}
+                        data-radius={999}
+                        data-light={theme === 'light'}
                         className="inline-block mb-4"
                       >
                         <div className="w-16 h-16 flex items-center justify-center p-4">
                           <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
                         </div>
-                      </LiquidGlass>
+                      </div>
                       <h3 className={`font-medium mb-2 drop-shadow-sm ${
                         theme === 'dark' ? 'text-slate-200' : 'text-white'
                       }`}>No se encontraron fotos</h3>
@@ -1078,7 +991,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         }
                       </p>
                     </div>
-                  </LiquidGlass>
+                  </div>
                 )}
               </div>
             </div>
@@ -1086,16 +999,77 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
         </>
       )}
 
+      {/* Compact Gallery (when header is hidden) */}
+      {hideHeader && (
+        <div className="p-4">
+          {filteredPhotos.length > 0 ? (
+            <div className={`grid gap-3 ${
+              viewMode === 'grid' 
+                ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6' 
+                : 'grid-cols-1 max-w-4xl mx-auto'
+            }`}>
+              <AnimatePresence>
+                {filteredPhotos.map((photo, idx) => (
+                  <LiquidPhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    isSelected={selectedPhotos.includes(photo.id)}
+                    onSelect={handlePhotoSelect}
+                    onOpenPreview={() => {
+                      setPreviewIndex(idx);
+                      setIsPreviewOpen(true);
+                    }}
+                    onApprove={handleApprove}
+                    onTag={() => handleOpenTaggingModal(photo)}
+                    onDownload={() => handleDownloadPhoto(photo.id)}
+                    onMove={() => {}}
+                    onDelete={async () => {
+                      if (confirm('¿Estás seguro de eliminar esta foto?')) {
+                        try {
+                          await onPhotoDelete?.([photo.id]);
+                          setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                          toast.success('Foto eliminada');
+                        } catch (error) {
+                          toast.error('Error al eliminar la foto');
+                        }
+                      }
+                    }}
+                    viewMode={viewMode}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 inline-block">
+                <div className="w-16 h-16 flex items-center justify-center p-4 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full">
+                  <ImageIcon className="w-full h-full text-gray-400" />
+                </div>
+                <h3 className="font-medium mb-2 text-gray-800 dark:text-gray-200">
+                  No se encontraron fotos
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {searchQuery ? 
+                    `No hay fotos que coincidan con "${searchQuery}".` :
+                    'No hay fotos disponibles con los filtros seleccionados.'
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Simple Liquid Glass FAB */}
       <div className="fixed bottom-6 right-6 z-50">
-        <LiquidGlass 
-          displacementScale={hasSelection ? 25 : 20}
-          blurAmount={0.08}
-          saturation={hasSelection ? 110 : 105}
-          aberrationIntensity={hasSelection ? 0.8 : 0.6}
-          elasticity={0.1}
-          cornerRadius={999}
-          overLight={false}
+        <div 
+          data-displacement={hasSelection ? 25 : 20}
+          data-blur={0.08}
+          data-saturation={hasSelection ? 110 : 105}
+          data-aberration={hasSelection ? 0.8 : 0.6}
+          data-elasticity={0.1}
+          data-radius={999}
+          data-light={false}
           onClick={handleFabAction}
           className="cursor-pointer transform hover:scale-110 active:scale-95 transition-all duration-300 w-16 h-16 flex items-center justify-center shadow-2xl"
           style={{
@@ -1110,46 +1084,46 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
           <div className="text-white relative z-10">
             {hasSelection ? (
               <div className="flex flex-col items-center justify-center animate-pulse">
-                <LiquidGlass 
-                  displacementScale={8}
-                  blurAmount={0.02}
-                  saturation={105}
-                  aberrationIntensity={0.3}
-                  elasticity={0.3}
-                  cornerRadius={4}
-                  overLight={true}
+                <div 
+                  data-displacement={8}
+                  data-blur={0.02}
+                  data-saturation={105}
+                  data-aberration={0.3}
+                  data-elasticity={0.3}
+                  data-radius={4}
+                  data-light={true}
                   className="mb-1"
                 >
                   <CheckIcon size={18} className="drop-shadow-lg text-white" />
-                </LiquidGlass>
+                </div>
                 {selectedCount > 0 && (
-                  <LiquidGlass 
-                    displacementScale={6}
-                    blurAmount={0.02}
-                    saturation={105}
-                    aberrationIntensity={0.2}
-                    elasticity={0.3}
-                    cornerRadius={999}
-                    overLight={false}
+                  <div 
+                    data-displacement={6}
+                    data-blur={0.02}
+                    data-saturation={105}
+                    data-aberration={0.2}
+                    data-elasticity={0.3}
+                    data-radius={999}
+                    data-light={false}
                   >
                     <span className="text-xs font-bold px-1.5 py-0.5 bg-white/20 rounded-full backdrop-blur-sm">
                       {selectedCount > 99 ? '99+' : selectedCount}
                     </span>
-                  </LiquidGlass>
+                  </div>
                 )}
               </div>
             ) : (
-              <LiquidGlass 
-                displacementScale={8}
-                blurAmount={0.02}
-                saturation={105}
-                aberrationIntensity={0.3}
-                elasticity={0.3}
-                cornerRadius={6}
-                overLight={true}
+              <div 
+                data-displacement={8}
+                data-blur={0.02}
+                data-saturation={105}
+                data-aberration={0.3}
+                data-elasticity={0.3}
+                data-radius={6}
+                data-light={true}
               >
                 <UploadIcon size={20} className="drop-shadow-lg" />
-              </LiquidGlass>
+              </div>
             )}
           </div>
           
@@ -1159,7 +1133,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               ? 'bg-gradient-to-br from-emerald-300/30 to-emerald-600/30' 
               : 'bg-gradient-to-br from-blue-300/30 to-blue-600/30'
           } blur-xl scale-150 animate-pulse`} />
-        </LiquidGlass>
+        </div>
       </div>
 
       {/* File input for upload */}
@@ -1199,11 +1173,21 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
       )}
 
       {isPreviewOpen && filteredPhotos.length > 0 && (
-        <PublicPhotoModal
-          photos={filteredPhotos.map(p => ({ ...p, url: p.preview_url || '' }))}
-          currentIndex={previewIndex}
+        <GalleryPhotoModal
+          photo={filteredPhotos[previewIndex] ? {
+            id: filteredPhotos[previewIndex].id,
+            storage_path: filteredPhotos[previewIndex].storage_path,
+            width: filteredPhotos[previewIndex].width || null,
+            height: filteredPhotos[previewIndex].height || null,
+            created_at: filteredPhotos[previewIndex].created_at,
+            signed_url: filteredPhotos[previewIndex].preview_url || ''
+          } : null}
+          isOpen={isPreviewOpen}
           onClose={() => setIsPreviewOpen(false)}
-          onIndexChange={setPreviewIndex}
+          onPrevious={() => setPreviewIndex(prev => prev > 0 ? prev - 1 : filteredPhotos.length - 1)}
+          onNext={() => setPreviewIndex(prev => prev < filteredPhotos.length - 1 ? prev + 1 : 0)}
+          currentIndex={previewIndex}
+          totalPhotos={filteredPhotos.length}
         />
       )}
 
