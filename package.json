@@ -124,6 +124,7 @@
     "framer-motion": "^12.23.12",
     "jose": "^5.9.2",
     "jsqr": "^1.4.0",
+    "liquid-glass-react": "^1.1.1",
     "lucide-react": "^0.536.0",
     "mercadopago": "^2.8.0",
     "nanoid": "^5.1.5",

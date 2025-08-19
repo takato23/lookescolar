@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import LiquidGlass from 'liquid-glass-react';
 import { MenuIcon, SearchIcon, BellIcon } from './icons';
 
 interface MobileNavProps {
@@ -13,39 +14,50 @@ export const MobileNav: React.FC<MobileNavProps> = ({
   className = "" 
 }) => {
   return (
-    <nav className={`flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b border-gray-200 ${className}`}>
-      {/* Left side - Menu */}
-      <button 
-        className="p-2 -m-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-        aria-label="Abrir menú"
-      >
-        <MenuIcon size={20} className="text-gray-700" />
-      </button>
-
-      {/* Center - Brand */}
-      <div className="flex-1 text-center">
-        <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
-          {title}
-        </h1>
-      </div>
-
-      {/* Right side - Actions */}
-      <div className="flex items-center space-x-2">
+    <LiquidGlass
+      displacementScale={25}
+      blurAmount={0.08}
+      elasticity={0.2}
+      cornerRadius={0}
+      overLight={true}
+      saturation={120}
+      aberrationIntensity={1}
+      className={`border-b border-gray-200/50 ${className}`}
+    >
+      <nav className="flex items-center justify-between p-4">
+        {/* Left side - Menu */}
         <button 
-          className="p-2 -m-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Buscar"
+          className="p-2 -m-2 hover:bg-white/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          aria-label="Abrir menú"
         >
-          <SearchIcon size={20} className="text-gray-700" />
+          <MenuIcon size={20} className="text-gray-800" />
         </button>
-        <button 
-          className="p-2 -m-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 relative"
-          aria-label="Notificaciones"
-        >
-          <BellIcon size={20} className="text-gray-700" />
-          {/* Notification badge */}
-          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
-      </div>
-    </nav>
+
+        {/* Center - Brand */}
+        <div className="flex-1 text-center">
+          <h1 className="text-lg font-semibold text-gray-900 tracking-tight">
+            {title}
+          </h1>
+        </div>
+
+        {/* Right side - Actions */}
+        <div className="flex items-center space-x-2">
+          <button 
+            className="p-2 -m-2 hover:bg-white/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            aria-label="Buscar"
+          >
+            <SearchIcon size={20} className="text-gray-800" />
+          </button>
+          <button 
+            className="p-2 -m-2 hover:bg-white/20 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/50 relative"
+            aria-label="Notificaciones"
+          >
+            <BellIcon size={20} className="text-gray-800" />
+            {/* Notification badge */}
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full shadow-sm"></span>
+          </button>
+        </div>
+      </nav>
+    </LiquidGlass>
   );
 };
