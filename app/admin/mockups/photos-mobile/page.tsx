@@ -256,13 +256,13 @@ function PhotosMobileMockupContent() {
         <div className="lg:hidden min-h-screen">
           <div className="p-6 space-y-6">
             
-            {/* Carpetas y Eventos Header with Liquid Glass */}
+            {/* Carpetas y Eventos Header with SIMPLE Liquid Glass */}
             <LiquidGlass 
-              displacementScale={50}
-              blurAmount={0.1}
-              saturation={120}
-              aberrationIntensity={1.5}
-              elasticity={0.4}
+              displacementScale={20}
+              blurAmount={0.05}
+              saturation={100}
+              aberrationIntensity={0.5}
+              elasticity={0.2}
               cornerRadius={16}
               overLight={theme === 'light'}
               className="w-full"
@@ -270,10 +270,10 @@ function PhotosMobileMockupContent() {
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center space-x-3">
                   <LiquidGlass 
-                    displacementScale={30}
-                    blurAmount={0.05}
-                    saturation={110}
-                    elasticity={0.6}
+                    displacementScale={10}
+                    blurAmount={0.02}
+                    saturation={100}
+                    elasticity={0.3}
                     cornerRadius={8}
                     overLight={theme === 'light'}
                   >
@@ -286,13 +286,13 @@ function PhotosMobileMockupContent() {
                   <h1 className="text-white text-lg font-semibold drop-shadow-sm">Carpetas y Eventos</h1>
                 </div>
                 
-                {/* Enhanced Theme Toggle with Liquid Glass */}
+                {/* Simple Theme Toggle with Liquid Glass */}
                 <LiquidGlass 
-                  displacementScale={40}
-                  blurAmount={0.08}
-                  saturation={140}
-                  aberrationIntensity={2}
-                  elasticity={0.5}
+                  displacementScale={15}
+                  blurAmount={0.03}
+                  saturation={110}
+                  aberrationIntensity={0.5}
+                  elasticity={0.3}
                   cornerRadius={8}
                   overLight={theme === 'light'}
                   onClick={toggleTheme}
@@ -309,13 +309,13 @@ function PhotosMobileMockupContent() {
               </div>
             </LiquidGlass>
 
-            {/* Search Bar with Liquid Glass */}
+            {/* Search Bar with SIMPLE Liquid Glass */}
             <LiquidGlass 
-              displacementScale={60}
-              blurAmount={0.12}
-              saturation={130}
-              aberrationIntensity={1.8}
-              elasticity={0.3}
+              displacementScale={15}
+              blurAmount={0.05}
+              saturation={105}
+              aberrationIntensity={0.3}
+              elasticity={0.2}
               cornerRadius={999}
               overLight={theme === 'light'}
               className="w-full relative"
@@ -337,14 +337,14 @@ function PhotosMobileMockupContent() {
 
             {/* Filter Chips and Toggle */}
             <div className="space-y-4">
-              {/* Filter Pills Container with Liquid Glass */}
+              {/* Filter Pills Container with SIMPLE Liquid Glass */}
               <div className="flex items-center justify-center">
                 <LiquidGlass 
-                  displacementScale={70}
-                  blurAmount={0.15}
-                  saturation={125}
-                  aberrationIntensity={2.2}
-                  elasticity={0.35}
+                  displacementScale={18}
+                  blurAmount={0.04}
+                  saturation={105}
+                  aberrationIntensity={0.4}
+                  elasticity={0.2}
                   cornerRadius={999}
                   overLight={theme === 'light'}
                   className="inline-flex"
@@ -353,11 +353,11 @@ function PhotosMobileMockupContent() {
                     {filterOptions.map((filter) => (
                       <LiquidGlass 
                         key={filter.value}
-                        displacementScale={activeFilter === filter.value ? 45 : 25}
-                        blurAmount={activeFilter === filter.value ? 0.08 : 0.05}
-                        saturation={activeFilter === filter.value ? 140 : 110}
-                        aberrationIntensity={activeFilter === filter.value ? 2.5 : 1}
-                        elasticity={0.6}
+                        displacementScale={activeFilter === filter.value ? 12 : 8}
+                        blurAmount={activeFilter === filter.value ? 0.03 : 0.02}
+                        saturation={activeFilter === filter.value ? 110 : 100}
+                        aberrationIntensity={activeFilter === filter.value ? 0.5 : 0.2}
+                        elasticity={0.3}
                         cornerRadius={999}
                         overLight={theme === 'light'}
                         onClick={() => setActiveFilter(filter.value)}
@@ -436,11 +436,11 @@ function PhotosMobileMockupContent() {
                   {filteredPhotos.map((photo) => (
                     <LiquidGlass 
                       key={photo.id}
-                      displacementScale={80}
-                      blurAmount={0.18}
-                      saturation={145}
-                      aberrationIntensity={2.5}
-                      elasticity={0.25}
+                      displacementScale={25}
+                      blurAmount={0.06}
+                      saturation={105}
+                      aberrationIntensity={0.8}
+                      elasticity={0.2}
                       cornerRadius={16}
                       overLight={theme === 'light'}
                       onClick={(e) => {
@@ -458,11 +458,11 @@ function PhotosMobileMockupContent() {
                           {/* Liquid Glass Checkbox */}
                           <div className="absolute top-3 left-3 z-10">
                             <LiquidGlass 
-                              displacementScale={selectedPhotos.has(photo.id) ? 50 : 30}
-                              blurAmount={selectedPhotos.has(photo.id) ? 0.1 : 0.06}
-                              saturation={selectedPhotos.has(photo.id) ? 180 : 130}
-                              aberrationIntensity={selectedPhotos.has(photo.id) ? 3 : 1.5}
-                              elasticity={0.7}
+                              displacementScale={selectedPhotos.has(photo.id) ? 12 : 8}
+                              blurAmount={selectedPhotos.has(photo.id) ? 0.03 : 0.02}
+                              saturation={selectedPhotos.has(photo.id) ? 115 : 105}
+                              aberrationIntensity={selectedPhotos.has(photo.id) ? 0.6 : 0.3}
+                              elasticity={0.3}
                               cornerRadius={6}
                               overLight={!selectedPhotos.has(photo.id)}
                               onClick={(e) => {
@@ -581,16 +581,16 @@ function PhotosMobileMockupContent() {
           </div>
         </div>
 
-        {/* Ultimate Liquid Glass FAB */}
+        {/* SIMPLE Liquid Glass FAB */}
         <div className="fixed bottom-6 right-6 z-50">
           <LiquidGlass 
-            displacementScale={hasSelection ? 90 : 75}
-            blurAmount={0.2}
-            saturation={hasSelection ? 160 : 140}
-            aberrationIntensity={hasSelection ? 3.5 : 2.8}
-            elasticity={0.15} // Very liquid feel
+            displacementScale={hasSelection ? 25 : 20}
+            blurAmount={0.08}
+            saturation={hasSelection ? 110 : 105}
+            aberrationIntensity={hasSelection ? 0.8 : 0.6}
+            elasticity={0.1}
             cornerRadius={999}
-            overLight={false} // Always over colored background
+            overLight={false}
             onClick={handleFabAction}
             className="cursor-pointer transform hover:scale-110 active:scale-95 transition-all duration-300 w-16 h-16 flex items-center justify-center shadow-2xl"
             style={{
@@ -606,11 +606,11 @@ function PhotosMobileMockupContent() {
               {hasSelection ? (
                 <div className="flex flex-col items-center justify-center animate-pulse">
                   <LiquidGlass 
-                    displacementScale={30}
-                    blurAmount={0.05}
-                    saturation={120}
-                    aberrationIntensity={1.5}
-                    elasticity={0.8}
+                    displacementScale={8}
+                    blurAmount={0.02}
+                    saturation={105}
+                    aberrationIntensity={0.3}
+                    elasticity={0.3}
                     cornerRadius={4}
                     overLight={true}
                     className="mb-1"
@@ -619,11 +619,11 @@ function PhotosMobileMockupContent() {
                   </LiquidGlass>
                   {selectedCount > 0 && (
                     <LiquidGlass 
-                      displacementScale={25}
-                      blurAmount={0.04}
-                      saturation={110}
-                      aberrationIntensity={1.2}
-                      elasticity={0.6}
+                      displacementScale={6}
+                      blurAmount={0.02}
+                      saturation={105}
+                      aberrationIntensity={0.2}
+                      elasticity={0.3}
                       cornerRadius={999}
                       overLight={false}
                     >
@@ -635,11 +635,11 @@ function PhotosMobileMockupContent() {
                 </div>
               ) : (
                 <LiquidGlass 
-                  displacementScale={35}
-                  blurAmount={0.06}
-                  saturation={130}
-                  aberrationIntensity={2}
-                  elasticity={0.7}
+                  displacementScale={8}
+                  blurAmount={0.02}
+                  saturation={105}
+                  aberrationIntensity={0.3}
+                  elasticity={0.3}
                   cornerRadius={6}
                   overLight={true}
                   className="group-hover:rotate-90 transition-transform duration-300"
