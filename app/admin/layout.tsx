@@ -115,11 +115,11 @@ export default function AdminLayout({
 
   if (loading) {
     return (
-      <div className="gradient-mesh flex min-h-screen items-center justify-center">
-        <div className="glass-card animate-scale-in p-8">
+      <div className="liquid-glass-app flex min-h-screen items-center justify-center">
+        <div className="liquid-card animate-scale-in p-8">
           <div className="flex items-center space-x-4">
             <div className="spinner-glass"></div>
-            <span className="text-foreground text-lg font-medium">
+            <span className="liquid-nav-text text-lg font-medium">
               Verificando autenticacion...
             </span>
           </div>
@@ -136,7 +136,7 @@ export default function AdminLayout({
 
   return (
     <MobileOptimizations>
-      <div className="gradient-mesh-dark dark:gradient-mesh min-h-screen">
+      <div className="liquid-glass-app min-h-screen">
         {/* Mobile Navigation */}
         <MobileNavigation
           items={adminNavigationItems}

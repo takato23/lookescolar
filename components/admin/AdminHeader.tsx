@@ -12,7 +12,8 @@ import {
   ChevronDown,
   Menu,
 } from 'lucide-react';
-import { HeaderThemeToggle } from '@/components/ui/theme-toggle';
+import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
+import { LiquidThemeToggle } from '@/components/ui/theme/LiquidThemeToggle';
 
 interface AdminHeaderProps {
   user: User | null;
@@ -88,24 +89,38 @@ export default function AdminHeader({
   };
 
   return (
-    <header className="glass-card bg-card/90 border-border/50 border-b px-4 py-4 shadow-2xl shadow-black/10 backdrop-blur-2xl transition-all duration-300 sm:px-6 lg:px-8 lg:py-5">
+    <header className="liquid-glass sticky top-0 z-50 border-b border-white/10 px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
-        {/* Left Section - Mobile Menu + Page Title */}
+        {/* Left Section - Logo + Mobile Menu + Page Title */}
         <div className="flex items-center gap-4 lg:gap-6">
+          {/* Logo - Visible on Desktop */}
+          <div className="hidden lg:flex items-center gap-3">
+            <LookEscolarLogo variant="blue" size="lg" />
+            <div className="leading-tight">
+              <h1 className="liquid-title text-lg font-extrabold tracking-tight">
+                LookEscolar
+              </h1>
+              <p className="liquid-subtitle text-xs">
+                Panel de Administración
+              </p>
+            </div>
+          </div>
+
           {/* Mobile Menu Button */}
           <button
             onClick={onMobileMenuToggle}
-            className="bg-muted/50 hover:bg-muted border-border rounded-xl border p-2 transition-all duration-200 lg:hidden"
+            className="liquid-button rounded-xl p-2 lg:hidden"
             aria-label="Abrir menú"
           >
-            <Menu className="text-foreground h-5 w-5" />
+            <Menu className="h-5 w-5" />
           </button>
 
-          <div>
-            <h1 className="mb-1 text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl text-menu-enhanced">
+          {/* Page Title */}
+          <div className="lg:ml-8">
+            <h2 className="liquid-nav-text text-xl font-bold tracking-tight sm:text-2xl lg:text-xl">
               {getPageTitle()}
-            </h1>
-            <p className="hidden text-xs font-medium sm:block sm:text-sm text-button-enhanced">
+            </h2>
+            <p className="hidden text-xs font-medium sm:block sm:text-sm liquid-description">
               {new Date().toLocaleDateString('es-AR', {
                 weekday: 'long',
                 year: 'numeric',
@@ -120,48 +135,48 @@ export default function AdminHeader({
         <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
           {/* Search - Hidden on mobile */}
           <div className="relative hidden lg:block">
-            <Search className="text-muted-foreground absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-neutral-500" />
             <input
               type="text"
               placeholder="Buscar..."
-              className="bg-muted/40 border-border text-foreground placeholder-muted-foreground focus:ring-primary/50 focus:border-primary/50 w-64 rounded-xl border py-2.5 pl-10 pr-4 font-medium shadow-lg shadow-black/10 transition-all hover:shadow-xl focus:outline-none focus:ring-2 xl:w-72"
+              className="liquid-button w-64 py-2.5 pl-10 pr-4 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/50 xl:w-72"
             />
           </div>
 
           {/* Theme Toggle - Always visible */}
           <div className="hidden sm:block">
-            <HeaderThemeToggle />
+            <LiquidThemeToggle size="md" />
           </div>
 
           {/* Notifications - Hidden on mobile */}
           <button
-            className="bg-muted/50 hover:bg-muted border-border group relative hidden rounded-xl border p-2 shadow-md shadow-black/10 transition-all duration-200 hover:scale-105 hover:shadow-lg sm:block sm:p-2.5"
+            className="liquid-button group relative hidden rounded-xl p-2 sm:block sm:p-2.5"
             aria-label="Notificaciones"
           >
-            <Bell className="text-muted-foreground group-hover:text-foreground h-4 w-4 sm:h-5 sm:w-5" />
-            <span className="bg-warning absolute right-1 top-1 h-2 w-2 animate-pulse rounded-full" />
+            <Bell className="h-4 w-4 transition-colors sm:h-5 sm:w-5" />
+            <span className="absolute right-1 top-1 h-2 w-2 animate-pulse rounded-full bg-amber-500" />
           </button>
 
           {/* Settings - Hidden on mobile */}
           <button
             onClick={() => router.push('/admin/settings')}
-            className="bg-muted/50 hover:bg-muted border-border group hidden rounded-xl border p-2 transition-all duration-200 hover:scale-105 hover:shadow-md sm:block sm:p-2.5"
+            className="liquid-button group hidden rounded-xl p-2 transition-all duration-200 hover:scale-105 sm:block sm:p-2.5"
             title="Configuración"
             aria-label="Configuración"
           >
-            <Settings className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-all group-hover:rotate-45 sm:h-5 sm:w-5" />
+            <Settings className="h-4 w-4 transition-all group-hover:rotate-45 sm:h-5 sm:w-5" />
           </button>
 
           {/* User Menu */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="bg-muted/50 hover:bg-muted border-border group flex items-center gap-2 rounded-xl border p-1.5 transition-all duration-200 hover:shadow-md sm:gap-3 sm:p-2"
+              className="liquid-button group flex items-center gap-2 rounded-xl p-1.5 transition-all duration-200 sm:gap-3 sm:p-2"
               aria-label="Menú de usuario"
               aria-expanded={showUserMenu}
             >
               {/* Avatar */}
-              <div className="from-primary via-primary to-secondary ring-primary/20 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br shadow-lg ring-2 sm:h-10 sm:w-10 sm:rounded-xl">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 via-primary-500 to-secondary-500 shadow-lg ring-2 ring-primary-500/20 sm:h-10 sm:w-10 sm:rounded-xl">
                 <span className="text-sm font-bold text-white sm:text-base">
                   {user?.email?.charAt(0).toUpperCase() || 'A'}
                 </span>
@@ -169,27 +184,27 @@ export default function AdminHeader({
 
               {/* User info - Hidden on mobile */}
               <div className="hidden text-left sm:block lg:block">
-                <p className="text-foreground text-xs font-semibold sm:text-sm">
+                <p className="liquid-nav-text text-xs font-semibold sm:text-sm">
                   {user?.email?.split('@')[0] || 'Admin'}
                 </p>
-                <p className="text-muted-foreground hidden text-xs font-medium lg:block">
+                <p className="liquid-description hidden text-xs font-medium lg:block">
                   Administrador
                 </p>
               </div>
 
               <ChevronDown
-                className={`text-muted-foreground hidden h-3 w-3 transition-transform duration-200 sm:block sm:h-4 sm:w-4 ${showUserMenu ? 'rotate-180' : ''}`}
+                className={`hidden h-3 w-3 transition-transform duration-200 sm:block sm:h-4 sm:w-4 ${showUserMenu ? 'rotate-180' : ''}`}
               />
             </button>
 
             {/* Dropdown Menu */}
             {showUserMenu && (
-              <div className="glass-ultra bg-card/98 animate-slide-down absolute right-0 z-50 mt-3 w-72 rounded-2xl border border-white/10 shadow-2xl shadow-black/20 ring-1 ring-white/10 backdrop-blur-2xl">
-                <div className="border-border/50 from-primary/5 border-b bg-gradient-to-br to-transparent p-5">
-                  <p className="text-foreground text-base font-bold">
+              <div className="liquid-card animate-slide-down absolute right-0 z-50 mt-3 w-72 rounded-2xl shadow-2xl">
+                <div className="border-b border-white/10 bg-gradient-to-br from-primary-50/10 to-transparent p-5">
+                  <p className="liquid-nav-text text-base font-bold">
                     {user?.email?.split('@')[0] || 'Admin'}
                   </p>
-                  <p className="text-muted-foreground text-sm font-medium">
+                  <p className="liquid-description text-sm font-medium">
                     {user?.email}
                   </p>
                 </div>
@@ -198,10 +213,10 @@ export default function AdminHeader({
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:shadow-3d-sm group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium transition-all duration-200 hover:-translate-y-[1px] active:translate-y-0 disabled:opacity-50"
+                    className="liquid-button group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium transition-all duration-200 hover:bg-red-50/50 dark:hover:bg-red-900/20 disabled:opacity-50"
                   >
-                    <LogOut className="group-hover:text-destructive h-4 w-4 transition-colors" />
-                    <span className="text-sm">
+                    <LogOut className="h-4 w-4 transition-colors group-hover:text-red-600" />
+                    <span className="liquid-button-text text-sm">
                       {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
                     </span>
                   </button>
