@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { ThemeProvider } from '../../_mockups/ThemeContext';
 import { MobileNav } from '../../_mockups/MobileNav';
 import { PhotosFilters } from '../../_mockups/PhotosFilters';
 import { PhotoCard, Photo, PhotoStatus } from '../../_mockups/PhotoCard';
+import { PhotoModal } from '../../_mockups/PhotoModal';
 import { Fab } from '../../_mockups/Fab';
 
 // Mock data
@@ -90,11 +92,13 @@ const photosMock: Photo[] = [
   }
 ];
 
-export default function PhotosMobileMockup() {
+function PhotosMobileMockupContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<PhotoStatus | 'all'>('all');
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   // Filter and search photos
   const filteredPhotos = useMemo(() => {
@@ -157,6 +161,17 @@ export default function PhotosMobileMockup() {
   const hasSelection = selectedPhotos.size > 0;
   const selectedCount = selectedPhotos.size;
 
+  // Photo modal handlers
+  const openPhotoModal = (photo: Photo) => {
+    const photoIndex = filteredPhotos.findIndex(p => p.id === photo.id);
+    setCurrentPhotoIndex(photoIndex);
+    setModalOpen(true);
+  };
+
+  const closePhotoModal = () => {
+    setModalOpen(false);
+  };
+
   // FAB action handler
   const handleFabAction = () => {
     if (hasSelection) {
@@ -177,79 +192,158 @@ export default function PhotosMobileMockup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4 flex items-start justify-center">
-      {/* Mobile Phone Frame */}
-      <div className="w-[430px] max-w-full mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-200">
-        {/* Mobile Navigation */}
-        <MobileNav />
+    <>
+      {/* Responsive Container */}
+      <div className="min-h-screen dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 transition-colors duration-500">
         
-        {/* Filters Section */}
-        <PhotosFilters
-          onSearch={setSearchQuery}
-          onFilterChange={setActiveFilter}
-          onSelectAllToggle={toggleSelectAll}
-          onViewModeChange={setViewMode}
-          allSelected={allVisibleSelected}
-          hasSelection={hasSelection}
-          activeFilter={activeFilter}
-          viewMode={viewMode}
-          totalCount={filteredPhotos.length}
-        />
+        {/* Desktop Layout */}
+        <div className="hidden lg:block">
+          <div className="max-w-7xl mx-auto min-h-screen">
+            {/* Navigation */}
+            <MobileNav />
+            
+            {/* Filters Section */}
+            <PhotosFilters
+              onSearch={setSearchQuery}
+              onFilterChange={setActiveFilter}
+              onSelectAllToggle={toggleSelectAll}
+              onViewModeChange={setViewMode}
+              allSelected={allVisibleSelected}
+              hasSelection={hasSelection}
+              activeFilter={activeFilter}
+              viewMode={viewMode}
+              totalCount={filteredPhotos.length}
+            />
 
-        {/* Photos Grid */}
-        <div className="p-3 pb-24 min-h-[400px]">
-          {filteredPhotos.length > 0 ? (
-            <div className={`grid gap-3 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-2 sm:grid-cols-3' 
-                : 'grid-cols-1'
-            }`}>
-              {filteredPhotos.map((photo) => (
-                <PhotoCard
-                  key={photo.id}
-                  photo={photo}
-                  selected={selectedPhotos.has(photo.id)}
-                  onToggleSelection={togglePhotoSelection}
-                />
-              ))}
+            {/* Desktop Photos Grid */}
+            <div className="px-6 pb-24 pt-6">
+              {filteredPhotos.length > 0 ? (
+                <div className={`grid gap-6 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6' 
+                    : 'grid-cols-1 max-w-4xl mx-auto'
+                }`}>
+                  {filteredPhotos.map((photo) => (
+                    <PhotoCard
+                      key={photo.id}
+                      photo={photo}
+                      selected={selectedPhotos.has(photo.id)}
+                      onToggleSelection={togglePhotoSelection}
+                      onPhotoClick={openPhotoModal}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState searchQuery={searchQuery} />
+              )}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No se encontraron fotos
-              </h3>
-              <p className="text-sm text-gray-500 max-w-sm">
-                {searchQuery ? 
-                  `No hay fotos que coincidan con "${searchQuery}".` :
-                  'No hay fotos disponibles con los filtros seleccionados.'
-                }
-              </p>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* Floating Action Button */}
+        {/* Mobile Layout */}
+        <div className="lg:hidden flex items-start justify-center p-4">
+          {/* Mobile Phone Frame */}
+          <div className="w-[430px] max-w-full mx-auto dark:bg-gray-900 bg-white rounded-3xl shadow-2xl overflow-hidden border dark:border-gray-700 border-gray-200 transition-colors duration-300">
+            {/* Mobile Navigation */}
+            <MobileNav />
+            
+            {/* Filters Section */}
+            <PhotosFilters
+              onSearch={setSearchQuery}
+              onFilterChange={setActiveFilter}
+              onSelectAllToggle={toggleSelectAll}
+              onViewModeChange={setViewMode}
+              allSelected={allVisibleSelected}
+              hasSelection={hasSelection}
+              activeFilter={activeFilter}
+              viewMode={viewMode}
+              totalCount={filteredPhotos.length}
+            />
+
+            {/* Mobile Photos Grid */}
+            <div className="p-4 pb-24 min-h-[400px]">
+              {filteredPhotos.length > 0 ? (
+                <div className={`grid gap-4 ${
+                  viewMode === 'grid' 
+                    ? 'grid-cols-2' 
+                    : 'grid-cols-1'
+                }`}>
+                  {filteredPhotos.map((photo) => (
+                    <PhotoCard
+                      key={photo.id}
+                      photo={photo}
+                      selected={selectedPhotos.has(photo.id)}
+                      onToggleSelection={togglePhotoSelection}
+                      onPhotoClick={openPhotoModal}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState searchQuery={searchQuery} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Action Button - Visible on both mobile and desktop */}
         <Fab
           onClick={handleFabAction}
           selectedCount={selectedCount}
         />
-      </div>
 
-      {/* Debug Info (only visible in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed top-4 right-4 bg-black/80 text-white p-3 rounded-lg text-xs font-mono max-w-xs">
-          <div>Filtered: {filteredPhotos.length}</div>
-          <div>Selected: {selectedCount}</div>
-          <div>Query: "{searchQuery}"</div>
-          <div>Filter: {activeFilter}</div>
-          <div>View: {viewMode}</div>
-        </div>
-      )}
+        {/* Photo Modal */}
+        <PhotoModal
+          isOpen={modalOpen}
+          onClose={closePhotoModal}
+          photos={filteredPhotos}
+          initialPhotoIndex={currentPhotoIndex}
+          selectedPhotos={selectedPhotos}
+          onToggleSelection={togglePhotoSelection}
+        />
+
+        {/* Debug Info (only visible in development) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed top-4 left-4 bg-black/90 text-white p-3 rounded-lg text-xs font-mono max-w-xs backdrop-blur-sm">
+            <div>Filtered: {filteredPhotos.length}</div>
+            <div>Selected: {selectedCount}</div>
+            <div>Query: "{searchQuery}"</div>
+            <div>Filter: {activeFilter}</div>
+            <div>View: {viewMode}</div>
+            <div>Modal: {modalOpen ? 'open' : 'closed'}</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// Empty state component
+function EmptyState({ searchQuery }: { searchQuery: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="w-16 h-16 dark:bg-gray-800 bg-gray-100 rounded-full flex items-center justify-center mb-4 transition-colors">
+        <svg className="w-8 h-8 dark:text-gray-500 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium dark:text-white text-gray-900 mb-2 transition-colors">
+        No se encontraron fotos
+      </h3>
+      <p className="text-sm dark:text-gray-400 text-gray-500 max-w-sm transition-colors">
+        {searchQuery ? 
+          `No hay fotos que coincidan con "${searchQuery}".` :
+          'No hay fotos disponibles con los filtros seleccionados.'
+        }
+      </p>
     </div>
+  );
+}
+
+// Main export component with ThemeProvider
+export default function PhotosMobileMockup() {
+  return (
+    <ThemeProvider>
+      <PhotosMobileMockupContent />
+    </ThemeProvider>
   );
 }
