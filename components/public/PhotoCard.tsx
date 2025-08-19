@@ -16,15 +16,8 @@ interface PhotoCardProps {
   onOpenModal?: (photoId: string) => void
 }
 
-// Gradientes coloridos para las cards
-const gradients = [
-  'from-orange-400 via-yellow-300 to-orange-500',
-  'from-cyan-400 via-teal-300 to-blue-500', 
-  'from-blue-400 via-purple-300 to-indigo-500',
-  'from-pink-400 via-rose-300 to-red-500',
-  'from-green-400 via-emerald-300 to-teal-500',
-  'from-purple-400 via-pink-300 to-rose-500'
-]
+// Diseño sutil y profesional
+const BLUR_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
 
 export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) {
   const [isLiked, setIsLiked] = useState(false)
@@ -34,9 +27,7 @@ export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) 
   const isSelected = isItemInCart(photo.id)
   const quantity = getItemQuantity(photo.id)
   
-  // Seleccionar gradiente basado en el ID de la foto
-  const gradientIndex = parseInt(photo.id.slice(-1), 16) % gradients.length
-  const gradient = gradients[gradientIndex]
+  const [isHovered, setIsHovered] = useState(false)
 
   const handleToggleSelect = () => {
     if (isSelected) {
@@ -54,137 +45,106 @@ export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) 
   const isSignedUrl = photo.signed_url.includes('token=')
 
   return (
-    <div className="group relative">
-      <div 
-        className={`
-          relative aspect-square rounded-2xl overflow-hidden shadow-lg
-          bg-gradient-to-br ${gradient}
-          transition-all duration-300 hover:scale-105 hover:shadow-xl
-          ${isSelected ? 'ring-4 ring-yellow-400 ring-offset-2' : ''}
-        `}
-      >
+    <div 
+      className="group relative cursor-pointer transition-all duration-300 hover:-translate-y-1"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-gray-100 shadow-sm transition-all duration-300 hover:shadow-lg ${isSelected ? 'ring-2 ring-indigo-500' : ''}`}>
         {/* Imagen de fondo con overlay gradient */}
-        <div className="absolute inset-0">
-          <Image
-            src={photo.signed_url}
-            alt="Foto del evento"
-            fill
-            className={`
-              object-cover transition-opacity duration-300
-              ${imageLoaded ? 'opacity-80' : 'opacity-0'}
-            `}
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            priority
-            unoptimized={isSignedUrl}
-            onLoad={() => setImageLoaded(true)}
-            onClick={handleImageClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                handleImageClick()
-              }
-            }}
-            aria-label="Ver foto en tamaño completo"
-          />
-          
-          {/* Overlay gradient para mejor legibilidad */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-        </div>
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-indigo-500" />
+          </div>
+        )}
+        
+        <Image
+          src={photo.signed_url}
+          alt="Foto del evento"
+          fill
+          className={`object-cover transition-all duration-300 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          } ${isHovered ? 'scale-105' : 'scale-100'}`}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          priority
+          unoptimized={isSignedUrl}
+          onLoad={() => setImageLoaded(true)}
+          onClick={handleImageClick}
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
+        />
 
-        {/* Badge MUESTRA */}
-        <div className="absolute top-3 left-3">
-          <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg">
-            <span className="text-sm font-bold text-gray-700 flex items-center space-x-1">
-              <Star className="h-3 w-3 text-yellow-500 fill-current" />
-              <span>MUESTRA</span>
-            </span>
+        {/* Overlay sutil en hover */}
+        <div className={`absolute inset-0 bg-black/10 transition-opacity duration-300 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
+        }`}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-gray-800 shadow-sm backdrop-blur-sm">
+              Ver foto
+            </div>
           </div>
         </div>
 
-        {/* Botón de favorito */}
+        {/* Badge sutil */}
+        <div className="absolute top-3 left-3">
+          <div className="bg-white/80 px-2 py-1 rounded text-xs font-medium text-gray-600 shadow-sm">
+            MUESTRA
+          </div>
+        </div>
+
+        {/* Botón de favorito sutil */}
         <button
           onClick={() => setIsLiked(!isLiked)}
-          className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-lg hover:bg-white/90 transition-colors"
+          className="absolute top-3 right-3 p-1.5 bg-white/70 rounded-full shadow-sm hover:bg-white/90 transition-colors"
           aria-label={isLiked ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
           <Heart 
-            className={`h-4 w-4 transition-colors ${
-              isLiked ? 'text-red-500 fill-current' : 'text-gray-600'
+            className={`h-3.5 w-3.5 transition-colors ${
+              isLiked ? 'text-red-500 fill-current' : 'text-gray-500'
             }`} 
           />
         </button>
 
-        {/* Contenido inferior */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex items-end justify-between">
-            {/* Checkbox y precio */}
-            <div className="flex items-center space-x-3">
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={handleToggleSelect}
-                className="h-6 w-6 bg-white/90 border-2 border-gray-300 data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400"
-                aria-label="Seleccionar para compra"
-              />
-              <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg shadow-lg">
-                <span className="text-sm font-bold text-gray-900">MUESTRA</span>
-              </div>
-            </div>
-
-            {/* Precio */}
-            <div className="text-right">
-              <div className="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
-                <p className="text-xs text-gray-600">Desde</p>
-                <p className="text-lg font-bold text-gray-900">ARS {price.toLocaleString()}</p>
-              </div>
-            </div>
+        {/* Precio sutil */}
+        <div className="absolute bottom-3 right-3">
+          <div className="bg-white/90 px-2 py-1 rounded text-xs font-medium text-gray-700 shadow-sm">
+            ${price.toLocaleString()}
           </div>
-
-          {/* Indicador de cantidad si está seleccionada */}
-          {quantity > 1 && (
-            <div className="mt-2 flex justify-center">
-              <div className="bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-                {quantity} seleccionadas
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Overlay de selección */}
+        {/* Indicador de selección sutil */}
         {isSelected && (
-          <div className="absolute inset-0 bg-yellow-400/20 flex items-center justify-center">
-            <div className="bg-yellow-400 p-3 rounded-full shadow-lg">
-              <Check className="h-6 w-6 text-black" />
+          <div className="absolute bottom-3 left-3">
+            <div className="bg-indigo-600 p-1.5 rounded-full shadow-sm">
+              <Check className="h-3 w-3 text-white" />
             </div>
-          </div>
-        )}
-
-        {/* Loading placeholder si la imagen no ha cargado */}
-        {!imageLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white/80 text-6xl font-bold">MUESTRA</div>
           </div>
         )}
       </div>
 
-      {/* Botón de selección rápida (solo visible en hover) */}
-      <Button
-        onClick={handleToggleSelect}
-        variant={isSelected ? "default" : "secondary"}
-        size="sm"
-        className={`
-          absolute -bottom-2 left-1/2 transform -translate-x-1/2 
-          opacity-0 group-hover:opacity-100 transition-all duration-200
-          shadow-lg z-10 text-xs font-bold
-          ${isSelected 
-            ? 'bg-yellow-400 text-black hover:bg-yellow-500' 
-            : 'bg-white text-gray-900 hover:bg-gray-50'
-          }
-        `}
-        aria-label={isSelected ? 'Quitar selección' : 'Seleccionar foto'}
-      >
-        {isSelected ? 'Seleccionada' : 'Seleccionar'}
-      </Button>
+      {/* Botón de selección */}
+      <div className="mt-3">
+        <Button
+          onClick={handleToggleSelect}
+          variant={isSelected ? 'default' : 'outline'}
+          size="sm"
+          className={`w-full rounded-lg transition-colors ${
+            isSelected 
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
+          aria-label={isSelected ? 'Quitar selección' : 'Seleccionar foto'}
+        >
+          {isSelected ? (
+            <>
+              <Check className="mr-2 h-4 w-4" />
+              Seleccionada
+            </>
+          ) : (
+            'Seleccionar'
+          )}
+        </Button>
+      </div>
     </div>
   )
 }
