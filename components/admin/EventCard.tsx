@@ -20,8 +20,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +28,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils/cn';
 
 interface Event {
@@ -104,29 +102,27 @@ export function EventCard({
   };
 
   return (
-    <Card
+    <div
       className={cn(
-        'group relative overflow-hidden transition-all duration-300',
-        'hover:scale-[1.01] hover:border-primary-300 hover:shadow-lg',
-        'gradient-border-hover',
+        'liquid-card liquid-shine group relative overflow-hidden transition-all duration-300',
+        'hover:scale-[1.01] hover:shadow-xl',
         className
       )}
-      variant="glass"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-secondary-50/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <CardHeader className="relative pb-4">
+      <div className="relative pb-4 p-6">
         <div className="flex items-start justify-between">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-center gap-3">
-              <Badge variant={status.variant} className="shrink-0">
+              <Badge variant={status.variant} className="shrink-0 liquid-label">
                 <status.icon className="mr-1 h-3 w-3" />
                 {status.label}
               </Badge>
               {isUpcoming && (
                 <Badge
                   variant="outline"
-                  className="border-orange-200 text-orange-600"
+                  className="border-orange-200 text-orange-600 liquid-label"
                 >
                   Próximo
                 </Badge>
@@ -135,7 +131,7 @@ export function EventCard({
                 event.stats.untaggedPhotos > 0 && (
                   <Badge
                     variant="outline"
-                    className="border-amber-200 text-amber-600"
+                    className="border-amber-200 text-amber-600 liquid-label"
                   >
                     {event.stats.untaggedPhotos} sin etiquetar
                   </Badge>
@@ -143,7 +139,7 @@ export function EventCard({
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-foreground line-clamp-1 text-xl font-bold transition-colors group-hover:text-primary-700">
+              <h3 className="liquid-title line-clamp-1 text-xl font-bold transition-colors group-hover:text-primary-700">
                 {event.school}
               </h3>
             </div>
@@ -151,15 +147,13 @@ export function EventCard({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+              <button
+                className="liquid-button opacity-0 transition-opacity group-hover:opacity-100 p-2 rounded-xl"
                 onClick={(e) => e.stopPropagation()}
                 disabled={isLoading}
               >
                 <MoreVertical className="h-4 w-4" />
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
@@ -203,57 +197,57 @@ export function EventCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="relative space-y-4 pt-0">
+      <div className="relative space-y-4 pt-0 px-6 pb-6">
         {/* Event Info */}
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="space-y-3">
-            <div className="text-muted-foreground flex items-center">
+            <div className="liquid-description flex items-center">
               <Calendar className="mr-2 h-4 w-4 shrink-0" />
               <div>
-                <div className="text-foreground font-medium">
+                <div className="liquid-nav-text font-medium">
                   {eventDate.toLocaleDateString('es-AR', {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
                   })}
                 </div>
-                <div className="text-xs">
+                <div className="text-xs liquid-description">
                   {eventDate.toLocaleDateString('es-AR', { weekday: 'long' })}
                 </div>
               </div>
             </div>
 
             {event.school && (
-              <div className="text-muted-foreground flex items-center">
+              <div className="liquid-description flex items-center">
                 <MapPin className="mr-2 h-4 w-4 shrink-0" />
-                <span className="truncate">{event.school}</span>
+                <span className="truncate liquid-nav-text">{event.school}</span>
               </div>
             )}
           </div>
 
           <div className="space-y-3">
             {event.photo_price && (
-              <div className="text-muted-foreground flex items-center">
+              <div className="liquid-description flex items-center">
                 <DollarSign className="mr-2 h-4 w-4 shrink-0" />
                 <div>
-                  <div className="text-foreground font-medium">
+                  <div className="liquid-number font-medium">
                     ${event.photo_price.toLocaleString()}
                   </div>
-                  <div className="text-xs">por foto</div>
+                  <div className="text-xs liquid-description">por foto</div>
                 </div>
               </div>
             )}
 
             {event.stats?.revenue && event.stats.revenue > 0 && (
-              <div className="text-muted-foreground flex items-center">
+              <div className="liquid-description flex items-center">
                 <TrendingUp className="mr-2 h-4 w-4 shrink-0" />
                 <div>
-                  <div className="font-medium text-green-600">
+                  <div className="liquid-number font-medium text-green-600">
                     ${event.stats.revenue.toLocaleString()}
                   </div>
-                  <div className="text-xs">recaudado</div>
+                  <div className="text-xs liquid-description">recaudado</div>
                 </div>
               </div>
             )}
@@ -267,79 +261,73 @@ export function EventCard({
               <div className="mb-1 flex items-center justify-center">
                 <Camera className="h-4 w-4 text-blue-600" />
               </div>
-              <div className="text-foreground text-lg font-bold">
+              <div className="liquid-number text-lg font-bold">
                 {event.stats.totalPhotos || 0}
               </div>
-              <div className="text-muted-foreground text-xs">Fotos</div>
+              <div className="liquid-description text-xs">Fotos</div>
             </div>
 
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
                 <Users className="h-4 w-4 text-purple-600" />
               </div>
-              <div className="text-foreground text-lg font-bold">
+              <div className="liquid-number text-lg font-bold">
                 {event.stats.totalSubjects || 0}
               </div>
-              <div className="text-muted-foreground text-xs">Familias</div>
+              <div className="liquid-description text-xs">Familias</div>
             </div>
 
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
                 <ShoppingCart className="h-4 w-4 text-green-600" />
               </div>
-              <div className="text-foreground text-lg font-bold">
+              <div className="liquid-number text-lg font-bold">
                 {event.stats.totalOrders || 0}
               </div>
-              <div className="text-muted-foreground text-xs">Pedidos</div>
+              <div className="liquid-description text-xs">Pedidos</div>
             </div>
           </div>
         )}
 
         {/* Action Area */}
         <div className="border-border/50 flex items-center justify-between border-t pt-4">
-          <div className="text-muted-foreground text-xs">
+          <div className="liquid-description text-xs">
             Creado {new Date(event.created_at).toLocaleDateString('es-AR')}
           </div>
 
           <div className="flex gap-2">
             <Link href={`/admin/events/${event.id}`}>
-              <Button variant="ghost" size="sm" className="text-xs">
-                <Eye className="mr-1 h-3 w-3" />
-                Ver
-              </Button>
+              <button className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                <span className="liquid-button-text">Ver</span>
+              </button>
             </Link>
             <Link href={`/admin/events/${event.id}/photos`}>
-              <Button variant="ghost" size="sm" className="text-xs">
-                <Camera className="mr-1 h-3 w-3" />
-                Fotos
-              </Button>
+              <button className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
+                <Camera className="h-3 w-3" />
+                <span className="liquid-button-text">Fotos</span>
+              </button>
             </Link>
             <Link href={`/gallery/${event.id}`}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs"
+              <button
+                className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
                 aria-label="Vista cliente"
               >
-                <Eye className="mr-1 h-3 w-3" />
-                Vista cliente
-              </Button>
+                <Eye className="h-3 w-3" />
+                <span className="liquid-button-text">Vista cliente</span>
+              </button>
             </Link>
             <Link href={`/admin/publish`}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs"
+              <button
+                className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
                 aria-label="Compartir salón"
               >
-                <QrCode className="mr-1 h-3 w-3" />
-                Compartir salón
-              </Button>
+                <QrCode className="h-3 w-3" />
+                <span className="liquid-button-text">Compartir</span>
+              </button>
             </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs"
+            <button
+              className="liquid-button text-xs px-3 py-1.5 rounded-lg"
               onClick={async () => {
                 try {
                   const res = await fetch('/api/admin/photos/watermark', {
@@ -355,11 +343,11 @@ export function EventCard({
               }}
               aria-label={`Generar watermarks del evento ${event.school}`}
             >
-              Previews
-            </Button>
+              <span className="liquid-button-text">Previews</span>
+            </button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

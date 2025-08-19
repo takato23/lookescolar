@@ -4,26 +4,26 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  BarChart3,
-  Camera,
   LucideIcon,
   X,
   ChevronDown,
   ChevronRight,
-  Calendar,
   ShoppingCart,
   QrCode,
   Settings,
 } from 'lucide-react';
+import { DashboardIcon, EventsIcon, FoldersIcon } from '@/components/ui/icons/LiquidIcons';
+import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
 import { clsx } from 'clsx';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<{ size?: number; className?: string }>;
   description?: string;
   badge?: string | number;
   shortcut?: string;
+  isLiquidIcon?: boolean;
 }
 
 // Main navigation items - only the essentials
@@ -31,23 +31,26 @@ const mainNavItems: NavItem[] = [
   {
     href: '/admin',
     label: 'Dashboard',
-    icon: BarChart3,
+    icon: DashboardIcon,
     description: 'Resumen general y métricas',
     shortcut: '⌘1',
+    isLiquidIcon: true,
   },
   {
     href: '/admin/events',
     label: 'Eventos',
-    icon: Calendar,
+    icon: EventsIcon,
     description: 'Gestionar eventos y salones',
     shortcut: '⌘2',
+    isLiquidIcon: true,
   },
   {
     href: '/admin/photos',
     label: 'Carpetas',
-    icon: Camera,
+    icon: FoldersIcon,
     description: 'Carpetas y fotos por evento',
     shortcut: '⌘3',
+    isLiquidIcon: true,
   },
   {
     href: '/admin/orders',
@@ -143,7 +146,7 @@ export default function AdminSidebar({
         <div className="border-border/50 border-b bg-gradient-to-b from-surface/40 to-transparent p-6 lg:p-8">
           <div className="mb-6 flex items-center gap-4">
             <div className="from-primary to-secondary ring-primary/10 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br shadow-xl ring-4 lg:h-14 lg:w-14">
-              <Camera className="h-6 w-6 text-white drop-shadow-lg lg:h-8 lg:w-8" />
+              <LookEscolarLogo variant="soft" size="lg" className="drop-shadow-lg" />
             </div>
             <div className="flex-1">
               <h1 className="text-foreground mb-1 text-xl font-bold tracking-tight drop-shadow-lg lg:text-2xl">
@@ -207,14 +210,26 @@ export default function AdminSidebar({
                         <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary-200/30 via-transparent to-primary-100/30 dark:from-primary-700/20 dark:to-primary-600/20" />
                       )}
 
-                      <Icon
-                        className={clsx(
-                          'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
-                          active
-                            ? 'text-primary drop-shadow-md'
-                            : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
-                        )}
-                      />
+                      {item.isLiquidIcon ? (
+                        <Icon
+                          size={20}
+                          className={clsx(
+                            'relative z-10 flex-shrink-0 transition-all',
+                            active
+                              ? 'drop-shadow-md'
+                              : 'group-hover:scale-110'
+                          )}
+                        />
+                      ) : (
+                        <Icon
+                          className={clsx(
+                            'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
+                            active
+                              ? 'text-primary drop-shadow-md'
+                              : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
+                          )}
+                        />
+                      )}
 
                       <div className="relative z-10 min-w-0 flex-1">
                         <div className="flex items-center justify-between">
@@ -304,14 +319,26 @@ export default function AdminSidebar({
                           <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary-200/30 via-transparent to-primary-100/30 dark:from-primary-700/20 dark:to-primary-600/20" />
                         )}
 
-                        <Icon
-                          className={clsx(
-                            'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
-                            active
-                              ? 'text-primary drop-shadow-md'
-                              : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
-                          )}
-                        />
+                        {item.isLiquidIcon ? (
+                          <Icon
+                            size={20}
+                            className={clsx(
+                              'relative z-10 flex-shrink-0 transition-all',
+                              active
+                                ? 'drop-shadow-md'
+                                : 'group-hover:scale-110'
+                            )}
+                          />
+                        ) : (
+                          <Icon
+                            className={clsx(
+                              'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
+                              active
+                                ? 'text-primary drop-shadow-md'
+                                : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
+                            )}
+                          />
+                        )}
 
                         <div className="relative z-10 min-w-0 flex-1">
                           <div className="flex items-center justify-between">
@@ -375,14 +402,26 @@ export default function AdminSidebar({
                           : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:translate-x-0.5'
                       )}
                     >
-                      <Icon
-                        className={clsx(
-                          'h-4 w-4 flex-shrink-0 transition-all',
-                          active
-                            ? 'text-primary'
-                            : 'text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110'
-                        )}
-                      />
+                      {item.isLiquidIcon ? (
+                        <Icon
+                          size={16}
+                          className={clsx(
+                            'flex-shrink-0 transition-all',
+                            active
+                              ? ''
+                              : 'group-hover:scale-110'
+                          )}
+                        />
+                      ) : (
+                        <Icon
+                          className={clsx(
+                            'h-4 w-4 flex-shrink-0 transition-all',
+                            active
+                              ? 'text-primary'
+                              : 'text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110'
+                          )}
+                        />
+                      )}
 
                       <div className="min-w-0 flex-1">
                         <span className="truncate text-sm font-medium">

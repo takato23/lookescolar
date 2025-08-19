@@ -69,52 +69,6 @@ http://localhost:3000/admin/events/c8455305-2315-4aec-9fd8-ae05b38589d9
 
 9- cuando pongo "COntiunar el pago", me dice
 
-PublicGallery.tsx:279  POST http://localhost:3000/api/gallery/checkout 404 (Not Found)
-onClick @ PublicGallery.tsx:279
-executeDispatch @ react-dom-client.development.js:16922
-runWithFiberInDEV @ react-dom-client.development.js:873
-processDispatchQueue @ react-dom-client.development.js:16972
-eval @ react-dom-client.development.js:17573
-batchedUpdates$1 @ react-dom-client.development.js:3313
-dispatchEventForPluginEventSystem @ react-dom-client.development.js:17126
-dispatchEvent @ react-dom-client.development.js:21309
-dispatchDiscreteEvent @ react-dom-client.development.js:21277
-<button>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:345
-_c @ button.tsx:169
-react_stack_bottom_frame @ react-dom-client.development.js:23553
-renderWithHooksAgain @ react-dom-client.development.js:6864
-renderWithHooks @ react-dom-client.development.js:6776
-updateForwardRef @ react-dom-client.development.js:8778
-beginWork @ react-dom-client.development.js:11019
-runWithFiberInDEV @ react-dom-client.development.js:873
-performUnitOfWork @ react-dom-client.development.js:15678
-workLoopSync @ react-dom-client.development.js:15498
-renderRootSync @ react-dom-client.development.js:15478
-performWorkOnRoot @ react-dom-client.development.js:14942
-performSyncWorkOnRoot @ react-dom-client.development.js:16782
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16628
-processRootScheduleInMicrotask @ react-dom-client.development.js:16666
-eval @ react-dom-client.development.js:16801
-<Button>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:345
-PublicGallery @ PublicGallery.tsx:274
-react_stack_bottom_frame @ react-dom-client.development.js:23553
-renderWithHooksAgain @ react-dom-client.development.js:6864
-renderWithHooks @ react-dom-client.development.js:6776
-updateFunctionComponent @ react-dom-client.development.js:9070
-beginWork @ react-dom-client.development.js:10680
-runWithFiberInDEV @ react-dom-client.development.js:873
-performUnitOfWork @ react-dom-client.development.js:15678
-workLoopSync @ react-dom-client.development.js:15498
-renderRootSync @ react-dom-client.development.js:15478
-performWorkOnRoot @ react-dom-client.development.js:14942
-performSyncWorkOnRoot @ react-dom-client.development.js:16782
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:16628
-processRootScheduleInMicrotask @ react-dom-client.development.js:16666
-eval @ react-dom-client.development.js:16801Understand this error
-PublicGallery.tsx:295 [Service] Public checkout error: Error: Event not found
-    at onClick (PublicGallery.tsx:290:31)
 
 
-    
+
