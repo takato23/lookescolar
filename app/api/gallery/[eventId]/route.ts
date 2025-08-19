@@ -149,7 +149,7 @@ export async function GET(
       );
     }
 
-    // Generar URLs firmadas priorizando watermark (baja calidad)
+    // Generar URLs firmadas SOLO para watermarks (NUNCA originales)
     type PhotoRow = {
       id: string;
       storage_path: string;
@@ -162,19 +162,29 @@ export async function GET(
     const photosWithUrls = await Promise.all(
       (photos || []).map(async (photo: any) => {
         try {
-          const key = photo.watermark_path || photo.storage_path;
+          // SEGURIDAD: SOLO watermark, NUNCA storage_path (original)
+          const key = photo.watermark_path;
           if (!key) {
+            console.warn(`Photo ${photo.id} has no watermark_path, skipping for security`);
             return null;
           }
+          
+          // Verificar que el key es realmente un watermark/preview
+          if (!key.includes('watermark') && !key.includes('preview')) {
+            console.warn(`Photo ${photo.id} key "${key}" doesn't look like watermark/preview, skipping`);
+            return null;
+          }
+
           const signedUrl = await signedUrlForKey(key, 900);
 
           return {
             id: photo.id,
-            storage_path: photo.storage_path,
+            // NO exponer storage_path (original) en respuesta pública
             width: photo.width,
             height: photo.height,
             created_at: photo.created_at,
             signed_url: signedUrl,
+            is_watermarked: true, // Indicar que es versión protegida
           };
         } catch (error) {
           console.error('[Service] PublicGallery signed URL error:', error);
