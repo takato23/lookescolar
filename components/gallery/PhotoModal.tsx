@@ -14,7 +14,7 @@ interface Photo {
 }
 
 interface PhotoModalProps {
-  photo: Photo;
+  photo: Photo | null;
   isOpen: boolean;
   onClose: () => void;
   onPrevious: () => void;
@@ -36,6 +36,11 @@ export function PhotoModal({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [imageError, setImageError] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Early return if no photo
+  if (!isOpen || !photo) {
+    return null;
+  }
 
   // Reset state when modal opens/closes or photo changes
   useEffect(() => {

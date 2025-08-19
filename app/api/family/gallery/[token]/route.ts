@@ -7,6 +7,13 @@ import {
   SecurityLogger,
 } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  parsePaginationParams,
+  createPaginationMeta,
+  logDevRequest,
+} from '@/lib/utils/api-response';
 
 const tokenParamsSchema = z.object({
   token: z.string().min(20, 'Token must be at least 20 characters'), // Minimum 20 characters as per security requirements
@@ -37,10 +44,12 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       try {
         // Verificar que es una familia con token válido (ya verificado por AuthMiddleware)
-        if (!authContext.isFamily || !authContext.subject) {
-          return NextResponse.json(
-            { error: 'Invalid token or access denied' },
-            { status: 401 }
+        if (!authContext.isAdmin && !authContext.user) {
+          return createErrorResponse(
+            'Invalid token or access denied',
+            'Authentication required',
+            401,
+            requestId
           );
         }
 
@@ -54,47 +63,70 @@ export const GET = RateLimitMiddleware.withRateLimit(
         // Validar parámetros de la URL
         const { token } = tokenParamsSchema.parse(params);
         const { searchParams } = new URL(request.url);
-        const { page, limit, photo_id } = queryParamsSchema.parse(
-          Object.fromEntries(searchParams)
-        );
+        const { page, limit, offset } = parsePaginationParams(searchParams);
+        const photo_id = searchParams.get('photo_id');
 
-        const subject = authContext.subject;
+        // Obtener subject desde el token
+        const subject = await familyService.getSubjectByToken(token);
+        if (!subject) {
+          return createErrorResponse(
+            'Invalid token',
+            'Subject not found for token',
+            404,
+            requestId
+          );
+        }
 
         // Si se solicita una foto específica
         if (photo_id) {
-          const photoInfo = await familyService.getPhotoInfo(
-            photo_id,
-            subject.id
-          );
-          if (!photoInfo) {
-            return NextResponse.json(
-              { error: 'Photo not found or access denied' },
-              { status: 404 }
+          try {
+            const photoInfo = await familyService.getPhotoInfo(
+              photo_id,
+              subject.id
+            );
+            if (!photoInfo) {
+              return createErrorResponse(
+                'Photo not found or access denied',
+                'Photo does not exist or is not accessible',
+                404,
+                requestId
+              );
+            }
+
+            // Generar URL firmada para la foto
+            const key = (photoInfo.photo as any).watermark_path || (photoInfo.photo as any).preview_path;
+            if (!key) {
+              return createErrorResponse(
+                'Vista previa no disponible',
+                'No preview or watermark path available',
+                404,
+                requestId
+              );
+            }
+            const signedUrl = await signedUrlForKey(key, 900); // 15 min
+
+            // Trackear view
+            await familyService.trackPhotoView(photo_id, subject.id);
+
+            logDevRequest(requestId, 'GET', `/api/family/gallery/${token}`, Date.now() - startTime, 200);
+
+            return createSuccessResponse({
+              photo: {
+                id: photoInfo.photo.id,
+                filename: photoInfo.photo.filename,
+                storage_path: photoInfo.photo.storage_path,
+                created_at: photoInfo.photo.created_at,
+                signed_url: signedUrl,
+              },
+            }, undefined, requestId);
+          } catch (photoError) {
+            return createErrorResponse(
+              'Error loading photo',
+              photoError instanceof Error ? photoError.message : 'Unknown error',
+              500,
+              requestId
             );
           }
-
-          // Generar URL firmada para la foto
-          const key = (photoInfo.photo as any).watermark_path || (photoInfo.photo as any).preview_path;
-          if (!key) {
-            return NextResponse.json(
-              { error: 'Vista previa no disponible' },
-              { status: 404 }
-            );
-          }
-          const signedUrl = await signedUrlForKey(key, 900); // 15 min
-
-          // Trackear view
-          await familyService.trackPhotoView(photo_id, subject.id);
-
-          return NextResponse.json({
-            photo: {
-              id: photoInfo.photo.id,
-              filename: photoInfo.photo.filename,
-              storage_path: photoInfo.photo.storage_path,
-              created_at: photoInfo.photo.created_at,
-              signed_url: signedUrl,
-            },
-          });
         }
 
         // Obtener fotos asignadas con paginación

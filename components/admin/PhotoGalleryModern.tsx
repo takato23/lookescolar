@@ -58,7 +58,7 @@ import { cn } from "@/lib/utils";
 import { buildPhotosUrl } from "@/lib/utils/photos-url-builder";
 import QRScannerModal, { type StudentInfo } from "./QRScannerModal";
 import TaggingModal from "./TaggingModal";
-import { PhotoModal as PublicPhotoModal } from "@/components/public/PhotoModal";
+import { PhotoModal as GalleryPhotoModal } from "@/components/gallery/PhotoModal";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
@@ -1899,27 +1899,28 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
 
       {/* Photo Preview Modal */}
       {isPreviewOpen && filteredPhotos[previewIndex] && (
-        <PublicPhotoModal
-          photo={{
+        <GalleryPhotoModal
+          photo={filteredPhotos[previewIndex] ? {
             id: filteredPhotos[previewIndex].id,
-            preview_url: filteredPhotos[previewIndex].preview_url || '',
-            filename: filteredPhotos[previewIndex].original_filename,
-          }}
+            storage_path: filteredPhotos[previewIndex].storage_path,
+            width: filteredPhotos[previewIndex].width || null,
+            height: filteredPhotos[previewIndex].height || null,
+            created_at: filteredPhotos[previewIndex].created_at,
+            signed_url: filteredPhotos[previewIndex].preview_url || ''
+          } : null}
           isOpen={isPreviewOpen}
           onClose={() => setIsPreviewOpen(false)}
-          onPrev={() => {
-            const newIndex = previewIndex > 0 ? previewIndex - 1 : previewIndex;
+          onPrevious={() => {
+            const newIndex = previewIndex > 0 ? previewIndex - 1 : filteredPhotos.length - 1;
             setPreviewIndex(newIndex);
             if (!filteredPhotos[newIndex]?.preview_url) void ensurePreviewUrl(newIndex);
           }}
           onNext={() => {
-            const newIndex = previewIndex < filteredPhotos.length - 1 ? previewIndex + 1 : previewIndex;
+            const newIndex = previewIndex < filteredPhotos.length - 1 ? previewIndex + 1 : 0;
             setPreviewIndex(newIndex);
             if (!filteredPhotos[newIndex]?.preview_url) void ensurePreviewUrl(newIndex);
           }}
-          hasPrev={previewIndex > 0}
-          hasNext={previewIndex < filteredPhotos.length - 1}
-          currentIndex={previewIndex + 1}
+          currentIndex={previewIndex}
           totalPhotos={filteredPhotos.length}
         />
       )}

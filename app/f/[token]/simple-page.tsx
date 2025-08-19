@@ -236,28 +236,46 @@ export default function SimpleGalleryPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50">
       <div aria-live="polite" className="sr-only">{submitted ? '¡Listo! Recibimos tu selección.' : ''}</div>
       
-      {/* Header */}
-      <div className="bg-white/60 backdrop-blur-md shadow-sm border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Tu Galería Privada</h1>
-            {subject?.event && (
-              <p className="text-lg text-gray-600">
-                {subject.event.name} • {subject.event.school_name}
-              </p>
-            )}
-            <div className="mt-4 flex items-center justify-center space-x-6 text-sm">
-              <div className="flex items-center space-x-2">
+      {/* Compact Header for Families */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Main Header Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-3">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">🖼️ Tus Fotos</h1>
+              {subject?.event && (
+                <p className="text-sm text-gray-600 mt-1">
+                  {subject.event.name} • {subject.event.school_name}
+                </p>
+              )}
+            </div>
+            <CartButton />
+          </div>
+          
+          {/* Status Row */}
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
                 <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                 <span className="text-gray-600">{photos.length} fotos disponibles</span>
               </div>
-              <CartButton />
               {selectedPhotos.size > 0 && (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full">
                   <ShoppingCartIcon className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium text-purple-600">{selectedPhotos.size} seleccionadas</span>
+                  <span className="font-medium text-purple-600">{selectedPhotos.size} seleccionadas para comprar</span>
                 </div>
               )}
+              {favorites.size > 0 && (
+                <div className="flex items-center gap-2 text-red-500">
+                  <HeartIcon className="h-4 w-4 fill-current" />
+                  <span>{favorites.size} favoritas</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Instructions */}
+            <div className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+              💡 Tip: ❤️ para favoritos • ✅ para comprar • 🔍 para ampliar
             </div>
           </div>
         </div>
@@ -297,10 +315,10 @@ export default function SimpleGalleryPage() {
             {photos.map((photo, idx) => (
               <div
                 key={photo.id}
-                className="group relative overflow-hidden rounded-lg bg-white shadow-sm hover:shadow-lg transition-all duration-200"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl group relative overflow-hidden transition-all duration-300 transform hover:scale-105"
               >
-                {/* Image */}
-                <div className="aspect-square relative bg-gray-100">
+                {/* Image Container */}
+                <div className="aspect-square relative bg-gray-100 dark:bg-gray-700 rounded-t-2xl overflow-hidden">
                   <Image
                     src={photo.preview_url}
                     alt={photo.filename}
@@ -321,72 +339,102 @@ export default function SimpleGalleryPage() {
                   >
                     <ZoomInIcon className="h-8 w-8 text-white drop-shadow-lg" />
                   </button>
-                </div>
 
-                {/* Watermark Badge */}
-                <div className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
-                  MUESTRA
-                </div>
+                  {/* Watermark Badge - Better positioned */}
+                  <div className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-purple-600 text-white rounded-full shadow-lg">
+                    MUESTRA
+                  </div>
 
-                {/* Action Buttons */}
-                <div className="absolute bottom-2 right-2 flex gap-2">
-                  {/* Favorite Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(photo.id);
-                    }}
-                    className={`rounded-full p-2 shadow-lg transition-all transform hover:scale-110 ${
-                      favorites.has(photo.id)
-                        ? 'bg-red-500 text-white'
-                        : 'bg-white/90 backdrop-blur text-gray-700 hover:bg-red-50'
-                    }`}
-                    aria-label={favorites.has(photo.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                  >
-                    <HeartIcon
-                      className="h-4 w-4 sm:h-5 sm:w-5"
-                      fill={favorites.has(photo.id) ? 'currentColor' : 'none'}
-                    />
-                  </button>
-
-                  {/* Select Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const wasSelected = selectedPhotos.has(photo.id);
-                      togglePhotoSelection(photo.id);
-                      if (!wasSelected) {
-                        addItem({
-                          photoId: photo.id,
-                          filename: photo.filename,
-                          price: 0,
-                          watermarkUrl: photo.preview_url,
-                        });
-                      }
-                    }}
-                    className={`rounded-full p-2 shadow-lg transition-all transform hover:scale-110 ${
-                      selectedPhotos.has(photo.id)
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white/90 backdrop-blur text-gray-700 hover:bg-purple-50'
-                    }`}
-                    aria-label={selectedPhotos.has(photo.id) ? 'Quitar de la selección' : 'Agregar a la selección'}
-                  >
-                    {selectedPhotos.has(photo.id) ? (
-                      <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                    ) : (
-                      <ShoppingCartIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                    )}
-                  </button>
-                </div>
-
-                {/* Selected Indicator */}
-                {selectedPhotos.has(photo.id) && (
-                  <div className="absolute top-2 right-2">
-                    <div className="bg-purple-600 text-white rounded-full p-1 shadow-lg">
-                      <CheckCircleIcon className="h-5 w-5" />
+                  {/* Selection Indicator */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <div 
+                      className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-lg ${
+                        selectedPhotos.has(photo.id) 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-white/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 backdrop-blur-sm'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const wasSelected = selectedPhotos.has(photo.id);
+                        togglePhotoSelection(photo.id);
+                        if (!wasSelected) {
+                          addItem({
+                            photoId: photo.id,
+                            filename: photo.filename,
+                            price: 0,
+                            watermarkUrl: photo.preview_url,
+                          });
+                        }
+                      }}
+                    >
+                      {selectedPhotos.has(photo.id) && (
+                        <CheckCircleIcon className="h-4 w-4" />
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
+
+                {/* Photo Info with Better Contrast */}
+                <div className="bg-white dark:bg-gray-800 p-3 rounded-b-2xl">
+                  <div className="flex items-center justify-between">
+                    {/* Photo filename */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {photo.filename}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        {Math.round(photo.size / 1024)} KB
+                      </p>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 ml-2">
+                      {/* Favorite Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(photo.id);
+                        }}
+                        className={`rounded-full p-1.5 transition-all transform hover:scale-110 ${
+                          favorites.has(photo.id)
+                            ? 'bg-red-500 text-white shadow-lg'
+                            : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-red-50'
+                        }`}
+                        aria-label={favorites.has(photo.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                      >
+                        <HeartIcon
+                          className="h-4 w-4"
+                          fill={favorites.has(photo.id) ? 'currentColor' : 'none'}
+                        />
+                      </button>
+
+                      {/* Cart Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const wasSelected = selectedPhotos.has(photo.id);
+                          togglePhotoSelection(photo.id);
+                          if (!wasSelected) {
+                            addItem({
+                              photoId: photo.id,
+                              filename: photo.filename,
+                              price: 0,
+                              watermarkUrl: photo.preview_url,
+                            });
+                          }
+                        }}
+                        className={`rounded-full p-1.5 transition-all transform hover:scale-110 ${
+                          selectedPhotos.has(photo.id)
+                            ? 'bg-purple-600 text-white shadow-lg'
+                            : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-purple-50'
+                        }`}
+                        aria-label={selectedPhotos.has(photo.id) ? 'Quitar de la selección' : 'Agregar a la selección'}
+                      >
+                        <ShoppingCartIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -396,8 +444,12 @@ export default function SimpleGalleryPage() {
         {isLoadingMore && (
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="animate-pulse overflow-hidden rounded-lg bg-white shadow-sm">
-                <div className="aspect-square bg-gray-200" />
+              <div key={i} className="animate-pulse bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                <div className="aspect-square bg-gray-200 dark:bg-gray-600 rounded-t-2xl" />
+                <div className="p-3">
+                  <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded mb-2" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2" />
+                </div>
               </div>
             ))}
           </div>

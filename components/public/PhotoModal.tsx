@@ -30,11 +30,16 @@ export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000 }: Pho
 
   // Actualizar índice cuando cambia la foto
   useEffect(() => {
-    if (photo) {
+    if (photo && photos && photos.length > 0) {
       const index = photos.findIndex(p => p.id === photo.id)
-      if (index !== -1) {
+      if (index !== -1 && index < photos.length) {
         setCurrentIndex(index)
+      } else {
+        // Si no se encuentra la foto, usar el primer índice disponible
+        setCurrentIndex(0)
       }
+    } else {
+      setCurrentIndex(0)
     }
   }, [photo, photos])
 
@@ -64,10 +69,12 @@ export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000 }: Pho
   }, [isOpen, currentIndex])
 
   const goToPrevious = () => {
+    if (!photos || photos.length === 0) return
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))
   }
 
   const goToNext = () => {
+    if (!photos || photos.length === 0) return
     setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))
   }
 
@@ -91,12 +98,15 @@ export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000 }: Pho
     onClose()
   }
 
-  const currentPhoto = photos[currentIndex]
+  // Safe access to current photo with bounds checking
+  const currentPhoto = photos && photos.length > 0 && currentIndex >= 0 && currentIndex < photos.length 
+    ? photos[currentIndex] 
+    : null
   
   // Detectar si es una URL firmada de Supabase (contiene token)
-  const isSignedUrl = currentPhoto?.signed_url.includes('token=')
+  const isSignedUrl = currentPhoto?.signed_url?.includes('token=') ?? false
 
-  if (!isOpen || !currentPhoto) return null
+  if (!isOpen || !currentPhoto || !photos || photos.length === 0) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

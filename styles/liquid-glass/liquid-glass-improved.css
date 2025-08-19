@@ -1,0 +1,631 @@
+/* 
+ * Improved Dark Mode for LookEscolar - Better Contrast and Visibility
+ * Enhanced liquid glass effects with improved accessibility
+ * WCAG AA+ compliant color scheme
+ */
+
+/* ============================================
+   Enhanced CSS Custom Properties
+   ============================================ */
+:root {
+  /* Core Glass Properties */
+  --lg-blur-base: 20px;
+  --lg-blur-medium: 16px;
+  --lg-blur-light: 10px;
+  --lg-saturation: 180%;
+  
+  /* Border Radius System */
+  --lg-radius-sm: 12px;
+  --lg-radius-md: 16px;
+  --lg-radius-lg: 24px;
+  --lg-radius-xl: 32px;
+  
+  /* Animation Timing */
+  --lg-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --lg-transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --lg-transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Light Mode Colors */
+  --lg-glass-bg-light: rgba(255, 255, 255, 0.08);
+  --lg-glass-border-light: rgba(255, 255, 255, 0.18);
+  --lg-glass-highlight-light: rgba(255, 255, 255, 0.2);
+  --lg-shadow-color-light: rgba(31, 38, 135, 0.37);
+  
+  /* Performance Optimization */
+  --lg-enable-animations: 1;
+  --lg-enable-shadows: 1;
+}
+
+/* Enhanced Dark Mode Variables with Better Contrast */
+.dark {
+  /* Improved Background Colors - Using comfortable dark grays instead of pure black */
+  --background: 26 26 32;              /* Comfortable dark gray (was 16 16 20) */
+  --foreground: 248 250 252;           /* High contrast white text */
+  --card: 32 32 40;                    /* Lighter card background (was 24 24 30) */
+  --card-foreground: 248 250 252;      /* Excellent contrast card text */
+  --popover: 36 36 44;                 /* Slightly lighter popover background */
+  --popover-foreground: 248 250 252;   /* High contrast popover text */
+  
+  /* Enhanced Surface Colors with Better Separation */
+  --surface: 42 42 50;                 /* More visible surface (was 36 36 40) */
+  --surface-variant: 48 48 56;         /* Better variant visibility (was 42 42 46) */
+  --surface-strong: 58 58 66;          /* Stronger contrast (was 52 52 56) */
+  
+  /* Improved Text Colors with WCAG AA+ Compliance */
+  --text-primary: 248 250 252;         /* Excellent primary text contrast */
+  --text-secondary: 210 214 220;       /* Much better secondary text (was 200 200 210) */
+  --text-tertiary: 170 176 185;        /* Better tertiary contrast (was 160 160 170) */
+  --text-disabled: 120 126 135;        /* More visible disabled text (was 100 100 110) */
+  
+  /* Enhanced Border Colors for Better Definition */
+  --border: 58 58 66;                  /* More visible borders (was 52 52 56) */
+  --border-strong: 80 82 90;           /* Much stronger borders (was 72 72 76) */
+  --input-border: 80 82 90;            /* Better input visibility */
+  --input-border-focus: 107 127 255;   /* Focus remains vibrant */
+  
+  /* Improved Brand Colors for Dark Mode */
+  --primary: 107 127 255;              /* Slightly brighter primary */
+  --primary-foreground: 26 26 32;      /* Dark text on primary */
+  --primary-strong: 139 152 255;       /* More visible strong primary */
+  
+  --secondary: 157 101 224;            /* Brighter purple */
+  --secondary-foreground: 26 26 32;    /* Dark text on secondary */
+  --secondary-strong: 177 121 244;     /* More vibrant strong secondary */
+  
+  --accent: 246 194 61;                /* Warmer, more visible gold */
+  --accent-foreground: 26 26 32;       /* Dark text on accent */
+  
+  /* Enhanced Semantic Colors */
+  --success: 44 207 104;               /* Brighter success green */
+  --success-strong: 84 232 138;        /* More vibrant strong success */
+  --warning: 255 201 46;               /* Brighter warning yellow */
+  --warning-strong: 255 221 87;        /* More visible strong warning */
+  --error: 255 123 123;                /* Brighter error red */
+  --error-strong: 255 175 175;         /* More visible strong error */
+  
+  /* Enhanced Interactive States */
+  --interactive-hover: 255 255 255 0.06;    /* Slightly more visible hover */
+  --interactive-active: 255 255 255 0.10;   /* More noticeable active state */
+  --interactive-focus: 107 127 255;          /* Bright focus color */
+  
+  /* Enhanced Liquid Glass Variables */
+  --lg-glass-bg-light: rgba(42, 42, 50, 0.5);         /* More visible glass */
+  --lg-glass-border-light: rgba(255, 255, 255, 0.12);  /* Better border visibility */
+  --lg-glass-highlight-light: rgba(255, 255, 255, 0.10); /* Stronger highlights */
+  --lg-shadow-color-light: rgba(0, 0, 0, 0.4);        /* Stronger shadows */
+  
+  /* Improved Glass Effects for Dark Mode */
+  --glass-bg: rgba(32, 32, 40, 0.75);       /* More opaque glass background */
+  --glass-border: rgba(255, 255, 255, 0.15); /* More visible glass border */
+  --glass-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 0 120px rgba(107, 127, 255, 0.12);
+}
+
+/* Performance Mode - Reduce Effects */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lg-enable-animations: 0;
+    --lg-blur-base: 12px;
+    --lg-blur-medium: 8px;
+    --lg-blur-light: 4px;
+  }
+}
+
+/* ============================================
+   Base Glass Mixins (as CSS Classes)
+   ============================================ */
+
+/* Core Glass Effect - Reusable Base */
+.lg-glass-base {
+  backdrop-filter: blur(var(--lg-blur-base)) saturate(var(--lg-saturation));
+  -webkit-backdrop-filter: blur(var(--lg-blur-base)) saturate(var(--lg-saturation));
+  border: 1px solid var(--lg-glass-border-light);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--lg-transition-medium);
+  will-change: transform, box-shadow;
+}
+
+/* Glass Gradient Overlay */
+.lg-glass-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    var(--lg-glass-highlight-light) 0%,
+    transparent 40%,
+    transparent 60%,
+    var(--lg-glass-bg-light) 100%
+  );
+  pointer-events: none;
+  opacity: 0.7;
+  z-index: 1;
+}
+
+/* Optimized Shadow System */
+.lg-shadow-sm {
+  box-shadow: 
+    0 4px 16px var(--lg-shadow-color-light),
+    inset 0 1px 0 var(--lg-glass-highlight-light);
+}
+
+.lg-shadow-md {
+  box-shadow: 
+    0 8px 32px var(--lg-shadow-color-light),
+    inset 0 1px 0 var(--lg-glass-highlight-light),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.lg-shadow-lg {
+  box-shadow: 
+    0 12px 48px var(--lg-shadow-color-light),
+    inset 0 1px 0 var(--lg-glass-highlight-light),
+    inset 0 -20px 40px -20px rgba(0, 0, 0, 0.1),
+    0 0 80px rgba(99, 119, 237, 0.1);
+}
+
+/* ============================================
+   Component Classes - Optimized
+   ============================================ */
+
+/* Container - Main wrapper */
+.lg-container {
+  composes: lg-glass-base lg-glass-gradient lg-shadow-lg;
+  background: linear-gradient(
+    135deg,
+    var(--lg-glass-bg-light) 0%,
+    transparent 100%
+  );
+  border-radius: var(--lg-radius-lg);
+  padding: 2rem;
+}
+
+/* Card Component */
+.lg-card {
+  composes: lg-glass-base lg-shadow-md;
+  background: var(--lg-glass-bg-light);
+  border-radius: var(--lg-radius-lg);
+  padding: 1.5rem;
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
+.lg-card:hover {
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 
+    0 16px 48px var(--lg-shadow-color-light),
+    inset 0 1px 0 var(--lg-glass-highlight-light),
+    0 0 60px rgba(99, 119, 237, 0.15);
+}
+
+/* Button Component - Optimized */
+.lg-button {
+  composes: lg-glass-base;
+  background: linear-gradient(
+    135deg,
+    var(--lg-glass-bg-light) 0%,
+    transparent 100%
+  );
+  border-radius: var(--lg-radius-md);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  color: currentColor;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition: all var(--lg-transition-fast);
+}
+
+/* Ripple Effect - Performance Optimized */
+.lg-button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: width var(--lg-transition-slow), 
+              height var(--lg-transition-slow), 
+              opacity var(--lg-transition-slow);
+}
+
+.lg-button:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+  transition: width 0s, height 0s, opacity var(--lg-transition-slow);
+}
+
+/* Input Field */
+.lg-input {
+  composes: lg-glass-base;
+  background: var(--lg-glass-bg-light);
+  border-radius: var(--lg-radius-sm);
+  padding: 0.75rem 1rem;
+  color: currentColor;
+  width: 100%;
+  transition: all var(--lg-transition-fast);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.lg-input:focus {
+  outline: none;
+  border-color: rgba(99, 119, 237, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 3px rgba(99, 119, 237, 0.2);
+}
+
+/* Badge Component */
+.lg-badge {
+  composes: lg-glass-base;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 119, 237, 0.15) 0%,
+    rgba(99, 119, 237, 0.08) 100%
+  );
+  border: 1px solid rgba(99, 119, 237, 0.3);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all var(--lg-transition-fast);
+}
+
+/* ============================================
+   Animations - Performance Optimized
+   ============================================ */
+
+/* Shimmer Effect - GPU Accelerated */
+@keyframes lg-shimmer {
+  0% {
+    transform: translateX(-100%) translateZ(0);
+  }
+  100% {
+    transform: translateX(100%) translateZ(0);
+  }
+}
+
+.lg-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.lg-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    var(--lg-glass-highlight-light) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%) translateZ(0);
+  animation: lg-shimmer 3s ease-in-out infinite;
+  animation-play-state: paused;
+  pointer-events: none;
+}
+
+.lg-shimmer:hover::after {
+  animation-play-state: running;
+}
+
+/* Float Animation - Smooth and Performant */
+@keyframes lg-float {
+  0%, 100% {
+    transform: translateY(0) translateZ(0);
+  }
+  50% {
+    transform: translateY(-10px) translateZ(0);
+  }
+}
+
+.lg-float {
+  animation: lg-float 6s ease-in-out infinite;
+  animation-play-state: calc(var(--lg-enable-animations) * running);
+}
+
+/* Pulse Glow - Optimized */
+@keyframes lg-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(99, 119, 237, 0.2),
+      0 0 40px rgba(99, 119, 237, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(99, 119, 237, 0.3),
+      0 0 60px rgba(99, 119, 237, 0.15);
+  }
+}
+
+.lg-pulse {
+  animation: lg-pulse 2s ease-in-out infinite;
+  animation-play-state: calc(var(--lg-enable-animations) * running);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Blur Variants */
+.lg-blur-light { backdrop-filter: blur(var(--lg-blur-light)); }
+.lg-blur-medium { backdrop-filter: blur(var(--lg-blur-medium)); }
+.lg-blur-heavy { backdrop-filter: blur(var(--lg-blur-base)); }
+
+/* Border Radius Variants */
+.lg-rounded-sm { border-radius: var(--lg-radius-sm); }
+.lg-rounded-md { border-radius: var(--lg-radius-md); }
+.lg-rounded-lg { border-radius: var(--lg-radius-lg); }
+.lg-rounded-xl { border-radius: var(--lg-radius-xl); }
+.lg-rounded-full { border-radius: 9999px; }
+
+/* Interaction States */
+.lg-interactive {
+  cursor: pointer;
+  transition: all var(--lg-transition-fast);
+}
+
+.lg-interactive:hover {
+  transform: translateY(-2px) translateZ(0);
+  filter: brightness(1.05);
+}
+
+.lg-interactive:active {
+  transform: translateY(0) translateZ(0);
+  filter: brightness(0.98);
+}
+
+/* ============================================
+   Enhanced Dark Mode Specific Styles
+   ============================================ */
+
+/* Improved Dark Mode Glass Components */
+.dark .lg-container,
+.dark .lg-card,
+.dark .lg-button {
+  background: linear-gradient(
+    135deg,
+    rgba(42, 42, 50, 0.6) 0%,      /* More visible background */
+    rgba(32, 32, 40, 0.4) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);  /* Better border visibility */
+}
+
+.dark .lg-card:hover {
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.3),             /* Stronger shadow */
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),    /* More visible inner highlight */
+    0 0 80px rgba(107, 127, 255, 0.12);         /* Enhanced blue glow */
+}
+
+.dark .lg-input {
+  background: rgba(42, 42, 50, 0.6);            /* More visible input background */
+  border: 1px solid rgba(255, 255, 255, 0.12);  /* Better border visibility */
+  color: rgba(248, 250, 252, 0.95);             /* High contrast text */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+.dark .lg-input:focus {
+  border-color: rgba(107, 127, 255, 0.5);       /* Bright focus border */
+  background: rgba(48, 48, 56, 0.7);            /* More opaque when focused */
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 0 3px rgba(107, 127, 255, 0.2),
+    0 4px 12px rgba(107, 127, 255, 0.25);       /* Enhanced focus glow */
+}
+
+/* Enhanced Dark Mode Button Styles */
+.dark .lg-button {
+  background: linear-gradient(
+    135deg,
+    rgba(58, 58, 66, 0.5) 0%,      /* More visible button background */
+    rgba(48, 48, 56, 0.4) 100%
+  );
+  color: rgba(248, 250, 252, 0.98);             /* High contrast button text */
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .lg-button:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(68, 68, 76, 0.6) 0%,      /* Brighter hover state */
+    rgba(58, 58, 66, 0.5) 100%
+  );
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 40px rgba(107, 127, 255, 0.15);         /* Subtle glow on hover */
+}
+
+/* Enhanced Badge Styles for Dark Mode */
+.dark .lg-badge {
+  background: linear-gradient(
+    135deg,
+    rgba(107, 127, 255, 0.20) 0%,  /* More visible badge background */
+    rgba(107, 127, 255, 0.12) 100%
+  );
+  border: 1px solid rgba(107, 127, 255, 0.3);   /* Stronger border */
+  color: rgba(177, 187, 255, 0.98);             /* High contrast badge text */
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --lg-blur-base: 16px;
+    --lg-blur-medium: 12px;
+    --lg-blur-light: 8px;
+  }
+  
+  .lg-container {
+    padding: 1rem;
+  }
+  
+  .lg-card {
+    padding: 1rem;
+    border-radius: var(--lg-radius-md);
+  }
+  
+  /* Disable heavy animations on mobile for performance */
+  .lg-shimmer::after {
+    animation: none;
+  }
+}
+
+/* ============================================
+   Enhanced Accessibility & High Contrast
+   ============================================ */
+
+/* Enhanced Focus Styles for All Modes */
+.lg-button:focus-visible,
+.lg-input:focus-visible,
+.lg-card:focus-visible {
+  outline: 2px solid rgba(107, 127, 255, 0.8);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(107, 127, 255, 0.3); /* Glowing focus ring */
+}
+
+/* Dark Mode Focus Enhancement */
+.dark .lg-button:focus-visible,
+.dark .lg-input:focus-visible,
+.dark .lg-card:focus-visible {
+  outline: 2px solid rgb(107, 127, 255);
+  box-shadow: 0 0 0 4px rgba(107, 127, 255, 0.4);
+}
+
+/* Enhanced High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .lg-glass-base {
+    border-width: 2px;
+  }
+  
+  .lg-button,
+  .lg-input {
+    border-width: 2px;
+    font-weight: 700;
+  }
+  
+  /* Dark Mode High Contrast Enhancements */
+  .dark {
+    --border: 120 126 135;          /* Much stronger borders in high contrast */
+    --border-strong: 150 156 165;   /* Very strong borders */
+    --text-secondary: 230 234 240;  /* Near-white secondary text */
+    --text-tertiary: 200 206 215;   /* Much brighter tertiary text */
+  }
+  
+  .dark .lg-glass-base {
+    border-color: rgba(255, 255, 255, 0.4) !important;  /* Much stronger borders */
+    background: rgba(42, 42, 50, 0.9) !important;       /* More opaque backgrounds */
+  }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  .lg-glass-base {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: white !important;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ============================================
+   Additional Dark Mode Improvements
+   ============================================ */
+
+/* Enhanced Scrollbar for Dark Mode */
+.dark .scrollbar-elevated::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);      /* More visible scrollbar */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.dark .scrollbar-elevated::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);      /* Brighter on hover */
+}
+
+/* Enhanced Dark Mode for Interactive States */
+.dark .hover\:bg-muted:hover {
+  background-color: rgba(58, 58, 66, 0.5) !important;  /* More visible hover states */
+}
+
+.dark button:active,
+.dark a:active {
+  background-color: rgba(68, 68, 76, 0.6) !important;  /* More visible active states */
+}
+
+/* Improved Mobile Dark Mode Optimizations */
+@media (max-width: 768px) {
+  .dark .mobile-nav {
+    background: rgba(32, 32, 40, 0.98);            /* More opaque mobile nav */
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  
+  .dark .mobile-header {
+    background: rgba(32, 32, 40, 0.98);            /* More opaque mobile header */
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  
+  /* Reduce glass effects on mobile for better performance and visibility */
+  .dark .lg-card {
+    backdrop-filter: blur(12px) !important;        /* Reduced blur for mobile */
+    background: rgba(42, 42, 50, 0.8) !important;  /* More opaque on mobile */
+  }
+}
+
+/* Dark Mode Animation Improvements */
+.dark .lg-card,
+.dark .lg-button,
+.dark .lg-input {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transitions */
+}
+
+/* Enhanced Typography Contrast for Dark Mode */
+.dark .liquid-subtitle {
+  color: rgba(210, 214, 220, 0.95) !important;     /* Much better subtitle contrast */
+}
+
+.dark .liquid-nav-text {
+  color: rgba(248, 250, 252, 0.98) !important;     /* Excellent nav text contrast */
+}
+
+.dark .liquid-description {
+  color: rgba(200, 206, 215, 0.90) !important;     /* Better description contrast */
+  background: rgba(48, 48, 56, 0.12);              /* Subtle background */
+}
+
+.dark .liquid-label {
+  color: rgba(220, 224, 230, 0.95) !important;     /* Much better label contrast */
+  background: rgba(48, 48, 56, 0.20);              /* More visible label background */
+  border: 1px solid rgba(255, 255, 255, 0.12);     /* Better border */
+}
+
+.dark .liquid-button-text {
+  color: rgba(248, 250, 252, 0.98) !important;     /* Excellent button text contrast */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);       /* Stronger shadow for definition */
+}

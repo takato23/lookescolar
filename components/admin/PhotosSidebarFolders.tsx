@@ -16,6 +16,7 @@ import {
 import { SearchIcon, MoreVerticalIcon, Trash2Icon, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { generateFamilyGalleryLink } from '@/lib/utils/gallery-links';
 
 export interface SidebarEvent {
   id: string;
@@ -346,7 +347,15 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
                             Revocar token
                           </DropdownMenuItem>
                           {code.token && (
-                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(`${window.location.origin}/f/${code.token}/simple-page`)}>
+                            <DropdownMenuItem onClick={() => {
+                              const galleryLink = generateFamilyGalleryLink({
+                                token: code.token,
+                                eventId: code.event_id,
+                                origin: window.location.origin
+                              });
+                              navigator.clipboard.writeText(galleryLink);
+                              toast.success('Enlace copiado al portapapeles');
+                            }}>
                               Copiar enlace
                             </DropdownMenuItem>
                           )}
