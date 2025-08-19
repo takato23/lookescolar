@@ -223,14 +223,18 @@ const LiquidPhotoCard: React.FC<{
           </div>
           
           <div className="flex-1 min-w-0">
-            <h3 className="text-white font-medium text-sm truncate drop-shadow-sm">
+            <h3 className={`font-medium text-sm truncate drop-shadow-sm ${
+              theme === 'dark' ? 'text-slate-100' : 'text-white'
+            }`}>
               {photo.original_filename}
             </h3>
             <div className="flex items-center space-x-2 mt-1">
               <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${statusColor}`}>
                 {statusText}
               </span>
-              <span className="text-white/70 text-xs">{Math.round(photo.file_size / 1024)} KB</span>
+              <span className={`text-xs ${
+                theme === 'dark' ? 'text-slate-400' : 'text-white/70'
+              }`}>{Math.round(photo.file_size / 1024)} KB</span>
             </div>
           </div>
 
@@ -362,10 +366,14 @@ const LiquidPhotoCard: React.FC<{
           overLight={theme === 'light'}
         >
           <div className="p-3">
-            <div className="text-white font-medium text-sm mb-1 drop-shadow-sm truncate">
+            <div className={`font-medium text-sm mb-1 drop-shadow-sm truncate ${
+              theme === 'dark' ? 'text-slate-100' : 'text-white'
+            }`}>
               {photo.original_filename}
             </div>
-            <div className="flex justify-between text-white/80 text-xs">
+            <div className={`flex justify-between text-xs ${
+              theme === 'dark' ? 'text-slate-300' : 'text-white/80'
+            }`}>
               <span className="drop-shadow-sm">{Math.round(photo.file_size / 1024)} KB</span>
               <span className="drop-shadow-sm">
                 {new Date(photo.created_at).toLocaleDateString()}
@@ -541,7 +549,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' : 'bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600'} transition-colors duration-500 overflow-hidden`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : 'bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600'} transition-colors duration-500 overflow-hidden`}>
       
       {!hideHeader && (
         <>
@@ -571,10 +579,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       overLight={theme === 'light'}
                     >
                       <div className="w-8 h-8 flex items-center justify-center p-2">
-                        <FolderIcon className="w-full h-full text-white drop-shadow-sm" />
+                        <FolderIcon className={`w-full h-full drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                        }`} />
                       </div>
                     </LiquidGlass>
-                    <h1 className="text-white text-2xl font-bold drop-shadow-sm">
+                    <h1 className={`text-2xl font-bold drop-shadow-sm ${
+                      theme === 'dark' ? 'text-slate-100' : 'text-white'
+                    }`}>
                       Galería de Fotos ({filteredPhotos.length})
                     </h1>
                   </div>
@@ -618,14 +630,18 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 >
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none z-10">
-                      <SearchIcon size={20} className="text-white/80 drop-shadow-sm" />
+                      <SearchIcon size={20} className={theme === 'dark' ? 'text-slate-300' : 'text-white/80'} />
                     </div>
                     <input
                       type="text"
                       placeholder="Buscar fotos por nombre..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-14 pr-6 py-4 bg-transparent text-white placeholder-white/70 focus:outline-none focus:placeholder-white/50 transition-all"
+                      className={`w-full pl-14 pr-6 py-4 bg-transparent focus:outline-none transition-all ${
+                        theme === 'dark' 
+                          ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500' 
+                          : 'text-white placeholder-white/70 focus:placeholder-white/50'
+                      }`}
                     />
                   </div>
                 </LiquidGlass>
@@ -658,8 +674,8 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         >
                           <div className={`px-4 py-2 text-sm font-medium transition-all ${
                             filterStatus === filter.value
-                              ? 'text-white drop-shadow-md font-semibold'
-                              : 'text-white/90 hover:text-white'
+                              ? (theme === 'dark' ? 'text-slate-100 drop-shadow-md font-semibold' : 'text-white drop-shadow-md font-semibold')
+                              : (theme === 'dark' ? 'text-slate-300 hover:text-slate-100' : 'text-white/90 hover:text-white')
                           }`}>
                             {filter.label}
                           </div>
@@ -711,12 +727,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         <div className={`w-6 h-6 flex items-center justify-center transition-all ${
                           allVisibleSelected
                             ? 'text-purple-600'
-                            : 'border-2 border-white/50'
+                            : (theme === 'dark' ? 'border-2 border-slate-300' : 'border-2 border-white/50')
                         }`}>
                           {allVisibleSelected && <CheckIcon size={14} className="drop-shadow-sm" />}
                         </div>
                       </LiquidGlass>
-                      <span className="text-white font-medium drop-shadow-sm">Seleccionar todas</span>
+                      <span className={`font-medium drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-200' : 'text-white'
+                      }`}>Seleccionar todas</span>
                     </div>
                   </LiquidGlass>
                 </div>
@@ -788,8 +806,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
                         </div>
                       </LiquidGlass>
-                      <h3 className="text-white text-xl font-semibold mb-2 drop-shadow-sm">No se encontraron fotos</h3>
-                      <p className="text-white/80 drop-shadow-sm">
+                      <h3 className={`text-xl font-semibold mb-2 drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-200' : 'text-white'
+                      }`}>No se encontraron fotos</h3>
+                      <p className={`drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-white/80'
+                      }`}>
                         {searchQuery ? 
                           `No hay fotos que coincidan con "${searchQuery}".` :
                           'No hay fotos disponibles con los filtros seleccionados.'
@@ -828,10 +850,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       overLight={theme === 'light'}
                     >
                       <div className="w-8 h-8 flex items-center justify-center p-2">
-                        <FolderIcon className="w-full h-full text-white drop-shadow-sm" />
+                        <FolderIcon className={`w-full h-full drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                        }`} />
                       </div>
                     </LiquidGlass>
-                    <h1 className="text-white text-lg font-semibold drop-shadow-sm">Fotos ({filteredPhotos.length})</h1>
+                    <h1 className={`text-lg font-semibold drop-shadow-sm ${
+                      theme === 'dark' ? 'text-slate-100' : 'text-white'
+                    }`}>Fotos ({filteredPhotos.length})</h1>
                   </div>
                   
                   {/* Theme Toggle */}
@@ -868,18 +894,22 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 overLight={theme === 'light'}
                 className="w-full relative"
               >
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                    <SearchIcon size={16} className="text-white/80 drop-shadow-sm" />
+                                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
+                      <SearchIcon size={16} className={theme === 'dark' ? 'text-slate-300' : 'text-white/80'} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Buscar fotos..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className={`w-full pl-12 pr-4 py-3 bg-transparent focus:outline-none transition-all text-sm ${
+                        theme === 'dark' 
+                          ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500' 
+                          : 'text-white placeholder-white/70 focus:placeholder-white/50'
+                      }`}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Buscar fotos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-transparent text-white placeholder-white/70 focus:outline-none focus:placeholder-white/50 transition-all text-sm"
-                  />
-                </div>
               </LiquidGlass>
 
               {/* Mobile Filter Pills */}
@@ -910,8 +940,8 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       >
                         <div className={`px-3 py-2 text-xs font-medium transition-all ${
                           filterStatus === filter.value
-                            ? 'text-white drop-shadow-md font-semibold'
-                            : 'text-white/90 hover:text-white'
+                            ? (theme === 'dark' ? 'text-slate-100 drop-shadow-md font-semibold' : 'text-white drop-shadow-md font-semibold')
+                            : (theme === 'dark' ? 'text-slate-300 hover:text-slate-100' : 'text-white/90 hover:text-white')
                         }`}>
                           {filter.label}
                         </div>
@@ -963,12 +993,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       <div className={`w-5 h-5 flex items-center justify-center transition-all ${
                         allVisibleSelected
                           ? 'text-purple-600'
-                          : 'border-2 border-white/50'
+                          : (theme === 'dark' ? 'border-2 border-slate-300' : 'border-2 border-white/50')
                       }`}>
                         {allVisibleSelected && <CheckIcon size={12} className="drop-shadow-sm" />}
                       </div>
                     </LiquidGlass>
-                    <span className="text-white text-sm font-medium drop-shadow-sm">Seleccionar todas</span>
+                    <span className={`text-sm font-medium drop-shadow-sm ${
+                      theme === 'dark' ? 'text-slate-200' : 'text-white'
+                    }`}>Seleccionar todas</span>
                   </div>
                 </LiquidGlass>
               </div>
@@ -1034,8 +1066,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
                         </div>
                       </LiquidGlass>
-                      <h3 className="text-white font-medium mb-2 drop-shadow-sm">No se encontraron fotos</h3>
-                      <p className="text-white/80 text-sm drop-shadow-sm">
+                      <h3 className={`font-medium mb-2 drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-200' : 'text-white'
+                      }`}>No se encontraron fotos</h3>
+                      <p className={`text-sm drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-white/80'
+                      }`}>
                         {searchQuery ? 
                           `No hay fotos que coincidan con "${searchQuery}".` :
                           'No hay fotos disponibles con los filtros seleccionados.'
