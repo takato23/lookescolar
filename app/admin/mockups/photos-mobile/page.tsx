@@ -9,6 +9,7 @@ import { PhotoModal } from '../../_mockups/PhotoModal';
 import { Fab } from '../../_mockups/Fab';
 import { SearchIcon, GridIcon, CheckIcon, SunIcon, MoonIcon } from '../../_mockups/icons';
 import { useTheme } from '../../_mockups/ThemeContext';
+import LiquidGlass from 'liquid-glass-react';
 
 // Filter options
 const filterOptions = [
@@ -211,8 +212,8 @@ function PhotosMobileMockupContent() {
         <div className="hidden lg:block">
           <div className="max-w-7xl mx-auto min-h-screen">
             {/* Navigation */}
-            <MobileNav />
-            
+        <MobileNav />
+
             {/* Filters Section */}
             <PhotosFilters
               onSearch={setSearchQuery}
@@ -255,93 +256,176 @@ function PhotosMobileMockupContent() {
         <div className="lg:hidden min-h-screen">
           <div className="p-6 space-y-6">
             
-            {/* Carpetas y Eventos Header */}
-            <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl p-4 border border-white/30 dark:border-white/10">
-              <div className="flex items-center justify-between">
+            {/* Carpetas y Eventos Header with Liquid Glass */}
+            <LiquidGlass 
+              displacementScale={50}
+              blurAmount={0.1}
+              saturation={120}
+              aberrationIntensity={1.5}
+              elasticity={0.4}
+              cornerRadius={16}
+              overLight={theme === 'light'}
+              className="w-full"
+            >
+              <div className="flex items-center justify-between p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-white/40 dark:bg-white/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
-                    </svg>
-                  </div>
-                  <h1 className="text-white text-lg font-semibold">Carpetas y Eventos</h1>
+                  <LiquidGlass 
+                    displacementScale={30}
+                    blurAmount={0.05}
+                    saturation={110}
+                    elasticity={0.6}
+                    cornerRadius={8}
+                    overLight={theme === 'light'}
+                  >
+                    <div className="w-8 h-8 flex items-center justify-center p-2">
+                      <svg className="w-full h-full text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                      </svg>
+                    </div>
+                  </LiquidGlass>
+                  <h1 className="text-white text-lg font-semibold drop-shadow-sm">Carpetas y Eventos</h1>
                 </div>
                 
-                {/* Theme Toggle */}
-                <button
+                {/* Enhanced Theme Toggle with Liquid Glass */}
+                <LiquidGlass 
+                  displacementScale={40}
+                  blurAmount={0.08}
+                  saturation={140}
+                  aberrationIntensity={2}
+                  elasticity={0.5}
+                  cornerRadius={8}
+                  overLight={theme === 'light'}
                   onClick={toggleTheme}
-                  className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
-                  aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                  className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                 >
-                  {theme === 'dark' ? (
-                    <SunIcon size={18} className="text-yellow-300" />
-                  ) : (
-                    <MoonIcon size={18} className="text-white" />
-                  )}
-                </button>
+                  <div className="w-10 h-10 flex items-center justify-center p-2">
+                    {theme === 'dark' ? (
+                      <SunIcon size={20} className="text-yellow-300 drop-shadow-md animate-pulse" />
+                    ) : (
+                      <MoonIcon size={20} className="text-white drop-shadow-md" />
+                    )}
+                  </div>
+                </LiquidGlass>
               </div>
-            </div>
+            </LiquidGlass>
 
-            {/* Search Bar */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                <SearchIcon size={20} className="text-white/70" />
+            {/* Search Bar with Liquid Glass */}
+            <LiquidGlass 
+              displacementScale={60}
+              blurAmount={0.12}
+              saturation={130}
+              aberrationIntensity={1.8}
+              elasticity={0.3}
+              cornerRadius={999}
+              overLight={theme === 'light'}
+              className="w-full relative"
+            >
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none z-10">
+                  <SearchIcon size={20} className="text-white/80 drop-shadow-sm" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar fotos por nombre..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-14 pr-6 py-4 bg-transparent text-white placeholder-white/70 focus:outline-none focus:placeholder-white/50 transition-all"
+                  style={{ background: 'transparent' }}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Buscar fotos por nombre..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-6 py-4 backdrop-blur-xl bg-white/20 dark:bg-black/30 border border-white/30 dark:border-white/10 rounded-full text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:bg-white/25 transition-all"
-              />
-            </div>
+            </LiquidGlass>
 
             {/* Filter Chips and Toggle */}
             <div className="space-y-4">
-              {/* Filter Pills Container */}
+              {/* Filter Pills Container with Liquid Glass */}
               <div className="flex items-center justify-center">
-                <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-full p-2 border border-white/30 dark:border-white/10 inline-flex">
-                  <div className="flex items-center space-x-1">
+                <LiquidGlass 
+                  displacementScale={70}
+                  blurAmount={0.15}
+                  saturation={125}
+                  aberrationIntensity={2.2}
+                  elasticity={0.35}
+                  cornerRadius={999}
+                  overLight={theme === 'light'}
+                  className="inline-flex"
+                >
+                  <div className="flex items-center space-x-1 p-2">
                     {filterOptions.map((filter) => (
-                      <button
+                      <LiquidGlass 
                         key={filter.value}
+                        displacementScale={activeFilter === filter.value ? 45 : 25}
+                        blurAmount={activeFilter === filter.value ? 0.08 : 0.05}
+                        saturation={activeFilter === filter.value ? 140 : 110}
+                        aberrationIntensity={activeFilter === filter.value ? 2.5 : 1}
+                        elasticity={0.6}
+                        cornerRadius={999}
+                        overLight={theme === 'light'}
                         onClick={() => setActiveFilter(filter.value)}
-                        className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
-                          activeFilter === filter.value
-                            ? 'bg-blue-500 text-white shadow-lg'
-                            : 'text-white/90 hover:bg-white/20'
-                        }`}
+                        className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
                       >
-                        {filter.label}
-                      </button>
+                        <div className={`px-4 py-2 text-sm font-medium transition-all ${
+                          activeFilter === filter.value
+                            ? 'text-white drop-shadow-md font-semibold'
+                            : 'text-white/90 hover:text-white'
+                        }`}>
+                          {filter.label}
+                        </div>
+                      </LiquidGlass>
                     ))}
+                    <div className="ml-2 flex items-center">
+                      <LiquidGlass 
+                        displacementScale={35}
+                        blurAmount={0.06}
+                        saturation={115}
+                        elasticity={0.5}
+                        cornerRadius={8}
+                        overLight={theme === 'light'}
+                        onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                        className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
+                      >
+                        <div className="p-2 text-white/80 hover:text-white transition-colors">
+                          <GridIcon size={18} />
+                        </div>
+                      </LiquidGlass>
+                    </div>
                   </div>
-                  <div className="ml-4 flex items-center">
-                    <button
-                      onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                      className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
-                    >
-                      <GridIcon size={18} />
-                    </button>
-                  </div>
-                </div>
+                </LiquidGlass>
               </div>
 
-              {/* Select All Toggle */}
+              {/* Select All Toggle with Liquid Glass */}
               <div className="flex items-center justify-center">
-                <button
+                <LiquidGlass 
+                  displacementScale={55}
+                  blurAmount={0.12}
+                  saturation={135}
+                  aberrationIntensity={2}
+                  elasticity={0.45}
+                  cornerRadius={16}
+                  overLight={theme === 'light'}
                   onClick={toggleSelectAll}
-                  className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl p-3 border border-white/30 dark:border-white/10 flex items-center space-x-3"
+                  className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
                 >
-                  <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                    allVisibleSelected
-                      ? 'bg-white border-white'
-                      : 'border-white/50 bg-transparent'
-                  }`}>
-                    {allVisibleSelected && <CheckIcon size={14} className="text-purple-600" />}
+                  <div className="flex items-center space-x-3 p-3">
+                    <LiquidGlass 
+                      displacementScale={allVisibleSelected ? 40 : 25}
+                      blurAmount={allVisibleSelected ? 0.08 : 0.05}
+                      saturation={allVisibleSelected ? 160 : 120}
+                      aberrationIntensity={allVisibleSelected ? 2.5 : 1.5}
+                      elasticity={0.6}
+                      cornerRadius={6}
+                      overLight={!allVisibleSelected} // Inverted for checkbox effect
+                    >
+                      <div className={`w-6 h-6 flex items-center justify-center transition-all ${
+                        allVisibleSelected
+                          ? 'text-purple-600'
+                          : 'border-2 border-white/50'
+                      }`}>
+                        {allVisibleSelected && <CheckIcon size={14} className="drop-shadow-sm" />}
+                      </div>
+                    </LiquidGlass>
+                    <span className="text-white font-medium drop-shadow-sm">Seleccionar todas</span>
                   </div>
-                  <span className="text-white font-medium">Seleccionar todas</span>
-                </button>
+                </LiquidGlass>
               </div>
             </div>
 
@@ -350,9 +434,15 @@ function PhotosMobileMockupContent() {
               {filteredPhotos.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
                   {filteredPhotos.map((photo) => (
-                    <div
+                    <LiquidGlass 
                       key={photo.id}
-                      className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl border border-white/30 dark:border-white/10 overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
+                      displacementScale={80}
+                      blurAmount={0.18}
+                      saturation={145}
+                      aberrationIntensity={2.5}
+                      elasticity={0.25}
+                      cornerRadius={16}
+                      overLight={theme === 'light'}
                       onClick={(e) => {
                         const target = e.target as HTMLElement;
                         if (target.closest('[data-checkbox]')) {
@@ -361,99 +451,214 @@ function PhotosMobileMockupContent() {
                           openPhotoModal(photo);
                         }
                       }}
+                      className="cursor-pointer transform hover:scale-105 active:scale-95 transition-transform duration-300"
                     >
-                      <div className="relative aspect-square">
-                        {/* Checkbox */}
-                        <button
-                          data-checkbox
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            togglePhotoSelection(photo.id);
-                          }}
-                          className={`absolute top-3 left-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                            selectedPhotos.has(photo.id)
-                              ? 'bg-white border-white'
-                              : 'border-white/70 bg-white/20 backdrop-blur-sm'
-                          }`}
-                        >
-                          {selectedPhotos.has(photo.id) && (
-                            <CheckIcon size={14} className="text-purple-600" />
-                          )}
-                        </button>
+                      <div className="overflow-hidden">
+                        <div className="relative aspect-square">
+                          {/* Liquid Glass Checkbox */}
+                          <div className="absolute top-3 left-3 z-10">
+                            <LiquidGlass 
+                              displacementScale={selectedPhotos.has(photo.id) ? 50 : 30}
+                              blurAmount={selectedPhotos.has(photo.id) ? 0.1 : 0.06}
+                              saturation={selectedPhotos.has(photo.id) ? 180 : 130}
+                              aberrationIntensity={selectedPhotos.has(photo.id) ? 3 : 1.5}
+                              elasticity={0.7}
+                              cornerRadius={6}
+                              overLight={!selectedPhotos.has(photo.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePhotoSelection(photo.id);
+                              }}
+                              className="cursor-pointer transform hover:scale-110 transition-transform"
+                            >
+                              <div data-checkbox className="w-6 h-6 flex items-center justify-center p-1">
+                                {selectedPhotos.has(photo.id) && (
+                                  <CheckIcon size={14} className="text-purple-600 drop-shadow-md animate-pulse" />
+                                )}
+                              </div>
+                            </LiquidGlass>
+                          </div>
 
-                        {/* Status Badge */}
-                        <div className="absolute top-3 right-3 px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">
-                          Aprobada
-                        </div>
+                          {/* Liquid Glass Status Badge */}
+                          <div className="absolute top-3 right-3 z-10">
+                            <LiquidGlass 
+                              displacementScale={40}
+                              blurAmount={0.08}
+                              saturation={150}
+                              aberrationIntensity={2}
+                              elasticity={0.4}
+                              cornerRadius={999}
+                              overLight={false} // Always dark for emerald background
+                            >
+                              <div className="px-3 py-1 text-white text-xs font-semibold">
+                                Aprobada
+                              </div>
+                            </LiquidGlass>
+                          </div>
 
-                        {/* Photo Content */}
-                        <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
-                          <div className="w-16 h-16 bg-white/30 rounded-xl backdrop-blur-sm flex items-center justify-center">
-                            <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                          {/* Photo Content with Enhanced Glass */}
+                          <div className="w-full h-full flex items-center justify-center relative">
+                            <LiquidGlass 
+                              displacementScale={60}
+                              blurAmount={0.12}
+                              saturation={120}
+                              aberrationIntensity={1.8}
+                              elasticity={0.35}
+                              cornerRadius={12}
+                              overLight={theme === 'light'}
+                              className="transform hover:scale-105 transition-transform duration-300"
+                            >
+                              <div className="w-16 h-16 flex items-center justify-center p-4">
+                                <svg className="w-full h-full text-white/80 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            </LiquidGlass>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Photo Info */}
-                      <div className="p-4 bg-white/10 backdrop-blur-sm">
-                        <div className="text-white font-medium text-sm mb-1">{photo.name}</div>
-                        <div className="flex justify-between text-white/70 text-xs">
-                          <span>{photo.sizeKB} KB</span>
-                          <span>{photo.date}</span>
-                        </div>
+                        {/* Photo Info with Liquid Glass */}
+                        <LiquidGlass 
+                          displacementScale={45}
+                          blurAmount={0.08}
+                          saturation={125}
+                          aberrationIntensity={1.5}
+                          elasticity={0.3}
+                          cornerRadius={0} // Bottom part of card
+                          overLight={theme === 'light'}
+                        >
+                          <div className="p-4">
+                            <div className="text-white font-medium text-sm mb-1 drop-shadow-sm">{photo.name}</div>
+                            <div className="flex justify-between text-white/80 text-xs">
+                              <span className="drop-shadow-sm">{photo.sizeKB} KB</span>
+                              <span className="drop-shadow-sm">{photo.date}</span>
+                            </div>
+                          </div>
+                        </LiquidGlass>
                       </div>
-                    </div>
+                    </LiquidGlass>
                   ))}
                 </div>
               ) : (
-                <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl p-8 border border-white/30 dark:border-white/10 text-center">
-                  <div className="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                <LiquidGlass 
+                  displacementScale={60}
+                  blurAmount={0.15}
+                  saturation={120}
+                  aberrationIntensity={2}
+                  elasticity={0.3}
+                  cornerRadius={16}
+                  overLight={theme === 'light'}
+                  className="text-center"
+                >
+                  <div className="p-8">
+                    <LiquidGlass 
+                      displacementScale={40}
+                      blurAmount={0.1}
+                      saturation={110}
+                      aberrationIntensity={1.5}
+                      elasticity={0.4}
+                      cornerRadius={999}
+                      overLight={theme === 'light'}
+                      className="inline-block mb-4"
+                    >
+                      <div className="w-16 h-16 flex items-center justify-center p-4">
+                        <svg className="w-full h-full text-white/80 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    </LiquidGlass>
+                    <h3 className="text-white font-medium mb-2 drop-shadow-sm">No se encontraron fotos</h3>
+                    <p className="text-white/80 text-sm drop-shadow-sm">
+                      {searchQuery ? 
+                        `No hay fotos que coincidan con "${searchQuery}".` :
+                        'No hay fotos disponibles con los filtros seleccionados.'
+                      }
+                    </p>
                   </div>
-                  <h3 className="text-white font-medium mb-2">No se encontraron fotos</h3>
-                  <p className="text-white/70 text-sm">
-                    {searchQuery ? 
-                      `No hay fotos que coincidan con "${searchQuery}".` :
-                      'No hay fotos disponibles con los filtros seleccionados.'
-                    }
-                  </p>
-                </div>
+                </LiquidGlass>
               )}
             </div>
           </div>
         </div>
 
-        {/* iOS-Style FAB */}
-        <button
-          onClick={handleFabAction}
-          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center ${
-            hasSelection 
-              ? 'bg-emerald-500/90 border-emerald-400/50 shadow-lg shadow-emerald-500/30' 
-              : 'bg-blue-500/90 border-blue-400/50 shadow-lg shadow-blue-500/30'
-          }`}
-          aria-label={hasSelection ? `Procesar ${selectedCount} foto${selectedCount === 1 ? '' : 's'} seleccionada${selectedCount === 1 ? '' : 's'}` : "Agregar nueva foto"}
-        >
-          <div className="text-white">
-            {hasSelection ? (
-              <div className="flex flex-col items-center justify-center">
-                <CheckIcon size={16} className="drop-shadow-sm" />
-                {selectedCount > 0 && (
-                  <span className="text-xs font-bold leading-none mt-0.5">
-                    {selectedCount > 9 ? '9+' : selectedCount}
-                  </span>
-                )}
-              </div>
-            ) : (
-              <svg className="w-6 h-6 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            )}
-          </div>
-        </button>
+        {/* Ultimate Liquid Glass FAB */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <LiquidGlass 
+            displacementScale={hasSelection ? 90 : 75}
+            blurAmount={0.2}
+            saturation={hasSelection ? 160 : 140}
+            aberrationIntensity={hasSelection ? 3.5 : 2.8}
+            elasticity={0.15} // Very liquid feel
+            cornerRadius={999}
+            overLight={false} // Always over colored background
+            onClick={handleFabAction}
+            className="cursor-pointer transform hover:scale-110 active:scale-95 transition-all duration-300 w-16 h-16 flex items-center justify-center shadow-2xl"
+            style={{
+              background: hasSelection 
+                ? 'linear-gradient(135deg, #10b981, #059669, #047857)' 
+                : 'linear-gradient(135deg, #3b82f6, #2563eb, #1d4ed8)',
+              boxShadow: hasSelection
+                ? `0 20px 40px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)`
+                : `0 20px 40px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)`
+            }}
+          >
+            <div className="text-white relative z-10">
+              {hasSelection ? (
+                <div className="flex flex-col items-center justify-center animate-pulse">
+                  <LiquidGlass 
+                    displacementScale={30}
+                    blurAmount={0.05}
+                    saturation={120}
+                    aberrationIntensity={1.5}
+                    elasticity={0.8}
+                    cornerRadius={4}
+                    overLight={true}
+                    className="mb-1"
+                  >
+                    <CheckIcon size={18} className="drop-shadow-lg text-white" />
+                  </LiquidGlass>
+                  {selectedCount > 0 && (
+                    <LiquidGlass 
+                      displacementScale={25}
+                      blurAmount={0.04}
+                      saturation={110}
+                      aberrationIntensity={1.2}
+                      elasticity={0.6}
+                      cornerRadius={999}
+                      overLight={false}
+                    >
+                      <span className="text-xs font-bold px-1.5 py-0.5 bg-white/20 rounded-full backdrop-blur-sm">
+                        {selectedCount > 99 ? '99+' : selectedCount}
+                      </span>
+                    </LiquidGlass>
+                  )}
+                </div>
+              ) : (
+                <LiquidGlass 
+                  displacementScale={35}
+                  blurAmount={0.06}
+                  saturation={130}
+                  aberrationIntensity={2}
+                  elasticity={0.7}
+                  cornerRadius={6}
+                  overLight={true}
+                  className="group-hover:rotate-90 transition-transform duration-300"
+                >
+                  <svg className="w-6 h-6 drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </LiquidGlass>
+              )}
+            </div>
+            
+            {/* Animated glow effect */}
+            <div className={`absolute inset-0 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300 -z-10 ${
+              hasSelection 
+                ? 'bg-gradient-to-br from-emerald-300/30 to-emerald-600/30' 
+                : 'bg-gradient-to-br from-blue-300/30 to-blue-600/30'
+            } blur-xl scale-150 animate-pulse`} />
+          </LiquidGlass>
+        </div>
 
         {/* Photo Modal */}
         <PhotoModal
