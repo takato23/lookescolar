@@ -5,12 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { QrCode, RotateCcw, LinkIcon, Copy, ExternalLink, RefreshCw, Users, User } from 'lucide-react';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { SimpleTooltip as Tooltip } from '@/components/ui/tooltip';
 
 type CodeRow = {
   id: string;
@@ -154,7 +149,6 @@ export default function PublishPage() {
   };
 
   return (
-    <TooltipProvider>
       <div className="container mx-auto space-y-6 p-6">
         <div className="flex items-end justify-between gap-3">
           <div>
@@ -183,37 +177,27 @@ export default function PublishPage() {
               </div>
               
               <div className="flex flex-wrap items-center gap-3">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      onClick={copyPublicLink}
-                      variant="default"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copiar Enlace Público
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Enlace para compartir con todas las familias del evento</p>
-                  </TooltipContent>
+                <Tooltip text="Enlace para compartir con todas las familias del evento">
+                  <Button 
+                    onClick={copyPublicLink}
+                    variant="default"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copiar Enlace Público
+                  </Button>
                 </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <a
-                      href={getPublicUrl()}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center rounded-md bg-white border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Ver Galería Pública
-                    </a>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Previsualizar cómo ven las familias la galería pública</p>
-                  </TooltipContent>
+                <Tooltip text="Previsualizar cómo ven las familias la galería pública">
+                  <a
+                    href={getPublicUrl()}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center rounded-md bg-white border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Ver Galería Pública
+                  </a>
                 </Tooltip>
 
                 <div className="text-xs text-blue-600 font-mono bg-blue-100 px-2 py-1 rounded">
@@ -289,49 +273,34 @@ export default function PublishPage() {
                         </Button>
                         {r.token && (
                           <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button onClick={() => copy(url)} aria-label="Copiar link" size="sm" variant="ghost">
-                                  <Copy className="mr-1 h-4 w-4" /> Copiar link
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Copiar enlace personalizado para {r.code_value}</p>
-                              </TooltipContent>
+                            <Tooltip text={`Copiar enlace personalizado para ${r.code_value}`}>
+                              <Button onClick={() => copy(url)} aria-label="Copiar link" size="sm" variant="ghost">
+                                <Copy className="mr-1 h-4 w-4" /> Copiar link
+                              </Button>
                             </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <a
-                                  href={`/f/${r.token}/simple-page`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  aria-label={`Abrir enlace personalizado ${r.code_value}`}
-                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
-                                >
-                                  <ExternalLink className="mr-1 h-4 w-4" /> Ver galería
-                                </a>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Ver galería personalizada de {r.code_value}</p>
-                              </TooltipContent>
+                            <Tooltip text={`Ver galería personalizada de ${r.code_value}`}>
+                              <a
+                                href={`/f/${r.token}/simple-page`}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={`Abrir enlace personalizado ${r.code_value}`}
+                                className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                              >
+                                <ExternalLink className="mr-1 h-4 w-4" /> Ver galería
+                              </a>
                             </Tooltip>
 
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <a
-                                  href={`/api/qr?token=${encodeURIComponent(r.token)}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  aria-label={`Ver QR ${r.code_value}`}
-                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
-                                >
-                                  <QrCode className="mr-1 h-4 w-4" /> QR
-                                </a>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Generar código QR para {r.code_value}</p>
-                              </TooltipContent>
+                            <Tooltip text={`Generar código QR para ${r.code_value}`}>
+                              <a
+                                href={`/api/qr?token=${encodeURIComponent(r.token)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={`Ver QR ${r.code_value}`}
+                                className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                              >
+                                <QrCode className="mr-1 h-4 w-4" /> QR
+                              </a>
                             </Tooltip>
                           </>
                         )}
@@ -345,10 +314,5 @@ export default function PublishPage() {
           </div>
         </Card>
       </div>
-    </TooltipProvider>
   );
 }
-
- 
-
-
