@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { SearchIcon, GridIcon, ListIcon, CheckIcon } from './icons';
 import { PhotoStatus } from './PhotoCard';
+import { useTheme } from './ThemeContext';
 
 interface PhotosFiltersProps {
   onSearch: (query: string) => void;
@@ -35,6 +36,7 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
   totalCount,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const { theme } = useTheme();
 
   // Debounce search
   useEffect(() => {
@@ -50,22 +52,34 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
   };
 
   return (
-    <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-200/50">
-      <div className="space-y-4 p-4">
+    <div className={`sticky top-0 z-40 backdrop-blur-md border-b transition-colors ${
+      theme === 'dark' 
+        ? 'bg-gray-900/90 border-gray-700/50' 
+        : 'bg-white/90 border-gray-200/50'
+    }`}>
+      <div className="space-y-4 p-4 max-w-7xl mx-auto">
       {/* Title */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
+        <h2 className={`text-xl font-semibold ${
+          theme === 'dark' ? 'text-white' : 'text-gray-900'
+        }`}>
           Fotos ({totalCount})
         </h2>
         <div className="flex items-center space-x-2">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <div className={`flex items-center rounded-lg p-1 ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-gray-100'
+          }`}>
             <button
               onClick={() => onViewModeChange('grid')}
               className={`p-1.5 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 viewMode === 'grid'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? theme === 'dark'
+                    ? 'bg-gray-700 text-blue-400 shadow-sm'
+                    : 'bg-white text-blue-600 shadow-sm'
+                  : theme === 'dark'
+                    ? 'text-gray-400 hover:text-gray-200'
+                    : 'text-gray-600 hover:text-gray-800'
               }`}
               aria-pressed={viewMode === 'grid'}
               aria-label="Vista de cuadrícula"
@@ -76,8 +90,12 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
               onClick={() => onViewModeChange('list')}
               className={`p-1.5 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 viewMode === 'list'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
+                  ? theme === 'dark'
+                    ? 'bg-gray-700 text-blue-400 shadow-sm'
+                    : 'bg-white text-blue-600 shadow-sm'
+                  : theme === 'dark'
+                    ? 'text-gray-400 hover:text-gray-200'
+                    : 'text-gray-600 hover:text-gray-800'
               }`}
               aria-pressed={viewMode === 'list'}
               aria-label="Vista de lista"
@@ -91,14 +109,18 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
       {/* Search Bar */}
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <SearchIcon size={16} className="text-gray-400" />
+          <SearchIcon size={16} className={theme === 'dark' ? 'text-gray-500' : 'text-gray-400'} />
         </div>
         <input
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
           placeholder="Buscar fotos por nombre..."
-          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={`w-full pl-10 pr-4 py-2.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+            theme === 'dark'
+              ? 'bg-gray-800 border border-gray-700 text-white placeholder-gray-400'
+              : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500'
+          }`}
           aria-label="Buscar fotos"
         />
       </div>
@@ -112,7 +134,9 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
             className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               activeFilter === filter.value
                 ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : theme === 'dark'
+                  ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             aria-pressed={activeFilter === filter.value}
           >
@@ -125,17 +149,23 @@ export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={onSelectAllToggle}
-          className="flex items-center space-x-2 p-2 -m-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`flex items-center space-x-2 p-2 -m-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            theme === 'dark' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'
+          }`}
           aria-pressed={allSelected}
         >
           <div className={`w-5 h-5 rounded border-2 transition-colors flex items-center justify-center ${
             allSelected
               ? 'bg-blue-500 border-blue-500 text-white'
-              : 'border-gray-300 bg-white'
+              : theme === 'dark'
+                ? 'border-gray-600 bg-gray-800'
+                : 'border-gray-300 bg-white'
           }`}>
             {allSelected && <CheckIcon size={12} />}
           </div>
-          <span className="text-sm font-medium text-gray-700">
+          <span className={`text-sm font-medium ${
+            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+          }`}>
             Seleccionar todas
           </span>
         </button>
