@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
-import PhotoGalleryModern from '@/components/admin/PhotoGalleryModern';
+import PhotoGalleryLiquid from '@/components/admin/PhotoGalleryLiquid';
 import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -468,7 +468,7 @@ export default function ModernPhotosPage() {
                 </div>
               )}
 
-              <PhotoGalleryModern
+              <PhotoGalleryLiquid
                 initialPhotos={photos}
                 initialEvents={events}
                 onPhotoUpload={handlePhotoUpload}
