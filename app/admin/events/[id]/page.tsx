@@ -205,7 +205,7 @@ export default function EventDetailPage() {
         {/* Stats Cards */}
         <div className="grid animate-slide-up grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <Card variant="glass" className="group hover:scale-105 transition-transform cursor-pointer"
-                onClick={() => router.push(`/admin/photos?eventId=${id}`)}>
+                onClick={() => router.push(`/gallery/${id}`)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -297,18 +297,18 @@ export default function EventDetailPage() {
                 onClick={() => router.push(`/admin/photos?eventId=${id}`)}
               >
                 <Upload className="mb-2 h-6 w-6 text-blue-600 group-hover:scale-110 transition-transform" />
-                <span className="font-medium">Subir Fotos</span>
-                <span className="text-xs text-muted-foreground">Con watermark</span>
+                <span className="font-medium">Gestionar Fotos</span>
+                <span className="text-xs text-muted-foreground">Admin/Subida/Tags</span>
               </Button>
 
               <Button
                 variant="outline"
                 className="h-auto flex-col py-4 hover:bg-purple-50 hover:border-purple-300 group"
-                onClick={() => router.push(`/admin/photos?eventId=${id}&view=gallery`)}
+                onClick={() => router.push(`/gallery/${id}`)}
               >
                 <Eye className="mb-2 h-6 w-6 text-purple-600 group-hover:scale-110 transition-transform" />
                 <span className="font-medium">Ver Galería</span>
-                <span className="text-xs text-muted-foreground">Todas las fotos</span>
+                <span className="text-xs text-muted-foreground">Vista cliente</span>
               </Button>
 
               <Button
@@ -445,14 +445,24 @@ export default function EventDetailPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Fotos del Evento</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
-                >
-                  Ver todas
-                  <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/gallery/${id}`)}
+                  >
+                    Ver galería
+                    <Eye className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                  >
+                    Administrar
+                    <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -464,13 +474,22 @@ export default function EventDetailPage() {
                     {event.stats.untaggedPhotos} fotos necesitan ser etiquetadas
                   </p>
                 )}
-                <Button
-                  variant="secondary"
-                  className="mt-4"
-                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
-                >
-                  Gestionar Fotos
-                </Button>
+                <div className="flex gap-2 mt-4 justify-center">
+                  <Button
+                    variant="secondary"
+                    onClick={() => router.push(`/gallery/${id}`)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Galería
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Administrar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
