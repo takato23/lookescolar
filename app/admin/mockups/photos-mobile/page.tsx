@@ -148,7 +148,7 @@ export default function PhotosMobilePage() {
       <div className="mx-auto w-[430px] max-w-full p-3">
         <MobileNav />
 
-        <div className="sticky top-0 z-20 -mx-3 mb-3 bg-white/70 px-3 pb-3 pt-2 backdrop-blur-md dark:bg-slate-900/60">
+        <div className="sticky top-0 z-20 -mx-3 mb-3 bg-white/70 px-3 pb-3 pt-2 backdrop-blur-md backdrop-saturate-150 dark:bg-slate-900/60">
           <div className="flex items-baseline justify-between">
             <h1 className="text-lg font-semibold tracking-tight">Fotos ({photosMock.length})</h1>
           </div>
@@ -181,4 +181,3 @@ export default function PhotosMobilePage() {
     </div>
   );
 }
-
