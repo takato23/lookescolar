@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { PlusIcon, CheckIcon } from './icons';
-import { useTheme } from './ThemeContext';
 
 interface FabProps {
   onClick: () => void;
@@ -16,7 +15,6 @@ export const Fab: React.FC<FabProps> = ({
   className = "" 
 }) => {
   const hasSelection = selectedCount > 0;
-  const { theme } = useTheme();
 
   return (
     <button
