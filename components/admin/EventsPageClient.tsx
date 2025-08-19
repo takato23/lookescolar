@@ -55,54 +55,46 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
     router.push(`/admin/events/${event.id}`);
   };
   return (
-    <div className="gradient-mesh min-h-screen">
-      <div className="container mx-auto space-y-8 px-6 py-8">
+    <div className="liquid-glass-app min-h-screen">
+      <div className="container mx-auto space-y-6 lg:space-y-8 p-6">
         {/* Header with Breadcrumbs */}
         <div className="relative animate-fade-in">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
-          <div className="relative">
+          <div className="relative liquid-card p-8">
             {/* Breadcrumbs */}
-            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+            <nav className="liquid-description mb-4 flex items-center gap-2 text-sm">
               <Link
                 href="/admin"
-                className="flex items-center gap-1 transition-colors hover:text-primary-600"
+                className="flex items-center gap-1 liquid-nav-text transition-colors hover:text-primary-600"
               >
                 <Home className="h-4 w-4" />
                 Dashboard
               </Link>
               <span>/</span>
-              <span className="text-foreground font-medium">Eventos</span>
+              <span className="liquid-nav-text font-medium">Eventos</span>
             </nav>
 
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <Link href="/admin">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-full p-2"
-                  >
+                  <button className="liquid-button rounded-full p-2">
                     <ArrowLeft className="h-5 w-5" />
-                  </Button>
+                  </button>
                 </Link>
                 <div>
-                  <h1 className="text-gradient mb-2 text-3xl font-bold md:text-4xl">
+                  <h1 className="liquid-title mb-2 text-3xl md:text-4xl">
                     Eventos
                   </h1>
-                  <p className="text-muted-foreground">
+                  <p className="liquid-subtitle">
                     Gestiona tus sesiones fotográficas y organiza por colegios
                   </p>
                 </div>
               </div>
               <Link href="/admin/events/new">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="shadow-3d rounded-full px-6"
-                >
-                  <Plus className="mr-2 h-5 w-5" />
-                  Nuevo Evento
-                </Button>
+                <button className="liquid-button liquid-shine shadow-lg px-6 py-3 rounded-2xl flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  <span className="liquid-button-text font-semibold">Nuevo Evento</span>
+                </button>
               </Link>
             </div>
           </div>
@@ -110,36 +102,29 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
 
         {/* Error State */}
         {error && (
-          <Card
-            variant="glass"
-            className="animate-slide-up border-red-200 bg-red-50/50 dark:bg-red-900/20"
-          >
-            <CardContent className="p-4">
-              <p className="text-sm text-red-700 dark:text-red-300">
-                Error al cargar eventos: {error.message}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="liquid-card animate-slide-up border-red-200 bg-red-50/50 dark:bg-red-900/20 p-4">
+            <p className="text-sm text-red-700 dark:text-red-300">
+              Error al cargar eventos: {error.message}
+            </p>
+          </div>
         )}
 
         {/* Events Content */}
         <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
           {!events || events.length === 0 ? (
-            <Card variant="glass" className="p-8 text-center">
-              <CardContent>
-                <EmptyState
-                  icon={Calendar}
-                  title="No hay eventos creados"
-                  description="Crea tu primer evento para comenzar a organizar tus sesiones fotográficas."
-                >
-                  <Link href="/admin/events/new" className="inline-block">
-                    <Button variant="secondary" className="rounded-full">
-                      Crear primer evento
-                    </Button>
-                  </Link>
-                </EmptyState>
-              </CardContent>
-            </Card>
+            <div className="liquid-card p-8 text-center">
+              <EmptyState
+                icon={Calendar}
+                title="No hay eventos creados"
+                description="Crea tu primer evento para comenzar a organizar tus sesiones fotográficas."
+              >
+                <Link href="/admin/events/new" className="inline-block">
+                  <button className="liquid-button liquid-shine px-6 py-3 rounded-2xl">
+                    <span className="liquid-button-text font-medium">Crear primer evento</span>
+                  </button>
+                </Link>
+              </EmptyState>
+            </div>
           ) : (
             <div className="scrollbar-elevated grid max-h-[70vh] gap-6 overflow-auto pr-1">
               {events.map((event, index) => (
