@@ -283,10 +283,10 @@ export default function ModernPhotosPage() {
 
   if (isInitializing || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">
+      <div className="liquid-glass-app flex items-center justify-center min-h-screen">
+        <div className="liquid-card p-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="liquid-nav-text mt-4">
             {isInitializing && !selectedEventId ? 'Creando evento rápido...' : 
              isInitializing ? 'Inicializando...' : 
              'Cargando fotos...'}
@@ -299,18 +299,18 @@ export default function ModernPhotosPage() {
   // No longer require eventId - show general gallery
 
   return (
-    <div className="min-h-screen">
+    <div className="liquid-glass-app min-h-screen">
       {/* Mobile Layout */}
       <div className="lg:hidden">
         <div className="p-2 space-y-3">
           {/* Mobile header - mejorado */}
-          <div className="bg-white rounded-lg p-3 shadow-sm border">
+          <div className="liquid-card p-3">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="liquid-title text-xl font-bold">
                 Fotos ({photos.length})
               </h1>
               {selectedEventId && (
-                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="liquid-label text-xs bg-blue-50 text-blue-700 border-blue-200">
                   {events.find(e => e.id === selectedEventId)?.name || 'Evento'}
                 </Badge>
               )}
@@ -320,9 +320,9 @@ export default function ModernPhotosPage() {
           </div>
           
           {/* Mobile folders - organizado */}
-          <div className="bg-white rounded-lg shadow-sm border">
+          <div className="liquid-card">
             <details className="group">
-              <summary className="p-3 cursor-pointer text-gray-700 font-semibold text-sm flex items-center justify-between hover:bg-gray-50 rounded-t-lg transition-colors">
+              <summary className="p-3 cursor-pointer liquid-nav-text font-semibold text-sm flex items-center justify-between hover:bg-gray-50/50 rounded-t-lg transition-colors">
                 <div className="flex items-center">
                   <FolderIcon className="w-4 h-4 mr-2" />
                   Carpetas y Eventos
@@ -333,7 +333,7 @@ export default function ModernPhotosPage() {
                   </svg>
                 </div>
               </summary>
-              <div className="p-3 pt-0 border-t border-gray-100">
+              <div className="p-3 pt-0 border-t border-white/10">
                 <PhotosSidebarFolders
                   events={events}
                   selected={{ eventId: selectedEventId, courseId: selectedCourseId, codeId: selectedCodeId }}
@@ -346,26 +346,24 @@ export default function ModernPhotosPage() {
 
           {/* QR Status - only if event selected and has data */}
           {selectedEventId && (qrStats?.detected || 0) > 0 && (
-            <div className="bg-blue-50 rounded-lg border p-2">
+            <div className="liquid-card bg-blue-50/50 dark:bg-blue-900/20 p-2">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="text-center">
-                  <div className="font-semibold text-blue-700">{qrStats?.detected ?? 0}</div>
-                  <div className="text-blue-600">QR detectados</div>
+                  <div className="liquid-number font-semibold text-blue-700">{qrStats?.detected ?? 0}</div>
+                  <div className="liquid-description text-blue-600">QR detectados</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold text-orange-700">{qrStats?.unassigned ?? 0}</div>
-                  <div className="text-orange-600">Sin carpeta</div>
+                  <div className="liquid-number font-semibold text-orange-700">{qrStats?.unassigned ?? 0}</div>
+                  <div className="liquid-description text-orange-600">Sin carpeta</div>
                 </div>
               </div>
               {(qrStats?.unassigned ?? 0) > 0 && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full mt-2 h-8 text-xs"
+                <button 
+                  className="liquid-button w-full mt-2 h-8 text-xs px-3 py-1 rounded-lg"
                   onClick={() => handleSelectFromSidebar({ eventId: selectedEventId, codeId: 'null' })}
                 >
-                  Ver sin carpeta
-                </Button>
+                  <span className="liquid-button-text">Ver sin carpeta</span>
+                </button>
               )}
             </div>
           )}
@@ -392,11 +390,11 @@ export default function ModernPhotosPage() {
       <div className="hidden lg:block">
         <div className="container mx-auto p-6">
           {/* Header mejorado para escritorio */}
-          <div className="mb-6">
+          <div className="mb-6 liquid-card p-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Gestión de Fotos</h1>
-                <p className="text-gray-600 mt-1">
+                <h1 className="liquid-title text-3xl font-bold">Gestión de Fotos</h1>
+                <p className="liquid-subtitle mt-1">
                   {selectedEventId ? events.find(e => e.id === selectedEventId)?.name + ' • ' : ''}
                   {photos.length} fotos en total
                 </p>
@@ -408,8 +406,8 @@ export default function ModernPhotosPage() {
           <div className="grid md:grid-cols-[320px_1fr] gap-8">
             <div className="space-y-4">
               {/* Sidebar mejorada */}
-              <Card className="p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center">
+              <div className="liquid-card p-4">
+                <h3 className="liquid-nav-text font-semibold mb-3 flex items-center">
                   <FolderIcon className="w-5 h-5 mr-2" />
                   Carpetas y Eventos
                 </h3>
@@ -419,49 +417,55 @@ export default function ModernPhotosPage() {
                   onSelect={handleSelectFromSidebar}
                   onCountsChanged={loadPhotos}
                 />
-              </Card>
+              </div>
             </div>
             
             <div className="space-y-4">
               {/* QR Status Panel mejorado */}
               {selectedEventId && (
-                <Card className="p-4">
+                <div className="liquid-card p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="font-semibold text-gray-900">Estado del Evento</h3>
+                      <h3 className="liquid-nav-text font-semibold">Estado del Evento</h3>
                       <div className="flex gap-2">
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                        <Badge variant="outline" className="liquid-label bg-blue-50 text-blue-700">
                           QR detectados: {qrStats?.detected ?? '-'}
                         </Badge>
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                        <Badge variant="outline" className="liquid-label bg-yellow-50 text-yellow-700">
                           Para revisar: {qrStats?.unmatched ?? '-'}
                         </Badge>
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                        <Badge variant="outline" className="liquid-label bg-green-50 text-green-700">
                           Asignadas: {qrStats?.assigned ?? '-'}
                         </Badge>
-                        <Badge variant="outline" className="bg-red-50 text-red-700">
+                        <Badge variant="outline" className="liquid-label bg-red-50 text-red-700">
                           Sin carpeta: {qrStats?.unassigned ?? '-'}
                         </Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
+                      <button 
+                        className="liquid-button text-blue-700 border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg"
                         onClick={() => handleSelectFromSidebar({ eventId: selectedEventId, codeId: 'null' })}
-                        className="text-blue-700 border-blue-200 hover:bg-blue-50"
                       >
-                        Ver sin carpeta
-                      </Button>
-                      <Button size="sm" onClick={refreshQRStats} aria-label="Refrescar estado QR">
-                        Refrescar
-                      </Button>
-                      <Button size="sm" onClick={handleRegroupNow} aria-label="Reagrupar ahora">
-                        Reagrupar ahora
-                      </Button>
+                        <span className="liquid-button-text">Ver sin carpeta</span>
+                      </button>
+                      <button 
+                        className="liquid-button px-3 py-1.5 rounded-lg" 
+                        onClick={refreshQRStats} 
+                        aria-label="Refrescar estado QR"
+                      >
+                        <span className="liquid-button-text">Refrescar</span>
+                      </button>
+                      <button 
+                        className="liquid-button px-3 py-1.5 rounded-lg" 
+                        onClick={handleRegroupNow} 
+                        aria-label="Reagrupar ahora"
+                      >
+                        <span className="liquid-button-text">Reagrupar ahora</span>
+                      </button>
                     </div>
                   </div>
-                </Card>
+                </div>
               )}
 
               <PhotoGalleryModern
