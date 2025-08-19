@@ -18,7 +18,6 @@ import {
   AlertCircle,
   CheckCircle,
   Home,
-  ArrowRight,
   RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
