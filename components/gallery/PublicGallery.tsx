@@ -116,7 +116,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
 
   // Filtrar fotos basado en el tab activo
   const getFilteredPhotos = () => {
-    if (!galleryData) return [];
+    if (!galleryData || !galleryData.photos) return [];
     
     switch (activeTab) {
       case 'seleccionadas':
@@ -146,10 +146,10 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     return <GalleryEmptyState />;
   }
 
-  const { photos, pagination } = galleryData;
+  const { photos = [], pagination } = galleryData;
   const filteredPhotos = getFilteredPhotos();
 
-  if (photos.length === 0) {
+  if (!photos || photos.length === 0) {
     return (
       <GalleryEmptyState message="Este evento aún no tiene fotos disponibles." />
     );
