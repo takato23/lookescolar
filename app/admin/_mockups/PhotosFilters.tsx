@@ -1,130 +1,150 @@
 'use client';
 
-import React from 'react';
-import { CheckIcon, GridIcon, ListIcon, SearchIcon } from '@/app/admin/_mockups/icons';
+import React, { useState, useEffect } from 'react';
+import { SearchIcon, GridIcon, ListIcon, CheckIcon } from './icons';
+import { PhotoStatus } from './PhotoCard';
 
-export type FilterType = 'all' | 'approved' | 'pending' | 'tagged';
-export type ViewType = 'grid' | 'list';
+interface PhotosFiltersProps {
+  onSearch: (query: string) => void;
+  onFilterChange: (status: PhotoStatus | 'all') => void;
+  onSelectAllToggle: () => void;
+  onViewModeChange: (mode: 'grid' | 'list') => void;
+  allSelected: boolean;
+  hasSelection: boolean;
+  activeFilter: PhotoStatus | 'all';
+  viewMode: 'grid' | 'list';
+  totalCount: number;
+}
 
-type Props = {
-  filter: FilterType;
-  onFilterChange: (f: FilterType) => void;
-  searchValue: string;
-  onSearchChange: (v: string) => void;
-  view: ViewType;
-  onViewChange: (v: ViewType) => void;
-  areAllVisibleSelected: boolean;
-  onToggleSelectAll: () => void;
-};
-
-const chips: { key: FilterType; label: string }[] = [
-  { key: 'all', label: 'Todas' },
-  { key: 'approved', label: 'Aprobadas' },
-  { key: 'pending', label: 'Pendientes' },
-  { key: 'tagged', label: 'Etiquetadas' },
+const filterOptions = [
+  { value: 'all' as const, label: 'Todas' },
+  { value: 'approved' as const, label: 'Aprobadas' },
+  { value: 'pending' as const, label: 'Pendientes' },
+  { value: 'tagged' as const, label: 'Etiquetadas' },
 ];
 
-export default function PhotosFilters(props: Props): JSX.Element {
-  const {
-    filter,
-    onFilterChange,
-    searchValue,
-    onSearchChange,
-    view,
-    onViewChange,
-    areAllVisibleSelected,
-    onToggleSelectAll,
-  } = props;
+export const PhotosFilters: React.FC<PhotosFiltersProps> = ({
+  onSearch,
+  onFilterChange,
+  onSelectAllToggle,
+  onViewModeChange,
+  allSelected,
+  hasSelection,
+  activeFilter,
+  viewMode,
+  totalCount,
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Debounce search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      onSearch(searchQuery);
+    }, 200);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, onSearch]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
 
   return (
-    <div className="mt-2 space-y-2">
+    <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-gray-200 space-y-4 p-4">
+      {/* Title */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Fotos ({totalCount})
+        </h2>
+        <div className="flex items-center space-x-2">
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => onViewModeChange('grid')}
+              className={`p-1.5 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                viewMode === 'grid'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+              aria-pressed={viewMode === 'grid'}
+              aria-label="Vista de cuadrícula"
+            >
+              <GridIcon size={16} />
+            </button>
+            <button
+              onClick={() => onViewModeChange('list')}
+              className={`p-1.5 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                viewMode === 'list'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+              aria-pressed={viewMode === 'list'}
+              aria-label="Vista de lista"
+            >
+              <ListIcon size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
       <div className="relative">
-        <label htmlFor="search-photos" className="sr-only">
-          Buscar fotos
-        </label>
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-          <SearchIcon className="h-4 w-4" />
-        </span>
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <SearchIcon size={16} className="text-gray-400" />
+        </div>
         <input
-          id="search-photos"
-          value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Buscar por nombre..."
-          className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-900"
+          type="text"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          placeholder="Buscar fotos por nombre..."
+          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          aria-label="Buscar fotos"
         />
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {chips.map((c) => {
-            const active = c.key === filter;
-            return (
-              <button
-                key={c.key}
-                type="button"
-                aria-pressed={active}
-                onClick={() => onFilterChange(c.key)}
-                className={
-                  'rounded-full border px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-slate-400 ' +
-                  (active
-                    ? 'border-slate-800 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-100 dark:text-slate-900'
-                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200')
-                }
-              >
-                {c.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-1.5">
+      {/* Filter Chips */}
+      <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+        {filterOptions.map((filter) => (
           <button
-            type="button"
-            aria-label="Vista de grilla"
-            aria-pressed={view === 'grid'}
-            onClick={() => onViewChange('grid')}
-            className={
-              'inline-flex h-9 w-9 items-center justify-center rounded-xl border outline-none focus:ring-2 focus:ring-slate-400 ' +
-              (view === 'grid'
-                ? 'border-slate-800 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-100 dark:text-slate-900'
-                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200')
-            }
+            key={filter.value}
+            onClick={() => onFilterChange(filter.value)}
+            className={`flex-shrink-0 px-4 py-2 text-sm font-medium rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              activeFilter === filter.value
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            aria-pressed={activeFilter === filter.value}
           >
-            <GridIcon className="h-4 w-4" />
+            {filter.label}
           </button>
-          <button
-            type="button"
-            aria-label="Vista de lista"
-            aria-pressed={view === 'list'}
-            onClick={() => onViewChange('list')}
-            className={
-              'inline-flex h-9 w-9 items-center justify-center rounded-xl border outline-none focus:ring-2 focus:ring-slate-400 ' +
-              (view === 'list'
-                ? 'border-slate-800 bg-slate-900 text-white dark:border-slate-200 dark:bg-slate-100 dark:text-slate-900'
-                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200')
-            }
-          >
-            <ListIcon className="h-4 w-4" />
-          </button>
-        </div>
+        ))}
       </div>
 
+      {/* Select All Toggle */}
       <div className="flex items-center justify-between">
         <button
-          type="button"
-          onClick={onToggleSelectAll}
-          className={
-            'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium outline-none focus:ring-2 focus:ring-slate-400 ' +
-            (areAllVisibleSelected
-              ? 'border-emerald-600 bg-emerald-500 text-white'
-              : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200')
-          }
+          onClick={onSelectAllToggle}
+          className="flex items-center space-x-2 p-2 -m-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-pressed={allSelected}
         >
-          <CheckIcon className="h-3.5 w-3.5" />
-          Seleccionar todas
+          <div className={`w-5 h-5 rounded border-2 transition-colors flex items-center justify-center ${
+            allSelected
+              ? 'bg-blue-500 border-blue-500 text-white'
+              : 'border-gray-300 bg-white'
+          }`}>
+            {allSelected && <CheckIcon size={12} />}
+          </div>
+          <span className="text-sm font-medium text-gray-700">
+            Seleccionar todas
+          </span>
         </button>
+
+        {hasSelection && (
+          <div className="text-xs text-blue-600 font-medium">
+            Fotos seleccionadas
+          </div>
+        )}
       </div>
     </div>
   );
-}
-
+};

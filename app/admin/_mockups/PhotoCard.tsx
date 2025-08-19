@@ -1,116 +1,126 @@
 'use client';
 
 import React from 'react';
-import { CheckIcon } from '@/app/admin/_mockups/icons';
-import type { ViewType } from '@/app/admin/_mockups/PhotosFilters';
+import { CheckIcon } from './icons';
 
-export type Photo = {
+export type PhotoStatus = 'approved' | 'pending' | 'tagged';
+
+export interface Photo {
   id: string;
-  src: string;
   name: string;
+  src: string;
   sizeKB: number;
-  date: string; // ISO date string (YYYY-MM-DD)
-  status: 'approved' | 'pending';
-};
+  date: string;
+  status: PhotoStatus;
+}
 
-type Props = {
+interface PhotoCardProps {
   photo: Photo;
   selected: boolean;
-  onToggle: () => void;
-  view: ViewType;
+  onToggleSelection: (id: string) => void;
+}
+
+const getStatusConfig = (status: PhotoStatus) => {
+  switch (status) {
+    case 'approved':
+      return {
+        label: 'Aprobada',
+        className: 'bg-emerald-500 text-white'
+      };
+    case 'pending':
+      return {
+        label: 'Pendiente',
+        className: 'bg-amber-500 text-white'
+      };
+    case 'tagged':
+      return {
+        label: 'Etiquetada',
+        className: 'bg-blue-500 text-white'
+      };
+    default:
+      return {
+        label: 'Sin estado',
+        className: 'bg-gray-500 text-white'
+      };
+  }
 };
 
-export default function PhotoCard({ photo, selected, onToggle, view }: Props): JSX.Element {
-  if (view === 'list') {
-    return (
-      <div
-        role="option"
-        aria-selected={selected}
-        className="flex items-center gap-3 py-2"
-      >
+export const PhotoCard: React.FC<PhotoCardProps> = ({ 
+  photo, 
+  selected, 
+  onToggleSelection 
+}) => {
+  const statusConfig = getStatusConfig(photo.status);
+  
+  return (
+    <div 
+      className={`relative group rounded-2xl shadow-sm bg-white overflow-hidden border-2 transition-all duration-200 hover:shadow-md ${
+        selected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+      }`}
+      aria-selected={selected}
+    >
+      {/* Image container */}
+      <div className="relative aspect-square bg-gray-100">
+        {/* Checkbox - Top Left */}
         <button
-          type="button"
-          aria-label={selected ? 'Quitar selección' : 'Seleccionar'}
-          onClick={onToggle}
-          className={
-            'relative inline-flex h-6 w-6 items-center justify-center rounded border ' +
-            (selected
-              ? 'border-emerald-600 bg-emerald-500 text-white'
-              : 'border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200')
-          }
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelection(photo.id);
+          }}
+          className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-md border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            selected
+              ? 'bg-blue-500 border-blue-500 text-white'
+              : 'bg-white/90 border-gray-300 hover:border-blue-400'
+          }`}
+          aria-label={selected ? 'Deseleccionar foto' : 'Seleccionar foto'}
+          aria-pressed={selected}
         >
-          {selected && <CheckIcon className="h-3.5 w-3.5" />}
+          {selected && (
+            <CheckIcon size={16} className="text-white" />
+          )}
         </button>
 
-        <div className="relative h-16 w-16 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm dark:border-slate-800">
-          <img src={photo.src} alt={photo.name} className="h-full w-full object-cover" />
-          {photo.status === 'approved' ? (
-            <span className="absolute right-1 top-1 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-medium text-white shadow">
-              Aprobada
-            </span>
-          ) : (
-            <span className="absolute right-1 top-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-medium text-white shadow">
-              Pendiente
-            </span>
-          )}
+        {/* Status Badge - Top Right */}
+        <div className={`absolute top-2 right-2 px-2 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
+          {statusConfig.label}
         </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{photo.name}</div>
-          <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-            {photo.sizeKB} KB • {photo.date}
+        {/* Photo Image */}
+        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+          {/* Placeholder image */}
+          <div className="w-16 h-16 bg-gray-300 rounded-lg flex items-center justify-center">
+            <svg 
+              className="w-8 h-8 text-gray-500" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div
-      role="option"
-      aria-selected={selected}
-      className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
-    >
-      <div className="relative aspect-square overflow-hidden">
-        <img src={photo.src} alt={photo.name} className="h-full w-full object-cover" />
-
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/0 via-black/0 to-black/10" />
-
-        {/* Checkbox top-left */}
-        <button
-          type="button"
-          aria-label={selected ? 'Quitar selección' : 'Seleccionar'}
-          onClick={onToggle}
-          className={
-            'absolute left-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-lg border text-xs font-medium outline-none focus:ring-2 focus:ring-slate-400 ' +
-            (selected
-              ? 'border-emerald-600 bg-emerald-500 text-white'
-              : 'border-white/80 bg-white/90 text-slate-700 hover:bg-white')
-          }
-        >
-          {selected && <CheckIcon className="h-4 w-4" />}
-        </button>
-
-        {/* Badge top-right */}
-        {photo.status === 'approved' ? (
-          <span className="absolute right-2 top-2 z-10 rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow">
-            Aprobada
-          </span>
-        ) : (
-          <span className="absolute right-2 top-2 z-10 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white shadow">
-            Pendiente
-          </span>
+        {/* Selection Overlay */}
+        {selected && (
+          <div className="absolute inset-0 bg-blue-500/10 pointer-events-none" />
         )}
       </div>
-      <div className="flex items-center justify-between px-3 py-2">
-        <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{photo.name}</div>
-          <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-            {photo.sizeKB} KB • {photo.date}
-          </div>
+
+      {/* Metadata Footer */}
+      <div className="p-3 space-y-1">
+        <div className="text-sm font-medium text-gray-900 truncate">
+          {photo.name}
+        </div>
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>{photo.sizeKB} KB</span>
+          <span>{photo.date}</span>
         </div>
       </div>
     </div>
   );
-}
-
+};
