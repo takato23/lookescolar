@@ -48,13 +48,14 @@ export default function AdminHeader({
 
   // Get page title based on current route
   const getPageTitle = () => {
-    if (pathname === '/admin') return 'Dashboard';
-    if (pathname.startsWith('/admin/events')) return 'Eventos';
-    if (pathname.startsWith('/admin/photos')) return 'Fotos';
-    if (pathname.startsWith('/admin/subjects')) return 'Estudiantes';
-    if (pathname.startsWith('/admin/orders')) return 'Pedidos';
-    if (pathname.startsWith('/admin/tagging')) return 'Etiquetado';
-    return 'Panel de Administración';
+    if (pathname === '/admin') return 'Dashboard Principal';
+    if (pathname.startsWith('/admin/events')) return 'Gestión de Eventos';
+    if (pathname.startsWith('/admin/photos')) return 'Biblioteca de Fotos';
+    if (pathname.startsWith('/admin/subjects')) return 'Base de Estudiantes';
+    if (pathname.startsWith('/admin/orders')) return 'Seguimiento de Pedidos';
+    if (pathname.startsWith('/admin/publish')) return 'Publicación y Compartir';
+    if (pathname.startsWith('/admin/tagging')) return 'Etiquetado Inteligente';
+    return 'Panel de Control';
   };
 
   const handleLogout = async () => {
@@ -91,21 +92,8 @@ export default function AdminHeader({
   return (
     <header className="liquid-glass sticky top-0 z-50 border-b border-white/10 px-4 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between">
-        {/* Left Section - Logo + Mobile Menu + Page Title */}
-        <div className="flex items-center gap-4 lg:gap-6">
-          {/* Logo - Visible on Desktop */}
-          <div className="hidden lg:flex items-center gap-3">
-            <LookEscolarLogo variant="blue" size="lg" />
-            <div className="leading-tight">
-              <h1 className="liquid-title text-lg font-extrabold tracking-tight">
-                LookEscolar
-              </h1>
-              <p className="liquid-subtitle text-xs">
-                Panel de Administración
-              </p>
-            </div>
-          </div>
-
+        {/* Left Section - Mobile Menu + Page Title */}
+        <div className="flex items-center gap-4">
           {/* Mobile Menu Button */}
           <button
             onClick={onMobileMenuToggle}
@@ -115,11 +103,11 @@ export default function AdminHeader({
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Page Title */}
-          <div className="lg:ml-8">
-            <h2 className="liquid-nav-text text-xl font-bold tracking-tight sm:text-2xl lg:text-xl">
+          {/* Page Title - More prominent */}
+          <div>
+            <h1 className="liquid-nav-text text-xl font-bold tracking-tight sm:text-2xl">
               {getPageTitle()}
-            </h2>
+            </h1>
             <p className="hidden text-xs font-medium sm:block sm:text-sm liquid-description">
               {new Date().toLocaleDateString('es-AR', {
                 weekday: 'long',
