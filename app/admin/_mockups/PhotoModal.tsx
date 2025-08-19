@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { XIcon, CheckIcon } from './icons';
 import { Photo } from './PhotoCard';
 import { useTheme } from './ThemeContext';
+import LiquidGlass from 'liquid-glass-react';
 
 interface PhotoModalProps {
   isOpen: boolean;
@@ -95,16 +96,36 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className={`absolute inset-0 ${
-          theme === 'dark' ? 'bg-black/90' : 'bg-black/80'
-        } backdrop-blur-md`}
+      {/* Enhanced Backdrop with Liquid Glass */}
+      <LiquidGlass
+        displacementScale={30}
+        blurAmount={0.25}
+        saturation={80}
+        aberrationIntensity={1.2}
+        elasticity={0.1}
+        cornerRadius={0}
+        overLight={false}
+        className="absolute inset-0 cursor-pointer"
         onClick={onClose}
+        style={{
+          background: theme === 'dark' 
+            ? 'radial-gradient(ellipse at center, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.9) 100%)' 
+            : 'radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.8) 100%)'
+        }}
       />
       
-      {/* Modal Content */}
-      <div className="relative w-full h-full flex flex-col max-w-6xl mx-auto p-4">
+      {/* Modal Content Container with Liquid Glass */}
+      <LiquidGlass
+        displacementScale={40}
+        blurAmount={0.08}
+        saturation={110}
+        aberrationIntensity={1.5}
+        elasticity={0.2}
+        cornerRadius={20}
+        overLight={theme === 'light'}
+        className="relative w-full h-full max-w-6xl mx-auto p-4"
+      >
+        <div className="w-full h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4 z-10">
           <div className={`flex items-center space-x-4 ${
@@ -119,27 +140,43 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
-            {/* Selection Button */}
-            <button
+            {/* Selection Button with Liquid Glass */}
+            <LiquidGlass
+              displacementScale={isSelected ? 35 : 25}
+              blurAmount={0.06}
+              saturation={isSelected ? 150 : 120}
+              aberrationIntensity={isSelected ? 2 : 1.5}
+              elasticity={0.5}
+              cornerRadius={8}
+              overLight={!isSelected}
               onClick={() => onToggleSelection(currentPhoto.id)}
-              className={`p-2 rounded-lg transition-all ${
+              className="cursor-pointer transform hover:scale-110 transition-transform"
+            >
+              <div className={`p-2 transition-all ${
                 isSelected 
-                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                  : 'bg-white/10 text-white hover:bg-white/20'
-              }`}
-              aria-label={isSelected ? 'Deseleccionar foto' : 'Seleccionar foto'}
-            >
-              <CheckIcon size={20} />
-            </button>
+                  ? 'text-white' 
+                  : 'text-white/80'
+              }`}>
+                <CheckIcon size={20} />
+              </div>
+            </LiquidGlass>
             
-            {/* Close Button */}
-            <button
+            {/* Close Button with Liquid Glass */}
+            <LiquidGlass
+              displacementScale={30}
+              blurAmount={0.06}
+              saturation={120}
+              aberrationIntensity={1.5}
+              elasticity={0.5}
+              cornerRadius={8}
+              overLight={false}
               onClick={onClose}
-              className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
-              aria-label="Cerrar modal"
+              className="cursor-pointer transform hover:scale-110 transition-transform"
             >
-              <XIcon size={20} />
-            </button>
+              <div className="p-2 text-white/80 hover:text-white transition-colors">
+                <XIcon size={20} />
+              </div>
+            </LiquidGlass>
           </div>
         </div>
 
@@ -150,21 +187,26 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {/* Previous Button - Desktop */}
-          <button
-            onClick={goToPrevious}
-            disabled={currentIndex === 0}
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 z-10 p-3 rounded-full transition-all hidden md:flex items-center justify-center ${
-              currentIndex === 0 
-                ? 'bg-white/10 text-white/30 cursor-not-allowed' 
-                : 'bg-white/20 text-white hover:bg-white/30 hover:scale-110'
-            }`}
-            aria-label="Foto anterior"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+          {/* Previous Button - Desktop with Liquid Glass */}
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 hidden md:block">
+            <LiquidGlass
+              displacementScale={currentIndex === 0 ? 15 : 35}
+              blurAmount={0.08}
+              saturation={currentIndex === 0 ? 90 : 130}
+              aberrationIntensity={currentIndex === 0 ? 1 : 2}
+              elasticity={0.4}
+              cornerRadius={999}
+              overLight={false}
+              onClick={currentIndex === 0 ? undefined : goToPrevious}
+              className={`${currentIndex === 0 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer transform hover:scale-110 transition-transform'}`}
+            >
+              <div className="p-3 flex items-center justify-center">
+                <svg className={`w-6 h-6 ${currentIndex === 0 ? 'text-white/30' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </div>
+            </LiquidGlass>
+          </div>
 
           {/* Photo */}
           <div className="relative max-w-full max-h-full">
@@ -209,21 +251,26 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
             </div>
           </div>
 
-          {/* Next Button - Desktop */}
-          <button
-            onClick={goToNext}
-            disabled={currentIndex === photos.length - 1}
-            className={`absolute right-4 top-1/2 transform -translate-y-1/2 z-10 p-3 rounded-full transition-all hidden md:flex items-center justify-center ${
-              currentIndex === photos.length - 1 
-                ? 'bg-white/10 text-white/30 cursor-not-allowed' 
-                : 'bg-white/20 text-white hover:bg-white/30 hover:scale-110'
-            }`}
-            aria-label="Foto siguiente"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          {/* Next Button - Desktop with Liquid Glass */}
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 hidden md:block">
+            <LiquidGlass
+              displacementScale={currentIndex === photos.length - 1 ? 15 : 35}
+              blurAmount={0.08}
+              saturation={currentIndex === photos.length - 1 ? 90 : 130}
+              aberrationIntensity={currentIndex === photos.length - 1 ? 1 : 2}
+              elasticity={0.4}
+              cornerRadius={999}
+              overLight={false}
+              onClick={currentIndex === photos.length - 1 ? undefined : goToNext}
+              className={`${currentIndex === photos.length - 1 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer transform hover:scale-110 transition-transform'}`}
+            >
+              <div className="p-3 flex items-center justify-center">
+                <svg className={`w-6 h-6 ${currentIndex === photos.length - 1 ? 'text-white/30' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </LiquidGlass>
+          </div>
 
           {/* Swipe Hint - Mobile */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 md:hidden">
@@ -261,7 +308,8 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
             })}
           </div>
         </div>
-      </div>
+        </div>
+      </LiquidGlass>
     </div>
   );
 };
