@@ -46,9 +46,9 @@ const mainNavItems: NavItem[] = [
   },
   {
     href: '/admin/photos',
-    label: 'Carpetas',
+    label: 'Fotos',
     icon: FoldersIcon,
-    description: 'Carpetas y fotos por evento',
+    description: 'Gestión de fotos y carpetas',
     shortcut: '⌘3',
     isLiquidIcon: true,
   },
