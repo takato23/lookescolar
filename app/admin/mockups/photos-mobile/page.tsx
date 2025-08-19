@@ -7,6 +7,16 @@ import { PhotosFilters } from '../../_mockups/PhotosFilters';
 import { PhotoCard, Photo, PhotoStatus } from '../../_mockups/PhotoCard';
 import { PhotoModal } from '../../_mockups/PhotoModal';
 import { Fab } from '../../_mockups/Fab';
+import { SearchIcon, GridIcon, CheckIcon, SunIcon, MoonIcon } from '../../_mockups/icons';
+import { useTheme } from '../../_mockups/ThemeContext';
+
+// Filter options
+const filterOptions = [
+  { value: 'all' as const, label: 'Todas' },
+  { value: 'approved' as const, label: 'Aprobadas' },
+  { value: 'pending' as const, label: 'Pendientes' },
+  { value: 'tagged' as const, label: 'Etiquetadas' },
+];
 
 // Mock data
 const photosMock: Photo[] = [
@@ -93,6 +103,7 @@ const photosMock: Photo[] = [
 ];
 
 function PhotosMobileMockupContent() {
+  const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<PhotoStatus | 'all'>('all');
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
@@ -193,8 +204,8 @@ function PhotosMobileMockupContent() {
 
   return (
     <>
-      {/* Responsive Container */}
-      <div className="min-h-screen dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 transition-colors duration-500">
+      {/* iOS-Style Container */}
+      <div className="min-h-screen dark:bg-gradient-to-br dark:from-gray-900 dark:via-purple-900 dark:to-gray-900 bg-gradient-to-br from-purple-400 via-purple-500 to-purple-600 transition-colors duration-500 overflow-hidden">
         
         {/* Desktop Layout */}
         <div className="hidden lg:block">
@@ -240,56 +251,209 @@ function PhotosMobileMockupContent() {
           </div>
         </div>
 
-        {/* Mobile Layout */}
-        <div className="lg:hidden flex items-start justify-center p-4">
-          {/* Mobile Phone Frame */}
-          <div className="w-[430px] max-w-full mx-auto dark:bg-gray-900 bg-white rounded-3xl shadow-2xl overflow-hidden border dark:border-gray-700 border-gray-200 transition-colors duration-300">
-            {/* Mobile Navigation */}
-            <MobileNav />
+        {/* iOS-Style Mobile Layout */}
+        <div className="lg:hidden min-h-screen">
+          <div className="p-6 space-y-6">
             
-            {/* Filters Section */}
-            <PhotosFilters
-              onSearch={setSearchQuery}
-              onFilterChange={setActiveFilter}
-              onSelectAllToggle={toggleSelectAll}
-              onViewModeChange={setViewMode}
-              allSelected={allVisibleSelected}
-              hasSelection={hasSelection}
-              activeFilter={activeFilter}
-              viewMode={viewMode}
-              totalCount={filteredPhotos.length}
-            />
+            {/* Carpetas y Eventos Header */}
+            <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl p-4 border border-white/30 dark:border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-white/40 dark:bg-white/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+                    </svg>
+                  </div>
+                  <h1 className="text-white text-lg font-semibold">Carpetas y Eventos</h1>
+                </div>
+                
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition-colors"
+                  aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                >
+                  {theme === 'dark' ? (
+                    <SunIcon size={18} className="text-yellow-300" />
+                  ) : (
+                    <MoonIcon size={18} className="text-white" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-            {/* Mobile Photos Grid */}
-            <div className="p-4 pb-24 min-h-[400px]">
+            {/* Search Bar */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                <SearchIcon size={20} className="text-white/70" />
+              </div>
+              <input
+                type="text"
+                placeholder="Buscar fotos por nombre..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-14 pr-6 py-4 backdrop-blur-xl bg-white/20 dark:bg-black/30 border border-white/30 dark:border-white/10 rounded-full text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:bg-white/25 transition-all"
+              />
+            </div>
+
+            {/* Filter Chips and Toggle */}
+            <div className="space-y-4">
+              {/* Filter Pills Container */}
+              <div className="flex items-center justify-center">
+                <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-full p-2 border border-white/30 dark:border-white/10 inline-flex">
+                  <div className="flex items-center space-x-1">
+                    {filterOptions.map((filter) => (
+                      <button
+                        key={filter.value}
+                        onClick={() => setActiveFilter(filter.value)}
+                        className={`px-4 py-2 text-sm font-medium rounded-full transition-all ${
+                          activeFilter === filter.value
+                            ? 'bg-blue-500 text-white shadow-lg'
+                            : 'text-white/90 hover:bg-white/20'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="ml-4 flex items-center">
+                    <button
+                      onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                      className="p-2 text-white/70 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
+                    >
+                      <GridIcon size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Select All Toggle */}
+              <div className="flex items-center justify-center">
+                <button
+                  onClick={toggleSelectAll}
+                  className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl p-3 border border-white/30 dark:border-white/10 flex items-center space-x-3"
+                >
+                  <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                    allVisibleSelected
+                      ? 'bg-white border-white'
+                      : 'border-white/50 bg-transparent'
+                  }`}>
+                    {allVisibleSelected && <CheckIcon size={14} className="text-purple-600" />}
+                  </div>
+                  <span className="text-white font-medium">Seleccionar todas</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Photos Grid with iOS Glass Effect */}
+            <div className="pb-24">
               {filteredPhotos.length > 0 ? (
-                <div className={`grid gap-4 ${
-                  viewMode === 'grid' 
-                    ? 'grid-cols-2' 
-                    : 'grid-cols-1'
-                }`}>
+                <div className="grid grid-cols-2 gap-4">
                   {filteredPhotos.map((photo) => (
-                    <PhotoCard
+                    <div
                       key={photo.id}
-                      photo={photo}
-                      selected={selectedPhotos.has(photo.id)}
-                      onToggleSelection={togglePhotoSelection}
-                      onPhotoClick={openPhotoModal}
-                    />
+                      className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl border border-white/30 dark:border-white/10 overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95"
+                      onClick={(e) => {
+                        const target = e.target as HTMLElement;
+                        if (target.closest('[data-checkbox]')) {
+                          togglePhotoSelection(photo.id);
+                        } else {
+                          openPhotoModal(photo);
+                        }
+                      }}
+                    >
+                      <div className="relative aspect-square">
+                        {/* Checkbox */}
+                        <button
+                          data-checkbox
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePhotoSelection(photo.id);
+                          }}
+                          className={`absolute top-3 left-3 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                            selectedPhotos.has(photo.id)
+                              ? 'bg-white border-white'
+                              : 'border-white/70 bg-white/20 backdrop-blur-sm'
+                          }`}
+                        >
+                          {selectedPhotos.has(photo.id) && (
+                            <CheckIcon size={14} className="text-purple-600" />
+                          )}
+                        </button>
+
+                        {/* Status Badge */}
+                        <div className="absolute top-3 right-3 px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full">
+                          Aprobada
+                        </div>
+
+                        {/* Photo Content */}
+                        <div className="w-full h-full bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center">
+                          <div className="w-16 h-16 bg-white/30 rounded-xl backdrop-blur-sm flex items-center justify-center">
+                            <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Photo Info */}
+                      <div className="p-4 bg-white/10 backdrop-blur-sm">
+                        <div className="text-white font-medium text-sm mb-1">{photo.name}</div>
+                        <div className="flex justify-between text-white/70 text-xs">
+                          <span>{photo.sizeKB} KB</span>
+                          <span>{photo.date}</span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <EmptyState searchQuery={searchQuery} />
+                <div className="backdrop-blur-xl bg-white/20 dark:bg-black/30 rounded-2xl p-8 border border-white/30 dark:border-white/10 text-center">
+                  <div className="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+                    <svg className="w-8 h-8 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-white font-medium mb-2">No se encontraron fotos</h3>
+                  <p className="text-white/70 text-sm">
+                    {searchQuery ? 
+                      `No hay fotos que coincidan con "${searchQuery}".` :
+                      'No hay fotos disponibles con los filtros seleccionados.'
+                    }
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Floating Action Button - Visible on both mobile and desktop */}
-        <Fab
+        {/* iOS-Style FAB */}
+        <button
           onClick={handleFabAction}
-          selectedCount={selectedCount}
-        />
+          className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full backdrop-blur-xl border transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center ${
+            hasSelection 
+              ? 'bg-emerald-500/90 border-emerald-400/50 shadow-lg shadow-emerald-500/30' 
+              : 'bg-blue-500/90 border-blue-400/50 shadow-lg shadow-blue-500/30'
+          }`}
+          aria-label={hasSelection ? `Procesar ${selectedCount} foto${selectedCount === 1 ? '' : 's'} seleccionada${selectedCount === 1 ? '' : 's'}` : "Agregar nueva foto"}
+        >
+          <div className="text-white">
+            {hasSelection ? (
+              <div className="flex flex-col items-center justify-center">
+                <CheckIcon size={16} className="drop-shadow-sm" />
+                {selectedCount > 0 && (
+                  <span className="text-xs font-bold leading-none mt-0.5">
+                    {selectedCount > 9 ? '9+' : selectedCount}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <svg className="w-6 h-6 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            )}
+          </div>
+        </button>
 
         {/* Photo Modal */}
         <PhotoModal
