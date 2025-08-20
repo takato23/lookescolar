@@ -25,6 +25,13 @@ npm run test:e2e        # End-to-end tests with Playwright
 npm run test:mvp        # Complete MVP workflow tests
 npm run test:comprehensive # Full test suite
 
+# QR Code Testing (specialized test suites)
+npm run test:qr-complete # Complete QR workflow tests
+npm run test:qr:integration # QR integration tests
+npm run test:qr:component # QR component tests
+npm run test:qr:security # QR security validation
+npm run test:qr:e2e     # QR end-to-end tests
+
 # Database
 npm run db:migrate      # Apply database migrations
 npm run db:types        # Generate TypeScript types from database
@@ -35,6 +42,14 @@ npm run db:reset        # Reset database (danger!)
 npm run storage:cleanup  # Clean up old storage files
 npm run metrics:egress   # Monitor Supabase egress usage
 npm run qr:class        # Generate QR codes for a class
+npm run security:audit  # Run security audit
+npm run validate:production # Check production readiness
+
+# Docker & Deployment
+npm run docker:build    # Build Docker image
+npm run docker:run      # Run with docker-compose
+npm run docker:stop     # Stop Docker containers
+npm run health:check    # Health check endpoint
 ```
 
 ## Architecture
@@ -217,6 +232,12 @@ The app is mobile-first with:
 - Virtual scrolling for large galleries
 - Progressive image loading
 - Optimized bundle splitting
+
+## Important Development Rules
+
+From Cursor rules (`.cursor/rules.md`):
+- **Production Storage**: Never use `fetch` to `/api/storage/signed-url` in production. Always sign URLs server-side with `signedUrlForKey()`
+- **Public Pagination**: Use `page`/`limit` parameters in API and `IntersectionObserver` for infinite scroll on client
 
 ## Monitoring and Maintenance
 
