@@ -207,11 +207,23 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       'info'
     );
 
-    // MEMORY OPTIMIZATION: Process photos efficiently (preview URLs temporarily disabled)
-    let processedPhotos = (photos || []).map((photo: any) => {
-      // TEMPORARY: Disable preview URL generation to fix [object Object] error
-      // Will re-enable once the core functionality is stable
-      const preview_url = null;
+    // MEMORY OPTIMIZATION: Process photos efficiently with conditional preview URL generation  
+    let processedPhotos = await Promise.all((photos || []).map(async (photo: any) => {
+      // Generate preview URL conditionally based on request size to avoid OOM
+      let preview_url = null;
+      
+      if ((photos?.length || 0) <= 20 && photo.preview_path) {
+        try {
+          const urlResult = await signedUrlForKey(photo.preview_path);
+          // Ensure we only accept valid string URLs
+          if (typeof urlResult === 'string' && urlResult.length > 0) {
+            preview_url = urlResult;
+          }
+        } catch (error) {
+          console.warn(`Failed to generate preview URL for photo ${photo.id}:`, error);
+          preview_url = null;
+        }
+      }
       
       return {
         id: photo.id,
