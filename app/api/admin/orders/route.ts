@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Tables } from '@/types/database';
 import type { OrderWithDetails, OrdersResponse } from '@/types/admin-api';
+import { createServerSupabaseClient, createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 type RawOrder = Tables<'orders'> & {
 	subjects?: {
@@ -69,8 +70,8 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = hasService
-      ? await createServiceClient()
-      : await createClient();
+      ? await createServerSupabaseServiceClient()
+      : await createServerSupabaseClient();
 
     const { data: orders, error: ordersError } = await supabase
       .from('orders')

@@ -165,8 +165,11 @@ class StorageService {
     const requestId = crypto.randomUUID();
 
     try {
+      // SECURITY: Sanitize path to prevent path traversal attacks
+      const sanitizedPath = this.sanitizePath(path);
+      
       // Verificar cache primero
-      const cacheKey = `${path}:${JSON.stringify(options)}`;
+      const cacheKey = `${sanitizedPath}:${JSON.stringify(options)}`;
       const cached = this.urlCache.get(cacheKey);
 
       if (cached && cached.expiresAt > Date.now()) {
@@ -193,7 +196,7 @@ class StorageService {
       // Generar URL firmada
       const { data, error } = await supabase.storage
         .from(STORAGE_BUCKET)
-        .createSignedUrl(path, expiresIn, {
+        .createSignedUrl(sanitizedPath, expiresIn, {
           download: options.download,
           transform: options.transform,
         });
@@ -223,7 +226,7 @@ class StorageService {
 
       logger.info('Signed URL created successfully', {
         requestId,
-        path: this.maskPath(path),
+        path: this.maskPath(sanitizedPath),
         expiresIn,
         cached: false,
       });
@@ -232,7 +235,8 @@ class StorageService {
     } catch (error) {
       logger.error('Failed to create signed URL', {
         requestId,
-        path: this.maskPath(path),
+        path: this.maskPath(path), // Use original path for error logging
+        sanitizedPath: this.maskPath(error.message?.includes('sanitiz') ? path : '***'),
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
@@ -489,6 +493,90 @@ class StorageService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Sanitiza paths para prevenir ataques de path traversal
+   */
+  private sanitizePath(path: string): string {
+    if (!path || typeof path !== 'string') {
+      throw new Error('Invalid path: must be a non-empty string');
+    }
+
+    // Remove null bytes and control characters
+    let sanitized = path.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    
+    // Normalize path separators
+    sanitized = sanitized.replace(/\\/g, '/');
+    
+    // Remove path traversal attempts
+    sanitized = sanitized.replace(/\.\./g, '');
+    
+    // Remove leading/trailing slashes
+    sanitized = sanitized.replace(/^\/+|\/+$/g, '');
+    
+    // Collapse multiple slashes
+    sanitized = sanitized.replace(/\/+/g, '/');
+    
+    // Validate path structure (must be within allowed patterns)
+    const allowedPatterns = [
+      /^events\/[a-f0-9-]{36}\/[a-zA-Z0-9._-]+$/,           // events/{uuid}/{filename}
+      /^events\/[a-f0-9-]{36}\/previews\/[a-zA-Z0-9._-]+$/, // events/{uuid}/previews/{filename}
+      /^shared\/[a-zA-Z0-9._-]+$/,                          // shared/{filename}
+      /^shared\/previews\/[a-zA-Z0-9._-]+$/,                // shared/previews/{filename}
+    ];
+
+    const isValidPath = allowedPatterns.some(pattern => pattern.test(sanitized));
+    if (!isValidPath) {
+      throw new Error(`Invalid path structure: ${sanitized}`);
+    }
+
+    // Additional security checks
+    if (sanitized.length > 500) {
+      throw new Error('Path too long (max 500 characters)');
+    }
+
+    if (sanitized.includes('..') || sanitized.includes('./') || sanitized.includes('~')) {
+      throw new Error('Path contains forbidden patterns');
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * Valida y sanitiza nombre de archivo
+   */
+  private sanitizeFilename(filename: string): string {
+    if (!filename || typeof filename !== 'string') {
+      throw new Error('Invalid filename: must be a non-empty string');
+    }
+
+    // Remove path separators and control characters
+    let sanitized = filename.replace(/[\/\\:*?"<>|\x00-\x1f\x7f-\x9f]/g, '_');
+    
+    // Remove leading/trailing dots and spaces
+    sanitized = sanitized.replace(/^[\.\s]+|[\.\s]+$/g, '');
+    
+    // Ensure filename is not empty after sanitization
+    if (!sanitized) {
+      throw new Error('Filename becomes empty after sanitization');
+    }
+
+    // Check for reserved Windows names
+    const reservedNames = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
+    if (reservedNames.test(sanitized)) {
+      sanitized = `file_${sanitized}`;
+    }
+
+    // Limit filename length
+    if (sanitized.length > 255) {
+      const extension = sanitized.split('.').pop() || '';
+      const nameWithoutExt = sanitized.substring(0, sanitized.lastIndexOf('.') || sanitized.length);
+      const maxNameLength = 255 - extension.length - 1; // -1 for the dot
+      sanitized = nameWithoutExt.substring(0, maxNameLength) + '.' + extension;
+    }
+
+    return sanitized;
   }
 
   /**

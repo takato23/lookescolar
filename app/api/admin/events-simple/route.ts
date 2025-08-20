@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, must-revalidate',
         },
       }
     );
@@ -102,6 +103,10 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Revalidate the events page to show the new event immediately
+    revalidatePath('/admin/events');
+    revalidatePath('/admin/events?include_stats=true');
 
     return NextResponse.json({
       success: true,

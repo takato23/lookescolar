@@ -124,8 +124,8 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // 5. Rate Limiting
-    if (pathname.startsWith('/api/')) {
+    // 5. Rate Limiting - DISABLED IN DEVELOPMENT
+    if (pathname.startsWith('/api/') && process.env.NODE_ENV !== 'development') {
       const rateLimitResult = await rateLimitMiddleware(request, requestId);
       
       if (!rateLimitResult.allowed) {

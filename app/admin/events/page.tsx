@@ -5,10 +5,8 @@ import { absoluteUrl } from '@/lib/absoluteUrl';
 // En desarrollo usa el endpoint simple que no requiere service role.
 async function getEvents() {
   try {
-    const path =
-      process.env.NODE_ENV === 'production'
-        ? '/api/admin/events?include_stats=true'
-        : '/api/admin/events-simple';
+    // Usar siempre el endpoint completo con estadísticas para mostrar conteos reales
+    const path = '/api/admin/events?include_stats=true';
 
     const response = await fetch(
       path.startsWith('/') ? await absoluteUrl(path) : path,
@@ -24,13 +22,20 @@ async function getEvents() {
       throw new Error('Failed to fetch events');
     }
 
-    const data = (await response.json()) as { events: unknown };
-    return { events: (data as { events: unknown }).events, error: null };
+    const data = await response.json();
+    
+    // El endpoint devuelve directamente un array, no un objeto con propiedad 'events'
+    const events = Array.isArray(data) ? data : (data.events || []);
+    return { events, error: null };
   } catch (error) {
     console.error('[Service] Error obteniendo eventos:', error);
     return { events: null, error };
   }
 }
+
+// Force dynamic rendering para que se actualice con router.refresh()
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function EventsPage() {
   const { events, error } = await getEvents();

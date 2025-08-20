@@ -103,6 +103,10 @@ async function handlePOST(request: NextRequest) {
     const formEventId = typeof formEventIdRaw === 'string' ? formEventIdRaw : null;
     const queryEventIdRaw = request.nextUrl.searchParams.get('eventId');
     const queryEventId = typeof queryEventIdRaw === 'string' ? queryEventIdRaw : null;
+    const photoTypeRaw = formData.get('photo_type');
+    const photoType = typeof photoTypeRaw === 'string' && ['private', 'public', 'classroom'].includes(photoTypeRaw) 
+      ? photoTypeRaw 
+      : 'private';
 
     console.log('[simple-upload] Received files:', files.length);
 
@@ -117,17 +121,138 @@ async function handlePOST(request: NextRequest) {
       );
     }
 
-    // Validar que todos los elementos sean archivos válidos
-    const validFiles = files.filter(file => file instanceof File && file.size > 0);
-    if (validFiles.length === 0) {
-      console.log('[simple-upload] No valid files found');
+    // SECURITY: Comprehensive file validation
+    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_FILES = 100;
+
+    if (files.length > MAX_FILES) {
+      SecurityLogger.logSecurityEvent(
+        'upload_too_many_files',
+        { requestId, fileCount: files.length, maxAllowed: MAX_FILES },
+        'warning'
+      );
       return NextResponse.json(
         { 
           success: false,
-          error: 'No se encontraron archivos válidos' 
+          error: `Máximo ${MAX_FILES} archivos permitidos` 
         },
         { status: 400 }
       );
+    }
+
+    const validFiles = [];
+    const invalidFiles = [];
+
+    for (const file of files) {
+      if (!(file instanceof File) || file.size === 0) {
+        invalidFiles.push({ name: file.name || 'unknown', reason: 'Invalid file object or empty file' });
+        continue;
+      }
+
+      // Validate file size
+      if (file.size > MAX_FILE_SIZE) {
+        invalidFiles.push({ 
+          name: file.name, 
+          reason: `File too large: ${Math.round(file.size / 1024 / 1024)}MB (max: 10MB)` 
+        });
+        SecurityLogger.logSecurityEvent(
+          'upload_file_too_large',
+          { requestId, filename: file.name, size: file.size, maxSize: MAX_FILE_SIZE },
+          'warning'
+        );
+        continue;
+      }
+
+      // Validate file extension
+      const extension = file.name.toLowerCase().split('.').pop();
+      if (!extension || !ALLOWED_EXTENSIONS.includes(`.${extension}`)) {
+        invalidFiles.push({ 
+          name: file.name, 
+          reason: `Invalid file extension: .${extension}. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}` 
+        });
+        SecurityLogger.logSecurityEvent(
+          'upload_invalid_extension',
+          { requestId, filename: file.name, extension, allowedExtensions: ALLOWED_EXTENSIONS },
+          'warning'
+        );
+        continue;
+      }
+
+      // Validate MIME type
+      if (!ALLOWED_MIME_TYPES.includes(file.type.toLowerCase())) {
+        invalidFiles.push({ 
+          name: file.name, 
+          reason: `Invalid file type: ${file.type}. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}` 
+        });
+        SecurityLogger.logSecurityEvent(
+          'upload_invalid_mime_type',
+          { requestId, filename: file.name, mimeType: file.type, allowedTypes: ALLOWED_MIME_TYPES },
+          'warning'
+        );
+        continue;
+      }
+
+      // Additional security check: validate file signature (magic bytes)
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer.slice(0, 4));
+        const signature = Array.from(uint8Array).map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        // Common image file signatures
+        const validSignatures = [
+          'ffd8ff',    // JPEG
+          '89504e47',  // PNG
+          '52494646',  // WebP (RIFF header)
+        ];
+        
+        const isValidSignature = validSignatures.some(sig => signature.startsWith(sig));
+        if (!isValidSignature) {
+          invalidFiles.push({ 
+            name: file.name, 
+            reason: `Invalid file signature. File may be corrupted or not a valid image.` 
+          });
+          SecurityLogger.logSecurityEvent(
+            'upload_invalid_signature',
+            { requestId, filename: file.name, signature, mimeType: file.type },
+            'warning'
+          );
+          continue;
+        }
+
+        // Recreate file object with validated buffer
+        const validatedFile = new File([arrayBuffer], file.name, { type: file.type });
+        validFiles.push(validatedFile);
+        
+      } catch (error) {
+        invalidFiles.push({ 
+          name: file.name, 
+          reason: `Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        });
+        SecurityLogger.logSecurityEvent(
+          'upload_file_read_error',
+          { requestId, filename: file.name, error: error instanceof Error ? error.message : 'Unknown error' },
+          'error'
+        );
+        continue;
+      }
+    }
+
+    if (validFiles.length === 0) {
+      console.log('[simple-upload] No valid files found after security validation');
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'No se encontraron archivos válidos después de la validación de seguridad',
+          invalidFiles: invalidFiles.map(f => ({ name: f.name, reason: f.reason }))
+        },
+        { status: 400 }
+      );
+    }
+
+    if (invalidFiles.length > 0) {
+      console.log('[simple-upload] Some files failed validation:', invalidFiles);
     }
 
     const supabase = await createServerSupabaseServiceClient();
@@ -289,6 +414,7 @@ async function handlePOST(request: NextRequest) {
               height: srcH,
               approved: process.env.PHOTOS_DEFAULT_APPROVED === 'true',
               event_id: finalEventId ?? null,
+              photo_type: photoType,
             })
             .select()
             .single();
@@ -487,5 +613,5 @@ async function handleGET(request: NextRequest) {
   }
 }
 
-export const POST = process.env.NODE_ENV === 'development' ? handlePOST : withAuth(handlePOST);
+export const POST = process.env.NODE_ENV === 'development' ? handlePOST : withAuth(handlePOST, { requireCSRF: true });
 export const GET = process.env.NODE_ENV === 'development' ? handleGET : withAuth(handleGET);

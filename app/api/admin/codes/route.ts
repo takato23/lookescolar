@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
+export async function GET(req: NextRequest) {
+  try {
+    const sb = await createServerSupabaseServiceClient();
+    
+    // Get all codes with their associated events
+    const { data: codes, error } = await sb
+      .from('codes')
+      .select(`
+        id,
+        code_value,
+        event_id,
+        events (
+          id,
+          name
+        )
+      `)
+      .order('code_value', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching codes:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, codes: codes || [] });
+  } catch (e: any) {
+    console.error('Error in codes GET:', e);
+    return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { eventId, codeValue } = await req.json();

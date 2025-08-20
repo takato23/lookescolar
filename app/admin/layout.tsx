@@ -140,10 +140,10 @@ export default function AdminLayout({
         {/* Mobile Navigation */}
         <MobileNavigation
           items={adminNavigationItems}
-          user={user ? {
-            name: user.email?.split('@')[0],
+          user={user && user.email ? {
+            name: user.email.split('@')[0],
             email: user.email,
-          } : undefined}
+          } : null}
           onLogout={async () => {
             const { authClient } = await import('@/lib/supabase/auth-client');
             await authClient.logout();

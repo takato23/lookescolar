@@ -112,6 +112,113 @@ export async function processImageWithWatermark(
 }
 
 /**
+ * Procesa una imagen optimizada para vista previa (máximo 300KB)
+ * Específicamente para cumplir con el plan gratuito de Supabase
+ */
+export async function processImagePreview(
+  inputBuffer: Buffer,
+  options: WatermarkOptions = {}
+): Promise<ProcessedImage> {
+  const config = { ...DEFAULT_WATERMARK_OPTIONS, ...options };
+  const MAX_SIZE_BYTES = 300 * 1024; // 300KB
+
+  // Validar seguridad de la imagen primero
+  const validation = await validateImageSecurity(inputBuffer);
+  if (!validation.isValid) {
+    throw new Error(validation.error || 'Imagen no válida');
+  }
+
+  const metadata = validation.metadata!;
+  const cleanBuffer = await stripImageMetadata(inputBuffer);
+
+  // Función para procesar con dimensiones y calidad específicas
+  const processWithSettings = async (width: number, height: number, quality: number) => {
+    const watermarkSvg = createWatermarkSvg(
+      width,
+      height,
+      config.text!,
+      Math.max(16, Math.floor(config.fontSize! * (width / 1200))), // Escalar font size
+      config.opacity!,
+      config.position!
+    );
+
+    return await sharp(cleanBuffer)
+      .resize(width, height, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .composite([
+        {
+          input: Buffer.from(watermarkSvg),
+          gravity: 'center',
+        },
+      ])
+      .webp({ quality })
+      .toBuffer();
+  };
+
+  // Estrategia de optimización progresiva para mantener bajo 300KB
+  const optimizationSteps = [
+    { maxDim: 1200, quality: 80 },
+    { maxDim: 1000, quality: 75 },
+    { maxDim: 800, quality: 70 },
+    { maxDim: 600, quality: 65 },
+    { maxDim: 500, quality: 60 },
+    { maxDim: 400, quality: 50 },
+  ];
+
+  let processedBuffer: Buffer;
+  let finalWidth: number;
+  let finalHeight: number;
+
+  for (const step of optimizationSteps) {
+    // Calcular dimensiones para este paso
+    let newWidth = metadata.width;
+    let newHeight = metadata.height;
+
+    if (metadata.width > step.maxDim || metadata.height > step.maxDim) {
+      if (metadata.width > metadata.height) {
+        newWidth = step.maxDim;
+        newHeight = Math.round((metadata.height / metadata.width) * step.maxDim);
+      } else {
+        newHeight = step.maxDim;
+        newWidth = Math.round((metadata.width / metadata.height) * step.maxDim);
+      }
+    }
+
+    processedBuffer = await processWithSettings(newWidth, newHeight, step.quality);
+    finalWidth = newWidth;
+    finalHeight = newHeight;
+
+    // Si el tamaño está bajo el límite, usar este resultado
+    if (processedBuffer.length <= MAX_SIZE_BYTES) {
+      break;
+    }
+  }
+
+  // Si aún es muy grande, aplicar compresión extrema
+  if (processedBuffer!.length > MAX_SIZE_BYTES) {
+    console.warn('Imagen muy grande, aplicando compresión extrema para cumplir límite de 300KB');
+    
+    finalWidth = Math.min(300, metadata.width);
+    finalHeight = Math.round((metadata.height / metadata.width) * finalWidth);
+    
+    processedBuffer = await processWithSettings(finalWidth, finalHeight, 40);
+  }
+
+  const filename = `${generateFileId()}.webp`;
+
+  return {
+    buffer: processedBuffer!,
+    format: 'webp',
+    width: finalWidth!,
+    height: finalHeight!,
+    size: processedBuffer!.length,
+    filename,
+  };
+}
+
+/**
  * Crea un SVG con el texto del watermark
  */
 function createWatermarkSvg(

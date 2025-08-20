@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Calendar, MapPin, DollarSign, Home, Users, User, Share, Lock } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, DollarSign, Home, Users, User, Share } from 'lucide-react';
 
 export default function NewEventPage() {
   const router = useRouter();
