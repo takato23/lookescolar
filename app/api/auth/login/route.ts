@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!data.user) {
+    if (!data.user || !data.session) {
       return NextResponse.json(
         { error: 'Error de autenticación' },
         { status: 401 }
@@ -69,15 +69,37 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar si el usuario tiene permisos de admin
-    const isAdmin = await checkAdminRole(data.user.id);
+    const isAdmin = await checkAdminRole(data.user.id, data.user);
     
     if (!isAdmin) {
       console.warn(`Non-admin user attempted login: ${data.user.email}`);
+      // Cerrar sesión si no es admin
+      await supabase.auth.signOut();
       return NextResponse.json(
         { error: 'Acceso no autorizado' },
         { status: 403 }
       );
     }
+
+    // Configurar cookies de sesión para que el middleware pueda leer la sesión
+    const cookieStore = await cookies();
+    
+    // Guardar tokens de sesión en cookies httpOnly
+    cookieStore.set('sb-access-token', data.session.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: data.session.expires_in,
+      path: '/',
+    });
+
+    cookieStore.set('sb-refresh-token', data.session.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 días
+      path: '/',
+    });
 
     console.log('🔐 Production login successful for:', data.user.email);
 
@@ -98,27 +120,33 @@ export async function POST(request: NextRequest) {
 }
 
 // Función auxiliar para verificar rol de admin
-async function checkAdminRole(userId: string): Promise<boolean> {
+async function checkAdminRole(userId: string, user?: any): Promise<boolean> {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    // Obtener información del usuario
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Si tenemos el usuario pasado como parámetro, usarlo directamente
+    const userToCheck = user;
     
-    if (userError || !user) {
+    if (!userToCheck) {
       return false;
     }
 
     // Opción 1: Verificar metadata del usuario para rol admin
-    if (user.user_metadata?.role === 'admin') {
+    if (userToCheck.user_metadata?.role === 'admin') {
+      console.log('Admin role found in user metadata');
       return true;
     }
 
     // Opción 2: Verificar lista de emails admin desde variables de entorno
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
-    if (user.email && adminEmails.includes(user.email)) {
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+    if (userToCheck.email && adminEmails.includes(userToCheck.email)) {
+      console.log('Admin email found in ADMIN_EMAILS:', userToCheck.email);
       return true;
     }
+
+    console.log('User is not admin:', {
+      email: userToCheck.email,
+      metadata: userToCheck.user_metadata,
+      adminEmails: adminEmails.length > 0 ? '[configured]' : '[not configured]'
+    });
 
     return false;
   } catch (error) {

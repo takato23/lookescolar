@@ -30,16 +30,39 @@ export async function createServerSupabaseClient(): Promise<
     );
   }
 
-  // TEMPORARY FIX: Use simple client creation to avoid AsyncHook issues
-  // This skips complex cookie handling which is causing memory leaks
-  const { createClient } = await import('@supabase/supabase-js');
+  const cookieStore = await cookies();
   
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
+  return createServerClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // Handle cookie setting errors in middleware/edge runtime
+            console.warn('Cookie setting failed:', error);
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // Handle cookie removal errors in middleware/edge runtime
+            console.warn('Cookie removal failed:', error);
+          }
+        },
+      },
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+      },
+    }
+  );
 }
 
 /**
