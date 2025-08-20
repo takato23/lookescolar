@@ -4,6 +4,7 @@ import {
   createServerSupabaseServiceClient,
 } from '@/lib/supabase/server';
 import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
+import { withRobustAuth, robustAuthCheck } from '@/lib/middleware/auth-robust.middleware';
 import {
   searchParamsSchema,
   SecurityValidator,
@@ -21,57 +22,16 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-async function handleGET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || 'unknown';
+async function handleGETRobust(request: NextRequest, context: { user: any; requestId: string }) {
+  const { user, requestId } = context;
   const startTime = Date.now();
 
   try {
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`[${requestId}] Photos API request started`);
+      console.debug(`[${requestId}] Photos API request started with robust auth`);
     }
 
-    // Check authentication
-    const supabase = await createServerSupabaseClient();
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`[${requestId}] Supabase client created`);
-    }
-    
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`[${requestId}] Auth check completed, user:`, !!user);
-    }
-
-    // En desarrollo, permitir continuar sin sesión y consultar datos reales
-    if (!user && process.env.NODE_ENV === 'development') {
-      SecurityLogger.logSecurityEvent(
-        'dev_mode_bypass_auth_photos',
-        {
-          requestId,
-          ip: request.headers.get('x-forwarded-for'),
-        },
-        'info'
-      );
-    } else if (!user) {
-      SecurityLogger.logSecurityEvent(
-        'unauthorized_photo_access',
-        {
-          requestId,
-          ip: request.headers.get('x-forwarded-for'),
-        },
-        'warning'
-      );
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // A partir de aquí, en dev se permite sin user; en prod requiere user
-    const effectiveUserId = user?.id ?? 'dev-user';
+    const effectiveUserId = user.id;
 
     // Use service client for queries - simplified
     const serviceClient = await createServerSupabaseServiceClient();
@@ -354,8 +314,24 @@ async function handleGET(request: NextRequest) {
   }
 }
 
-// Export with conditional authentication based on environment
-// Temporarily bypass auth for debugging in production
+// Keep original handler for fallback
+async function handleGET(request: NextRequest) {
+  const authResult = await robustAuthCheck(request);
+  
+  if (!authResult.authenticated || !authResult.isAdmin) {
+    return NextResponse.json(
+      { error: authResult.error || 'Admin access required' },
+      { status: authResult.authenticated ? 403 : 401 }
+    );
+  }
+
+  return handleGETRobust(request, {
+    user: authResult.user!,
+    requestId: authResult.requestId
+  });
+}
+
+// Export with robust authentication
 export const GET = handleGET;
 
 // DELETE - Borrar múltiples fotos
