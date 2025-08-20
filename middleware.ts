@@ -55,13 +55,21 @@ export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
   
+  // BYPASS COMPLETO para endpoints de admin photos
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith('/api/admin/photos') || pathname.startsWith('/api/debug/')) {
+    const bypassResponse = NextResponse.next();
+    bypassResponse.headers.set('X-Request-ID', requestId);
+    bypassResponse.headers.set('X-Bypass-Reason', 'admin-photos-debug');
+    return bypassResponse;
+  }
+  
   // Agregar request ID a headers para tracking
   const response = NextResponse.next();
   response.headers.set('X-Request-ID', requestId);
   
   try {
     const url = request.nextUrl.clone();
-    const pathname = url.pathname;
     const method = request.method;
     const userAgent = request.headers.get('user-agent') || 'unknown';
     const referer = request.headers.get('referer');
