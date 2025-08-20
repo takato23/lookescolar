@@ -32,6 +32,7 @@ import {
   TrashIcon
 } from 'lucide-react';
 import { buildPhotosUrl } from '@/lib/utils/photos-url-builder';
+import { fetchPhotosSimple } from '@/lib/utils/photos-url-builder-simple';
 import { cn } from '@/lib/utils';
 
 interface Photo {

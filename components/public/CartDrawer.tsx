@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { X, Minus, Plus, Trash2, ShoppingCart, Star } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
@@ -17,6 +18,8 @@ export function CartDrawer() {
     email: '',
     phone: ''
   })
+  
+  const pathname = usePathname()
 
   const {
     items,
@@ -30,11 +33,25 @@ export function CartDrawer() {
     setContactInfo,
     eventId
   } = useCartStore()
+  
+  // Fallback: extraer eventId de la URL si no está en el store
+  const getEventIdFromUrl = () => {
+    const match = pathname.match(/\/gallery\/([^\/]+)/)
+    return match ? match[1] : null
+  }
+  
+  const finalEventId = eventId || getEventIdFromUrl()
 
   const totalItems = getTotalItems()
   const totalPrice = getTotalPrice()
 
   const handleCheckout = async () => {
+    console.log('[CartDrawer] DEBUG - eventId from store:', eventId)
+    console.log('[CartDrawer] DEBUG - eventId from URL:', getEventIdFromUrl())
+    console.log('[CartDrawer] DEBUG - finalEventId:', finalEventId)
+    console.log('[CartDrawer] DEBUG - items:', items)
+    console.log('[CartDrawer] DEBUG - contactForm:', contactForm)
+    
     if (!contactForm.name || !contactForm.email || !contactForm.phone) {
       alert('Por favor completa todos los campos de contacto')
       return
@@ -45,7 +62,8 @@ export function CartDrawer() {
       return
     }
 
-    if (!eventId) {
+    if (!finalEventId) {
+      console.error('[CartDrawer] ERROR - finalEventId is null/undefined:', finalEventId)
       alert('Error: ID de evento no encontrado')
       return
     }
@@ -58,7 +76,7 @@ export function CartDrawer() {
 
       // Preparar datos para el checkout según el esquema esperado por /api/gallery/checkout
       const checkoutData = {
-        eventId: eventId,
+        eventId: finalEventId,
         photoIds: items.map(item => item.photoId),
         contactInfo: contactForm,
         package: `Selección personalizada (${items.length} fotos)`
