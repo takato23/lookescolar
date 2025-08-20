@@ -1,0 +1,32 @@
+{
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/admin/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization, X-Requested-With, X-Request-ID"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/admin/photos-optimized",
+      "destination": "/admin/photos-optimized"
+    }
+  ]
+}

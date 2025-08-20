@@ -8,6 +8,8 @@ const ALLOWED_ORIGINS = [
   'https://lookescolar.com',
   'https://www.lookescolar.com',
   'https://admin.lookescolar.com',
+  'https://lookescolar.vercel.app', // Añadir dominio de Vercel
+  'https://*.vercel.app', // Permitir subdominios de Vercel
 ];
 
 // Configuración CSP según CLAUDE.md - TEMPORALMENTE DESHABILITADO PARA DESARROLLO
@@ -315,6 +317,12 @@ function validateAntiHotlinking(
     return { allowed: true };
   }
   
+  // TEMPORAL: Permitir todos los requests a endpoints de admin para debugging
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith('/api/admin/photos')) {
+    return { allowed: true };
+  }
+  
   // Permitir requests directos (sin referer) solo para GET
   if (!referer) {
     if (request.method === 'GET') {
@@ -329,9 +337,14 @@ function validateAntiHotlinking(
     // Verificar si el referer está en la lista de permitidos
     const isAllowed = ALLOWED_ORIGINS.some(origin => {
       if (origin.includes('*')) {
-        const pattern = origin.replace('*', '[^.]*');
+        const pattern = origin.replace(/\*/g, '[^.]*'); // Escape all * characters
         const regex = new RegExp(`^https?://${pattern}$`, 'i');
         return regex.test(`${refererUrl.protocol}//${refererUrl.hostname}`);
+      }
+      
+      // Handle vercel.app domains specially
+      if (origin.includes('vercel.app')) {
+        return refererUrl.hostname.includes('vercel.app');
       }
       
       const originUrl = new URL(origin);
@@ -358,6 +371,12 @@ function validateAntiHotlinking(
 function isBlockedUserAgent(userAgent: string): boolean {
   // En desarrollo no bloquear por User-Agent para facilitar pruebas locales
   if (process.env.NODE_ENV !== 'production') return false;
+  
+  // TEMPORAL: No bloquear user agents para debugging de endpoints admin
+  return false;
+  
+  // Código original comentado temporalmente
+  /*
   const blockedPatterns = [
     /bot.*bot/i, // Bots maliciosos
     /crawler/i,
@@ -377,6 +396,7 @@ function isBlockedUserAgent(userAgent: string): boolean {
     /facebookexternalhit/i,
     /twitterbot/i,
     /linkedinbot/i,
+    /curl/i, // Permitir curl para debugging
   ];
   
   // Si es un bot permitido, no bloquear
@@ -386,6 +406,7 @@ function isBlockedUserAgent(userAgent: string): boolean {
   
   // Bloquear si coincide con patrones maliciosos
   return blockedPatterns.some(pattern => pattern.test(userAgent));
+  */
 }
 
 /**
