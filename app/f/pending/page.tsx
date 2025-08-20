@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Clock, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 
-function PaymentPendingContent() {</search>
+function PaymentPendingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<
@@ -258,4 +258,4 @@ export default function PaymentPendingPage() {
       <PaymentPendingContent />
     </Suspense>
   );
-}</search>
+}
