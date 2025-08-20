@@ -46,12 +46,6 @@ export function CartDrawer() {
   const totalPrice = getTotalPrice()
 
   const handleCheckout = async () => {
-    console.log('[CartDrawer] DEBUG - eventId from store:', eventId)
-    console.log('[CartDrawer] DEBUG - eventId from URL:', getEventIdFromUrl())
-    console.log('[CartDrawer] DEBUG - finalEventId:', finalEventId)
-    console.log('[CartDrawer] DEBUG - items:', items)
-    console.log('[CartDrawer] DEBUG - contactForm:', contactForm)
-    
     if (!contactForm.name || !contactForm.email || !contactForm.phone) {
       alert('Por favor completa todos los campos de contacto')
       return
@@ -63,7 +57,6 @@ export function CartDrawer() {
     }
 
     if (!finalEventId) {
-      console.error('[CartDrawer] ERROR - finalEventId is null/undefined:', finalEventId)
       alert('Error: ID de evento no encontrado')
       return
     }

@@ -207,40 +207,37 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       'info'
     );
 
-    // MEMORY OPTIMIZATION: Process photos in smaller batches to avoid OOM
-    const BATCH_SIZE = 10; // Process 10 photos at a time
-    let processedPhotos: any[] = [];
-    
-    for (let i = 0; i < (photos || []).length; i += BATCH_SIZE) {
-      const batch = photos!.slice(i, i + BATCH_SIZE);
+    // MEMORY OPTIMIZATION: Process photos efficiently without heavy operations
+    let processedPhotos = (photos || []).map((photo: any) => {
+      // Generate preview URL conditionally based on request size
+      let preview_url = null;
       
-      const batchPromises = batch.map(async (photo: any) => {
-        // MEMORY OPTIMIZATION: No subjects query for now, return simplified data
-        return {
-          id: photo.id,
-          event_id: photo.event_id,
-          original_filename: photo.original_filename,
-          storage_path: photo.storage_path,
-          preview_path: photo.preview_path ?? null,
-          preview_url: null, // Skip signed URLs to save memory
-          approved: photo.approved,
-          created_at: photo.created_at,
-          file_size: photo.file_size ?? null,
-          width: photo.width ?? null,
-          height: photo.height ?? null,
-          subjects: [], // Empty for now to save memory
-          tagged: false, // Simplified for memory
-        };
-      });
-
-      const batchResults = await Promise.all(batchPromises);
-      processedPhotos.push(...batchResults);
-      
-      // Force garbage collection between batches
-      if (global.gc) {
-        global.gc();
+      // Only generate signed URLs for small batches to avoid OOM
+      if ((photos?.length || 0) <= 20 && photo.preview_path) {
+        try {
+          preview_url = signedUrlForKey(photo.preview_path);
+        } catch (error) {
+          console.warn(`Failed to generate preview URL for photo ${photo.id}:`, error);
+          preview_url = null;
+        }
       }
-    }
+      
+      return {
+        id: photo.id,
+        event_id: photo.event_id,
+        original_filename: photo.original_filename,
+        storage_path: photo.storage_path,
+        preview_path: photo.preview_path ?? null,
+        preview_url,
+        approved: photo.approved,
+        created_at: photo.created_at,
+        file_size: photo.file_size ?? null,
+        width: photo.width ?? null,
+        height: photo.height ?? null,
+        subjects: [], // Empty for now to save memory - can be loaded separately if needed
+        tagged: false, // Simplified for memory - can be enhanced later
+      };
+    });
 
     // Apply tagged filter in application layer if needed
     if (tagged === 'true') {
