@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
-  generateSecureToken,
   maskToken,
-  getTokenExpiryDate,
 } from '@/lib/utils/tokens';
 
 interface Subject {
@@ -56,9 +54,6 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
     setError(null);
 
     try {
-      const token = generateSecureToken();
-      const tokenExpiresAt = getTokenExpiryDate(30);
-
       const resp = await fetch('/api/admin/subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -113,7 +108,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
     }
   };
 
-  const handleRotateToken = async (subjectId: string) => {
+  const handleRotateToken = async (_subjectId: string) => {
     if (
       !confirm(
         '¿Estás seguro de rotar este token? El token anterior dejará de funcionar.'
@@ -123,9 +118,6 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
     }
 
     try {
-      const newToken = generateSecureToken();
-      const tokenExpiresAt = getTokenExpiryDate(30);
-
       // Usa API para compatibilidad
       const resp = await fetch('/api/admin/subjects', {
         method: 'POST',

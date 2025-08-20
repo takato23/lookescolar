@@ -32,6 +32,7 @@ import { buildPhotosUrl } from "@/lib/utils/photos-url-builder";
 import QRScannerModal, { type StudentInfo } from "./QRScannerModal";
 import TaggingModal from "./TaggingModal";
 import { PhotoModal as GalleryPhotoModal } from "@/components/gallery/PhotoModal";
+import { SimpleTooltip } from "@/components/ui/tooltip";
 // Using CSS liquid glass styles instead of liquid-glass-react library
 
 // Theme Context
@@ -149,6 +150,9 @@ interface PhotoGalleryLiquidProps {
   onCountsChanged?: () => void;
   compact?: boolean;
   hideHeader?: boolean;
+  viewMode?: 'grid' | 'list';
+  selectedPhotos?: string[];
+  onPhotosSelected?: (photoIds: string[]) => void;
 }
 
 // Liquid Glass Photo Card Component
@@ -195,9 +199,15 @@ const LiquidPhotoCard: React.FC<{
       ? 'Etiquetada' 
       : 'Pendiente';
 
+  const statusTooltip = photo.approved 
+    ? 'Foto aprobada - Lista para venta y descarga' 
+    : photo.tagged 
+      ? 'Foto etiquetada - Asignada a un estudiante pero pendiente de aprobación' 
+      : 'Foto pendiente - Sin asignar estudiante ni aprobar';
+
   if (viewMode === 'list') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg cursor-pointer transform hover:scale-[1.02] transition-all duration-300">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg cursor-pointer transform hover:scale-[1.02] transition-all duration-300 group">
         <div className="p-4 flex items-center space-x-4">
           <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden">
             {photo.preview_url ? (
@@ -226,13 +236,52 @@ const LiquidPhotoCard: React.FC<{
               {photo.original_filename}
             </h3>
             <div className="flex items-center space-x-2 mt-1">
-              <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${statusColor}`}>
-                {statusText}
-              </span>
+              <SimpleTooltip text={statusTooltip} side="top">
+                <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${statusColor}`}>
+                  {statusText}
+                </span>
+              </SimpleTooltip>
               <span className="text-xs text-gray-600 dark:text-gray-400">
                 {Math.round(photo.file_size / 1024)} KB
               </span>
             </div>
+          </div>
+
+          {/* Action Buttons - aparecen en hover */}
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <SimpleTooltip text="Mover a carpeta" side="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove(photo.id);
+                }}
+                className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+              >
+                <MoveIcon size={14} />
+              </button>
+            </SimpleTooltip>
+            <SimpleTooltip text="Descargar foto" side="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload();
+                }}
+                className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+              >
+                <DownloadIcon size={14} />
+              </button>
+            </SimpleTooltip>
+            <SimpleTooltip text="Eliminar foto" side="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+              >
+                <TrashIcon size={14} />
+              </button>
+            </SimpleTooltip>
           </div>
 
           {/* Simple Checkbox */}
@@ -291,13 +340,15 @@ const LiquidPhotoCard: React.FC<{
 
           {/* Status Badge with Better Contrast */}
           <div className="absolute top-3 right-3 z-10">
-            <div className={`px-2 py-1 text-white text-xs font-medium ${statusColor} rounded-full shadow-lg`}>
-              {statusText}
-            </div>
+            <SimpleTooltip text={statusTooltip} side="left">
+              <div className={`px-2 py-1 text-white text-xs font-medium ${statusColor} rounded-full shadow-lg`}>
+                {statusText}
+              </div>
+            </SimpleTooltip>
           </div>
 
           {/* Photo Content */}
-          <div className="w-full h-full flex items-center justify-center relative">
+          <div className="w-full h-full flex items-center justify-center relative group">
             {photo.preview_url ? (
               <img
                 src={photo.preview_url}
@@ -315,6 +366,43 @@ const LiquidPhotoCard: React.FC<{
                 </div>
               </div>
             )}
+            
+            {/* Action Buttons - aparecen en hover */}
+            <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <SimpleTooltip text="Mover a carpeta" side="left">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMove(photo.id);
+                  }}
+                  className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                >
+                  <MoveIcon size={14} />
+                </button>
+              </SimpleTooltip>
+              <SimpleTooltip text="Descargar foto" side="left">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDownload();
+                  }}
+                  className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                >
+                  <DownloadIcon size={14} />
+                </button>
+              </SimpleTooltip>
+              <SimpleTooltip text="Eliminar foto" side="left">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                >
+                  <TrashIcon size={14} />
+                </button>
+              </SimpleTooltip>
+            </div>
           </div>
         </div>
 
@@ -352,13 +440,18 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   onCountsChanged,
   compact = false,
   hideHeader = false,
+  viewMode = 'grid',
+  selectedPhotos: externalSelectedPhotos,
+  onPhotosSelected,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const [photos, setPhotos] = useState<PhotoItem[]>(initialPhotos);
   const [events, setEvents] = useState<FolderItem[]>(initialEvents);
-  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  // Use external selectedPhotos if provided, otherwise use internal state
+  const [internalSelectedPhotos, setInternalSelectedPhotos] = useState<string[]>([]);
+  const selectedPhotos = externalSelectedPhotos || internalSelectedPhotos;
+  const setSelectedPhotos = onPhotosSelected || setInternalSelectedPhotos;
   const [selectedEvent, setSelectedEvent] = useState<string | null>(externalSelectedEvent);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending' | 'tagged'>('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -375,6 +468,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   const [taggingPhoto, setTaggingPhoto] = useState<PhotoItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number>(0);
+  
+  // Move Modal State
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [availableFolders, setAvailableFolders] = useState<Array<{id: string, name: string, eventName?: string}>>([]);
 
   // Codes state for move operations
   const [codes, setCodes] = useState<CodeRow[]>([]);
@@ -479,6 +576,62 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   const handleOpenTaggingModal = (photo: PhotoItem) => {
     setTaggingPhoto(photo);
     setShowTaggingModal(true);
+  };
+
+  // Load available folders for move operation
+  const loadAvailableFolders = async () => {
+    try {
+      // Obtener carpetas (subjects) y eventos
+      const [subjectsResponse, eventsResponse] = await Promise.all([
+        fetch('/api/admin/subjects'),
+        fetch('/api/admin/events')
+      ]);
+      
+      const subjectsData = await subjectsResponse.json();
+      const eventsData = await eventsResponse.json();
+      
+      const subjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData.data || []);
+      const events = Array.isArray(eventsData) ? eventsData : (eventsData.data || []);
+      
+      // Crear mapa de eventos para obtener nombres
+      const eventMap = new Map(events.map((event: any) => [event.id, event.name || event.school]));
+      
+      // Combinar subjects con información de eventos
+      const folders = subjects.map((subject: any) => ({
+        id: subject.id,
+        name: subject.name || 'Sin nombre',
+        eventName: eventMap.get(subject.event_id) || 'Evento desconocido',
+        type: 'subject'
+      }));
+      
+      setAvailableFolders(folders);
+    } catch (error) {
+      console.error('Error loading folders:', error);
+      toast.error('Error al cargar las carpetas disponibles');
+    }
+  };
+
+  // Handle move photos to folder
+  const handleMovePhotos = async (folderId: string) => {
+    if (selectedPhotos.length === 0) return;
+    
+    try {
+      const promises = selectedPhotos.map(photoId => 
+        fetch(`/api/admin/photos/${photoId}/move`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codeId: folderId })
+        })
+      );
+      
+      await Promise.all(promises);
+      setSelectedPhotos([]);
+      setShowMoveModal(false);
+      toast.success(`${selectedPhotos.length} fotos movidas exitosamente`);
+      onRefresh?.();
+    } catch (error) {
+      toast.error('Error al mover las fotos');
+    }
   };
 
   const handleDownloadPhoto = async (photoId: string) => {
@@ -602,7 +755,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           data-elasticity={0.3}
                           data-radius={8}
                           data-light={theme === 'light'}
-                          onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                          onClick={() => toast.info('Controla la vista desde los controles superiores')}
                           className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                         >
                           <div className="p-2 text-white/80 hover:text-white transition-colors">
@@ -868,7 +1021,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         data-elasticity={0.3}
                         data-radius={8}
                         data-light={theme === 'light'}
-                        onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                        onClick={() => toast.info('Controla la vista desde los controles superiores')}
                         className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
                       >
                         <div className="p-2 text-white/80 hover:text-white transition-colors">
@@ -921,7 +1074,11 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               {/* Mobile Photos Grid */}
               <div className="pb-20">
                 {filteredPhotos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className={`grid gap-3 ${
+                    viewMode === 'grid' 
+                      ? 'grid-cols-2' 
+                      : 'grid-cols-1'
+                  }`}>
                     <AnimatePresence>
                       {filteredPhotos.map((photo, idx) => (
                         <LiquidPhotoCard
@@ -1172,15 +1329,131 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
         />
       )}
 
+      {/* Floating Selection Bar */}
+      {selectedPhotos.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="bg-white dark:bg-gray-900 shadow-2xl rounded-full px-6 py-3 border border-gray-200 dark:border-gray-700 flex items-center gap-4"
+          >
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+              <CheckSquareIcon className="w-4 h-4" />
+              <span>{selectedPhotos.length} seleccionada{selectedPhotos.length !== 1 ? 's' : ''}</span>
+            </div>
+            
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowMoveModal(true);
+                  loadAvailableFolders();
+                }}
+                className="h-8 px-3 text-xs"
+              >
+                <MoveIcon className="w-3 h-3 mr-1" />
+                Mover
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await onPhotoApprove?.(selectedPhotos, true);
+                    setSelectedPhotos([]);
+                    toast.success(`${selectedPhotos.length} fotos aprobadas`);
+                    onRefresh?.();
+                  } catch (error) {
+                    toast.error('Error al aprobar fotos');
+                  }
+                }}
+                className="h-8 px-3 text-xs text-green-700 border-green-300 hover:bg-green-50"
+              >
+                <CheckIcon className="w-3 h-3 mr-1" />
+                Aprobar
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await onPhotoApprove?.(selectedPhotos, false);
+                    setSelectedPhotos([]);
+                    toast.success(`${selectedPhotos.length} fotos marcadas como pendientes`);
+                    onRefresh?.();
+                  } catch (error) {
+                    toast.error('Error al cambiar estado');
+                  }
+                }}
+                className="h-8 px-3 text-xs text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+              >
+                <XIcon className="w-3 h-3 mr-1" />
+                Rechazar
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // TODO: Implement assign to subject
+                  toast.info('Función "Asignar sujeto" próximamente');
+                }}
+                className="h-8 px-3 text-xs"
+              >
+                <TagIcon className="w-3 h-3 mr-1" />
+                Asignar
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (confirm(`¿Eliminar ${selectedPhotos.length} fotos seleccionadas?`)) {
+                    try {
+                      await onPhotoDelete?.(selectedPhotos);
+                      setSelectedPhotos([]);
+                      toast.success(`${selectedPhotos.length} fotos eliminadas`);
+                      onRefresh?.();
+                    } catch (error) {
+                      toast.error('Error al eliminar fotos');
+                    }
+                  }
+                }}
+                className="h-8 px-3 text-xs text-red-700 border-red-300 hover:bg-red-50"
+              >
+                <TrashIcon className="w-3 h-3 mr-1" />
+                Eliminar
+              </Button>
+            </div>
+            
+            <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedPhotos([])}
+              className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
+            >
+              <XIcon className="w-4 h-4" />
+            </Button>
+          </motion.div>
+        </div>
+      )}
+
       {isPreviewOpen && filteredPhotos.length > 0 && (
         <GalleryPhotoModal
           photo={filteredPhotos[previewIndex] ? {
             id: filteredPhotos[previewIndex].id,
-            storage_path: filteredPhotos[previewIndex].storage_path,
+            storage_path: filteredPhotos[previewIndex].watermark_path || filteredPhotos[previewIndex].preview_path || filteredPhotos[previewIndex].storage_path,
             width: filteredPhotos[previewIndex].width || null,
             height: filteredPhotos[previewIndex].height || null,
             created_at: filteredPhotos[previewIndex].created_at,
-            signed_url: filteredPhotos[previewIndex].preview_url || ''
           } : null}
           isOpen={isPreviewOpen}
           onClose={() => setIsPreviewOpen(false)}
@@ -1200,6 +1473,76 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
             setShowQRScanner(false);
           }}
         />
+      )}
+
+      {/* Move Photos Modal */}
+      {showMoveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Mover {selectedPhotos.length} foto{selectedPhotos.length !== 1 ? 's' : ''}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Selecciona una carpeta de destino
+              </p>
+            </div>
+            
+            <div className="p-6 max-h-96 overflow-y-auto">
+              {availableFolders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FolderIcon className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm">No hay carpetas disponibles</p>
+                  <p className="text-xs">Crea carpetas desde el sidebar</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Option to move to "Sin carpeta" */}
+                  <button
+                    onClick={() => handleMovePhotos('null')}
+                    className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FolderIcon className="w-5 h-5 text-orange-600" />
+                      <div>
+                        <div className="font-medium text-gray-900">Sin carpeta</div>
+                        <div className="text-xs text-gray-500">Mover a fotos no organizadas</div>
+                      </div>
+                    </div>
+                  </button>
+                  
+                  {availableFolders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      onClick={() => handleMovePhotos(folder.id)}
+                      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FolderIcon className="w-5 h-5 text-blue-600" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">{folder.name}</div>
+                          {folder.eventName && (
+                            <div className="text-xs text-gray-500 truncate">{folder.eventName}</div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowMoveModal(false)}
+                className="px-4 py-2"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

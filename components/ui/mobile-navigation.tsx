@@ -31,9 +31,9 @@ interface NavigationItem {
 interface MobileNavigationProps {
   items: NavigationItem[];
   user?: {
-    name?: string;
-    email?: string;
-    avatar?: string;
+    name?: string | undefined;
+    email?: string | undefined;
+    avatar?: string | undefined;
   } | null;
   onLogout?: () => void;
   className?: string;

@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SearchIcon, MoreVerticalIcon, Trash2Icon, Plus } from 'lucide-react';
+import { SearchIcon, MoreVerticalIcon, Trash2Icon, Plus, FolderIcon, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { generateFamilyGalleryLink } from '@/lib/utils/gallery-links';
@@ -47,7 +47,7 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
   const [codesCache, setCodesCache] = useState<Record<string, SidebarCodeRow[]>>({});
   const [newFolderName, setNewFolderName] = useState('');
 
-  // Eventos ocultos en esta vista simplificada; solo mostramos todas las carpetas
+  // Mostrar eventos disponibles para navegación
 
   const fetchCodes = useCallback(
     async (eventId?: string | null) => {
@@ -189,25 +189,33 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
     }
   };
 
+  // Group folders by event for better organization
+  const allCodes = codesCache['__all__'] || [];
+  const filteredCodes = allCodes.filter((c) => !query || String(c.code_value).toLowerCase().includes(query.toLowerCase()));
+  
+  // Group codes by event
+  const codesByEvent = filteredCodes.reduce((acc, code) => {
+    if (!acc[code.event_id]) {
+      acc[code.event_id] = [];
+    }
+    acc[code.event_id].push(code);
+    return acc;
+  }, {} as Record<string, SidebarCodeRow[]>);
+
+  // Sort events and codes
+  Object.keys(codesByEvent).forEach(eventId => {
+    codesByEvent[eventId].sort((a, b) => a.code_value.localeCompare(b.code_value));
+  });
+
   return (
     <div className="space-y-4">
-      {/* Nueva carpeta / evento rápido */}
-      <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-gray-800">Nueva carpeta</h4>
-          <Button
-            size="sm"
-            variant="outline"
-            aria-label="Crear carpeta"
-            onClick={() => handleCreateFolder(`Carpeta ${new Date().toLocaleDateString('es-AR')}`)}
-          >
-            <Plus className="h-4 w-4 mr-1" /> Crear carpeta
-          </Button>
-        </div>
+      {/* Nueva carpeta */}
+      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+        <h4 className="text-sm font-semibold text-blue-800 mb-2">Nueva carpeta</h4>
         <div className="flex gap-2">
           <Input
             aria-label="Nombre de carpeta"
-            placeholder="Nombre de la carpeta..."
+            placeholder="Ej: 4to A, Salita Verde..."
             value={newFolderName}
             onChange={(e) => setNewFolderName(e.target.value)}
             onKeyDown={(e) => {
@@ -220,7 +228,7 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
                 }
               }
             }}
-            className="placeholder:text-gray-500 text-gray-900 font-medium border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+            className="placeholder:text-blue-500 text-blue-900 font-medium border-blue-300 focus:border-blue-500 focus:ring-blue-500"
           />
           <Button
             onClick={() => {
@@ -234,154 +242,274 @@ export default function PhotosSidebarFolders({ events: _events, selected, onSele
             disabled={!newFolderName.trim()}
             className="bg-blue-600 text-white font-semibold hover:bg-blue-700 border-0 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            Crear carpeta
+            <Plus className="h-4 w-4 mr-1" />
+            Crear
           </Button>
         </div>
       </div>
+      
       <div className="relative">
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           aria-label="Buscar carpeta"
-          placeholder="Buscar carpeta..."
+          placeholder="Buscar carpeta o evento..."
           className="pl-9 placeholder:text-gray-500 text-gray-900 font-medium"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
+      
+      {/* Sin carpeta option always at top */}
       <Card className="p-0 border border-gray-200">
         <div className="p-3 border-b border-gray-100 bg-gray-50">
-          <h4 className="text-sm font-semibold text-gray-800">Todas las Carpetas</h4>
+          <h4 className="text-sm font-semibold text-gray-800">Fotos sin carpeta</h4>
+        </div>
+        <div className="p-2">
+          <Button
+            variant={selected.codeId === 'null' ? 'default' : 'ghost'}
+            className={cn(
+              "w-full justify-start h-auto p-3 text-left",
+              selected.codeId === 'null' 
+                ? "bg-orange-50 text-orange-900 border-orange-200" 
+                : "hover:bg-gray-50"
+            )}
+            onClick={() => onSelect({ eventId: selected.eventId, courseId: null, codeId: 'null' })}
+            aria-label="Ver fotos sin carpeta"
+          >
+            <div className="flex items-center gap-2 w-full">
+              <FolderIcon className="w-4 h-4 text-orange-600" />
+              <div className="flex-1">
+                <div className="font-semibold text-sm">Sin carpeta</div>
+                <div className="text-xs text-muted-foreground">Fotos no organizadas</div>
+              </div>
+              <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                📂 General
+              </Badge>
+            </div>
+          </Button>
+        </div>
+      </Card>
+
+      {/* Events List for Navigation */}
+      {_events.length > 0 && (
+        <Card className="p-0 border border-gray-200">
+          <div className="p-3 border-b border-gray-100 bg-blue-50">
+            <h4 className="text-sm font-semibold text-blue-800">Eventos</h4>
+            <p className="text-xs text-blue-600 mt-1">
+              {_events.length} eventos disponibles
+            </p>
+          </div>
+          <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
+            {_events
+              .filter(event => !query || event.name.toLowerCase().includes(query.toLowerCase()))
+              .map((event) => (
+                <Button
+                  key={event.id}
+                  variant={selected.eventId === event.id ? 'default' : 'ghost'}
+                  className={cn(
+                    "w-full justify-start h-auto p-3 text-left",
+                    selected.eventId === event.id 
+                      ? "bg-blue-50 text-blue-900 border-blue-200" 
+                      : "hover:bg-gray-50"
+                  )}
+                  onClick={() => onSelect({ eventId: event.id, courseId: null, codeId: null })}
+                  aria-label={`Cambiar a evento ${event.name}`}
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate" title={event.name}>
+                        {event.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {event.photo_count || 0} fotos
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      Evento
+                    </Badge>
+                  </div>
+                </Button>
+              ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Events with their folders */}
+      <Card className="p-0 border border-gray-200">
+        <div className="p-3 border-b border-gray-100 bg-gray-50">
+          <h4 className="text-sm font-semibold text-gray-800">Carpetas por Evento</h4>
           <p className="text-xs text-gray-600 mt-1">
-            {(codesCache['__all__'] || []).filter((c) => !query || String(c.code_value).toLowerCase().includes(query.toLowerCase())).length} carpetas disponibles
+            {Object.keys(codesByEvent).length} eventos con {filteredCodes.length} carpetas
           </p>
         </div>
-        <ScrollArea className="h-[calc(100vh-280px)]">
-          <div className="p-2 space-y-1">
-            {/* Vista mejorada: organizar carpetas */}
-            <div className="space-y-2">
-              {(codesCache['__all__'] || [])
-                .filter((c) => !query || String(c.code_value).toLowerCase().includes(query.toLowerCase()))
-                .sort((a, b) => a.code_value.localeCompare(b.code_value))
-                .map((code) => (
-                  <div key={`all-${code.id}`} className="group border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
-                    <div className="flex items-center p-2">
-                      <Button
-                        variant={selected.codeId === code.id ? 'default' : 'ghost'}
-                        className={cn(
-                          "flex-1 justify-start h-auto p-2 text-left",
-                          selected.codeId === code.id 
-                            ? "bg-blue-50 text-blue-900 border-blue-200" 
-                            : "hover:bg-gray-50"
-                        )}
-                        onClick={() => onSelect({ eventId: code.event_id, courseId: null, codeId: code.id })}
-                        aria-label={`Abrir carpeta ${code.code_value}`}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                        }}
-                        onDrop={async (e) => {
-                          e.preventDefault();
-                          const photoId = e.dataTransfer.getData('text/plain');
-                          if (!photoId) return;
-                          try {
-                            const res = await fetch(`/api/admin/photos/${photoId}/move`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ codeId: code.id }),
-                            });
-                            const j = await res.json().catch(() => ({}));
-                            if (!res.ok) throw new Error(j?.error || 'No se pudo mover la foto');
-                            toast.success('Foto movida');
-                            onCountsChanged?.();
-                          } catch (err: any) {
-                            toast.error(err?.message || 'Error al mover la foto');
-                          }
-                        }}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm truncate" title={code.code_value}>
-                            {code.code_value}
+        <ScrollArea className="h-[calc(100vh-350px)]">
+          <div className="p-2 space-y-3">
+            {Object.keys(codesByEvent).length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FolderIcon className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm">No hay carpetas creadas</p>
+                <p className="text-xs">Crea tu primera carpeta arriba</p>
+              </div>
+            ) : (
+              Object.entries(codesByEvent).map(([eventId, codes]) => {
+                const eventName = _events.find(e => e.id === eventId)?.name || `Evento ${eventId.substring(0, 8)}`;
+                const isEventSelected = selected.eventId === eventId;
+                
+                return (
+                  <div key={`event-${eventId}`} className="space-y-2">
+                    {/* Event Header */}
+                    <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-auto p-1 text-left",
+                            isEventSelected && "text-blue-700 font-semibold"
+                          )}
+                          onClick={() => onSelect({ eventId, courseId: null, codeId: null })}
+                          aria-label={`Ver evento ${eventName}`}
+                        >
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span className="text-sm font-medium truncate max-w-32" title={eventName}>
+                              {eventName}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge 
-                              variant="secondary" 
-                              className="text-xs bg-gray-100 text-gray-700"
+                        </Button>
+                      </div>
+                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                        {codes.length} carpetas
+                      </Badge>
+                    </div>
+
+                    {/* Event folders */}
+                    <div className="pl-4 space-y-1">
+                      {codes.map((code) => (
+                        <div key={`folder-${code.id}`} className="group border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+                          <div className="flex items-center p-2">
+                            <Button
+                              variant={selected.codeId === code.id ? 'default' : 'ghost'}
+                              className={cn(
+                                "flex-1 justify-start h-auto p-2 text-left",
+                                selected.codeId === code.id 
+                                  ? "bg-blue-50 text-blue-900 border-blue-200" 
+                                  : "hover:bg-gray-50"
+                              )}
+                              onClick={() => onSelect({ eventId: code.event_id, courseId: null, codeId: code.id })}
+                              aria-label={`Abrir carpeta ${code.code_value}`}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                              }}
+                              onDrop={async (e) => {
+                                e.preventDefault();
+                                const photoId = e.dataTransfer.getData('text/plain');
+                                if (!photoId) return;
+                                try {
+                                  const res = await fetch(`/api/admin/photos/${photoId}/move`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ codeId: code.id }),
+                                  });
+                                  const j = await res.json().catch(() => ({}));
+                                  if (!res.ok) throw new Error(j?.error || 'No se pudo mover la foto');
+                                  toast.success('Foto movida');
+                                  onCountsChanged?.();
+                                } catch (err: any) {
+                                  toast.error(err?.message || 'Error al mover la foto');
+                                }
+                              }}
                             >
-                              {code.photos_count} fotos
-                            </Badge>
-                            {code.is_published ? (
-                              <Badge className="text-xs bg-green-100 text-green-800 border-green-200">
-                                Publicado
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-300">
-                                No publicado
-                              </Badge>
-                            )}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-sm truncate" title={code.code_value}>
+                                  📁 {code.code_value}
+                                </div>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge 
+                                    variant="secondary" 
+                                    className="text-xs bg-gray-100 text-gray-700"
+                                  >
+                                    {code.photos_count} fotos
+                                  </Badge>
+                                  {code.is_published ? (
+                                    <Badge className="text-xs bg-green-100 text-green-800 border-green-200">
+                                      Publicado
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-300">
+                                      No publicado
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </Button>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
+                                  aria-label={`Acciones para ${code.code_value}`}
+                                >
+                                  <MoreVerticalIcon className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                {code.is_published ? (
+                                  <DropdownMenuItem onClick={() => void handleUnpublish(code.id)}>
+                                    Despublicar
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem onClick={() => void handlePublish(code.id)}>
+                                    Publicar
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => void handleRevoke(code.id)}>
+                                  Revocar token
+                                </DropdownMenuItem>
+                                {code.token && (
+                                  <DropdownMenuItem onClick={() => {
+                                    const galleryLink = generateFamilyGalleryLink({
+                                      token: code.token,
+                                      eventId: code.event_id,
+                                      origin: window.location.origin
+                                    });
+                                    navigator.clipboard.writeText(galleryLink);
+                                    toast.success('Enlace copiado al portapapeles');
+                                  }}>
+                                    Copiar enlace
+                                  </DropdownMenuItem>
+                                )}
+                                {code.token && (
+                                  <DropdownMenuItem onClick={() => window.open(`/api/qr?token=${code.token}`, '_blank')}>
+                                    Ver código QR
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => void handleDownloadZip(code)}>
+                                  Descargar ZIP
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 focus:text-red-600"
+                                  onClick={() => void handleDeleteCode(code.event_id, code.id, code.code_value)}
+                                >
+                                  <Trash2Icon className="w-4 h-4 mr-2" />
+                                  Eliminar carpeta
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
-                      </Button>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="opacity-0 group-hover:opacity-100 transition-opacity ml-2"
-                            aria-label={`Acciones para ${code.code_value}`}
-                          >
-                            <MoreVerticalIcon className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          {code.is_published ? (
-                            <DropdownMenuItem onClick={() => void handleUnpublish(code.id)}>
-                              Despublicar
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => void handlePublish(code.id)}>
-                              Publicar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => void handleRevoke(code.id)}>
-                            Revocar token
-                          </DropdownMenuItem>
-                          {code.token && (
-                            <DropdownMenuItem onClick={() => {
-                              const galleryLink = generateFamilyGalleryLink({
-                                token: code.token,
-                                eventId: code.event_id,
-                                origin: window.location.origin
-                              });
-                              navigator.clipboard.writeText(galleryLink);
-                              toast.success('Enlace copiado al portapapeles');
-                            }}>
-                              Copiar enlace
-                            </DropdownMenuItem>
-                          )}
-                          {code.token && (
-                            <DropdownMenuItem onClick={() => window.open(`/api/qr?token=${code.token}`, '_blank')}>
-                              Ver código QR
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => void handleDownloadZip(code)}>
-                            Descargar ZIP
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => void handleDeleteCode(code.event_id, code.id, code.code_value)}
-                          >
-                            <Trash2Icon className="w-4 h-4 mr-2" />
-                            Eliminar carpeta
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      ))}
                     </div>
                   </div>
-                ))}
-            </div>
+                );
+              })
+            )}
           </div>
         </ScrollArea>
       </Card>

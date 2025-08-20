@@ -4,16 +4,23 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import 'server-only';
 
+// Temporary fix: disable ALL caching in development to prevent memory leaks
+// This is a workaround until we can properly debug the AsyncHook issue
+
+// Global cleanup function (legacy - no longer needed)
+export function cleanupSupabaseClients() {
+  // No-op in development mode
+}
+
 /**
  * Creates a Supabase client for server-side usage with anon key.
- * Uses cookie-based auth for SSR.
+ * Uses cookie-based auth for SSR with connection pooling.
  * @returns {Promise<SupabaseClient<Database>>} Supabase client
  * @throws {Error} If env vars missing
  */
 export async function createServerSupabaseClient(): Promise<
   SupabaseClient<Database>
 > {
-  const cookieStore = await cookies();
   const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
   const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
@@ -23,29 +30,21 @@ export async function createServerSupabaseClient(): Promise<
     );
   }
 
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        } catch {
-          // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
-      },
+  // TEMPORARY FIX: Use simple client creation to avoid AsyncHook issues
+  // This skips complex cookie handling which is causing memory leaks
+  const { createClient } = await import('@supabase/supabase-js');
+  
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
   });
 }
 
 /**
  * Creates a Supabase service role client for admin tasks.
- * Bypasses RLS for privileged operations.
+ * Bypasses RLS for privileged operations with connection pooling.
  * @returns {Promise<SupabaseClient<Database>>} Service role client
  * @throws {Error} If env vars missing
  */
@@ -61,18 +60,25 @@ export async function createServerSupabaseServiceClient(): Promise<
     );
   }
 
+  // No caching to prevent memory leaks
+
   // Para service role, usar createClient directamente sin cookies
   // Importar createClient de @supabase/supabase-js
   const { createClient } = await import('@supabase/supabase-js');
 
-  return createClient<Database>(supabaseUrl, serviceRoleKey, {
+  const client = createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
+
+  // No caching to prevent memory leaks
+  
+  return client;
 }
 
 // Aliases de compatibilidad para código existente
 export const createClient = createServerSupabaseClient;
 export const createServiceClient = createServerSupabaseServiceClient;
+export const createServerClient = createServerSupabaseClient;

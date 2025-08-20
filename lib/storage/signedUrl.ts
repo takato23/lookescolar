@@ -1,7 +1,21 @@
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { SecurityLogger } from '@/lib/middleware/auth.middleware';
 
-export async function signedUrlForKey(key: string, expiresSec = 900): Promise<string> {
+interface TransformOptions {
+  width?: number;
+  height?: number;
+  resize?: 'contain' | 'cover' | 'fill';
+  quality?: number;
+}
+
+interface SignedUrlOptions {
+  expiresIn?: number;
+  transform?: TransformOptions;
+}
+
+export async function signedUrlForKey(key: string, options?: SignedUrlOptions | number): Promise<string> {
+  // Handle backward compatibility
+  const expiresSec = typeof options === 'number' ? options : (options?.expiresIn || 900);
   const sb = await createServerSupabaseServiceClient();
   const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
   const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
@@ -11,7 +25,16 @@ export async function signedUrlForKey(key: string, expiresSec = 900): Promise<st
 
   // Buckets are always set due to fallbacks above
 
-  let { data, error } = await sb.storage.from(bucket).createSignedUrl(key, expiresSec);
+  // Build signed URL with transform options if provided
+  const transform = typeof options === 'object' ? options.transform : undefined;
+  let { data, error } = await sb.storage.from(bucket).createSignedUrl(key, expiresSec, {
+    transform: transform ? {
+      width: transform.width,
+      height: transform.height,
+      resize: transform.resize,
+      quality: transform.quality,
+    } : undefined,
+  });
   // If object not found, attempt the other bucket as a safety net
   const isMissing = error && (
     (error as any)?.status === 404 ||
@@ -20,7 +43,14 @@ export async function signedUrlForKey(key: string, expiresSec = 900): Promise<st
   );
   if (isMissing) {
     const fallback = bucket === ORIGINAL_BUCKET ? PREVIEW_BUCKET : ORIGINAL_BUCKET;
-    const attempt = await sb.storage.from(fallback).createSignedUrl(key, expiresSec);
+    const attempt = await sb.storage.from(fallback).createSignedUrl(key, expiresSec, {
+      transform: transform ? {
+        width: transform.width,
+        height: transform.height,
+        resize: transform.resize,
+        quality: transform.quality,
+      } : undefined,
+    });
     if (!attempt.error && attempt.data?.signedUrl) {
       SecurityLogger.logSecurityEvent('signed_url_fallback_bucket', { requestId, from: bucket, to: fallback, key }, 'warning');
       bucket = fallback;

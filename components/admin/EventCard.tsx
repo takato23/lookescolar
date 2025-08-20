@@ -155,7 +155,7 @@ export function EventCard({
                 <MoreVertical className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
@@ -165,6 +165,25 @@ export function EventCard({
                 <Eye className="mr-2 h-4 w-4" />
                 Ver detalles
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/admin/photos?eventId=${event.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Administrar fotos
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  href={`/admin/publish`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Compartir salón
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
@@ -174,14 +193,24 @@ export function EventCard({
                 <Edit3 className="mr-2 h-4 w-4" />
                 Editar evento
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/admin/events/${event.id}/qr-pdf`}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Descargar QR PDF
-                </Link>
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const res = await fetch('/api/admin/photos/watermark', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ eventId: event.id }),
+                    });
+                    if (!res.ok) throw new Error('Error');
+                    alert('Generación de watermarks iniciada');
+                  } catch {
+                    alert('No se pudo iniciar la generación de watermarks');
+                  }
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Generar previews
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -289,62 +318,28 @@ export function EventCard({
           </div>
         )}
 
-        {/* Action Area */}
+        {/* Action Area - Simplified */}
         <div className="border-border/50 flex items-center justify-between border-t pt-4">
           <div className="liquid-description text-xs">
-            Creado {new Date(event.created_at).toLocaleDateString('es-AR')}
+            Creado {new Date(event.created_at || '').toLocaleDateString('es-AR')}
           </div>
 
           <div className="flex gap-2">
             <Link href={`/admin/events/${event.id}`}>
-              <button className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                <span className="liquid-button-text">Ver</span>
-              </button>
-            </Link>
-            <Link href={`/admin/events/${event.id}/photos`}>
-              <button className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
-                <Camera className="h-3 w-3" />
-                <span className="liquid-button-text">Fotos</span>
+              <button className="liquid-button text-xs px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
+                <Eye className="h-4 w-4" />
+                <span className="liquid-button-text">Gestionar</span>
               </button>
             </Link>
             <Link href={`/gallery/${event.id}`}>
               <button
-                className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
+                className="liquid-button liquid-button-secondary text-xs px-3 py-2 rounded-lg flex items-center gap-1"
                 aria-label="Vista cliente"
               >
                 <Eye className="h-3 w-3" />
-                <span className="liquid-button-text">Vista cliente</span>
+                <span className="liquid-button-text">Vista</span>
               </button>
             </Link>
-            <Link href={`/admin/publish`}>
-              <button
-                className="liquid-button text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
-                aria-label="Compartir salón"
-              >
-                <QrCode className="h-3 w-3" />
-                <span className="liquid-button-text">Compartir</span>
-              </button>
-            </Link>
-            <button
-              className="liquid-button text-xs px-3 py-1.5 rounded-lg"
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/admin/photos/watermark', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ eventId: event.id }),
-                  });
-                  if (!res.ok) throw new Error('Error');
-                  alert('Generación de watermarks iniciada');
-                } catch {
-                  alert('No se pudo iniciar la generación de watermarks');
-                }
-              }}
-              aria-label={`Generar watermarks del evento ${event.school}`}
-            >
-              <span className="liquid-button-text">Previews</span>
-            </button>
           </div>
         </div>
       </div>

@@ -20,17 +20,17 @@ export default function GroupingPage() {
   const [error, setError] = useState<string | null>(null);
   const [dryRun, setDryRun] = useState(true);
 
-  const [codes, setCodes] = useState<Array<{ id: string; code_value: string; is_published: boolean; has_anchor: boolean; count: number }>>([]);
+  const [_codes, _setCodes] = useState<Array<{ id: string; code_value: string; is_published: boolean; has_anchor: boolean; count: number }>>([]);
   const [sourceCodeValue, setSourceCodeValue] = useState('');
   const [destCodeId, setDestCodeId] = useState('');
-  const [photosSample, setPhotosSample] = useState<Array<{ id: string; original_filename: string }>>([]);
+  const [_photosSample, _setPhotosSample] = useState<Array<{ id: string; original_filename: string }>>([]);
   const [showUnassigned, setShowUnassigned] = useState(false);
 
   useEffect(() => {
     const loadCodes = async () => {
       if (!eventId) return;
-      const res = await fetch(`/api/admin/events?include_stats=false`);
       // Simplificado: si existe un endpoint para codes, se usaría; por ahora omitido (MVP)
+      // const res = await fetch(`/api/admin/events?include_stats=false`);
     };
     loadCodes();
   }, [eventId]);

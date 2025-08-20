@@ -1,6 +1,6 @@
 import OrderManager from '@/components/admin/OrderManager';
 import Link from 'next/link';
-import { ArrowLeft, Home, Package } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
