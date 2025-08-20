@@ -125,23 +125,44 @@ export async function authenticateAdmin(
 
     const supabase = await createServerSupabaseClient();
 
+    // Debug session and cookies in production
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🔍 [${requestId}] Auth debug - cookies present:`, {
+        hasAuthCookie: !!request.cookies.get('sb-auth-token'),
+        hasRefreshCookie: !!request.cookies.get('sb-refresh-token'),
+        cookieCount: request.cookies.getAll().length,
+        cookieNames: request.cookies.getAll().map(c => c.name).join(', '),
+        userAgent: request.headers.get('user-agent')?.substring(0, 50),
+        host: request.headers.get('host')
+      });
+    }
+
     // Get user from session
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
+    // Enhanced logging for authentication failures
     if (authError || !user) {
+      const failureDetails = {
+        requestId,
+        reason: authError?.message || 'No user session',
+        errorName: authError?.name,
+        errorStatus: (authError as any)?.status,
+        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+        userAgent: request.headers.get('user-agent'),
+        host: request.headers.get('host'),
+        path: request.nextUrl?.pathname,
+        cookiesPresent: request.cookies.getAll().length,
+        hasSbTokens: request.cookies.getAll().some(c => c.name.startsWith('sb-')),
+      };
+
+      console.error(`🔍 [${requestId}] Authentication failed:`, failureDetails);
+
       SecurityLogger.logSecurityEvent(
         'auth_failed',
-        {
-          requestId,
-          reason: authError?.message || 'No user session',
-          ip:
-            request.headers.get('x-forwarded-for') ||
-            request.headers.get('x-real-ip'),
-          userAgent: request.headers.get('user-agent'),
-        },
+        failureDetails,
         'warning'
       );
 

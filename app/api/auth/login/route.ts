@@ -1,48 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
   try {
     const body = await request.json();
     const { email, password } = body;
 
+    console.log(`🔐 [${requestId}] Login attempt for:`, email);
+
     // Validar campos requeridos
     if (!email || !password) {
+      console.warn(`🔐 [${requestId}] Missing credentials`);
       return NextResponse.json(
         { error: 'Email y contraseña son requeridos' },
         { status: 400 }
       );
     }
 
-    // Mock authentication - en desarrollo aceptamos cualquier credencial
+    // Development mode: Use Supabase auth but with relaxed admin checking
     if (process.env.NODE_ENV === 'development') {
-      // Crear token mock
-      const mockToken = `mock_session_${Date.now()}`;
+      console.log(`🔐 [${requestId}] Development mode - attempting Supabase auth`);
+      
+      const supabase = await createServerSupabaseClient();
 
-      // Guardar en cookies
-      const cookieStore = await cookies();
-      cookieStore.set('auth_token', mockToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 días
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      console.log('🔐 Mock login successful for:', email);
+      if (error) {
+        console.error(`🔐 [${requestId}] Development Supabase auth error:`, error);
+        return NextResponse.json(
+          { 
+            error: 'Credenciales inválidas',
+            details: error.message 
+          },
+          { status: 401 }
+        );
+      }
 
+      if (!data.user || !data.session) {
+        console.error(`🔐 [${requestId}] Development auth failed - no user/session`);
+        return NextResponse.json(
+          { error: 'Error de autenticación' },
+          { status: 401 }
+        );
+      }
+
+      // In development, be more permissive with admin role
+      const isAdmin = await checkAdminRole(data.user.id, data.user);
+      console.log(`🔐 [${requestId}] Development admin check result:`, isAdmin);
+
+      console.log(`🔐 [${requestId}] Development login successful for:`, data.user.email);
+
+      // Let Supabase SSR client handle cookies - no manual cookie setting
       return NextResponse.json({
         success: true,
         user: {
-          id: '1',
-          email: email,
-          name: 'Admin',
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name || 'Admin',
           role: 'admin',
         },
       });
     }
 
-    // Producción: usar autenticación real con Supabase
+    // Production: usar autenticación real con Supabase
+    console.log(`🔐 [${requestId}] Production mode - Supabase auth`);
     const supabase = await createServerSupabaseClient();
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -51,7 +77,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      console.error('Supabase auth error:', error);
+      console.error(`🔐 [${requestId}] Production Supabase auth error:`, {
+        message: error.message,
+        status: error.status,
+        name: error.name
+      });
       return NextResponse.json(
         { 
           error: 'Credenciales inválidas',
@@ -62,6 +92,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!data.user || !data.session) {
+      console.error(`🔐 [${requestId}] Production auth failed - no user/session`, {
+        hasUser: !!data.user,
+        hasSession: !!data.session
+      });
       return NextResponse.json(
         { error: 'Error de autenticación' },
         { status: 401 }
@@ -70,9 +104,15 @@ export async function POST(request: NextRequest) {
 
     // Verificar si el usuario tiene permisos de admin
     const isAdmin = await checkAdminRole(data.user.id, data.user);
+    console.log(`🔐 [${requestId}] Production admin check result:`, {
+      userId: data.user.id,
+      email: data.user.email,
+      isAdmin,
+      userMetadata: data.user.user_metadata
+    });
     
     if (!isAdmin) {
-      console.warn(`Non-admin user attempted login: ${data.user.email}`);
+      console.warn(`🔐 [${requestId}] Non-admin user attempted login:`, data.user.email);
       // Cerrar sesión si no es admin
       await supabase.auth.signOut();
       return NextResponse.json(
@@ -81,28 +121,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Configurar cookies de sesión para que el middleware pueda leer la sesión
-    const cookieStore = await cookies();
+    console.log(`🔐 [${requestId}] Production login successful for:`, {
+      email: data.user.email,
+      userId: data.user.id,
+      sessionExpires: data.session.expires_at,
+      refreshToken: !!data.session.refresh_token
+    });
+
+    // CRITICAL FIX: Don't manually set cookies - let Supabase SSR client handle them
+    // The createServerSupabaseClient will automatically handle cookies with proper names
+    // that the middleware can read correctly
     
-    // Guardar tokens de sesión en cookies httpOnly
-    cookieStore.set('sb-access-token', data.session.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: data.session.expires_in,
-      path: '/',
-    });
-
-    cookieStore.set('sb-refresh-token', data.session.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30 días
-      path: '/',
-    });
-
-    console.log('🔐 Production login successful for:', data.user.email);
-
     return NextResponse.json({
       success: true,
       user: {
@@ -114,7 +143,11 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Login error:', error);
+    console.error(`🔐 [${requestId}] Login error:`, {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

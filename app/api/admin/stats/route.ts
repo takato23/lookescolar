@@ -3,6 +3,11 @@ import {
   createServerSupabaseClient,
   createServerSupabaseServiceClient,
 } from '@/lib/supabase/server';
+import {
+  AuthMiddleware,
+  SecurityLogger,
+} from '@/lib/middleware/auth.middleware';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 
 interface GlobalStats {
   events: {
@@ -45,16 +50,41 @@ interface GlobalStats {
   };
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const serviceClient = await createServerSupabaseServiceClient();
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const firstDayOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    ).toISOString();
+export const GET = RateLimitMiddleware.withRateLimit(
+  AuthMiddleware.withAuth(async (request: NextRequest, authContext) => {
+    const requestId = crypto.randomUUID();
+    const startTime = Date.now();
+
+    try {
+      // Verificar que es admin
+      if (!authContext.isAdmin) {
+        SecurityLogger.logSecurityEvent('unauthorized_stats_access', {
+          requestId,
+          userId: authContext.user?.id || 'unknown',
+          ip: request.headers.get('x-forwarded-for') || 'unknown',
+        }, 'warning');
+        
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { 
+            status: 403,
+            headers: { 'X-Request-Id': requestId }
+          }
+        );
+      }
+
+      SecurityLogger.logResourceAccess('admin_stats', authContext, request);
+
+      const serviceClient = await createServerSupabaseServiceClient();
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const firstDayOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+      ).toISOString();
+
+      console.log(`📊 [${requestId}] Fetching admin stats for user:`, authContext.user?.email);
 
     // Ejecutar queries en paralelo para mejor performance
     const [
@@ -237,27 +267,53 @@ export async function GET(request: NextRequest) {
       system: systemStatus,
     };
 
-    // Cache headers para optimizar performance
-    const response = NextResponse.json({
-      success: true,
-      data: stats,
-      generated_at: now.toISOString(),
-    });
+      const duration = Date.now() - startTime;
+      console.log(`📊 [${requestId}] Stats generation completed in ${duration}ms`);
 
-    // Cache por 5 minutos
-    response.headers.set('Cache-Control', 'public, max-age=300');
+      SecurityLogger.logSecurityEvent('admin_stats_success', {
+        requestId,
+        userId: authContext.user?.id,
+        duration,
+        statsGenerated: true
+      });
 
-    return response;
-  } catch (error: any) {
-    console.error('Error en GET /api/admin/stats:', {
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString(),
-    });
+      // Cache headers para optimizar performance
+      const response = NextResponse.json({
+        success: true,
+        data: stats,
+        generated_at: now.toISOString(),
+      });
 
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    );
-  }
-}
+      // Cache por 5 minutos
+      response.headers.set('Cache-Control', 'public, max-age=300');
+      response.headers.set('X-Request-Id', requestId);
+
+      return response;
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      console.error(`📊 [${requestId}] Error en GET /api/admin/stats:`, {
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+        duration,
+        userId: authContext.user?.id
+      });
+
+      SecurityLogger.logSecurityEvent('admin_stats_error', {
+        requestId,
+        error: error.message,
+        duration,
+        userId: authContext.user?.id
+      }, 'error');
+
+      return NextResponse.json(
+        { error: 'Error interno del servidor' },
+        { 
+          status: 500,
+          headers: { 'X-Request-Id': requestId }
+        }
+      );
+    }
+  }, 'admin')
+);
