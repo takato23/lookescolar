@@ -207,15 +207,15 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       'info'
     );
 
-    // MEMORY OPTIMIZATION: Process photos efficiently without heavy operations
-    let processedPhotos = (photos || []).map((photo: any) => {
+    // MEMORY OPTIMIZATION: Process photos efficiently with async preview URL generation
+    let processedPhotos = await Promise.all((photos || []).map(async (photo: any) => {
       // Generate preview URL conditionally based on request size
       let preview_url = null;
       
       // Only generate signed URLs for small batches to avoid OOM
       if ((photos?.length || 0) <= 20 && photo.preview_path) {
         try {
-          preview_url = signedUrlForKey(photo.preview_path);
+          preview_url = await signedUrlForKey(photo.preview_path);
         } catch (error) {
           console.warn(`Failed to generate preview URL for photo ${photo.id}:`, error);
           preview_url = null;
@@ -237,7 +237,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
         subjects: [], // Empty for now to save memory - can be loaded separately if needed
         tagged: false, // Simplified for memory - can be enhanced later
       };
-    });
+    }));
 
     // Apply tagged filter in application layer if needed
     if (tagged === 'true') {

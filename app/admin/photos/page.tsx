@@ -427,7 +427,7 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
 
     // Show enhanced post-upload toast
     const uploadedCount = result?.uploaded?.length || files.length;
-    const ev = result.uploaded?.[0]?.event_id || eventId;
+    const ev = String(result.uploaded?.[0]?.event_id || eventId || '');
     const actualEventName = ev ? events.find(e => e.id === ev)?.name : null;
 
     const uploadResult = {
