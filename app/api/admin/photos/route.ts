@@ -207,26 +207,13 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       'info'
     );
 
-    // MEMORY OPTIMIZATION: Process photos efficiently with async preview URL generation
-    let processedPhotos = await Promise.all((photos || []).map(async (photo: any) => {
-      // Generate preview URL conditionally based on request size
-      let preview_url = null;
+    // MEMORY OPTIMIZATION: Process photos efficiently (preview URLs temporarily disabled)
+    let processedPhotos = (photos || []).map((photo: any) => {
+      // TEMPORARY: Disable preview URL generation to fix [object Object] error
+      // Will re-enable once the core functionality is stable
+      const preview_url = null;
       
-      // Only generate signed URLs for small batches to avoid OOM
-      if ((photos?.length || 0) <= 20 && photo.preview_path) {
-        try {
-          console.log(`🔧 Attempting to generate preview URL for photo ${photo.id}, path: ${photo.preview_path}`);
-          preview_url = await signedUrlForKey(photo.preview_path);
-          console.log(`🔧 Generated preview URL for photo ${photo.id}: ${typeof preview_url}, length: ${String(preview_url).length}`);
-        } catch (error) {
-          console.warn(`🔧 Failed to generate preview URL for photo ${photo.id}:`, error);
-          preview_url = null;
-        }
-      } else {
-        console.log(`🔧 Skipping preview URL for photo ${photo.id} (batch size: ${photos?.length || 0}, has path: ${!!photo.preview_path})`);
-      }
-      
-      const result = {
+      return {
         id: photo.id,
         event_id: photo.event_id,
         original_filename: photo.original_filename,
@@ -241,9 +228,6 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
         subjects: [], // Empty for now to save memory - can be loaded separately if needed
         tagged: false, // Simplified for memory - can be enhanced later
       };
-      
-      console.log(`🔧 Final photo object for ${photo.id}: preview_url type = ${typeof result.preview_url}, value = ${JSON.stringify(result.preview_url)}`);
-      return result;
     }));
 
     // Apply tagged filter in application layer if needed
