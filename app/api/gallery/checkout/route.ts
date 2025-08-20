@@ -197,9 +197,9 @@ export async function POST(request: NextRequest) {
         }),
       },
       back_urls: {
-        success: `${MP_CONFIG.successUrl}/${validatedData.eventId}/payment-success?order=${order.id}`,
-        failure: `${MP_CONFIG.failureUrl}/${validatedData.eventId}/payment-failure?order=${order.id}`,
-        pending: `${MP_CONFIG.pendingUrl}/${validatedData.eventId}/payment-pending?order=${order.id}`,
+        success: `${MP_CONFIG.successUrl}/success?order=${order.id}`,
+        failure: `${MP_CONFIG.failureUrl}/error?order=${order.id}`,
+        pending: `${MP_CONFIG.pendingUrl}/pending?order=${order.id}`,
       },
       auto_return: 'approved' as const,
       external_reference: order.id,
