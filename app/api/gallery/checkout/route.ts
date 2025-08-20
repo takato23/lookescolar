@@ -157,7 +157,6 @@ export async function POST(request: NextRequest) {
       quantity: 1,
       unit_price: pricePerPhoto,
       subtotal: pricePerPhoto,
-      price_list_item_id: crypto.randomUUID(), // Campo requerido por el esquema
     }));
 
     const { error: itemsError } = await supabase
@@ -198,9 +197,9 @@ export async function POST(request: NextRequest) {
         }),
       },
       back_urls: {
-        success: `${MP_CONFIG.successUrl}/public/payment-success?order=${order.id}`,
-        failure: `${MP_CONFIG.failureUrl}/public/payment-failure?order=${order.id}`,
-        pending: `${MP_CONFIG.pendingUrl}/public/payment-pending?order=${order.id}`,
+        success: `${MP_CONFIG.successUrl}/${validatedData.eventId}/payment-success?order=${order.id}`,
+        failure: `${MP_CONFIG.failureUrl}/${validatedData.eventId}/payment-failure?order=${order.id}`,
+        pending: `${MP_CONFIG.pendingUrl}/${validatedData.eventId}/payment-pending?order=${order.id}`,
       },
       auto_return: 'approved' as const,
       external_reference: order.id,

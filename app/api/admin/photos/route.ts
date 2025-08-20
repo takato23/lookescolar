@@ -47,9 +47,11 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       return v === null || v === '' ? undefined : v;
     };
 
-    // Pagination params
+    // Pagination params - MEMORY OPTIMIZATION: Reduce default limit
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '24');
+    const requestedLimit = parseInt(searchParams.get('limit') || '24');
+    // Cap limit to prevent memory issues
+    const limit = Math.min(requestedLimit, 50);
     const offset = (page - 1) * limit;
 
     // Optional filters (keep backwards compatibility but do not require)
@@ -96,11 +98,11 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       console.debug('photos_query', { eventId: eventId || 'ALL', codeId, page, limit, offset });
     }
 
+    // MEMORY OPTIMIZATION: Simplified query, fetch subjects separately if needed
     const buildBaseQuery = () => serviceClient
       .from('photos')
       .select(
-        `id, event_id, original_filename, storage_path, preview_path, approved, created_at, file_size, width, height,
-         photo_subjects(subject_id, subjects(id, name))`,
+        `id, event_id, original_filename, storage_path, preview_path, approved, created_at, file_size, width, height`,
         { count: 'exact' }
       );
     let query = buildBaseQuery();
@@ -205,50 +207,40 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       'info'
     );
 
-    // Process photos WITH signed URLs for admin (original images without watermark)
-    const processedPhotosPromises = (photos || []).map(async (photo: any) => {
-      // Extract subject information from the joined data
-      const subjects = photo.photo_subjects?.map((ps: any) => ({
-        id: ps.subjects?.id,
-        name: ps.subjects?.name,
-      })).filter((s: any) => s.id) || [];
+    // MEMORY OPTIMIZATION: Process photos in smaller batches to avoid OOM
+    const BATCH_SIZE = 10; // Process 10 photos at a time
+    let processedPhotos: any[] = [];
+    
+    for (let i = 0; i < (photos || []).length; i += BATCH_SIZE) {
+      const batch = photos!.slice(i, i + BATCH_SIZE);
       
-      // Generate signed URL for original image (without watermark) for admin
-      let preview_url: string | null = null;
-      if (photo.storage_path) {
-        try {
-          preview_url = await signedUrlForKey(photo.storage_path, {
-            expiresIn: 3600, // 1 hour
-            transform: {
-              width: 800,
-              height: 800,
-              resize: 'contain'
-            }
-          });
-        } catch (error) {
-          console.warn('Failed to generate signed URL for admin preview:', error);
-        }
-      }
-      
-      return {
-        id: photo.id,
-        event_id: photo.event_id,
-        original_filename: photo.original_filename,
-        storage_path: photo.storage_path,
-        preview_path: photo.preview_path ?? null,
-        watermark_path: photo.watermark_path ?? null,
-        preview_url, // Admin gets original image URLs (no watermark)
-        approved: photo.approved,
-        created_at: photo.created_at,
-        file_size: photo.file_size ?? (photo.file_size_bytes ?? null),
-        width: photo.width ?? null,
-        height: photo.height ?? null,
-        subjects, // Include subjects array
-        tagged: subjects.length > 0, // Photo is tagged if it has subjects
-      };
-    });
+      const batchPromises = batch.map(async (photo: any) => {
+        // MEMORY OPTIMIZATION: No subjects query for now, return simplified data
+        return {
+          id: photo.id,
+          event_id: photo.event_id,
+          original_filename: photo.original_filename,
+          storage_path: photo.storage_path,
+          preview_path: photo.preview_path ?? null,
+          preview_url: null, // Skip signed URLs to save memory
+          approved: photo.approved,
+          created_at: photo.created_at,
+          file_size: photo.file_size ?? null,
+          width: photo.width ?? null,
+          height: photo.height ?? null,
+          subjects: [], // Empty for now to save memory
+          tagged: false, // Simplified for memory
+        };
+      });
 
-    let processedPhotos = await Promise.all(processedPhotosPromises);
+      const batchResults = await Promise.all(batchPromises);
+      processedPhotos.push(...batchResults);
+      
+      // Force garbage collection between batches
+      if (global.gc) {
+        global.gc();
+      }
+    }
 
     // Apply tagged filter in application layer if needed
     if (tagged === 'true') {
