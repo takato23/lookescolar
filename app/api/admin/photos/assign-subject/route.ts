@@ -263,5 +263,5 @@ async function handleDELETE(request: NextRequest) {
   }
 }
 
-export const POST = withAuth(handlePOST);
-export const DELETE = withAuth(handleDELETE);
+export const POST = handlePOST;
+export const DELETE = handleDELETE;

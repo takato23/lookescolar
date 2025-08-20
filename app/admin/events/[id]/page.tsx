@@ -144,98 +144,110 @@ export default function EventDetailPage() {
   return (
     <div className="gradient-mesh min-h-screen">
       <div className="container mx-auto space-y-8 px-6 py-8">
-        {/* Header with Breadcrumbs */}
+        {/* Enhanced Header with Breadcrumbs */}
         <div className="relative animate-fade-in">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
-          <div className="relative">
-            {/* Breadcrumbs */}
-            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+          <div className="relative liquid-card p-6">
+            {/* Enhanced Breadcrumbs */}
+            <nav className="liquid-description mb-6 flex items-center gap-2 text-sm">
               <Link
                 href="/admin"
-                className="flex items-center gap-1 transition-colors hover:text-primary-600"
+                className="flex items-center gap-1 liquid-nav-text transition-colors hover:text-primary-600 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Home className="h-4 w-4" />
                 Dashboard
               </Link>
-              <span>/</span>
+              <span className="text-gray-400">›</span>
               <Link
                 href="/admin/events"
-                className="transition-colors hover:text-primary-600"
+                className="liquid-nav-text transition-colors hover:text-primary-600 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Eventos
               </Link>
-              <span>/</span>
-              <span className="text-foreground font-medium">
+              <span className="text-gray-400">›</span>
+              <span className="liquid-nav-text font-semibold px-3 py-2 bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg">
                 {event.school || event.name}
               </span>
             </nav>
 
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={() => router.push('/admin/events')}
-                  className="rounded-full p-2"
+                  className="liquid-button liquid-button-secondary rounded-full p-3"
+                  title="Volver a eventos"
                 >
                   <ArrowLeft className="h-5 w-5" />
-                </Button>
+                </button>
                 <div>
-                  <h1 className="text-gradient mb-2 text-3xl font-bold md:text-4xl">
+                  <h1 className="liquid-title mb-3 text-3xl font-bold md:text-4xl">
                     {event.school || event.name}
                   </h1>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2 liquid-description">
                       <Calendar className="h-4 w-4" />
                       {new Date(event.date).toLocaleDateString('es-AR', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
+                        weekday: 'long'
                       })}
                     </div>
                     {event.location && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="flex items-center gap-2 liquid-description">
                         <MapPin className="h-4 w-4" />
                         {event.location}
                       </div>
                     )}
-                    <Badge variant={event.active ? 'secondary' : 'outline'}>
+                    <Badge variant={event.active ? 'secondary' : 'outline'} className="liquid-label">
                       {event.active ? 'Activo' : 'Inactivo'}
                     </Badge>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/admin/events/${id}/edit`)}
+              
+              {/* Primary Actions */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                  className="liquid-button liquid-button-primary px-6 py-3 rounded-xl flex items-center gap-2 font-semibold"
                 >
-                  <Edit3 className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={fetchEvent}
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Actualizar
-                </Button>
-                <Button
-                  variant="secondary"
+                  <Camera className="h-5 w-5" />
+                  <span className="liquid-button-text">Gestionar Fotos</span>
+                </button>
+                
+                <button
                   onClick={() => router.push(`/gallery/${id}`)}
+                  className="liquid-button liquid-button-secondary px-4 py-3 rounded-xl flex items-center gap-2"
                   aria-label="Vista cliente"
                 >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Vista cliente
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => router.push(`/admin/publish`)}
-                  aria-label="Compartir salón"
+                  <Eye className="h-4 w-4" />
+                  <span className="liquid-button-text">Vista Cliente</span>
+                </button>
+                
+                <button
+                  onClick={async () => {
+                    const publicUrl = `${window.location.origin}/gallery/${id}`;
+                    try {
+                      await navigator.clipboard.writeText(publicUrl);
+                      alert('Link público copiado al portapapeles');
+                    } catch (error) {
+                      alert('No se pudo copiar el link');
+                    }
+                  }}
+                  className="liquid-button liquid-button-secondary p-3 rounded-xl"
+                  title="Copiar link público"
                 >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Compartir salón
-                </Button>
+                  <LinkIcon className="h-4 w-4" />
+                </button>
+                
+                <button
+                  onClick={fetchEvent}
+                  className="liquid-button liquid-button-secondary p-3 rounded-xl"
+                  title="Actualizar datos"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -510,29 +522,118 @@ export default function EventDetailPage() {
             {/* Students Tab */}
             <TabsContent value="students" className="mt-6">
               <div className="space-y-6">
-                {/* Student CSV Uploader */}
+                {/* Prominent CSV Upload Hero Section */}
+                <div className="relative overflow-hidden" data-csv-uploader>
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-primary-500/10 blur-2xl" />
+                  <Card variant="glass" className="relative border-blue-200/50 bg-gradient-to-br from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-3 text-xl">
+                            <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/50">
+                              <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            Importar Estudiantes
+                          </CardTitle>
+                          <p className="text-muted-foreground mt-2">
+                            La forma más rápida de agregar estudiantes es usando un archivo CSV
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+                          Recomendado
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <StudentCSVUploader
+                        eventId={id}
+                        eventName={event?.name || event?.school}
+                        onStudentsAdded={handleStudentsAdded}
+                        className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-6 border border-blue-200/30"
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Students Management Section */}
                 <Card variant="glass">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileUser className="w-5 h-5" />
-                      Gestión de Estudiantes
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Agrega estudiantes individualmente, por lista o archivo CSV
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="w-5 h-5" />
+                          Estudiantes Registrados
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {subjects.length > 0 
+                            ? `${subjects.length} estudiante${subjects.length !== 1 ? 's' : ''} con tokens generados`
+                            : 'No hay estudiantes registrados aún'
+                          }
+                        </p>
+                      </div>
+                      {subjects.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {subjects.length} activo{subjects.length !== 1 ? 's' : ''}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Export students list
+                              fetch(`/api/admin/events/${id}/tokens/export`)
+                                .then(res => res.blob())
+                                .then(blob => {
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = `estudiantes-${event?.name || id}.csv`;
+                                  a.click();
+                                  window.URL.revokeObjectURL(url);
+                                })
+                                .catch(err => console.error('Error exporting:', err));
+                            }}
+                            className="gap-1"
+                          >
+                            <Download className="w-4 h-4" />
+                            Exportar CSV
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
-                  <CardContent>
-                    <StudentCSVUploader
-                      eventId={id}
-                      eventName={event?.name || event?.school}
-                      onStudentsAdded={handleStudentsAdded}
-                    />
+                  <CardContent className={subjects.length === 0 ? "py-12" : ""}>
+                    {subjects.length === 0 ? (
+                      <div className="text-center">
+                        <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                          <FileUser className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                          ¡Comienza importando estudiantes!
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
+                          Usa el importador CSV de arriba para agregar estudiantes rápidamente. 
+                          También puedes agregarlos uno por uno o con una lista de texto.
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            // Scroll to CSV uploader
+                            document.querySelector('[data-csv-uploader]')?.scrollIntoView({ 
+                              behavior: 'smooth', 
+                              block: 'start' 
+                            });
+                          }}
+                          className="gap-2"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Ir al importador
+                        </Button>
+                      </div>
+                    ) : (
+                      <SubjectsSection eventId={id} />
+                    )}
                   </CardContent>
-                </Card>
-
-                {/* Existing Students List */}
-                <Card variant="glass">
-                  <SubjectsSection eventId={id} />
                 </Card>
               </div>
             </TabsContent>

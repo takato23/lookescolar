@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { Plus, Calendar, ArrowLeft, Home } from 'lucide-react';
 import { EventCard } from '@/components/admin/EventCard';
+import { EventFilters } from '@/components/admin/EventFilters';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 interface EventsPageClientProps {
   events: any[] | null;
@@ -17,6 +18,7 @@ interface EventsPageClientProps {
 export function EventsPageClient({ events, error }: EventsPageClientProps) {
   const router = useRouter();
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [filteredEvents, setFilteredEvents] = useState<any[]>(events || []);
 
   const handleDeleteEvent = async (event: any) => {
     const hasPhotos = event.stats?.totalPhotos > 0;
@@ -75,6 +77,10 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
   const handleViewEvent = (event: any) => {
     router.push(`/admin/events/${event.id}`);
   };
+
+  const handleFilteredEventsChange = useCallback((newFilteredEvents: any[]) => {
+    setFilteredEvents(newFilteredEvents);
+  }, []);
   return (
     <div className="liquid-glass-app min-h-screen">
       <div className="container mx-auto space-y-6 lg:space-y-8 p-6">
@@ -130,8 +136,18 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
           </div>
         )}
 
+        {/* Event Filters */}
+        {events && events.length > 0 && (
+          <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+            <EventFilters
+              events={events}
+              onFilteredEventsChange={handleFilteredEventsChange}
+            />
+          </div>
+        )}
+
         {/* Events Content */}
-        <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
           {!events || events.length === 0 ? (
             <div className="liquid-card p-8 text-center">
               <EmptyState
@@ -146,9 +162,24 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                 </Link>
               </EmptyState>
             </div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="liquid-card p-8 text-center">
+              <EmptyState
+                icon={Calendar}
+                title="No se encontraron eventos"
+                description="Prueba ajustando los filtros o el término de búsqueda para ver más resultados."
+              >
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="liquid-button liquid-shine px-6 py-3 rounded-2xl"
+                >
+                  <span className="liquid-button-text font-medium">Actualizar página</span>
+                </button>
+              </EmptyState>
+            </div>
           ) : (
             <div className="scrollbar-elevated grid max-h-[70vh] gap-6 overflow-auto pr-1">
-              {events.map((event, index) => (
+              {filteredEvents.map((event, index) => (
                 <div
                   key={event.id}
                   className="animate-slide-up"

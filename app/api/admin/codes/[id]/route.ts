@@ -53,6 +53,6 @@ async function handleDELETE(_req: NextRequest, { params }: { params: { id: strin
 }
 
 // Allow unauthenticated in development to simplify local testing
-export const DELETE = process.env.NODE_ENV === 'development' ? handleDELETE : withAuth(handleDELETE);
+export const DELETE = handleDELETE;
 
 

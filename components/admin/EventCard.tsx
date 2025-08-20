@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import {
   Calendar,
   MapPin,
@@ -19,6 +20,9 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
+  ExternalLink,
+  Copy,
+  Wrench,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -101,6 +105,49 @@ export function EventCard({
     }
   };
 
+  // Copy public gallery link to clipboard
+  const copyPublicLink = async () => {
+    const publicUrl = `${window.location.origin}/gallery/${event.id}`;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast.success('Link público copiado al portapapeles', {
+        description: `Las familias pueden acceder en: /gallery/${event.id}`,
+        duration: 4000
+      });
+    } catch (error) {
+      toast.error('No se pudo copiar el link');
+    }
+  };
+
+  // Repair photo previews with better feedback
+  const repairPreviews = async () => {
+    const loadingToast = toast.loading('Reparando previews...', {
+      description: 'Regenerando watermarks para el evento'
+    });
+    
+    try {
+      const res = await fetch('/api/admin/photos/repair-previews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: event.id }),
+      });
+      
+      if (!res.ok) throw new Error('Error reparando previews');
+      
+      toast.success('Previews reparados exitosamente', {
+        id: loadingToast,
+        description: 'Se regeneraron los watermarks del evento',
+        duration: 5000
+      });
+    } catch (error) {
+      toast.error('No se pudo reparar los previews', {
+        id: loadingToast,
+        description: 'Intenta nuevamente o contacta soporte',
+        duration: 5000
+      });
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -145,86 +192,105 @@ export function EventCard({
             </div>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="liquid-button opacity-0 transition-opacity group-hover:opacity-100 p-2 rounded-xl"
-                onClick={(e) => e.stopPropagation()}
-                disabled={isLoading}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onView?.(event);
-                }}
-              >
-                <Eye className="mr-2 h-4 w-4" />
-                Ver detalles
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/admin/photos?eventId=${event.id}`}
+          {/* Quick Actions - Always visible on hover */}
+          <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            {/* Manage Photos */}
+            <Link
+              href={`/admin/photos?eventId=${event.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="liquid-button liquid-button-secondary p-2 rounded-xl"
+              title="Administrar fotos"
+            >
+              <Camera className="h-4 w-4" />
+            </Link>
+
+            {/* Copy Public Link */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copyPublicLink();
+              }}
+              className="liquid-button liquid-button-secondary p-2 rounded-xl"
+              title="Copiar link público"
+              disabled={isLoading}
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+
+            {/* Options Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="liquid-button liquid-button-secondary p-2 rounded-xl"
                   onClick={(e) => e.stopPropagation()}
+                  disabled={isLoading}
+                  title="Más opciones"
                 >
-                  <Camera className="mr-2 h-4 w-4" />
-                  Administrar fotos
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href={`/admin/publish`}
-                  onClick={(e) => e.stopPropagation()}
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onView?.(event);
+                  }}
                 >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Compartir salón
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit?.(event);
-                }}
-              >
-                <Edit3 className="mr-2 h-4 w-4" />
-                Editar evento
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    const res = await fetch('/api/admin/photos/watermark', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ eventId: event.id }),
-                    });
-                    if (!res.ok) throw new Error('Error');
-                    alert('Generación de watermarks iniciada');
-                  } catch {
-                    alert('No se pudo iniciar la generación de watermarks');
-                  }
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Generar previews
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-600 focus:text-red-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete?.(event);
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar evento
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver detalles
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={`/gallery/${event.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    target="_blank"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Abrir galería pública
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href={`/admin/publish`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Compartir salón
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    repairPreviews();
+                  }}
+                >
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Reparar previews
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit?.(event);
+                  }}
+                >
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Editar evento
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete?.(event);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar evento
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -318,26 +384,22 @@ export function EventCard({
           </div>
         )}
 
-        {/* Action Area - Simplified */}
+        {/* Quick Info and Primary Action */}
         <div className="border-border/50 flex items-center justify-between border-t pt-4">
-          <div className="liquid-description text-xs">
-            Creado {new Date(event.created_at || '').toLocaleDateString('es-AR')}
+          <div className="flex items-center gap-4 text-xs liquid-description">
+            <span>Creado {new Date(event.created_at || '').toLocaleDateString('es-AR')}</span>
+            {event.stats?.lastPhotoUploaded && (
+              <span className="text-green-600">
+                Última foto: {new Date(event.stats.lastPhotoUploaded).toLocaleDateString('es-AR')}
+              </span>
+            )}
           </div>
 
           <div className="flex gap-2">
             <Link href={`/admin/events/${event.id}`}>
-              <button className="liquid-button text-xs px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
+              <button className="liquid-button liquid-button-primary text-sm px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
                 <Eye className="h-4 w-4" />
                 <span className="liquid-button-text">Gestionar</span>
-              </button>
-            </Link>
-            <Link href={`/gallery/${event.id}`}>
-              <button
-                className="liquid-button liquid-button-secondary text-xs px-3 py-2 rounded-lg flex items-center gap-1"
-                aria-label="Vista cliente"
-              >
-                <Eye className="h-3 w-3" />
-                <span className="liquid-button-text">Vista</span>
               </button>
             </Link>
           </div>

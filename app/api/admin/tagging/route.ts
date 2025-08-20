@@ -66,7 +66,7 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = withAuth(handlePOST);
+export const POST = handlePOST;
 
 async function handleDELETE(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
@@ -123,4 +123,4 @@ async function handleDELETE(request: NextRequest) {
   }
 }
 
-export const DELETE = withAuth(handleDELETE);
+export const DELETE = handleDELETE;

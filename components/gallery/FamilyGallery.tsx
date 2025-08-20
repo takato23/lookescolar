@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { ShoppingCartIcon, HeartIcon, CheckCircleIcon, ZoomInIcon, AlertCircleIcon } from 'lucide-react';
+import { ShoppingCartIcon, HeartIcon, CheckCircleIcon, ZoomInIcon, AlertCircleIcon, Users, Camera, Star, Filter, Grid3X3Icon, List } from 'lucide-react';
 import { useUnifiedCartStore } from '@/lib/stores/unified-cart-store';
 import { EmptyState } from '@/components/public/EmptyState';
 import { PhotoModal } from '@/components/public/PhotoModal';
@@ -13,6 +13,7 @@ import { CartButton, ShoppingCart as FamilyCartDrawer } from '@/components/famil
 import { StickyCTA } from '@/components/public/StickyCTA';
 import type { GalleryContextData } from '@/lib/gallery-context';
 import { debugMigration } from '@/lib/feature-flags';
+import { Button } from '@/components/ui/button';
 
 interface Photo {
   id: string;
@@ -203,114 +204,162 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-          <div>
-            <p className="text-lg font-medium text-gray-700">Cargando tu galería...</p>
-            <p className="text-sm text-gray-500 mt-1">Esto puede tomar unos segundos</p>
-          </div>
-        </div>
+      <div className="space-y-8">
+        <FamilyGalleryLoadingSkeleton />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="rounded-xl bg-white p-8 shadow-xl max-w-md w-full">
-          <div className="flex items-start space-x-3">
-            <AlertCircleIcon className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">No pudimos cargar tu galería</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <p className="text-sm font-medium text-gray-700">Posibles soluciones:</p>
-                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                  <li>Verifica que el enlace sea correcto</li>
-                  <li>Asegúrate de usar el QR o código proporcionado</li>
-                  <li>Contacta con el fotógrafo si el problema persiste</li>
-                </ul>
-              </div>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 transition-colors"
-              >
-                Intentar de nuevo
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <FamilyGalleryErrorState error={error} onRetry={() => loadGallery(1)} />
     );
   }
 
   const priceText = pkg ? (pkg === 'Combo A' ? '$' + 1000 : pkg === 'Combo B' ? '$' + 1800 : 'sin precio online') : 'sin precio online';
 
+  // Tabs para navegación familiar
+  const familyTabs = [
+    { id: 'todas' as const, label: 'Todas', count: photos.length, icon: Grid3X3Icon },
+    { id: 'favoritas' as const, label: 'Favoritas', count: favorites.size, icon: HeartIcon },
+    { id: 'seleccionadas' as const, label: 'Seleccionadas', count: selectedPhotos.size, icon: ShoppingCartIcon },
+  ];
+
+  const [activeTab, setActiveTab] = useState<'todas' | 'favoritas' | 'seleccionadas'>('todas');
+
+  // Filtrar fotos basado en el tab activo
+  const getFilteredPhotos = () => {
+    switch (activeTab) {
+      case 'favoritas':
+        return photos.filter(photo => favorites.has(photo.id));
+      case 'seleccionadas':
+        return photos.filter(photo => selectedPhotos.has(photo.id));
+      default:
+        return photos;
+    }
+  };
+
+  const filteredPhotos = getFilteredPhotos();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div aria-live="polite" className="sr-only">{submitted ? '¡Listo! Recibimos tu selección.' : ''}</div>
       
-      {/* Family Header */}
-      <div className="bg-white/90 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-lg">
+      {/* Family Header mejorado - Liquid glass design */}
+      <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-8 shadow-xl shadow-cyan-500/10">
         {/* Main Header Row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">🖼️ Tus Fotos</h1>
-            {subject?.event && (
-              <p className="text-sm text-gray-600 mt-1">
-                {subject.event.name} • {subject.event.school_name}
-              </p>
-            )}
+        <div className="flex flex-wrap items-center justify-between gap-6 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-2xl blur-lg opacity-60 group-hover:opacity-80 transition-opacity" />
+              <div className="relative bg-gradient-to-br from-cyan-400 to-purple-500 p-4 rounded-2xl shadow-xl">
+                <Camera className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-br from-cyan-600 to-purple-600 bg-clip-text text-transparent">
+                Tus Fotos Privadas
+              </h1>
+              {subject?.event && (
+                <p className="text-gray-600 mt-1 font-medium">
+                  {subject.event.name} • {subject.event.school_name}
+                </p>
+              )}
+            </div>
           </div>
           <CartButton />
         </div>
         
-        {/* Status Row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">{photos.length} fotos disponibles</span>
+        {/* Enhanced Status Row */}
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full">
+              <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
+              <Camera className="h-4 w-4 text-green-600" />
+              <span className="text-green-700 font-semibold">{photos.length} fotos disponibles</span>
             </div>
             {selectedPhotos.size > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
                 <ShoppingCartIcon className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-600">{selectedPhotos.size} seleccionadas para comprar</span>
+                <span className="font-semibold text-blue-600">{selectedPhotos.size} para comprar</span>
               </div>
             )}
             {favorites.size > 0 && (
-              <div className="flex items-center gap-2 text-red-500">
-                <HeartIcon className="h-4 w-4 fill-current" />
-                <span>{favorites.size} favoritas</span>
+              <div className="flex items-center gap-2 bg-red-50 px-4 py-2 rounded-full">
+                <HeartIcon className="h-4 w-4 text-red-500 fill-current" />
+                <span className="font-semibold text-red-600">{favorites.size} favoritas</span>
               </div>
             )}
           </div>
           
-          {/* Instructions */}
-          <div className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
-            💡 Tip: ❤️ para favoritos • ✅ para comprar • 🔍 para ampliar
+          {/* Instructions mejoradas */}
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-2 rounded-full border border-gray-200">
+            <span className="text-sm text-gray-600">
+              💡 <strong>Tip:</strong> ❤️ favoritos • ✅ comprar • 🔍 ampliar
+            </span>
           </div>
         </div>
       </div>
 
+      {/* Navigation Tabs */}
+      <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
+        <div className="flex space-x-2">
+          {familyTabs.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  relative flex-1 px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 transform
+                  ${activeTab === tab.id
+                    ? 'bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25 scale-105'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-white/60 hover:scale-102 hover:shadow-md'
+                  }
+                `}
+                aria-label={`Filtrar por ${tab.label}`}
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                  <span className={`
+                    px-2 py-1 rounded-full text-xs font-bold
+                    ${activeTab === tab.id 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-gray-100 text-gray-600'
+                    }
+                  `}>
+                    {tab.count}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {submitted && (
-        <div className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 p-1">
-          <div className="rounded-lg bg-white p-6">
-            <div className="flex items-start space-x-3">
-              <CheckCircleIcon className="h-8 w-8 text-green-500 flex-shrink-0" />
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-gray-900 mb-1">¡Selección enviada con éxito!</h2>
-                <p className="text-gray-600 mb-4">
-                  Hemos recibido tu selección de fotos. El fotógrafo se pondrá en contacto contigo pronto.
+        <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-8 shadow-xl shadow-green-500/10">
+          <div className="flex items-start space-x-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-500 shadow-xl shadow-green-500/25">
+              <CheckCircleIcon className="h-8 w-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Selección enviada con éxito!</h2>
+              <p className="text-gray-600 mb-6 text-lg">
+                Hemos recibido tu selección de fotos. El fotógrafo se pondrá en contacto contigo pronto para coordinar la entrega.
+              </p>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4 mb-6">
+                <p className="text-sm text-gray-600">
+                  📧 <strong>Próximos pasos:</strong> Revisa tu email y teléfono en las próximas 24-48 horas.
                 </p>
-                <button 
-                  onClick={() => setSubmitted(false)} 
-                  className="rounded-lg bg-blue-600 px-6 py-2 text-white font-medium hover:bg-blue-700 transition-colors"
-                >
-                  Ver galería nuevamente
-                </button>
               </div>
+              <Button
+                onClick={() => setSubmitted(false)}
+                className="rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 px-8 py-3 font-bold text-white shadow-lg shadow-green-500/25 transition-all duration-300 hover:scale-105"
+              >
+                Ver galería nuevamente
+              </Button>
             </div>
           </div>
         </div>
@@ -318,107 +367,50 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
 
       {/* Main Gallery */}
       {photos.length === 0 ? (
-        <EmptyState />
+        <FamilyEmptyState />
+      ) : filteredPhotos.length === 0 ? (
+        <FamilyEmptyFilterState activeTab={activeTab} />
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {photos.map((photo, idx) => (
-            <div
-              key={photo.id}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-xl group relative overflow-hidden transition-all duration-300 transform hover:scale-105"
-            >
-              {/* Image Container */}
-              <div className="aspect-square relative bg-gray-100 rounded-t-2xl overflow-hidden">
-                <Image
-                  src={photo.preview_url}
-                  alt={photo.filename}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                  decoding="async"
-                  placeholder="blur"
-                  blurDataURL={BLUR_DATA_URL}
-                />
-                
-                {/* Zoom button on hover */}
-                <button
-                  onClick={() => setZoomIndex(idx)}
-                  className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-colors opacity-0 group-hover:opacity-100"
-                  aria-label="Ver foto en tamaño completo"
-                >
-                  <ZoomInIcon className="h-8 w-8 text-white drop-shadow-lg" />
-                </button>
-
-                {/* Watermark Badge */}
-                <div className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded-full shadow-lg">
-                  MUESTRA
-                </div>
-
-                {/* Selection Indicator */}
-                <div className="absolute top-3 right-3 z-10">
-                  <div 
-                    className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-lg ${
-                      selectedPhotos.has(photo.id) 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-white/90 text-gray-600 backdrop-blur-sm'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const wasSelected = selectedPhotos.has(photo.id);
-                      togglePhotoSelection(photo.id);
-                      if (!wasSelected) {
-                        addItem({
-                          photoId: photo.id,
-                          filename: photo.filename,
-                          price: 0,
-                          watermarkUrl: photo.preview_url,
-                        });
-                      }
-                    }}
-                  >
-                    {selectedPhotos.has(photo.id) && (
-                      <CheckCircleIcon className="h-4 w-4" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Photo Info */}
-              <div className="bg-white p-3 rounded-b-2xl">
-                <div className="flex items-center justify-between">
-                  {/* Photo filename */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">
-                      {photo.filename}
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {Math.round(photo.size / 1024)} KB
-                    </p>
-                  </div>
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {filteredPhotos.map((photo, idx) => (
+            <div key={photo.id} className="group">
+              <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20 hover:scale-105">
+                {/* Image Container */}
+                <div className="aspect-square relative bg-gray-100 rounded-2xl overflow-hidden">
+                  <Image
+                    src={photo.preview_url}
+                    alt={photo.filename}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                  />
                   
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 ml-2">
-                    {/* Favorite Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(photo.id);
-                      }}
-                      className={`rounded-full p-1.5 transition-all transform hover:scale-110 ${
-                        favorites.has(photo.id)
-                          ? 'bg-red-500 text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-600 hover:bg-red-50'
-                      }`}
-                      aria-label={favorites.has(photo.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                    >
-                      <HeartIcon
-                        className="h-4 w-4"
-                        fill={favorites.has(photo.id) ? 'currentColor' : 'none'}
-                      />
-                    </button>
+                  {/* Zoom button on hover */}
+                  <button
+                    onClick={() => setZoomIndex(idx)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-colors opacity-0 group-hover:opacity-100"
+                    aria-label="Ver foto en tamaño completo"
+                  >
+                    <ZoomInIcon className="h-8 w-8 text-white drop-shadow-lg" />
+                  </button>
 
-                    {/* Cart Button */}
-                    <button
+                  {/* Watermark Badge */}
+                  <div className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-full shadow-lg">
+                    PRIVADA
+                  </div>
+
+                  {/* Selection Indicator */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <div 
+                      className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-lg ${
+                        selectedPhotos.has(photo.id) 
+                          ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white scale-110' 
+                          : 'bg-white/90 text-gray-600 backdrop-blur-sm'
+                      }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         const wasSelected = selectedPhotos.has(photo.id);
@@ -432,15 +424,82 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
                           });
                         }
                       }}
-                      className={`rounded-full p-1.5 transition-all transform hover:scale-110 ${
-                        selectedPhotos.has(photo.id)
-                          ? 'bg-blue-600 text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-600 hover:bg-blue-50'
-                      }`}
-                      aria-label={selectedPhotos.has(photo.id) ? 'Quitar de la selección' : 'Agregar a la selección'}
                     >
-                      <ShoppingCartIcon className="h-4 w-4" />
-                    </button>
+                      {selectedPhotos.has(photo.id) && (
+                        <CheckCircleIcon className="h-5 w-5" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Favorite Indicator */}
+                  {favorites.has(photo.id) && (
+                    <div className="absolute bottom-3 left-3">
+                      <div className="bg-red-500 text-white p-1 rounded-full shadow-lg">
+                        <HeartIcon className="h-3 w-3 fill-current" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Photo Info */}
+                <div className="p-3">
+                  <div className="flex items-center justify-between">
+                    {/* Photo filename */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {photo.filename}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {Math.round(photo.size / 1024)} KB
+                      </p>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-1">
+                      {/* Favorite Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(photo.id);
+                        }}
+                        className={`rounded-full p-2 transition-all transform hover:scale-110 ${
+                          favorites.has(photo.id)
+                            ? 'bg-red-500 text-white shadow-lg'
+                            : 'bg-gray-100 text-gray-600 hover:bg-red-50'
+                        }`}
+                        aria-label={favorites.has(photo.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                      >
+                        <HeartIcon
+                          className="h-4 w-4"
+                          fill={favorites.has(photo.id) ? 'currentColor' : 'none'}
+                        />
+                      </button>
+
+                      {/* Cart Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const wasSelected = selectedPhotos.has(photo.id);
+                          togglePhotoSelection(photo.id);
+                          if (!wasSelected) {
+                            addItem({
+                              photoId: photo.id,
+                              filename: photo.filename,
+                              price: 0,
+                              watermarkUrl: photo.preview_url,
+                            });
+                          }
+                        }}
+                        className={`rounded-full p-2 transition-all transform hover:scale-110 ${
+                          selectedPhotos.has(photo.id)
+                            ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-lg'
+                            : 'bg-gray-100 text-gray-600 hover:bg-blue-50'
+                        }`}
+                        aria-label={selectedPhotos.has(photo.id) ? 'Quitar de la selección' : 'Agregar a la selección'}
+                      >
+                        <ShoppingCartIcon className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -449,18 +508,31 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
         </div>
       )}
       
-      {/* Loading more indicator */}
+      {/* Loading more indicator - Liquid glass design */}
       {isLoadingMore && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="animate-pulse bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="aspect-square bg-gray-200 rounded-t-2xl" />
-              <div className="p-3">
-                <div className="h-4 bg-gray-200 rounded mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {Array.from({ length: 12 }).map((_, i) => {
+            const gradients = [
+              'from-orange-300 to-yellow-400',
+              'from-cyan-300 to-blue-400', 
+              'from-purple-300 to-pink-400',
+              'from-green-300 to-emerald-400',
+              'from-rose-300 to-red-400',
+              'from-indigo-300 to-purple-400'
+            ];
+            const gradient = gradients[i % gradients.length];
+            return (
+              <div key={i} className="group">
+                <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
+                  <div className={`aspect-square animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
+                  <div className="mt-3 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded-lg animate-pulse" />
+                    <div className="h-3 bg-gray-200 rounded-lg w-2/3 animate-pulse" />
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       
@@ -519,27 +591,209 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
       />
 
       {/* Photo Modal */}
-      {zoomIndex !== null && photos[zoomIndex] && (
+      {zoomIndex !== null && filteredPhotos[zoomIndex] && (
         <PhotoModal
           photo={{
-            id: photos[zoomIndex].id,
-            preview_url: photos[zoomIndex].preview_url,
-            filename: photos[zoomIndex].filename
+            id: filteredPhotos[zoomIndex].id,
+            preview_url: filteredPhotos[zoomIndex].preview_url,
+            filename: filteredPhotos[zoomIndex].filename
           }}
           isOpen={true}
           onClose={() => setZoomIndex(null)}
           onPrev={() => setZoomIndex((i) => (i === null || i === 0 ? i : i - 1))}
-          onNext={() => setZoomIndex((i) => (i === null || i === photos.length - 1 ? i : i + 1))}
-          hasNext={zoomIndex < photos.length - 1}
+          onNext={() => setZoomIndex((i) => (i === null || i === filteredPhotos.length - 1 ? i : i + 1))}
+          hasNext={zoomIndex < filteredPhotos.length - 1}
           hasPrev={zoomIndex > 0}
           currentIndex={zoomIndex + 1}
-          totalPhotos={photos.length}
-          isSelected={selectedPhotos.has(photos[zoomIndex].id)}
-          isFavorite={favorites.has(photos[zoomIndex].id)}
-          onToggleSelection={() => togglePhotoSelection(photos[zoomIndex].id)}
-          onToggleFavorite={() => toggleFavorite(photos[zoomIndex].id)}
+          totalPhotos={filteredPhotos.length}
+          isSelected={selectedPhotos.has(filteredPhotos[zoomIndex].id)}
+          isFavorite={favorites.has(filteredPhotos[zoomIndex].id)}
+          onToggleSelection={() => togglePhotoSelection(filteredPhotos[zoomIndex].id)}
+          onToggleFavorite={() => toggleFavorite(filteredPhotos[zoomIndex].id)}
         />
       )}
+    </div>
+  );
+}
+
+// Loading skeleton específico para galería familiar
+function FamilyGalleryLoadingSkeleton() {
+  const gradients = [
+    'from-orange-300 to-yellow-400',
+    'from-cyan-300 to-blue-400', 
+    'from-purple-300 to-pink-400',
+    'from-green-300 to-emerald-400',
+    'from-rose-300 to-red-400',
+    'from-indigo-300 to-purple-400'
+  ];
+
+  return (
+    <>
+      {/* Header skeleton */}
+      <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-8 shadow-xl shadow-cyan-500/10">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 animate-pulse rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300" />
+            <div className="space-y-3">
+              <div className="h-8 w-56 animate-pulse rounded-lg bg-gradient-to-br from-gray-200 to-gray-300" />
+              <div className="h-4 w-40 animate-pulse rounded bg-gray-200" />
+            </div>
+          </div>
+          <div className="h-12 w-32 animate-pulse rounded-2xl bg-gray-200" />
+        </div>
+        <div className="flex gap-4">
+          <div className="h-8 w-32 animate-pulse rounded-full bg-gray-200" />
+          <div className="h-8 w-28 animate-pulse rounded-full bg-gray-200" />
+          <div className="h-8 w-24 animate-pulse rounded-full bg-gray-200" />
+        </div>
+      </div>
+
+      {/* Tabs skeleton */}
+      <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
+        <div className="flex space-x-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex-1 h-16 animate-pulse rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300" />
+          ))}
+        </div>
+      </div>
+      
+      {/* Grid skeleton */}
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+        {Array.from({ length: 12 }).map((_, i) => {
+          const gradient = gradients[i % gradients.length];
+          return (
+            <div key={i} className="group">
+              <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
+                <div className={`aspect-square animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
+                <div className="mt-3 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded-lg animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded-lg w-2/3 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// Error state específico para galería familiar
+function FamilyGalleryErrorState({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <div className="py-20 text-center">
+      <div className="mx-auto max-w-lg">
+        <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-12 shadow-xl shadow-red-500/10">
+          <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-red-400 via-orange-400 to-yellow-400 shadow-2xl shadow-red-500/20">
+            <AlertTriangleIcon className="h-16 w-16 text-white" />
+          </div>
+          <h3 className="mb-6 text-3xl font-bold text-gray-800">
+            No pudimos cargar tu galería privada
+          </h3>
+          <p className="mx-auto mb-8 max-w-md text-gray-600 text-lg leading-relaxed">{error}</p>
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-6 mb-8">
+            <p className="text-sm font-semibold text-gray-700 mb-3">Posibles soluciones:</p>
+            <ul className="text-sm text-gray-600 space-y-2 text-left">
+              <li className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-400 rounded-full" />
+                Verifica que el enlace o código QR sea correcto
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-orange-400 rounded-full" />
+                Asegúrate de usar el acceso proporcionado por el fotógrafo
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full" />
+                Contacta con el fotógrafo si el problema persiste
+              </li>
+            </ul>
+          </div>
+          <Button
+            onClick={onRetry}
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 px-10 py-4 font-bold text-white shadow-2xl shadow-red-500/25 transition-all duration-300 hover:scale-110 hover:shadow-3xl hover:shadow-red-500/30"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+            <div className="flex items-center gap-3">
+              <AlertTriangleIcon className="h-5 w-5" />
+              <span>Intentar de nuevo</span>
+            </div>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Empty state específico para galería familiar
+function FamilyEmptyState() {
+  return (
+    <div className="py-20 text-center">
+      <div className="mx-auto max-w-lg">
+        <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-12 shadow-xl shadow-cyan-500/10">
+          <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 shadow-2xl shadow-cyan-500/20">
+            <Camera className="h-16 w-16 text-white" />
+          </div>
+          <h3 className="mb-6 text-3xl font-bold text-gray-800">
+            ¡Aún no hay fotos privadas!
+          </h3>
+          <p className="mx-auto max-w-md text-gray-600 text-lg leading-relaxed mb-6">
+            Tus fotos aparecerán aquí cuando estén disponibles.
+          </p>
+          <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-2xl p-6">
+            <p className="text-sm text-gray-600 mb-2">💡 <strong>Mientras esperas:</strong></p>
+            <ul className="text-sm text-gray-600 space-y-1 text-left">
+              <li>• El fotógrafo está procesando las imágenes</li>
+              <li>• Las fotos aparecerán automáticamente cuando estén listas</li>
+              <li>• Este enlace es privado y seguro para tu familia</li>
+              <li>• Guarda este enlace para volver más tarde</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Empty state para filtros
+function FamilyEmptyFilterState({ activeTab }: { activeTab: string }) {
+  const messages = {
+    favoritas: {
+      title: '¡Aún no tienes favoritas!',
+      description: 'Toca el corazón ❤️ en las fotos que más te gusten para marcarlas como favoritas.',
+      icon: HeartIcon,
+      gradient: 'from-red-400 via-pink-400 to-rose-500'
+    },
+    seleccionadas: {
+      title: '¡Aún no has seleccionado fotos!',
+      description: 'Toca el botón de carrito 🛒 en las fotos que quieras comprar.',
+      icon: ShoppingCartIcon,
+      gradient: 'from-blue-400 via-cyan-400 to-teal-500'
+    }
+  };
+
+  const config = messages[activeTab as keyof typeof messages] || messages.seleccionadas;
+  const Icon = config.icon;
+
+  return (
+    <div className="py-20 text-center">
+      <div className="mx-auto max-w-lg">
+        <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-12 shadow-xl shadow-gray-500/10">
+          <div className={`mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br ${config.gradient} shadow-2xl shadow-gray-500/20`}>
+            <Icon className="h-16 w-16 text-white" />
+          </div>
+          <h3 className="mb-6 text-3xl font-bold text-gray-800">
+            {config.title}
+          </h3>
+          <p className="mx-auto max-w-md text-gray-600 text-lg leading-relaxed mb-6">
+            {config.description}
+          </p>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6">
+            <p className="text-sm text-gray-600">
+              💡 <strong>Tip:</strong> Usa la pestaña "Todas" para ver todas las fotos disponibles.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

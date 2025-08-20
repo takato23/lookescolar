@@ -17,6 +17,7 @@ interface CartStore {
   items: CartItem[]
   isCartOpen: boolean
   contactInfo: ContactInfo | null
+  eventId: string | null
   
   // Acciones del carrito
   addItem: (photoId: string, price: number) => void
@@ -32,6 +33,9 @@ interface CartStore {
   // Información de contacto
   setContactInfo: (info: ContactInfo) => void
   
+  // EventId
+  setEventId: (eventId: string) => void
+  
   // Cálculos
   getTotalItems: () => number
   getTotalPrice: () => number
@@ -43,6 +47,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   isCartOpen: false,
   contactInfo: null,
+  eventId: null,
 
   addItem: (photoId: string, price: number) => {
     set((state) => {
@@ -108,6 +113,10 @@ export const useCartStore = create<CartStore>((set, get) => ({
 
   setContactInfo: (info: ContactInfo) => {
     set({ contactInfo: info })
+  },
+
+  setEventId: (eventId: string) => {
+    set({ eventId })
   },
 
   getTotalItems: () => {

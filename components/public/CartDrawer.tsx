@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { X, Minus, Plus, Trash2, ShoppingCart, Star } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
@@ -27,7 +27,8 @@ export function CartDrawer() {
     clearCart,
     getTotalItems,
     getTotalPrice,
-    setContactInfo
+    setContactInfo,
+    eventId
   } = useCartStore()
 
   const totalItems = getTotalItems()
@@ -44,21 +45,23 @@ export function CartDrawer() {
       return
     }
 
+    if (!eventId) {
+      alert('Error: ID de evento no encontrado')
+      return
+    }
+
     setIsCheckingOut(true)
 
     try {
       // Guardar información de contacto
       setContactInfo(contactForm)
 
-      // Preparar datos para el checkout
+      // Preparar datos para el checkout según el esquema esperado por /api/gallery/checkout
       const checkoutData = {
-        eventId: 'current-event-id', // TODO: obtener del contexto
+        eventId: eventId,
+        photoIds: items.map(item => item.photoId),
         contactInfo: contactForm,
-        items: items.map(item => ({
-          photoId: item.photoId,
-          quantity: item.quantity,
-          priceType: item.priceType
-        }))
+        package: `Selección personalizada (${items.length} fotos)`
       }
 
       // Llamar al endpoint de checkout
@@ -71,10 +74,12 @@ export function CartDrawer() {
       })
 
       if (!response.ok) {
-        throw new Error('Error en el procesamiento del pago')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error en el procesamiento del pago')
       }
 
-      const { redirectUrl } = await response.json()
+      const result = await response.json()
+      const { redirectUrl } = result.success ? result.data : result
 
       // Redirigir a MercadoPago
       if (redirectUrl) {

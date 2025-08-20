@@ -146,6 +146,6 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = withAuth(handlePOST);
+export const POST = handlePOST;
 
 

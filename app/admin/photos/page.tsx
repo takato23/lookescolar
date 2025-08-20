@@ -5,6 +5,10 @@ import { toast } from 'sonner';
 import PhotoGalleryLiquid from '@/components/admin/PhotoGalleryLiquid';
 import { PhotoTypeSelector } from '@/components/admin/PhotoTypeSelector';
 import { PhotoUploadButton } from '@/components/admin/PhotoUploadButton';
+import PhotoFilters, { type PhotoFilters as PhotoFiltersType, type ViewSettings } from '@/components/admin/PhotoFilters';
+import EventContextChip from '@/components/admin/EventContextChip';
+import BulkActionsBar from '@/components/admin/BulkActionsBar';
+import { createPostUploadToast } from '@/components/admin/PostUploadToast';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -70,17 +74,17 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoType, setPhotoType] = useState<'private' | 'public' | 'classroom'>('private');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'name' | 'size'>('recent');
-  const [activeFilters, setActiveFilters] = useState<{
-    approved?: boolean;
-    tagged?: boolean;
-    withFolder?: boolean;
-  }>({});
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
-  const [showMoveModal, setShowMoveModal] = useState(false);
   const [availableFolders, setAvailableFolders] = useState<Array<{id: string, name: string, eventName?: string, type?: string}>>([]);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  
+  // Load subjects for filter dropdown
+  const [subjects, setSubjects] = useState<Array<{
+    id: string;
+    name: string;
+    event_id: string;
+    event_name?: string;
+  }>>([]);
   const params = useSearchParams();
   const router = useRouter();
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -88,14 +92,28 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
   const selectedEventId = params.get('eventId');
   const selectedCourseId = params.get('courseId');
   const selectedCodeId = params.get('codeId');
+  
+  // New filter and view state using the advanced components
+  const [filters, setFilters] = useState<PhotoFiltersType>({
+    search: '',
+    eventId: selectedEventId || undefined,
+    approved: undefined,
+    tagged: undefined,
+    withFolder: undefined
+  });
+  
+  const [viewSettings, setViewSettings] = useState<ViewSettings>({
+    mode: 'grid',
+    density: 'normal'
+  });
 
-  // Filter and sort photos
+  // Filter and sort photos using new filter system
   const filteredAndSortedPhotos = useMemo(() => {
     let filtered = photos;
     
     // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (filters.search.trim()) {
+      const query = filters.search.toLowerCase();
       filtered = filtered.filter(photo => 
         photo.original_filename.toLowerCase().includes(query) ||
         photo.event?.name?.toLowerCase().includes(query) ||
@@ -103,54 +121,102 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
       );
     }
     
+    // Apply event filter
+    if (filters.eventId) {
+      filtered = filtered.filter(photo => photo.event_id === filters.eventId);
+    }
+    
+    // Apply subject filter
+    if (filters.subjectId) {
+      if (filters.subjectId === 'null') {
+        filtered = filtered.filter(photo => !photo.subject?.id);
+      } else {
+        filtered = filtered.filter(photo => photo.subject?.id === filters.subjectId);
+      }
+    }
+    
     // Apply status filters
-    if (activeFilters.approved !== undefined) {
-      filtered = filtered.filter(photo => photo.approved === activeFilters.approved);
+    if (filters.approved !== undefined) {
+      filtered = filtered.filter(photo => photo.approved === filters.approved);
     }
     
-    if (activeFilters.tagged !== undefined) {
-      filtered = filtered.filter(photo => photo.tagged === activeFilters.tagged);
+    if (filters.tagged !== undefined) {
+      filtered = filtered.filter(photo => photo.tagged === filters.tagged);
     }
     
-    if (activeFilters.withFolder !== undefined) {
-      if (activeFilters.withFolder) {
+    if (filters.withFolder !== undefined) {
+      if (filters.withFolder) {
         filtered = filtered.filter(photo => photo.subject?.id);
       } else {
         filtered = filtered.filter(photo => !photo.subject?.id);
       }
     }
     
-    // Apply sorting
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'recent':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        case 'oldest':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        case 'name':
-          return a.original_filename.localeCompare(b.original_filename);
-        case 'size':
-          return b.file_size - a.file_size;
-        default:
-          return 0;
+    // Apply date range filter
+    if (filters.dateRange) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      switch (filters.dateRange) {
+        case 'today':
+          filtered = filtered.filter(photo => {
+            const photoDate = new Date(photo.created_at);
+            return photoDate >= today;
+          });
+          break;
+        case 'week':
+          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+          filtered = filtered.filter(photo => {
+            const photoDate = new Date(photo.created_at);
+            return photoDate >= weekAgo;
+          });
+          break;
+        case 'month':
+          const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+          filtered = filtered.filter(photo => {
+            const photoDate = new Date(photo.created_at);
+            return photoDate >= monthAgo;
+          });
+          break;
       }
+    }
+    
+    // Apply sorting (default to recent)
+    const sorted = [...filtered].sort((a, b) => {
+      // Always sort by recent for now, more sorting options can be added to filters
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     
     return sorted;
-  }, [photos, searchQuery, activeFilters, sortBy]);
+  }, [photos, filters]);
 
-  // Toggle filter functions
-  const toggleFilter = (filterKey: keyof typeof activeFilters, value?: boolean) => {
-    setActiveFilters(prev => ({
+  // Load subjects/folders for filter dropdown
+  const loadSubjects = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/codes');
+      const data = await response.json();
+      const codes = Array.isArray(data) ? data : (data.codes || []);
+      
+      const subjectsData = codes.map((code: any) => ({
+        id: code.id,
+        name: code.code_value || 'Sin nombre',
+        event_id: code.event_id || '',
+        event_name: code.events?.name || 'Evento desconocido'
+      }));
+      
+      setSubjects(subjectsData);
+    } catch (error) {
+      console.error('Error loading subjects:', error);
+    }
+  }, []);
+
+  // Sync URL params with filters
+  useEffect(() => {
+    setFilters(prev => ({
       ...prev,
-      [filterKey]: prev[filterKey] === value ? undefined : value
+      eventId: selectedEventId || undefined
     }));
-  };
-
-  const clearAllFilters = () => {
-    setActiveFilters({});
-    setSearchQuery('');
-  };
+  }, [selectedEventId]);
 
   // Load photos with abort controller for better performance
   const loadPhotos = useCallback(async (isRefresh = false) => {
@@ -358,34 +424,42 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
       throw new Error(result.error || 'Error uploading photos');
     }
 
-    // Show success with detailed information
+    // Show enhanced post-upload toast
     const uploadedCount = result?.uploaded?.length || files.length;
     const ev = result.uploaded?.[0]?.event_id || eventId;
     const actualEventName = ev ? events.find(e => e.id === ev)?.name : null;
 
-    let successMessage = `✅ ${uploadedCount} fotos ${photoTypeLabel} subidas`;
-    let successDescription = '';
+    const uploadResult = {
+      uploadedCount,
+      eventId: ev,
+      eventName: actualEventName,
+      photoType,
+      qrDetection: result.qr_detection
+    };
 
-    if (actualEventName) {
-      successDescription = `Evento: ${actualEventName}`;
-    }
+    // Create custom toast with quick actions
+    const toastOptions = createPostUploadToast(uploadResult, {
+      onViewPhotos: () => {
+        if (ev) {
+          router.replace(`/admin/photos?eventId=${ev}&codeId=null`);
+        } else {
+          const usp = new URLSearchParams();
+          usp.set('codeId', 'null');
+          router.replace(`/admin/photos?${usp.toString()}`);
+        }
+      },
+      onTagNow: () => {
+        // Navigate to tagging interface if needed
+        if (ev) {
+          router.push(`/admin/events/${ev}/tagging`);
+        }
+      },
+      duration: 8000
+    });
 
-    // Add QR detection info to description
-    if (result.qr_detection && result.qr_detection.detected > 0) {
-      const { detected, auto_assigned } = result.qr_detection;
-      const qrInfo = `🔍 QR: ${detected} detectados, ${auto_assigned} asignados`;
-      successDescription = successDescription ? `${successDescription} • ${qrInfo}` : qrInfo;
-    }
-
-    // Add photo type info
-    const typeInfo = photoType === 'private' ? '👨‍👩‍👧‍👦 Familiares' : 
-                    photoType === 'classroom' ? '🏫 Del Salón' : '🌍 Públicas';
-    successDescription = successDescription ? `${successDescription} • ${typeInfo}` : typeInfo;
-
-    toast.success(successMessage, { 
+    toast.custom(() => toastOptions.component, {
       id: uploadingToast,
-      description: successDescription,
-      duration: 5000
+      duration: toastOptions.duration
     });
 
     // Show quick navigation after upload
@@ -538,6 +612,63 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
     }
   }, [photos, loading, loadEvents]);
 
+  // Load subjects when component mounts
+  useEffect(() => {
+    loadSubjects();
+  }, [loadSubjects]);
+
+  // Bulk actions functions
+  const handleSelectAll = useCallback(() => {
+    const allIds = filteredAndSortedPhotos.map(photo => photo.id);
+    setSelectedPhotos(allIds);
+  }, [filteredAndSortedPhotos]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedPhotos([]);
+  }, []);
+
+  const handleBulkApprove = useCallback(async () => {
+    await handlePhotoApprove(selectedPhotos, true);
+    setSelectedPhotos([]);
+    await loadPhotos(true);
+  }, [selectedPhotos, handlePhotoApprove, loadPhotos]);
+
+  const handleBulkDelete = useCallback(async () => {
+    await handlePhotoDelete(selectedPhotos);
+    setSelectedPhotos([]);
+    await loadPhotos(true);
+  }, [selectedPhotos, handlePhotoDelete, loadPhotos]);
+
+  const handleBulkMove = useCallback(async (folderId: string) => {
+    const promises = selectedPhotos.map(photoId => 
+      fetch(`/api/admin/photos/${photoId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codeId: folderId })
+      })
+    );
+    
+    await Promise.all(promises);
+    setSelectedPhotos([]);
+    await loadPhotos(true);
+  }, [selectedPhotos, loadPhotos]);
+
+  const handleBulkTag = useCallback(() => {
+    // Open tagging modal or navigate to tagging interface
+    console.log('Bulk tagging for:', selectedPhotos);
+    // This could open a modal or navigate to a tagging interface
+  }, [selectedPhotos]);
+
+  const clearAllFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      eventId: undefined,
+      approved: undefined,
+      tagged: undefined,
+      withFolder: undefined
+    });
+  }, []);
+
   // Enhanced loading state with better UX
   if (isInitializing || (loading && !photos.length)) {
     return (
@@ -638,13 +769,25 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
             </div>
           </div>
           
-          {/* Mobile badges */}
+          {/* Mobile Event Context */}
+          {selectedEventId && events.find(e => e.id === selectedEventId) && (
+            <div className="mb-3">
+              <EventContextChip
+                event={events.find(e => e.id === selectedEventId)!}
+                photoCount={photos.length}
+                filteredCount={filteredAndSortedPhotos.length}
+                onRemoveFilter={() => {
+                  const newFilters = { ...filters, eventId: undefined };
+                  setFilters(newFilters);
+                  router.replace('/admin/photos');
+                }}
+                compact={true}
+              />
+            </div>
+          )}
+          
+          {/* Mobile Photo Type Badge */}
           <div className="flex flex-wrap gap-2 mb-3">
-            {selectedEventId && (
-              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                📸 {events.find(e => e.id === selectedEventId)?.name || 'Evento'}
-              </Badge>
-            )}
             <Badge 
               variant="outline" 
               className={`text-xs ${
@@ -758,7 +901,9 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
               hideSidebar
               hideHeader
               compact
-              viewMode={viewMode}
+              viewMode={viewSettings.mode}
+              selectedPhotos={selectedPhotos}
+              onPhotosSelected={setSelectedPhotos}
               externalSelectedEvent={selectedEventId}
               externalCodeId={selectedCodeId ?? null}
             />
@@ -769,403 +914,63 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
                 {/* Desktop Layout */}
       <div className="hidden lg:block">
         <div className="container mx-auto px-6 pt-2">
-          {/* Breadcrumb with Event Context */}
+          {/* Event Context Chip */}
           {selectedEventId && events.find(e => e.id === selectedEventId) && (
-            <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Link 
-                href="/admin/events" 
-                className="flex items-center gap-1 transition-colors hover:text-primary-600"
-              >
-                <Home className="h-4 w-4" />
-                Eventos
-              </Link>
-              <span>/</span>
-              <Link
-                href={`/admin/events/${selectedEventId}`}
-                className="transition-colors hover:text-primary-600"
-              >
-                {events.find(e => e.id === selectedEventId)?.name}
-              </Link>
-              <span>/</span>
-              <span className="text-foreground font-medium">Gestión de Fotos</span>
-            </nav>
+            <div className="mb-6">
+              <EventContextChip
+                event={events.find(e => e.id === selectedEventId)!}
+                photoCount={photos.length}
+                filteredCount={filteredAndSortedPhotos.length}
+                onRemoveFilter={() => {
+                  const newFilters = { ...filters, eventId: undefined };
+                  setFilters(newFilters);
+                  router.replace('/admin/photos');
+                }}
+              />
+            </div>
           )}
           
-          {/* Header with Context and Controls */}
+          {/* Header with Controls */}
           <div className="space-y-4 mb-6">
-            {/* Top Context Bar */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ImageIcon className="w-6 h-6 text-primary-600" />
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestión de Fotos</h1>
-                {selectedEventId && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push(`/admin/events/${selectedEventId}`)}
-                    className="text-blue-700 border-blue-200 hover:bg-blue-50"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-1" />
-                    Volver al evento
-                  </Button>
-                )}
-              </div>
-              
-              {/* Context Pill (sticky) */}
               <div className="flex items-center gap-3">
-                {(selectedEventId || selectedCodeId) && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-full px-4 py-2 text-sm font-medium text-blue-800">
-                    <span className="text-blue-600">Subiendo a:</span>
-                    <span className="ml-1">
-                      {selectedEventId ? events.find(e => e.id === selectedEventId)?.name || 'Evento' : 'Todas las fotos'}
-                      {selectedCodeId && selectedCodeId !== 'null' ? (
-                        <span className="text-blue-700"> › Carpeta específica</span>
-                      ) : selectedCodeId === 'null' ? (
-                        <span className="text-orange-700"> › Sin carpeta</span>
-                      ) : (
-                        <span className="text-blue-700"> › General</span>
-                      )}
-                    </span>
-                  </div>
-                )}
+                <ImageIcon className="w-6 h-6 text-primary-600" />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  Gestión de Fotos
+                </h1>
                 {isRefreshing && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-700">
                     <Loader2Icon className="w-4 h-4 animate-spin" />
                     <span>Actualizando...</span>
                   </div>
                 )}
-                <PhotoUploadButton
-                  onUpload={(files) => handlePhotoUpload(files, selectedEventId || undefined)}
-                  variant="default"
-                  size="sm"
-                >
-                  Subir Fotos
-                </PhotoUploadButton>
               </div>
-            </div>
-
-            {/* Controls Bar Reorganizada */}
-            <div className="space-y-3 p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
               
-              {/* Primera fila: Búsqueda y controles principales */}
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  {/* Search */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar por nombre, etiqueta o carpeta…"
-                      className="pl-10 pr-4 py-2 w-80 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                  </div>
-                  
-                  {/* View Toggle */}
-                  <div className="flex items-center gap-1 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg p-1">
-                    <button 
-                      onClick={() => setViewMode('grid')}
-                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                        viewMode === 'grid' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Grid
-                    </button>
-                    <button 
-                      onClick={() => setViewMode('list')}
-                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                        viewMode === 'list' 
-                          ? 'bg-blue-100 text-blue-700' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      Lista
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {/* Sort */}
-                  <select 
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="recent">Recientes</option>
-                    <option value="oldest">Más antiguas</option>
-                    <option value="name">A–Z</option>
-                    <option value="size">Tamaño</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Segunda fila: Botones de acción y filtros */}
-              <div className="flex items-center justify-between gap-4">
-                
-                {/* Botones de acción principales */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      console.log('Select all clicked. Current selectedPhotos:', selectedPhotos);
-                      console.log('filteredAndSortedPhotos count:', filteredAndSortedPhotos.length);
-                      
-                      const allVisibleSelected = filteredAndSortedPhotos.length > 0 && 
-                        filteredAndSortedPhotos.every(photo => selectedPhotos.includes(photo.id));
-                      
-                      if (allVisibleSelected) {
-                        // Deselect all visible
-                        const newSelection = selectedPhotos.filter(id => !filteredAndSortedPhotos.some(photo => photo.id === id));
-                        console.log('Deselecting. New selection:', newSelection);
-                        setSelectedPhotos(newSelection);
-                      } else {
-                        // Select all visible
-                        const visibleIds = filteredAndSortedPhotos.map(photo => photo.id);
-                        const newSelection = Array.from(new Set([...selectedPhotos, ...visibleIds]));
-                        console.log('Selecting all. Visible IDs:', visibleIds);
-                        console.log('New selection:', newSelection);
-                        setSelectedPhotos(newSelection);
-                      }
-                    }}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                      filteredAndSortedPhotos.length > 0 && 
-                      filteredAndSortedPhotos.every(photo => selectedPhotos.includes(photo.id))
-                        ? 'bg-blue-100 text-blue-700 border-blue-300'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <CheckSquareIcon className="w-4 h-4 mr-2" />
-                    Seleccionar todas ({filteredAndSortedPhotos.length})
-                  </button>
-
-                  {selectedPhotos.length > 0 && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          console.log('Move button clicked. Selected photos:', selectedPhotos);
-                          loadAvailableFolders();
-                          setShowMoveModal(true);
-                        }}
-                        className="text-green-700 border-green-300 hover:bg-green-50"
-                      >
-                        <MoveIcon className="w-4 h-4 mr-2" />
-                        Mover ({selectedPhotos.length})
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          try {
-                            await handlePhotoApprove(selectedPhotos, true);
-                            setSelectedPhotos([]);
-                            toast.success(`${selectedPhotos.length} fotos aprobadas`);
-                            onRefresh?.();
-                          } catch (error) {
-                            toast.error('Error al aprobar fotos');
-                          }
-                        }}
-                        className="text-green-700 border-green-300 hover:bg-green-50"
-                      >
-                        <CheckIcon className="w-4 h-4 mr-2" />
-                        Aprobar ({selectedPhotos.length})
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          if (confirm(`¿Eliminar ${selectedPhotos.length} fotos seleccionadas?`)) {
-                            try {
-                              await handlePhotoDelete(selectedPhotos);
-                              setSelectedPhotos([]);
-                              toast.success(`${selectedPhotos.length} fotos eliminadas`);
-                              await loadPhotos(true);
-                            } catch (error) {
-                              toast.error('Error al eliminar fotos');
-                            }
-                          }
-                        }}
-                        className="text-red-700 border-red-300 hover:bg-red-50"
-                      >
-                        <TrashIcon className="w-4 h-4 mr-2" />
-                        Eliminar ({selectedPhotos.length})
-                      </Button>
-                    </>
-                  )}
-                </div>
-
-                {/* Filtros en desplegable */}
-                <div className="relative">
-                  <details className="group">
-                    <summary className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
-                      </svg>
-                      Filtros
-                      {(Object.keys(activeFilters).length > 0) && (
-                        <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300 text-xs">
-                          {Object.keys(activeFilters).length}
-                        </Badge>
-                      )}
-                    </summary>
-                    
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 p-3">
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Estado de aprobación</label>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => toggleFilter('approved', true)}
-                              className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
-                                activeFilters.approved === true
-                                  ? 'bg-green-100 text-green-700 border-green-300'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-green-50'
-                              }`}
-                            >
-                              Aprobadas
-                            </button>
-                            <button
-                              onClick={() => toggleFilter('approved', false)}
-                              className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
-                                activeFilters.approved === false
-                                  ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-yellow-50'
-                              }`}
-                            >
-                              Pendientes
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Organización</label>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => toggleFilter('withFolder', false)}
-                              className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
-                                activeFilters.withFolder === false
-                                  ? 'bg-orange-100 text-orange-700 border-orange-300'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-orange-50'
-                              }`}
-                            >
-                              Sin carpeta
-                            </button>
-                            <button
-                              onClick={() => toggleFilter('tagged', true)}
-                              className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
-                                activeFilters.tagged === true
-                                  ? 'bg-blue-100 text-blue-700 border-blue-300'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-blue-50'
-                              }`}
-                            >
-                              Con etiqueta
-                            </button>
-                            <button
-                              onClick={() => toggleFilter('tagged', false)}
-                              className={`text-xs px-3 py-2 rounded-lg border transition-colors ${
-                                activeFilters.tagged === false
-                                  ? 'bg-purple-100 text-purple-700 border-purple-300'
-                                  : 'bg-white text-gray-600 border-gray-300 hover:bg-purple-50'
-                              }`}
-                            >
-                              Sin etiqueta
-                            </button>
-                          </div>
-                        </div>
-
-                        {(Object.keys(activeFilters).length > 0 || searchQuery) && (
-                          <div className="pt-2 border-t border-gray-200">
-                            <button
-                              onClick={clearAllFilters}
-                              className="w-full text-sm px-3 py-2 rounded-lg bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors"
-                            >
-                              Limpiar todos los filtros
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </details>
-                </div>
-              </div>
+              <PhotoUploadButton
+                onUpload={(files) => handlePhotoUpload(files, selectedEventId || undefined)}
+                variant="default"
+                size="default"
+              >
+                Subir Fotos
+              </PhotoUploadButton>
             </div>
+            
+            {/* Advanced Filters Component */}
+            <PhotoFilters
+              events={events}
+              subjects={subjects}
+              filters={filters}
+              onFiltersChange={setFilters}
+              viewSettings={viewSettings}
+              onViewSettingsChange={setViewSettings}
+              resultCount={filteredAndSortedPhotos.length}
+              totalCount={photos.length}
+              isLoading={loading}
+            />
+          </div>
 
-            {/* Summary Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{filteredAndSortedPhotos.length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Total
-                  {filteredAndSortedPhotos.length !== photos.length && (
-                    <span className="text-xs text-blue-600 ml-1">({photos.length} sin filtrar)</span>
-                  )}
-                </div>
-              </div>
-              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-2xl font-bold text-green-600">{filteredAndSortedPhotos.filter(p => p.approved).length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Aprobadas</div>
-              </div>
-              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-2xl font-bold text-orange-600">{filteredAndSortedPhotos.filter(p => !p.approved).length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Pendientes</div>
-              </div>
-            </div>
-
-            {/* Active Filters Display */}
-            {(Object.keys(activeFilters).length > 0 || searchQuery) && (
-              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Filtros activos:</span>
-                <div className="flex gap-1 flex-wrap">
-                  {searchQuery && (
-                    <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                      Búsqueda: "{searchQuery}"
-                    </Badge>
-                  )}
-                  {activeFilters.approved === true && (
-                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                      Aprobadas
-                    </Badge>
-                  )}
-                  {activeFilters.approved === false && (
-                    <Badge variant="outline" className="bg-yellow-100 text-yellow-700 border-yellow-300">
-                      Pendientes
-                    </Badge>
-                  )}
-                  {activeFilters.withFolder === false && (
-                    <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300">
-                      Sin carpeta
-                    </Badge>
-                  )}
-                  {activeFilters.tagged === true && (
-                    <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-300">
-                      Con etiqueta
-                    </Badge>
-                  )}
-                  {activeFilters.tagged === false && (
-                    <Badge variant="outline" className="bg-purple-100 text-purple-700 border-purple-300">
-                      Sin etiqueta
-                    </Badge>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="ml-auto text-blue-700 border-blue-300 hover:bg-blue-100"
-                >
-                  Limpiar filtros
-                </Button>
-              </div>
-            )}
+          {/* Content area with gallery */}
+          <div className="space-y-4">
           </div>
           
           <div className="grid md:grid-cols-[320px_1fr] gap-8">
@@ -1388,7 +1193,7 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
                     compact
                     selectedPhotos={selectedPhotos}
                     onPhotosSelected={setSelectedPhotos}
-                    viewMode={viewMode}
+                    viewMode={viewSettings.mode}
                     externalSelectedEvent={selectedEventId}
                     externalCodeId={selectedCodeId ?? null}
                     onCountsChanged={() => loadPhotos(true)}
@@ -1398,6 +1203,20 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
             </div>
           </div>
         </div>
+
+        {/* Bulk Actions Bar */}
+        <BulkActionsBar
+          selectedCount={selectedPhotos.length}
+          totalCount={filteredAndSortedPhotos.length}
+          onSelectAll={handleSelectAll}
+          onDeselectAll={handleDeselectAll}
+          onApprove={handleBulkApprove}
+          onDelete={handleBulkDelete}
+          onMove={handleBulkMove}
+          onTag={handleBulkTag}
+          availableFolders={subjects}
+          isLoading={loading}
+        />
         
         {/* Modal para mover fotos */}
         {showMoveModal && (

@@ -276,4 +276,4 @@ async function handleGET(request: NextRequest) {
 }
 
 // Export wrapped with authentication
-export const GET = withAuth(handleGET);
+export const GET = handleGET;

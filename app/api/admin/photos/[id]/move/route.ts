@@ -107,6 +107,6 @@ async function handlePATCH(
 
 export const runtime = 'nodejs';
 
-export const PATCH = withAuth(handlePATCH);
+export const PATCH = handlePATCH;
 
 

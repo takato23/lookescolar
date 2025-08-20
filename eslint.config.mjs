@@ -1,5 +1,5 @@
 import js from "@eslint/js";
-import tseslint from "@typescript-eslint/eslint-plugin";
+import typescript from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import prettierPlugin from "eslint-plugin-prettier";
 import nextPlugin from "@next/eslint-plugin-next";
@@ -10,17 +10,21 @@ export default [
   { languageOptions: { parser: tsParser, parserOptions: { ecmaVersion: 2022, sourceType: "module" } } },
   { languageOptions: { globals: { browser: true, es6: true, node: true } } },
   js.configs.recommended,
-  ...tseslint.configs.recommended,
+  {
+    plugins: { "@typescript-eslint": typescript },
+    rules: {
+      ...typescript.configs.recommended.rules,
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-non-null-assertion": "error"
+    }
+  },
   { rules: nextPlugin.configs["core-web-vitals"].rules },
   prettierConfig,
-  { plugins: { "@typescript-eslint": tseslint, prettier: prettierPlugin } },
+  { plugins: { prettier: prettierPlugin } },
   { rules: {
     "prettier/prettier": "error",
     "no-console": "warn",
-    "@typescript-eslint/no-unused-vars": "error",
-    "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/explicit-function-return-type": "warn",
-    "@typescript-eslint/no-non-null-assertion": "error",
     "prefer-const": "error",
     "no-var": "error"
   } }

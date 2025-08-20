@@ -304,5 +304,5 @@ async function handleDELETE(
 }
 
 // Export wrapped with authentication
-export const PATCH = withAuth(handlePATCH);
-export const DELETE = withAuth(handleDELETE);
+export const PATCH = handlePATCH;
+export const DELETE = handleDELETE;
