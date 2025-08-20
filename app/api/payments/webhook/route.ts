@@ -3,15 +3,15 @@ import { createClient } from '@/lib/supabase/server';
 import { paymentClient, MP_CONFIG } from '@/lib/mercadopago/client';
 import crypto from 'crypto';
 
-// Verify webhook signature from Mercado Pago
+// Verify webhook signature from Mercado Pago with timestamp validation
 function verifyWebhookSignature(
   xSignature: string | null,
   xRequestId: string | null,
   dataId: string,
   secret: string
-): boolean {
+): { valid: boolean; error?: string } {
   if (!xSignature || !xRequestId) {
-    return false;
+    return { valid: false, error: 'Missing signature or request ID' };
   }
 
   // Extract ts and hash from x-signature header
@@ -21,18 +21,42 @@ function verifyWebhookSignature(
   
   for (const part of parts) {
     const [key, value] = part.split('=');
-    if (key === 'ts') {
-      ts = value;
-    } else if (key === 'v1') {
-      hash = value;
+    if (key?.trim() === 'ts') {
+      ts = value?.trim() || '';
+    } else if (key?.trim() === 'v1') {
+      hash = value?.trim() || '';
     }
   }
   
   if (!ts || !hash) {
-    return false;
+    return { valid: false, error: 'Missing timestamp or hash in signature' };
+  }
+
+  // SECURITY: Validate timestamp to prevent replay attacks
+  const timestampMs = parseInt(ts, 10);
+  if (isNaN(timestampMs)) {
+    return { valid: false, error: 'Invalid timestamp format' };
+  }
+
+  const now = Date.now();
+  const maxAge = 5 * 60 * 1000; // 5 minutes
+  const timestampAge = Math.abs(now - timestampMs);
+
+  if (timestampAge > maxAge) {
+    console.warn('Webhook timestamp too old:', {
+      timestamp: timestampMs,
+      now: now,
+      ageMinutes: Math.round(timestampAge / 60000)
+    });
+    return { valid: false, error: 'Webhook timestamp expired (older than 5 minutes)' };
+  }
+
+  // Prevent future timestamps (with 1 minute tolerance)
+  if (timestampMs > (now + 60 * 1000)) {
+    return { valid: false, error: 'Webhook timestamp from future' };
   }
   
-  // Create the manifest string
+  // Create the manifest string exactly as Mercado Pago expects
   const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
   
   // Generate HMAC signature
@@ -40,11 +64,22 @@ function verifyWebhookSignature(
   hmac.update(manifest);
   const calculatedHash = hmac.digest('hex');
   
-  // Compare signatures
-  return crypto.timingSafeEqual(
-    Buffer.from(hash),
-    Buffer.from(calculatedHash)
-  );
+  // Compare signatures using timing-safe comparison
+  try {
+    const isValid = crypto.timingSafeEqual(
+      Buffer.from(hash, 'hex'),
+      Buffer.from(calculatedHash, 'hex')
+    );
+    
+    if (!isValid) {
+      return { valid: false, error: 'Signature verification failed' };
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    console.error('Error comparing signatures:', error);
+    return { valid: false, error: 'Signature comparison error' };
+  }
 }
 
 // Map Mercado Pago status to internal status
@@ -79,19 +114,23 @@ export async function POST(request: NextRequest) {
       requestId: xRequestId
     });
     
-    // Verify webhook signature
+    // Verify webhook signature with timestamp validation
     if (MP_CONFIG.webhookSecret && body.data?.id) {
-      const isValid = verifyWebhookSignature(
+      const signatureResult = verifyWebhookSignature(
         xSignature,
         xRequestId,
         body.data.id,
         MP_CONFIG.webhookSecret
       );
       
-      if (!isValid) {
-        console.error('Invalid webhook signature');
+      if (!signatureResult.valid) {
+        console.error('Webhook signature validation failed:', {
+          error: signatureResult.error,
+          requestId: xRequestId,
+          dataId: body.data.id
+        });
         return NextResponse.json(
-          { error: 'Invalid signature' },
+          { error: signatureResult.error || 'Invalid signature' },
           { status: 401 }
         );
       }

@@ -127,12 +127,13 @@ export async function POST(request: NextRequest) {
     // Update environment variables in runtime (for current session)
     // Note: This won't persist across deployments
     if (typeof window === 'undefined') {
-      process.env.NEXT_PUBLIC_MP_PUBLIC_KEY = validatedData.publicKey;
-      process.env.MP_ACCESS_TOKEN = validatedData.accessToken;
-      if (validatedData.webhookSecret) {
-        process.env.MP_WEBHOOK_SECRET = validatedData.webhookSecret;
-      }
-      process.env.NEXT_PUBLIC_MP_ENVIRONMENT = validatedData.environment;
+      // Use Object.assign to avoid webpack compilation issues
+      Object.assign(process.env, {
+        'NEXT_PUBLIC_MP_PUBLIC_KEY': validatedData.publicKey,
+        'MP_ACCESS_TOKEN': validatedData.accessToken,
+        'NEXT_PUBLIC_MP_ENVIRONMENT': validatedData.environment,
+        ...(validatedData.webhookSecret && { 'MP_WEBHOOK_SECRET': validatedData.webhookSecret })
+      });
     }
     
     return NextResponse.json({ success: true });

@@ -39,7 +39,7 @@
 }
 
 .dark .liquid-subtitle {
-  color: rgba(156, 163, 175, 0.9); /* Gray-400 */
+  color: rgba(210, 214, 220, 0.95); /* Much better contrast gray */
 }
 
 /* Texto de navegación */
@@ -51,7 +51,7 @@
 }
 
 .dark .liquid-nav-text {
-  color: rgba(229, 231, 235, 0.95); /* Gray-200 */
+  color: rgba(248, 250, 252, 0.98); /* Excellent nav text contrast */
 }
 
 .liquid-nav-text:hover {
@@ -60,8 +60,8 @@
 }
 
 .dark .liquid-nav-text:hover {
-  color: rgba(96, 165, 250, 1); /* Blue-400 */
-  text-shadow: 0 2px 8px rgba(96, 165, 250, 0.4);
+  color: rgba(139, 152, 255, 1); /* Brighter blue for better visibility */
+  text-shadow: 0 2px 8px rgba(139, 152, 255, 0.3);
 }
 
 /* Descripción con cristal líquido */
@@ -75,8 +75,8 @@
 }
 
 .dark .liquid-description {
-  color: rgba(156, 163, 175, 0.8); /* Gray-400 */
-  background: rgba(0, 0, 0, 0.05);
+  color: rgba(200, 206, 215, 0.90); /* Better description contrast */
+  background: rgba(48, 48, 56, 0.12); /* Subtle background */
 }
 
 /* Texto destacado liquid */
@@ -119,9 +119,9 @@
 }
 
 .dark .liquid-label {
-  color: rgba(156, 163, 175, 0.8); /* Gray-400 */
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(220, 224, 230, 0.95); /* Much better label contrast */
+  background: rgba(48, 48, 56, 0.20); /* More visible label background */
+  border: 1px solid rgba(255, 255, 255, 0.12); /* Better border */
 }
 
 /* Números/estadísticas liquid */
@@ -161,8 +161,8 @@
 }
 
 .dark .liquid-button-text {
-  color: rgba(229, 231, 235, 0.95); /* Gray-200 */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: rgba(248, 250, 252, 0.98); /* Excellent button text contrast */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); /* Stronger shadow for definition */
 }
 
 /* Clases de tamaño tipográfico liquid */

@@ -3,7 +3,9 @@ import { Suspense } from 'react';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { GalleryHeader } from '@/components/public/GalleryHeader';
 import { PublicGallery } from '@/components/gallery/PublicGallery';
+import { UnifiedGallery } from '@/components/gallery/UnifiedGallery';
 import { CartDrawer } from '@/components/public/CartDrawer';
+import { featureFlags } from '@/lib/feature-flags';
 
 interface PublicGalleryPageProps {
   params: Promise<{ eventId: string }>;
@@ -62,7 +64,11 @@ export default async function PublicGalleryPage({ params }: PublicGalleryPagePro
       <div className="container mx-auto max-w-7xl px-4 py-8">
         {/* Galería de fotos */}
         <Suspense fallback={<GallerySkeleton />}>
-          <PublicGallery eventId={eventId} />
+          {featureFlags.UNIFIED_GALLERY_ENABLED ? (
+            <UnifiedGallery eventId={eventId} initialEvent={event} />
+          ) : (
+            <PublicGallery eventId={eventId} />
+          )}
         </Suspense>
       </div>
 

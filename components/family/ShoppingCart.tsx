@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { X, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react';
-import { useCartStore } from '@/lib/stores/cart-store';
+import { useUnifiedCartStore } from '@/lib/stores/unified-cart-store';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ export function ShoppingCart({ onCheckout, className }: ShoppingCartProps) {
     clearCart,
     getTotalItems,
     getTotalPrice,
-  } = useCartStore();
+  } = useUnifiedCartStore();
   
   const totalItems = getTotalItems();
   const totalPrice = getTotalPrice();
@@ -205,7 +205,7 @@ export function ShoppingCart({ onCheckout, className }: ShoppingCartProps) {
 
 // Cart Button Component (to open the cart)
 export function CartButton({ className }: { className?: string }) {
-  const { openCart, getTotalItems } = useCartStore();
+  const { openCart, getTotalItems } = useUnifiedCartStore();
   const totalItems = getTotalItems();
   
   return (

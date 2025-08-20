@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { useSignedUrl } from '@/lib/utils/signed-url-cache';
 
 interface Photo {
   id: string;
@@ -10,11 +11,10 @@ interface Photo {
   width: number | null;
   height: number | null;
   created_at: string;
-  signed_url: string;
 }
 
 interface PhotoModalProps {
-  photo: Photo;
+  photo: Photo | null;
   isOpen: boolean;
   onClose: () => void;
   onPrevious: () => void;
@@ -36,6 +36,17 @@ export function PhotoModal({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [imageError, setImageError] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Get signed URL for the photo
+  const { url: signedUrl, loading: urlLoading, error: urlError } = useSignedUrl(
+    photo?.id || '',
+    photo?.storage_path || ''
+  );
+
+  // Early return if no photo
+  if (!isOpen || !photo) {
+    return null;
+  }
 
   // Reset state when modal opens/closes or photo changes
   useEffect(() => {
@@ -204,32 +215,37 @@ export function PhotoModal({
 
       {/* Image container */}
       <div className="relative flex h-full w-full items-center justify-center overflow-hidden p-16">
-        {!imageLoaded && !imageError && (
+        {(!imageLoaded && !imageError && !urlError) || urlLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center space-y-4">
               <div className="h-12 w-12 animate-spin rounded-full border-4 border-white/30 border-t-white" />
-              <p className="text-white/75">Cargando foto...</p>
+              <p className="text-white/75">
+                {urlLoading ? 'Obteniendo foto...' : 'Cargando foto...'}
+              </p>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {imageError ? (
+        {(imageError || urlError) ? (
           <div className="flex flex-col items-center space-y-4 text-white">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <span className="text-2xl">⚠️</span>
             </div>
-            <p className="text-lg">Error al cargar la imagen</p>
+            <p className="text-lg">
+              {urlError ? 'Error al obtener la foto' : 'Error al cargar la imagen'}
+            </p>
             <Button
               onClick={() => {
                 setImageError(false);
                 setImageLoaded(false);
+                // Note: URL refetch is handled automatically by the hook when photo changes
               }}
               className="border-none bg-white/10 text-white hover:bg-white/20"
             >
               Intentar de nuevo
             </Button>
           </div>
-        ) : (
+        ) : signedUrl ? (
           <div
             className="relative cursor-move transition-transform duration-200 ease-out"
             style={{
@@ -238,7 +254,7 @@ export function PhotoModal({
             }}
           >
             <Image
-              src={photo.signed_url}
+              src={signedUrl}
               alt={`Foto del evento - ${currentIndex} de ${totalPhotos}`}
               width={photo.width || 800}
               height={photo.height || 600}
@@ -254,7 +270,7 @@ export function PhotoModal({
               quality={90}
             />
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Bottom info */}

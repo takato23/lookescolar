@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { signedUrlForKey } from '@/lib/storage/signedUrl';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  parsePaginationParams,
+  createPaginationMeta,
+  logDevRequest,
+} from '@/lib/utils/api-response';
 
 const eventIdSchema = z.object({
   eventId: z.string().uuid('Invalid event ID format'),
@@ -50,14 +57,17 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ): Promise<NextResponse> {
   const startTime = Date.now();
-  const ip = request.ip ?? request.headers.get('x-forwarded-for') ?? 'unknown';
+  const requestId = crypto.randomUUID();
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
 
   try {
     // Rate limiting básico por IP
     if (!checkRateLimit(ip)) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429 }
+      return createErrorResponse(
+        'Too many requests. Please try again later.',
+        'Rate limit exceeded',
+        429,
+        requestId
       );
     }
 
@@ -65,9 +75,7 @@ export async function GET(
     const resolvedParams = await params;
     const { eventId } = eventIdSchema.parse(resolvedParams);
     const { searchParams } = new URL(request.url);
-    const { page, limit } = queryParamsSchema.parse(
-      Object.fromEntries(searchParams)
-    );
+    const { page, limit, offset } = parsePaginationParams(searchParams);
 
     // Log acceso enmascarado
     console.log(
@@ -97,10 +105,13 @@ export async function GET(
       }
     }
     if (!event) {
-      return NextResponse.json({ error: 'Event not found or not available' }, { status: 404 });
+      return createErrorResponse(
+        'Event not found or not available',
+        'Event does not exist or is not accessible',
+        404,
+        requestId
+      );
     }
-
-    // Si se requiere flag, validar en DB; por compatibilidad, omitimos check cuando falta columna
 
     // Obtener total de fotos aprobadas del evento
     const { count: totalPhotos, error: countError } = await supabase
@@ -111,17 +122,18 @@ export async function GET(
 
     if (countError) {
       console.error('Error getting photos count:', countError);
-      return NextResponse.json(
-        { error: 'Error loading gallery' },
-        { status: 500 }
+      return createErrorResponse(
+        'Error loading gallery',
+        countError.message,
+        500,
+        requestId
       );
     }
 
     // Obtener fotos del evento con paginación
-    const offset = (page - 1) * limit;
     const { data: photos, error: photosError } = await supabase
       .from('photos')
-      .select('id, storage_path, preview_path, watermark_path, width, height, created_at')
+      .select('id, storage_path, watermark_path, width, height, created_at')
       .eq('event_id', eventId)
       .eq('approved', true)
       .order('created_at', { ascending: false })
@@ -129,17 +141,18 @@ export async function GET(
 
     if (photosError) {
       console.error('Error fetching photos:', photosError);
-      return NextResponse.json(
-        { error: 'Error loading photos' },
-        { status: 500 }
+      return createErrorResponse(
+        'Error loading photos',
+        photosError.message,
+        500,
+        requestId
       );
     }
 
-    // Generar URLs firmadas priorizando watermark/preview (baja calidad)
+    // Generar URLs firmadas SOLO para watermarks (NUNCA originales)
     type PhotoRow = {
       id: string;
       storage_path: string;
-      preview_path: string | null;
       watermark_path: string | null;
       width: number | null;
       height: number | null;
@@ -147,21 +160,31 @@ export async function GET(
     };
 
     const photosWithUrls = await Promise.all(
-      (photos as PhotoRow[] | null | undefined || []).map(async (photo: PhotoRow) => {
+      (photos || []).map(async (photo: any) => {
         try {
-          const key = photo.watermark_path || photo.preview_path;
+          // SEGURIDAD: SOLO watermark, NUNCA storage_path (original)
+          const key = photo.watermark_path;
           if (!key) {
+            console.warn(`Photo ${photo.id} has no watermark_path, skipping for security`);
             return null;
           }
+          
+          // Verificar que el key es realmente un watermark/preview
+          if (!key.includes('watermark') && !key.includes('preview')) {
+            console.warn(`Photo ${photo.id} key "${key}" doesn't look like watermark/preview, skipping`);
+            return null;
+          }
+
           const signedUrl = await signedUrlForKey(key, 900);
 
           return {
             id: photo.id,
-            storage_path: photo.storage_path,
+            // NO exponer storage_path (original) en respuesta pública
             width: photo.width,
             height: photo.height,
             created_at: photo.created_at,
             signed_url: signedUrl,
+            is_watermarked: true, // Indicar que es versión protegida
           };
         } catch (error) {
           console.error('[Service] PublicGallery signed URL error:', error);
@@ -175,55 +198,48 @@ export async function GET(
 
     const duration = Date.now() - startTime;
     const total = totalPhotos || 0;
-    const has_more = offset + limit < total;
+    const paginationMeta = createPaginationMeta(page, limit, total);
 
-    // Log performance
-    console.log(
-      `Public gallery API - Event: ${eventId}, Photos: ${validPhotos.length}/${total}, Duration: ${duration}ms`
+    // Log development request
+    logDevRequest(requestId, 'GET', `/api/gallery/${event.id}`, duration, 200);
+
+    return createSuccessResponse(
+      {
+        event: {
+          id: event.id,
+          name: event.name,
+          school: event.school,
+          date: event.date,
+          created_at: event.created_at,
+        },
+        photos: validPhotos,
+        metadata: {
+          generated_at: new Date().toISOString(),
+          photos_with_urls: validPhotos.length,
+          photos_failed: (photos?.length || 0) - validPhotos.length,
+        },
+      },
+      paginationMeta,
+      requestId
     );
-
-    return NextResponse.json({
-      event: {
-        id: event.id,
-        name: event.name,
-        school: event.school,
-        date: event.date,
-        created_at: event.created_at,
-      },
-      photos: validPhotos,
-      pagination: {
-        page,
-        limit,
-        total,
-        has_more,
-        total_pages: Math.ceil(total / limit),
-      },
-      metadata: {
-        generated_at: new Date().toISOString(),
-        photos_with_urls: validPhotos.length,
-        photos_failed: (photos?.length || 0) - validPhotos.length,
-      },
-    });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(
-      `Public gallery API error - Duration: ${duration}ms, Error:`,
-      error
-    );
+    logDevRequest(requestId, 'GET', `/api/gallery/${eventId}`, duration, 'error');
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Invalid parameters',
-          details: error.errors.map((e) => `${e.path.join('.')}: ${e.message}`),
-        },
-        { status: 400 }
+      return createErrorResponse(
+        'Invalid parameters',
+        error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+        400,
+        requestId
       );
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return createErrorResponse(
+      'Internal server error',
+      error instanceof Error ? error.message : 'Unknown error',
+      500,
+      requestId
     );
   }
 }

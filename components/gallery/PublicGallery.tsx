@@ -74,7 +74,15 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
           }
         }
 
-        const data: GalleryData = await response.json();
+        const apiResponse = await response.json();
+        
+        // La API devuelve { data: { event, photos }, pagination }
+        // Necesitamos reestructurar para que coincida con GalleryData
+        const data: GalleryData = {
+          event: apiResponse.data.event,
+          photos: apiResponse.data.photos || [],
+          pagination: apiResponse.pagination || { page: 1, limit: 24, total: 0, has_more: false, total_pages: 1 }
+        };
 
         setGalleryData((prevData) => {
           if (append && prevData) {
@@ -116,7 +124,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
 
   // Filtrar fotos basado en el tab activo
   const getFilteredPhotos = () => {
-    if (!galleryData) return [];
+    if (!galleryData || !galleryData.photos) return [];
     
     switch (activeTab) {
       case 'seleccionadas':
@@ -146,10 +154,10 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     return <GalleryEmptyState />;
   }
 
-  const { photos, pagination } = galleryData;
+  const { photos = [], pagination } = galleryData;
   const filteredPhotos = getFilteredPhotos();
 
-  if (photos.length === 0) {
+  if (!photos || photos.length === 0) {
     return (
       <GalleryEmptyState message="Este evento aún no tiene fotos disponibles." />
     );

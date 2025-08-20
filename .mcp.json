@@ -1,0 +1,57 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/santiagobalosky/LookEscolar"],
+      "description": "File system operations for LookEscolar project"
+    },
+    "sequential-thinking": {
+      "command": "npx", 
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "description": "Complex analysis and multi-step reasoning"
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "Browser automation for E2E testing"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "description": "Library documentation and framework patterns lookup"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent memory and knowledge graph for cross-session context"
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": ["-y", "mcp-server-sqlite-npx"],
+      "description": "SQLite database operations and queries"
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@brave/brave-search-mcp-server"],
+      "env": {
+        "BRAVE_API_KEY": ""
+      },
+      "description": "Web search using Brave Search API (requires API key)"
+    },
+    "search-multi": {
+      "command": "npx",
+      "args": ["-y", "@abhishekguptain/mcp-search-server"],
+      "env": {
+        "GOOGLE_API_KEY": "",
+        "GOOGLE_CX": "",
+        "TAVILY_API_KEY": ""
+      },
+      "description": "Multi-provider search (Google, Tavily, DuckDuckGo, Brave)"
+    },
+    "desktop-commander": {
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander"],
+      "description": "Advanced terminal operations and file editing"
+    }
+  }
+}

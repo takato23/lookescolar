@@ -19,10 +19,7 @@ import {
   Camera,
   Users,
   DollarSign,
-  Plus,
-  Upload,
   Package,
-  Activity,
   TrendingUp,
   Zap,
   Star,
@@ -46,7 +43,7 @@ export default function AdminDashboard() {
     refreshCritical,
   } = useDashboardData();
 
-  // Track last update time
+  // Track last update time - HMR performance test
   useEffect(() => {
     if (!isLoading && stats) {
       setLastUpdated(new Date());

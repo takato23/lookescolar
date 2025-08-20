@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Home, Package, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import OrderDetail from '@/components/admin/orders/OrderDetail';

@@ -19,14 +19,34 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   const handleDeleteEvent = async (event: any) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el evento "${event.school}"? Esta acción no se puede deshacer.`)) {
+    const hasPhotos = event.stats?.totalPhotos > 0;
+    const hasSubjects = event.stats?.totalSubjects > 0;
+    
+    // Construir mensaje de confirmación detallado
+    let confirmMessage = `¿Estás seguro de que quieres eliminar el evento "${event.school || event.name}"?\n\n`;
+    
+    if (hasPhotos || hasSubjects) {
+      confirmMessage += "⚠️ ATENCIÓN: Este evento contiene datos que se eliminarán:\n";
+      if (hasPhotos) {
+        confirmMessage += `• ${event.stats.totalPhotos} fotos (se borrarán del almacenamiento)\n`;
+      }
+      if (hasSubjects) {
+        confirmMessage += `• ${event.stats.totalSubjects} estudiantes/familias\n`;
+      }
+      confirmMessage += "\n";
+    }
+    
+    confirmMessage += "Esta acción NO se puede deshacer.\n\n¿Continuar con la eliminación?";
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
     setDeletingEventId(event.id);
     
     try {
-      const response = await fetch(`/api/admin/events/${event.id}`, {
+      // Usar force=true para eliminar eventos con fotos/sujetos
+      const response = await fetch(`/api/admin/events/${event.id}?force=true`, {
         method: 'DELETE',
       });
 
@@ -37,6 +57,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
 
       // Refresh the page to show updated events list
       router.refresh();
+      alert('Evento eliminado exitosamente');
     } catch (error) {
       console.error('Error deleting event:', error);
       alert(error instanceof Error ? error.message : 'Error al eliminar el evento');

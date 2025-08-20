@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Calendar, MapPin, DollarSign, Home } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, DollarSign, Home, Users, User, Share } from 'lucide-react';
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function NewEventPage() {
     date: '',
     photo_price: 0,
     active: true,
+    sharing_mode: 'public', // 'public' o 'private'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +38,7 @@ export default function NewEventPage() {
           location: formData.location.trim() || null,
           date: formData.date,
           photo_price: formData.photo_price || 0,
+          sharing_mode: formData.sharing_mode,
         }),
       });
 
@@ -212,6 +214,68 @@ export default function NewEventPage() {
                 <Label htmlFor="active" className="cursor-pointer">
                   Evento activo (las familias pueden acceder)
                 </Label>
+              </div>
+
+              {/* Modo de Compartir */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">
+                  <Share className="mr-2 h-4 w-4 inline" />
+                  Modo de Compartir Fotos
+                </Label>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div
+                    className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                      formData.sharing_mode === 'public'
+                        ? 'border-blue-500 bg-blue-50/50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setFormData({ ...formData, sharing_mode: 'public' })}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`rounded-full p-2 ${
+                        formData.sharing_mode === 'public' 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Público</h3>
+                        <p className="text-sm text-gray-600">
+                          Todas las familias ven las mismas fotos
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                      formData.sharing_mode === 'private'
+                        ? 'border-orange-500 bg-orange-50/50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setFormData({ ...formData, sharing_mode: 'private' })}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`rounded-full p-2 ${
+                        formData.sharing_mode === 'private' 
+                          ? 'bg-orange-500 text-white' 
+                          : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Personalizado</h3>
+                        <p className="text-sm text-gray-600">
+                          Cada familia ve solo sus fotos específicas
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  💡 Puedes cambiar esto después desde la configuración del evento
+                </p>
               </div>
 
               {error && (

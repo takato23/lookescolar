@@ -44,7 +44,7 @@ interface PhotoStats {
 export default function SecuencialPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params?.id as string;
+  const id = params?.['id'] as string;
   
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);

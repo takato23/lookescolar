@@ -11,18 +11,39 @@ import {
 } from '@/lib/security/validation';
 import { z } from 'zod';
 import { signedUrlForKey } from '@/lib/storage/signedUrl';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  parsePaginationParams,
+  createPaginationMeta,
+  logDevRequest,
+} from '@/lib/utils/api-response';
 
 export const dynamic = 'force-dynamic';
 
 async function handleGET(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
+  const startTime = Date.now();
 
   try {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`[${requestId}] Photos API request started`);
+    }
+
     // Check authentication
     const supabase = await createServerSupabaseClient();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`[${requestId}] Supabase client created`);
+    }
+    
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`[${requestId}] Auth check completed, user:`, !!user);
+    }
 
     // En desarrollo, permitir continuar sin sesión y consultar datos reales
     if (!user && process.env.NODE_ENV === 'development') {
@@ -52,8 +73,12 @@ async function handleGET(request: NextRequest) {
     // A partir de aquí, en dev se permite sin user; en prod requiere user
     const effectiveUserId = user?.id ?? 'dev-user';
 
-    // Usar service client para consultas
+    // Use service client for queries - simplified
     const serviceClient = await createServerSupabaseServiceClient();
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`[${requestId}] Service client created successfully`);
+    }
 
     // Validar y sanitizar parámetros mínimos requeridos
     const { searchParams } = new URL(request.url);
@@ -166,7 +191,9 @@ async function handleGET(request: NextRequest) {
     // Aplicar paginación
     query = query.range(parsedOffset, parsedOffset + parsedLimit - 1);
 
+    const queryStartTime = Date.now();
     let { data: photos, error, count } = await query;
+    const queryDuration = Date.now() - queryStartTime;
 
     // Fallback: if schema lacks code_id (legacy), retry without code filter instead of 500
     if (error && codeId) {
@@ -218,45 +245,50 @@ async function handleGET(request: NextRequest) {
       'info'
     );
 
-    // Procesar datos y firmar preview_url server-side
-    let processedPhotos = await Promise.all(
-      (photos || []).map(async (photo: any) => {
-        let preview_url: string | null = null;
+    // Process photos WITH signed URLs for admin (original images without watermark)
+    const processedPhotosPromises = (photos || []).map(async (photo: any) => {
+      // Extract subject information from the joined data
+      const subjects = photo.photo_subjects?.map((ps: any) => ({
+        id: ps.subjects?.id,
+        name: ps.subjects?.name,
+      })).filter((s: any) => s.id) || [];
+      
+      // Generate signed URL for original image (without watermark) for admin
+      let preview_url: string | null = null;
+      if (photo.storage_path) {
         try {
-          // Intentar en orden: preview_path, watermark_path (nunca original)
-          const preferredKey = photo.preview_path || photo.watermark_path;
-          if (preferredKey) {
-            preview_url = await signedUrlForKey(preferredKey, 900);
-          }
-        } catch (err) {
-          console.warn('Failed to generate signed URL for photo:', photo.id, err);
-          preview_url = null;
+          preview_url = await signedUrlForKey(photo.storage_path, {
+            expiresIn: 3600, // 1 hour
+            transform: {
+              width: 800,
+              height: 800,
+              resize: 'contain'
+            }
+          });
+        } catch (error) {
+          console.warn('Failed to generate signed URL for admin preview:', error);
         }
-        
-        // Extract subject information from the joined data
-        const subjects = photo.photo_subjects?.map((ps: any) => ({
-          id: ps.subjects?.id,
-          name: ps.subjects?.name,
-        })).filter((s: any) => s.id) || [];
-        
-        return {
-          id: photo.id,
-          event_id: photo.event_id,
-          original_filename: photo.original_filename,
-          storage_path: photo.storage_path,
-          preview_path: photo.preview_path ?? null,
-          watermark_path: photo.watermark_path ?? null,
-          preview_url,
-          approved: photo.approved,
-          created_at: photo.created_at,
-          file_size: photo.file_size ?? (photo.file_size_bytes ?? null),
-          width: photo.width ?? null,
-          height: photo.height ?? null,
-          subjects, // Include subjects array
-          tagged: subjects.length > 0, // Photo is tagged if it has subjects
-        };
-      })
-    );
+      }
+      
+      return {
+        id: photo.id,
+        event_id: photo.event_id,
+        original_filename: photo.original_filename,
+        storage_path: photo.storage_path,
+        preview_path: photo.preview_path ?? null,
+        watermark_path: photo.watermark_path ?? null,
+        preview_url, // Admin gets original image URLs (no watermark)
+        approved: photo.approved,
+        created_at: photo.created_at,
+        file_size: photo.file_size ?? (photo.file_size_bytes ?? null),
+        width: photo.width ?? null,
+        height: photo.height ?? null,
+        subjects, // Include subjects array
+        tagged: subjects.length > 0, // Photo is tagged if it has subjects
+      };
+    });
+
+    let processedPhotos = await Promise.all(processedPhotosPromises);
 
     // Apply tagged filter in application layer if needed
     if (tagged === 'true') {
@@ -265,9 +297,29 @@ async function handleGET(request: NextRequest) {
       processedPhotos = processedPhotos.filter(photo => !photo.tagged);
     }
 
+    const totalDuration = Date.now() - startTime;
+
+    // Performance logging
+    SecurityLogger.logSecurityEvent(
+      'photos_performance',
+      {
+        requestId,
+        queryDuration,
+        totalDuration,
+        photosCount: processedPhotos.length,
+        totalPhotos: count || 0,
+        limit: parsedLimit,
+        eventId: eventId || 'ALL',
+      },
+      'info'
+    );
+
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.debug('photos_query_result', { count: processedPhotos.length });
+      console.debug('photos_performance', { 
+        queryDuration: `${queryDuration}ms`,
+        totalDuration: `${totalDuration}ms`,
+        count: processedPhotos.length 
+      });
     }
 
     return NextResponse.json(
@@ -275,6 +327,10 @@ async function handleGET(request: NextRequest) {
         success: true,
         photos: processedPhotos,
         counts: { total: count || 0 },
+        _performance: process.env.NODE_ENV === 'development' ? {
+          query_duration_ms: queryDuration,
+          total_duration_ms: totalDuration,
+        } : undefined,
       },
       {
         headers: {

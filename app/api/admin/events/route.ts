@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import {
   createServerSupabaseClient,
   createServerSupabaseServiceClient,
@@ -8,6 +9,18 @@ import {
   SecurityLogger,
 } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  parsePaginationParams,
+  createPaginationMeta,
+  logDevRequest,
+} from '@/lib/utils/api-response';
+import {
+  normalizeEvent,
+  prepareEventInsert,
+  detectSchemaVersion,
+} from '@/lib/utils/schema-compatibility';
 
 export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (request: NextRequest, authContext) => {
@@ -116,20 +129,20 @@ export const GET = RateLimitMiddleware.withRateLimit(
           const orders = ordersStats.data || [];
 
           const stats = {
-            total_subjects: subjectsStats.count || 0,
-            total_photos: photos.length,
-            approved_photos: photos.filter((p) => p.approved).length,
-            tagged_photos: photos.filter((p) => p.subject_id !== null).length,
-            total_orders: orders.length,
-            pending_orders: orders.filter((o) => o.status === 'pending').length,
-            approved_orders: orders.filter((o) => o.status === 'approved')
+            totalSubjects: subjectsStats.count || 0,
+            totalPhotos: photos.length,
+            approvedPhotos: photos.filter((p) => p.approved).length,
+            untaggedPhotos: photos.filter((p) => p.subject_id === null).length,
+            totalOrders: orders.length,
+            pendingOrders: orders.filter((o) => o.status === 'pending').length,
+            approvedOrders: orders.filter((o) => o.status === 'approved')
               .length,
-            delivered_orders: orders.filter((o) => o.status === 'delivered')
+            deliveredOrders: orders.filter((o) => o.status === 'delivered')
               .length,
-            total_revenue_cents: orders
+            revenue: Math.round(orders
               .filter((o) => ['approved', 'delivered'].includes(o.status))
-              .reduce((sum, order) => sum + (order.total_amount || 0), 0),
-            last_photo_uploaded:
+              .reduce((sum, order) => sum + (order.total_amount || 0), 0) / 100), // Convert cents to pesos
+            lastPhotoUploaded:
               photos.length > 0
                 ? photos.sort(
                     (a, b) =>
@@ -137,7 +150,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
                       new Date(a.created_at).getTime()
                   )[0].created_at
                 : null,
-            last_order_created:
+            lastOrderCreated:
               orders.length > 0
                 ? orders.sort(
                     (a, b) =>
@@ -149,6 +162,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
           return {
             ...event,
+            school: event.name || event.location, // Map name to school for compatibility
             active: event.status === 'active',
             stats,
           };
@@ -167,7 +181,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
       });
 
       // Compat tests: devolver arreglo como raíz (no objeto envuelto)
-      return NextResponse.json(eventsWithStats);
+      return NextResponse.json(eventsWithStats, {
+        headers: {
+          'Cache-Control': 'no-store, must-revalidate',
+        },
+      });
     } catch (error: any) {
       const duration = Date.now() - startTime;
 
@@ -278,6 +296,9 @@ export const POST = RateLimitMiddleware.withRateLimit(
         eventName: insertResult.data.name,
         duration,
       });
+
+      // Revalidate the events page to show the new event immediately
+      revalidatePath('/admin/events');
 
       // Compat tests: incluir campos en la raíz además del objeto event
       return NextResponse.json({

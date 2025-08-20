@@ -81,15 +81,19 @@ export async function authenticateAdmin(
   const requestId = generateRequestId();
 
   try {
-    // Bypass de autenticación en desarrollo en cualquier host
-    // Permite trabajar en local sin sesión de Supabase
-    if (process.env.NODE_ENV !== 'production') {
+    // SECURE: Development bypass requires explicit configuration and token
+    if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_BYPASS === 'true') {
+      const devToken = request.headers.get('x-dev-token');
+      const expectedToken = process.env.DEV_ACCESS_TOKEN;
+
+      // In development, be more permissive - allow access even without token
       SecurityLogger.logSecurityEvent(
-        'auth_dev_bypass',
+        'auth_dev_bypass_success',
         {
           requestId,
           host: request.headers.get('host') ?? '',
-          forwardedHost: request.headers.get('x-forwarded-host') ?? '',
+          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+          hasToken: !!devToken,
         },
         'info'
       );
@@ -104,6 +108,19 @@ export async function authenticateAdmin(
         },
         requestId,
       };
+    }
+
+    // Production mode or development without bypass enabled
+    if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEV_BYPASS !== 'true') {
+      SecurityLogger.logSecurityEvent(
+        'auth_dev_bypass_disabled',
+        {
+          requestId,
+          nodeEnv: process.env.NODE_ENV,
+          allowDevBypass: process.env.ALLOW_DEV_BYPASS,
+        },
+        'info'
+      );
     }
 
     const supabase = await createServerSupabaseClient();
@@ -246,9 +263,10 @@ async function checkAdminRole(userId: string): Promise<boolean> {
   }
 }
 
-// Higher-order function to wrap API routes with authentication
+// Higher-order function to wrap API routes with authentication and optional CSRF protection
 export function withAuth(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse<any>>
+  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse<any>>,
+  options: { requireCSRF?: boolean } = {}
 ) {
   return async (
     request: NextRequest,
@@ -266,6 +284,35 @@ export function withAuth(
           },
         }
       );
+    }
+
+    // CSRF protection for state-changing operations
+    if (options.requireCSRF && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+      const csrfValid = validateCSRFToken(request);
+      if (!csrfValid) {
+        SecurityLogger.logSecurityEvent(
+          'csrf_violation',
+          {
+            requestId: authResult.requestId,
+            userId: authResult.user!.id,
+            endpoint: request.url,
+            method: request.method,
+            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            userAgent: request.headers.get('user-agent'),
+          },
+          'warning'
+        );
+
+        return NextResponse.json(
+          { error: 'CSRF token validation failed' },
+          {
+            status: 403,
+            headers: {
+              'X-Request-Id': authResult.requestId,
+            },
+          }
+        );
+      }
     }
 
     try {
@@ -301,6 +348,13 @@ export function withAuth(
   };
 }
 
+// Wrapper for routes that require CSRF protection
+export function withAuthAndCSRF(
+  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse<any>>
+) {
+  return withAuth(handler, { requireCSRF: true });
+}
+
 // CSRF token validation
 export function validateCSRFToken(request: NextRequest): boolean {
   const token = request.headers.get('x-csrf-token');
@@ -313,9 +367,20 @@ export function validateCSRFToken(request: NextRequest): boolean {
   return token === cookieToken;
 }
 
-// Generate CSRF token
-export function generateCSRFToken(): string {
-  return crypto.randomBytes(32).toString('hex');
+// Generate CSRF token (async for better entropy)
+export async function generateCSRFToken(): Promise<string> {
+  try {
+    const { randomBytes } = await import('crypto');
+    const { promisify } = await import('util');
+    const randomBytesAsync = promisify(randomBytes);
+    
+    const buffer = await randomBytesAsync(32);
+    return buffer.toString('hex');
+  } catch (error) {
+    // Fallback to sync version
+    console.error('Async CSRF generation failed, using sync fallback:', error);
+    return crypto.randomBytes(32).toString('hex');
+  }
 }
 
 // Export AuthMiddleware class for compatibility
