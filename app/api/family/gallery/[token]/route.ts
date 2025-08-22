@@ -129,17 +129,21 @@ export const GET = RateLimitMiddleware.withRateLimit(
           }
         }
 
-        // Obtener fotos asignadas con paginación
+        // Obtener fotos asignadas con paginación (individuales y grupales)
         const { photos, total, has_more } =
           await familyService.getSubjectPhotos(subject.id, page, limit);
 
-        // Generar URLs firmadas para todas las fotos
+        // Generar URLs firmadas para todas las fotos (individuales y grupales)
         const photosWithUrls = (
           await Promise.all(
             photos.map(async (assignment) => {
               const key = (assignment.photo as any).watermark_path || (assignment.photo as any).preview_path;
               if (!key) return null;
               const signedUrl = await signedUrlForKey(key, 900); // 15 min de expiración
+              
+              // Determine if this is a group photo based on the structure
+              const isGroupPhoto = 'course_id' in assignment && assignment.course_id;
+              
               return {
                 id: assignment.photo.id,
                 filename: assignment.photo.filename,
@@ -147,6 +151,10 @@ export const GET = RateLimitMiddleware.withRateLimit(
                 created_at: assignment.photo.created_at,
                 signed_url: signedUrl,
                 assignment_id: assignment.id,
+                photo_type: assignment.photo.photo_type || 'individual',
+                is_group_photo: isGroupPhoto,
+                course_id: isGroupPhoto ? (assignment as any).course_id : null,
+                tagged_at: (assignment as any).tagged_at,
               };
             })
           )
@@ -168,6 +176,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
           subject: {
             id: subject.id,
             name: subject.name,
+            grade: (subject as any).grade,
+            section: (subject as any).section,
             parent_name: subject.parent_name,
             parent_email: subject.parent_email,
             event: subject.event
@@ -176,6 +186,14 @@ export const GET = RateLimitMiddleware.withRateLimit(
                   name: subject.event.name,
                   date: (subject.event as any).date,
                   school_name: (subject.event as any).school_name || (subject.event as any).school,
+                }
+              : null,
+            course: (subject as any).course
+              ? {
+                  id: (subject as any).course.id,
+                  name: (subject as any).course.name,
+                  grade: (subject as any).course.grade,
+                  section: (subject as any).course.section,
                 }
               : null,
           },

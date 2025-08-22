@@ -1,11 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-export interface Subject {
+export interface Student {
   id: string;
   event_id: string;
+  course_id?: string;
   name: string;
-  parent_name: string;
-  parent_email: string;
+  grade?: string;
+  section?: string;
+  parent_name?: string;
+  parent_email?: string;
   token: string;
   token_expires_at: string;
   created_at: string;
@@ -18,22 +21,53 @@ export interface Subject {
     status: string;
     photo_prices: Record<string, number>;
   };
+  course?: {
+    id: string;
+    name: string;
+    grade: string;
+    section: string;
+  };
 }
+
+// Legacy interface for backward compatibility
+export interface Subject extends Student {}
 
 export interface PhotoAssignment {
   id: string;
   photo_id: string;
-  subject_id: string;
-  assigned_at: string;
+  student_id: string;
+  tagged_at: string;
   photo: {
     id: string;
     event_id: string;
+    course_id?: string;
     filename: string;
     storage_path: string;
     preview_path?: string;
     watermark_path?: string;
     created_at: string;
-    status: string;
+    photo_type: 'individual' | 'group' | 'activity' | 'event';
+    approved: boolean;
+  };
+}
+
+export interface GroupPhoto {
+  id: string;
+  photo_id: string;
+  course_id: string;
+  photo_type: 'group' | 'activity' | 'event';
+  tagged_at: string;
+  photo: {
+    id: string;
+    event_id: string;
+    course_id?: string;
+    filename: string;
+    storage_path: string;
+    preview_path?: string;
+    watermark_path?: string;
+    created_at: string;
+    photo_type: 'individual' | 'group' | 'activity' | 'event';
+    approved: boolean;
   };
 }
 
@@ -74,25 +108,44 @@ export class FamilyService {
   }
 
   /**
-   * Validar token y obtener información del sujeto
-   * @param token Token único del sujeto
-   * @returns Subject con información del evento o null si inválido
+   * Validar token y obtener información del estudiante
+   * @param token Token único del estudiante
+   * @returns Student con información del evento y curso o null si inválido
    */
-  async validateToken(token: string): Promise<Subject | null> {
+  async validateToken(token: string): Promise<Student | null> {
     if (!token || token.length < 20) {
       return null;
     }
 
     try {
-      // 1) Resolver token → subject
+      // 1) Resolver token → student (supporting both new and legacy table names)
       const nowIso = new Date().toISOString();
-      const { data: tokenRow, error: tokenError } = await this.supabase
-        .from('subject_tokens')
-        .select('subject_id, expires_at')
+      let tokenRow, tokenError;
+      
+      // Try new student_tokens table first
+      const { data: newTokenRow, error: newTokenError } = await this.supabase
+        .from('student_tokens')
+        .select('student_id, expires_at')
         .eq('token', token)
         .gt('expires_at', nowIso)
         .limit(1)
         .maybeSingle();
+
+      if (newTokenRow) {
+        tokenRow = { subject_id: newTokenRow.student_id, expires_at: newTokenRow.expires_at };
+      } else {
+        // Fallback to legacy subject_tokens table
+        const { data: legacyTokenRow, error: legacyTokenError } = await this.supabase
+          .from('subject_tokens')
+          .select('subject_id, expires_at')
+          .eq('token', token)
+          .gt('expires_at', nowIso)
+          .limit(1)
+          .maybeSingle();
+        
+        tokenRow = legacyTokenRow;
+        tokenError = legacyTokenError;
+      }
 
       if (tokenError || !tokenRow) {
         console.warn(
@@ -101,38 +154,69 @@ export class FamilyService {
         return null;
       }
 
-      // 2) Cargar sujeto + evento básico
-      const { data: subjectData, error: subjectError } = await this.supabase
-        .from('subjects')
-        .select(`id, event_id, name, parent_name, parent_email, created_at, event:events ( id, name, date )`)
+      // 2) Try students table first, then fallback to subjects table
+      let studentData, studentError;
+      
+      const { data: newStudentData, error: newStudentError } = await this.supabase
+        .from('students')
+        .select(`
+          id, event_id, course_id, name, grade, section, parent_name, parent_email, created_at,
+          event:events ( id, name, date ),
+          course:courses ( id, name, grade, section )
+        `)
         .eq('id', tokenRow.subject_id)
         .single();
 
-      if (subjectError || !subjectData) {
-        console.warn(`Token validation failed: subject not found - Token: tok_***`);
+      if (newStudentData) {
+        studentData = newStudentData;
+      } else {
+        // Fallback to legacy subjects table
+        const { data: legacySubjectData, error: legacySubjectError } = await this.supabase
+          .from('subjects')
+          .select(`id, event_id, name, parent_name, parent_email, created_at, event:events ( id, name, date )`)
+          .eq('id', tokenRow.subject_id)
+          .single();
+        
+        studentData = legacySubjectData;
+        studentError = legacySubjectError;
+      }
+
+      if (studentError || !studentData) {
+        console.warn(`Token validation failed: student not found - Token: tok_***`);
         return null;
       }
 
-      // 3) Devolver en el shape esperado
+      // 3) Return in expected format
       return {
-        id: subjectData.id,
-        event_id: subjectData.event_id,
-        name: subjectData.name,
-        parent_name: subjectData.parent_name,
-        parent_email: subjectData.parent_email,
+        id: studentData.id,
+        event_id: studentData.event_id,
+        course_id: studentData.course_id,
+        name: studentData.name,
+        grade: studentData.grade,
+        section: studentData.section,
+        parent_name: studentData.parent_name,
+        parent_email: studentData.parent_email,
         token,
         token_expires_at: tokenRow.expires_at,
-        created_at: subjectData.created_at,
-        event: subjectData.event
+        created_at: studentData.created_at,
+        event: studentData.event
           ? {
-              id: subjectData.event.id,
-              name: subjectData.event.name,
-              date: subjectData.event.date,
+              id: studentData.event.id,
+              name: studentData.event.name,
+              date: studentData.event.date,
               status: 'active',
               photo_prices: {},
             }
           : undefined,
-      } as Subject;
+        course: studentData.course
+          ? {
+              id: studentData.course.id,
+              name: studentData.course.name,
+              grade: studentData.course.grade,
+              section: studentData.course.section,
+            }
+          : undefined,
+      } as Student;
     } catch (error) {
       console.error('Error validating token:', error);
       return null;
@@ -140,62 +224,192 @@ export class FamilyService {
   }
 
   /**
-   * Obtener fotos asignadas a un sujeto
-   * @param subjectId ID del sujeto
+   * Legacy method for backward compatibility
+   */
+  async getSubjectByToken(token: string): Promise<Subject | null> {
+    return this.validateToken(token);
+  }
+
+  /**
+   * Obtener fotos asignadas a un estudiante (individuales y grupales)
+   * @param studentId ID del estudiante
    * @param page Página para paginación (opcional)
    * @param limit Límite por página (opcional)
-   * @returns Lista de asignaciones de fotos
+   * @returns Lista de asignaciones de fotos (individuales y grupales)
    */
   async getSubjectPhotos(
-    subjectId: string,
+    studentId: string,
     page: number = 1,
     limit: number = 50
-  ): Promise<{ photos: PhotoAssignment[]; total: number; has_more: boolean }> {
+  ): Promise<{ photos: (PhotoAssignment | GroupPhoto)[]; total: number; has_more: boolean }> {
     try {
       const offset = (page - 1) * limit;
 
-      // Obtener total count
-      const { count } = await this.supabase
-        .from('photo_assignments')
-        .select('*', { count: 'exact', head: true })
-        .eq('subject_id', subjectId);
-
-      // Obtener fotos con paginación
-      const { data, error } = await this.supabase
-        .from('photo_assignments')
-        .select(
-          `
-          id,
-          photo_id,
-          subject_id,
-          assigned_at,
-          photo:photos (
-            id,
-            event_id,
-            filename,
-            storage_path,
-            preview_path,
-            watermark_path,
-            created_at,
-            status
-          )
-        `
-        )
-        .eq('subject_id', subjectId)
-        .order('assigned_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) {
-        console.error('Error getting subject photos:', error);
-        throw new Error('Failed to load photos');
+      // Get student info to access course_id for group photos
+      const student = await this.validateToken(studentId); // This is not correct, let me fix it
+      
+      // Let me get student by ID instead
+      let studentData;
+      const { data: newStudentData } = await this.supabase
+        .from('students')
+        .select('id, course_id')
+        .eq('id', studentId)
+        .single();
+      
+      if (newStudentData) {
+        studentData = newStudentData;
+      } else {
+        // Fallback for legacy subjects
+        const { data: legacySubjectData } = await this.supabase
+          .from('subjects')
+          .select('id')
+          .eq('id', studentId)
+          .single();
+        studentData = legacySubjectData;
       }
 
-      const total = count || 0;
-      const has_more = total > page * limit;
+      if (!studentData) {
+        throw new Error('Student not found');
+      }
+
+      // Get individual photos count
+      let individualCount = 0;
+      const { count: newPhotoCount } = await this.supabase
+        .from('photo_students')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', studentId);
+      
+      if (newPhotoCount !== null) {
+        individualCount = newPhotoCount;
+      } else {
+        // Fallback to legacy table
+        const { count: legacyPhotoCount } = await this.supabase
+          .from('photo_assignments')
+          .select('*', { count: 'exact', head: true })
+          .eq('subject_id', studentId);
+        individualCount = legacyPhotoCount || 0;
+      }
+
+      // Get group photos count if student has course_id
+      let groupCount = 0;
+      if (studentData.course_id) {
+        const { count: groupPhotoCount } = await this.supabase
+          .from('photo_courses')
+          .select('*', { count: 'exact', head: true })
+          .eq('course_id', studentData.course_id);
+        groupCount = groupPhotoCount || 0;
+      }
+
+      const totalCount = individualCount + groupCount;
+
+      // Determine how many individual vs group photos to fetch for this page
+      const allPhotos: (PhotoAssignment | GroupPhoto)[] = [];
+      
+      // Fetch individual photos first
+      if (offset < individualCount) {
+        const individualLimit = Math.min(limit, individualCount - offset);
+        
+        // Try new photo_students table first
+        const { data: newPhotoData, error: newPhotoError } = await this.supabase
+          .from('photo_students')
+          .select(`
+            id,
+            photo_id,
+            student_id,
+            tagged_at,
+            photo:photos (
+              id,
+              event_id,
+              course_id,
+              filename,
+              storage_path,
+              preview_path,
+              watermark_path,
+              created_at,
+              photo_type,
+              approved
+            )
+          `)
+          .eq('student_id', studentId)
+          .eq('photo.approved', true)
+          .order('tagged_at', { ascending: false })
+          .range(offset, offset + individualLimit - 1);
+
+        if (newPhotoData && !newPhotoError) {
+          allPhotos.push(...(newPhotoData as PhotoAssignment[]));
+        } else {
+          // Fallback to legacy table
+          const { data: legacyPhotoData } = await this.supabase
+            .from('photo_assignments')
+            .select(`
+              id,
+              photo_id,
+              subject_id as student_id,
+              assigned_at as tagged_at,
+              photo:photos (
+                id,
+                event_id,
+                course_id,
+                filename,
+                storage_path,
+                preview_path,
+                watermark_path,
+                created_at,
+                photo_type,
+                approved
+              )
+            `)
+            .eq('subject_id', studentId)
+            .order('assigned_at', { ascending: false })
+            .range(offset, offset + individualLimit - 1);
+          
+          if (legacyPhotoData) {
+            allPhotos.push(...(legacyPhotoData as PhotoAssignment[]));
+          }
+        }
+      }
+
+      // Fetch group photos if needed and student has course
+      if (allPhotos.length < limit && studentData.course_id) {
+        const groupOffset = Math.max(0, offset - individualCount);
+        const groupLimit = limit - allPhotos.length;
+        
+        const { data: groupPhotoData } = await this.supabase
+          .from('photo_courses')
+          .select(`
+            id,
+            photo_id,
+            course_id,
+            photo_type,
+            tagged_at,
+            photo:photos (
+              id,
+              event_id,
+              course_id,
+              filename,
+              storage_path,
+              preview_path,
+              watermark_path,
+              created_at,
+              photo_type,
+              approved
+            )
+          `)
+          .eq('course_id', studentData.course_id)
+          .eq('photo.approved', true)
+          .order('tagged_at', { ascending: false })
+          .range(groupOffset, groupOffset + groupLimit - 1);
+
+        if (groupPhotoData) {
+          allPhotos.push(...(groupPhotoData as GroupPhoto[]));
+        }
+      }
+
+      const has_more = totalCount > page * limit;
 
       return {
-        photos: data as PhotoAssignment[],
-        total,
+        photos: allPhotos,
+        total: totalCount,
         has_more,
       };
     } catch (error) {
@@ -205,24 +419,147 @@ export class FamilyService {
   }
 
   /**
-   * Validar que una foto pertenece al sujeto
+   * Obtener solo fotos grupales de un estudiante
+   * @param studentId ID del estudiante
+   * @param page Página para paginación
+   * @param limit Límite por página
+   * @returns Lista de fotos grupales del curso del estudiante
+   */
+  async getStudentGroupPhotos(
+    studentId: string,
+    page: number = 1,
+    limit: number = 50
+  ): Promise<{ photos: GroupPhoto[]; total: number; has_more: boolean }> {
+    try {
+      const offset = (page - 1) * limit;
+
+      // Get student course_id
+      let studentData;
+      const { data: newStudentData } = await this.supabase
+        .from('students')
+        .select('id, course_id')
+        .eq('id', studentId)
+        .single();
+      
+      if (newStudentData) {
+        studentData = newStudentData;
+      } else {
+        // Legacy subjects don't have course_id, so no group photos
+        return { photos: [], total: 0, has_more: false };
+      }
+
+      if (!studentData?.course_id) {
+        return { photos: [], total: 0, has_more: false };
+      }
+
+      // Get group photos count
+      const { count } = await this.supabase
+        .from('photo_courses')
+        .select('*', { count: 'exact', head: true })
+        .eq('course_id', studentData.course_id);
+
+      // Get group photos with pagination
+      const { data, error } = await this.supabase
+        .from('photo_courses')
+        .select(`
+          id,
+          photo_id,
+          course_id,
+          photo_type,
+          tagged_at,
+          photo:photos (
+            id,
+            event_id,
+            course_id,
+            filename,
+            storage_path,
+            preview_path,
+            watermark_path,
+            created_at,
+            photo_type,
+            approved
+          )
+        `)
+        .eq('course_id', studentData.course_id)
+        .eq('photo.approved', true)
+        .order('tagged_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) {
+        console.error('Error getting group photos:', error);
+        throw new Error('Failed to load group photos');
+      }
+
+      const total = count || 0;
+      const has_more = total > page * limit;
+
+      return {
+        photos: data as GroupPhoto[],
+        total,
+        has_more,
+      };
+    } catch (error) {
+      console.error('Error in getStudentGroupPhotos:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Validar que una foto pertenece al estudiante (individual o grupal)
    * @param photoId ID de la foto
-   * @param subjectId ID del sujeto
-   * @returns true si la foto pertenece al sujeto
+   * @param studentId ID del estudiante
+   * @returns true si la foto pertenece al estudiante
    */
   async validatePhotoOwnership(
     photoId: string,
-    subjectId: string
+    studentId: string
   ): Promise<boolean> {
     try {
-      const { data, error } = await this.supabase
+      // Check individual photos first (new schema)
+      const { data: individualPhoto } = await this.supabase
+        .from('photo_students')
+        .select('id')
+        .eq('photo_id', photoId)
+        .eq('student_id', studentId)
+        .single();
+
+      if (individualPhoto) {
+        return true;
+      }
+
+      // Check legacy individual photos
+      const { data: legacyPhoto } = await this.supabase
         .from('photo_assignments')
         .select('id')
         .eq('photo_id', photoId)
-        .eq('subject_id', subjectId)
+        .eq('subject_id', studentId)
         .single();
 
-      return !error && !!data;
+      if (legacyPhoto) {
+        return true;
+      }
+
+      // Check group photos if student has course
+      const { data: studentData } = await this.supabase
+        .from('students')
+        .select('course_id')
+        .eq('id', studentId)
+        .single();
+
+      if (studentData?.course_id) {
+        const { data: groupPhoto } = await this.supabase
+          .from('photo_courses')
+          .select('id')
+          .eq('photo_id', photoId)
+          .eq('course_id', studentData.course_id)
+          .single();
+
+        if (groupPhoto) {
+          return true;
+        }
+      }
+
+      return false;
     } catch (error) {
       console.error('Error validating photo ownership:', error);
       return false;
@@ -318,45 +655,119 @@ export class FamilyService {
   }
 
   /**
-   * Obtener información de una foto específica
+   * Obtener información de una foto específica (individual o grupal)
    * @param photoId ID de la foto
-   * @param subjectId ID del sujeto (para validar pertenencia)
+   * @param studentId ID del estudiante (para validar pertenencia)
    * @returns Información de la foto o null si no pertenece
    */
   async getPhotoInfo(
     photoId: string,
-    subjectId: string
-  ): Promise<PhotoAssignment | null> {
+    studentId: string
+  ): Promise<PhotoAssignment | GroupPhoto | null> {
     try {
-      const { data, error } = await this.supabase
-        .from('photo_assignments')
-        .select(
-          `
+      // First, validate ownership
+      const hasAccess = await this.validatePhotoOwnership(photoId, studentId);
+      if (!hasAccess) {
+        return null;
+      }
+
+      // Try to get individual photo first (new schema)
+      const { data: individualPhoto } = await this.supabase
+        .from('photo_students')
+        .select(`
           id,
           photo_id,
-          subject_id,
-          assigned_at,
+          student_id,
+          tagged_at,
           photo:photos (
             id,
             event_id,
+            course_id,
             filename,
             storage_path,
             preview_path,
             watermark_path,
             created_at,
-            status
+            photo_type,
+            approved
           )
-        `
-        )
+        `)
         .eq('photo_id', photoId)
-        .eq('subject_id', subjectId)
+        .eq('student_id', studentId)
         .single();
 
-      if (error || !data) {
-        return null;
+      if (individualPhoto) {
+        return individualPhoto as PhotoAssignment;
       }
 
-      return data as PhotoAssignment;
+      // Try legacy individual photo
+      const { data: legacyPhoto } = await this.supabase
+        .from('photo_assignments')
+        .select(`
+          id,
+          photo_id,
+          subject_id as student_id,
+          assigned_at as tagged_at,
+          photo:photos (
+            id,
+            event_id,
+            course_id,
+            filename,
+            storage_path,
+            preview_path,
+            watermark_path,
+            created_at,
+            photo_type,
+            approved
+          )
+        `)
+        .eq('photo_id', photoId)
+        .eq('subject_id', studentId)
+        .single();
+
+      if (legacyPhoto) {
+        return legacyPhoto as PhotoAssignment;
+      }
+
+      // Try group photo
+      const { data: studentData } = await this.supabase
+        .from('students')
+        .select('course_id')
+        .eq('id', studentId)
+        .single();
+
+      if (studentData?.course_id) {
+        const { data: groupPhoto } = await this.supabase
+          .from('photo_courses')
+          .select(`
+            id,
+            photo_id,
+            course_id,
+            photo_type,
+            tagged_at,
+            photo:photos (
+              id,
+              event_id,
+              course_id,
+              filename,
+              storage_path,
+              preview_path,
+              watermark_path,
+              created_at,
+              photo_type,
+              approved
+            )
+          `)
+          .eq('photo_id', photoId)
+          .eq('course_id', studentData.course_id)
+          .single();
+
+        if (groupPhoto) {
+          return groupPhoto as GroupPhoto;
+        }
+      }
+
+      return null;
     } catch (error) {
       console.error('Error getting photo info:', error);
       return null;

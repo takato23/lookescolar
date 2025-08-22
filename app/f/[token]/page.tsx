@@ -1,5 +1,6 @@
-// FASE 3: Redirección condicional a sistema unificado
+// Enhanced Family Portal with improved token system
 import SimpleGalleryPage from './simple-page';
+import EnhancedFamilyGallery from './enhanced-page';
 import TokenRedirect from './redirect';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { featureFlags, debugMigration } from '@/lib/feature-flags';
@@ -13,6 +14,14 @@ export default async function FamilyPortal() {
     familyInGalleryRoute: featureFlags.FAMILY_IN_GALLERY_ROUTE,
     unifiedGalleryEnabled: featureFlags.UNIFIED_GALLERY_ENABLED 
   });
+
+  // Check if enhanced family access is available
+  const useEnhancedSystem = process.env.NEXT_PUBLIC_ENHANCED_FAMILY_ACCESS === 'true';
+
+  if (useEnhancedSystem) {
+    debugMigration('Using EnhancedFamilyGallery system');
+    return <EnhancedFamilyGallery />;
+  }
 
   // Si la redirección a galería unificada está habilitada, usar TokenRedirect
   if (featureFlags.FAMILY_IN_GALLERY_ROUTE && featureFlags.UNIFIED_GALLERY_ENABLED) {

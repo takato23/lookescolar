@@ -20,17 +20,25 @@ export type OrderStatus = (typeof MP_STATUS_MAPPING)[MPStatus];
 // Configuración del cliente MP con reintentos
 const getMPClient = () => {
   const accessToken = process.env.MP_ACCESS_TOKEN;
+  console.log('[MP Client] Initializing with token:', accessToken ? 'SET' : 'NOT SET');
+  
   if (!accessToken) {
     throw new Error('MP_ACCESS_TOKEN no configurado');
   }
 
-  return new MercadoPagoConfig({
+  const config = new MercadoPagoConfig({
     accessToken,
     options: {
-      timeout: 10000, // Incrementar timeout a 10s
+      timeout: 15000, // Increase timeout to 15s
       idempotencyKey: crypto.randomBytes(16).toString('hex'),
+      integratorId: undefined, // Explicitly set to undefined
+      corporationId: undefined, // Explicitly set to undefined 
+      platformId: undefined, // Explicitly set to undefined
     },
   });
+  
+  console.log('[MP Client] Client created successfully');
+  return config;
 };
 
 // Crear preferencia de pago
@@ -55,25 +63,40 @@ export const createPaymentPreference = async (
   const MAX_RETRIES = 2;
 
   try {
+    console.log('[MP] Starting preference creation process...');
     const client = getMPClient();
     const preference = new Preference(client);
+    console.log('[MP] Preference instance created');
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    console.log('[MP] Base URL for callbacks:', baseUrl);
+
+    // Validate base URL format
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+      throw new Error(`Invalid base URL format: ${baseUrl}`);
+    }
 
     // Preferencia mínima para debugging
     const preferenceData = {
       items: params.items,
       back_urls: {
-        success: `${baseUrl}/f/success`,
-        failure: `${baseUrl}/f/error`,
-        pending: `${baseUrl}/f/pending`,
+        success: `${baseUrl}/api/payments/success`,
+        failure: `${baseUrl}/api/payments/failure`,
+        pending: `${baseUrl}/api/payments/pending`,
       },
       external_reference: params.orderId,
+      // auto_return: 'approved', // Temporarily disabled for debugging
     };
 
-    console.log('[MP DEBUG] Enviando preferenceData:', JSON.stringify(preferenceData, null, 2));
+    console.log('[MP] Sending preference data:', JSON.stringify(preferenceData, null, 2));
+    
+    const startTime = Date.now();
+    console.log('[MP] Making API call to Mercado Pago...');
     const result = await preference.create({ body: preferenceData });
-    console.log('[MP DEBUG] Respuesta MP:', { id: result.id, hasInitPoint: !!result.init_point, hasSandboxInitPoint: !!result.sandbox_init_point });
+    const duration = Date.now() - startTime;
+    
+    console.log('[MP] API call completed successfully in', duration + 'ms');
+    console.log('[MP] Response summary:', { id: result.id, hasInitPoint: !!result.init_point, hasSandboxInitPoint: !!result.sandbox_init_point });
 
     if (!result.id || !result.init_point || !result.sandbox_init_point) {
       throw new Error('Respuesta incompleta de MercadoPago');
@@ -84,10 +107,17 @@ export const createPaymentPreference = async (
       init_point: result.init_point,
       sandbox_init_point: result.sandbox_init_point,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       `Error creando preferencia MP (intento ${retryCount + 1}):`,
-      error
+      {
+        message: error.message,
+        status: error.status,
+        statusCode: error.statusCode,
+        cause: error.cause,
+        response: error.response?.data || error.response,
+        stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+      }
     );
 
     // Retry logic for transient errors
@@ -98,7 +128,12 @@ export const createPaymentPreference = async (
       return createPaymentPreference(params, retryCount + 1);
     }
 
-    throw new Error('Error al crear preferencia de pago después de reintentos');
+    // Provide more specific error message
+    const errorMessage = error.message?.includes('parse URL') 
+      ? `Mercado Pago API error: ${error.message}. Check URL configuration and credentials.`
+      : error.message || 'Error desconocido al crear preferencia de pago';
+    
+    throw new Error(`Error al crear preferencia de pago: ${errorMessage}`);
   }
 };
 

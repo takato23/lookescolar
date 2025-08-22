@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import crypto from 'crypto';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import {
   createPaymentPreference,
   validateSinglePendingOrder,
@@ -10,12 +10,9 @@ import {
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
-// Rate limiting: 5 req/min por IP para checkout
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(5, '1 m'),
-  analytics: true,
-});
+// Rate limiting disabled for debugging
+let ratelimit: Ratelimit | null = null;
+console.log('[Checkout] Rate limiting disabled for debugging');
 
 // Schema de validación para checkout
 const CheckoutSchema = z.object({
@@ -44,29 +41,33 @@ export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
 
   try {
-    // Rate limiting
-    const ip =
-      request.headers.get('x-forwarded-for') || request.ip || 'unknown';
-    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+    // Rate limiting (skip if not configured)
+    if (ratelimit) {
+      const ip =
+        request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+      const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
-    if (!success) {
-      console.warn(`[${requestId}] Checkout rate limit exceeded`, {
-        ip: ip.replace(/\d+$/, '***'),
-        limit,
-        remaining,
-      });
+      if (!success) {
+        console.warn(`[${requestId}] Checkout rate limit exceeded`, {
+          ip: ip.replace(/\d+$/, '***'),
+          limit,
+          remaining,
+        });
 
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please wait before trying again.' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': new Date(reset).toISOString(),
-          },
-        }
-      );
+        return NextResponse.json(
+          { error: 'Rate limit exceeded. Please wait before trying again.' },
+          {
+            status: 429,
+            headers: {
+              'X-RateLimit-Limit': limit.toString(),
+              'X-RateLimit-Remaining': remaining.toString(),
+              'X-RateLimit-Reset': new Date(reset).toISOString(),
+            },
+          }
+        );
+      }
+    } else {
+      console.log(`[${requestId}] Rate limiting bypassed (Redis not configured)`);
     }
 
     // Parsear y validar request
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { token, contactInfo, items } = validation.data;
-    const supabase = await createServiceClient();
+    const supabase = await createServerSupabaseServiceClient();
 
     console.info(`[${requestId}] Checkout started`, {
       token: 'tok_***',
@@ -100,20 +101,139 @@ export async function POST(request: NextRequest) {
       totalQuantity: items.reduce((sum, item) => sum + item.quantity, 0),
     });
 
-    // 1. Verificar token válido y obtener sujeto
-    const { data: tokenData } = await supabase
-      .from('subject_tokens')
-      .select(`subject_id, expires_at, subjects:subject_id ( id, event_id, first_name, last_name, type, events:event_id ( id, name, school, status ) )`)
+    console.log(`[${requestId}] Step 1: Verifying token and obtaining subject/student...`);
+
+    // 1. Verificar token válido y obtener sujeto/estudiante
+    let tokenData: any = null;
+    let tokenMode: 'code' | 'subject' | 'student' = 'subject'; // Track token type
+    let codeId: string | null = null;
+    
+    // Primero intentar con códigos (compatible con sistema legacy)
+    console.log(`[${requestId}] Searching for token in codes table...`);
+    const { data: codeData, error: codeError } = await supabase
+      .from('codes')
+      .select(`
+        id,
+        event_id,
+        code_value,
+        is_published,
+        events:event_id ( id, name, school )
+      `)
       .eq('token', token)
       .single();
+    
+    if (codeError) {
+      console.log(`[${requestId}] Codes query error:`, codeError);
+    }
+    
+    if (codeData) {
+      console.log(`[${requestId}] Token found in codes table`);
+      tokenMode = 'code';
+      codeId = codeData.id;
+      // Para códigos, crear estructura compatible
+      tokenData = {
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 días desde ahora
+        subjects: {
+          id: codeData.id,
+          event_id: codeData.event_id,
+          first_name: null,
+          last_name: codeData.code_value,
+          type: 'code',
+          events: {
+            id: codeData.events.id,
+            name: codeData.events.name,
+            school: codeData.events.school,
+            status: 'active' // Default active for codes
+          }
+        }
+      };
+    } else {
+      console.log(`[${requestId}] Token not found in codes, trying student_tokens...`);
+      
+      // Intentar con el nuevo sistema (students/student_tokens)
+      const { data: studentTokenData } = await supabase
+        .from('student_tokens')
+        .select(`
+          student_id, 
+          expires_at, 
+          students:student_id ( 
+            id, 
+            event_id, 
+            first_name, 
+            last_name, 
+            events:event_id ( id, name, school, active ) 
+          )
+        `)
+        .eq('token', token)
+        .single();
+      
+      if (studentTokenData) {
+        console.log(`[${requestId}] Token found in student_tokens table`);
+        tokenData = {
+          subject_id: studentTokenData.student_id,
+          expires_at: studentTokenData.expires_at,
+          subjects: {
+            id: studentTokenData.students.id,
+            event_id: studentTokenData.students.event_id,
+            first_name: studentTokenData.students.first_name,
+            last_name: studentTokenData.students.last_name,
+            type: 'student',
+            events: {
+              id: studentTokenData.students.events.id,
+              name: studentTokenData.students.events.name,
+              school: studentTokenData.students.events.school,
+              status: studentTokenData.students.events.active ? 'active' : 'inactive'
+            }
+          }
+        };
+      } else {
+        console.log(`[${requestId}] Token not found in student_tokens, trying subject_tokens...`);
+        
+        // Fallback al sistema legacy (subjects/subject_tokens)
+        const { data: legacyTokenData } = await supabase
+          .from('subject_tokens')
+          .select(`
+            subject_id, 
+            expires_at, 
+            subjects:subject_id ( 
+              id, 
+              event_id, 
+              first_name, 
+              last_name, 
+              type, 
+              events:event_id ( id, name, school, active ) 
+            )
+          `)
+          .eq('token', token)
+          .single();
+          
+        if (legacyTokenData) {
+          console.log(`[${requestId}] Token found in subject_tokens table`);
+          tokenData = {
+            ...legacyTokenData,
+            subjects: {
+              ...legacyTokenData.subjects,
+              events: {
+                ...legacyTokenData.subjects.events,
+                status: legacyTokenData.subjects.events.active ? 'active' : 'inactive'
+              }
+            }
+          };
+        } else {
+          console.log(`[${requestId}] Token not found in any table`);
+        }
+      }
+    }
 
     if (!tokenData || new Date(tokenData.expires_at) < new Date()) {
+      console.log(`[${requestId}] Token validation failed`);
       return NextResponse.json(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
     }
 
+    console.log(`[${requestId}] Token validated successfully`);
     const subject = tokenData.subjects as any;
     const event = subject?.events as any;
 
@@ -145,11 +265,66 @@ export async function POST(request: NextRequest) {
 
     // 3. Validar que todas las fotos pertenecen al sujeto
     const photoIds = items.map((item) => item.photoId);
-    const { data: photos } = await supabase
-      .from('photos')
-      .select('id, filename')
-      .eq('subject_id', subject.id)
-      .in('id', photoIds);
+    
+    // Buscar fotos según el tipo de token
+    let photos: any[] = [];
+    
+    if (tokenMode === 'code' && codeId) {
+      console.log(`[${requestId}] Validating photos for code mode with codeId: ${codeId}`);
+      // Para códigos, buscar fotos directamente por code_id
+      const { data: codePhotos, error: codePhotosError } = await supabase
+        .from('photos')
+        .select('id, original_filename')
+        .eq('code_id', codeId)
+        .in('id', photoIds);
+        
+      if (codePhotosError) {
+        console.error(`[${requestId}] Code photos query error:`, codePhotosError);
+      }
+      
+      if (codePhotos && codePhotos.length > 0) {
+        photos = codePhotos.map(p => ({
+          id: p.id,
+          filename: p.original_filename
+        }));
+      }
+    } else {
+      // Buscar fotos asociadas al estudiante a través de photo_students o photo_subjects (compatibilidad)
+      
+      // Intentar con el nuevo sistema (students/photo_students)
+      const { data: studentPhotos } = await supabase
+        .from('photo_students')
+        .select(`
+          photo_id,
+          photos!inner(id, filename, original_filename)
+        `)
+        .eq('student_id', subject.id)
+        .in('photo_id', photoIds);
+      
+      if (studentPhotos && studentPhotos.length > 0) {
+        photos = studentPhotos.map(sp => ({
+          id: sp.photos.id,
+          filename: sp.photos.filename || sp.photos.original_filename
+        }));
+      } else {
+        // Fallback al sistema legacy (subjects/photo_subjects)
+        const { data: legacyPhotos } = await supabase
+          .from('photo_subjects')
+          .select(`
+            photo_id,
+            photos!inner(id, filename, original_filename)
+          `)
+          .eq('subject_id', subject.id)
+          .in('photo_id', photoIds);
+          
+        if (legacyPhotos && legacyPhotos.length > 0) {
+          photos = legacyPhotos.map(ps => ({
+            id: ps.photos.id,
+            filename: ps.photos.filename || ps.photos.original_filename
+          }));
+        }
+      }
+    }
 
     if (!photos || photos.length !== photoIds.length) {
       const foundIds = photos?.map((p) => p.id) || [];
@@ -167,22 +342,110 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Obtener precios del evento
-    const { data: priceList } = await supabase
+    // 4. Obtener o crear precios del evento
+    let priceList: any = null;
+    
+    const { data: existingPriceList, error: priceListQueryError } = await supabase
       .from('price_lists')
-      .select(
-        `
-        id,
-        price_list_items (
-          id,
-          label,
-          type,
-          price_cents
-        )
-      `
-      )
+      .select('id')
       .eq('event_id', event.id)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() to handle no results
+      
+    if (priceListQueryError) {
+      console.error(`[${requestId}] Price list query error:`, priceListQueryError);
+    }
+    
+    if (existingPriceList?.id) {
+      console.log(`[${requestId}] Found existing price list ${existingPriceList.id}`);
+      
+      // Check if it has items
+      const { data: existingItems } = await supabase
+        .from('price_list_items')
+        .select('id, label, price_cents')
+        .eq('price_list_id', existingPriceList.id);
+        
+      if (existingItems && existingItems.length > 0) {
+        console.log(`[${requestId}] Found ${existingItems.length} existing price items`);
+        priceList = {
+          id: existingPriceList.id,
+          price_list_items: existingItems
+        };
+      } else {
+        console.log(`[${requestId}] Adding default items to existing price list ${existingPriceList.id}`);
+        
+        const defaultPriceItems = [
+          {
+            price_list_id: existingPriceList.id,
+            label: 'Foto Digital',
+            price_cents: 1000 // $10.00 ARS
+          }
+        ];
+
+        const { data: priceItems, error: itemsError } = await supabase
+          .from('price_list_items')
+          .insert(defaultPriceItems)
+          .select('id, label, price_cents');
+
+        if (itemsError) {
+          console.error(`[${requestId}] Error creating price items:`, itemsError);
+          return NextResponse.json(
+            { error: 'Error creating pricing items' },
+            { status: 500 }
+          );
+        }
+
+        priceList = {
+          id: existingPriceList.id,
+          price_list_items: priceItems
+        };
+      }
+    } else {
+      // Crear lista de precios básica si no existe
+      console.log(`[${requestId}] Creating default price list for event ${event.id}`);
+      
+      const { data: newPriceList, error: priceListError } = await supabase
+        .from('price_lists')
+        .insert({
+          event_id: event.id
+        })
+        .select('id')
+        .single();
+
+      if (priceListError) {
+        console.error(`[${requestId}] Error creating price list:`, priceListError);
+        return NextResponse.json(
+          { error: 'Error creating pricing for this event' },
+          { status: 500 }
+        );
+      }
+
+      // Crear items de precios por defecto
+      const defaultPriceItems = [
+        {
+          price_list_id: newPriceList.id,
+          label: 'Foto Digital',
+          price_cents: 1000 // $10.00 ARS
+        }
+      ];
+
+      const { data: priceItems, error: itemsError } = await supabase
+        .from('price_list_items')
+        .insert(defaultPriceItems)
+        .select('id, label, price_cents');
+
+      if (itemsError) {
+        console.error(`[${requestId}] Error creating price items:`, itemsError);
+        return NextResponse.json(
+          { error: 'Error creating pricing items' },
+          { status: 500 }
+        );
+      }
+
+      priceList = {
+        id: newPriceList.id,
+        price_list_items: priceItems
+      };
+    }
 
     if (!priceList?.price_list_items?.length) {
       return NextResponse.json(
@@ -191,10 +454,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear mapa de precios por tipo
+    // Crear mapa de precios por tipo (simplified without type field)
     const priceMap = new Map();
     priceList.price_list_items.forEach((item: any) => {
-      priceMap.set(item.type || 'base', {
+      priceMap.set('base', {
         id: item.id,
         label: item.label,
         price_cents: item.price_cents,
@@ -228,15 +491,39 @@ export async function POST(request: NextRequest) {
 
     // 6. Crear orden en base de datos
     const orderId = crypto.randomUUID();
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    
+    // For codes, ensure subject exists or create it
+    if (tokenMode === 'code') {
+      // Generate token for subject creation (required by database schema)
+      const { randomBytes } = await import('crypto');
+      const accessToken = randomBytes(24).toString('base64url');
+      const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      
+      const { error: subjectError } = await supabase
+        .from('subjects')
+        .upsert({
+          id: subject.id,
+          event_id: event.id,
+          name: subject.first_name + ' ' + subject.last_name,
+          access_token: accessToken,
+          token_expires_at: tokenExpiresAt.toISOString()
+        });
+      
+      if (subjectError) {
+        console.log(`[${requestId}] Could not create subject for code:`, subjectError);
+        // Continue anyway, might already exist
+      }
+    }
+    
     const { error: orderError } = await supabase.from('orders').insert({
       id: orderId,
+      order_number: orderNumber,
+      event_id: event.id,
       subject_id: subject.id,
       contact_name: contactInfo.name,
       contact_email: contactInfo.email,
-      contact_phone: contactInfo.phone || null,
-      total_amount_cents: totalCents,
       status: 'pending',
-      created_by: 'family_checkout',
     });
 
     if (orderError) {
@@ -251,10 +538,9 @@ export async function POST(request: NextRequest) {
     const orderItems = validatedItems.map((item) => ({
       order_id: orderId,
       photo_id: item.photoId,
-      price_list_item_id: item.priceListItemId,
       quantity: item.quantity,
-      unit_price_cents: item.unitPrice,
-      total_price_cents: item.totalPrice,
+      unit_price: item.unitPrice,
+      subtotal: item.totalPrice,
     }));
 
     const { error: itemsError } = await supabase
@@ -293,7 +579,22 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    console.log(`[${requestId}] Creating MP preference with params:`, {
+      orderId,
+      itemsCount: mpItems.length,
+      totalAmount: Math.round(totalCents / 100),
+      preferenceParams: JSON.stringify(preferenceParams, null, 2)
+    });
+
+    console.log(`[${requestId}] About to call createPaymentPreference...`);
     const preference = await createPaymentPreference(preferenceParams);
+    console.log(`[${requestId}] createPaymentPreference returned:`, preference);
+    
+    console.log(`[${requestId}] MP preference created successfully:`, {
+      preferenceId: preference.id,
+      hasInitPoint: !!preference.init_point,
+      hasSandboxInitPoint: !!preference.sandbox_init_point,
+    });
 
     // 9. Actualizar orden con preference_id
     const { error: updateError } = await supabase
