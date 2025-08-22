@@ -25,6 +25,7 @@ import {
   Image,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ interface EventCardProps {
   onDelete?: (event: Event) => void;
   onView?: (event: Event) => void;
   className?: string;
+  compact?: boolean;
 }
 
 const statusConfig = {
@@ -88,6 +90,7 @@ export function EventCard({
   onDelete,
   onView,
   className,
+  compact = false,
 }: EventCardProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -105,13 +108,22 @@ export function EventCard({
     }
   };
 
-  // Color coding for different hierarchy levels
+  // Color scheme for neural glass effect
   const getColorScheme = () => {
-    // For now, we'll use a default color scheme for events
-    // In the future, this could be based on event type or other factors
+    if (event.active) {
+      return {
+        primary: 'from-emerald-500 to-teal-600',
+        secondary: 'from-emerald-400 to-teal-500',
+        accent: 'text-emerald-600',
+        badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        statIcon: 'text-emerald-500',
+        gradient: 'bg-gradient-to-br from-emerald-50/50 to-teal-50/50',
+      };
+    }
+    
     return {
-      primary: 'from-blue-500 to-blue-600',
-      secondary: 'from-blue-400 to-blue-500',
+      primary: 'from-blue-500 to-indigo-600',
+      secondary: 'from-blue-400 to-indigo-500',
       accent: 'text-blue-600',
       badge: 'bg-blue-100 text-blue-800 border-blue-200',
       statIcon: 'text-blue-500',
@@ -129,131 +141,105 @@ export function EventCard({
   return (
     <div
       className={cn(
-        'liquid-glass-card-ios26 group relative overflow-hidden transition-all duration-300 rounded-2xl border border-white/20 shadow-lg',
-        'hover:scale-[1.02] hover:shadow-xl',
+        'neural-glass-card group relative overflow-hidden transition-all duration-500',
+        'hover:scale-[1.02] hover:shadow-xl hover:-translate-y-2',
+        compact ? 'neural-event-card-compact' : 'min-h-[320px]',
         className
       )}
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${colorScheme.gradient} opacity-50`} />
+      {/* Neural refractive background */}
+      <div className={`absolute inset-0 ${colorScheme.gradient} opacity-40`} />
       
-      {/* Color accent bar */}
+      {/* Status accent bar */}
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorScheme.primary}`} />
 
-      <div className="relative pb-4 p-5 sm:p-6">
-        <div className="flex items-start justify-between">
+      {/* Main Content */}
+      <div className={cn(
+        "relative flex flex-col h-full",
+        compact ? "p-4" : "p-5 sm:p-6"
+      )}>
+        {/* Header Section */}
+        <div className="flex items-start justify-between mb-3">
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={status.variant} className={`glass-label-ios26 ${colorScheme.badge}`}>
+              <Badge variant={status.variant} className={`neural-glass-card text-xs ${colorScheme.badge}`}>
                 <status.icon className="mr-1 h-3 w-3" />
                 {status.label}
               </Badge>
               {isUpcoming && (
                 <Badge
                   variant="outline"
-                  className="glass-label-ios26 border-orange-200 text-orange-600 bg-orange-50"
+                  className="neural-glass-card text-xs border-orange-200 text-orange-600 bg-orange-50/50"
                 >
                   Próximo
                 </Badge>
               )}
-              {event.stats?.untaggedPhotos &&
-                event.stats.untaggedPhotos > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="glass-label-ios26 border-amber-200 text-amber-600 bg-amber-50"
-                  >
-                    {event.stats.untaggedPhotos} sin etiquetar
-                  </Badge>
-                )}
+              {event.stats?.untaggedPhotos && event.stats.untaggedPhotos > 0 && (
+                <Badge
+                  variant="outline"
+                  className="neural-glass-card text-xs border-amber-200 text-amber-600 bg-amber-50/50"
+                >
+                  {event.stats.untaggedPhotos} pendientes
+                </Badge>
+              )}
             </div>
 
             <div className="space-y-1">
-              <h3 className="gradient-text-ios26 line-clamp-1 text-xl font-bold transition-colors group-hover:text-blue-700">
+              <h3 className={cn(
+                "neural-title font-bold transition-colors group-hover:text-blue-700",
+                compact ? "text-lg line-clamp-1" : "text-xl line-clamp-2"
+              )}>
                 {event.school}
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                {eventDate.toLocaleDateString('es-AR', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </p>
+              {!compact && (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {eventDate.toLocaleDateString('es-AR', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    weekday: 'short',
+                  })}
+                </p>
+              )}
             </div>
           </div>
 
+          {/* Actions Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="liquid-glass-button-ios26 opacity-0 transition-opacity group-hover:opacity-100 p-2 rounded-xl hover:bg-white/10"
+                className="neural-glass-card opacity-0 transition-opacity group-hover:opacity-100 p-2 rounded-xl hover:bg-white/20 border-white/20"
                 onClick={(e) => e.stopPropagation()}
                 disabled={isLoading}
               >
                 <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="liquid-glass-card-ios26 border border-white/20 w-56">
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onView && onView(event);
-                }}
-              >
+            <DropdownMenuContent align="end" className="neural-glass-card border-white/20 w-56">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView && onView(event); }}>
                 <Eye className="mr-2 h-4 w-4" />
                 Ver detalles
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link
-                  href={`/admin/photos?eventId=${event.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <Link href={`/admin/photos?eventId=${event.id}`} onClick={(e) => e.stopPropagation()}>
                   <Camera className="mr-2 h-4 w-4" />
                   Administrar fotos
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link
-                  href={`/admin/publish`}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <Link href={`/admin/publish`} onClick={(e) => e.stopPropagation()}>
                   <QrCode className="mr-2 h-4 w-4" />
                   Compartir salón
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-white/20" />
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit && onEdit(event);
-                }}
-              >
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit && onEdit(event); }}>
                 <Edit3 className="mr-2 h-4 w-4" />
                 Editar evento
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  try {
-                    const res = await fetch('/api/admin/photos/watermark', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ eventId: event.id }),
-                    });
-                    if (!res.ok) throw new Error('Error');
-                    alert('Generación de watermarks iniciada');
-                  } catch {
-                    alert('No se pudo iniciar la generación de watermarks');
-                  }
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Generar previews
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-white/20" />
-              <DropdownMenuItem
                 className="text-red-600 focus:text-red-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete && onDelete(event);
-                }}
+                onClick={(e) => { e.stopPropagation(); onDelete && onDelete(event); }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Eliminar evento
@@ -261,21 +247,15 @@ export function EventCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
 
-      <div className="relative space-y-4 pt-0 px-5 sm:px-6 pb-6">
-        {/* Event Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div className="space-y-3">
+        {/* Quick Info Section */}
+        {!compact && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
             <div className="flex items-center text-gray-600 dark:text-gray-300">
               <Calendar className="mr-2 h-4 w-4 shrink-0" />
               <div>
                 <div className="font-medium text-gray-900 dark:text-white">
-                  {eventDate.toLocaleDateString('es-AR', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {eventDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   {eventDate.toLocaleDateString('es-AR', { weekday: 'long' })}
@@ -283,15 +263,6 @@ export function EventCard({
               </div>
             </div>
 
-            {event.school && (
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <MapPin className="mr-2 h-4 w-4 shrink-0" />
-                <span className="truncate font-medium text-gray-900 dark:text-white">{event.school}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
             {event.photo_price && (
               <div className="flex items-center text-gray-600 dark:text-gray-300">
                 <DollarSign className="mr-2 h-4 w-4 shrink-0" />
@@ -303,29 +274,33 @@ export function EventCard({
                 </div>
               </div>
             )}
-
-            {event.stats?.revenue && event.stats.revenue > 0 && (
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
-                <TrendingUp className="mr-2 h-4 w-4 shrink-0" />
-                <div>
-                  <div className="font-medium text-green-600 dark:text-green-400">
-                    ${event.stats.revenue.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">recaudado</div>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
-        {/* Stats Grid with Hierarchy Icons */}
+        {/* Compact Date Info */}
+        {compact && (
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-3">
+            <Calendar className="mr-2 h-4 w-4" />
+            <span className="font-medium">
+              {eventDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          </div>
+        )}
+
+        {/* Stats Grid */}
         {event.stats && (
-          <div className="border-border/50 grid grid-cols-3 gap-3 border-t pt-4 border-white/20">
+          <div className={cn(
+            "grid gap-3 border-t pt-3 mb-3 border-white/20",
+            compact ? "grid-cols-3" : "grid-cols-3"
+          )}>
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
-                <Image className={`h-5 w-5 ${colorScheme.statIcon}`} />
+                <Image className={`h-4 w-4 ${colorScheme.statIcon}`} />
               </div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white">
+              <div className={cn(
+                "font-bold text-gray-900 dark:text-white",
+                compact ? "text-sm" : "text-lg"
+              )}>
                 {event.stats.totalPhotos || 0}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-300">Fotos</div>
@@ -333,9 +308,12 @@ export function EventCard({
 
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
-                <User className="h-5 w-5 text-purple-500" />
+                <User className="h-4 w-4 text-purple-500" />
               </div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white">
+              <div className={cn(
+                "font-bold text-gray-900 dark:text-white",
+                compact ? "text-sm" : "text-lg"
+              )}>
                 {event.stats.totalSubjects || 0}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-300">Familias</div>
@@ -343,9 +321,12 @@ export function EventCard({
 
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
-                <ShoppingCart className="h-5 w-5 text-green-500" />
+                <ShoppingCart className="h-4 w-4 text-green-500" />
               </div>
-              <div className="text-lg font-bold text-gray-900 dark:text-white">
+              <div className={cn(
+                "font-bold text-gray-900 dark:text-white",
+                compact ? "text-sm" : "text-lg"
+              )}>
                 {event.stats.totalOrders || 0}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-300">Pedidos</div>
@@ -353,11 +334,11 @@ export function EventCard({
           </div>
         )}
 
-        {/* Progress Bar for Photo Tagging */}
+        {/* Progress Bar */}
         {event.stats && event.stats.totalPhotos > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 mb-4">
             <div className="flex justify-between text-xs">
-              <span className="text-gray-600 dark:text-gray-300">Progreso de etiquetado</span>
+              <span className="text-gray-600 dark:text-gray-300">Progreso</span>
               <span className="font-medium text-gray-900 dark:text-white">{photoTaggingProgress}%</span>
             </div>
             <div className="progress-bar-ios26 h-2 rounded-full overflow-hidden">
@@ -369,27 +350,45 @@ export function EventCard({
           </div>
         )}
 
-        {/* Action Area - Simplified */}
-        <div className="border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3 border-t pt-4 border-white/20">
-          <div className="text-xs text-gray-600 dark:text-gray-300">
-            Creado {event.created_at ? new Date(event.created_at).toLocaleDateString('es-AR') : 'N/A'}
+        {/* Revenue Display */}
+        {event.stats?.revenue && event.stats.revenue > 0 && (
+          <div className="neural-metric-display p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-300">Ingresos</span>
+              </div>
+              <span className="font-bold text-green-600 dark:text-green-400">
+                ${event.stats.revenue.toLocaleString()}
+              </span>
+            </div>
           </div>
+        )}
 
-          <div className="flex gap-2 w-full sm:w-auto">
+        {/* Action Buttons - Bottom */}
+        <div className="mt-auto flex flex-col gap-3 border-t pt-3 border-white/20">
+          {!compact && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Creado {event.created_at ? new Date(event.created_at).toLocaleDateString('es-AR') : 'N/A'}
+            </div>
+          )}
+
+          <div className="flex gap-2">
             <Link href={`/admin/events/${event.id}`} className="flex-1">
-              <button className="liquid-glass-button-ios26 w-full text-xs px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-2 font-medium hover:bg-white/10 transition-colors">
-                <Eye className="h-4 w-4" />
-                <span>Gestionar</span>
-              </button>
+              <Button className="neural-glass-card w-full border-white/20 hover:bg-white/20" size={compact ? "sm" : "default"}>
+                <Eye className="h-4 w-4 mr-2" />
+                Gestionar
+              </Button>
             </Link>
             <Link href={`/gallery/${event.id}`}>
-              <button
-                className="liquid-glass-button-ios26 text-xs px-3 py-2 rounded-lg flex items-center gap-1 hover:bg-white/10 transition-colors"
-                aria-label="Vista cliente"
+              <Button
+                variant="outline"
+                className="neural-glass-card border-white/20 hover:bg-white/20"
+                size={compact ? "sm" : "default"}
               >
                 <Eye className="h-3 w-3" />
-                <span>Vista</span>
-              </button>
+                {compact ? '' : 'Vista'}
+              </Button>
             </Link>
           </div>
         </div>
