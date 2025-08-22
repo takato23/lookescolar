@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import {
   Calendar,
   MapPin,
@@ -20,11 +19,13 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  ExternalLink,
-  Copy,
-  Wrench,
+  GraduationCap,
+  BookOpen,
+  User,
+  Image,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ interface EventCardProps {
   onDelete?: (event: Event) => void;
   onView?: (event: Event) => void;
   className?: string;
+  compact?: boolean;
 }
 
 const statusConfig = {
@@ -88,6 +90,7 @@ export function EventCard({
   onDelete,
   onView,
   className,
+  compact = false,
 }: EventCardProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -105,302 +108,287 @@ export function EventCard({
     }
   };
 
-  // Copy public gallery link to clipboard
-  const copyPublicLink = async () => {
-    const publicUrl = `${window.location.origin}/gallery/${event.id}`;
-    try {
-      await navigator.clipboard.writeText(publicUrl);
-      toast.success('Link público copiado al portapapeles', {
-        description: `Las familias pueden acceder en: /gallery/${event.id}`,
-        duration: 4000
-      });
-    } catch (error) {
-      toast.error('No se pudo copiar el link');
+  // Color scheme for neural glass effect
+  const getColorScheme = () => {
+    if (event.active) {
+      return {
+        primary: 'from-emerald-500 to-teal-600',
+        secondary: 'from-emerald-400 to-teal-500',
+        accent: 'text-emerald-600',
+        badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        statIcon: 'text-emerald-500',
+        gradient: 'bg-gradient-to-br from-emerald-50/50 to-teal-50/50',
+      };
     }
+    
+    return {
+      primary: 'from-blue-500 to-indigo-600',
+      secondary: 'from-blue-400 to-indigo-500',
+      accent: 'text-blue-600',
+      badge: 'bg-blue-100 text-blue-800 border-blue-200',
+      statIcon: 'text-blue-500',
+      gradient: 'bg-gradient-to-br from-blue-50/50 to-indigo-50/50',
+    };
   };
 
-  // Repair photo previews with better feedback
-  const repairPreviews = async () => {
-    const loadingToast = toast.loading('Reparando previews...', {
-      description: 'Regenerando watermarks para el evento'
-    });
-    
-    try {
-      const res = await fetch('/api/admin/photos/repair-previews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: event.id }),
-      });
-      
-      if (!res.ok) throw new Error('Error reparando previews');
-      
-      toast.success('Previews reparados exitosamente', {
-        id: loadingToast,
-        description: 'Se regeneraron los watermarks del evento',
-        duration: 5000
-      });
-    } catch (error) {
-      toast.error('No se pudo reparar los previews', {
-        id: loadingToast,
-        description: 'Intenta nuevamente o contacta soporte',
-        duration: 5000
-      });
-    }
-  };
+  const colorScheme = getColorScheme();
+
+  // Calculate progress percentage for photo tagging
+  const photoTaggingProgress = event.stats?.totalPhotos 
+    ? Math.round(((event.stats.totalPhotos - (event.stats.untaggedPhotos || 0)) / event.stats.totalPhotos) * 100)
+    : 0;
 
   return (
     <div
       className={cn(
-        'liquid-card liquid-shine group relative overflow-hidden transition-all duration-300',
-        'hover:scale-[1.01] hover:shadow-xl',
+        'neural-glass-card group relative overflow-hidden transition-all duration-500',
+        'hover:scale-[1.02] hover:shadow-xl hover:-translate-y-2',
+        compact ? 'neural-event-card-compact' : 'min-h-[320px]',
         className
       )}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-50/30 to-secondary-50/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      {/* Neural refractive background */}
+      <div className={`absolute inset-0 ${colorScheme.gradient} opacity-40`} />
+      
+      {/* Status accent bar */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${colorScheme.primary}`} />
 
-      <div className="relative pb-4 p-6">
-        <div className="flex items-start justify-between">
+      {/* Main Content */}
+      <div className={cn(
+        "relative flex flex-col h-full",
+        compact ? "p-4" : "p-5 sm:p-6"
+      )}>
+        {/* Header Section */}
+        <div className="flex items-start justify-between mb-3">
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-center gap-3">
-              <Badge variant={status.variant} className="shrink-0 liquid-label">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={status.variant} className={`neural-glass-card text-xs ${colorScheme.badge}`}>
                 <status.icon className="mr-1 h-3 w-3" />
                 {status.label}
               </Badge>
               {isUpcoming && (
                 <Badge
                   variant="outline"
-                  className="border-orange-200 text-orange-600 liquid-label"
+                  className="neural-glass-card text-xs border-orange-200 text-orange-600 bg-orange-50/50"
                 >
                   Próximo
                 </Badge>
               )}
-              {event.stats?.untaggedPhotos &&
-                event.stats.untaggedPhotos > 0 && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-200 text-amber-600 liquid-label"
-                  >
-                    {event.stats.untaggedPhotos} sin etiquetar
-                  </Badge>
-                )}
+              {event.stats?.untaggedPhotos && event.stats.untaggedPhotos > 0 && (
+                <Badge
+                  variant="outline"
+                  className="neural-glass-card text-xs border-amber-200 text-amber-600 bg-amber-50/50"
+                >
+                  {event.stats.untaggedPhotos} pendientes
+                </Badge>
+              )}
             </div>
 
             <div className="space-y-1">
-              <h3 className="liquid-title line-clamp-1 text-xl font-bold transition-colors group-hover:text-primary-700">
+              <h3 className={cn(
+                "neural-title font-bold transition-colors group-hover:text-blue-700",
+                compact ? "text-lg line-clamp-1" : "text-xl line-clamp-2"
+              )}>
                 {event.school}
               </h3>
-            </div>
-          </div>
-
-          {/* Quick Actions - Always visible on hover */}
-          <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-            {/* Manage Photos */}
-            <Link
-              href={`/admin/photos?eventId=${event.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="liquid-button liquid-button-secondary p-2 rounded-xl"
-              title="Administrar fotos"
-            >
-              <Camera className="h-4 w-4" />
-            </Link>
-
-            {/* Copy Public Link */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                copyPublicLink();
-              }}
-              className="liquid-button liquid-button-secondary p-2 rounded-xl"
-              title="Copiar link público"
-              disabled={isLoading}
-            >
-              <Copy className="h-4 w-4" />
-            </button>
-
-            {/* Options Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="liquid-button liquid-button-secondary p-2 rounded-xl"
-                  onClick={(e) => e.stopPropagation()}
-                  disabled={isLoading}
-                  title="Más opciones"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onView?.(event);
-                  }}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver detalles
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`/gallery/${event.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    target="_blank"
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Abrir galería pública
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={`/admin/publish`}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <QrCode className="mr-2 h-4 w-4" />
-                    Compartir salón
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    repairPreviews();
-                  }}
-                >
-                  <Wrench className="mr-2 h-4 w-4" />
-                  Reparar previews
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit?.(event);
-                  }}
-                >
-                  <Edit3 className="mr-2 h-4 w-4" />
-                  Editar evento
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-600 focus:text-red-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.(event);
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar evento
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative space-y-4 pt-0 px-6 pb-6">
-        {/* Event Info */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="space-y-3">
-            <div className="liquid-description flex items-center">
-              <Calendar className="mr-2 h-4 w-4 shrink-0" />
-              <div>
-                <div className="liquid-nav-text font-medium">
+              {!compact && (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
                   {eventDate.toLocaleDateString('es-AR', {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
+                    weekday: 'short',
                   })}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Actions Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="neural-glass-card opacity-0 transition-opacity group-hover:opacity-100 p-2 rounded-xl hover:bg-white/20 border-white/20"
+                onClick={(e) => e.stopPropagation()}
+                disabled={isLoading}
+              >
+                <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="neural-glass-card border-white/20 w-56">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView && onView(event); }}>
+                <Eye className="mr-2 h-4 w-4" />
+                Ver detalles
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/photos?eventId=${event.id}`} onClick={(e) => e.stopPropagation()}>
+                  <Camera className="mr-2 h-4 w-4" />
+                  Administrar fotos
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/publish`} onClick={(e) => e.stopPropagation()}>
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Compartir salón
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-white/20" />
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit && onEdit(event); }}>
+                <Edit3 className="mr-2 h-4 w-4" />
+                Editar evento
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-600"
+                onClick={(e) => { e.stopPropagation(); onDelete && onDelete(event); }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Eliminar evento
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Quick Info Section */}
+        {!compact && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
+            <div className="flex items-center text-gray-600 dark:text-gray-300">
+              <Calendar className="mr-2 h-4 w-4 shrink-0" />
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">
+                  {eventDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
                 </div>
-                <div className="text-xs liquid-description">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   {eventDate.toLocaleDateString('es-AR', { weekday: 'long' })}
                 </div>
               </div>
             </div>
 
-            {event.school && (
-              <div className="liquid-description flex items-center">
-                <MapPin className="mr-2 h-4 w-4 shrink-0" />
-                <span className="truncate liquid-nav-text">{event.school}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
             {event.photo_price && (
-              <div className="liquid-description flex items-center">
+              <div className="flex items-center text-gray-600 dark:text-gray-300">
                 <DollarSign className="mr-2 h-4 w-4 shrink-0" />
                 <div>
-                  <div className="liquid-number font-medium">
+                  <div className="font-medium text-gray-900 dark:text-white">
                     ${event.photo_price.toLocaleString()}
                   </div>
-                  <div className="text-xs liquid-description">por foto</div>
-                </div>
-              </div>
-            )}
-
-            {event.stats?.revenue && event.stats.revenue > 0 && (
-              <div className="liquid-description flex items-center">
-                <TrendingUp className="mr-2 h-4 w-4 shrink-0" />
-                <div>
-                  <div className="liquid-number font-medium text-green-600">
-                    ${event.stats.revenue.toLocaleString()}
-                  </div>
-                  <div className="text-xs liquid-description">recaudado</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">por foto</div>
                 </div>
               </div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* Compact Date Info */}
+        {compact && (
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-3">
+            <Calendar className="mr-2 h-4 w-4" />
+            <span className="font-medium">
+              {eventDate.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          </div>
+        )}
 
         {/* Stats Grid */}
         {event.stats && (
-          <div className="border-border/50 grid grid-cols-3 gap-4 border-t pt-4">
+          <div className={cn(
+            "grid gap-3 border-t pt-3 mb-3 border-white/20",
+            compact ? "grid-cols-3" : "grid-cols-3"
+          )}>
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
-                <Camera className="h-4 w-4 text-blue-600" />
+                <Image className={`h-4 w-4 ${colorScheme.statIcon}`} />
               </div>
-              <div className="liquid-number text-lg font-bold">
+              <div className={cn(
+                "font-bold text-gray-900 dark:text-white",
+                compact ? "text-sm" : "text-lg"
+              )}>
                 {event.stats.totalPhotos || 0}
               </div>
-              <div className="liquid-description text-xs">Fotos</div>
+              <div className="text-xs text-gray-600 dark:text-gray-300">Fotos</div>
             </div>
 
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
-                <Users className="h-4 w-4 text-purple-600" />
+                <User className="h-4 w-4 text-purple-500" />
               </div>
-              <div className="liquid-number text-lg font-bold">
+              <div className={cn(
+                "font-bold text-gray-900 dark:text-white",
+                compact ? "text-sm" : "text-lg"
+              )}>
                 {event.stats.totalSubjects || 0}
               </div>
-              <div className="liquid-description text-xs">Familias</div>
+              <div className="text-xs text-gray-600 dark:text-gray-300">Familias</div>
             </div>
 
             <div className="text-center">
               <div className="mb-1 flex items-center justify-center">
-                <ShoppingCart className="h-4 w-4 text-green-600" />
+                <ShoppingCart className="h-4 w-4 text-green-500" />
               </div>
-              <div className="liquid-number text-lg font-bold">
+              <div className={cn(
+                "font-bold text-gray-900 dark:text-white",
+                compact ? "text-sm" : "text-lg"
+              )}>
                 {event.stats.totalOrders || 0}
               </div>
-              <div className="liquid-description text-xs">Pedidos</div>
+              <div className="text-xs text-gray-600 dark:text-gray-300">Pedidos</div>
             </div>
           </div>
         )}
 
-        {/* Quick Info and Primary Action */}
-        <div className="border-border/50 flex items-center justify-between border-t pt-4">
-          <div className="flex items-center gap-4 text-xs liquid-description">
-            <span>Creado {new Date(event.created_at || '').toLocaleDateString('es-AR')}</span>
-            {event.stats?.lastPhotoUploaded && (
-              <span className="text-green-600">
-                Última foto: {new Date(event.stats.lastPhotoUploaded).toLocaleDateString('es-AR')}
-              </span>
-            )}
+        {/* Progress Bar */}
+        {event.stats && event.stats.totalPhotos > 0 && (
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-600 dark:text-gray-300">Progreso</span>
+              <span className="font-medium text-gray-900 dark:text-white">{photoTaggingProgress}%</span>
+            </div>
+            <div className="progress-bar-ios26 h-2 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                style={{ width: `${photoTaggingProgress}%` }}
+              />
+            </div>
           </div>
+        )}
+
+        {/* Revenue Display */}
+        {event.stats?.revenue && event.stats.revenue > 0 && (
+          <div className="neural-metric-display p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-300">Ingresos</span>
+              </div>
+              <span className="font-bold text-green-600 dark:text-green-400">
+                ${event.stats.revenue.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons - Bottom */}
+        <div className="mt-auto flex flex-col gap-3 border-t pt-3 border-white/20">
+          {!compact && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Creado {event.created_at ? new Date(event.created_at).toLocaleDateString('es-AR') : 'N/A'}
+            </div>
+          )}
 
           <div className="flex gap-2">
-            <Link href={`/admin/events/${event.id}`}>
-              <button className="liquid-button liquid-button-primary text-sm px-4 py-2 rounded-lg flex items-center gap-2 font-medium">
-                <Eye className="h-4 w-4" />
-                <span className="liquid-button-text">Gestionar</span>
-              </button>
+            <Link href={`/admin/events/${event.id}`} className="flex-1">
+              <Button className="neural-glass-card w-full border-white/20 hover:bg-white/20" size={compact ? "sm" : "default"}>
+                <Eye className="h-4 w-4 mr-2" />
+                Gestionar
+              </Button>
+            </Link>
+            <Link href={`/gallery/${event.id}`}>
+              <Button
+                variant="outline"
+                className="neural-glass-card border-white/20 hover:bg-white/20"
+                size={compact ? "sm" : "default"}
+              >
+                <Eye className="h-3 w-3" />
+                {compact ? '' : 'Vista'}
+              </Button>
             </Link>
           </div>
         </div>
