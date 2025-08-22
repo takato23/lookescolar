@@ -2,11 +2,12 @@ import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vite
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/family/gallery/[token]/route';
 import { familyService } from '@/lib/services/family.service';
-import { storageService } from '@/lib/services/storage';
+import { signedUrlForKey } from '@/lib/storage/signedUrl';
 
 // Mock services
 vi.mock('@/lib/services/family.service');
 vi.mock('@/lib/services/storage');
+vi.mock('@/lib/storage/signedUrl');
 
 // Test data constants
 const TEST_TOKEN = 'valid-token-123456789012345678901234567890';
@@ -136,7 +137,7 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
     (familyService.getPhotoInfo as any).mockResolvedValue(mockPhotoAssignments[0]);
     (familyService.trackPhotoView as any).mockResolvedValue(undefined);
 
-    (storageService.getSignedUrl as any).mockResolvedValue(
+    (signedUrlForKey as any).mockResolvedValue(
       'https://storage.supabase.co/object/sign/bucket/photo.jpg?token=signed-token'
     );
   });
@@ -279,12 +280,12 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
       });
 
       // Verificar que se solicitaron URLs firmadas para cada foto
-      expect(storageService.getSignedUrl).toHaveBeenCalledTimes(2);
-      expect(storageService.getSignedUrl).toHaveBeenCalledWith(
+      expect(signedUrlForKey).toHaveBeenCalledTimes(2);
+      expect(signedUrlForKey).toHaveBeenCalledWith(
         'events/test-event/photos/IMG_001.jpg',
         3600
       );
-      expect(storageService.getSignedUrl).toHaveBeenCalledWith(
+      expect(signedUrlForKey).toHaveBeenCalledWith(
         'events/test-event/photos/IMG_002.jpg',
         3600
       );
@@ -307,14 +308,14 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
       const request = createMockRequest(TEST_TOKEN);
       await GET(request, { params: { token: TEST_TOKEN } });
 
-      expect(storageService.getSignedUrl).toHaveBeenCalledWith(
+      expect(signedUrlForKey).toHaveBeenCalledWith(
         expect.any(String),
         3600 // 1 hora en segundos
       );
     });
 
     it('debería manejar errores en generación de URLs firmadas', async () => {
-      (storageService.getSignedUrl as any).mockRejectedValue(
+      (signedUrlForKey as any).mockRejectedValue(
         new Error('Storage service unavailable')
       );
 
@@ -333,7 +334,7 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
       await GET(request2, { params: { token: TEST_TOKEN } });
 
       // En una implementación con cache, el segundo request debería usar cache
-      expect(storageService.getSignedUrl).toHaveBeenCalledTimes(4); // 2 fotos * 2 requests
+      expect(signedUrlForKey).toHaveBeenCalledTimes(4); // 2 fotos * 2 requests
     });
   });
 
@@ -493,11 +494,18 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
         ...mockPhotoAssignments[0],
         id: `assignment-${i}`,
         photo_id: `photo-${i}`,
-        photo: {
-          ...mockPhotoAssignments[0].photo,
+        photo: mockPhotoAssignments[0].photo! ? {
+          ...mockPhotoAssignments[0].photo!,
           id: `photo-${i}`,
           filename: `IMG_${String(i).padStart(3, '0')}.jpg`,
           storage_path: `events/test-event/photos/IMG_${String(i).padStart(3, '0')}.jpg`
+        } : {
+          id: `photo-${i}`,
+          event_id: TEST_EVENT_ID,
+          filename: `IMG_${String(i).padStart(3, '0')}.jpg`,
+          storage_path: `events/test-event/photos/IMG_${String(i).padStart(3, '0')}.jpg`,
+          created_at: '2024-01-01T09:00:00Z',
+          status: 'approved'
         }
       }));
 
@@ -525,7 +533,7 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
       await GET(request, { params: { token: TEST_TOKEN } });
 
       // Verificar que las URLs se generan en paralelo, no secuencialmente
-      expect(storageService.getSignedUrl).toHaveBeenCalledTimes(2);
+      expect(signedUrlForKey).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -624,7 +632,7 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
     });
 
     it('debería manejar errores de storage service', async () => {
-      (storageService.getSignedUrl as any).mockRejectedValue(
+      (signedUrlForKey as any).mockRejectedValue(
         new Error('Storage bucket unavailable')
       );
 
@@ -658,7 +666,7 @@ describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
   describe('Anti-Hotlinking y Referer Validation', () => {
     it('debería verificar referer header para prevenir hotlinking', async () => {
       // Test con referer externo
-      const request = new NextRequest(
+      new NextRequest(
         `http://localhost:3000/api/family/gallery/${TEST_TOKEN}`,
         {
           method: 'GET',

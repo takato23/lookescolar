@@ -340,9 +340,9 @@ describe('/api/gallery/checkout', () => {
       const responses = await Promise.all(requests);
       const lastResponse = responses[responses.length - 1];
       
-      expect(lastResponse.status).toBe(429);
+      expect(lastResponse!.status).toBe(429);
       
-      const data = await lastResponse.json();
+      const data = await lastResponse!.json();
       expect(data.error).toContain('Rate limit exceeded');
     });
 

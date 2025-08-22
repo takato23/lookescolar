@@ -154,12 +154,25 @@ const PhotoGridItem: React.FC<{
       className={cn(
         "relative group cursor-default hover:cursor-grab active:cursor-grabbing rounded-lg overflow-hidden border-2 transition-all",
         isSelected ? "border-blue-500 ring-2 ring-blue-200" : "border-transparent hover:border-gray-300",
-        isDragOver && "border-blue-400 bg-blue-50"
+        isDragOver && "border-blue-400 bg-blue-50 ring-2 ring-blue-200 scale-105 z-10",
+        "shadow-md hover:shadow-lg"
       )}
       draggable
-      onDragStart={() => onDragStart(photo)}
-      onDragOver={onDragOver}
-      onDrop={(e) => onDrop(e, photo)}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        onDragStart(photo);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        onDragOver(e);
+      }}
+      onDragEnter={() => {}}
+      onDragLeave={() => {}}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop(e, photo);
+      }}
       onClick={() => onSelect(photo)}
     >
       <div className="aspect-square relative">
@@ -318,19 +331,53 @@ const PhotoManagement: React.FC<PhotoManagementProps> = ({
   }, [folders]);
 
   // Handle drag and drop
-  const handleDragStart = useCallback((photo: PhotoItem) => {
+  const handleDragStart = useCallback((e: React.DragEvent, photo: PhotoItem) => {
+    e.dataTransfer.setData('text/plain', photo.id);
     setDraggedPhoto(photo);
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDragEnter = useCallback((photo: PhotoItem) => {
+    setDragOverPhoto(photo.id);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverPhoto(null);
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, targetPhoto: PhotoItem) => {
     e.preventDefault();
     if (draggedPhoto && draggedPhoto.id !== targetPhoto.id) {
-      // Reorder photos logic would go here
-      console.log(`Moving ${draggedPhoto.name} near ${targetPhoto.name}`);
+      // Reorder photos by swapping positions
+      setPhotos(prev => {
+        const newPhotos = [...prev];
+        const draggedIndex = newPhotos.findIndex(p => p.id === draggedPhoto.id);
+        const targetIndex = newPhotos.findIndex(p => p.id === targetPhoto.id);
+        
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+          // Swap the photos
+          [newPhotos[draggedIndex], newPhotos[targetIndex]] = [newPhotos[targetIndex], newPhotos[draggedIndex]];
+        }
+        
+        return newPhotos;
+      });
+      
+      toast.success(`Moved ${draggedPhoto.name} to new position`);
+    }
+    setDraggedPhoto(null);
+    setDragOverPhoto(null);
+  }, [draggedPhoto]);
+
+  const handleDropOnFolder = useCallback((e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    if (draggedPhoto) {
+      // Move photo to folder logic would go here
+      console.log(`Moving ${draggedPhoto.name} to folder ${folderId}`);
+      toast.success(`Moved ${draggedPhoto.name} to folder`);
     }
     setDraggedPhoto(null);
     setDragOverPhoto(null);

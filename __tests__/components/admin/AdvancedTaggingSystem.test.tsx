@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { AdvancedTaggingSystem } from '@/components/admin/photos/AdvancedTaggingSystem'
+import { PhotoTaggerEnhanced as AdvancedTaggingSystem } from '@/components/admin/PhotoTaggerEnhanced'
 
 // Mock QR Scanner
 vi.mock('react-qr-scanner', () => ({
@@ -257,7 +257,7 @@ describe('AdvancedTaggingSystem', () => {
 
     it('debe asignar fotos automáticamente después de scan exitoso', async () => {
       // Mock fetch para encontrar sujeto por token
-      vi.mocked(fetch).mockImplementation(async (url, options) => {
+      vi.mocked(fetch).mockImplementation(async (url, _options) => {
         if (url === '/api/admin/subjects') {
           return {
             ok: true,

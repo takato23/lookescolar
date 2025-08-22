@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+> **Nota para asistentes (Claude/Codex/Gemini):** usá `docs/CLAUDE_CONTEXT.md` como **contexto fijo** del proyecto. Para cada tarea, leé también `docs/specs/*.md`.
+
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -25,13 +28,6 @@ npm run test:e2e        # End-to-end tests with Playwright
 npm run test:mvp        # Complete MVP workflow tests
 npm run test:comprehensive # Full test suite
 
-# QR Code Testing (specialized test suites)
-npm run test:qr-complete # Complete QR workflow tests
-npm run test:qr:integration # QR integration tests
-npm run test:qr:component # QR component tests
-npm run test:qr:security # QR security validation
-npm run test:qr:e2e     # QR end-to-end tests
-
 # Database
 npm run db:migrate      # Apply database migrations
 npm run db:types        # Generate TypeScript types from database
@@ -42,14 +38,6 @@ npm run db:reset        # Reset database (danger!)
 npm run storage:cleanup  # Clean up old storage files
 npm run metrics:egress   # Monitor Supabase egress usage
 npm run qr:class        # Generate QR codes for a class
-npm run security:audit  # Run security audit
-npm run validate:production # Check production readiness
-
-# Docker & Deployment
-npm run docker:build    # Build Docker image
-npm run docker:run      # Run with docker-compose
-npm run docker:stop     # Stop Docker containers
-npm run health:check    # Health check endpoint
 ```
 
 ## Architecture
@@ -233,12 +221,6 @@ The app is mobile-first with:
 - Progressive image loading
 - Optimized bundle splitting
 
-## Important Development Rules
-
-From Cursor rules (`.cursor/rules.md`):
-- **Production Storage**: Never use `fetch` to `/api/storage/signed-url` in production. Always sign URLs server-side with `signedUrlForKey()`
-- **Public Pagination**: Use `page`/`limit` parameters in API and `IntersectionObserver` for infinite scroll on client
-
 ## Monitoring and Maintenance
 
 - Health check endpoint: `/api/health`
@@ -246,3 +228,113 @@ From Cursor rules (`.cursor/rules.md`):
 - Egress monitoring to prevent Supabase overage
 - Error logging with structured formats
 - Performance monitoring with Web Vitals
+
+## AI Coding Agents (Codex CLI & Gemini CLI)
+
+> Objetivo: poder usar **ChatGPT Codex CLI** y **Gemini CLI** como agentes de terminal sobre este repo, con seguridad y resultados reproducibles. Siempre trabajá en una rama (p. ej. `agent/codex-fix-previews`) y con el repo bajo git para poder revertir.
+
+### ChatGPT Codex CLI — Setup rápido
+
+**Instalación**
+```bash
+npm i -g @openai/codex
+```
+
+**Autenticación**
+```bash
+# Recomendado: API Key de OpenAI (cuenta con acceso a ChatGPT)
+export OPENAI_API_KEY="<tu_api_key>"
+```
+
+**Modos de aprobación**
+- `codex` ⇒ **Suggest** (lee/propone cambios y comandos, pide confirmación)
+- `codex --auto-edit` ⇒ **Auto Edit** (edita archivos, pide confirmación para shell)
+- `codex --full-auto` ⇒ **Full Auto** (lee/escribe/ejecuta comandos en sand
+**Uso recomendado en este repo** (desde la raíz):
+```bash
+# 1) Diagnóstico del código
+codex -p "Dame un mapa del proyecto y enumera puntos de mejora en previews, etiquetado y webhook de pagos"
+
+# 2) Fix guiado (mantener Suggest por seguridad)
+codex -p "Arreglá la política de fallback de previews: si falta preview_path usar watermark_path; si no, placeholder. Agregá tests"
+
+# 3) Refactor con más autonomía (en branch temporal)
+git checkout -b agent/codex-previews
+codex --auto-edit -p "Implementá WebP 512/1024 post-upload y prevení servir originales en UI. Actualizá docs"
+```
+
+> Buenas prácticas: corré `npm test` y `npm run test:integration` después de cada bloque de cambios; revisá los parches antes de aceptar.
+
+---
+
+### Gemini CLI — Setup rápido
+
+**Instalación**
+```bash
+# Opción A: Homebrew (macOS/Linux)
+brew install gemini-cli
+# Opción B: npm global
+npm i -g @google/gemini-cli
+```
+
+**Autenticación**
+```bash
+# OAuth (flujo en el navegador)
+gemini
+# o API Key
+export GEMINI_API_KEY="<tu_api_key>" && gemini
+```
+
+**Uso básico en este repo**
+```bash
+# Sesión interactiva con contexto del directorio
+gemini
+
+# Prompt directo (no interactivo)
+gemini -p "Revisa /app/api/admin/photos y proponé mejoras de rendimiento y accesibilidad"
+
+# Incluir dirs adicionales del monorepo
+gemini --include-directories lib,components,app/api
+```
+
+**Herramientas integradas**
+- **Shell commands** (requiere aprobación explícita la primera vez)  
+- **File ops** (lectura/escritura de archivos)  
+- **Web fetch & search** (para grounding puntual)
+
+> Seguridad: no habilites aprobación automática de `shell` por defecto. Mantené ramas separadas y verificá diffs antes de aplicar.
+
+---
+
+### Plantillas de contexto sugeridas
+
+> Crear estos archivos es **opcional**. Sirven para que los agentes entiendan el proyecto. (Si los creás, añadilos a git.)
+
+**`CODEX.md` (sugerido) — resumen operativo**
+```md
+# CODEX.md — LookEscolar
+- Norte del MVP: admin→familia (eventos, fotos, previews, checkout MP).
+- Guardrails: no servir originales; auth real en prod con Supabase + RLS.
+- Prioridades: previews 512/1024 WebP; etiquetado consistente; visibilidad pública/familiar.
+- Rutas críticas: /admin/events, /admin/photos, /gallery/[eventId], /f/[token].
+- KPIs: Admin<1.6s, Galerías<2s, filtros<300ms, 60fps mobile.
+```
+
+**`GEMINI.md` (sugerido) — pistas para Gemini CLI**
+```md
+# GEMINI.md — LookEscolar
+- Si necesitás ejecutar shell, pedí confirmación.
+- Revisar primero lib/services/* y app/api/* antes de tocar componentes.
+- No uses originales en UI; generar WebP 512/1024 en post-upload.
+- Después de cambios en pagos, correr `npm run test:integration`.
+```
+
+---
+
+### Flujo recomendado (ambos agentes)
+1. Crear rama: `git checkout -b agent/<tarea>`
+2. Correr agente en **Suggest** / **interactivo**
+3. Revisar diffs + correr tests
+4. Iterar con **Auto Edit** solo si es rutinario y seguro
+5. PR con checklist de performance/accesibilidad cumplido
+

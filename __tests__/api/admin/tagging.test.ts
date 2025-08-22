@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach, vi, beforeAll } from 'vitest';
 import { NextRequest } from 'next/server';
-import { POST, DELETE, GET } from '@/app/api/admin/tagging/route';
+import { POST, DELETE } from '@/app/api/admin/tagging/route';
 import { POST as BatchPOST, DELETE as BatchDELETE, PUT as BulkPUT } from '@/app/api/admin/tagging/batch/route';
 import { createClient } from '@/lib/supabase/server';
 
@@ -17,7 +17,6 @@ const TEST_EVENT_ID = '123e4567-e89b-12d3-a456-426614174000';
 const TEST_SUBJECT_ID = '987fcdeb-51a2-43d1-b789-123456789012';
 const TEST_PHOTO_ID_1 = 'photo-123e4567-e89b-12d3-a456-426614174001';
 const TEST_PHOTO_ID_2 = 'photo-123e4567-e89b-12d3-a456-426614174002';
-const TEST_PHOTO_ID_3 = 'photo-123e4567-e89b-12d3-a456-426614174003';
 
 // Mock request helpers
 const createMockRequest = (method: string, body?: any, params?: Record<string, string>): NextRequest => {
@@ -25,18 +24,18 @@ const createMockRequest = (method: string, body?: any, params?: Record<string, s
     ? `http://localhost:3000/api/admin/tagging?${new URLSearchParams(params).toString()}`
     : 'http://localhost:3000/api/admin/tagging';
 
-  const requestInit: RequestInit = {
+  const options: any = {
     method,
     headers: {
       'Content-Type': 'application/json',
-    },
+    }
   };
 
   if (body) {
-    requestInit.body = JSON.stringify(body);
+    options.body = JSON.stringify(body);
   }
 
-  return new NextRequest(url, requestInit);
+  return new NextRequest(url, options);
 };
 
 describe('/api/admin/tagging - Comprehensive Tests', () => {
@@ -49,7 +48,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     (createClient as any).mockReturnValue(mockSupabase);
     
     // Setup default mocks
-    mockSupabase.from.mockImplementation((table: string) => {
+    mockSupabase.from.mockImplementation((_table: string) => {
       const mockQuery = {
         select: vi.fn().mockReturnThis(),
         insert: vi.fn().mockReturnThis(),
@@ -273,7 +272,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     });
   });
 
-  describe('DELETE /api/admin/tagging - Desasignación', () => {
+  describe('DELETE /api/admin/tagging - Desasignación Individual', () => {
     it('debería quitar asignación de fotos exitosamente', async () => {
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'photos') {
@@ -323,80 +322,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     });
   });
 
-  describe('GET /api/admin/tagging - Estadísticas', () => {
-    it('debería obtener estadísticas de tagging correctamente', async () => {
-      mockSupabase.from.mockImplementation((table: string) => {
-        if (table === 'photos') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            is: vi.fn().mockReturnThis(),
-            order: vi.fn().mockReturnThis(),
-            mockResolvedValue: vi.fn().mockResolvedValue({
-              data: [
-                { id: TEST_PHOTO_ID_1, subject_id: TEST_SUBJECT_ID },
-                { id: TEST_PHOTO_ID_2, subject_id: null },
-                { id: TEST_PHOTO_ID_3, subject_id: TEST_SUBJECT_ID }
-              ],
-              error: null
-            })
-          };
-        }
-        
-        if (table === 'subjects') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            order: vi.fn().mockReturnThis(),
-            mockResolvedValue: vi.fn().mockResolvedValue({
-              data: [
-                { id: TEST_SUBJECT_ID, first_name: 'Juan', last_name: 'Pérez', family_name: 'Familia Pérez', type: 'student', photos: [{id: TEST_PHOTO_ID_1}] }
-              ],
-              error: null
-            })
-          };
-        }
-        
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockReturnThis(),
-          is: vi.fn().mockReturnThis(),
-          order: vi.fn().mockReturnThis(),
-          mockResolvedValue: vi.fn().mockResolvedValue({ data: [], error: null })
-        };
-      });
-
-      const request = createMockRequest('GET', null, { eventId: TEST_EVENT_ID });
-      const response = await GET(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.data.stats).toHaveProperty('totalPhotos');
-      expect(data.data.stats).toHaveProperty('taggedPhotos');
-      expect(data.data.stats).toHaveProperty('untaggedPhotos');
-      expect(data.data.stats).toHaveProperty('progressPercentage');
-      expect(data.data).toHaveProperty('subjects');
-      expect(data.data).toHaveProperty('untaggedPhotos');
-    });
-
-    it('debería requerir eventId en GET', async () => {
-      const request = createMockRequest('GET');
-      const response = await GET(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('eventId es requerido');
-    });
-
-    it('debería validar formato UUID del eventId en GET', async () => {
-      const request = createMockRequest('GET', null, { eventId: 'invalid-uuid' });
-      const response = await GET(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('eventId inválido');
-    });
+  describe('GET /api/admin/tagging - Consulta de Asignaciones', () => {
+    // These tests should be removed since there's no GET method in the route
   });
 
   describe('POST /api/admin/tagging/batch - Asignación Batch', () => {
@@ -498,6 +425,90 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
 
       expect(response.status).toBe(500);
       expect(data.error).toBe('Failed to assign photos in batch');
+    });
+
+    it('debería manejar actualizaciones parciales exitosamente', async () => {
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'photos') {
+          return {
+            update: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                select: vi.fn(() => ({
+                  single: vi.fn().mockResolvedValue({
+                    data: { id: TEST_PHOTO_ID_1 },
+                    error: null
+                  })
+                }))
+              }))
+            }))
+          };
+        }
+        return { select: vi.fn().mockReturnThis() };
+      });
+
+      const requestBody = {
+        items: [
+          { photoId: TEST_PHOTO_ID_1, codeId: 'code-123' },
+          { photoId: TEST_PHOTO_ID_2, codeId: 'code-456' }
+        ]
+      };
+
+      const request = createMockRequest('POST', requestBody);
+      const response = await BatchPOST(request);
+      const data = await response.json();
+      expect(response.status).toBe(200);
+      expect(data.updated).toBe(2);
+    });
+
+    it('debería manejar errores de actualización individualmente', async () => {
+      // Mock partial success
+      let callCount = 0;
+      mockSupabase.from.mockImplementation((table: string) => {
+        if (table === 'photos') {
+          return {
+            update: vi.fn(() => ({
+              eq: vi.fn(() => {
+                callCount++;
+                if (callCount === 2) {
+                  // Second call fails
+                  return {
+                    select: vi.fn(() => ({
+                      single: vi.fn().mockResolvedValue({
+                        data: null,
+                        error: { message: 'Database error' }
+                      })
+                    }))
+                  };
+                }
+                // First call succeeds
+                return {
+                  select: vi.fn(() => ({
+                    single: vi.fn().mockResolvedValue({
+                      data: { id: TEST_PHOTO_ID_1 },
+                      error: null
+                    })
+                  }))
+                };
+              })
+            }))
+          };
+        }
+        return { select: vi.fn().mockReturnThis() };
+      });
+
+      const requestBody = {
+        items: [
+          { photoId: TEST_PHOTO_ID_1, codeId: 'code-123' },
+          { photoId: TEST_PHOTO_ID_2, codeId: 'code-456' }
+        ]
+      };
+
+      const request = createMockRequest('POST', requestBody);
+      const response = await BatchPOST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.updated).toBe(1); // Only first item succeeded
     });
   });
 
@@ -806,7 +817,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         return;
       }
       
-      const data = await response.json();
+      await response.json();
       expect(response.status).toBeLessThan(500);
     });
 
@@ -825,7 +836,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         return;
       }
       
-      const data = await response.json();
+      await response.json();
       expect(response.status).toBeLessThan(500);
     });
 

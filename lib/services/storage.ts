@@ -14,8 +14,8 @@ const supabase = createClient(
   }
 );
 
-// Default to private originals bucket
-const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'photo-private';
+// Use only preview bucket for free tier optimization
+const STORAGE_BUCKET = process.env.STORAGE_BUCKET_PREVIEW || 'photos';
 const DEFAULT_URL_EXPIRY = 60 * 60; // 1 hora en segundos
 
 export interface SignedUrlOptions {
@@ -46,20 +46,23 @@ export interface UploadResult {
 }
 
 /**
- * Sube una imagen procesada al storage de Supabase
+ * Sube una imagen procesada optimizada al storage de Supabase
+ * Only stores optimized previews, no originals for free tier compliance
  */
 export async function uploadToStorage(
   processedImage: { buffer: Buffer; filename: string },
   eventId: string
 ): Promise<UploadResult> {
-  const path = `events/${eventId}/${processedImage.filename}`;
+  // Only store optimized previews in the preview bucket
+  const containerPrefix = `events/${eventId}`;
+  const path = `${containerPrefix}/previews/${processedImage.filename}`;
 
   try {
-    // Subir al bucket privado
+    // Subir al bucket de previews (público)
     const { data, error } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(path, processedImage.buffer, {
-        contentType: 'image/webp',
+        contentType: 'image/webp', // Always WebP for optimized images
         cacheControl: '3600',
         upsert: false, // No sobrescribir si existe
       });
@@ -76,7 +79,7 @@ export async function uploadToStorage(
       throw new Error(`Storage upload failed: ${error.message}`);
     }
 
-    logger.info('File uploaded successfully', {
+    logger.info('Optimized preview uploaded successfully', {
       path: path.substring(0, 20) + '***',
       size: processedImage.buffer.length,
     });
@@ -86,7 +89,7 @@ export async function uploadToStorage(
       size: processedImage.buffer.length,
     };
   } catch (error) {
-    logger.error('Failed to upload to storage', {
+    logger.error('Failed to upload optimized preview to storage', {
       eventId,
       filename: processedImage.filename,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -103,9 +106,9 @@ class StorageService {
   ];
 
   /**
-   * Configura el bucket como privado en Supabase
+   * Configura el bucket como público para previews optimizadas
    */
-  async configureBucketPrivate(): Promise<void> {
+  async configureBucketPublic(): Promise<void> {
     try {
       // Verificar si el bucket existe
       const { data: buckets, error: listError } =
@@ -118,12 +121,12 @@ class StorageService {
       const bucketExists = buckets?.some((b) => b.name === STORAGE_BUCKET);
 
       if (!bucketExists) {
-        // Crear bucket privado
+        // Crear bucket público para previews
         const { error: createError } = await supabase.storage.createBucket(
           STORAGE_BUCKET,
           {
-            public: false,
-            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+            public: true, // Público para previews optimizadas
+            allowedMimeTypes: ['image/webp'], // Solo WebP para optimización
             fileSizeLimit: 10 * 1024 * 1024, // 10MB
           }
         );
@@ -132,21 +135,21 @@ class StorageService {
           throw new Error(`Error creating bucket: ${createError.message}`);
         }
 
-        logger.info('Private bucket created successfully', {
+        logger.info('Public preview bucket created successfully', {
           bucket: STORAGE_BUCKET,
         });
       } else {
-        // Verificar que sea privado
+        // Verificar que sea público
         const { data: bucket } =
           await supabase.storage.getBucket(STORAGE_BUCKET);
-        if (bucket?.public) {
-          logger.warn('Bucket is public, should be private for security', {
+        if (!bucket?.public) {
+          logger.warn('Bucket should be public for optimized previews', {
             bucket: STORAGE_BUCKET,
           });
         }
       }
     } catch (error) {
-      logger.error('Failed to configure bucket', {
+      logger.error('Failed to configure preview bucket', {
         error: error instanceof Error ? error.message : 'Unknown error',
         bucket: STORAGE_BUCKET,
       });
@@ -202,41 +205,41 @@ class StorageService {
         });
 
       if (error) {
-        throw new Error(`Error creating signed URL: ${error.message}`);
+        logger.error('Failed to create signed URL', {
+          requestId,
+          path: this.maskPath(sanitizedPath),
+          error: error.message,
+        });
+        throw new Error(`Signed URL generation failed: ${error.message}`);
       }
 
-      if (!data?.signedUrl) {
-        throw new Error('No signed URL returned from Supabase');
-      }
-
-      // Cachear URL
-      const expiresAt = Date.now() + expiresIn * 1000 - 5 * 60 * 1000; // 5 min buffer
+      // Cache URL for performance
       this.urlCache.set(cacheKey, {
         url: data.signedUrl,
-        expiresAt,
+        expiresAt: Date.now() + (expiresIn * 1000) - 5000, // 5 seconds buffer
       });
 
-      // Track egress
+      // Track egress for new URL generation
       if (egressData) {
         await egressService.trackEgress({
           ...egressData,
           requests: 1,
+          bytes: 0, // Will be updated when actually served
         });
       }
 
-      logger.info('Signed URL created successfully', {
+      logger.debug('Generated new signed URL', {
         requestId,
         path: this.maskPath(sanitizedPath),
-        expiresIn,
-        cached: false,
+        expiresAt: new Date(Date.now() + (expiresIn * 1000)).toISOString(),
+        cacheHit: false,
       });
 
       return data.signedUrl;
     } catch (error) {
-      logger.error('Failed to create signed URL', {
+      logger.error('Error in createSignedUrl', {
         requestId,
-        path: this.maskPath(path), // Use original path for error logging
-        sanitizedPath: this.maskPath(error.message?.includes('sanitiz') ? path : '***'),
+        path: this.maskPath(path),
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
@@ -244,338 +247,75 @@ class StorageService {
   }
 
   /**
-   * Genera múltiples URLs firmadas en lote (optimizado)
+   * Genera URLs firmadas en batch para mejor performance
    */
   async createBatchSignedUrls(
     requests: BatchSignedUrlRequest[],
     egressData?: EgressData
-  ): Promise<{ path: string; url: string | null; error?: string }[]> {
-    const requestId = crypto.randomUUID();
-    const startTime = Date.now();
+  ): Promise<Array<{ path: string; url: string; error?: string }>> {
+    const results: Array<{ path: string; url: string; error?: string }> = [];
 
-    try {
-      // Procesar en lotes de 10 para evitar sobrecargar Supabase
-      const batchSize = 10;
-      const batches = [];
-
-      for (let i = 0; i < requests.length; i += batchSize) {
-        batches.push(requests.slice(i, i + batchSize));
-      }
-
-      const results: { path: string; url: string | null; error?: string }[] =
-        [];
-
-      for (const batch of batches) {
-        const batchPromises = batch.map(async (request) => {
+    // Process in batches to avoid overwhelming the API
+    const batchSize = 50;
+    for (let i = 0; i < requests.length; i += batchSize) {
+      const batch = requests.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (req) => {
           try {
-            const url = await this.createSignedUrl(
-              request.path,
-              request.options,
-              egressData
-            );
-            return { path: request.path, url };
+            const url = await this.createSignedUrl(req.path, req.options, egressData);
+            return { path: req.path, url };
           } catch (error) {
             return {
-              path: request.path,
-              url: null,
+              path: req.path,
+              url: '',
               error: error instanceof Error ? error.message : 'Unknown error',
             };
           }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults);
-      }
-
-      const duration = Date.now() - startTime;
-      const successCount = results.filter((r) => r.url).length;
-
-      logger.info('Batch signed URLs created', {
-        requestId,
-        totalRequests: requests.length,
-        successCount,
-        failureCount: requests.length - successCount,
-        duration,
-        batchSize,
-      });
-
-      return results;
-    } catch (error) {
-      logger.error('Failed to create batch signed URLs', {
-        requestId,
-        totalRequests: requests.length,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Valida referer para anti-hotlinking
-   */
-  validateReferer(referer?: string | null): boolean {
-    if (!referer) {
-      return false;
-    }
-
-    try {
-      const refererUrl = new URL(referer);
-
-      return this.trustedOrigins.some((origin) => {
-        if (origin.includes('*')) {
-          // Soporte para wildcards como *.lookescolar.com
-          const pattern = origin.replace('*', '[^.]*');
-          const regex = new RegExp(`^${pattern}$`, 'i');
-          return regex.test(refererUrl.hostname);
-        }
-
-        const originUrl = new URL(origin);
-        return refererUrl.hostname === originUrl.hostname;
-      });
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Invalida cache de URLs
-   */
-  invalidateCache(pathPattern?: string): void {
-    if (!pathPattern) {
-      this.urlCache.clear();
-      logger.info('All URL cache cleared');
-      return;
-    }
-
-    const regex = new RegExp(pathPattern);
-    const keysToDelete: string[] = [];
-
-    for (const [key] of this.urlCache) {
-      if (regex.test(key)) {
-        keysToDelete.push(key);
-      }
-    }
-
-    keysToDelete.forEach((key) => this.urlCache.delete(key));
-
-    logger.info('Cache invalidated for pattern', {
-      pattern: pathPattern,
-      keysDeleted: keysToDelete.length,
-    });
-  }
-
-  /**
-   * Limpieza automática de archivos viejos
-   */
-  async cleanupOldFiles(olderThanDays: number = 90): Promise<{
-    deletedCount: number;
-    totalSizeBytes: number;
-  }> {
-    const requestId = crypto.randomUUID();
-
-    try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-
-      // Listar archivos
-      const { data: files, error } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .list('previews/', {
-          limit: 1000,
-          sortBy: { column: 'created_at', order: 'asc' },
-        });
-
-      if (error) {
-        throw new Error(`Error listing files: ${error.message}`);
-      }
-
-      if (!files || files.length === 0) {
-        return { deletedCount: 0, totalSizeBytes: 0 };
-      }
-
-      // Filtrar archivos viejos
-      const oldFiles = files.filter((file) => {
-        if (!file.created_at) return false;
-        const fileDate = new Date(file.created_at);
-        return fileDate < cutoffDate;
-      });
-
-      if (oldFiles.length === 0) {
-        logger.info('No old files found for cleanup', {
-          requestId,
-          olderThanDays,
-        });
-        return { deletedCount: 0, totalSizeBytes: 0 };
-      }
-
-      // Calcular tamaño total
-      const totalSizeBytes = oldFiles.reduce(
-        (sum, file) => sum + (file.metadata?.size || 0),
-        0
+        })
       );
-
-      // Eliminar archivos en lotes
-      const pathsToDelete = oldFiles.map((file) => `previews/${file.name}`);
-      const batchSize = 100;
-      let deletedCount = 0;
-
-      for (let i = 0; i < pathsToDelete.length; i += batchSize) {
-        const batch = pathsToDelete.slice(i, i + batchSize);
-
-        const { error: deleteError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .remove(batch);
-
-        if (deleteError) {
-          logger.warn('Failed to delete batch', {
-            requestId,
-            batchStart: i,
-            batchSize: batch.length,
-            error: deleteError.message,
-          });
-        } else {
-          deletedCount += batch.length;
-        }
-      }
-
-      // Invalidar cache para archivos eliminados
-      this.invalidateCache('previews/');
-
-      logger.info('Old files cleanup completed', {
-        requestId,
-        olderThanDays,
-        deletedCount,
-        totalSizeBytes,
-        totalSizeMB: Math.round(totalSizeBytes / 1024 / 1024),
-      });
-
-      return { deletedCount, totalSizeBytes };
-    } catch (error) {
-      logger.error('Failed to cleanup old files', {
-        requestId,
-        olderThanDays,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
+      results.push(...batchResults);
     }
+
+    return results;
   }
 
   /**
-   * Obtiene estadísticas del storage
+   * Limpia entradas expiradas del cache
    */
-  async getStorageStats(): Promise<{
-    totalFiles: number;
-    totalSizeBytes: number;
-    cacheSize: number;
-  }> {
-    try {
-      const { data: files, error } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .list('', { limit: 1000 });
+  cleanExpiredCache(): number {
+    const now = Date.now();
+    let removedCount = 0;
 
-      if (error) {
-        throw new Error(`Error getting storage stats: ${error.message}`);
+    for (const [key, value] of this.urlCache.entries()) {
+      if (value.expiresAt <= now) {
+        this.urlCache.delete(key);
+        removedCount++;
       }
-
-      const totalFiles = files?.length || 0;
-      const totalSizeBytes =
-        files?.reduce((sum, file) => sum + (file.metadata?.size || 0), 0) || 0;
-      const cacheSize = this.urlCache.size;
-
-      return {
-        totalFiles,
-        totalSizeBytes,
-        cacheSize,
-      };
-    } catch (error) {
-      logger.error('Failed to get storage stats', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
     }
+
+    if (removedCount > 0) {
+      logger.debug('Cleaned expired cache entries', { removedCount });
+    }
+
+    return removedCount;
   }
 
   /**
    * Sanitiza paths para prevenir ataques de path traversal
    */
   private sanitizePath(path: string): string {
-    if (!path || typeof path !== 'string') {
-      throw new Error('Invalid path: must be a non-empty string');
-    }
-
-    // Remove null bytes and control characters
-    let sanitized = path.replace(/[\x00-\x1f\x7f-\x9f]/g, '');
+    // Remove null bytes
+    let sanitized = path.replace(/\0/g, '');
+    
+    // Prevent directory traversal
+    sanitized = sanitized.replace(/(\.\.[/\\])+/, '');
     
     // Normalize path separators
-    sanitized = sanitized.replace(/\\/g, '/');
-    
-    // Remove path traversal attempts
-    sanitized = sanitized.replace(/\.\./g, '');
+    sanitized = sanitized.replace(/[/\\]+/g, '/');
     
     // Remove leading/trailing slashes
     sanitized = sanitized.replace(/^\/+|\/+$/g, '');
     
-    // Collapse multiple slashes
-    sanitized = sanitized.replace(/\/+/g, '/');
-    
-    // Validate path structure (must be within allowed patterns)
-    const allowedPatterns = [
-      /^events\/[a-f0-9-]{36}\/[a-zA-Z0-9._-]+$/,           // events/{uuid}/{filename}
-      /^events\/[a-f0-9-]{36}\/previews\/[a-zA-Z0-9._-]+$/, // events/{uuid}/previews/{filename}
-      /^shared\/[a-zA-Z0-9._-]+$/,                          // shared/{filename}
-      /^shared\/previews\/[a-zA-Z0-9._-]+$/,                // shared/previews/{filename}
-    ];
-
-    const isValidPath = allowedPatterns.some(pattern => pattern.test(sanitized));
-    if (!isValidPath) {
-      throw new Error(`Invalid path structure: ${sanitized}`);
-    }
-
-    // Additional security checks
-    if (sanitized.length > 500) {
-      throw new Error('Path too long (max 500 characters)');
-    }
-
-    if (sanitized.includes('..') || sanitized.includes('./') || sanitized.includes('~')) {
-      throw new Error('Path contains forbidden patterns');
-    }
-
-    return sanitized;
-  }
-
-  /**
-   * Valida y sanitiza nombre de archivo
-   */
-  private sanitizeFilename(filename: string): string {
-    if (!filename || typeof filename !== 'string') {
-      throw new Error('Invalid filename: must be a non-empty string');
-    }
-
-    // Remove path separators and control characters
-    let sanitized = filename.replace(/[\/\\:*?"<>|\x00-\x1f\x7f-\x9f]/g, '_');
-    
-    // Remove leading/trailing dots and spaces
-    sanitized = sanitized.replace(/^[\.\s]+|[\.\s]+$/g, '');
-    
-    // Ensure filename is not empty after sanitization
-    if (!sanitized) {
-      throw new Error('Filename becomes empty after sanitization');
-    }
-
-    // Check for reserved Windows names
-    const reservedNames = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i;
-    if (reservedNames.test(sanitized)) {
-      sanitized = `file_${sanitized}`;
-    }
-
-    // Limit filename length
-    if (sanitized.length > 255) {
-      const extension = sanitized.split('.').pop() || '';
-      const nameWithoutExt = sanitized.substring(0, sanitized.lastIndexOf('.') || sanitized.length);
-      const maxNameLength = 255 - extension.length - 1; // -1 for the dot
-      sanitized = nameWithoutExt.substring(0, maxNameLength) + '.' + extension;
-    }
-
     return sanitized;
   }
 
@@ -583,41 +323,21 @@ class StorageService {
    * Enmascara paths para logging seguro
    */
   private maskPath(path: string): string {
-    if (path.length <= 10) {
-      return '*'.repeat(path.length);
-    }
-
-    const start = path.substring(0, 3);
-    const end = path.substring(path.length - 3);
-    const middle = '*'.repeat(Math.max(0, path.length - 6));
-
-    return `${start}${middle}${end}`;
+    return path.substring(0, 20) + '***';
   }
 
   /**
-   * Limpieza periódica del cache
+   * Obtiene estadísticas del cache para monitoreo
    */
-  private cleanExpiredCache(): void {
-    const now = Date.now();
-    const expiredKeys: string[] = [];
-
-    for (const [key, value] of this.urlCache) {
-      if (value.expiresAt <= now) {
-        expiredKeys.push(key);
-      }
-    }
-
-    expiredKeys.forEach((key) => this.urlCache.delete(key));
-
-    if (expiredKeys.length > 0) {
-      logger.debug('Expired cache entries removed', {
-        count: expiredKeys.length,
-      });
-    }
+  getCacheStats() {
+    return {
+      size: this.urlCache.size,
+      maxSize: 1000, // Configurable limit
+    };
   }
 }
 
-// Instancia singleton
+// Export singleton instance
 export const storageService = new StorageService();
 
 // Limpieza periódica del cache cada 15 minutos
@@ -632,7 +352,7 @@ if (typeof setInterval !== 'undefined') {
 
 // Auto-configurar bucket en inicialización
 if (process.env.NODE_ENV !== 'test') {
-  storageService.configureBucketPrivate().catch((error) => {
+  storageService.configureBucketPublic().catch((error) => {
     logger.error('Failed to configure bucket on startup', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });

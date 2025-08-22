@@ -38,44 +38,13 @@ interface PackageOption {
 }
 
 const PACKAGE_OPTIONS: PackageOption[] = [
-  {
-    id: 'option-a',
-    name: 'OPCIÓN A',
-    price: 18500,
-    description: 'Carpeta impresa con diseño personalizado (20x30)',
-    includes: [
-      '1 foto INDIVIDUAL (15x21)',
-      '4 fotos 4x5 (de la misma individual)',
-      '1 foto grupal (15x21)'
-    ],
-    photoRequirements: {
-      individual: 1,
-      group: 1
-    }
-  },
-  {
-    id: 'option-b',
-    name: 'OPCIÓN B',
-    price: 28500,
-    description: 'Carpeta impresa con diseño personalizado (20x30)',
-    includes: [
-      '2 fotos INDIVIDUALES (15x21)',
-      '8 fotos 4x5 (de las mismas individuales)',
-      '1 foto grupal (15x21)'
-    ],
-    photoRequirements: {
-      individual: 2,
-      group: 1
-    }
-  }
+  // These will be loaded dynamically from the API
+  // Default structure kept for typing
 ];
 
 const EXTRA_COPIES = [
-  { id: 'extra-4x5', name: '4x5 (4 fotitos)', price: 2800 },
-  { id: 'extra-10x15', name: 'Foto 10x15', price: 2200 },
-  { id: 'extra-13x18', name: 'Foto 13x18', price: 3200 },
-  { id: 'extra-15x21', name: 'Foto 15x21', price: 4500 },
-  { id: 'extra-20x30', name: 'Poster 20x30', price: 7800 }
+  // These will be loaded dynamically from the API
+  // Default structure kept for typing
 ];
 
 interface UnifiedGalleryPageProps {
@@ -98,6 +67,12 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+  
+  // Dynamic pricing state
+  const [packageOptions, setPackageOptions] = useState<PackageOption[]>([]);
+  const [extraCopies, setExtraCopies] = useState<Array<{id: string; name: string; price: number; description?: string}>>([]);
+  const [pricingLoaded, setPricingLoaded] = useState(false);
+  
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const { addItem, getTotalItems, setContext } = useUnifiedCartStore();
@@ -115,6 +90,62 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
       loadGallery(1).catch(console.error);
     }
   }, [token, subject?.id]);
+
+  useEffect(() => {
+    // Load pricing data
+    const loadPricing = async () => {
+      try {
+        const response = await fetch('/api/admin/pricing');
+        if (response.ok) {
+          const pricingData = await response.json();
+          setPackageOptions(pricingData.packages || []);
+          setExtraCopies(pricingData.extraCopies || []);
+        } else {
+          // Use fallback pricing if API fails
+          console.warn('Failed to load pricing, using fallback');
+          setPackageOptions([
+            {
+              id: 'option-a',
+              name: 'OPCIÓN A',
+              price: 0,
+              description: 'Carpeta impresa con diseño personalizado (20x30)',
+              includes: [
+                '1 foto INDIVIDUAL (15x21)',
+                '4 fotos 4x5 (de la misma individual elegida)',
+                '1 foto grupal (15x21)'
+              ],
+              photoRequirements: { individual: 1, group: 1 }
+            },
+            {
+              id: 'option-b',
+              name: 'OPCIÓN B', 
+              price: 0,
+              description: 'Carpeta impresa con diseño personalizado (20x30)',
+              includes: [
+                '2 fotos INDIVIDUALES (15x21)',
+                '8 fotos 4x5 (de las mismas individuales elegidas)',
+                '1 foto grupal (15x21)'
+              ],
+              photoRequirements: { individual: 2, group: 1 }
+            }
+          ]);
+          setExtraCopies([
+            { id: 'extra-4x5', name: '4x5 (4 fotitos)', price: 0 },
+            { id: 'extra-10x15', name: 'Foto 10x15', price: 0 },
+            { id: 'extra-13x18', name: 'Foto 13x18', price: 0 },
+            { id: 'extra-15x21', name: 'Foto 15x21', price: 0 },
+            { id: 'extra-20x30', name: 'Poster 20x30', price: 0 }
+          ]);
+        }
+      } catch (error) {
+        console.error('Error loading pricing:', error);
+      } finally {
+        setPricingLoaded(true);
+      }
+    };
+    
+    loadPricing();
+  }, []);
 
   const loadGallery = async (targetPage: number) => {
     try {
@@ -191,7 +222,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
   const calculateTotal = () => {
     const packagePrice = selectedPackage?.price || 0;
     const extrasPrice = Object.entries(selectedExtras).reduce((total, [extraId, quantity]) => {
-      const extra = EXTRA_COPIES.find(e => e.id === extraId);
+      const extra = extraCopies.find(e => e.id === extraId);
       return total + (extra ? extra.price * quantity : 0);
     }, 0);
     return packagePrice + extrasPrice;
@@ -394,33 +425,40 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
             
             {/* Package Selection */}
             <div className="space-y-4 mb-6">
-              {PACKAGE_OPTIONS.map((pkg) => (
-                <div
-                  key={pkg.id}
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
-                    selectedPackage?.id === pkg.id
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
-                  }`}
-                  onClick={() => setSelectedPackage(pkg)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">{pkg.name}</h3>
-                    <span className="text-xl font-bold text-purple-600">
-                      {formatCurrency(pkg.price)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">{pkg.description}</p>
-                  <ul className="text-sm text-gray-700 space-y-1">
-                    {pkg.includes.map((item, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="text-green-500 mr-2">✓</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+              {!pricingLoaded ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-20 bg-gray-200 rounded-xl"></div>
+                  <div className="h-20 bg-gray-200 rounded-xl"></div>
                 </div>
-              ))}
+              ) : (
+                packageOptions.map((pkg) => (
+                  <div
+                    key={pkg.id}
+                    className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                      selectedPackage?.id === pkg.id
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                    onClick={() => setSelectedPackage(pkg)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-bold text-gray-900">{pkg.name}</h3>
+                      <span className="text-xl font-bold text-purple-600">
+                        {pkg.price > 0 ? formatCurrency(pkg.price) : 'Precio a definir'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{pkg.description}</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      {pkg.includes.map((item, idx) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Photo Selection Status */}
@@ -454,15 +492,17 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
             )}
 
             {/* Extra Copies */}
-            {selectedPackage && (
+            {selectedPackage && pricingLoaded && (
               <div className="mb-6">
                 <h4 className="font-bold text-gray-900 mb-3">Copias Adicionales:</h4>
                 <div className="space-y-2">
-                  {EXTRA_COPIES.map((extra) => (
+                  {extraCopies.map((extra) => (
                     <div key={extra.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
                       <div className="flex-1">
                         <span className="text-sm font-medium">{extra.name}</span>
-                        <span className="text-sm text-gray-600 ml-2">{formatCurrency(extra.price)}</span>
+                        <span className="text-sm text-gray-600 ml-2">
+                          {extra.price > 0 ? formatCurrency(extra.price) : 'Precio a definir'}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button

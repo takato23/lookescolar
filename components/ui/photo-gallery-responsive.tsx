@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from './button';
 import Image from 'next/image';
+import { useDragDrop } from '@/lib/utils/use-drag-drop';
 
 interface Photo {
   id: string;
@@ -44,6 +45,18 @@ export function PhotoGalleryResponsive({
   const [loadedPhotos, setLoadedPhotos] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  
+  // Drag and drop functionality
+  const {
+    draggedItem: draggedPhoto,
+    dragOverItem: dragOverPhoto,
+    isDragging,
+    handleDragStart,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragEnd
+  } = useDragDrop<Photo>();
 
   // Handle photo selection
   const handlePhotoSelect = useCallback(
@@ -72,6 +85,21 @@ export function PhotoGalleryResponsive({
     },
     [allowMultiSelect, onSelectionChange]
   );
+
+  // Handle photo reordering
+  const handlePhotoReorder = useCallback((draggedPhoto: Photo, targetPhoto: Photo) => {
+    // This would typically involve updating the photos array order
+    // and calling an API to persist the new order
+    console.log(`Moving ${draggedPhoto.id} to position of ${targetPhoto.id}`);
+    
+    // In a real implementation, you would:
+    // 1. Update the local state to reflect the new order
+    // 2. Call an API to persist the new order in the database
+    // 3. Show a success message
+    
+    // For now, we'll just show a toast notification
+    // toast.success(`Moved ${draggedPhoto.alt} to new position`);
+  }, []);
 
   // Modal navigation
   const openModal = (photo: Photo) => {
@@ -184,6 +212,8 @@ export function PhotoGalleryResponsive({
           {photos.map((photo) => {
             const isSelected = selectedPhotos.has(photo.id);
             const isLoaded = loadedPhotos.has(photo.id);
+            const isDragged = draggedPhoto?.id === photo.id;
+            const isDragOver = dragOverPhoto?.id === photo.id;
 
             return (
               <div
@@ -194,13 +224,28 @@ export function PhotoGalleryResponsive({
                   'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
                   'focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2',
                   isSelected &&
-                    'shadow-lg ring-2 ring-primary-600 ring-offset-2'
+                    'shadow-lg ring-2 ring-primary-600 ring-offset-2',
+                  isDragged && 'opacity-50 scale-95',
+                  isDragOver && 'ring-2 ring-blue-500 ring-offset-2 scale-105 z-10'
                 )}
                 data-photo-id={photo.id}
                 ref={(el) => {
                   if (el && observerRef.current && !isLoaded) {
                     observerRef.current.observe(el);
                   }
+                }}
+                draggable
+                onDragStart={() => handleDragStart(photo)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  handleDragOver(photo);
+                }}
+                onDragLeave={handleDragLeave}
+                onDragEnd={handleDragEnd}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  handleDrop(photo, handlePhotoReorder);
+                  handleDragEnd();
                 }}
               >
                 {/* Photo Image */}
@@ -247,6 +292,15 @@ export function PhotoGalleryResponsive({
                     <Heart className="h-8 w-8 fill-current text-white" />
                   )}
                 </button>
+
+                {/* Drag and Drop Indicator */}
+                {isDragOver && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-blue-500 bg-opacity-20 rounded-lg z-20">
+                    <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                      Soltar aquí
+                    </div>
+                  </div>
+                )}
 
                 {/* Action Buttons - Desktop Only */}
                 <div

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { isCourseFolder } from '@/lib/courses/folders';
 
 const courseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -11,6 +12,8 @@ const courseSchema = z.object({
   description: z.string().optional(),
   sort_order: z.number().optional(),
   active: z.boolean().optional(),
+  parent_course_id: z.string().optional(),
+  is_folder: z.boolean().optional(),
 });
 
 // GET /api/admin/events/[id]/courses
@@ -25,6 +28,7 @@ export const GET = withAuth(async (req: NextRequest, { params }: { params: { id:
     const sortOrder = searchParams.get('sort_order') || 'asc';
     const page = parseInt(searchParams.get('page') || '0');
     const limit = parseInt(searchParams.get('limit') || '50');
+    const parentCourseId = searchParams.get('parent_course_id') || null;
 
     const supabase = await createServerSupabaseServiceClient();
 
@@ -48,6 +52,10 @@ export const GET = withAuth(async (req: NextRequest, { params }: { params: { id:
         photo_courses:photo_courses!left (
           id,
           photo_type
+        ),
+        parent_course:courses!parent_course_id (
+          id,
+          name
         )
       `)
       .eq('event_id', eventId);
@@ -55,6 +63,21 @@ export const GET = withAuth(async (req: NextRequest, { params }: { params: { id:
     // Apply filters
     if (levelId) {
       query = query.eq('level_id', levelId);
+    }
+    
+    if (parentCourseId) {
+      // Check if the parent is actually a folder
+      const isFolder = await isCourseFolder(parentCourseId);
+      if (!isFolder) {
+        return NextResponse.json(
+          { error: 'Parent course is not a folder' },
+          { status: 400 }
+        );
+      }
+      query = query.eq('parent_course_id', parentCourseId);
+    } else {
+      // If no parent_course_id specified, only show root courses/folders
+      query = query.or('parent_course_id.is.null,parent_course_id.eq.', { foreignTable: 'courses' });
     }
 
     if (search) {
@@ -96,6 +119,9 @@ export const GET = withAuth(async (req: NextRequest, { params }: { params: { id:
       description: course.description,
       sort_order: course.sort_order,
       active: course.active,
+      is_folder: course.is_folder || false,
+      parent_course_id: course.parent_course_id,
+      parent_course_name: course.parent_course?.name,
       created_at: course.created_at,
       updated_at: course.updated_at,
       student_count: course.students?.filter((s: any) => s.active)?.length || 0,
@@ -137,17 +163,24 @@ export const POST = withAuth(async (req: NextRequest, { params }: { params: { id
 
     const supabase = await createServerSupabaseServiceClient();
 
-    // Check if course with same name exists
-    const { data: existingCourse } = await supabase
+    // Check if course with same name exists in the same parent context
+    let nameCheckQuery = supabase
       .from('courses')
       .select('id')
       .eq('event_id', eventId)
-      .eq('name', validatedData.name)
-      .single();
+      .eq('name', validatedData.name);
+      
+    if (validatedData.parent_course_id) {
+      nameCheckQuery = nameCheckQuery.eq('parent_course_id', validatedData.parent_course_id);
+    } else {
+      nameCheckQuery = nameCheckQuery.is('parent_course_id', null);
+    }
+
+    const { data: existingCourse } = await nameCheckQuery.single();
 
     if (existingCourse) {
       return NextResponse.json(
-        { error: 'A course with this name already exists' },
+        { error: 'A course or folder with this name already exists in this location' },
         { status: 400 }
       );
     }
@@ -155,18 +188,25 @@ export const POST = withAuth(async (req: NextRequest, { params }: { params: { id
     // Get next sort order if not provided
     let sortOrder = validatedData.sort_order;
     if (sortOrder === undefined) {
-      const { data: lastCourse } = await supabase
+      let sortOrderQuery = supabase
         .from('courses')
         .select('sort_order')
         .eq('event_id', eventId)
         .order('sort_order', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
+        
+      if (validatedData.parent_course_id) {
+        sortOrderQuery = sortOrderQuery.eq('parent_course_id', validatedData.parent_course_id);
+      } else {
+        sortOrderQuery = sortOrderQuery.is('parent_course_id', null);
+      }
+      
+      const { data: lastCourse } = await sortOrderQuery.single();
       
       sortOrder = (lastCourse?.sort_order || 0) + 1;
     }
 
-    // Insert new course
+    // Insert new course or folder
     const { data: course, error } = await supabase
       .from('courses')
       .insert({
@@ -178,10 +218,16 @@ export const POST = withAuth(async (req: NextRequest, { params }: { params: { id
         description: validatedData.description,
         sort_order: sortOrder,
         active: validatedData.active ?? true,
+        parent_course_id: validatedData.parent_course_id,
+        is_folder: validatedData.is_folder ?? false,
       })
       .select(`
         *,
         event_levels!left (
+          id,
+          name
+        ),
+        parent_course:courses!parent_course_id (
           id,
           name
         )

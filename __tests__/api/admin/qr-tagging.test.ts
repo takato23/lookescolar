@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeAll } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST as QRDecode } from '@/app/api/admin/qr/decode/route';
 import { GET as StudentLookup } from '@/app/api/admin/students/[id]/route';

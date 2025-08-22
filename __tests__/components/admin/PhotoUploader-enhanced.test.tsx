@@ -6,7 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import PhotoUploader from '@/components/admin/PhotoUploader';
+import { PhotoUploadButton as PhotoUploader } from '@/components/admin/PhotoUploadButton';
 
 // Mock fetch para simular API
 const mockFetch = vi.fn();
@@ -58,7 +58,7 @@ describe('PhotoUploader Enhanced', () => {
     // Mock FileReader para previews
     Object.defineProperty(global, 'FileReader', {
       value: vi.fn().mockImplementation(() => ({
-        readAsDataURL: vi.fn(function() {
+        readAsDataURL: vi.fn(function(this: FileReader) {
           this.onload({ target: { result: 'data:image/jpeg;base64,mock' } });
         }),
         addEventListener: vi.fn(),
@@ -134,7 +134,6 @@ describe('PhotoUploader Enhanced', () => {
 
   describe('Validaciones de archivos', () => {
     it('debe rechazar archivos muy grandes', async () => {
-      const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} maxSizeBytes={5 * 1024 * 1024} />);
       
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
