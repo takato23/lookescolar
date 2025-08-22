@@ -5,6 +5,7 @@ import {
 } from '@/lib/supabase/server';
 import { processImageBatch, validateImage } from '@/lib/services/watermark';
 import { uploadToStorage } from '@/lib/services/storage';
+import { qrDetectionService } from '@/lib/services/qr-detection.service';
 import {
   AuthMiddleware,
   SecurityLogger,
@@ -286,6 +287,46 @@ export const POST = RateLimitMiddleware.withRateLimit(
             throw new Error('Invalid storage path generated');
           }
 
+          // Detect QR codes in the original image
+          let detectedQRCode = null;
+          let detectedStudentId = null;
+          
+          try {
+            const qrResults = await qrDetectionService.detectQRCodesInImage(
+              originalBuffer.buffer,
+              eventId,
+              {
+                maxWidth: 1920,
+                maxHeight: 1080,
+                enhanceContrast: true,
+              }
+            );
+
+            if (qrResults.length > 0) {
+              // Use the first detected QR code with highest confidence
+              const topQR = qrResults[0];
+              detectedQRCode = topQR.data?.id || null;
+              detectedStudentId = topQR.data?.studentId || null;
+
+              SecurityLogger.logSecurityEvent('qr_detected_in_photo', {
+                requestId,
+                filename: originalName,
+                qrCodeId: detectedQRCode,
+                studentId: detectedStudentId?.substring(0, 8) + '***',
+                confidence: topQR.confidence,
+                eventId,
+              });
+            }
+          } catch (qrError: any) {
+            // QR detection failure shouldn't block photo upload
+            SecurityLogger.logSecurityEvent('qr_detection_failed', {
+              requestId,
+              filename: originalName,
+              error: qrError.message,
+              eventId,
+            }, 'warn');
+          }
+
           // Guardar en base de datos
           const { data: photoData, error: dbError } = await serviceClient
             .from('photos')
@@ -298,7 +339,8 @@ export const POST = RateLimitMiddleware.withRateLimit(
               file_size: size,
               mime_type: 'image/webp',
               approved: false, // Por defecto no aprobada hasta tagging
-              subject_id: null, // Sin asignar hasta tagging
+              subject_id: detectedStudentId, // Auto-assign if QR detected
+              code_id: detectedQRCode, // Link to detected QR code
               original_filename:
                 SecurityValidator.sanitizeFilename(originalName),
               processing_status: 'completed',
@@ -319,6 +361,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
             width: processed.width,
             height: processed.height,
             path: path,
+            qrDetected: detectedQRCode !== null,
+            qrCodeId: detectedQRCode,
+            studentId: detectedStudentId,
+            autoClassified: detectedStudentId !== null,
           });
         } catch (error: any) {
           SecurityLogger.logSecurityEvent(

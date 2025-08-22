@@ -90,6 +90,7 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
           // Agregar nuevo item con cantidad 1 y contexto
           const newItem: CartItem = {
             ...item,
+            price: item.price || 1000, // Precio por defecto: $10.00 ARS
             quantity: 1,
             metadata: {
               ...item.metadata,

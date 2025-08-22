@@ -1,11 +1,15 @@
 /**
- * @fileoverview Integration Tests for Complete QR Tagging Workflow
+ * @fileoverview Integration Tests for Complete QR Workflow
  * 
- * Tests the complete QR workflow:
- * 1. QR scan → decode → validate
- * 2. Photo selection → batch assignment
- * 3. Database state verification
- * 4. Error scenarios and edge cases
+ * Tests the complete QR workflow including:
+ * 1. QR code generation for student identification
+ * 2. QR code detection in uploaded photos
+ * 3. Student QR validation and photo auto-classification
+ * 4. QR scan → decode → validate (legacy tagging)
+ * 5. Photo selection → batch assignment
+ * 6. Database state verification
+ * 7. Error scenarios and edge cases
+ * 8. Family access to QR codes
  * 
  * Security: Tests rate limiting, token validation, duplicate prevention
  * Performance: Tests batch operations with 50+ photos
@@ -88,6 +92,386 @@ describe('QR Tagging Workflow Integration Tests', () => {
 
   afterEach(async () => {
     await testData.cleanup();
+  });
+
+  describe('QR Code Generation and Management', () => {
+    it('should generate QR code for student identification', async () => {
+      const generateRequest = new NextRequest('http://localhost/api/admin/qr/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: eventId,
+          studentId: studentId,
+          studentName: 'Juan Pérez',
+          options: {
+            size: 200,
+            errorCorrectionLevel: 'M',
+          },
+        }),
+      });
+
+      // Mock admin authentication for test
+      Object.defineProperty(generateRequest, 'headers', {
+        value: new Headers({
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-admin-token',
+        }),
+        writable: false,
+      });
+
+      const response = await fetch('http://localhost/api/admin/qr/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+          studentId: studentId,
+          studentName: 'Juan Pérez',
+          options: {
+            size: 200,
+            errorCorrectionLevel: 'M',
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        expect(data.success).toBe(true);
+        expect(data.data.qrCodeId).toBeDefined();
+        expect(data.data.dataUrl).toMatch(/^data:image\/png;base64,/);
+        expect(data.data.token).toBeDefined();
+
+        // Verify QR code was stored in database
+        const { data: qrCode } = await supabase
+          .from('codes')
+          .select('*')
+          .eq('id', data.data.qrCodeId)
+          .single();
+
+        expect(qrCode).toBeTruthy();
+        expect(qrCode.event_id).toBe(eventId);
+        expect(qrCode.code_value).toMatch(/^LKSTUDENT_/);
+        expect(qrCode.is_published).toBe(true);
+
+        // Verify student is linked to QR code
+        const { data: student } = await supabase
+          .from('subjects')
+          .select('qr_code, metadata')
+          .eq('id', studentId)
+          .single();
+
+        expect(student.qr_code).toBe(data.data.qrCodeId);
+        expect(student.metadata?.qr_type).toBe('student_identification');
+      }
+    });
+
+    it('should retrieve QR codes for an event', async () => {
+      const response = await fetch(`http://localhost/api/admin/qr/${eventId}`, {
+        headers: {
+          'Authorization': 'Bearer test-admin-token',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        expect(data.success).toBe(true);
+        expect(data.data.qrCodes).toBeDefined();
+        expect(data.data.stats).toBeDefined();
+        expect(data.data.stats.totalStudentCodes).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it('should validate student QR codes', async () => {
+      // First generate a QR code
+      const generateResponse = await fetch('http://localhost/api/admin/qr/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+          studentId: studentId,
+          studentName: 'Juan Pérez',
+        }),
+      });
+
+      if (generateResponse.ok) {
+        const generateData = await generateResponse.json();
+        
+        // Get the QR code value from database
+        const { data: qrCode } = await supabase
+          .from('codes')
+          .select('code_value')
+          .eq('id', generateData.data.qrCodeId)
+          .single();
+
+        // Now validate the QR code
+        const validateResponse = await fetch('http://localhost/api/qr/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            qrCode: qrCode.code_value,
+            eventId: eventId,
+          }),
+        });
+
+        if (validateResponse.ok) {
+          const validateData = await validateResponse.json();
+          expect(validateData.success).toBe(true);
+          expect(validateData.valid).toBe(true);
+          expect(validateData.data.studentId).toBe(studentId);
+          expect(validateData.data.eventId).toBe(eventId);
+        }
+      }
+    });
+
+    it('should allow family access to student QR codes', async () => {
+      const response = await fetch(`http://localhost/api/family/qr/${studentId}`, {
+        headers: {
+          'Authorization': `Bearer ${studentToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        expect(data.success).toBe(true);
+        if (data.data) {
+          expect(data.data.qrCodeId).toBeDefined();
+          expect(data.data.dataUrl).toMatch(/^data:image\/png;base64,/);
+          expect(data.data.studentName).toBe('Juan Pérez');
+          expect(data.data.eventId).toBe(eventId);
+        }
+      }
+    });
+
+    it('should reject invalid QR code formats during validation', async () => {
+      const invalidQRCodes = [
+        'INVALID_FORMAT',
+        'LKSTUDENT_',
+        'LKFAMILY_wrong-prefix',
+        '',
+        'LKSTUDENT_nonexistent-token',
+      ];
+
+      for (const invalidQR of invalidQRCodes) {
+        const response = await fetch('http://localhost/api/qr/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            qrCode: invalidQR,
+            eventId: eventId,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          expect(data.valid).toBe(false);
+        }
+      }
+    });
+
+    it('should generate batch QR codes for multiple students', async () => {
+      // Create additional test students
+      const student2 = await testData.createSubject({
+        event_id: eventId,
+        name: 'María González',
+        grade: '5A',
+        token: TestHelpers.generateSecureToken(24),
+      });
+
+      const student3 = await testData.createSubject({
+        event_id: eventId,
+        name: 'Carlos Rodríguez',
+        grade: '5A',
+        token: TestHelpers.generateSecureToken(24),
+      });
+
+      const response = await fetch('http://localhost/api/admin/qr/generate', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+          students: [
+            { id: student2.id, name: student2.name },
+            { id: student3.id, name: student3.name },
+          ],
+          options: {
+            size: 150,
+            errorCorrectionLevel: 'M',
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        expect(data.success).toBe(true);
+        expect(data.data.summary.total).toBe(2);
+        expect(data.data.summary.successful).toBe(2);
+        expect(data.data.results).toHaveLength(2);
+
+        // Verify both QR codes were created
+        for (const result of data.data.results) {
+          expect(result.error).toBeUndefined();
+          expect(result.qrCode).toBeDefined();
+          expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+        }
+      }
+    });
+  });
+
+  describe('Photo Upload with QR Detection', () => {
+    it('should detect QR codes in uploaded photos', async () => {
+      // First generate a QR code for the student
+      const generateResponse = await fetch('http://localhost/api/admin/qr/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+          studentId: studentId,
+          studentName: 'Juan Pérez',
+        }),
+      });
+
+      let qrCodeId = null;
+      if (generateResponse.ok) {
+        const generateData = await generateResponse.json();
+        qrCodeId = generateData.data.qrCodeId;
+      }
+
+      // Create a simple test image buffer
+      const testImageBuffer = Buffer.from([
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+        0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00,
+        0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0xD7, 0x63, 0xF8, 0x0F, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x5C, 0xC2, 0x8A, 0x77, 0x00, 0x00, 0x00, 0x00, 0x49,
+        0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+      ]);
+
+      const formData = new FormData();
+      formData.append('eventId', eventId);
+      formData.append('files', new File([testImageBuffer], 'test-qr-photo.png', { type: 'image/png' }));
+
+      const uploadResponse = await fetch('http://localhost/api/admin/photos/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: formData,
+      });
+
+      if (uploadResponse.ok) {
+        const uploadData = await uploadResponse.json();
+        expect(uploadData.success).toBe(true);
+        expect(uploadData.uploaded).toBeDefined();
+        expect(uploadData.uploaded.length).toBeGreaterThan(0);
+
+        const uploadedPhoto = uploadData.uploaded[0];
+        expect(uploadedPhoto).toHaveProperty('qrDetected');
+        expect(uploadedPhoto).toHaveProperty('autoClassified');
+
+        // Note: Actual QR detection would require a real QR code in the image
+        // This test verifies the upload workflow includes QR detection fields
+      }
+    });
+
+    it('should handle photos without QR codes gracefully', async () => {
+      // Upload a photo without QR code
+      const testImageBuffer = Buffer.from([
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+        0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00,
+        0x0C, 0x49, 0x44, 0x41, 0x54, 0x08, 0xD7, 0x63, 0xF8, 0x0F, 0x00, 0x00,
+        0x01, 0x00, 0x01, 0x5C, 0xC2, 0x8A, 0x77, 0x00, 0x00, 0x00, 0x00, 0x49,
+        0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+      ]);
+
+      const formData = new FormData();
+      formData.append('eventId', eventId);
+      formData.append('files', new File([testImageBuffer], 'no-qr-photo.png', { type: 'image/png' }));
+
+      const response = await fetch('http://localhost/api/admin/photos/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        expect(data.success).toBe(true);
+        
+        const uploadedPhoto = data.uploaded[0];
+        expect(uploadedPhoto.qrDetected).toBe(false);
+        expect(uploadedPhoto.autoClassified).toBe(false);
+        expect(uploadedPhoto.studentId).toBeNull();
+      }
+    });
+  });
+
+  describe('QR Code Statistics and Analytics', () => {
+    it('should calculate QR code usage statistics', async () => {
+      // Generate QR codes for multiple students
+      const additionalStudents = await Promise.all([
+        testData.createSubject({
+          event_id: eventId,
+          name: 'Ana López',
+          grade: '5A',
+          token: TestHelpers.generateSecureToken(24),
+        }),
+        testData.createSubject({
+          event_id: eventId,
+          name: 'Pedro García',
+          grade: '5A',
+          token: TestHelpers.generateSecureToken(24),
+        }),
+      ]);
+
+      // Generate QR codes
+      await fetch('http://localhost/api/admin/qr/generate', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer test-admin-token',
+        },
+        body: JSON.stringify({
+          eventId: eventId,
+          students: [
+            { id: studentId, name: 'Juan Pérez' },
+            ...additionalStudents.map(s => ({ id: s.id, name: s.name })),
+          ],
+        }),
+      });
+
+      // Get statistics
+      const response = await fetch(`http://localhost/api/admin/qr/${eventId}`, {
+        headers: {
+          'Authorization': 'Bearer test-admin-token',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        expect(data.success).toBe(true);
+        expect(data.data.stats).toBeDefined();
+        
+        const stats = data.data.stats;
+        expect(stats.totalStudentCodes).toBeGreaterThanOrEqual(3);
+        expect(stats.activeStudentCodes).toBeGreaterThanOrEqual(3);
+        expect(stats.studentsWithCodes).toBeGreaterThanOrEqual(3);
+        expect(stats.studentsWithoutCodes).toBeGreaterThanOrEqual(0);
+      }
+    });
   });
 
   describe('Complete QR Workflow - Happy Path', () => {

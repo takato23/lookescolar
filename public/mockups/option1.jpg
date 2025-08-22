@@ -1,0 +1,11 @@
+// Placeholder for Option 1 mockup image
+// This would be an actual image file showing a single photo in a folder
+// For now, we'll create a simple SVG placeholder
+
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#f3f4f6"/>
+  <rect x="50" y="50" width="300" height="200" fill="#e5e7eb" rx="8"/>
+  <rect x="80" y="80" width="240" height="140" fill="#ffffff" rx="4"/>
+  <circle cx="200" cy="150" r="30" fill="#d1d5db"/>
+  <text x="200" y="280" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="14">Opción 1 - 1 Foto</text>
+</svg>
