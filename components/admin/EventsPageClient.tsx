@@ -1,11 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Calendar, ArrowLeft, Home } from 'lucide-react';
+import { Plus, Calendar, ArrowLeft, Home, Sparkles, TrendingUp, ChevronRight } from 'lucide-react';
 import { EventCard } from '@/components/admin/EventCard';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -75,55 +73,99 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
   const handleViewEvent = (event: any) => {
     router.push(`/admin/events/${event.id}`);
   };
+
+  // Calculate statistics for the dashboard
+  const totalEvents = events?.length || 0;
+  const totalPhotos = events?.reduce((sum, event) => sum + (event.stats?.totalPhotos || 0), 0) || 0;
+  const totalRevenue = events?.reduce((sum, event) => sum + (event.stats?.revenue || 0), 0) || 0;
+
   return (
-    <div className="liquid-glass-app min-h-screen">
-      <div className="container mx-auto space-y-6 lg:space-y-8 p-6">
-        {/* Header with Breadcrumbs */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="container mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6">
+        {/* Enhanced Header with Breadcrumbs and Stats */}
         <div className="relative animate-fade-in">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
-          <div className="relative liquid-card p-8">
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-xl" />
+          <div className="relative liquid-glass-card-ios26 p-6 sm:p-8 rounded-2xl border border-white/20 shadow-xl">
             {/* Breadcrumbs */}
-            <nav className="liquid-description mb-4 flex items-center gap-2 text-sm">
+            <nav className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <Link
                 href="/admin"
-                className="flex items-center gap-1 liquid-nav-text transition-colors hover:text-primary-600"
+                className="flex items-center gap-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <Home className="h-4 w-4" />
                 Dashboard
               </Link>
-              <span>/</span>
-              <span className="liquid-nav-text font-medium">Eventos</span>
+              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <span className="font-medium text-gray-900 dark:text-white">Eventos</span>
             </nav>
 
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+              <div className="flex items-start gap-3 sm:gap-4">
                 <Link href="/admin">
-                  <button className="liquid-button rounded-full p-2">
-                    <ArrowLeft className="h-5 w-5" />
+                  <button className="liquid-glass-button-ios26 rounded-full p-2 hover:bg-white/10 transition-colors">
+                    <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                   </button>
                 </Link>
                 <div>
-                  <h1 className="liquid-title mb-2 text-3xl md:text-4xl">
+                  <h1 className="gradient-text-ios26 mb-2 text-2xl sm:text-3xl md:text-4xl font-bold">
                     Eventos
                   </h1>
-                  <p className="liquid-subtitle">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 sm:text-base">
                     Gestiona tus sesiones fotográficas y organiza por colegios
                   </p>
                 </div>
               </div>
-              <Link href="/admin/events/new">
-                <button className="liquid-button liquid-shine shadow-lg px-6 py-3 rounded-2xl flex items-center gap-2">
-                  <Plus className="h-5 w-5" />
-                  <span className="liquid-button-text font-semibold">Nuevo Evento</span>
-                </button>
-              </Link>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/admin/events/new">
+                  <button className="liquid-glass-button-ios26 shadow-lg px-4 py-2 sm:px-6 sm:py-3 rounded-xl flex items-center gap-2 hover:bg-white/10 transition-all">
+                    <Plus className="h-5 w-5" />
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">Nuevo Evento</span>
+                  </button>
+                </Link>
+              </div>
             </div>
+            
+            {/* Stats Dashboard */}
+            {events && events.length > 0 && (
+              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="glass-stat-card-ios26 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-100/50 dark:bg-blue-900/30">
+                    <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Total Eventos</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{totalEvents}</p>
+                  </div>
+                </div>
+                
+                <div className="glass-stat-card-ios26 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-100/50 dark:bg-purple-900/30">
+                    <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Fotos Totales</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{totalPhotos}</p>
+                  </div>
+                </div>
+                
+                <div className="glass-stat-card-ios26 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-100/50 dark:bg-green-900/30">
+                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">Ingresos Totales</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Error State */}
         {error && (
-          <div className="liquid-card animate-slide-up border-red-200 bg-red-50/50 dark:bg-red-900/20 p-4">
+          <div className="liquid-glass-card-ios26 animate-slide-up border-red-200 bg-red-50/50 dark:bg-red-900/20 p-4 rounded-xl border">
             <p className="text-sm text-red-700 dark:text-red-300">
               Error al cargar eventos: {error.message}
             </p>
@@ -133,32 +175,34 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
         {/* Events Content */}
         <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
           {!events || events.length === 0 ? (
-            <div className="liquid-card p-8 text-center">
+            <div className="liquid-glass-card-ios26 p-8 text-center rounded-2xl border border-white/20 shadow-lg">
               <EmptyState
                 icon={Calendar}
                 title="No hay eventos creados"
                 description="Crea tu primer evento para comenzar a organizar tus sesiones fotográficas."
               >
                 <Link href="/admin/events/new" className="inline-block">
-                  <button className="liquid-button liquid-shine px-6 py-3 rounded-2xl">
-                    <span className="liquid-button-text font-medium">Crear primer evento</span>
+                  <button className="liquid-glass-button-ios26 px-6 py-3 rounded-xl hover:bg-white/10 transition-all">
+                    <span className="font-medium text-gray-800 dark:text-gray-200">Crear primer evento</span>
                   </button>
                 </Link>
               </EmptyState>
             </div>
           ) : (
-            <div className="scrollbar-elevated grid max-h-[70vh] gap-6 overflow-auto pr-1">
+            // Enhanced grid layout with more columns for better space utilization
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               {events.map((event, index) => (
                 <div
                   key={event.id}
                   className="animate-slide-up"
-                  style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+                  style={{ animationDelay: `${0.1 + index * 0.05}s` }}
                 >
                   <EventCard 
                     event={event} 
                     onDelete={handleDeleteEvent}
                     onEdit={handleEditEvent}
                     onView={handleViewEvent}
+                    className="h-full flex flex-col"
                   />
                 </div>
               ))}

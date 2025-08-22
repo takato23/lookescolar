@@ -166,7 +166,7 @@ function OptimizedPhotoCard({
   }, [photo.filename]);
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+    <div className="group relative h-full overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 active:scale-95">
       <div className="relative aspect-square">
         <LazyImage
           src={imageUrl}
@@ -176,15 +176,15 @@ function OptimizedPhotoCard({
           onError={handleImageError}
         />
 
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 transition-all duration-300 group-hover:bg-opacity-20">
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        {/* Apple-grade hover overlay with spring animation */}
+        <div className="absolute inset-0 bg-black bg-opacity-0 transition-all duration-300 ease-out group-hover:bg-opacity-20">
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:scale-100 scale-90">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onView();
               }}
-              className="transform rounded-full bg-white bg-opacity-90 p-2 transition-all duration-200 hover:scale-110 hover:bg-opacity-100"
+              className="transform rounded-full bg-white bg-opacity-90 p-3 transition-all duration-200 ease-out hover:scale-110 hover:bg-opacity-100 hover:shadow-lg active:scale-95 apple-focus"
               title="Ver foto completa"
               aria-label={`Ver foto ${photo.filename}`}
             >

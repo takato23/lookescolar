@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/admin/photos/upload/route';
 import { createServerSupabaseClient, createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -34,8 +34,7 @@ const mockSupabaseServiceClient = {
 };
 
 // Función helper para crear archivos de prueba
-const createTestFile = async (name: string, type: string = 'image/jpeg', size: number = 1024): Promise<File> => {
-  // Crear un buffer de imagen pequeña usando sharp
+const createTestFile = async (name: string, type: string = 'image/jpeg'): Promise<File> => {
   const imageBuffer = await sharp({
     create: {
       width: 100,
@@ -45,7 +44,9 @@ const createTestFile = async (name: string, type: string = 'image/jpeg', size: n
     }
   }).jpeg().toBuffer();
 
-  const blob = new Blob([imageBuffer], { type });
+  // Convert Buffer to Uint8Array to fix type issue
+  const uint8Array = new Uint8Array(imageBuffer);
+  const blob = new Blob([uint8Array], { type });
   return new File([blob], name, { type });
 };
 
@@ -116,13 +117,13 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
     (createServerSupabaseClient as any).mockResolvedValue(mockSupabaseClient);
     (createServerSupabaseServiceClient as any).mockResolvedValue(mockSupabaseServiceClient);
     
-    (SecurityValidator.isAllowedIP as any).mockReturnValue(true);
-    (SecurityValidator.isSuspiciousUserAgent as any).mockReturnValue(false);
-    (SecurityValidator.isAllowedContentType as any).mockReturnValue(true);
-    (SecurityValidator.isSafeFilename as any).mockReturnValue(true);
-    (SecurityValidator.sanitizeFilename as any).mockImplementation((name: string) => name);
-    (SecurityValidator.isValidImageDimensions as any).mockReturnValue(true);
-    (SecurityValidator.isValidStoragePath as any).mockReturnValue(true);
+    // Fix SecurityValidator mocks
+    vi.mocked(SecurityValidator.isAllowedIP).mockReturnValue(true);
+    vi.mocked(SecurityValidator.isSuspiciousUserAgent).mockReturnValue(false);
+    vi.mocked(SecurityValidator.isAllowedContentType).mockReturnValue(true);
+    vi.mocked(SecurityValidator.isSafeFilename).mockReturnValue(true);
+    vi.mocked(SecurityValidator.sanitizeFilename).mockImplementation((name: string) => name);
+    vi.mocked(SecurityValidator.isValidImageDimensions).mockReturnValue(true);
     
     (validateImage as any).mockResolvedValue(true);
     (processImageBatch as any).mockResolvedValue({
@@ -288,7 +289,11 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
     });
 
     it('debería rechazar archivos demasiado grandes', async () => {
-      const largeFile = await createTestFile('large.jpg', 'image/jpeg', 50 * 1024 * 1024); // 50MB
+      // Mock a large file by directly creating a file with large size
+      const largeBuffer = Buffer.alloc(50 * 1024 * 1024); // 50MB buffer
+      const largeBlob = new Blob([largeBuffer], { type: 'image/jpeg' });
+      const largeFile = new File([largeBlob], 'large.jpg', { type: 'image/jpeg' });
+      
       const formData = createFormData(TEST_EVENT_ID, [largeFile]);
       const request = createMockRequest(formData);
 
@@ -302,8 +307,8 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
     });
 
     it('debería sanitizar nombres de archivo inseguros', async () => {
-      (SecurityValidator.isSafeFilename as any).mockReturnValue(false);
-      (SecurityValidator.sanitizeFilename as any).mockReturnValue('safe_filename.jpg');
+      vi.mocked(SecurityValidator.isSafeFilename).mockReturnValue(false);
+      vi.mocked(SecurityValidator.sanitizeFilename).mockReturnValue('safe_filename.jpg');
 
       const file = await createTestFile('../../../evil.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
@@ -436,7 +441,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
     });
 
     it('debería validar dimensiones de imagen procesada', async () => {
-      (SecurityValidator.isValidImageDimensions as any).mockReturnValue(false);
+      vi.mocked(SecurityValidator.isValidImageDimensions).mockReturnValue(false);
 
       const file = await createTestFile('test.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
@@ -545,11 +550,27 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
   describe('Seguridad - IP y User-Agent', () => {
     it('debería rechazar IPs bloqueadas', async () => {
-      (SecurityValidator.isAllowedIP as any).mockReturnValue(false);
+      vi.mocked(SecurityValidator.isAllowedIP).mockReturnValue(false);
 
       const file = await createTestFile('test.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
       const request = createMockRequest(formData, { ip: '192.168.1.100' });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.error).toBe('Access denied');
+    });
+
+    it('debería rechazar User-Agents sospechosos', async () => {
+      vi.mocked(SecurityValidator.isSuspiciousUserAgent).mockReturnValue(true);
+
+      const file = await createTestFile('test.jpg');
+      const formData = createFormData(TEST_EVENT_ID, [file]);
+      const request = createMockRequest(formData, { 
+        userAgent: 'malicious-bot-v1.0' 
+      });
 
       const response = await POST(request);
       const data = await response.json();

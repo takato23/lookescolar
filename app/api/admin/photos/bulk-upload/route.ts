@@ -6,6 +6,7 @@ import { verifyAuthAdmin } from '@/lib/security/auth';
 import { applyRateLimit } from '@/lib/security/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import sharp from 'sharp';
+import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
 
 // Input validation schema
 const BulkUploadSchema = z.object({
@@ -74,13 +75,45 @@ async function processSinglePhoto(
     const fileExtension = photo.type.split('/')[1];
     const uniqueFilename = `${timestamp}-${randomSuffix}-${photo.filename.replace(/\.[^/.]+$/, '')}.${fileExtension}`;
 
-    // Upload original to private bucket
-    const originalPath = `events/${eventId}/originals/${uniqueFilename}`;
+    // Use Free Tier Optimizer for aggressive compression and watermarking
+    // NO original storage - only optimized previews
+    const containerPrefix = `events/${eventId}`;
+    const previewPath = `${containerPrefix}/previews/${uniqueFilename}.webp`;
+
+    // Get event name for watermark
+    let wmLabel = 'Look Escolar';
+    try {
+      const { data: evInfo } = await supabaseAdmin
+        .from('events')
+        .select('name, school_name')
+        .eq('id', eventId)
+        .single();
+      if (evInfo?.name || evInfo?.school_name) {
+        wmLabel = `${evInfo.school_name || ''}${evInfo.school_name && evInfo.name ? ' · ' : ''}${evInfo.name || ''}`.trim() || wmLabel;
+      }
+    } catch {}
+
+    // Process image with FreeTierOptimizer (no original storage)
+    const optimizedResult = await FreeTierOptimizer.processForFreeTier(
+      imageBuffer,
+      {
+        targetSizeKB: 35, // Aggressive compression for free tier
+        maxDimension: 500, // Reduced dimensions for better compression
+        watermarkText: wmLabel,
+        enableOriginalStorage: false // NEVER store originals
+      }
+    );
+
+    const previewBuffer = optimizedResult.processedBuffer;
+
+    // Upload optimized preview to public bucket (NO original storage)
+    const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
     const { error: uploadError } = await supabaseAdmin.storage
-      .from(process.env.STORAGE_BUCKET_ORIGINAL!)
-      .upload(originalPath, imageBuffer, {
-        contentType: photo.type,
-        cacheControl: '3600'
+      .from(PREVIEW_BUCKET)
+      .upload(previewPath, previewBuffer, {
+        contentType: 'image/webp',
+        cacheControl: '3600',
+        upsert: false
       });
 
     if (uploadError) {
@@ -93,49 +126,38 @@ async function processSinglePhoto(
       detectedQrCodes = await detectQrCodes(imageBuffer);
     }
 
-    // Create photo record in database
+    // Create photo record in database (only with preview path)
     const { data: photoData, error: dbError } = await supabaseAdmin
       .from('photos')
       .insert({
         event_id: eventId,
         filename: uniqueFilename,
         original_filename: photo.filename,
-        file_path: originalPath,
-        file_size: photo.size,
-        mime_type: photo.type,
-        width: metadata.width,
-        height: metadata.height,
-        photo_type: 'individual', // Default to individual, will be classified later
-        processing_status: options.generatePreviews ? 'pending' : 'completed',
+        preview_path: previewPath, // Only store preview path
+        file_size: optimizedResult.actualSizeKB * 1024, // Use optimized size
+        mime_type: 'image/webp', // Always WebP for optimized images
+        width: optimizedResult.finalDimensions.width,
+        height: optimizedResult.finalDimensions.height,
+        photo_type: 'individual',
+        processing_status: 'completed', // Already processed
         detected_qr_codes: JSON.stringify(detectedQrCodes),
-        approved: false // Require manual approval
+        approved: false,
+        metadata: {
+          freetier_optimized: true,
+          compression_level: optimizedResult.compressionLevel,
+          original_size: photo.size,
+          optimization_ratio: Math.round((photo.size - optimizedResult.actualSizeKB * 1024) / photo.size * 100)
+        }
       })
       .select('id, filename, processing_status')
       .single();
 
     if (dbError) {
-      // Clean up uploaded file on database error
+      // Clean up uploaded preview on database error
       await supabaseAdmin.storage
-        .from(process.env.STORAGE_BUCKET_ORIGINAL!)
-        .remove([originalPath]);
+        .from(PREVIEW_BUCKET)
+        .remove([previewPath]);
       throw new Error(`Database error: ${dbError.message}`);
-    }
-
-    // Queue preview generation if enabled
-    if (options.generatePreviews) {
-      // In production, this would be queued for background processing
-      try {
-        await storageService.generatePreview(photoData.id, imageBuffer, uniqueFilename);
-        
-        // Update processing status
-        await supabaseAdmin
-          .from('photos')
-          .update({ processing_status: 'completed' })
-          .eq('id', photoData.id);
-      } catch (previewError) {
-        console.error('Preview generation failed:', previewError);
-        // Don't fail the upload, just log the error
-      }
     }
 
     return {
@@ -198,144 +220,51 @@ export async function POST(req: NextRequest) {
 
     if (event.status !== 'active') {
       return NextResponse.json(
-        { error: 'Cannot upload to inactive event' },
+        { error: 'Event is not active' },
         { status: 400 }
       );
     }
 
-    // Set default processing options
-    const processingOptions = {
-      generatePreviews: true,
-      detectQrCodes: true,
-      processWatermarks: true,
-      autoClassify: false,
-      ...validatedData.processingOptions
-    };
-
-    // Process photos in parallel (with concurrency limit)
+    // Process all photos
     const results: UploadResult[] = [];
-    const concurrencyLimit = 3; // Process max 3 photos simultaneously
     
-    for (let i = 0; i < validatedData.photos.length; i += concurrencyLimit) {
-      const batch = validatedData.photos.slice(i, i + concurrencyLimit);
-      const batchPromises = batch.map(photo => 
-        processSinglePhoto(photo, validatedData.eventId, processingOptions)
+    for (const photo of validatedData.photos) {
+      const result = await processSinglePhoto(
+        photo,
+        validatedData.eventId,
+        {
+          generatePreviews: validatedData.processingOptions?.generatePreviews ?? true,
+          detectQrCodes: validatedData.processingOptions?.detectQrCodes ?? true,
+          processWatermarks: validatedData.processingOptions?.processWatermarks ?? true
+        }
       );
-      
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
+      results.push(result);
     }
 
-    // Count successful and failed uploads
-    const successful = results.filter(r => r.status === 'success');
-    const failed = results.filter(r => r.status === 'error');
-
-    // Log bulk upload activity
-    await supabaseAdmin
-      .from('admin_activity')
-      .insert({
-        admin_id: user.id,
-        action: 'bulk_upload_photos',
-        resource_type: 'event',
-        resource_id: validatedData.eventId,
-        metadata: {
-          total_photos: validatedData.photos.length,
-          successful_uploads: successful.length,
-          failed_uploads: failed.length,
-          processing_options: processingOptions
-        }
-      });
+    // Calculate success/failure statistics
+    const successCount = results.filter(r => r.status === 'success').length;
+    const errorCount = results.filter(r => r.status === 'error').length;
 
     return NextResponse.json({
-      success: true,
-      summary: {
-        total: validatedData.photos.length,
-        successful: successful.length,
-        failed: failed.length
-      },
+      success: successCount > 0,
+      message: `Processed ${results.length} photos: ${successCount} successful, ${errorCount} failed`,
       results,
-      event: {
-        id: event.id,
-        name: event.name
+      statistics: {
+        total: results.length,
+        successful: successCount,
+        failed: errorCount
       }
     });
 
   } catch (error) {
-    console.error('Bulk upload error:', error);
-
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
-          error: 'Validation failed',
-          details: error.errors.map(e => ({
-            path: e.path.join('.'),
-            message: e.message
-          }))
-        },
+        { error: 'Validation error', details: error.errors },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-// GET endpoint to check upload status
-export async function GET(req: NextRequest) {
-  try {
-    const user = await verifyAuthAdmin();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { searchParams } = new URL(req.url);
-    const eventId = searchParams.get('eventId');
-
-    if (!eventId) {
-      return NextResponse.json(
-        { error: 'Event ID required' },
-        { status: 400 }
-      );
-    }
-
-    // Get upload statistics for the event
-    const { data: stats, error } = await supabaseAdmin
-      .from('photos')
-      .select('processing_status, photo_type, approved')
-      .eq('event_id', eventId);
-
-    if (error) {
-      throw error;
-    }
-
-    const summary = {
-      total: stats.length,
-      processing: stats.filter(s => s.processing_status === 'processing').length,
-      completed: stats.filter(s => s.processing_status === 'completed').length,
-      failed: stats.filter(s => s.processing_status === 'failed').length,
-      approved: stats.filter(s => s.approved).length,
-      by_type: {
-        individual: stats.filter(s => s.photo_type === 'individual').length,
-        group: stats.filter(s => s.photo_type === 'group').length,
-        activity: stats.filter(s => s.photo_type === 'activity').length,
-        event: stats.filter(s => s.photo_type === 'event').length
-      }
-    };
-
-    return NextResponse.json({
-      success: true,
-      event_id: eventId,
-      summary
-    });
-
-  } catch (error) {
-    console.error('Upload status check error:', error);
+    console.error('Bulk upload error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

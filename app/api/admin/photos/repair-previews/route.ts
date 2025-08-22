@@ -2,51 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import sharp from 'sharp';
+import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
 
 export const runtime = 'nodejs';
 
 const Body = z.object({ eventId: z.string().uuid() });
-
-// Texto configurable del watermark; por defecto el requerido denso y diagonal
-const WATERMARK_TEXT = process.env.WATERMARK_TEXT || 'LOOK ESCOLAR – VISTA PREVIA';
-
-// SVG de watermark denso en patrón diagonal
-function watermarkSvg(width: number, height: number, text: string = WATERMARK_TEXT) {
-  const maxSide = Math.max(width, height);
-  const fontSize = Math.max(28, Math.floor(Math.min(width, height) / 12));
-  const patternSize = Math.max(180, Math.min(280, Math.floor(maxSide / 6)));
-  const opacity = 0.4; // denso
-
-  return `
-  <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <pattern id="wm" x="0" y="0" width="${patternSize}" height="${patternSize}" patternUnits="userSpaceOnUse">
-        <text x="${patternSize / 2}" y="${patternSize / 2}"
-          font-family="Arial, sans-serif"
-          font-size="${fontSize}"
-          font-weight="bold"
-          fill="white"
-          fill-opacity="${opacity}"
-          text-anchor="middle"
-          transform="rotate(-45 ${patternSize / 2} ${patternSize / 2})">
-          ${text}
-        </text>
-        <text x="${patternSize / 2}" y="${patternSize / 2 + Math.max(28, fontSize * 0.4)}"
-          font-family="Arial, sans-serif"
-          font-size="${fontSize * 0.8}"
-          font-weight="bold"
-          fill="white"
-          fill-opacity="${opacity}"
-          text-anchor="middle"
-          transform="rotate(-45 ${patternSize / 2} ${patternSize / 2})">
-          ${text}
-        </text>
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#wm)"/>
-  </svg>`;
-}
 
 async function handlePOST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
@@ -60,7 +20,7 @@ async function handlePOST(request: NextRequest) {
 
     const { data: photos, error } = await supabase
       .from('photos')
-      .select('id, storage_path, preview_path, watermark_path')
+      .select('id, storage_path, preview_path, watermark_path, original_filename, event_id')
       .eq('event_id', eventId)
       .limit(2000);
     if (error) throw error;
@@ -88,47 +48,92 @@ async function handlePOST(request: NextRequest) {
       }
 
       try {
-        // download original
-        const { data: file, error: dlErr } = await supabase.storage.from(ORIGINAL_BUCKET).download(p.storage_path as string);
-        if (dlErr) throw dlErr;
-        const buf = Buffer.from(await file.arrayBuffer());
+        // Download original (if it exists)
+        let imageBuffer: Buffer | null = null;
+        if ((p as any).storage_path) {
+          try {
+            const { data: file, error: dlErr } = await supabase.storage.from(ORIGINAL_BUCKET).download((p as any).storage_path);
+            if (!dlErr && file) {
+              imageBuffer = Buffer.from(await file.arrayBuffer());
+            }
+          } catch (e) {
+            console.log('Could not download original, will regenerate from existing preview');
+          }
+        }
 
-        // generate webp preview and watermark
-        const meta = await sharp(buf).metadata();
-        const maxSide = 1600;
-        const width = meta.width || 1200;
-        const height = meta.height || 800;
-        const scale = Math.min(1, maxSide / Math.max(width, height));
-        const newW = Math.round(width * scale);
-        const newH = Math.round(height * scale);
+        // If we can't get original, try to download existing preview to regenerate
+        if (!imageBuffer && (p as any).preview_path) {
+          try {
+            const { data: file, error: dlErr } = await supabase.storage.from(PREVIEW_BUCKET).download((p as any).preview_path);
+            if (!dlErr && file) {
+              imageBuffer = Buffer.from(await file.arrayBuffer());
+            }
+          } catch (e) {
+            console.log('Could not download existing preview');
+          }
+        }
 
-        const base = (p.storage_path as string)
+        // If we still don't have an image buffer, skip this photo
+        if (!imageBuffer) {
+          results.push({ id: p.id, repaired: false, error: 'No source image available' });
+          continue;
+        }
+
+        // Get event name for watermark
+        let wmLabel = 'Look Escolar';
+        try {
+          const { data: evInfo } = await supabase
+            .from('events')
+            .select('name, school_name')
+            .eq('id', p.event_id)
+            .single();
+          if (evInfo?.name || evInfo?.school_name) {
+            wmLabel = `${evInfo.school_name || ''}${evInfo.school_name && evInfo.name ? ' · ' : ''}${evInfo.name || ''}`.trim() || wmLabel;
+          }
+        } catch {}
+
+        // Process image with FreeTierOptimizer (no original storage)
+        const optimizedResult = await FreeTierOptimizer.processForFreeTier(
+          imageBuffer,
+          {
+            targetSizeKB: 35, // Aggressive compression for free tier
+            maxDimension: 500, // Reduced dimensions for better compression
+            watermarkText: wmLabel,
+            enableOriginalStorage: false // NEVER store originals
+          }
+        );
+
+        const previewBuffer = optimizedResult.processedBuffer;
+
+        // Generate paths
+        const base = ((p as any).storage_path || (p as any).preview_path || `photo-${p.id}`)
           .replace(/^events\//, '')
           .replace(/\.[^.]+$/, '')
           .replace(/[^a-zA-Z0-9/_-]+/g, '_');
         const previewKey = `previews/${base}.webp`;
-        const watermarkKey = `watermarks/${base}.webp`;
 
-        const previewBuf = await sharp(buf)
-          .resize({ width: newW, height: newH, fit: 'inside', withoutEnlargement: true })
-          .webp({ quality: 72 })
-          .toBuffer();
-
-        const wmSvg = watermarkSvg(newW, newH, WATERMARK_TEXT);
-        const watermarkBuf = await sharp(buf)
-          .resize({ width: newW, height: newH, fit: 'inside', withoutEnlargement: true })
-          .composite([{ input: Buffer.from(wmSvg), gravity: 'center' }])
-          .webp({ quality: 72 })
-          .toBuffer();
-
-        const up1 = await supabase.storage.from(PREVIEW_BUCKET).upload(previewKey, previewBuf, { contentType: 'image/webp', upsert: true });
+        // Upload new preview
+        const up1 = await supabase.storage.from(PREVIEW_BUCKET).upload(previewKey, previewBuffer, { contentType: 'image/webp', upsert: true });
         if (up1.error) throw up1.error;
-        const up2 = await supabase.storage.from(PREVIEW_BUCKET).upload(watermarkKey, watermarkBuf, { contentType: 'image/webp', upsert: true });
-        if (up2.error) throw up2.error;
+
+        // For backward compatibility, use same path for watermark
+        const watermarkKey = previewKey;
 
         const upd = await supabase
           .from('photos')
-          .update({ preview_path: previewKey, watermark_path: watermarkKey })
+          .update({ 
+            preview_path: previewKey, 
+            watermark_path: watermarkKey,
+            file_size: optimizedResult.actualSizeKB * 1024,
+            width: optimizedResult.finalDimensions.width,
+            height: optimizedResult.finalDimensions.height,
+            metadata: {
+              ...(p as any).metadata || {},
+              freetier_optimized: true,
+              compression_level: optimizedResult.compressionLevel,
+              optimization_ratio: Math.round(((p as any).file_size - optimizedResult.actualSizeKB * 1024) / (p as any).file_size * 100)
+            }
+          })
           .eq('id', p.id);
         if (upd.error) throw upd.error;
 
@@ -147,5 +152,3 @@ async function handlePOST(request: NextRequest) {
 }
 
 export const POST = withAuth(handlePOST);
-
-

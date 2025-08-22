@@ -3,7 +3,7 @@
  * Tests all critical APIs that must work for MVP success
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
@@ -27,8 +27,8 @@ let testData = {
 
 beforeAll(async () => {
   supabase = createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env['NEXT_PUBLIC_SUPABASE_URL']!,
+    process.env['SUPABASE_SERVICE_ROLE_KEY']!
   );
   
   // Setup test data

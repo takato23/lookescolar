@@ -73,6 +73,149 @@ export const batchSignedUrlSchema = z.object({
 // Security validator class
 export class SecurityValidator {
   /**
+   * Check if IP is allowed (whitelist-based)
+   */
+  static isAllowedIP(ip: string): boolean {
+    // In development, allow all IPs
+    if (process.env.NODE_ENV !== 'production') {
+      return true;
+    }
+
+    // Define allowed IP patterns (whitelist)
+    const allowedIPs = [
+      '127.0.0.1', // Localhost
+      '::1', // IPv6 localhost
+      // Add other trusted IPs or IP ranges as needed
+    ];
+
+    // Check if IP is in whitelist
+    return allowedIPs.some(allowedIP => {
+      if (allowedIP.includes('/')) {
+        // Handle CIDR notation
+        return this.isIPInRange(ip, allowedIP);
+      }
+      return ip === allowedIP;
+    });
+  }
+
+  /**
+   * Check if IP is in a CIDR range
+   */
+  static isIPInRange(ip: string, cidr: string): boolean {
+    // Basic implementation - in a real system, you might want to use a more robust library
+    const [range, prefix] = cidr.split('/');
+    if (!range || !prefix) return false;
+
+    // For IPv4 only in this simple implementation
+    if (ip.includes(':') || range.includes(':')) return false;
+
+    const ipParts = ip.split('.').map(Number);
+    const rangeParts = range.split('.').map(Number);
+    const prefixNum = parseInt(prefix);
+
+    if (ipParts.length !== 4 || rangeParts.length !== 4 || isNaN(prefixNum)) {
+      return false;
+    }
+
+    // Convert to binary and compare based on prefix
+    let ipNum = 0;
+    let rangeNum = 0;
+    let mask = 0;
+
+    for (let i = 0; i < 4; i++) {
+      ipNum = (ipNum << 8) + ipParts[i];
+      rangeNum = (rangeNum << 8) + rangeParts[i];
+    }
+
+    mask = ~((1 << (32 - prefixNum)) - 1);
+
+    return (ipNum & mask) === (rangeNum & mask);
+  }
+
+  /**
+   * Check if User-Agent is suspicious
+   */
+  static isSuspiciousUserAgent(userAgent: string | null): boolean {
+    if (!userAgent) return false;
+
+    // List of suspicious patterns
+    const suspiciousPatterns = [
+      /bot/i,
+      /crawler/i,
+      /spider/i,
+      /scanner/i,
+      /automated/i,
+      /python/i,
+      /curl/i,
+      /wget/i,
+      /postman/i,
+      /insomnia/i,
+    ];
+
+    // Allow list of known good user agents
+    const allowedUserAgents = [
+      /mozilla/i,
+      /chrome/i,
+      /safari/i,
+      /firefox/i,
+      /edge/i,
+      /opera/i,
+      /mobile/i,
+      /android/i,
+      /iphone/i,
+      /ipad/i,
+    ];
+
+    // If it's a known good user agent, allow it
+    if (allowedUserAgents.some(pattern => pattern.test(userAgent))) {
+      return false;
+    }
+
+    // Check for suspicious patterns
+    return suspiciousPatterns.some(pattern => pattern.test(userAgent));
+  }
+
+  /**
+   * Check if filename is safe
+   */
+  static isSafeFilename(filename: string): boolean {
+    if (!filename) return false;
+
+    // Check for dangerous characters or patterns
+    const dangerousPatterns = [
+      /\.\./, // Path traversal
+      /\/|\\/, // Directory separators
+      /:|\*|\?|"|<|>|\|/, // Windows forbidden characters
+      /^\./, // Hidden files
+      /~$/, // Backup files
+    ];
+
+    return !dangerousPatterns.some(pattern => pattern.test(filename));
+  }
+
+  /**
+   * Validate image dimensions
+   */
+  static isValidImageDimensions(width: number, height: number): boolean {
+    // Check if dimensions are within reasonable limits
+    if (width <= 0 || height <= 0) return false;
+    
+    // Maximum dimensions (adjust as needed)
+    const maxWidth = 10000;
+    const maxHeight = 10000;
+    
+    if (width > maxWidth || height > maxHeight) return false;
+    
+    // Minimum dimensions
+    const minWidth = 10;
+    const minHeight = 10;
+    
+    if (width < minWidth || height < minHeight) return false;
+    
+    return true;
+  }
+
+  /**
    * Validate storage path to prevent path traversal
    */
   static isValidStoragePath(storagePath: string): boolean {

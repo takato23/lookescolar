@@ -147,6 +147,22 @@ const config: Config = {
   			'safe-right': 'env(safe-area-inset-right)'
   		},
   		colors: {
+  			// Apple-grade age-appropriate color systems
+  			kindergarten: {
+  				primary: 'hsl(45, 100%, 70%)',
+  				secondary: 'hsl(120, 60%, 70%)',
+  				accent: 'hsl(300, 60%, 80%)',
+  			},
+  			elementary: {
+  				primary: 'hsl(210, 80%, 60%)',
+  				secondary: 'hsl(25, 80%, 65%)',
+  				accent: 'hsl(330, 70%, 70%)',
+  			},
+  			'secondary-school': {
+  				primary: 'hsl(220, 70%, 50%)',
+  				secondary: 'hsl(150, 60%, 45%)',
+  				accent: 'hsl(280, 60%, 55%)',
+  			},
   			primary: {
   				'50': '#f0f4ff',
   				'100': '#e0e9ff',

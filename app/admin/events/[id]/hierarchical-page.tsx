@@ -7,8 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import HierarchicalNavigation from '@/components/admin/hierarchical-navigation';
-import VirtualizedStudentGrid from '@/components/admin/virtualized-student-grid';
-import CourseManagement from '@/components/admin/course-management';
 import {
   ArrowLeft,
   RefreshCw,
@@ -24,6 +22,9 @@ import {
   Calendar,
   MapPin,
   ShoppingCart,
+  Activity,
+  Percent,
+  Target,
 } from 'lucide-react';
 
 export default function HierarchicalEventPage() {
@@ -37,11 +38,11 @@ export default function HierarchicalEventPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
-  const [activeView, setActiveView] = useState('navigation');
+  const [activeView, setActiveView] = useState(searchParams?.get('view') || 'overview');
 
   // Initialize from URL params
   useEffect(() => {
-    const view = searchParams?.get('view') || 'navigation';
+    const view = searchParams?.get('view') || 'overview';
     setActiveView(view);
   }, [searchParams]);
 
@@ -125,13 +126,13 @@ export default function HierarchicalEventPage() {
       <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 space-y-6 sm:space-y-8">
         {/* Mobile-optimized Header */}
         <div className="relative animate-fade-in">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-3xl" />
           <div className="relative">
             {/* Breadcrumbs - Mobile responsive */}
             <nav className="text-muted-foreground mb-4 flex items-center gap-1 sm:gap-2 text-xs sm:text-sm overflow-x-auto">
               <Link
                 href="/admin"
-                className="flex items-center gap-1 transition-colors hover:text-primary-600 shrink-0"
+                className="flex items-center gap-1 transition-colors hover:text-blue-600 shrink-0"
               >
                 <Home className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
@@ -139,7 +140,7 @@ export default function HierarchicalEventPage() {
               <span className="text-muted-foreground/50">/</span>
               <Link
                 href="/admin/events"
-                className="transition-colors hover:text-primary-600 shrink-0"
+                className="transition-colors hover:text-blue-600 shrink-0"
               >
                 Eventos
               </Link>
@@ -161,7 +162,7 @@ export default function HierarchicalEventPage() {
                   <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
                 <div className="min-w-0 flex-1">
-                  <h1 className="text-gradient mb-2 text-xl sm:text-3xl md:text-4xl font-bold truncate">
+                  <h1 className="text-gradient mb-2 text-xl sm:text-3xl md:text-4xl font-bold truncate bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
                     {event.school || event.name}
                   </h1>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -194,7 +195,7 @@ export default function HierarchicalEventPage() {
                   variant="outline"
                   size="sm"
                   onClick={loadEventData}
-                  className="shrink-0"
+                  className="shrink-0 glass-button"
                 >
                   <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Actualizar</span>
@@ -212,7 +213,7 @@ export default function HierarchicalEventPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => router.push(`/admin/events/${id}/edit`)}
-                  className="shrink-0"
+                  className="shrink-0 glass-button"
                 >
                   <Settings className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Config</span>
@@ -226,7 +227,7 @@ export default function HierarchicalEventPage() {
         {stats && (
           <div className="animate-slide-up">
             {/* Performance Overview - Mobile first */}
-            <Card variant="glass" className="mb-6">
+            <Card variant="glass" className="mb-6 glass-card border border-white/20">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base sm:text-lg">Resumen del Evento</CardTitle>
@@ -241,65 +242,65 @@ export default function HierarchicalEventPage() {
               <CardContent className="pt-0">
                 {/* Mobile-optimized grid - 2 columns on mobile, more on larger screens */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                  <div className="text-center p-3 rounded-lg bg-blue-50/50 border border-blue-200/50">
+                  <div className="text-center p-3 rounded-lg bg-blue-50/20 border border-blue-200/30 glass-card">
                     <Users className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-blue-500" />
-                    <p className="text-lg sm:text-2xl font-bold text-blue-700">
+                    <p className="text-lg sm:text-2xl font-bold text-blue-700 dark:text-blue-300">
                       {stats.active_students || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-blue-600">Estudiantes</p>
+                    <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400">Estudiantes</p>
                   </div>
                   
-                  <div className="text-center p-3 rounded-lg bg-purple-50/50 border border-purple-200/50">
+                  <div className="text-center p-3 rounded-lg bg-purple-50/20 border border-purple-200/30 glass-card">
                     <BookOpen className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-purple-500" />
-                    <p className="text-lg sm:text-2xl font-bold text-purple-700">
+                    <p className="text-lg sm:text-2xl font-bold text-purple-700 dark:text-purple-300">
                       {stats.active_courses || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-purple-600">Cursos</p>
+                    <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400">Cursos</p>
                   </div>
                   
-                  <div className="text-center p-3 rounded-lg bg-orange-50/50 border border-orange-200/50">
+                  <div className="text-center p-3 rounded-lg bg-orange-50/20 border border-orange-200/30 glass-card">
                     <Camera className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-orange-500" />
-                    <p className="text-lg sm:text-2xl font-bold text-orange-700">
+                    <p className="text-lg sm:text-2xl font-bold text-orange-700 dark:text-orange-300">
                       {stats.approved_photos || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-orange-600">Fotos</p>
+                    <p className="text-xs sm:text-sm text-orange-600 dark:text-orange-400">Fotos</p>
                     {stats.untagged_photos > 0 && (
-                      <p className="text-xs text-amber-600 mt-1">
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                         {stats.untagged_photos} sin tags
                       </p>
                     )}
                   </div>
                   
-                  <div className="text-center p-3 rounded-lg bg-green-50/50 border border-green-200/50">
+                  <div className="text-center p-3 rounded-lg bg-green-50/20 border border-green-200/30 glass-card">
                     <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-green-500" />
-                    <p className="text-lg sm:text-2xl font-bold text-green-700">
+                    <p className="text-lg sm:text-2xl font-bold text-green-700 dark:text-green-300">
                       {stats.total_orders || 0}
                     </p>
-                    <p className="text-xs sm:text-sm text-green-600">Pedidos</p>
+                    <p className="text-xs sm:text-sm text-green-600 dark:text-green-400">Pedidos</p>
                     {stats.pending_orders > 0 && (
-                      <p className="text-xs text-orange-600 mt-1">
+                      <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
                         {stats.pending_orders} pendientes
                       </p>
                     )}
                   </div>
                   
-                  <div className="text-center p-3 rounded-lg bg-emerald-50/50 border border-emerald-200/50 col-span-2 sm:col-span-1">
+                  <div className="text-center p-3 rounded-lg bg-emerald-50/20 border border-emerald-200/30 glass-card col-span-2 sm:col-span-1">
                     <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 text-emerald-500" />
-                    <p className="text-lg sm:text-2xl font-bold text-emerald-700">
+                    <p className="text-lg sm:text-2xl font-bold text-emerald-700 dark:text-emerald-300">
                       ${(stats.total_revenue || 0).toLocaleString()}
                     </p>
-                    <p className="text-xs sm:text-sm text-emerald-600">Ingresos</p>
+                    <p className="text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">Ingresos</p>
                   </div>
                 </div>
 
                 {/* Progress Indicators - Mobile responsive */}
-                <div className="mt-4 pt-4 border-t grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
                       <span>Progreso de etiquetado</span>
                       <span className="font-medium">{stats.photo_tagging_progress || 0}%</span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
+                    <div className="h-2 bg-gray-200/30 dark:bg-gray-700/50 rounded-full">
                       <div
                         className="h-2 bg-blue-500 rounded-full transition-all"
                         style={{ width: `${stats.photo_tagging_progress || 0}%` }}
@@ -312,7 +313,7 @@ export default function HierarchicalEventPage() {
                       <span>Tasa de pedidos</span>
                       <span className="font-medium">{stats.order_conversion_rate || 0}%</span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
+                    <div className="h-2 bg-gray-200/30 dark:bg-gray-700/50 rounded-full">
                       <div
                         className="h-2 bg-green-500 rounded-full transition-all"
                         style={{ width: `${stats.order_conversion_rate || 0}%` }}
@@ -330,7 +331,7 @@ export default function HierarchicalEventPage() {
                         }%
                       </span>
                     </div>
-                    <div className="h-2 bg-gray-200 rounded-full">
+                    <div className="h-2 bg-gray-200/30 dark:bg-gray-700/50 rounded-full">
                       <div
                         className="h-2 bg-purple-500 rounded-full transition-all"
                         style={{ 
@@ -348,26 +349,26 @@ export default function HierarchicalEventPage() {
 
             {/* Recent Activity - Mobile responsive */}
             {stats.recent_activity && (
-              <Card variant="glass" className="mb-6">
+              <Card variant="glass" className="mb-6 glass-card border border-white/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base sm:text-lg">Actividad Reciente (7 días)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-xl sm:text-2xl font-bold text-blue-600">
+                    <div className="glass-card p-3 rounded-lg">
+                      <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
                         {stats.recent_activity.new_students}
                       </p>
                       <p className="text-xs sm:text-sm text-muted-foreground">Nuevos estudiantes</p>
                     </div>
-                    <div>
-                      <p className="text-xl sm:text-2xl font-bold text-orange-600">
+                    <div className="glass-card p-3 rounded-lg">
+                      <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">
                         {stats.recent_activity.new_photos}
                       </p>
                       <p className="text-xs sm:text-sm text-muted-foreground">Fotos subidas</p>
                     </div>
-                    <div>
-                      <p className="text-xl sm:text-2xl font-bold text-green-600">
+                    <div className="glass-card p-3 rounded-lg">
+                      <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
                         {stats.recent_activity.new_orders}
                       </p>
                       <p className="text-xs sm:text-sm text-muted-foreground">Nuevos pedidos</p>

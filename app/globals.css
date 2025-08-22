@@ -4,11 +4,100 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Apple-grade shimmer animation for enhanced loading states */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Apple-style spring animations */
+@keyframes appleSpring {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Enhanced focus rings for Apple-grade accessibility */
+.apple-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200;
+}
+
+/* Apple-grade mobile touch targets and navigation */
+.mobile-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-touch-target:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-out;
+}
+
+/* Enhanced mobile navigation */
+.mobile-nav {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.mobile-header {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Safe area padding for modern mobile devices */
+.safe-area-padding {
+  padding-top: max(env(safe-area-inset-top), 12px);
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+  padding-left: max(env(safe-area-inset-left), 16px);
+  padding-right: max(env(safe-area-inset-right), 16px);
+}
+
+.pt-safe-top {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+
+.pb-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}
+
+/* Apple-grade focus states for mobile */
+.apple-focus:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Enhanced backdrop blur for iOS compatibility */
+@supports (-webkit-backdrop-filter: blur(20px)) {
+  .mobile-nav, .mobile-header {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}
+
 /* Liquid Glass Effects */
 @import url('../styles/liquid-glass/effects.css');
 @import url('../styles/liquid-glass/typography.css');
 @import url('../styles/liquid-glass/liquid-glass-enhanced.css');
 @import url('../styles/liquid-glass/liquid-glass-improved.css');
+@import url('../styles/liquid-glass/liquid-glass-ios26.css');
 
 @layer base {
   :root {
@@ -916,6 +1005,116 @@
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+/* Apple-Grade Modal Enhancements */
+@supports (backdrop-filter: blur(24px)) {
+  .apple-modal-backdrop {
+    backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+
+/* Fallback for browsers without backdrop-filter */
+@supports not (backdrop-filter: blur(24px)) {
+  .apple-modal-backdrop {
+    background: rgba(0, 0, 0, 0.95);
+  }
+}
+
+/* Apple-grade touch feedback for modal controls */
+.apple-modal-control {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  cursor: pointer;
+}
+
+.apple-modal-control:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-out;
+}
+
+/* Smooth modal animations */
+.apple-modal-enter {
+  animation: appleModalEnter 0.3s ease-out forwards;
+}
+
+.apple-modal-exit {
+  animation: appleModalExit 0.2s ease-in forwards;
+}
+
+@keyframes appleModalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    backdrop-filter: blur(24px);
+  }
+}
+
+@keyframes appleModalExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    backdrop-filter: blur(24px);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+    backdrop-filter: blur(0px);
+  }
+}
+
+/* Enhanced image loading shimmer */
+.apple-image-loading {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: appleShimmer 2s infinite ease-in-out;
+}
+
+@keyframes appleShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Apple-grade focus states for modal */
+.apple-focus:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* iOS Safari specific fixes for modal */
+@supports (-webkit-touch-callout: none) {
+  .apple-modal-ios {
+    /* Fix for iOS viewport height issues */
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+  }
+  
+  .apple-modal-backdrop-ios {
+    /* Enhanced backdrop for iOS */
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    background: rgba(0, 0, 0, 0.8);
   }
 }
 

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createTestClient, setupMocks, cleanupTestData } from '../../test-utils';
+import { createTestClient, setupMocks } from '../../../test-utils';
 import sharp from 'sharp';
 import { createMocks } from 'node-mocks-http';
 import { POST } from '@/app/api/admin/photos/upload/route';
@@ -71,8 +71,7 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
   // Helper para crear imagen de prueba
   const createTestImage = async (
     width = 800,
-    height = 600,
-    format: 'jpeg' | 'png' = 'jpeg'
+    height = 600
   ): Promise<Buffer> => {
     return sharp({
       create: {
@@ -106,12 +105,6 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
             Make: 'Test Camera',
             Model: 'Test Model',
             DateTime: '2024:01:01 12:00:00'
-          },
-          GPS: {
-            GPSLatitude: [40, 42, 51.56],
-            GPSLatitudeRef: 'N',
-            GPSLongitude: [74, 0, 21.49],
-            GPSLongitudeRef: 'W'
           }
         }
       })
@@ -128,7 +121,9 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
     formData.append('eventId', eventId);
 
     files.forEach(({ buffer, filename, contentType = 'image/jpeg' }) => {
-      const blob = new Blob([buffer], { type: contentType });
+      // Convert Buffer to Uint8Array to fix type issue
+      const uint8Array = new Uint8Array(buffer);
+      const blob = new Blob([uint8Array], { type: contentType });
       const file = new File([blob], filename, { type: contentType });
       formData.append('files', file);
     });

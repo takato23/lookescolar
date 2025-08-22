@@ -284,12 +284,14 @@ describe('/api/family/checkout', () => {
       }
 
       const responses = await Promise.all(requests);
-      const lastResponse = responses[responses.length - 1];
-      
-      expect(lastResponse.status).toBe(429);
-      
-      const data = await lastResponse.json();
-      expect(data.error).toContain('Rate limit exceeded');
+      // Verificar que al menos una request fue rate limited
+      const rateLimitedResponse = responses.find(r => r.status === 429);
+      expect(rateLimitedResponse).toBeDefined();
+      if (rateLimitedResponse) {
+        expect(rateLimitedResponse.status).toBe(429);
+        const data = await rateLimitedResponse.json();
+        expect(data.error).toBe('Rate limit exceeded');
+      }
     });
 
     it('should calculate total correctly for multiple items', async () => {

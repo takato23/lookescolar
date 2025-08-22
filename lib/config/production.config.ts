@@ -156,13 +156,17 @@ export function createProductionConfig(): ProductionConfig {
       'image/tiff',
     ]),
 
-    // Photo Processing
+    // Photo Processing - OPTIMIZED FOR SUPABASE FREE TIER
+    // Target: 20,000 photos × 50KB = 1GB total storage
     maxConcurrentUploads: getEnvNumber('MAX_CONCURRENT_UPLOADS', 5),
     watermarkOpacity: parseFloat(process.env.WATERMARK_OPACITY || '0.5'),
-    photoMaxSize: getEnvNumber('PHOTO_MAX_SIZE', 1600),
-    photoQuality: getEnvNumber('PHOTO_QUALITY', 72),
+    photoMaxSize: getEnvNumber('PHOTO_MAX_SIZE', 800), // Reduced from 1600
+    photoQuality: getEnvNumber('PHOTO_QUALITY', 50), // Reduced from 72
     photoFormat:
       (process.env.PHOTO_FORMAT as 'webp' | 'jpeg' | 'png') || 'webp',
+    // FREE TIER OPTIMIZATION: Target 50KB per preview image
+    freetierOptimization: getEnvBoolean('FREE_TIER_OPTIMIZATION', true),
+    maxPreviewSize: getEnvNumber('MAX_PREVIEW_SIZE_KB', 50), // 50KB target
 
     // Performance
     enableRedisCache: getEnvBoolean('ENABLE_REDIS_CACHE', isProduction),

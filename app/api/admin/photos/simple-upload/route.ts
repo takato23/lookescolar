@@ -4,6 +4,7 @@ import { getSignedUrl } from '@/lib/services/watermark.service';
 import { SecurityLogger, generateRequestId, withAuth } from '@/lib/middleware/auth.middleware';
 import { decodeQR, normalizeCode } from '@/lib/qr/decoder';
 import { tokenService } from '@/lib/services/token.service';
+import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
 export const runtime = 'nodejs';
 
 // Expected QR format: STUDENT:ID:NAME:EVENT_ID
@@ -320,8 +321,7 @@ async function handlePOST(request: NextRequest) {
           // Sin eventos: trabajar sin asignar (event_id = null)
           // Usar prefijo de storage 'shared'
 
-          // Use separate buckets for originals (private) and previews (public)
-          const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+          // Use separate buckets for previews (public) - NO originals stored
           const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
           const sharp = (await import('sharp')).default;
           // Construir paths determinísticos
@@ -334,23 +334,8 @@ async function handlePOST(request: NextRequest) {
             .slice(0, 120) || 'photo';
 
           const containerPrefix = finalEventId ? `events/${finalEventId}` : 'shared';
-          const originalPath = `${containerPrefix}/${safeBase}.${ext}`;
-
-          // Subir original al bucket (privado). Upsert por simplicidad en MVP
-          // Ensure buckets exist (idempotent in Supabase API)
-          try {
-            await supabase.storage.createBucket(ORIGINAL_BUCKET, { public: false });
-          } catch {}
-          try {
-            await supabase.storage.createBucket(PREVIEW_BUCKET, { public: false });
-          } catch {}
-
-          const upOriginal = await supabase.storage
-            .from(ORIGINAL_BUCKET)
-            .upload(originalPath, buffer, { contentType: file.type || `image/${ext}`, upsert: true });
-          if (upOriginal.error) {
-            throw new Error(`Error subiendo original: ${upOriginal.error.message}`);
-          }
+          // NO original path needed - we don't store originals
+          const previewPath = `${containerPrefix}/previews/${safeBase}.webp`;
 
           // Determinar tamaño y crear preview con watermark (esquina inferior derecha, 60% opacidad)
           // If we have an event, try to fetch name/school to include in watermark
@@ -386,11 +371,20 @@ async function handlePOST(request: NextRequest) {
             </svg>
           `);
 
-          const previewBuffer = await sharp(buffer)
-            .resize(newW, newH, { fit: 'inside', withoutEnlargement: true })
-            .composite([{ input: wmSvg }])
-            .webp({ quality: 60 })
-            .toBuffer();
+          // Use Free Tier Optimizer for aggressive compression and watermarking
+          const optimizedResult = await FreeTierOptimizer.processForFreeTier(
+            buffer,
+            {
+              targetSizeKB: 50, // Target 50KB per image
+              maxDimension: 600, // Reduced from 1200 for free tier
+              watermarkText: wmLabel,
+              enableOriginalStorage: false // Don't store originals to save space
+            }
+          );
+          
+          const previewBuffer = optimizedResult.processedBuffer;
+          
+          console.log(`Free tier optimization: ${file.name} compressed to ${optimizedResult.actualSizeKB}KB (${optimizedResult.finalDimensions.width}x${optimizedResult.finalDimensions.height}) using level ${optimizedResult.compressionLevel}`);
 
           const previewPath = `${containerPrefix}/previews/${safeBase}.webp`;
           const upPrev = await supabase.storage
@@ -402,19 +396,27 @@ async function handlePOST(request: NextRequest) {
           }
 
           // Guardar en la base de datos (sin exponer original públicamente)
+          // Using optimized dimensions and noting free tier optimization
           const { data: photo, error: dbError } = await supabase
             .from('photos')
             .insert({
               storage_path: originalPath,
               preview_path: previewPath,
               original_filename: file.name,
-              file_size: file.size,
-              mime_type: file.type,
-              width: srcW,
-              height: srcH,
+              file_size: optimizedResult.actualSizeKB * 1024, // Use optimized size
+              mime_type: 'image/webp', // Always WebP for optimized images
+              width: optimizedResult.finalDimensions.width,
+              height: optimizedResult.finalDimensions.height,
               approved: process.env.PHOTOS_DEFAULT_APPROVED === 'true',
               event_id: finalEventId ?? null,
               photo_type: photoType,
+              // Add metadata about free tier optimization
+              metadata: {
+                freetier_optimized: true,
+                compression_level: optimizedResult.compressionLevel,
+                original_size: file.size,
+                optimization_ratio: Math.round((file.size - optimizedResult.actualSizeKB * 1024) / file.size * 100)
+              }
             })
             .select()
             .single();

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { DragDropUploader } from '@/components/admin/photos/DragDropUploader'
+import DragDropUploader from '@/components/admin/BulkPhotoUpload'
 
 // Mock fetch
 global.fetch = vi.fn()
