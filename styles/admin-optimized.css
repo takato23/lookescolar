@@ -1,0 +1,327 @@
+/* Neural Glass Admin Interface - Optimized Styles */
+
+/* Large Display Optimizations (27"+ screens) */
+@media (min-width: 2048px) {
+  .neural-events-grid-optimized {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    max-width: none;
+  }
+  
+  .neural-events-ultrawide {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2rem;
+  }
+  
+  .neural-glass-surface {
+    padding: 2.5rem 3rem;
+    border-radius: 2rem;
+  }
+  
+  .neural-title {
+    font-size: 3.5rem;
+    line-height: 1.1;
+  }
+  
+  .neural-subtitle {
+    font-size: 1.25rem;
+  }
+}
+
+/* Ultra-wide Display Optimizations (32"+ screens) */
+@media (min-width: 2560px) {
+  .neural-events-grid-optimized {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+  }
+  
+  .neural-events-ultrawide {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 2.5rem;
+  }
+  
+  .container {
+    max-width: 2400px;
+  }
+}
+
+@media (min-width: 3440px) {
+  .neural-events-ultrawide {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 3rem;
+  }
+}
+
+/* Performance-optimized animations */
+.neural-card-enter {
+  animation: neuralCardEnter 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  transform: translate3d(0, 0, 0); /* Force GPU acceleration */
+  will-change: transform, opacity;
+}
+
+@keyframes neuralCardEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(2rem) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Virtual scrolling optimizations */
+.neural-events-grid-optimized {
+  contain: layout style paint;
+  transform: translate3d(0, 0, 0);
+}
+
+.neural-events-grid-optimized > * {
+  contain: layout;
+}
+
+/* Performance-optimized glass effects */
+.neural-glass-card {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.5) inset;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.neural-glass-surface {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.15),
+    0 2px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+/* Enhanced fab button for large screens */
+.neural-fab {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 1rem;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: transform, box-shadow;
+  position: relative;
+  overflow: hidden;
+}
+
+.neural-fab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.neural-fab:hover::before {
+  left: 100%;
+}
+
+.neural-fab:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+/* Metric display optimizations */
+.neural-metric-display {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  transform: translate3d(0, 0, 0);
+}
+
+.neural-metric-display:hover {
+  background: rgba(255, 255, 255, 0.85);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Staggered animations for better performance */
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optimized hover states */
+.neural-glass-card:hover,
+.neural-fab:hover,
+button:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+/* Performance-first reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .neural-card-enter {
+    animation: none;
+  }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .neural-glass-card {
+    background: rgba(17, 24, 39, 0.8);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+  }
+  
+  .neural-glass-surface {
+    background: rgba(17, 24, 39, 0.9);
+    border: 1px solid rgba(75, 85, 99, 0.4);
+  }
+  
+  .neural-metric-display {
+    background: rgba(31, 41, 55, 0.7);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+  }
+}
+
+/* Virtual scrolling container optimizations */
+.virtual-scroll-container {
+  contain: strict;
+  overflow: auto;
+  transform: translate3d(0, 0, 0);
+}
+
+.virtual-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.virtual-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Accessibility enhancements */
+.focus-visible:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+.high-contrast .neural-glass-card {
+  border: 2px solid #000;
+  background: #fff;
+}
+
+.high-contrast .neural-glass-surface {
+  border: 3px solid #000;
+  background: #fff;
+}
+
+/* Print optimizations */
+@media print {
+  .neural-glass-card,
+  .neural-glass-surface {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+  
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-down {
+    animation: none !important;
+  }
+}
+
+/* Loading states optimization */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Memory-efficient transforms */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.gpu-accelerated:hover {
+  will-change: auto;
+}

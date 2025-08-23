@@ -4,9 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { StatsCard } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardTitle, StatsCard } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortcuts';
 import { QuickActions } from './QuickActions';
@@ -200,278 +199,197 @@ export function DashboardClient() {
   };
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <DashboardHeader
-        currentTime={currentTime}
-        formatTime={formatTime}
-        onSearchClick={() => setShowCommandPalette(true)}
-        onPerformanceClick={() =>
-          setShowPerformanceMonitor(!showPerformanceMonitor)
-        }
-        showPerformanceMonitor={showPerformanceMonitor}
-      />
-
-      <div className="space-y-6 p-6">
-        {/* Quick Actions - Mobile */}
-        <QuickActions variant="mobile" />
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            title="Pedidos hoy"
-            value={dashboardStats.todayOrders}
-            description="Nuevos pedidos"
-            icon={<Package className="h-5 w-5" />}
-            className="transition-shadow hover:shadow-lg"
-          />
-          <StatsCard
-            title="Pagos confirmados"
-            value={`$${dashboardStats.todayPayments.toLocaleString()}`}
-            description="Ingresado hoy"
-            icon={<DollarSign className="h-5 w-5" />}
-            className="transition-shadow hover:shadow-lg"
-          />
-          <StatsCard
-            title="Pendientes"
-            value={dashboardStats.pendingOrders}
-            description="Por revisar"
-            icon={<Activity className="h-5 w-5" />}
-            className="transition-shadow hover:shadow-lg"
-          />
-          <StatsCard
-            title="Fotos hoy"
-            value={dashboardStats.todayUploads}
-            description="Subidas hoy"
-            icon={<Camera className="h-5 w-5" />}
-            className="transition-shadow hover:shadow-lg"
-          />
+      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Bienvenido de vuelta! Hoy es {currentTime.toLocaleDateString('es-ES')}
+          </p>
         </div>
-
-        {/* Performance Monitor */}
-        {showPerformanceMonitor && (
-          <div className="animate-in fade-in duration-300">
-            <PerformanceMonitor />
+        <div className="flex items-center gap-4">
+          <div className="liquid-glass-button-ios26 rounded-lg px-4 py-2 text-sm">
+            {formatTime(currentTime)}
           </div>
-        )}
+          <Button
+            variant="glass-ios26"
+            onClick={() => refetch()}
+            aria-label="Actualizar datos"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
-        {/* Quick Actions - Desktop */}
-        <QuickActions variant="desktop" />
-
-        {/* Recent Activity */}
-        <RecentActivity
-          activities={dashboardStats.recentActivity}
-          formatTimeAgo={formatTimeAgo}
+      {/* Stats Grid */}
+      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StatsCard
+          variant="glass-ios26"
+          title="Eventos Activos"
+          value={dashboardStats.activeEvents}
+          description="Eventos en curso"
+          icon={<Calendar className="h-6 w-6" />}
+          trend="up"
+          trendValue="+2"
         />
-
-        {/* Keyboard Shortcuts Info */}
-        <KeyboardShortcutsInfo />
-
-        {/* Command Palette */}
-        <CommandPalette
-          isOpen={showCommandPalette}
-          onClose={() => setShowCommandPalette(false)}
+        <StatsCard
+          variant="glass-ios26"
+          title="Fotos Totales"
+          value={dashboardStats.totalPhotos.toLocaleString()}
+          description="Fotos procesadas"
+          icon={<Camera className="h-6 w-6" />}
+          trend="up"
+          trendValue="+12%"
+        />
+        <StatsCard
+          variant="glass-ios26"
+          title="Familias"
+          value={dashboardStats.registeredFamilies.toLocaleString()}
+          description="Familias registradas"
+          icon={<Users className="h-6 w-6" />}
+          trend="up"
+          trendValue="+8%"
+        />
+        <StatsCard
+          variant="glass-ios26"
+          title="Ventas"
+          value={`$${(dashboardStats.totalSales / 100).toLocaleString()}`}
+          description="Ingresos totales"
+          icon={<DollarSign className="h-6 w-6" />}
+          trend="up"
+          trendValue="+15%"
         />
       </div>
+
+      {/* Quick Actions and Performance */}
+      <div className="mb-8 grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card variant="glass-ios26" className="h-full">
+            <CardHeader>
+              <CardTitle>Acciones Rápidas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <QuickActions />
+            </CardContent>
+          </Card>
+        </div>
+        <div>
+          <Card variant="glass-ios26" className="h-full">
+            <CardHeader>
+              <CardTitle>Rendimiento</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Hoy - Subidas</span>
+                  <span className="font-medium">{dashboardStats.todayUploads}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Hoy - Pedidos</span>
+                  <span className="font-medium">{dashboardStats.todayOrders}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Hoy - Pagos</span>
+                  <span className="font-medium">{dashboardStats.todayPayments}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Pedidos Pendientes</span>
+                  <span className="font-medium">{dashboardStats.pendingOrders}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Activity and Storage */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card variant="glass-ios26">
+          <CardHeader>
+            <CardTitle>Actividad Reciente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {dashboardStats.recentActivity.length > 0 ? (
+                dashboardStats.recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-3">
+                    <div className="liquid-glass-button-ios26 mt-1 flex h-8 w-8 items-center justify-center rounded-full">
+                      {activity.type === 'event_created' && <Calendar className="h-4 w-4" />}
+                      {activity.type === 'photos_uploaded' && <Camera className="h-4 w-4" />}
+                      {activity.type === 'order_created' && <Package className="h-4 w-4" />}
+                      {activity.type === 'order_completed' && <DollarSign className="h-4 w-4" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm">{activity.message}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {formatTimeAgo(activity.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center">
+                  No hay actividad reciente
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card variant="glass-ios26">
+          <CardHeader>
+            <CardTitle>Uso de Almacenamiento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-2 flex justify-between text-sm">
+                  <span>
+                    {Math.round((dashboardStats.storageUsed / 1024 / 1024 / 1024) * 100) / 100} GB
+                  </span>
+                  <span>
+                    {Math.round((dashboardStats.storageLimit / 1024 / 1024 / 1024) * 100) / 100} GB
+                  </span>
+                </div>
+                <div className="liquid-glass-button-ios26 h-2 rounded-full">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
+                    style={{
+                      width: `${Math.min(
+                        (dashboardStats.storageUsed / dashboardStats.storageLimit) * 100,
+                        100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="glass-ios26" className="w-full">
+                  <Monitor className="mr-2 h-4 w-4" />
+                  Monitorear
+                </Button>
+                <Button variant="glass-ios26" className="w-full">
+                  <Eye className="mr-2 h-4 w-4" />
+                  Ver Detalles
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Performance Monitor */}
+      {showPerformanceMonitor && (
+        <div className="mt-8">
+          <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
+        </div>
+      )}
+
+      {/* Command Palette */}
+      {showCommandPalette && (
+        <CommandPalette onClose={() => setShowCommandPalette(false)} />
+      )}
     </div>
   );
 }
-
-// Dashboard Header Component
-const DashboardHeader = React.memo(function DashboardHeader({
-  currentTime,
-  formatTime,
-  onSearchClick,
-  onPerformanceClick,
-  showPerformanceMonitor,
-}: {
-  currentTime: Date;
-  formatTime: (date: Date) => string;
-  onSearchClick: () => void;
-  onPerformanceClick: () => void;
-  showPerformanceMonitor: boolean;
-}) {
-  return (
-    <div className="border-border bg-card px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-foreground text-2xl font-bold">
-              Dashboard Profesional
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              {currentTime.toLocaleDateString('es-ES', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-              <span>&nbsp;&bull;&nbsp;</span>
-              {formatTime(currentTime)}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            aria-label="Abrir buscador y atajos"
-            variant="outline"
-            size="sm"
-            onClick={onSearchClick}
-            className="flex items-center gap-2"
-          >
-            <Search className="h-4 w-4" />
-            Buscar
-            <kbd className="inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-xs">
-              ⌘K
-            </kbd>
-          </Button>
-
-          <Button
-            aria-label={
-              showPerformanceMonitor ? 'Ocultar rendimiento' : 'Ver rendimiento'
-            }
-            variant={showPerformanceMonitor ? 'secondary' : 'outline'}
-            size="sm"
-            onClick={onPerformanceClick}
-          >
-            <Monitor className="mr-2 h-4 w-4" />
-            {showPerformanceMonitor ? 'Ocultar' : 'Ver'} rendimiento
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-// Recent Activity Component
-const RecentActivity = React.memo(function RecentActivity({
-  activities,
-  formatTimeAgo,
-}: {
-  activities: Activity[];
-  formatTimeAgo: (timestamp: string) => string;
-}) {
-  const getActivityIcon = (type: Activity['type']) => {
-    switch (type) {
-      case 'photos_uploaded':
-        return Camera;
-      case 'order_created':
-        return Package;
-      case 'order_completed':
-        return DollarSign;
-      case 'event_created':
-        return Calendar;
-      default:
-        return Activity;
-    }
-  };
-
-  const getActivityColor = (type: Activity['type']) => {
-    switch (type) {
-      case 'photos_uploaded':
-        return 'text-blue-600 bg-blue-50';
-      case 'order_created':
-        return 'text-green-600 bg-green-50';
-      case 'order_completed':
-        return 'text-purple-600 bg-purple-50';
-      case 'event_created':
-        return 'text-orange-600 bg-orange-50';
-      default:
-        return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-blue-600" />
-            Actividad Reciente
-          </CardTitle>
-          <Button variant="ghost" size="sm">
-            <Eye className="mr-2 h-4 w-4" />
-            Ver todo
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {activities.length > 0 ? (
-          <div className="space-y-4">
-            {activities.map((activity) => {
-              const Icon = getActivityIcon(activity.type);
-              const colorClass = getActivityColor(activity.type);
-
-              return (
-                <div
-                  key={activity.id}
-                  className="hover:bg-muted/50 flex items-start gap-3 rounded-lg p-3 transition-colors"
-                >
-                  <div className={`rounded-lg p-2 ${colorClass}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-foreground mb-1 text-sm font-medium">
-                      {activity.message}
-                    </p>
-                    <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                      <Clock className="h-3 w-3" />
-                      {formatTimeAgo(activity.timestamp)}
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm">
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="py-12 text-center">
-            <Activity className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <h3 className="text-foreground mb-2 font-medium">
-              Sin actividad reciente
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              Cuando uses el sistema, aquí verás tu actividad reciente.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-});
-
-// Keyboard Shortcuts Info Component
-const KeyboardShortcutsInfo = React.memo(function KeyboardShortcutsInfo() {
-  return (
-    <Card className="border-dashed">
-      <CardContent className="p-4">
-        <div className="text-muted-foreground flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <kbd className="bg-muted rounded px-2 py-1 text-xs">⌘</kbd>
-              <kbd className="bg-muted rounded px-2 py-1 text-xs">K</kbd>
-              <span>Command Palette</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <kbd className="bg-muted rounded px-2 py-1 text-xs">⌘</kbd>
-              <kbd className="bg-muted rounded px-2 py-1 text-xs">N</kbd>
-              <span>Nuevo Evento</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <kbd className="bg-muted rounded px-2 py-1 text-xs">⌘</kbd>
-              <kbd className="bg-muted rounded px-2 py-1 text-xs">U</kbd>
-              <span>Subir Fotos</span>
-            </div>
-          </div>
-          <div className="text-xs">
-            Presiona <kbd className="bg-muted rounded px-1 py-0.5">⌘K</kbd> para
-            ver todos los atajos
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});

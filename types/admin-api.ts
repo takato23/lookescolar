@@ -95,19 +95,45 @@ export interface OrderItem {
   } | null;
 }
 
+export interface OrderAuditEvent {
+  action_type: string;
+  created_at: string;
+  changed_by_type: string | null;
+  notes: string | null;
+  old_values?: any;
+  new_values?: any;
+}
+
 export interface OrderWithDetails {
   id: string;
   contact_name: string;
   contact_email: string;
   contact_phone: string | null;
   status: 'pending' | 'approved' | 'delivered' | 'failed';
+  enhanced_status?: 'pending_overdue' | 'delivery_overdue' | string;
   mp_payment_id: string | null;
   mp_status: string | null;
   notes: string | null;
+  admin_notes: string | null;
   created_at: string;
   delivered_at: string | null;
   total_amount_cents: number;
   total_items: number;
+  // Enhanced tracking fields
+  priority_level: number | null;
+  estimated_delivery_date: string | null;
+  actual_delivery_date: string | null;
+  delivery_method: string | null;
+  tracking_number: string | null;
+  // Audit information
+  status_history: any[] | null;
+  last_status_change: string | null;
+  status_changed_by: string | null;
+  audit_log_count?: number;
+  recent_audit_events?: OrderAuditEvent[];
+  // Time calculations
+  hours_since_created?: number;
+  hours_since_status_change?: number;
   event: {
     id: string;
     name: string;

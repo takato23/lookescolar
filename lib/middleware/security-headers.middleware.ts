@@ -85,6 +85,22 @@ export function applySecurityHeaders(
   response.headers.set('X-DNS-Prefetch-Control', 'off');
   response.headers.set('X-Download-Options', 'noopen');
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
+  
+  // Enhanced security headers for QR system
+  response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Resource-Policy', 'same-site');
+  
+  // Additional protection headers
+  response.headers.set('X-Content-Security-Policy', 'default-src \'self\'');
+  response.headers.set('Expect-CT', 'enforce, max-age=86400');
+  
+  // QR-specific security headers
+  if (request.nextUrl.pathname.includes('/qr') || request.nextUrl.pathname.includes('/api/qr')) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('X-QR-Security', 'enhanced');
+  }
 
   // Remove potentially revealing headers
   response.headers.delete('Server');

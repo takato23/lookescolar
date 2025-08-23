@@ -78,14 +78,22 @@ beforeAll(async () => {
       (globalThis as any).fetch = ((input: any, init?: any) => {
         const urlStr = typeof input === 'string' ? input : (input?.url ?? input);
         if (typeof urlStr === 'string' && !/^https?:\/\//i.test(urlStr)) {
-          const sanitizedPath = urlStr.replace(/^\/+/, '/');
-          const absolute = new URL(sanitizedPath, base).toString();
-          return originalFetch(absolute, init);
+          // Ensure the path starts with a single slash
+          const sanitizedPath = urlStr.startsWith('/') ? urlStr : `/${urlStr}`;
+          try {
+            const absolute = new URL(sanitizedPath, base).toString();
+            return originalFetch(absolute, init);
+          } catch (urlError) {
+            console.warn(`Failed to construct URL from ${sanitizedPath} and base ${base}:`, urlError);
+            return originalFetch(urlStr, init);
+          }
         }
         return originalFetch(input, init);
       }) as any;
     }
-  } catch {}
+  } catch (setupError) {
+    console.warn('Failed to setup fetch wrapper:', setupError);
+  }
 
   // Mocks adicionales para dependencias pesadas si estamos en modo fake DB
   if (process.env['SEED_FAKE_DB'] === '1') {

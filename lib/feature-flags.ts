@@ -7,6 +7,11 @@ export interface FeatureFlags {
   FAMILY_IN_GALLERY_ROUTE: boolean;
   TOKEN_AUTO_DETECTION: boolean;
   
+  // Event Photo Library
+  EVENT_PHOTO_LIBRARY_ENABLED: boolean;
+  EVENT_PHOTO_LIBRARY_VIRTUALIZATION: boolean;
+  EVENT_PHOTO_LIBRARY_DRAG_DROP: boolean;
+  
   // Fallbacks de seguridad
   LEGACY_FALLBACK_ENABLED: boolean;
   DEBUG_MIGRATION: boolean;
@@ -22,6 +27,9 @@ const DEFAULT_FLAGS: FeatureFlags = {
   UNIFIED_GALLERY_ENABLED: false,
   FAMILY_IN_GALLERY_ROUTE: false,
   TOKEN_AUTO_DETECTION: false,
+  EVENT_PHOTO_LIBRARY_ENABLED: false,
+  EVENT_PHOTO_LIBRARY_VIRTUALIZATION: false,
+  EVENT_PHOTO_LIBRARY_DRAG_DROP: false,
   LEGACY_FALLBACK_ENABLED: true,
   DEBUG_MIGRATION: false,
   UNIFIED_CART_STORE: false,
@@ -34,6 +42,9 @@ export const featureFlags: FeatureFlags = {
   UNIFIED_GALLERY_ENABLED: process.env.FF_UNIFIED_GALLERY_ENABLED === 'true',
   FAMILY_IN_GALLERY_ROUTE: process.env.FF_FAMILY_IN_GALLERY_ROUTE === 'true',
   TOKEN_AUTO_DETECTION: process.env.FF_TOKEN_AUTO_DETECTION === 'true',
+  EVENT_PHOTO_LIBRARY_ENABLED: process.env.FF_EVENT_PHOTO_LIBRARY_ENABLED === 'true',
+  EVENT_PHOTO_LIBRARY_VIRTUALIZATION: process.env.FF_EVENT_PHOTO_LIBRARY_VIRTUALIZATION === 'true',
+  EVENT_PHOTO_LIBRARY_DRAG_DROP: process.env.FF_EVENT_PHOTO_LIBRARY_DRAG_DROP === 'true',
   LEGACY_FALLBACK_ENABLED: process.env.FF_LEGACY_FALLBACK_ENABLED !== 'false', // Default true
   DEBUG_MIGRATION: process.env.FF_DEBUG_MIGRATION === 'true',
   UNIFIED_CART_STORE: process.env.FF_UNIFIED_CART_STORE === 'true',
@@ -67,6 +78,15 @@ export function validateFeatureFlags(): { isValid: boolean; errors: string[] } {
   // Family route necesita token detection
   if (featureFlags.FAMILY_IN_GALLERY_ROUTE && !featureFlags.TOKEN_AUTO_DETECTION) {
     errors.push('FAMILY_IN_GALLERY_ROUTE requiere TOKEN_AUTO_DETECTION');
+  }
+  
+  // Event Photo Library dependencies
+  if (featureFlags.EVENT_PHOTO_LIBRARY_VIRTUALIZATION && !featureFlags.EVENT_PHOTO_LIBRARY_ENABLED) {
+    errors.push('EVENT_PHOTO_LIBRARY_VIRTUALIZATION requiere EVENT_PHOTO_LIBRARY_ENABLED');
+  }
+  
+  if (featureFlags.EVENT_PHOTO_LIBRARY_DRAG_DROP && !featureFlags.EVENT_PHOTO_LIBRARY_ENABLED) {
+    errors.push('EVENT_PHOTO_LIBRARY_DRAG_DROP requiere EVENT_PHOTO_LIBRARY_ENABLED');
   }
   
   return {

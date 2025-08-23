@@ -2,6 +2,9 @@ import QRCode from 'qrcode';
 import { createClient } from '@supabase/supabase-js';
 import { TokenService } from './token.service';
 import { logger } from '@/lib/utils/logger';
+import { qrSignatureService } from '@/lib/security/qr-signatures';
+import { securityAuditService } from '@/lib/security/qr-audit.service';
+import { qrCacheService, QRCacheEntry } from '@/lib/cache/qr-enhanced-cache.service';
 import 'server-only';
 
 const supabase = createClient(
@@ -85,20 +88,58 @@ export class QRService {
   };
 
   /**
-   * Genera QR individual para un sujeto específico
+   * Genera QR individual para un sujeto específico con seguridad mejorada
    */
   async generateQRForSubject(
     subjectId: string,
     subjectName: string,
-    options: QRGenerationOptions = {}
+    options: QRGenerationOptions = {},
+    userId?: string
   ): Promise<QRResult> {
     try {
+      // Check cache first
+      const cachedQR = await qrCacheService.getQR(subjectId);
+      if (cachedQR) {
+        logger.debug('qr_cache_hit', {
+          subjectId,
+          subjectName,
+          cacheHit: true,
+          businessMetric: {
+            type: 'photo_view',
+            value: 1,
+            unit: 'hit',
+          }
+        });
+        
+        return {
+          dataUrl: cachedQR.dataUrl,
+          token: cachedQR.token,
+          portalUrl: cachedQR.portalUrl,
+          subjectName: cachedQR.subjectName,
+        };
+      }
+
+      const startTime = Date.now();
+      
       // Generar o obtener token existente
       const tokenResult =
         await TokenService.prototype.generateTokenForSubject(subjectId);
 
-      // Generar URL del portal
-      const portalUrl = TokenService.generatePortalUrl(tokenResult.token);
+      // Crear datos para firma digital
+      const qrData = {
+        subjectId,
+        token: tokenResult.token,
+        timestamp: Date.now(),
+        userId: userId || 'system'
+      };
+
+      // Aplicar firma digital si está configurada
+      let portalUrl = TokenService.generatePortalUrl(tokenResult.token);
+      if (qrSignatureService.isConfigured()) {
+        const signedData = await qrSignatureService.signQRData(JSON.stringify(qrData));
+        const secureToken = await qrSignatureService.generateSecureToken(qrData);
+        portalUrl = TokenService.generatePortalUrl(secureToken);
+      }
 
       // Configurar opciones de QR
       const qrOptions = {
@@ -113,12 +154,50 @@ export class QRService {
 
       // Generar QR como data URL
       const dataUrl = await QRCode.toDataURL(portalUrl, qrOptions);
+      
+      // Record generation time
+      const generationTime = Date.now() - startTime;
+      qrCacheService.recordGenerationTime(generationTime);
 
-      console.log({
-        event: 'qr_generated',
+      // Cache the result
+      const qrResult: Omit<QRCacheEntry, 'generatedAt' | 'expiresAt' | 'accessCount' | 'lastAccessed'> = {
+        dataUrl,
+        token: tokenResult.token,
+        portalUrl,
+        subjectName,
+      };
+      
+      await qrCacheService.setQR(subjectId, qrResult);
+
+      // Log de auditoría
+      await securityAuditService.logQRGeneration({
+        userId: userId || 'system',
+        studentId: subjectId,
+        eventId: 'unknown', // Se puede mejorar pasando el eventId
+        qrType: 'family_portal',
+        metadata: {
+          size: qrOptions.width,
+          subjectName,
+          signatureEnabled: qrSignatureService.isConfigured(),
+          generationTimeMs: generationTime
+        }
+      });
+
+      logger.info('qr_generated', {
         subjectId,
         subjectName,
         size: qrOptions.width,
+        secure: qrSignatureService.isConfigured(),
+        generationTimeMs: generationTime,
+        cacheHit: false,
+        businessMetric: {
+          type: 'photo_view',
+          value: 1,
+          unit: 'generation',
+        },
+        performance: {
+          totalTime: generationTime,
+        }
       });
 
       return {
@@ -128,11 +207,11 @@ export class QRService {
         subjectName,
       };
     } catch (error: any) {
-      console.error({
-        event: 'qr_generation_error',
+      logger.error('qr_generation_error', {
         subjectId,
         subjectName,
         error: error.message,
+        stack: error.stack,
       });
       throw new Error(
         `Error generando QR para ${subjectName}: ${error.message}`

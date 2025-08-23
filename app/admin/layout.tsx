@@ -7,6 +7,8 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { MobileNavigation, adminNavigationItems } from '@/components/ui/mobile-navigation';
 import { MobileOptimizations } from '@/components/family/MobileOptimizations';
+import { NotificationProvider, useRealTimeNotifications } from '@/components/ui/NotificationSystem';
+import { KeyboardProvider } from '@/components/ui/KeyboardShortcuts';
 
 export default function AdminLayout({
   children,
@@ -135,6 +137,21 @@ export default function AdminLayout({
   }
 
   return (
+    <NotificationProvider>
+      <KeyboardProvider>
+        <AdminLayoutContent user={user}>
+          {children}
+        </AdminLayoutContent>
+      </KeyboardProvider>
+    </NotificationProvider>
+  );
+}
+
+function AdminLayoutContent({ children, user }: { children: React.ReactNode; user: User }) {
+  // Initialize real-time notifications
+  useRealTimeNotifications();
+
+  return (
     <MobileOptimizations>
       <div className="liquid-glass-app min-h-screen">
         {/* Mobile Navigation */}
@@ -147,7 +164,7 @@ export default function AdminLayout({
           onLogout={async () => {
             const { authClient } = await import('@/lib/supabase/auth-client');
             await authClient.logout();
-            router.replace('/login');
+            window.location.href = '/login';
           }}
           className="lg:hidden"
         />
@@ -156,8 +173,8 @@ export default function AdminLayout({
           {/* Desktop Sidebar */}
           <div className="hidden lg:block">
             <AdminSidebar
-              isMobileOpen={isMobileMenuOpen}
-              onMobileToggle={toggleMobileMenu}
+              isMobileOpen={false}
+              onMobileToggle={() => {}}
             />
           </div>
 
@@ -165,7 +182,7 @@ export default function AdminLayout({
           <div className="flex min-w-0 flex-1 flex-col">
             {/* Desktop Header */}
             <div className="hidden lg:block">
-              <AdminHeader user={user} onMobileMenuToggle={toggleMobileMenu} />
+              <AdminHeader user={user} onMobileMenuToggle={() => {}} />
             </div>
 
             {/* Page Content - Adjusted for mobile navigation */}

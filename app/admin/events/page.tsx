@@ -1,4 +1,4 @@
-import { EventsPageClient } from '@/components/admin/EventsPageClient';
+import { EventsPageClient } from '@/components/admin/EventsPageClean';
 import { absoluteUrl } from '@/lib/absoluteUrl';
 
 // Obtiene eventos desde el backend usando ruta relativa.

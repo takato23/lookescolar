@@ -5,10 +5,11 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // Get a single event with stats
 export const GET = RateLimitMiddleware.withRateLimit(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
+  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
       const supabase = await createServerSupabaseServiceClient();
-      const eventId = params.id;
+      const { id } = await params;
+      const eventId = id;
 
       // Get event details
       const { data: event, error: eventError } = await supabase

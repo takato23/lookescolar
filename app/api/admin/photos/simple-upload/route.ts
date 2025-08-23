@@ -5,6 +5,7 @@ import { SecurityLogger, generateRequestId, withAuth } from '@/lib/middleware/au
 import { decodeQR, normalizeCode } from '@/lib/qr/decoder';
 import { tokenService } from '@/lib/services/token.service';
 import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
+import sharp from 'sharp';
 export const runtime = 'nodejs';
 
 // Expected QR format: STUDENT:ID:NAME:EVENT_ID
@@ -18,6 +19,10 @@ function parseStudentQR(qrText: string): { studentId: string; studentName: strin
   if (!match) return null;
   
   const [, studentId, studentName, eventId] = match;
+  
+  // Ensure all values are strings (they should be from regex match)
+  if (!studentId || !studentName || !eventId) return null;
+  
   return { studentId, studentName, eventId };
 }
 
@@ -108,6 +113,13 @@ async function handlePOST(request: NextRequest) {
     const photoType = typeof photoTypeRaw === 'string' && ['private', 'public', 'classroom'].includes(photoTypeRaw) 
       ? photoTypeRaw 
       : 'private';
+
+    console.log('[simple-upload] Event ID detection:', {
+      formEventId: formEventId ? `${formEventId.substring(0, 8)}***` : null,
+      queryEventId: queryEventId ? `${queryEventId.substring(0, 8)}***` : null,
+      photoType,
+      requestId
+    });
 
     console.log('[simple-upload] Received files:', files.length);
 
@@ -310,13 +322,19 @@ async function handlePOST(request: NextRequest) {
           // Continue with upload even if QR detection fails
         }
 
-        // Procesar y subir imagen con preview + watermark (Quick Share)
         // Prefer eventId enviado por el cliente (form), luego query param, luego QR si existe
         let finalEventId: string | null = (formEventId && isValidUUID(formEventId))
           ? formEventId
           : (queryEventId && isValidUUID(queryEventId))
             ? queryEventId
             : (qrDetectionResult?.eventId || null);
+
+        console.log(`[${requestId}] Final event ID resolution for ${file.name}:`, {
+          finalEventId: finalEventId ? `${finalEventId.substring(0, 8)}***` : null,
+          source: finalEventId === formEventId ? 'form' : 
+                  finalEventId === queryEventId ? 'query' : 
+                  finalEventId === qrDetectionResult?.eventId ? 'qr' : 'none'
+        });
 
           // Sin eventos: trabajar sin asignar (event_id = null)
           // Usar prefijo de storage 'shared'
@@ -372,61 +390,127 @@ async function handlePOST(request: NextRequest) {
           `);
 
           // Use Free Tier Optimizer for aggressive compression and watermarking
-          const optimizedResult = await FreeTierOptimizer.processForFreeTier(
-            buffer,
-            {
-              targetSizeKB: 50, // Target 50KB per image
-              maxDimension: 600, // Reduced from 1200 for free tier
-              watermarkText: wmLabel,
-              enableOriginalStorage: false // Don't store originals to save space
+          let optimizedResult;
+          let previewBuffer: Buffer;
+          
+          try {
+            console.log(`[${requestId}] Starting FreeTierOptimizer for ${file.name}`);
+            optimizedResult = await FreeTierOptimizer.processForFreeTier(
+              buffer,
+              {
+                targetSizeKB: 50,
+                maxDimension: 600,
+                watermarkText: wmLabel,
+                enableOriginalStorage: false
+              }
+            );
+            previewBuffer = optimizedResult.processedBuffer;
+            console.log(`[${requestId}] FreeTierOptimizer completed for ${file.name}`);
+          } catch (optimizationError) {
+            console.error(`[${requestId}] FreeTierOptimizer failed for ${file.name}:`, optimizationError);
+            
+            // Fallback to basic Sharp processing
+            try {
+              const fallbackBuffer = await sharp(buffer)
+                .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 60 })
+                .toBuffer();
+              
+              const metadata = await sharp(fallbackBuffer).metadata();
+              optimizedResult = {
+                processedBuffer: fallbackBuffer,
+                finalDimensions: { width: metadata.width || 600, height: metadata.height || 600 },
+                compressionLevel: 0,
+                actualSizeKB: Math.round(fallbackBuffer.length / 1024)
+              };
+              previewBuffer = fallbackBuffer;
+              console.log(`[${requestId}] Fallback processing completed for ${file.name}`);
+            } catch (fallbackError) {
+              console.error(`[${requestId}] Both optimization and fallback failed for ${file.name}:`, fallbackError);
+              throw new Error('Image processing failed');
             }
-          );
+          }
           
-          const previewBuffer = optimizedResult.processedBuffer;
+          console.log(`[${requestId}] Uploading processed image for ${file.name}`);
           
-          console.log(`Free tier optimization: ${file.name} compressed to ${optimizedResult.actualSizeKB}KB (${optimizedResult.finalDimensions.width}x${optimizedResult.finalDimensions.height}) using level ${optimizedResult.compressionLevel}`);
-
-          const previewPath = `${containerPrefix}/previews/${safeBase}.webp`;
+          const finalPreviewPath = `${containerPrefix}/previews/${safeBase}.webp`;
           const upPrev = await supabase.storage
             .from(PREVIEW_BUCKET)
-            .upload(previewPath, previewBuffer, { contentType: 'image/webp', upsert: true });
+            .upload(finalPreviewPath, previewBuffer, { contentType: 'image/webp', upsert: true });
+            
           if (upPrev.error) {
-            await supabase.storage.from(ORIGINAL_BUCKET).remove([originalPath]);
+            console.error(`[${requestId}] Storage upload failed for ${file.name}:`, upPrev.error);
             throw new Error(`Error subiendo preview: ${upPrev.error.message}`);
           }
+          
+          console.log(`[${requestId}] Storage upload completed for ${file.name}`);
 
-          // Guardar en la base de datos (sin exponer original públicamente)
-          // Using optimized dimensions and noting free tier optimization
+          // Save to database with correct schema matching the database types
+          console.log(`[${requestId}] Saving to database for ${file.name}`);
+          
+          // Database requires event_id to be non-null
+          // If no event, try to find or create a "general" event
+          let dbEventId = finalEventId;
+          if (!dbEventId) {
+            console.log(`[${requestId}] No event_id for ${file.name}, looking for general event`);
+            
+            // Try to find a "general" or "shared" event
+            const { data: generalEvent } = await supabase
+              .from('events')
+              .select('id')
+              .ilike('name', '%general%')
+              .or('name.ilike.%shared%,name.ilike.%sin evento%')
+              .limit(1)
+              .single();
+            
+            if (generalEvent) {
+              dbEventId = generalEvent.id;
+              console.log(`[${requestId}] Using existing general event: ${dbEventId.substring(0, 8)}***`);
+            } else {
+              console.log(`[${requestId}] No general event found, photo cannot be saved - database requires event_id`);
+              throw new Error('Database requires event_id - no general event available');
+            }
+          }
+          
           const { data: photo, error: dbError } = await supabase
             .from('photos')
             .insert({
-              storage_path: originalPath,
-              preview_path: previewPath,
               original_filename: file.name,
-              file_size: optimizedResult.actualSizeKB * 1024, // Use optimized size
-              mime_type: 'image/webp', // Always WebP for optimized images
-              width: optimizedResult.finalDimensions.width,
-              height: optimizedResult.finalDimensions.height,
-              approved: process.env.PHOTOS_DEFAULT_APPROVED === 'true',
-              event_id: finalEventId ?? null,
-              photo_type: photoType,
-              // Add metadata about free tier optimization
-              metadata: {
-                freetier_optimized: true,
-                compression_level: optimizedResult.compressionLevel,
-                original_size: file.size,
-                optimization_ratio: Math.round((file.size - optimizedResult.actualSizeKB * 1024) / file.size * 100)
-              }
+              storage_path: finalPreviewPath,
+              file_size: optimizedResult.actualSizeKB * 1024,
+              event_id: dbEventId,
+              approved: process.env['PHOTOS_DEFAULT_APPROVED'] === 'true'
             })
             .select()
             .single();
 
           if (dbError) {
-            console.error('Database error:', dbError);
-            throw new Error(
-              `DB Error: ${dbError.message || 'Unknown database error'}`
-            );
+            console.error(`[${requestId}] Database error for ${file.name}:`, dbError);
+            // Clean up uploaded file on database error
+            try {
+              await supabase.storage.from(PREVIEW_BUCKET).remove([finalPreviewPath]);
+            } catch (cleanupError) {
+              console.error(`[${requestId}] Cleanup error:`, cleanupError);
+            }
+            throw new Error(`DB Error: ${dbError.message || 'Unknown database error'}`);
           }
+
+          console.log(`[${requestId}] Database save completed for ${file.name}, photo ID: ${photo.id}`);
+
+          // Verify the photo was inserted properly
+          const { data: verifyPhoto } = await supabase
+            .from('photos')
+            .select('id, original_filename')
+            .eq('id', photo.id)
+            .single();
+            
+          if (!verifyPhoto) {
+            console.error(`[${requestId}] Photo verification failed for ${file.name}`);
+            throw new Error('Photo verification failed');
+          }
+          
+          console.log(`[${requestId}] Photo verification successful for ${file.name}`);
+
 
           // ===== AUTOMATIC STUDENT ASSIGNMENT =====
           let assignmentResult = null;
@@ -468,9 +552,9 @@ async function handlePOST(request: NextRequest) {
             id: photo.id,
             photoId: photo.id,
             filename: file.name,
-            preview_path: photo.preview_path,
+            storage_path: photo.storage_path,
             success: true,
-            event_id: finalEventId ?? null,
+            event_id: dbEventId, // Use the resolved dbEventId
             qr_detected: qrDetectionResult ? {
               student_name: qrDetectionResult.studentName,
               student_id: `${qrDetectionResult.studentId.substring(0, 8)}***`,
@@ -492,7 +576,7 @@ async function handlePOST(request: NextRequest) {
               photoId: photo.id,
               filename: file.name,
                storagePath: '[hidden]',
-               previewPath: photo.preview_path,
+               previewPath: photo.storage_path,
               size: file.size,
               mimeType: file.type,
               qrDetected: qrDetectionResult ? true : false,
@@ -563,7 +647,7 @@ async function handlePOST(request: NextRequest) {
       failed: errors.length,
       eventId: (() => {
         const first = results[0] as any;
-        return first?.event_id || formEventId;
+        return first?.event_id || formEventId || queryEventId;
       })(),
       qr_detection: {
         detected: qrDetectedCount,

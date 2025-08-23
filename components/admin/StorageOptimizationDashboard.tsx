@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Storage Optimization Dashboard
  * Shows storage usage metrics and optimization recommendations

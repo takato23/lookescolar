@@ -11,6 +11,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     | 'danger'
     | 'success'
     | 'glass'
+    | 'glass-ios26' // New iOS 26 liquid glass variant
     | 'link'
     | 'minimal';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -128,6 +129,15 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         'backdrop-blur-lg',
       ].join(' '),
 
+      // New iOS 26 liquid glass variant
+      'glass-ios26': [
+        'liquid-glass-button-ios26 text-foreground',
+        'hover:shadow-lg hover:-translate-y-1',
+        'active:translate-y-0',
+        'focus-visible:ring-white/50',
+        'transition-all duration-300',
+      ].join(' '),
+
       link: [
         'bg-transparent text-primary-700 underline underline-offset-4 decoration-primary-300',
         'hover:text-primary-800 hover:decoration-primary-400',
@@ -198,8 +208,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {/* Shine effect for premium feel */}
         {(variant === 'primary' ||
           variant === 'danger' ||
-          variant === 'success') && (
-          <div className="absolute inset-0 -translate-x-full -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
+          variant === 'success' ||
+          variant === 'glass-ios26') && (
+          <span className="absolute inset-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.2)_50%,transparent_60%)] bg-[200%_100%] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         )}
       </button>
     );

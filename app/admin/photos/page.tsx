@@ -390,18 +390,37 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
 
     // Show quick navigation after upload
     if (result?.success && result?.uploaded?.length > 0) {
-      if (ev) {
-        // Ensure we are pointing to the event and to unassigned by default
-        router.replace(`/admin/photos?eventId=${ev}&codeId=null`);
-      } else {
-        // No event: show general gallery focusing on unassigned (sin carpeta)
-        const usp = new URLSearchParams();
-        usp.set('codeId', 'null');
-        router.replace(`/admin/photos?${usp.toString()}`);
+      // DON'T redirect - just refresh the current view to show new photos
+      loadPhotos(true);
+      loadEvents();
+      
+      // If we have an event context, just refresh without navigation
+      if (ev && selectedEventId === ev) {
+        // Already in the right context, just refresh
+        console.log('Staying in current event context after upload');
+      } else if (ev) {
+        // Only navigate if we're not already in the event context
+        console.log('Navigating to event context:', ev);
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('eventId', ev);
+        if (selectedCodeId) {
+          newUrl.searchParams.set('codeId', selectedCodeId);
+        }
+        window.history.replaceState({}, '', newUrl.toString());
       }
     }
 
-    await loadPhotos();
+    // Refresh photos and events to show new uploads
+    // Add a small delay to ensure database transaction has committed
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    await Promise.all([
+      loadPhotos(true), // Force refresh
+      loadEvents() // Update event stats
+    ]);
+    
+    // Log the refresh for debugging
+    console.log('Photo upload completed, photos refreshed');
   };
 
   // Handle photo deletion (chunked to respect API batch limits)
@@ -752,7 +771,11 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
             <PhotoGalleryLiquid
               initialPhotos={filteredAndSortedPhotos}
               initialEvents={events}
-              onCountsChanged={() => loadPhotos(true)}
+              onCountsChanged={() => {
+                // Force refresh when photo counts change (after upload, delete, etc.)
+                loadPhotos(true);
+                loadEvents();
+              }}
               onPhotoUpload={handlePhotoUpload}
               onPhotoDelete={handlePhotoDelete}
               hideSidebar
@@ -968,7 +991,7 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
                             await handlePhotoApprove(selectedPhotos, true);
                             setSelectedPhotos([]);
                             toast.success(`${selectedPhotos.length} fotos aprobadas`);
-                            onRefresh?.();
+                            loadPhotos(true); // Refresh photos
                           } catch (error) {
                             toast.error('Error al aprobar fotos');
                           }
@@ -1382,7 +1405,11 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
                     onPhotoDelete={handlePhotoDelete}
                     onPhotoApprove={handlePhotoApprove}
                     onPhotoTag={handlePhotoTag}
-                    onRefresh={() => loadPhotos(true)}
+                    onRefresh={() => {
+                      // Gentle refresh - only reload photos when manually requested
+                      console.log('Manual refresh of photos requested');
+                      loadPhotos(true);
+                    }}
                     hideSidebar
                     hideHeader
                     compact
@@ -1391,7 +1418,11 @@ const ModernPhotosPage = React.memo(function ModernPhotosPage() {
                     viewMode={viewMode}
                     externalSelectedEvent={selectedEventId}
                     externalCodeId={selectedCodeId ?? null}
-                    onCountsChanged={() => loadPhotos(true)}
+                    onCountsChanged={() => {
+                      // Gentle refresh when photo counts change - no forced reload
+                      console.log('Photo counts changed, gentle refresh');
+                      loadPhotos(true);
+                    }}
                   />
                 )}
               </div>
