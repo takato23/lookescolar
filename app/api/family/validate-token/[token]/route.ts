@@ -36,28 +36,46 @@ export async function GET(
 
     const supabase = await createServerSupabaseServiceClient();
 
-    // Buscar el token en la tabla family_tokens
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('family_tokens')
-      .select(`
-        id,
-        token,
-        expires_at,
-        students (
+    // Try subject_tokens table (the main token system)
+    let tokenData = null;
+    let error: any = null;
+
+    try {
+      const { data: subjectTokenData, error: subjectError } = await supabase
+        .from('subject_tokens')
+        .select(`
           id,
-          name,
-          events (
+          token,
+          expires_at,
+          subjects (
             id,
             name,
-            status
+            events (
+              id,
+              name,
+              active
+            )
           )
-        )
-      `)
-      .eq('token', token)
-      .single();
+        `)
+        .eq('token', token)
+        .single();
 
-    if (tokenError || !tokenData) {
-      debugMigration('Token not found in database', { error: tokenError?.message });
+      if (subjectTokenData && !subjectError) {
+        tokenData = {
+          ...subjectTokenData,
+          students: subjectTokenData.subjects, // Map subjects to students for compatibility
+          type: 'subject'
+        };
+      } else {
+        error = subjectError;
+      }
+    } catch (e) {
+      error = e;
+      debugMigration('Subject token validation failed', { error: e });
+    }
+
+    if (!tokenData || error) {
+      debugMigration('Token not found in database', { error: error?.message || 'Unknown error' });
       return NextResponse.json({
         valid: false,
         error: 'Token no encontrado'
@@ -75,11 +93,14 @@ export async function GET(
 
     // Verificar que el evento asociado esté activo
     const student = tokenData.students;
-    if (!student || !student.events || student.events.status !== 'active') {
+    const hasValidEvent = student && student.events && typeof student.events === 'object';
+    const isActive = hasValidEvent ? (student.events.active !== false) : false; // Default to false if no valid event
+    
+    if (!student || !hasValidEvent || !isActive) {
       debugMigration('Associated event not active or found', { 
         hasStudent: !!student,
-        hasEvent: !!student?.events,
-        eventStatus: student?.events?.status
+        hasEvent: hasValidEvent,
+        eventActive: hasValidEvent ? student.events.active : undefined
       });
       return NextResponse.json({
         valid: false,
@@ -89,13 +110,13 @@ export async function GET(
 
     const response: TokenValidationResponse = {
       valid: true,
-      eventId: student.events.id,
+      eventId: hasValidEvent && student.events.id ? student.events.id : '',
       student: {
         id: student.id,
         name: student.name,
         event: {
-          id: student.events.id,
-          name: student.events.name,
+          id: hasValidEvent && student.events.id ? student.events.id : '',
+          name: hasValidEvent && student.events.name ? student.events.name : '',
         },
       },
     };

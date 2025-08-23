@@ -2,276 +2,236 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { Tables } from '@/types/database';
 import type { OrderWithDetails, OrdersResponse } from '@/types/admin-api';
 import { createServerSupabaseClient, createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { getEnhancedOrderService, type OrderFilters } from '@/lib/services/enhanced-order.service';
+import { z } from 'zod';
 
-type RawOrder = Tables<'orders'> & {
-	subjects?: {
-		id: string;
-		name: string;
-		type?: 'student' | 'couple' | 'family';
-		events?: {
-			id: string;
-			name: string;
-			school: string;
-			date: string;
-		} | null;
-	} | null;
-	order_items?: Array<{
-		id: string;
-		quantity: number | null;
-		photos?: {
-			id: string;
-			original_filename?: string | null;
-			storage_path: string;
-		} | null;
-		price_list_items?: {
-			id: string;
-			name?: string | null;
-			price_cents: number;
-		} | null;
-	}>;
-	payments?: Array<{
-		id: string;
-		mp_payment_id: string;
-		mp_status: string;
-		mp_status_detail?: string | null;
-		mp_payment_type?: string | null;
-		amount_cents?: number | null;
-		processed_at?: string | null;
-	}>;
-};
+// Validation schema for query parameters
+const QueryParamsSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(50),
+  status: z.enum(['pending', 'approved', 'delivered', 'failed', 'cancelled', 'all']).default('all'),
+  event_id: z.string().uuid().optional(),
+  priority_level: z.coerce.number().min(1).max(5).optional(),
+  delivery_method: z.enum(['pickup', 'email', 'postal', 'hand_delivery']).optional(),
+  created_after: z.string().datetime().optional(),
+  created_before: z.string().datetime().optional(),
+  overdue_only: z.coerce.boolean().default(false),
+  search: z.string().max(100).optional(),
+});
+
+// Fallback function to get orders directly from tables if view fails
+async function getOrdersFallback(filters: OrderFilters, page: number, limit: number) {
+  const supabase = await createServerSupabaseServiceClient();
+  
+  const offset = (page - 1) * limit;
+  
+  // Build base query
+  let query = supabase
+    .from('orders')
+    .select(`
+      *,
+      event:events(name, school, date),
+      subject:subjects(name, email, phone)
+    `);
+  
+  // Apply filters
+  if (filters.status && filters.status !== 'all') {
+    query = query.eq('status', filters.status);
+  }
+  
+  if (filters.event_id) {
+    query = query.eq('event_id', filters.event_id);
+  }
+  
+  // Get total count
+  const countQuery = query;
+  const { count } = await countQuery.select('*', { count: 'exact', head: true });
+  const total = count || 0;
+  
+  // Get paginated results
+  const { data: orders, error } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  
+  if (error) {
+    throw new Error(`Failed to fetch orders: ${error.message}`);
+  }
+  
+  // Transform data to match OrderWithDetails structure
+  const transformedOrders = orders.map(order => ({
+    ...order,
+    event_name: order.event?.name || null,
+    event_school: order.event?.school || null,
+    event_date: order.event?.date || null,
+    subject_name: order.subject?.name || null,
+    subject_email: order.subject?.email || null,
+    subject_phone: order.subject?.phone || null,
+    // Add default values for missing fields
+    audit_log_count: 0,
+    recent_audit_events: null,
+    enhanced_status: order.status,
+    hours_since_created: null,
+    hours_since_status_change: null,
+  }));
+  
+  // Simple stats calculation
+  const stats = {
+    total: total,
+    by_status: {
+      pending: orders.filter(o => o.status === 'pending').length,
+      approved: orders.filter(o => o.status === 'approved').length,
+      delivered: orders.filter(o => o.status === 'delivered').length,
+      failed: orders.filter(o => o.status === 'failed').length,
+      cancelled: orders.filter(o => o.status === 'cancelled').length,
+    },
+    total_revenue_cents: orders
+      .filter(o => o.status === 'approved' || o.status === 'delivered')
+      .reduce((sum, order) => sum + (order.total_amount || 0), 0),
+    overdue_pending: 0,
+    overdue_delivery: 0,
+    avg_processing_time_hours: 0,
+    priority_distribution: {},
+  };
+  
+  return {
+    orders: transformedOrders,
+    stats,
+    pagination: {
+      page,
+      limit,
+      total,
+      total_pages: Math.ceil(total / limit),
+      has_more: total > page * limit,
+    },
+  };
+}
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
+    // Check permissions
     const hasService = Boolean(process.env['SUPABASE_SERVICE_ROLE_KEY']);
     const hasAnon = Boolean(
       process.env['NEXT_PUBLIC_SUPABASE_URL'] &&
         process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
     );
 
-    // Fallback de desarrollo si no hay credenciales
-    if (!hasService && !hasAnon) {
-      console.error(
-        '[Service] Orders API sin credenciales de Supabase. Devolviendo lista vacía.'
+    if (!hasService || !hasAnon) {
+      console.error('[Admin Orders API] Missing Supabase configuration');
+      return NextResponse.json(
+        { error: 'Service configuration error' },
+        { status: 500 }
       );
-      const stats: OrdersResponse['stats'] = {
-        total: 0,
-        by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
-        total_revenue_cents: 0,
-        filtered_by: {
-          event_id: request.nextUrl.searchParams.get('event') || null,
-          status: request.nextUrl.searchParams.get('status'),
+    }
+
+    // Parse and validate query parameters
+    const url = new URL(request.url);
+    const rawParams = Object.fromEntries(url.searchParams.entries());
+    
+    const validation = QueryParamsSchema.safeParse(rawParams);
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid query parameters',
+          details: validation.error.issues
         },
-      };
-      return NextResponse.json<OrdersResponse>({
-        orders: [],
-        stats,
-        generated_at: new Date().toISOString(),
-      });
+        { status: 400 }
+      );
     }
 
-    const supabase = hasService
-      ? await createServerSupabaseServiceClient()
-      : await createServerSupabaseClient();
+    const params = validation.data;
 
-    const { data: orders, error: ordersError } = await supabase
-      .from('orders')
-      .select(
-        'id, created_at, status, customer_name, customer_email, customer_phone, mp_payment_id, notes, total_cents, subject_id, event_id'
-      )
-      .order('created_at', { ascending: false });
-
-    if (ordersError) {
-      console.error('[Service] Error obteniendo pedidos:', ordersError);
-      const safeStats: OrdersResponse['stats'] = {
-        total: 0,
-        by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
-        total_revenue_cents: 0,
-        filtered_by: {
-          event_id: request.nextUrl.searchParams.get('event') || null,
-          status: request.nextUrl.searchParams.get('status'),
-        },
-      };
-      return NextResponse.json<OrdersResponse>({
-        orders: [],
-        stats: safeStats,
-        generated_at: new Date().toISOString(),
-      });
-    }
-
-    // Si no hay pedidos, responder rápido
-    if (!orders || orders.length === 0) {
-      const emptyStats: OrdersResponse['stats'] = {
-        total: 0,
-        by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
-        total_revenue_cents: 0,
-        filtered_by: {
-          event_id: request.nextUrl.searchParams.get('event') || null,
-          status: request.nextUrl.searchParams.get('status'),
-        },
-      };
-      return NextResponse.json<OrdersResponse>({
-        orders: [],
-        stats: emptyStats,
-        generated_at: new Date().toISOString(),
-      });
-    }
-
-    const orderIds = (orders ?? []).map((o) => o.id);
-    const subjectIds = Array.from(
-      new Set((orders ?? []).map((o) => o.subject_id).filter(Boolean))
-    ) as string[];
-    const eventIds = Array.from(
-      new Set((orders ?? []).map((o) => o.event_id).filter(Boolean))
-    ) as string[];
-
-    // Cargar subjects
-    const subjectById = new Map<string, { id: string; name: string }>();
-    if (subjectIds.length > 0) {
-      const { data: subjects } = await supabase
-        .from('subjects')
-        .select('id, name')
-        .in('id', subjectIds);
-      (subjects ?? []).forEach((s) => subjectById.set(s.id, s));
-    }
-
-    // Cargar events
-    const eventById = new Map<string, { id: string; school: string; date: string }>();
-    if (eventIds.length > 0) {
-      const { data: events } = await supabase
-        .from('events')
-        .select('id, school, date')
-        .in('id', eventIds);
-      (events ?? []).forEach((e) => eventById.set(e.id, e));
-    }
-
-    // Cargar items
-    let items: Array<{ id: string; order_id: string; quantity: number | null; photo_id: string; price_list_item_id: string }> = [];
-    if (orderIds.length > 0) {
-      const res = await supabase
-        .from('order_items')
-        .select('id, order_id, quantity, photo_id, price_list_item_id')
-        .in('order_id', orderIds);
-      items = res.data ?? [];
-    }
-
-    const photoIds = Array.from(new Set((items ?? []).map((it) => it.photo_id))).filter(Boolean) as string[];
-    const priceItemIds = Array.from(
-      new Set((items ?? []).map((it) => it.price_list_item_id))
-    ).filter(Boolean) as string[];
-
-    const photoById = new Map<string, { id: string; storage_path: string }>();
-    if (photoIds.length > 0) {
-      const { data: photos } = await supabase
-        .from('photos')
-        .select('id, storage_path')
-        .in('id', photoIds);
-      (photos ?? []).forEach((p) => photoById.set(p.id, p));
-    }
-
-    const priceItemById = new Map<string, { id: string; name: string | null; price_cents: number }>();
-    if (priceItemIds.length > 0) {
-      const { data: priceItems } = await supabase
-        .from('price_list_items')
-        .select('id, name, price_cents')
-        .in('id', priceItemIds);
-      (priceItems ?? []).forEach((pi) => priceItemById.set(pi.id, pi));
-    }
-
-    const stats: OrdersResponse['stats'] = {
-      total: orders?.length ?? 0,
-      by_status: {
-        pending: 0,
-        approved: 0,
-        delivered: 0,
-        failed: 0,
-      },
-      total_revenue_cents: 0,
-      filtered_by: {
-        event_id: request.nextUrl.searchParams.get('event') || null,
-        status: request.nextUrl.searchParams.get('status'),
-      },
+    // Build filters object
+    const filters: OrderFilters = {
+      status: params.status,
+      event_id: params.event_id,
+      priority_level: params.priority_level,
+      delivery_method: params.delivery_method,
+      created_after: params.created_after,
+      created_before: params.created_before,
+      overdue_only: params.overdue_only,
+      search_query: params.search,
     };
 
-    const processedOrders: OrderWithDetails[] = (orders ?? []).map((order) => {
-      const totalItems = (items ?? [])
-        .filter((it) => it.order_id === order.id)
-        .reduce((sum, it) => sum + (it.quantity ?? 0), 0);
+    try {
+      // Try to use enhanced order service first
+      const service = getEnhancedOrderService();
+      const result = await service.getOrders(
+        filters,
+        params.page,
+        params.limit
+      );
+      
+      const duration = Date.now() - startTime;
+      
+      console.log(`[Admin Orders API] Query completed in ${duration}ms`, {
+        filters: Object.keys(filters).filter(key => filters[key as keyof OrderFilters] !== undefined),
+        total_orders: result.orders.length,
+        total_count: result.pagination.total,
+        page: params.page,
+        duration
+      });
+      
+      return NextResponse.json({
+        orders: result.orders,
+        stats: result.stats,
+        pagination: result.pagination,
+        performance: {
+          query_time_ms: duration,
+          cache_used: false,
+          optimized: true
+        },
+        generated_at: new Date().toISOString(),
+      } satisfies OrdersResponse & { pagination: any; performance: any });
+      
+    } catch (serviceError) {
+      console.warn('[Admin Orders API] Enhanced service failed, using fallback:', serviceError);
+      
+      // Fallback to direct table query
+      const result = await getOrdersFallback(filters, params.page, params.limit);
+      
+      const duration = Date.now() - startTime;
+      
+      console.log(`[Admin Orders API] Fallback query completed in ${duration}ms`, {
+        filters: Object.keys(filters).filter(key => filters[key as keyof OrderFilters] !== undefined),
+        total_orders: result.orders.length,
+        total_count: result.pagination.total,
+        page: params.page,
+        duration
+      });
+      
+      return NextResponse.json({
+        orders: result.orders,
+        stats: result.stats,
+        pagination: result.pagination,
+        performance: {
+          query_time_ms: duration,
+          cache_used: false,
+          optimized: false,
+          fallback_used: true
+        },
+        generated_at: new Date().toISOString(),
+      } satisfies OrdersResponse & { pagination: any; performance: any });
+    }
 
-      if (order.status === 'approved' || order.status === 'delivered') {
-        stats.total_revenue_cents += order.total_cents ?? 0;
-      }
-      const statusKey = (order.status ?? 'pending') as keyof typeof stats.by_status;
-      if (statusKey in stats.by_status) stats.by_status[statusKey]++;
-
-      const orderItems: OrderWithDetails['items'] = (items ?? [])
-        .filter((it) => it.order_id === order.id)
-        .map((it) => {
-          const priceItem = priceItemById.get(it.price_list_item_id);
-          const photo = photoById.get(it.photo_id);
-          return {
-            id: it.id,
-            quantity: it.quantity ?? 0,
-            price_cents: priceItem?.price_cents ?? 0,
-            label: priceItem?.name ?? 'Foto',
-            photo: photo ? { id: photo.id, storage_path: photo.storage_path } : null,
-          };
-        });
-
-      const s = order.subject_id ? subjectById.get(order.subject_id) : undefined;
-      const e = order.event_id ? eventById.get(order.event_id) : undefined;
-
-      return {
-        id: order.id,
-        contact_name: order.customer_name ?? '',
-        contact_email: order.customer_email ?? '',
-        contact_phone: order.customer_phone ?? null,
-        status: (order.status as OrderWithDetails['status']) ?? 'pending',
-        mp_payment_id: order.mp_payment_id ?? null,
-        mp_status: null,
-        notes: order.notes ?? null,
-        created_at: order.created_at ?? new Date(0).toISOString(),
-        delivered_at: null,
-        total_amount_cents: order.total_cents ?? 0,
-        total_items: totalItems,
-        event: e
-          ? {
-              id: e.id,
-              name: e.school, // fallback
-              school: e.school,
-              date: e.date,
-            }
-          : null,
-        subject: s
-          ? {
-              id: s.id,
-              name: s.name,
-              type: 'student',
-            }
-          : null,
-        items: orderItems,
-      };
-    });
-
-    return NextResponse.json<OrdersResponse>({
-      orders: processedOrders,
-      stats,
-      generated_at: new Date().toISOString(),
-    });
   } catch (error) {
-    console.error('[Service] Error en Orders API:', error);
-    const stats: OrdersResponse['stats'] = {
-      total: 0,
-      by_status: { pending: 0, approved: 0, delivered: 0, failed: 0 },
-      total_revenue_cents: 0,
-      filtered_by: {
-        event_id: request.nextUrl.searchParams.get('event') || null,
-        status: request.nextUrl.searchParams.get('status'),
-      },
-    };
-    return NextResponse.json<OrdersResponse>({
-      orders: [],
-      stats,
-      generated_at: new Date().toISOString(),
+    const duration = Date.now() - startTime;
+    console.error('[Admin Orders API] Error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      duration
     });
+
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch orders',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }
+
+// Legacy implementation removed - now uses enhancedOrderService for optimal performance
+// See Phase 2 of the admin orders enhancement plan

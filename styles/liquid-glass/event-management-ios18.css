@@ -1,0 +1,487 @@
+/* ============================================ */
+/* iOS 18 EVENT MANAGEMENT LIQUID GLASS       */
+/* Holistic Interface Design System           */
+/* 2025 Apple Design Language Enhancement     */
+/* ============================================ */
+
+/* ===========================================
+   FOUNDATION MATERIALS
+   =========================================== */
+
+/* Ultra-thin navigation bar with system blur */
+.liquid-nav-ultra-thin {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .liquid-nav-ultra-thin {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Primary glass islands for health cards */
+.glass-health-island {
+  position: relative;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(255, 255, 255, 0.03) 60%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.03);
+}
+
+.dark .glass-health-island {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.03) 40%,
+    rgba(255, 255, 255, 0.01) 60%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%) brightness(0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 0 80px rgba(99, 119, 237, 0.08);
+}
+
+/* Enhanced hover states for glass islands */
+.glass-health-island:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-health-island:hover {
+  box-shadow: 
+    0 16px 64px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 0 120px rgba(99, 119, 237, 0.12);
+}
+
+/* Floating action hub with elevated glass */
+.glass-action-hub {
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+  backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(1.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  padding: 24px;
+  overflow: hidden;
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05),
+    0 0 120px rgba(99, 119, 237, 0.05);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-action-hub {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  backdrop-filter: blur(24px) saturate(200%) brightness(0.85);
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 0 120px rgba(99, 119, 237, 0.1);
+}
+
+/* Workflow island with dynamic context */
+.glass-workflow-island {
+  position: relative;
+  background: linear-gradient(
+    120deg,
+    rgba(59, 130, 246, 0.08) 0%,
+    rgba(139, 92, 246, 0.05) 50%,
+    rgba(59, 130, 246, 0.06) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 20px;
+  padding: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 8px 32px rgba(59, 130, 246, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-workflow-island {
+  background: linear-gradient(
+    120deg,
+    rgba(59, 130, 246, 0.06) 0%,
+    rgba(139, 92, 246, 0.03) 50%,
+    rgba(59, 130, 246, 0.04) 100%
+  );
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  box-shadow: 
+    0 8px 32px rgba(59, 130, 246, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 0 80px rgba(59, 130, 246, 0.1);
+}
+
+/* ===========================================
+   INTERACTIVE COMPONENTS
+   =========================================== */
+
+/* Enhanced floating action buttons */
+.glass-fab {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.12) 100%);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 16px 24px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.dark .glass-fab {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.glass-fab:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass-fab:hover {
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.glass-fab:active {
+  transform: translateY(0) scale(0.98);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Live progress rings with liquid animation */
+.progress-ring-liquid {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.progress-ring-liquid svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.progress-ring-liquid .ring-background {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 4;
+}
+
+.progress-ring-liquid .ring-progress {
+  fill: none;
+  stroke: url(#liquidGradient);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+}
+
+/* Context sidebar with adaptive opacity */
+.glass-context-sidebar {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  width: 280px;
+  height: calc(100vh - 64px);
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 20px;
+  overflow-y: auto;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
+  /* Hide on mobile to prevent overlap */
+  display: none;
+}
+
+/* Show only on large screens */
+@media (min-width: 1280px) {
+  .glass-context-sidebar {
+    display: block;
+  }
+}
+
+.dark .glass-context-sidebar {
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  backdrop-filter: blur(20px) saturate(180%) brightness(0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(0.9);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-context-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 24px;
+  overflow-y: auto;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+}
+
+.dark .glass-context-sidebar {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.03);
+}
+
+/* Work canvas with minimal glass for content focus */
+.glass-work-canvas {
+  margin-left: 280px;
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 32px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-work-canvas {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* ===========================================
+   NOTIFICATION & FEEDBACK SYSTEM
+   =========================================== */
+
+/* Glass notification cards with dynamic types */
+.glass-notification {
+  position: relative;
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glass-notification.success {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.12) 0%, rgba(52, 199, 89, 0.08) 100%);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+  color: #059669;
+}
+
+.glass-notification.warning {
+  background: linear-gradient(135deg, rgba(255, 159, 10, 0.12) 0%, rgba(255, 159, 10, 0.08) 100%);
+  border: 1px solid rgba(255, 159, 10, 0.3);
+  color: #d97706;
+}
+
+.glass-notification.info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.08) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #2563eb;
+}
+
+.glass-notification.action {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #7c3aed;
+}
+
+/* Dark mode notification adjustments */
+.dark .glass-notification.success {
+  background: linear-gradient(135deg, rgba(52, 199, 89, 0.08) 0%, rgba(52, 199, 89, 0.04) 100%);
+  border: 1px solid rgba(52, 199, 89, 0.2);
+  color: #10b981;
+}
+
+.dark .glass-notification.warning {
+  background: linear-gradient(135deg, rgba(255, 159, 10, 0.08) 0%, rgba(255, 159, 10, 0.04) 100%);
+  border: 1px solid rgba(255, 159, 10, 0.2);
+  color: #f59e0b;
+}
+
+.dark .glass-notification.info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.dark .glass-notification.action {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  color: #8b5cf6;
+}
+
+/* ===========================================
+   ANIMATION DEFINITIONS
+   =========================================== */
+
+/* Liquid flow animation for progress indicators */
+@keyframes liquid-flow {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Spring entrance animation */
+@keyframes spring-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(20px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Gentle glow pulse for active states */
+@keyframes gentle-glow {
+  0%, 100% {
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      0 0 0 rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 0 40px rgba(59, 130, 246, 0.15);
+  }
+}
+
+/* Utility classes */
+.spring-entrance {
+  animation: spring-entrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gentle-glow {
+  animation: gentle-glow 3s ease-in-out infinite;
+}
+
+/* Responsive adjustments for larger displays */
+@media (min-width: 1920px) {
+  .glass-health-island {
+    padding: 24px;
+  }
+  
+  .glass-action-hub {
+    padding: 32px;
+  }
+  
+  .glass-context-sidebar {
+    width: 320px;
+  }
+  
+  .glass-work-canvas {
+    margin-left: 320px;
+    padding: 40px;
+  }
+}
+
+@media (min-width: 2560px) {
+  .glass-context-sidebar {
+    width: 380px;
+  }
+  
+  .glass-work-canvas {
+    margin-left: 380px;
+    padding: 48px;
+  }
+}

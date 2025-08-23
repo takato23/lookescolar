@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -25,22 +25,66 @@ import {
   Mail,
   Phone,
   MapPin,
+  AlertTriangle,
+  RefreshCw,
+  Loader2,
+  Settings,
+  MoreHorizontal,
+  CheckSquare,
+  Square,
+  ArrowUpDown,
+  SortAsc,
+  SortDesc,
+  BarChart3,
+  Workflow,
+  Shield,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import OrderDetail from './orders/OrderDetail';
+import OrderAnalyticsDashboard from './orders/OrderAnalyticsDashboard';
+import WorkflowManagementDashboard from './orders/WorkflowManagementDashboard';
+import SecurityAuditDashboard from './orders/SecurityAuditDashboard';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 
-interface Order {
+// Enhanced Order interface with new fields
+interface EnhancedOrder {
   id: string;
   contact_name: string;
   contact_email: string;
   contact_phone: string | null;
-  status: 'pending' | 'approved' | 'delivered' | 'failed';
+  status: 'pending' | 'approved' | 'delivered' | 'failed' | 'cancelled';
+  enhanced_status?: 'pending_overdue' | 'delivery_overdue' | string;
   mp_payment_id: string | null;
   mp_status: string | null;
   notes: string | null;
+  admin_notes: string | null;
   created_at: string;
   delivered_at: string | null;
   total_amount_cents: number;
   total_items: number;
+  priority_level: number | null;
+  estimated_delivery_date: string | null;
+  actual_delivery_date: string | null;
+  delivery_method: string | null;
+  tracking_number: string | null;
+  hours_since_created?: number;
+  hours_since_status_change?: number;
   event: {
     id: string;
     name: string;
@@ -64,53 +108,146 @@ interface Order {
   }>;
 }
 
-interface OrderStats {
+interface EnhancedOrderStats {
   total: number;
-  by_status: {
-    pending: number;
-    approved: number;
-    delivered: number;
-    failed: number;
-  };
+  by_status: Record<string, number>;
   total_revenue_cents: number;
+  overdue_pending: number;
+  overdue_delivery: number;
+  avg_processing_time_hours: number;
+  priority_distribution: Record<number, number>;
 }
 
-type OrderStatus = 'all' | 'pending' | 'approved' | 'delivered' | 'failed';
+type OrderStatus = 'all' | 'pending' | 'approved' | 'delivered' | 'failed' | 'cancelled';
+type SortField = 'created_at' | 'status' | 'total_amount_cents' | 'priority_level' | 'contact_name';
+type SortOrder = 'asc' | 'desc';
+type Order = EnhancedOrder; // Type alias for compatibility
 
 export default function OrderManager() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<OrderStats | null>(null);
+  // Tab state
+  const [activeTab, setActiveTab] = useState('orders');
+  
+  // State management
+  const [orders, setOrders] = useState<EnhancedOrder[]>([]);
+  const [stats, setStats] = useState<EnhancedOrderStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<OrderStatus>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [updatingOrders, setUpdatingOrders] = useState<Set<string>>(new Set());
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<EnhancedOrder | null>(null);
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [eventId, setEventId] = useState<string | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
+  
+  // Auto-refresh state
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  const loadOrders = async () => {
+  // Load orders with enhanced filtering
+  const loadOrders = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
+      else setRefreshing(true);
       setError(null);
 
-      const response = await fetch('/api/admin/orders');
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+        status: filter,
+        ...(eventId && { event_id: eventId }),
+        ...(searchQuery && { search: searchQuery }),
+      });
+
+      const response = await fetch(`/api/admin/orders?${params}`);
       if (!response.ok) {
-        throw new Error('Error cargando pedidos');
+        throw new Error('Error loading orders');
       }
 
       const data = await response.json();
       setOrders(data.orders || []);
       setStats(data.stats || null);
+      setLastRefresh(new Date());
     } catch (error) {
-      console.error('Error cargando pedidos:', error);
-      setError(error instanceof Error ? error.message : 'Error desconocido');
+      console.error('Error loading orders:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
+      alert('Failed to load orders. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  }, [currentPage, pageSize, filter, eventId, searchQuery]);
+
+  // Auto-refresh logic
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      loadOrders(false); // Refresh without showing loading spinner
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, loadOrders]);
+
+  // Sort orders
+  const sortedOrders = useMemo(() => {
+    if (!orders.length) return [];
+
+    return [...orders].sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      // Handle special sorting cases
+      if (sortField === 'total_amount_cents') {
+        aValue = a.total_amount_cents || 0;
+        bValue = b.total_amount_cents || 0;
+      } else if (sortField === 'priority_level') {
+        aValue = a.priority_level || 1;
+        bValue = b.priority_level || 1;
+      } else if (sortField === 'created_at') {
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  }, [orders, sortField, sortOrder]);
+
+  // Handle sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: 'delivered') => {
+  // Get sort icon
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortOrder === 'asc' ? 
+      <SortAsc className="h-4 w-4" /> : 
+      <SortDesc className="h-4 w-4" />;
+  };
+
+  // Update order status with enhanced tracking
+  const updateOrderStatus = async (orderId: string, newStatus: 'delivered' | 'cancelled', notes?: string) => {
     try {
       setUpdatingOrders((prev) => new Set([...prev, orderId]));
 
@@ -119,31 +256,36 @@ export default function OrderManager() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ 
+          status: newStatus,
+          admin_notes: notes,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Error actualizando pedido');
+        throw new Error('Error updating order');
       }
 
-      // Actualizar estado local
+      const result = await response.json();
+
+      // Update local state
       setOrders((prev) =>
         prev.map((order) =>
           order.id === orderId
             ? {
                 ...order,
                 status: newStatus,
-                delivered_at:
-                  newStatus === 'delivered' ? new Date().toISOString() : null,
+                admin_notes: notes || order.admin_notes,
+                actual_delivery_date: newStatus === 'delivered' ? new Date().toISOString() : null,
               }
             : order
         )
       );
+
+      alert(`Order ${newStatus} successfully`);
     } catch (error) {
-      console.error('Error actualizando pedido:', error);
-      alert(
-        error instanceof Error ? error.message : 'Error actualizando pedido'
-      );
+      console.error('Error updating order:', error);
+      alert(error instanceof Error ? error.message : 'Error updating order');
     } finally {
       setUpdatingOrders((prev) => {
         const newSet = new Set(prev);
@@ -151,6 +293,124 @@ export default function OrderManager() {
         return newSet;
       });
     }
+  };
+
+  // Handle bulk operations
+  const handleBulkUpdate = async (status: 'delivered' | 'cancelled', notes?: string) => {
+    if (selectedOrders.size === 0) {
+      alert('Please select orders to update');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/orders/bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          order_ids: Array.from(selectedOrders),
+          updates: {
+            status,
+            admin_notes: notes,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error performing bulk update');
+      }
+
+      const result = await response.json();
+
+      alert(`${result.result.successful_updates} orders updated successfully`);
+
+      // Refresh orders
+      loadOrders(false);
+      setSelectedOrders(new Set());
+
+    } catch (error) {
+      console.error('Error in bulk update:', error);
+      alert(error instanceof Error ? error.message : 'Error performing bulk update');
+    }
+  };
+
+  // Selection handlers
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    setSelectedOrders(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(orderId);
+      } else {
+        newSet.delete(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(new Set(sortedOrders.map(order => order.id)));
+    } else {
+      setSelectedOrders(new Set());
+    }
+  };
+
+  // Export functions and utilities
+
+  // Get status badge variant
+  const getStatusBadgeVariant = (status: string, enhancedStatus?: string) => {
+    if (enhancedStatus === 'pending_overdue' || enhancedStatus === 'delivery_overdue') {
+      return 'destructive';
+    }
+    
+    switch (status) {
+      case 'pending':
+        return 'secondary';
+      case 'approved':
+        return 'default';
+      case 'delivered':
+        return 'success';
+      case 'failed':
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
+  // Get priority badge
+  const getPriorityBadge = (priority: number | null) => {
+    if (!priority || priority === 1) return null;
+    
+    const variants = {
+      2: 'secondary',
+      3: 'default', 
+      4: 'destructive',
+      5: 'destructive'
+    } as const;
+    
+    return (
+      <Badge variant={variants[priority as keyof typeof variants] || 'secondary'} className="text-xs">
+        P{priority}
+      </Badge>
+    );
+  };
+
+  // Format currency
+  const formatCurrency = (cents: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+    }).format(cents / 100);
+  };
+
+  // Format relative time
+  const formatRelativeTime = (hours: number) => {
+    if (hours < 1) return 'Less than 1 hour';
+    if (hours < 24) return `${Math.floor(hours)} hours ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
   };
 
   const exportOrders = async () => {
@@ -306,7 +566,28 @@ export default function OrderManager() {
   }
 
   return (
-    <div className="animate-fade-in space-y-8">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="orders" className="gap-2">
+          <Package className="h-4 w-4" />
+          Orders
+        </TabsTrigger>
+        <TabsTrigger value="analytics" className="gap-2">
+          <BarChart3 className="h-4 w-4" />
+          Analytics
+        </TabsTrigger>
+        <TabsTrigger value="workflows" className="gap-2">
+          <Settings className="h-4 w-4" />
+          Workflows
+        </TabsTrigger>
+        <TabsTrigger value="security" className="gap-2">
+          <Shield className="h-4 w-4" />
+          Security
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="orders" className="mt-6">
+        <div className="animate-fade-in space-y-8">
       {/* Statistics Dashboard */}
       {stats && (
         <div
@@ -322,14 +603,14 @@ export default function OrderManager() {
           />
           <StatsCard
             title="Pendientes"
-            value={stats.by_status.pending}
+            value={stats.by_status['pending'] || 0}
             icon={<Clock className="h-5 w-5" />}
             variant="glass"
             noise
           />
           <StatsCard
             title="Entregados"
-            value={stats.by_status.delivered}
+            value={stats.by_status['delivered'] || 0}
             icon={<CheckCircle className="h-5 w-5" />}
             variant="glass"
             noise
@@ -469,7 +750,7 @@ export default function OrderManager() {
                 </h3>
                 <p className="mb-3 text-sm text-red-700">{error}</p>
                 <Button
-                  onClick={loadOrders}
+                  onClick={() => loadOrders()}
                   variant="outline"
                   size="sm"
                   className="border-red-300 text-red-700 hover:bg-red-50"
@@ -750,7 +1031,7 @@ export default function OrderManager() {
         </div>
         <div className="flex items-center gap-3">
           <Button
-            onClick={loadOrders}
+            onClick={() => loadOrders()}
             variant="outline"
             size="sm"
             disabled={loading}
@@ -773,6 +1054,20 @@ export default function OrderManager() {
         }}
         onStatusUpdate={updateOrderStatus}
       />
-    </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="analytics" className="mt-6">
+        <OrderAnalyticsDashboard />
+      </TabsContent>
+
+      <TabsContent value="workflows" className="mt-6">
+        <WorkflowManagementDashboard />
+      </TabsContent>
+
+      <TabsContent value="security" className="mt-6">
+        <SecurityAuditDashboard />
+      </TabsContent>
+    </Tabs>
   );
 }

@@ -1,128 +1,197 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { z } from 'zod';
+import { orderExportService, type ExportOptions, type ExportFormat, type ExportTemplate } from '@/lib/services/order-export.service';
+import type { OrderFilters } from '@/lib/services/enhanced-order.service';
 
-export async function GET(request: NextRequest) {
+// Validation schema for export request
+const ExportRequestSchema = z.object({
+  format: z.enum(['csv', 'excel', 'pdf', 'json']).default('csv'),
+  template: z.enum(['standard', 'detailed', 'summary', 'financial', 'labels']).default('standard'),
+  includeItems: z.boolean().default(false),
+  includeAuditTrail: z.boolean().default(false),
+  includePaymentInfo: z.boolean().default(false),
+  filters: z.object({
+    status: z.array(z.string()).optional(),
+    event_id: z.string().uuid().optional(),
+    priority_level: z.array(z.number()).optional(),
+    delivery_method: z.array(z.string()).optional(),
+    created_after: z.string().datetime().optional(),
+    created_before: z.string().datetime().optional(),
+    amount_min: z.number().optional(),
+    amount_max: z.number().optional(),
+    overdue_only: z.boolean().optional(),
+    has_payment: z.boolean().optional(),
+    search_query: z.string().optional(),
+  }).optional(),
+  customFields: z.array(z.string()).optional(),
+});
+
+/**
+ * POST /api/admin/orders/export
+ * Export orders with specified format and filters
+ */
+export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
-    const { searchParams } = request.nextUrl;
-    const eventId = searchParams.get('eventId');
-    const courseId = searchParams.get('courseId');
+    // Parse and validate request body
+    const body = await request.json();
+    const validation = ExportRequestSchema.safeParse(body);
 
-    const supabase = await createServerSupabaseServiceClient();
-
-    // Unir orders con subjects y codes (por code_id indirecto via photos -> codes en items sería costoso; MVP: traer items y derivar)
-    const { data: orders, error } = await supabase
-      .from('orders')
-      .select('id, event_id, status, customer_name, customer_email, created_at')
-      .eq('event_id', eventId ?? '')
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid export parameters',
+          details: validation.error.issues
+        },
+        { status: 400 }
+      );
     }
 
-    const orderIds = (orders || []).map((o) => o.id);
-    const { data: items } = await supabase
-      .from('order_items')
-      .select('order_id, photo_id')
-      .in('order_id', orderIds);
+    const {
+      format,
+      template,
+      includeItems,
+      includeAuditTrail,
+      includePaymentInfo,
+      filters,
+      customFields
+    } = validation.data;
 
-    // Mapear fotos → filenames y code_value (si existe)
-    const photoIds = Array.from(new Set((items || []).map((it) => it.photo_id)));
-    // Si columna approved existe, filtrar por approved=true; de lo contrario, traer todas
-    let photosQuery = supabase
-      .from('photos')
-      .select('id, storage_path, original_filename, code_id, approved')
-      .in('id', photoIds);
-    const { data: photosRaw } = await photosQuery;
-    const photos = (photosRaw || []).filter((p: any) => {
-      if (typeof p.approved === 'boolean') return p.approved === true;
-      return true;
-    });
-
-    const codeIds = Array.from(new Set((photos || []).map((p: any) => p.code_id).filter(Boolean)));
-    const { data: codes } = await supabase
-      .from('codes' as any)
-      .select('id, code_value, course_id')
-      .in('id', codeIds);
-
-    const codeById = new Map<string, any>();
-    (codes || []).forEach((c: any) => codeById.set(c.id, c));
-
-    const photosById = new Map<string, any>();
-    (photos || []).forEach((p: any) => photosById.set(p.id, p));
-
-    type Row = {
-      curso: string;
-      code_value: string;
-      fotos_seleccionadas: string;
-      paquete: string;
-      cantidad: number;
-      total: string;
-      pago: string;
+    // Prepare export options
+    const exportOptions: ExportOptions = {
+      format,
+      template,
+      includeItems,
+      includeAuditTrail,
+      includePaymentInfo,
+      filters,
+      customFields,
     };
 
-    const rows: Row[] = [];
+    console.log(`[Order Export API] Starting export`, {
+      format,
+      template,
+      filters: filters ? Object.keys(filters).filter(key => filters[key as keyof typeof filters] !== undefined) : [],
+    });
 
-    for (const o of orders || []) {
-      const its = (items || []).filter((it) => it.order_id === o.id);
-      const filenames: string[] = [];
-      let codeValue = '';
-      let curso = '';
-      for (const it of its) {
-        const p = photosById.get(it.photo_id);
-        if (!p) continue;
-        filenames.push((p.original_filename as string) || (p.storage_path as string));
-        if (p.code_id && !codeValue) {
-          const c = codeById.get(p.code_id as string);
-          if (c) {
-            codeValue = String(c.code_value);
-          }
-        }
-      }
-      rows.push({
-        curso,
-        code_value: codeValue,
-        fotos_seleccionadas: filenames.join(';'),
-        paquete: (o as any).metadata?.package || '',
-        cantidad: its.length,
-        total: '0',
-        pago: o.status === 'approved' ? 'pagado' : 'pendiente',
-      });
-    }
+    // Generate export
+    const result = await orderExportService.exportOrders(exportOptions);
 
-    const header = 'curso,code_value,fotos_seleccionadas,paquete,cantidad,total,pago\n';
-    const csv =
-      header +
-      rows
-        .map((r) =>
-          [
-            r.curso,
-            r.code_value,
-            r.fotos_seleccionadas,
-            r.paquete,
-            r.cantidad,
-            r.total,
-            r.pago,
-          ]
-            .map((v) => {
-              const s = String(v ?? '');
-              return s.includes(',') || s.includes('"')
-                ? '"' + s.replace(/"/g, '""') + '"'
-                : s;
-            })
-            .join(',')
-        )
-        .join('\n');
+    const duration = Date.now() - startTime;
 
-    return new NextResponse(csv, {
-      status: 200,
-      headers: {
-        'content-type': 'text/csv; charset=utf-8',
-        'Content-Disposition': 'attachment; filename="orders-export.csv"',
+    console.log(`[Order Export API] Export completed in ${duration}ms`, {
+      filename: result.filename,
+      recordCount: result.recordCount,
+      fileSize: `${(result.fileSize / 1024).toFixed(2)} KB`,
+    });
+
+    // Return export result
+    return NextResponse.json({
+      success: true,
+      export: result,
+      performance: {
+        generation_time_ms: duration,
+        records_per_second: Math.round(result.recordCount / (duration / 1000)),
+      },
+      metadata: {
+        format,
+        template,
+        filters_applied: filters ? Object.keys(filters).length : 0,
+        generated_at: new Date().toISOString(),
       },
     });
+
   } catch (error) {
-    console.error('[Service] Orders export error:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const duration = Date.now() - startTime;
+    console.error('[Order Export API] Export failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
+    });
+
+    return NextResponse.json(
+      {
+        error: 'Export failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/admin/orders/export
+ * Simple export with query parameters (for direct download links)
+ */
+export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+
+  try {
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+
+    // Parse query parameters
+    const format = (searchParams.get('format') as ExportFormat) || 'csv';
+    const template = (searchParams.get('template') as ExportTemplate) || 'standard';
+    const eventId = searchParams.get('event_id') || undefined;
+    const status = searchParams.get('status') || undefined;
+    const createdAfter = searchParams.get('created_after') || undefined;
+    const createdBefore = searchParams.get('created_before') || undefined;
+
+    // Build filters from query params
+    const filters: OrderFilters = {};
+    if (eventId) filters.event_id = eventId;
+    if (status && status !== 'all') filters.status = [status];
+    if (createdAfter) filters.created_after = createdAfter;
+    if (createdBefore) filters.created_before = createdBefore;
+
+    const exportOptions: ExportOptions = {
+      format,
+      template,
+      filters,
+      includeItems: template === 'detailed',
+      includeAuditTrail: template === 'detailed',
+      includePaymentInfo: template === 'financial' || template === 'detailed',
+    };
+
+    console.log(`[Order Export API] GET export request`, {
+      format,
+      template,
+      filters: Object.keys(filters),
+    });
+
+    // Generate export
+    const result = await orderExportService.exportOrders(exportOptions);
+
+    const duration = Date.now() - startTime;
+
+    console.log(`[Order Export API] GET export completed in ${duration}ms`, {
+      filename: result.filename,
+      recordCount: result.recordCount,
+    });
+
+    // For GET requests, return the file directly
+    // In a real implementation, you would stream the file content
+    return NextResponse.json({
+      success: true,
+      downloadUrl: `/api/admin/orders/export/download/${result.filename}`,
+      export: result,
+      message: 'Export generated successfully. Use the downloadUrl to get the file.',
+    });
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[Order Export API] GET export failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
+    });
+
+    return NextResponse.json(
+      {
+        error: 'Export failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }

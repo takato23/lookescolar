@@ -1,0 +1,150 @@
+{
+  "metadata": {
+    "timestamp": "2025-08-22T19:59:29.341Z",
+    "environment": "test",
+    "stage": "all",
+    "execution_time_ms": 77241,
+    "node_version": "v23.9.0",
+    "lookescolar_version": "0.1.0"
+  },
+  "preflight": {
+    "all_passed": false,
+    "details": {}
+  },
+  "test_execution": {
+    "timestamp": "2025-08-22T19:59:29.321Z",
+    "environment": "test",
+    "configuration": {
+      "coverage": true,
+      "parallel": false,
+      "suites_run": 9
+    },
+    "summary": {
+      "total_tests": 1,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 1,
+      "success_rate": 0,
+      "duration_ms": 70823
+    },
+    "suites": [
+      {
+        "name": "Critical Endpoints (TDD)",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 5
+      },
+      {
+        "name": "Enhanced Security",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 1,
+          "total": 1
+        },
+        "duration_ms": 0
+      },
+      {
+        "name": "Performance Comprehensive",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 9633
+      },
+      {
+        "name": "Integration Workflows",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 5750
+      },
+      {
+        "name": "API Critical Endpoints",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 5180
+      },
+      {
+        "name": "V1 Flow",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 4804
+      },
+      {
+        "name": "Security Validation",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 25029
+      },
+      {
+        "name": "Component Tests",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 13130
+      },
+      {
+        "name": "Utility Functions",
+        "status": "PASSED",
+        "tests": {
+          "passed": 0,
+          "failed": 0,
+          "skipped": 0,
+          "total": 0
+        },
+        "duration_ms": 5057
+      }
+    ],
+    "coverage": {
+      "average": 0
+    }
+  },
+  "recommendations": [
+    "🔧 Resolve preflight check failures before deployment",
+    "📊 Increase test coverage to 70%+ (currently 0.0%)",
+    "🎯 Improve test reliability to 95%+ (currently 0%)"
+  ],
+  "ci_integration": {
+    "exit_code": 0,
+    "should_deploy": false,
+    "quality_gates": {
+      "coverage_threshold": 70,
+      "coverage_achieved": 0,
+      "success_rate_threshold": 95,
+      "success_rate_achieved": 0
+    }
+  }
+}

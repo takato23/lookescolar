@@ -7,7 +7,7 @@ import { AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
 export default function GalleryPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params?.id as string;
+  const id = params?.['id'] as string;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,29 +15,44 @@ export default function GalleryPage() {
   useEffect(() => {
     // Check if this is a direct gallery access attempt
     if (id) {
-      // Try to redirect to family access if this is actually a token
-      const checkIfToken = async () => {
+      const checkAccess = async () => {
         try {
-          // Check if this ID could be a valid family token
-          const response = await fetch(`/api/family/validate-token/${id}`);
-          if (response.ok) {
-            // It's a valid token, redirect to family gallery
-            router.replace(`/f/${id}`);
-            return;
+          // First, check if this is a valid eventId (UUID format)
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          
+          if (uuidRegex.test(id)) {
+            // This looks like an eventId, check if public gallery is enabled
+            const response = await fetch(`/api/admin/events/${id}`);
+            if (response.ok) {
+              const eventData = await response.json();
+              // For now, redirect to a more appropriate page or show access form
+              setError('Para acceder a esta galería necesitas un enlace especial de la escuela.');
+              setLoading(false);
+              return;
+            }
           }
           
-          // Not a valid token, show error
+          // If not a UUID, try to validate as a family token
+          if (id.length >= 20) {
+            const response = await fetch(`/api/family/validate-token/${id}`);
+            if (response.ok) {
+              // It's a valid token, redirect to family gallery
+              router.replace(`/f/${id}`);
+              return;
+            }
+          }
+          
+          // Neither valid eventId nor token
           setError('Esta galería no existe o no está disponible públicamente.');
         } catch (err) {
-          // API error, show generic error
-          console.error('Error validating token:', err);
+          console.error('Error validating access:', err);
           setError('Error verificando acceso a la galería.');
         }
         
         setLoading(false);
       };
 
-      checkIfToken();
+      checkAccess();
     }
   }, [id, router]);
 

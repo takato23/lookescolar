@@ -17,6 +17,14 @@ LookEscolar is a web application for managing school photography, including uplo
 - Testing: Vitest, Playwright
 - Payments: Mercado Pago
 
+## Documentation
+For comprehensive documentation, see the [docs/](docs/) directory:
+- [Architecture Reference](docs/ARCHITECTURE.md)
+- [API Reference](docs/api-reference.md)
+- [Development Guidelines](docs/development/)
+- [Operations Guides](docs/operations/)
+- [Resources](docs/resources/)
+
 ## Setup
 1. Clone the repository: `git clone <repo-url>`
 2. Install dependencies: `npm install`
@@ -47,4 +55,3 @@ See `.env.example` for required variables:
 5. Open pull request
 
 For issues, check the docs/ folder or open a new issue.
-

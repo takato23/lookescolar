@@ -1,0 +1,10 @@
+{
+  "exit_code": 0,
+  "should_deploy": false,
+  "quality_gates": {
+    "coverage_threshold": 70,
+    "coverage_achieved": 0,
+    "success_rate_threshold": 95,
+    "success_rate_achieved": 0
+  }
+}

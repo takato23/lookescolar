@@ -488,7 +488,17 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   useEffect(() => {
     console.log('PhotoGalleryLiquid: initialPhotos changed', initialPhotos.length, initialPhotos);
     setPhotos(initialPhotos);
-  }, [initialPhotos]);
+    
+    // Clear selection when photos change
+    if (selectedPhotos.length > 0) {
+      const validSelectedPhotos = selectedPhotos.filter(id => 
+        initialPhotos.some(photo => photo.id === id)
+      );
+      if (validSelectedPhotos.length !== selectedPhotos.length) {
+        setSelectedPhotos(validSelectedPhotos);
+      }
+    }
+  }, [initialPhotos, selectedPhotos, setSelectedPhotos]);
 
   // Update events when initialEvents changes
   useEffect(() => {
@@ -521,9 +531,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
   // Selection handlers
   const handlePhotoSelect = (photoId: string) => {
-    setSelectedPhotos(prev => 
+    setSelectedPhotos((prev: string[]) => 
       prev.includes(photoId) 
-        ? prev.filter(id => id !== photoId)
+        ? prev.filter((id: string) => id !== photoId)
         : [...prev, photoId]
     );
   };
@@ -534,11 +544,11 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
     
     if (allVisibleSelected) {
       // Deselect all visible
-      setSelectedPhotos(prev => prev.filter(id => !filteredPhotos.some(photo => photo.id === id)));
+      setSelectedPhotos((prev: string[]) => prev.filter((id: string) => !filteredPhotos.some(photo => photo.id === id)));
     } else {
       // Select all visible
       const visibleIds = filteredPhotos.map(photo => photo.id);
-      setSelectedPhotos(prev => Array.from(new Set([...prev, ...visibleIds])));
+      setSelectedPhotos((prev: string[]) => Array.from(new Set([...prev, ...visibleIds])));
     }
   };
 

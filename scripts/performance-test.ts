@@ -25,7 +25,7 @@ class PerformanceTester {
   private results: PerformanceResult[] = [];
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    this.baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002';
   }
 
   async runTests(): Promise<void> {

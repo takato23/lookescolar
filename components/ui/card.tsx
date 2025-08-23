@@ -7,6 +7,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
     | 'surface'
     | 'glass'
     | 'glass-strong'
+    | 'glass-ios26' // New iOS 26 liquid glass variant
     | 'elevated'
     | 'outlined'
     | 'floating';
@@ -54,6 +55,14 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
         'backdrop-blur-lg border border-glass-border',
         'shadow-glass text-foreground',
         'rounded-xl',
+      ].join(' '),
+
+      // New iOS 26 liquid glass variant
+      'glass-ios26': [
+        'liquid-glass-card-ios26 text-foreground',
+        'rounded-2xl',
+        'shadow-glass',
+        'transition-all duration-300',
       ].join(' '),
 
       elevated: [
@@ -249,7 +258,7 @@ interface StatsCardProps extends CardProps {
 
 const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
   (
-    { title, value, description, trend, trendValue, icon, className, ...props },
+    { title, value, description, trend, trendValue, icon, className, variant = 'glass', ...props },
     ref
   ) => {
     const trendColors = {
@@ -258,26 +267,47 @@ const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
       neutral: 'text-gray-600 bg-gray-50 border-gray-200',
     };
 
+    // Special handling for glass-ios26 variant
+    const isGlassIOS26 = variant === 'glass-ios26';
+    
     return (
       <Card
         ref={ref}
-        variant="glass"
+        variant={variant}
         className={clsx('p-6', className)}
         {...props}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className="text-muted-foreground text-sm font-medium">{title}</p>
-            <p className="text-foreground mt-1 text-3xl font-bold">{value}</p>
+            <p className={clsx(
+              'text-sm font-medium',
+              isGlassIOS26 ? 'text-foreground/80' : 'text-muted-foreground'
+            )}>
+              {title}
+            </p>
+            <p className={clsx(
+              'mt-1 text-3xl font-bold',
+              isGlassIOS26 ? 'text-foreground' : 'text-foreground'
+            )}>
+              {value}
+            </p>
             {description && (
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className={clsx(
+                'mt-1 text-sm',
+                isGlassIOS26 ? 'text-foreground/70' : 'text-muted-foreground'
+              )}>
                 {description}
               </p>
             )}
           </div>
 
           {icon && (
-            <div className="ml-4 rounded-lg bg-primary-50 p-2 text-primary-600 dark:bg-primary-950 dark:text-primary-400">
+            <div className={clsx(
+              'ml-4 rounded-lg p-2',
+              isGlassIOS26 
+                ? 'bg-white/10 text-foreground' 
+                : 'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400'
+            )}>
               {icon}
             </div>
           )}
@@ -287,7 +317,8 @@ const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
           <div
             className={clsx(
               'mt-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium',
-              trendColors[trend]
+              trendColors[trend],
+              isGlassIOS26 && 'backdrop-blur-sm'
             )}
           >
             {trend === 'up' && '↗'}

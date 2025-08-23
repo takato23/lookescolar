@@ -99,30 +99,14 @@ export const GET = RateLimitMiddleware.withRateLimit(
       // Estadísticas de eventos
       serviceClient.from('events').select('id, active, created_at'),
 
-      // Estadísticas de fotos
-      serviceClient.from('photos').select(`
-          id,
-          created_at,
-          approved,
-          photo_subjects!left(id)
-        `),
+      // Estadísticas de fotos - simplificado
+      serviceClient.from('photos').select('id, created_at, approved'),
 
-      // Estadísticas de sujetos
-      serviceClient.from('subjects').select(`
-          id,
-          subject_tokens!left(id, expires_at)
-        `),
+      // Estadísticas de sujetos - simplificado
+      serviceClient.from('subjects').select('id'),
 
-      // Estadísticas de órdenes
-      serviceClient.from('orders').select(`
-          id,
-          status,
-          created_at,
-          order_items!inner(
-            quantity,
-            price_list_items!inner(price_cents)
-          )
-        `),
+      // Estadísticas de órdenes - simplificado
+      serviceClient.from('orders').select('id, status, created_at, total_cents'),
 
       // Estadísticas de pagos
       serviceClient
@@ -133,7 +117,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
       // Actividad reciente (últimas 24h) - removido por ahora
       Promise.resolve({ data: null, error: null }),
 
-      // Health check del sistema
+      // Health check del sistema - only use subject_tokens table
       serviceClient
         .from('subject_tokens')
         .select('id')
@@ -170,28 +154,36 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
     // Procesar estadísticas de fotos
     const photos = photosStats.data || [];
-    const todayPhotos = photos.filter((p) => p.created_at.startsWith(today));
+    const todayPhotos = photos.filter((p) => p.created_at && typeof p.created_at === 'string' && p.created_at.startsWith(today));
+    
+    // Get tagged photos count separately to avoid join issues
+    const { data: photoSubjects } = await serviceClient
+      .from('photo_subjects')
+      .select('photo_id');
+    
+    const taggedPhotoIds = new Set((photoSubjects || []).map(ps => ps.photo_id));
+    
     const photoStats = {
       total: photos.length,
-      tagged: photos.filter(
-        (p) => p.photo_subjects && p.photo_subjects.length > 0
-      ).length,
-      untagged: photos.filter(
-        (p) => !p.photo_subjects || p.photo_subjects.length === 0
-      ).length,
+      tagged: photos.filter(p => taggedPhotoIds.has(p.id)).length,
+      untagged: photos.filter(p => !taggedPhotoIds.has(p.id)).length,
       uploaded_today: todayPhotos.length,
     };
 
     // Procesar estadísticas de sujetos
     const subjects = subjectsStats.data || [];
+    
+    // Get active tokens count separately
+    const { data: activeTokens } = await serviceClient
+      .from('subject_tokens')
+      .select('subject_id')
+      .gt('expires_at', now.toISOString());
+    
+    const subjectsWithTokens = new Set((activeTokens || []).map(t => t.subject_id));
+    
     const subjectStats = {
       total: subjects.length,
-      with_tokens: subjects.filter(
-        (s) =>
-          s.subject_tokens &&
-          s.subject_tokens.length > 0 &&
-          s.subject_tokens.some((t) => new Date(t.expires_at) > now)
-      ).length,
+      with_tokens: subjects.filter(s => subjectsWithTokens.has(s.id)).length,
     };
 
     // Procesar estadísticas de órdenes
@@ -203,27 +195,15 @@ export const GET = RateLimitMiddleware.withRateLimit(
       delivered: orders.filter((o) => o.status === 'delivered').length,
       failed: orders.filter((o) => o.status === 'failed').length,
       total_revenue_cents: orders
-        .filter((o) => ['approved', 'delivered'].includes(o.status))
-        .reduce((total, order) => {
-          const orderTotal =
-            order.order_items?.reduce((sum, item) => {
-              return sum + item.quantity * item.price_list_items.price_cents;
-            }, 0) || 0;
-          return total + orderTotal;
-        }, 0),
+        .filter((o) => o.status && ['approved', 'delivered'].includes(o.status))
+        .reduce((total, order) => total + (order.total_cents || 0), 0),
       monthly_revenue_cents: orders
         .filter(
           (o) =>
-            ['approved', 'delivered'].includes(o.status) &&
-            o.created_at >= firstDayOfMonth
+            o.status && ['approved', 'delivered'].includes(o.status) &&
+            o.created_at && o.created_at >= firstDayOfMonth
         )
-        .reduce((total, order) => {
-          const orderTotal =
-            order.order_items?.reduce((sum, item) => {
-              return sum + item.quantity * item.price_list_items.price_cents;
-            }, 0) || 0;
-          return total + orderTotal;
-        }, 0),
+        .reduce((total, order) => total + (order.total_cents || 0), 0),
     };
 
     // Procesar estadísticas de storage (estimación)
@@ -239,7 +219,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
     ).toISOString();
     const activityData = {
       recent_uploads: todayPhotos.length,
-      recent_orders: orders.filter((o) => o.created_at >= yesterday).length,
+      recent_orders: orders.filter((o) => o.created_at && o.created_at >= yesterday).length,
       recent_payments: (paymentsStats.data || []).filter(
         (p) => p.processed_at && new Date(p.processed_at) >= new Date(yesterday)
       ).length,
@@ -247,12 +227,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
     // Estado del sistema
     const expiredTokens = systemHealth.data?.length || 0;
+    const healthStatus: 'healthy' | 'warning' | 'critical' = expiredTokens > 50 ? 'critical' : expiredTokens > 20 ? 'warning' : 'healthy';
     const systemStatus = {
-      health_status: (expiredTokens > 50
-        ? 'critical'
-        : expiredTokens > 20
-          ? 'warning'
-          : 'healthy') as const,
+      health_status: healthStatus,
       expired_tokens: expiredTokens,
       cache_timestamp: now.toISOString(),
     };

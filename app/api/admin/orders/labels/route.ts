@@ -1,129 +1,178 @@
 import { NextRequest, NextResponse } from 'next/server';
-import PDFDocument from 'pdfkit';
-import QRCode from 'qrcode';
-import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { z } from 'zod';
+import { orderExportService } from '@/lib/services/order-export.service';
 
-export async function GET(request: NextRequest) {
+// Validation schema for labels generation
+const LabelsRequestSchema = z.object({
+  order_ids: z.array(z.string().uuid()).min(1).max(100),
+  format: z.enum(['pdf', 'html']).default('pdf'),
+  label_size: z.enum(['standard', 'small', 'large']).default('standard'),
+  include_qr: z.boolean().default(true),
+  include_logo: z.boolean().default(true),
+});
+
+/**
+ * POST /api/admin/orders/labels
+ * Generate shipping labels for specified orders
+ */
+export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
-    const { searchParams } = request.nextUrl;
-    const eventId = searchParams.get('eventId');
-    const orderIdsParam = searchParams.get('orderIds');
+    // Parse and validate request body
+    const body = await request.json();
+    const validation = LabelsRequestSchema.safeParse(body);
 
-    if (!eventId) {
-      return NextResponse.json({ error: 'eventId requerido' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid labels request',
+          details: validation.error.issues
+        },
+        { status: 400 }
+      );
     }
 
-    const supabase = await createServerSupabaseServiceClient();
+    const { order_ids, format, label_size, include_qr, include_logo } = validation.data;
 
-    // Traer pedidos
-    let query = supabase
-      .from('orders')
-      .select('id, status, created_at')
-      .eq('event_id', eventId)
-      .order('created_at', { ascending: true });
-
-    const orderIds = orderIdsParam ? orderIdsParam.split(',').map((s) => s.trim()) : null;
-    if (orderIds && orderIds.length > 0) {
-      query = query.in('id', orderIds);
-    }
-
-    const { data: orders, error } = await query;
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    if (!orders || orders.length === 0) {
-      return NextResponse.json({ error: 'Sin pedidos' }, { status: 404 });
-    }
-
-    const itemsRes = await supabase
-      .from('order_items')
-      .select('order_id, photo_id')
-      .in('order_id', orders.map((o) => o.id));
-    const items = itemsRes.data || [];
-
-    const photoIds = Array.from(new Set(items.map((it) => it.photo_id)));
-    const { data: photos } = await supabase
-      .from('photos')
-      .select('id, original_filename, code_id')
-      .in('id', photoIds);
-    const photosById = new Map<string, any>();
-    (photos || []).forEach((p: any) => photosById.set(p.id, p));
-
-    const codeIds = Array.from(new Set((photos || []).map((p: any) => p.code_id).filter(Boolean)));
-    const { data: codes } = await supabase
-      .from('codes' as any)
-      .select('id, code_value, token, course_id')
-      .in('id', codeIds);
-    const courseIds = Array.from(new Set((codes || []).map((c: any) => c.course_id).filter(Boolean)));
-    const { data: courses } = await supabase
-      .from('courses' as any)
-      .select('id, name')
-      .in('id', courseIds);
-    const courseById = new Map<string, any>();
-    (courses || []).forEach((c: any) => courseById.set(c.id, c));
-    const codeById = new Map<string, any>();
-    (codes || []).forEach((c: any) => codeById.set(c.id, c));
-
-    // Generar PDF A6 por etiqueta
-    const doc = new PDFDocument({ size: 'A6', margin: 18 });
-    const chunks: Uint8Array[] = [];
-    doc.on('data', (chunk) => chunks.push(chunk));
-    const done = new Promise<Buffer>((resolve) => {
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
+    console.log(`[Order Labels API] Generating labels for ${order_ids.length} orders`, {
+      format,
+      label_size,
+      include_qr,
+      include_logo,
     });
 
-    for (const o of orders) {
-      const its = items.filter((it) => it.order_id === o.id);
-      const firstPhoto = its.length > 0 ? photosById.get(its[0].photo_id) : null;
-      const code = firstPhoto?.code_id ? codeById.get(firstPhoto.code_id) : null;
-      const token = code?.token as string | undefined;
+    // Generate labels using the export service
+    const result = await orderExportService.generateShippingLabels(order_ids);
 
-      const filenames = its
-        .slice(0, 5)
-        .map((it) => photosById.get(it.photo_id)?.original_filename)
-        .filter(Boolean)
-        .map((s: string) => s.replace(/\.[^.]+$/, '')) as string[];
+    const duration = Date.now() - startTime;
 
-      doc.fontSize(14).text('LookEscolar', { align: 'left' });
-      doc.moveDown(0.5);
-      doc.fontSize(12).text(`Pedido: ${o.id.slice(-8)}`);
-      if (code?.code_value) doc.text(`Código: ${code.code_value}`);
-      const courseName = code?.course_id ? courseById.get(code.course_id)?.name : '';
-      if (courseName) doc.text(`Curso: ${courseName}`);
-      doc.text(`Fotos: ${its.length}`);
-      if (filenames.length > 0) {
-        doc.fontSize(10).text(`Lista: ${filenames.join(', ')}`);
-      }
+    console.log(`[Order Labels API] Labels generated in ${duration}ms`, {
+      filename: result.filename,
+      recordCount: result.recordCount,
+      fileSize: `${(result.fileSize / 1024).toFixed(2)} KB`,
+    });
 
-      if (token) {
-        try {
-          const url = `${request.nextUrl.origin}/f/${token}`;
-          const qrDataUrl = await QRCode.toDataURL(url, { margin: 0, width: 120 });
-          const base64 = qrDataUrl.split(',')[1];
-          const buf = Buffer.from(base64, 'base64');
-          doc.image(buf, doc.page.width - 150, 18, { width: 120, height: 120 });
-          doc.rect(doc.page.width - 150, 18, 120, 120).stroke();
-        } catch {}
-      }
-
-      doc.addPage({ size: 'A6', margin: 18 });
-    }
-
-    doc.end();
-    const pdf = await done;
-
-    return new NextResponse(pdf, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="etiquetas.pdf"',
+    return NextResponse.json({
+      success: true,
+      labels: result,
+      metadata: {
+        order_count: order_ids.length,
+        format,
+        label_size,
+        options: {
+          include_qr,
+          include_logo,
+        },
+        generated_at: new Date().toISOString(),
+      },
+      performance: {
+        generation_time_ms: duration,
+        labels_per_second: Math.round(order_ids.length / (duration / 1000)),
       },
     });
+
   } catch (error) {
-    console.error('[Service] Orders labels PDF error:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const duration = Date.now() - startTime;
+    console.error('[Order Labels API] Label generation failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
+    });
+
+    return NextResponse.json(
+      {
+        error: 'Label generation failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }
 
+/**
+ * GET /api/admin/orders/labels
+ * Generate labels for orders based on query parameters
+ */
+export async function GET(request: NextRequest) {
+  const startTime = Date.now();
 
+  try {
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
+
+    // Get order IDs from query parameter (comma-separated)
+    const orderIdsParam = searchParams.get('order_ids');
+    if (!orderIdsParam) {
+      return NextResponse.json(
+        { error: 'order_ids parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    const orderIds = orderIdsParam.split(',').filter(Boolean);
+    if (orderIds.length === 0 || orderIds.length > 100) {
+      return NextResponse.json(
+        { error: 'Invalid number of order IDs (must be 1-100)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    for (const id of orderIds) {
+      if (!uuidRegex.test(id)) {
+        return NextResponse.json(
+          { error: `Invalid order ID format: ${id}` },
+          { status: 400 }
+        );
+      }
+    }
+
+    const format = (searchParams.get('format') as 'pdf' | 'html') || 'pdf';
+    const labelSize = (searchParams.get('label_size') as 'standard' | 'small' | 'large') || 'standard';
+    const includeQr = searchParams.get('include_qr') !== 'false';
+    const includeLogo = searchParams.get('include_logo') !== 'false';
+
+    console.log(`[Order Labels API] GET request for ${orderIds.length} labels`, {
+      format,
+      labelSize,
+      includeQr,
+      includeLogo,
+    });
+
+    // Generate labels
+    const result = await orderExportService.generateShippingLabels(orderIds);
+
+    const duration = Date.now() - startTime;
+
+    console.log(`[Order Labels API] GET labels completed in ${duration}ms`);
+
+    // For GET requests, provide download information
+    return NextResponse.json({
+      success: true,
+      downloadUrl: `/api/admin/orders/labels/download/${result.filename}`,
+      labels: result,
+      message: 'Labels generated successfully. Use the downloadUrl to get the file.',
+      metadata: {
+        order_count: orderIds.length,
+        format,
+        options: { includeQr, includeLogo, labelSize },
+      },
+    });
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[Order Labels API] GET labels failed:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration
+    });
+
+    return NextResponse.json(
+      {
+        error: 'Label generation failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}

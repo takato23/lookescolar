@@ -71,6 +71,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      order_audit_log: {
+        Row: {
+          id: string;
+          order_id: string;
+          action_type: string;
+          old_values: Json | null;
+          new_values: Json | null;
+          changed_by: string | null;
+          changed_by_type: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          notes: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          action_type: string;
+          old_values?: Json | null;
+          new_values?: Json | null;
+          changed_by?: string | null;
+          changed_by_type?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          notes?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          action_type?: string;
+          old_values?: Json | null;
+          new_values?: Json | null;
+          changed_by?: string | null;
+          changed_by_type?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          notes?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'order_audit_log_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'order_audit_log_changed_by_fkey';
+            columns: ['changed_by'];
+            isOneToOne: false;
+            referencedRelation: 'admin_users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       order_items: {
         Row: {
           created_at: string | null;
@@ -134,6 +191,16 @@ export type Database = {
           subject_id: string;
           total_cents: number;
           updated_at: string | null;
+          // Enhanced audit and tracking fields
+          status_history: Json | null;
+          last_status_change: string | null;
+          status_changed_by: string | null;
+          admin_notes: string | null;
+          estimated_delivery_date: string | null;
+          actual_delivery_date: string | null;
+          delivery_method: string | null;
+          tracking_number: string | null;
+          priority_level: number | null;
         };
         Insert: {
           created_at?: string | null;
@@ -148,6 +215,16 @@ export type Database = {
           subject_id: string;
           total_cents: number;
           updated_at?: string | null;
+          // Enhanced audit and tracking fields
+          status_history?: Json | null;
+          last_status_change?: string | null;
+          status_changed_by?: string | null;
+          admin_notes?: string | null;
+          estimated_delivery_date?: string | null;
+          actual_delivery_date?: string | null;
+          delivery_method?: string | null;
+          tracking_number?: string | null;
+          priority_level?: number | null;
         };
         Update: {
           created_at?: string | null;
@@ -162,6 +239,16 @@ export type Database = {
           subject_id?: string;
           total_cents?: number;
           updated_at?: string | null;
+          // Enhanced audit and tracking fields
+          status_history?: Json | null;
+          last_status_change?: string | null;
+          status_changed_by?: string | null;
+          admin_notes?: string | null;
+          estimated_delivery_date?: string | null;
+          actual_delivery_date?: string | null;
+          delivery_method?: string | null;
+          tracking_number?: string | null;
+          priority_level?: number | null;
         };
         Relationships: [
           {

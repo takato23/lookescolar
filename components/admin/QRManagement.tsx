@@ -82,11 +82,11 @@ export default function QRManagement({ eventId, eventName }: QRManagementProps) 
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/events/${eventId}/subjects`);
+      const response = await fetch(`/api/admin/events/${eventId}/students`);
       if (!response.ok) throw new Error('Failed to load students');
       
       const data = await response.json();
-      setStudents(data.subjects || []);
+      setStudents(data.students || []);
     } catch (error) {
       toast.error('Failed to load students');
       console.error('Students load error:', error);

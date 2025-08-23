@@ -1,224 +1,259 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServiceClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
-import crypto from 'crypto';
+import { getEnhancedOrderService, type UpdateOrderRequest } from '@/lib/services/enhanced-order.service';
 
-// Schema para actualizar pedido
+// Validation schema for order updates
 const UpdateOrderSchema = z.object({
-  status: z.enum(['delivered']), // Solo permitimos marcar como entregado
-  notes: z.string().optional(),
+  status: z.enum(['pending', 'approved', 'delivered', 'failed', 'cancelled']).optional(),
+  admin_notes: z.string().max(1000).optional(),
+  priority_level: z.number().min(1).max(5).optional(),
+  estimated_delivery_date: z.string().datetime().optional(),
+  delivery_method: z.enum(['pickup', 'email', 'postal', 'hand_delivery']).optional(),
+  tracking_number: z.string().max(100).optional(),
 });
 
-// PUT - Actualizar estado de pedido (solo para admin)
-export async function PUT(
+/**
+ * GET /api/admin/orders/[id]
+ * Get detailed order information with audit trail
+ */
+export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const requestId = crypto.randomUUID();
   const startTime = Date.now();
-  const { id: orderId } = params;
 
   try {
-    // Verificar autenticación admin
-    const cookieStore = await cookies();
-    const adminSession = cookieStore.get('admin-session');
+    const { id } = params;
 
-    if (!adminSession) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    // Validar UUID del pedido
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(orderId)) {
+    if (!id || typeof id !== 'string') {
       return NextResponse.json(
-        { error: 'ID de pedido inválido' },
+        { error: 'Invalid order ID' },
         { status: 400 }
       );
     }
 
-    // Parsear y validar request body
-    const body = await request.json();
-    const validation = UpdateOrderSchema.safeParse(body);
+    // Get order with full details and audit information
+    const enhancedOrderService = getEnhancedOrderService();
+    const order = await enhancedOrderService.getOrderById(id);
 
-    if (!validation.success) {
+    // Get audit trail
+    const auditTrail = await enhancedOrderService.getOrderAuditTrail(id);
+
+    const duration = Date.now() - startTime;
+
+    console.log(`[Admin Order Detail] Order ${id} retrieved in ${duration}ms`);
+
+    return NextResponse.json({
+      order,
+      audit_trail: auditTrail,
+      performance: {
+        query_time_ms: duration,
+        optimized: true
+      },
+      generated_at: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[Admin Order Detail] Error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      order_id: params.id,
+      duration
+    });
+
+    if (error instanceof Error && error.message === 'Order not found') {
       return NextResponse.json(
-        { error: 'Datos inválidos', details: validation.error.issues },
-        { status: 400 }
-      );
-    }
-
-    const { status, notes } = validation.data;
-    const supabase = await createServiceClient();
-
-    // Verificar que el pedido existe y está en estado approved
-    const { data: existingOrder, error: fetchError } = await supabase
-      .from('orders')
-      .select('id, status, contact_name')
-      .eq('id', orderId)
-      .single();
-
-    if (fetchError || !existingOrder) {
-      console.error(`[${requestId}] Pedido no encontrado:`, fetchError);
-      return NextResponse.json(
-        { error: 'Pedido no encontrado' },
+        { error: 'Order not found' },
         { status: 404 }
       );
     }
 
-    // Validar transición de estado
-    if (status === 'delivered' && existingOrder.status !== 'approved') {
-      return NextResponse.json(
-        {
-          error:
-            'Solo se pueden marcar como entregados los pedidos pagados (approved)',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (existingOrder.status === 'delivered') {
-      return NextResponse.json(
-        { error: 'El pedido ya está marcado como entregado' },
-        { status: 409 }
-      );
-    }
-
-    // Actualizar pedido
-    const updateData: any = {
-      status,
-      ...(notes ? { notes } : {}),
-      ...(status === 'delivered'
-        ? { delivered_at: new Date().toISOString() }
-        : {}),
-    };
-
-    const { data: updatedOrder, error: updateError } = await supabase
-      .from('orders')
-      .update(updateData)
-      .eq('id', orderId)
-      .select('id, status, delivered_at')
-      .single();
-
-    if (updateError) {
-      console.error(`[${requestId}] Error actualizando pedido:`, updateError);
-      return NextResponse.json(
-        { error: 'Error actualizando pedido' },
-        { status: 500 }
-      );
-    }
-
-    const duration = Date.now() - startTime;
-    console.info(`[${requestId}] Pedido actualizado`, {
-      orderId: `ord_***${orderId.slice(-4)}`,
-      customerName: existingOrder.contact_name,
-      newStatus: status,
-      duration,
-    });
-
-    return NextResponse.json({
-      message: 'Pedido actualizado exitosamente',
-      order: updatedOrder,
-    });
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error(`[${requestId}] Error actualizando pedido:`, error);
-
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      {
+        error: 'Failed to fetch order details',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
 }
 
-// GET - Obtener detalles de un pedido específico
-export async function GET(
+/**
+ * PUT /api/admin/orders/[id]
+ * Update order with audit trail
+ */
+export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const requestId = crypto.randomUUID();
-  const { id: orderId } = params;
+  const startTime = Date.now();
 
   try {
-    // Verificar autenticación admin
-    const cookieStore = await cookies();
-    const adminSession = cookieStore.get('admin-session');
+    const { id } = params;
 
-    if (!adminSession) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    // Validar UUID del pedido
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(orderId)) {
+    if (!id || typeof id !== 'string') {
       return NextResponse.json(
-        { error: 'ID de pedido inválido' },
+        { error: 'Invalid order ID' },
         { status: 400 }
       );
     }
 
-    const supabase = await createServiceClient();
+    // Parse and validate request body
+    const body = await request.json();
+    const validation = UpdateOrderSchema.safeParse(body);
 
-    // Obtener pedido con relaciones completas
-    const { data: order, error } = await supabase
-      .from('orders')
-      .select(
-        `
-        *,
-        subjects:subject_id (
-          id,
-          first_name,
-          last_name,
-          type,
-          events:event_id (
-            id,
-            name,
-            school,
-            date
-          )
-        ),
-        order_items (
-          id,
-          quantity,
-          photos:photo_id (
-            id,
-            storage_path
-          ),
-          price_list_items:price_list_item_id (
-            id,
-            label,
-            price_cents
-          )
-        )
-      `
-      )
-      .eq('id', orderId)
-      .single();
-
-    if (error || !order) {
-      console.warn(`[${requestId}] Pedido no encontrado: ${orderId}`);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Pedido no encontrado' },
+        {
+          error: 'Invalid update data',
+          details: validation.error.issues
+        },
+        { status: 400 }
+      );
+    }
+
+    const updates = validation.data;
+
+    // Extract admin context for audit trail
+    const adminId = request.headers.get('x-admin-id') || undefined;
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     request.ip;
+    const userAgent = request.headers.get('user-agent') || undefined;
+
+    // Update the order
+    const enhancedOrderService = getEnhancedOrderService();
+    const updatedOrder = await enhancedOrderService.updateOrder(
+      id,
+      updates,
+      adminId,
+      ipAddress,
+      userAgent
+    );
+
+    const duration = Date.now() - startTime;
+
+    console.log(`[Admin Order Update] Order ${id} updated in ${duration}ms`, {
+      updates: Object.keys(updates),
+      admin_id: adminId,
+      duration
+    });
+
+    return NextResponse.json({
+      success: true,
+      order: updatedOrder,
+      updated_fields: Object.keys(updates),
+      performance: {
+        update_time_ms: duration,
+        audit_logged: true
+      },
+      updated_at: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[Admin Order Update] Error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      order_id: params.id,
+      duration
+    });
+
+    if (error instanceof Error && error.message === 'Order not found') {
+      return NextResponse.json(
+        { error: 'Order not found' },
         { status: 404 }
       );
     }
 
-    console.info(`[${requestId}] Detalles de pedido obtenidos`, {
-      orderId: `ord_***${orderId.slice(-4)}`,
-      status: order.status,
-    });
+    return NextResponse.json(
+      {
+        error: 'Failed to update order',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
 
-    return NextResponse.json({ order });
-  } catch (error) {
-    console.error(
-      `[${requestId}] Error obteniendo detalles del pedido:`,
-      error
+/**
+ * DELETE /api/admin/orders/[id]
+ * Cancel order (soft delete with audit trail)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const startTime = Date.now();
+
+  try {
+    const { id } = params;
+
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json(
+        { error: 'Invalid order ID' },
+        { status: 400 }
+      );
+    }
+
+    // Get cancellation reason from query params
+    const reason = request.nextUrl.searchParams.get('reason') || 'Admin cancellation';
+
+    // Extract admin context
+    const adminId = request.headers.get('x-admin-id') || undefined;
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     request.ip;
+    const userAgent = request.headers.get('user-agent') || undefined;
+
+    // Cancel the order (update status to cancelled)
+    const enhancedOrderService = getEnhancedOrderService();
+    const cancelledOrder = await enhancedOrderService.updateOrder(
+      id,
+      { 
+        status: 'cancelled', 
+        admin_notes: reason 
+      },
+      adminId,
+      ipAddress,
+      userAgent
     );
 
+    const duration = Date.now() - startTime;
+
+    console.log(`[Admin Order Cancel] Order ${id} cancelled in ${duration}ms`, {
+      reason,
+      admin_id: adminId,
+      duration
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order cancelled successfully',
+      order: cancelledOrder,
+      cancellation_reason: reason,
+      cancelled_at: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('[Admin Order Cancel] Error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      order_id: params.id,
+      duration
+    });
+
+    if (error instanceof Error && error.message === 'Order not found') {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      {
+        error: 'Failed to cancel order',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
