@@ -31,42 +31,51 @@ test.describe('Visual Regression Testing', () => {
           transition-duration: 0s !important;
           transition-delay: 0s !important;
         }
-      `
+      `,
     });
   });
 
   test.describe('Homepage Visual Tests', () => {
-    VIEWPORTS.forEach(viewport => {
+    VIEWPORTS.forEach((viewport) => {
       test(`Homepage - ${viewport.name}`, async ({ page }) => {
         await page.setViewportSize(viewport);
         await page.goto('/');
-        
+
         // Wait for content to load
         await page.waitForSelector('[data-testid="main-content"]');
         await page.waitForLoadState('networkidle');
-        
+
         // Take screenshot
-        await expect(page).toHaveScreenshot(`homepage-${viewport.name.toLowerCase()}.png`, {
-          ...SCREENSHOT_CONFIG,
-          fullPage: true,
-        });
+        await expect(page).toHaveScreenshot(
+          `homepage-${viewport.name.toLowerCase()}.png`,
+          {
+            ...SCREENSHOT_CONFIG,
+            fullPage: true,
+          }
+        );
       });
     });
 
     test('Homepage - Hero section', async ({ page }) => {
       await page.goto('/');
       await page.waitForSelector('[data-testid="hero-section"]');
-      
+
       const heroSection = page.locator('[data-testid="hero-section"]');
-      await expect(heroSection).toHaveScreenshot('hero-section.png', SCREENSHOT_CONFIG);
+      await expect(heroSection).toHaveScreenshot(
+        'hero-section.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Homepage - Navigation', async ({ page }) => {
       await page.goto('/');
       await page.waitForSelector('[data-testid="main-navigation"]');
-      
+
       const navigation = page.locator('[data-testid="main-navigation"]');
-      await expect(navigation).toHaveScreenshot('navigation.png', SCREENSHOT_CONFIG);
+      await expect(navigation).toHaveScreenshot(
+        'navigation.png',
+        SCREENSHOT_CONFIG
+      );
     });
   });
 
@@ -82,7 +91,7 @@ test.describe('Visual Regression Testing', () => {
 
     test('Admin Dashboard - Overview', async ({ page }) => {
       await page.waitForSelector('[data-testid="dashboard-stats"]');
-      
+
       // Hide dynamic content (dates, numbers that change)
       await page.addStyleTag({
         content: `
@@ -94,7 +103,7 @@ test.describe('Visual Regression Testing', () => {
             content: "###";
             color: black;
           }
-        `
+        `,
       });
 
       await expect(page).toHaveScreenshot('admin-dashboard.png', {
@@ -108,30 +117,39 @@ test.describe('Visual Regression Testing', () => {
 
     test('Admin Sidebar', async ({ page }) => {
       const sidebar = page.locator('[data-testid="admin-sidebar"]');
-      await expect(sidebar).toHaveScreenshot('admin-sidebar.png', SCREENSHOT_CONFIG);
+      await expect(sidebar).toHaveScreenshot(
+        'admin-sidebar.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Photo Upload Interface', async ({ page }) => {
       await page.click('[data-testid="nav-photos"]');
       await page.waitForSelector('[data-testid="upload-dropzone"]');
-      
+
       const uploadInterface = page.locator('[data-testid="upload-interface"]');
-      await expect(uploadInterface).toHaveScreenshot('photo-upload.png', SCREENSHOT_CONFIG);
+      await expect(uploadInterface).toHaveScreenshot(
+        'photo-upload.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Photo Grid - Empty State', async ({ page }) => {
       await page.goto('/admin/photos?filter=empty');
       await page.waitForSelector('[data-testid="empty-state"]');
-      
+
       const emptyState = page.locator('[data-testid="empty-state"]');
-      await expect(emptyState).toHaveScreenshot('photo-grid-empty.png', SCREENSHOT_CONFIG);
+      await expect(emptyState).toHaveScreenshot(
+        'photo-grid-empty.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Photo Grid - Loaded State', async ({ page }) => {
       await page.goto('/admin/photos');
       await page.waitForSelector('[data-testid="photo-grid"]');
       await page.waitForTimeout(1000); // Wait for images to load
-      
+
       const photoGrid = page.locator('[data-testid="photo-grid"]');
       await expect(photoGrid).toHaveScreenshot('photo-grid-loaded.png', {
         ...SCREENSHOT_CONFIG,
@@ -144,15 +162,20 @@ test.describe('Visual Regression Testing', () => {
     test('Photo Tagging Interface', async ({ page }) => {
       await page.goto('/admin/tagging');
       await page.waitForSelector('[data-testid="tagging-interface"]');
-      
-      const taggingInterface = page.locator('[data-testid="tagging-interface"]');
-      await expect(taggingInterface).toHaveScreenshot('photo-tagging.png', SCREENSHOT_CONFIG);
+
+      const taggingInterface = page.locator(
+        '[data-testid="tagging-interface"]'
+      );
+      await expect(taggingInterface).toHaveScreenshot(
+        'photo-tagging.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Order Management', async ({ page }) => {
       await page.goto('/admin/orders');
       await page.waitForSelector('[data-testid="orders-table"]');
-      
+
       // Mask dynamic content
       await page.addStyleTag({
         content: `
@@ -168,7 +191,7 @@ test.describe('Visual Regression Testing', () => {
             content: "10:30";
             color: black;
           }
-        `
+        `,
       });
 
       const ordersTable = page.locator('[data-testid="orders-table"]');
@@ -183,18 +206,21 @@ test.describe('Visual Regression Testing', () => {
   });
 
   test.describe('Public Gallery Visual Tests', () => {
-    VIEWPORTS.forEach(viewport => {
+    VIEWPORTS.forEach((viewport) => {
       test(`Public Gallery - ${viewport.name}`, async ({ page }) => {
         await page.setViewportSize(viewport);
         await page.goto('/gallery/test-event-123');
-        
+
         await page.waitForSelector('[data-testid="public-gallery"]');
         await page.waitForTimeout(1000);
-        
-        await expect(page).toHaveScreenshot(`public-gallery-${viewport.name.toLowerCase()}.png`, {
-          ...SCREENSHOT_CONFIG,
-          fullPage: true,
-        });
+
+        await expect(page).toHaveScreenshot(
+          `public-gallery-${viewport.name.toLowerCase()}.png`,
+          {
+            ...SCREENSHOT_CONFIG,
+            fullPage: true,
+          }
+        );
       });
     });
 
@@ -211,56 +237,70 @@ test.describe('Visual Regression Testing', () => {
       for (const breakpoint of breakpoints) {
         await page.setViewportSize({ width: breakpoint.width, height: 800 });
         await page.goto('/gallery/test-event-123');
-        
+
         await page.waitForSelector('[data-testid="photo-grid"]');
         await page.waitForTimeout(500);
-        
+
         const photoGrid = page.locator('[data-testid="photo-grid"]');
-        await expect(photoGrid).toHaveScreenshot(`photo-grid-${breakpoint.name}.png`, SCREENSHOT_CONFIG);
+        await expect(photoGrid).toHaveScreenshot(
+          `photo-grid-${breakpoint.name}.png`,
+          SCREENSHOT_CONFIG
+        );
       }
     });
 
     test('Photo Modal', async ({ page }) => {
       await page.goto('/gallery/test-event-123');
       await page.waitForSelector('[data-testid="photo-card"]');
-      
+
       // Open modal
       await page.click('[data-testid="photo-card"]');
       await page.waitForSelector('[data-testid="photo-modal"]');
-      
+
       const photoModal = page.locator('[data-testid="photo-modal"]');
-      await expect(photoModal).toHaveScreenshot('photo-modal.png', SCREENSHOT_CONFIG);
+      await expect(photoModal).toHaveScreenshot(
+        'photo-modal.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Contact Form', async ({ page }) => {
       await page.goto('/gallery/test-event-123');
-      await page.locator('[data-testid="contact-form"]').scrollIntoViewIfNeeded();
-      
+      await page
+        .locator('[data-testid="contact-form"]')
+        .scrollIntoViewIfNeeded();
+
       const contactForm = page.locator('[data-testid="contact-form"]');
-      await expect(contactForm).toHaveScreenshot('contact-form.png', SCREENSHOT_CONFIG);
+      await expect(contactForm).toHaveScreenshot(
+        'contact-form.png',
+        SCREENSHOT_CONFIG
+      );
     });
   });
 
   test.describe('Family Portal Visual Tests', () => {
-    VIEWPORTS.forEach(viewport => {
+    VIEWPORTS.forEach((viewport) => {
       test(`Family Portal - ${viewport.name}`, async ({ page }) => {
         await page.setViewportSize(viewport);
         await page.goto('/f/family-token-12345');
-        
+
         await page.waitForSelector('[data-testid="family-gallery"]');
         await page.waitForTimeout(1000);
-        
-        await expect(page).toHaveScreenshot(`family-portal-${viewport.name.toLowerCase()}.png`, {
-          ...SCREENSHOT_CONFIG,
-          fullPage: true,
-        });
+
+        await expect(page).toHaveScreenshot(
+          `family-portal-${viewport.name.toLowerCase()}.png`,
+          {
+            ...SCREENSHOT_CONFIG,
+            fullPage: true,
+          }
+        );
       });
     });
 
     test('Family Header with Token Info', async ({ page }) => {
       await page.goto('/f/family-token-12345');
       await page.waitForSelector('[data-testid="family-header"]');
-      
+
       // Mask expiration date
       await page.addStyleTag({
         content: `
@@ -271,7 +311,7 @@ test.describe('Visual Regression Testing', () => {
             content: "Válido hasta: 31 Dic 2024";
             color: inherit;
           }
-        `
+        `,
       });
 
       const familyHeader = page.locator('[data-testid="family-header"]');
@@ -283,31 +323,37 @@ test.describe('Visual Regression Testing', () => {
 
     test('Shopping Cart', async ({ page }) => {
       await page.goto('/f/family-token-12345');
-      
+
       // Select some photos
       await page.click('[data-testid="family-photo"]');
       await page.click('[data-testid="family-photo"]');
-      
+
       // View cart
       await page.click('[data-testid="view-cart"]');
       await page.waitForSelector('[data-testid="shopping-cart"]');
-      
+
       const shoppingCart = page.locator('[data-testid="shopping-cart"]');
-      await expect(shoppingCart).toHaveScreenshot('shopping-cart.png', SCREENSHOT_CONFIG);
+      await expect(shoppingCart).toHaveScreenshot(
+        'shopping-cart.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Checkout Form', async ({ page }) => {
       await page.goto('/f/family-token-12345/checkout');
       await page.waitForSelector('[data-testid="checkout-form"]');
-      
+
       const checkoutForm = page.locator('[data-testid="checkout-form"]');
-      await expect(checkoutForm).toHaveScreenshot('checkout-form.png', SCREENSHOT_CONFIG);
+      await expect(checkoutForm).toHaveScreenshot(
+        'checkout-form.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Order Status', async ({ page }) => {
       await page.goto('/f/family-with-order-token/order-status');
       await page.waitForSelector('[data-testid="order-status"]');
-      
+
       // Mask dynamic content
       await page.addStyleTag({
         content: `
@@ -325,7 +371,7 @@ test.describe('Visual Regression Testing', () => {
             content: "15 Dic 2024";
             color: inherit;
           }
-        `
+        `,
       });
 
       const orderStatus = page.locator('[data-testid="order-status"]');
@@ -343,89 +389,119 @@ test.describe('Visual Regression Testing', () => {
     test('404 Error Page', async ({ page }) => {
       await page.goto('/nonexistent-page');
       await page.waitForSelector('[data-testid="error-404"]');
-      
+
       await expect(page).toHaveScreenshot('error-404.png', SCREENSHOT_CONFIG);
     });
 
     test('Invalid Token Error', async ({ page }) => {
       await page.goto('/f/invalid-token-12345');
       await page.waitForSelector('[data-testid="invalid-token"]');
-      
-      await expect(page).toHaveScreenshot('invalid-token.png', SCREENSHOT_CONFIG);
+
+      await expect(page).toHaveScreenshot(
+        'invalid-token.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Network Error State', async ({ page }) => {
       // Mock network failure
-      await page.route('**/api/**', route => {
+      await page.route('**/api/**', (route) => {
         route.abort('failed');
       });
 
       await page.goto('/f/valid-token-12345');
       await page.waitForSelector('[data-testid="network-error"]');
-      
+
       const networkError = page.locator('[data-testid="network-error"]');
-      await expect(networkError).toHaveScreenshot('network-error.png', SCREENSHOT_CONFIG);
+      await expect(networkError).toHaveScreenshot(
+        'network-error.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Loading States', async ({ page }) => {
       // Delay API responses to capture loading state
-      await page.route('**/api/family/gallery/**', async route => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+      await page.route('**/api/family/gallery/**', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         await route.continue();
       });
 
       await page.goto('/f/valid-token-12345');
-      
+
       // Capture loading skeleton
       await page.waitForSelector('[data-testid="loading-skeleton"]');
       const loadingSkeleton = page.locator('[data-testid="loading-skeleton"]');
-      await expect(loadingSkeleton).toHaveScreenshot('loading-skeleton.png', SCREENSHOT_CONFIG);
+      await expect(loadingSkeleton).toHaveScreenshot(
+        'loading-skeleton.png',
+        SCREENSHOT_CONFIG
+      );
     });
   });
 
   test.describe('Interactive States Visual Tests', () => {
     test('Photo Selection States', async ({ page }) => {
       await page.goto('/f/family-token-12345');
-      
+
       // Test unselected state
       const firstPhoto = page.locator('[data-testid="family-photo"]').first();
-      await expect(firstPhoto).toHaveScreenshot('photo-unselected.png', SCREENSHOT_CONFIG);
-      
+      await expect(firstPhoto).toHaveScreenshot(
+        'photo-unselected.png',
+        SCREENSHOT_CONFIG
+      );
+
       // Test selected state
       await firstPhoto.click();
-      await expect(firstPhoto).toHaveScreenshot('photo-selected.png', SCREENSHOT_CONFIG);
+      await expect(firstPhoto).toHaveScreenshot(
+        'photo-selected.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Button Hover States', async ({ page }) => {
       await page.goto('/');
-      
+
       const primaryButton = page.locator('[data-testid="cta-button"]');
-      
+
       // Normal state
-      await expect(primaryButton).toHaveScreenshot('button-normal.png', SCREENSHOT_CONFIG);
-      
+      await expect(primaryButton).toHaveScreenshot(
+        'button-normal.png',
+        SCREENSHOT_CONFIG
+      );
+
       // Hover state
       await primaryButton.hover();
-      await expect(primaryButton).toHaveScreenshot('button-hover.png', SCREENSHOT_CONFIG);
-      
+      await expect(primaryButton).toHaveScreenshot(
+        'button-hover.png',
+        SCREENSHOT_CONFIG
+      );
+
       // Focus state
       await primaryButton.focus();
-      await expect(primaryButton).toHaveScreenshot('button-focus.png', SCREENSHOT_CONFIG);
+      await expect(primaryButton).toHaveScreenshot(
+        'button-focus.png',
+        SCREENSHOT_CONFIG
+      );
     });
 
     test('Form Validation States', async ({ page }) => {
       await page.goto('/f/test-token/checkout');
-      
+
       // Test invalid input state
       await page.fill('[data-testid="contact-email"]', 'invalid-email');
       await page.click('[data-testid="proceed-payment"]');
-      
+
       const emailField = page.locator('[data-testid="contact-email"]');
-      await expect(emailField).toHaveScreenshot('input-error.png', SCREENSHOT_CONFIG);
-      
+      await expect(emailField).toHaveScreenshot(
+        'input-error.png',
+        SCREENSHOT_CONFIG
+      );
+
       // Test valid input state
       await page.fill('[data-testid="contact-email"]', 'valid@email.com');
-      await expect(emailField).toHaveScreenshot('input-valid.png', SCREENSHOT_CONFIG);
+      await expect(emailField).toHaveScreenshot(
+        'input-valid.png',
+        SCREENSHOT_CONFIG
+      );
     });
   });
 
@@ -438,7 +514,7 @@ test.describe('Visual Regression Testing', () => {
     test('Homepage Dark Mode', async ({ page }) => {
       await page.goto('/');
       await page.waitForSelector('[data-testid="main-content"]');
-      
+
       await expect(page).toHaveScreenshot('homepage-dark.png', {
         ...SCREENSHOT_CONFIG,
         fullPage: true,
@@ -448,7 +524,7 @@ test.describe('Visual Regression Testing', () => {
     test('Family Portal Dark Mode', async ({ page }) => {
       await page.goto('/f/family-token-12345');
       await page.waitForSelector('[data-testid="family-gallery"]');
-      
+
       await expect(page).toHaveScreenshot('family-portal-dark.png', {
         ...SCREENSHOT_CONFIG,
         fullPage: true,
@@ -459,20 +535,23 @@ test.describe('Visual Regression Testing', () => {
       await page.goto('/gallery/test-event-123');
       await page.click('[data-testid="photo-card"]');
       await page.waitForSelector('[data-testid="photo-modal"]');
-      
+
       const photoModal = page.locator('[data-testid="photo-modal"]');
-      await expect(photoModal).toHaveScreenshot('photo-modal-dark.png', SCREENSHOT_CONFIG);
+      await expect(photoModal).toHaveScreenshot(
+        'photo-modal-dark.png',
+        SCREENSHOT_CONFIG
+      );
     });
   });
 
   test.describe('High Contrast Mode Visual Tests', () => {
     test.beforeEach(async ({ page }) => {
       // Simulate high contrast mode
-      await page.emulateMedia({ 
+      await page.emulateMedia({
         colorScheme: 'dark',
-        reducedMotion: 'reduce'
+        reducedMotion: 'reduce',
       });
-      
+
       await page.addStyleTag({
         content: `
           @media (prefers-contrast: high) {
@@ -486,14 +565,14 @@ test.describe('Visual Regression Testing', () => {
               color: black !important;
             }
           }
-        `
+        `,
       });
     });
 
     test('High Contrast Homepage', async ({ page }) => {
       await page.goto('/');
       await page.waitForSelector('[data-testid="main-content"]');
-      
+
       await expect(page).toHaveScreenshot('homepage-high-contrast.png', {
         ...SCREENSHOT_CONFIG,
         fullPage: true,

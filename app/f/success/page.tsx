@@ -249,20 +249,20 @@ function PaymentSuccessContent() {
 
 export default function PaymentSuccessPage() {
   return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-8">
-        <div className="mx-auto max-w-2xl">
-          <Card className="p-8">
-            <div className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-green-600"></div>
-              <h1 className="mb-2 text-xl font-semibold">
-                Cargando...
-              </h1>
-            </div>
-          </Card>
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-8">
+          <div className="mx-auto max-w-2xl">
+            <Card className="p-8">
+              <div className="text-center">
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-green-600"></div>
+                <h1 className="mb-2 text-xl font-semibold">Cargando...</h1>
+              </div>
+            </Card>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <PaymentSuccessContent />
     </Suspense>
   );

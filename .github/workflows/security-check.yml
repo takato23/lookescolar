@@ -9,7 +9,7 @@ on:
 jobs:
   security-audit:
     runs-on: ubuntu-latest
-    
+
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -54,7 +54,7 @@ jobs:
 
   dependency-check:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
           AUDIT_RESULT=$(npm audit --audit-level=high --json)
           HIGH_VULN=$(echo $AUDIT_RESULT | jq '.metadata.vulnerabilities.high // 0')
           CRITICAL_VULN=$(echo $AUDIT_RESULT | jq '.metadata.vulnerabilities.critical // 0')
-          
+
           if [ "$HIGH_VULN" -gt 0 ] || [ "$CRITICAL_VULN" -gt 0 ]; then
             echo "❌ Found $HIGH_VULN high and $CRITICAL_VULN critical vulnerabilities"
             echo "Run 'npm audit fix' to resolve"
@@ -87,7 +87,7 @@ jobs:
 
   performance-check:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
         run: |
           BUILD_SIZE=$(du -sh .next | cut -f1)
           echo "Build size: $BUILD_SIZE"
-          
+
           # Check if .next/static/chunks exists and get size
           if [ -d ".next/static/chunks" ]; then
             CHUNK_SIZE=$(du -sh .next/static/chunks | cut -f1)
@@ -128,7 +128,7 @@ jobs:
 
   code-quality:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -155,7 +155,7 @@ jobs:
         run: |
           TODO_COUNT=$(grep -r "TODO\|FIXME" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" src app lib | wc -l)
           echo "TODO/FIXME comments found: $TODO_COUNT"
-          
+
           if [ "$TODO_COUNT" -gt 20 ]; then
             echo "⚠️  High number of TODO/FIXME comments: $TODO_COUNT"
             echo "Consider addressing before release"
@@ -165,37 +165,37 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security-audit, dependency-check, performance-check, code-quality]
     if: always()
-    
+
     steps:
       - name: Security Summary
         run: |
           echo "## 🔒 Security Audit Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.security-audit.result }}" = "success" ]; then
             echo "✅ **Security Audit**: PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Security Audit**: FAILED" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.dependency-check.result }}" = "success" ]; then
             echo "✅ **Dependency Check**: PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Dependency Check**: FAILED" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.performance-check.result }}" = "success" ]; then
             echo "✅ **Performance Check**: PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Performance Check**: FAILED" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.code-quality.result }}" = "success" ]; then
             echo "✅ **Code Quality**: PASSED" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Code Quality**: FAILED" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📋 Pre-Production Checklist" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

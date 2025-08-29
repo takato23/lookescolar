@@ -18,14 +18,17 @@ interface PerformanceMetrics {
 class DashboardPerformanceTest {
   private metrics: PerformanceMetrics[] = [];
 
-  async testApiEndpoint(url: string, name: string): Promise<PerformanceMetrics> {
+  async testApiEndpoint(
+    url: string,
+    name: string
+  ): Promise<PerformanceMetrics> {
     const start = performance.now();
-    
+
     try {
       const response = await fetch(url, { cache: 'no-store' });
       const data = await response.json();
       const duration = performance.now() - start;
-      
+
       const metric: PerformanceMetrics = {
         name,
         duration,
@@ -34,9 +37,9 @@ class DashboardPerformanceTest {
           status: response.status,
           dataSize: JSON.stringify(data).length,
           hasCache: response.headers.get('cache-control'),
-        }
+        },
       };
-      
+
       this.metrics.push(metric);
       return metric;
     } catch (error) {
@@ -45,9 +48,11 @@ class DashboardPerformanceTest {
         name,
         duration,
         status: 'error',
-        details: { error: error instanceof Error ? error.message : 'Unknown error' }
+        details: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
-      
+
       this.metrics.push(metric);
       return metric;
     }
@@ -57,12 +62,12 @@ class DashboardPerformanceTest {
     console.log(chalk.blue.bold('\n🔍 Dashboard Performance Analysis\n'));
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    
-    // Test optimized API endpoint
-    console.log(chalk.yellow('📊 Testing optimized dashboard API...'));
+
+    // Test unified Admin Stats API endpoint
+    console.log(chalk.yellow('📊 Testing admin stats API...'));
     const apiTest = await this.testApiEndpoint(
-      `${baseUrl}/api/admin/dashboard/stats`,
-      'Dashboard Stats API'
+      `${baseUrl}/api/admin/stats`,
+      'Admin Stats API'
     );
 
     this.displayResults();
@@ -71,21 +76,27 @@ class DashboardPerformanceTest {
 
   private displayResults(): void {
     console.log(chalk.green.bold('\n📈 Performance Results:\n'));
-    
-    this.metrics.forEach(metric => {
+
+    this.metrics.forEach((metric) => {
       const statusColor = metric.status === 'success' ? chalk.green : chalk.red;
-      const durationColor = metric.duration < 200 ? chalk.green : 
-                           metric.duration < 500 ? chalk.yellow : chalk.red;
-      
+      const durationColor =
+        metric.duration < 200
+          ? chalk.green
+          : metric.duration < 500
+            ? chalk.yellow
+            : chalk.red;
+
       console.log(`${statusColor('●')} ${metric.name}`);
       console.log(`  ${durationColor(`${metric.duration.toFixed(2)}ms`)}`);
-      
+
       if (metric.details) {
         if (metric.details.status) {
           console.log(`  Status: ${metric.details.status}`);
         }
         if (metric.details.dataSize) {
-          console.log(`  Response size: ${(metric.details.dataSize / 1024).toFixed(2)}KB`);
+          console.log(
+            `  Response size: ${(metric.details.dataSize / 1024).toFixed(2)}KB`
+          );
         }
         if (metric.details.hasCache) {
           console.log(`  Cache headers: ${metric.details.hasCache}`);
@@ -97,9 +108,9 @@ class DashboardPerformanceTest {
 
   private displayRecommendations(): void {
     console.log(chalk.blue.bold('🚀 Optimization Recommendations:\n'));
-    
-    const apiMetric = this.metrics.find(m => m.name === 'Dashboard Stats API');
-    
+
+    const apiMetric = this.metrics.find((m) => m.name === 'Admin Stats API');
+
     if (apiMetric) {
       if (apiMetric.duration > 500) {
         console.log(chalk.yellow('⚠️  API response time > 500ms'));
@@ -117,7 +128,7 @@ class DashboardPerformanceTest {
     console.log('  • Largest Contentful Paint: <2.5s');
     console.log('  • Bundle Size: <500KB initial');
     console.log('  • Query Cache Hit Rate: >80%');
-    
+
     console.log('\n' + chalk.green('✅ Implemented Optimizations:'));
     console.log('  • Server-side data fetching with API route');
     console.log('  • React Query with intelligent caching');
@@ -130,7 +141,7 @@ class DashboardPerformanceTest {
 
   async compareLegacyVsOptimized(): Promise<void> {
     console.log(chalk.magenta.bold('\n⚖️  Legacy vs Optimized Comparison:\n'));
-    
+
     console.log(chalk.red('❌ Legacy Implementation Issues:'));
     console.log('  • Direct Supabase queries from client (8 parallel queries)');
     console.log('  • No intelligent caching (only 30s interval)');
@@ -138,7 +149,7 @@ class DashboardPerformanceTest {
     console.log('  • No proper loading states or error boundaries');
     console.log('  • Hard-coded mock data mixed with real data');
     console.log('  • Missing bundle optimization');
-    
+
     console.log('\n' + chalk.green('✅ Optimized Implementation Benefits:'));
     console.log('  • Single API endpoint with server-side batching');
     console.log('  • React Query caching with 30s stale time + 5min gc');
@@ -147,7 +158,7 @@ class DashboardPerformanceTest {
     console.log('  • Real activity data from database');
     console.log('  • Performance monitoring and bundle analysis');
     console.log('  • Exponential backoff retry strategy');
-    
+
     console.log('\n' + chalk.blue('📊 Performance Improvements:'));
     console.log('  • Reduced client-side queries: 8 → 1 (-87.5%)');
     console.log('  • Better caching: 30s interval → intelligent React Query');
@@ -160,7 +171,7 @@ class DashboardPerformanceTest {
 // Main execution
 async function main(): Promise<void> {
   const tester = new DashboardPerformanceTest();
-  
+
   try {
     await tester.runTests();
     await tester.compareLegacyVsOptimized();

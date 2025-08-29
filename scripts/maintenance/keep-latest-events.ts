@@ -6,16 +6,22 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
-  console.error('[keep-latest-events] Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
+  console.error(
+    '[keep-latest-events] Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY'
+  );
   process.exit(1);
 }
 
-const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
+const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
+  auth: { persistSession: false },
+});
 
 async function main() {
   const keep = parseInt(process.argv[2] || '3', 10);
   if (Number.isNaN(keep) || keep < 1) {
-    console.error('Uso: pnpm ts-node scripts/maintenance/keep-latest-events.ts [n=3]');
+    console.error(
+      'Uso: pnpm ts-node scripts/maintenance/keep-latest-events.ts [n=3]'
+    );
     process.exit(1);
   }
 
@@ -36,18 +42,42 @@ async function main() {
 
   // Borrado en orden con ON DELETE CASCADE fallback
   // 1) Eliminar photos del evento (si no hay cascade)
-  const { error: delPhotosErr } = await sb.from('photos').delete().in('event_id', toDelete);
-  if (delPhotosErr) console.warn('[keep-latest-events] Aviso borrando photos:', delPhotosErr.message);
+  const { error: delPhotosErr } = await sb
+    .from('photos')
+    .delete()
+    .in('event_id', toDelete);
+  if (delPhotosErr)
+    console.warn(
+      '[keep-latest-events] Aviso borrando photos:',
+      delPhotosErr.message
+    );
   // 2) Eliminar subjects del evento
-  const { error: delSubjectsErr } = await sb.from('subjects').delete().in('event_id', toDelete);
-  if (delSubjectsErr) console.warn('[keep-latest-events] Aviso borrando subjects:', delSubjectsErr.message);
+  const { error: delSubjectsErr } = await sb
+    .from('subjects')
+    .delete()
+    .in('event_id', toDelete);
+  if (delSubjectsErr)
+    console.warn(
+      '[keep-latest-events] Aviso borrando subjects:',
+      delSubjectsErr.message
+    );
   // 3) Eliminar orders del evento (order_items debería caer por cascade)
-  const { error: delOrdersErr } = await sb.from('orders').delete().in('event_id', toDelete);
-  if (delOrdersErr) console.warn('[keep-latest-events] Aviso borrando orders:', delOrdersErr.message);
+  const { error: delOrdersErr } = await sb
+    .from('orders')
+    .delete()
+    .in('event_id', toDelete);
+  if (delOrdersErr)
+    console.warn(
+      '[keep-latest-events] Aviso borrando orders:',
+      delOrdersErr.message
+    );
   // 4) Finalmente, eliminar eventos
   const { error: delErr } = await sb.from('events').delete().in('id', toDelete);
   if (delErr) {
-    console.error('[keep-latest-events] Error borrando eventos', delErr.message);
+    console.error(
+      '[keep-latest-events] Error borrando eventos',
+      delErr.message
+    );
     process.exit(1);
   }
 
@@ -58,5 +88,3 @@ main().catch((e) => {
   console.error('[keep-latest-events] fatal', e);
   process.exit(1);
 });
-
-

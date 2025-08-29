@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 
@@ -20,7 +25,11 @@ interface GalleryHeaderProps {
   formattedDate?: string;
 }
 
-export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeaderProps) {
+export function GalleryHeader({
+  event,
+  photoCount,
+  formattedDate,
+}: GalleryHeaderProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [token, setToken] = useState('');
@@ -79,10 +88,10 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
           <h1 className="text-3xl font-semibold leading-tight text-gray-900 md:text-4xl lg:text-5xl">
             {event.name}
           </h1>
-          <p className="text-lg text-gray-600 md:text-xl">
-            {event.school}
+          <p className="text-lg text-gray-600 md:text-xl">{event.school}</p>
+          <p className="text-base text-gray-500">
+            {formattedDate ?? event.date}
           </p>
-          <p className="text-base text-gray-500">{formattedDate ?? event.date}</p>
         </div>
       </div>
 
@@ -156,9 +165,7 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
               <h3 className="font-semibold text-gray-900">
                 Melisa - Look Escolar
               </h3>
-              <p className="text-sm text-gray-600">
-                Fotografía Profesional
-              </p>
+              <p className="text-sm text-gray-600">Fotografía Profesional</p>
             </div>
           </div>
 
@@ -177,7 +184,10 @@ export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeade
 
       {/* Dialog para token de familia */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-        <DialogContent aria-label="Ingresar token de familia" aria-describedby="token-desc">
+        <DialogContent
+          aria-label="Ingresar token de familia"
+          aria-describedby="token-desc"
+        >
           <DialogHeader>
             <DialogTitle>Ver mis fotos</DialogTitle>
           </DialogHeader>

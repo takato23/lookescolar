@@ -1,25 +1,31 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Activity, 
-  Clock, 
-  Database, 
-  Gauge, 
-  RefreshCw, 
-  TrendingUp, 
+import {
+  Activity,
+  Clock,
+  Database,
+  Gauge,
+  RefreshCw,
+  TrendingUp,
   TrendingDown,
   AlertTriangle,
   CheckCircle,
   Zap,
   Eye,
   Download,
-  Server
+  Server,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,8 +72,12 @@ interface BundleMetrics {
 export function PerformanceMonitorEnhanced() {
   const [webVitals, setWebVitals] = useState<WebVitals | null>(null);
   const [dbMetrics, setDbMetrics] = useState<DatabaseMetrics | null>(null);
-  const [serverMetrics, setServerMetrics] = useState<ServerMetrics | null>(null);
-  const [bundleMetrics, setBundleMetrics] = useState<BundleMetrics | null>(null);
+  const [serverMetrics, setServerMetrics] = useState<ServerMetrics | null>(
+    null
+  );
+  const [bundleMetrics, setBundleMetrics] = useState<BundleMetrics | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout>();
@@ -76,7 +86,7 @@ export function PerformanceMonitorEnhanced() {
   const fetchMetrics = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       const [webVitalsRes, dbRes, serverRes, bundleRes] = await Promise.all([
         fetch('/api/admin/metrics/web-vitals'),
         fetch('/api/admin/metrics/database'),
@@ -84,12 +94,9 @@ export function PerformanceMonitorEnhanced() {
         fetch('/api/admin/metrics/bundle'),
       ]);
 
-      const [webVitalsData, dbData, serverData, bundleData] = await Promise.all([
-        webVitalsRes.json(),
-        dbRes.json(),
-        serverRes.json(),
-        bundleRes.json(),
-      ]);
+      const [webVitalsData, dbData, serverData, bundleData] = await Promise.all(
+        [webVitalsRes.json(), dbRes.json(), serverRes.json(), bundleRes.json()]
+      );
 
       setWebVitals(webVitalsData);
       setDbMetrics(dbData);
@@ -106,34 +113,36 @@ export function PerformanceMonitorEnhanced() {
   // Initialize Web Vitals collection
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        const vitals: Partial<WebVitals> = {};
-        
-        getCLS((metric) => {
-          vitals.CLS = metric.value;
-          setWebVitals(prev => ({ ...prev, ...vitals } as WebVitals));
-        });
-        
-        getFID((metric) => {
-          vitals.FID = metric.value;
-          setWebVitals(prev => ({ ...prev, ...vitals } as WebVitals));
-        });
-        
-        getFCP((metric) => {
-          vitals.FCP = metric.value;
-          setWebVitals(prev => ({ ...prev, ...vitals } as WebVitals));
-        });
-        
-        getLCP((metric) => {
-          vitals.LCP = metric.value;
-          setWebVitals(prev => ({ ...prev, ...vitals } as WebVitals));
-        });
-        
-        getTTFB((metric) => {
-          vitals.TTFB = metric.value;
-          setWebVitals(prev => ({ ...prev, ...vitals } as WebVitals));
-        });
-      });
+      import('web-vitals').then(
+        ({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+          const vitals: Partial<WebVitals> = {};
+
+          getCLS((metric) => {
+            vitals.CLS = metric.value;
+            setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
+          });
+
+          getFID((metric) => {
+            vitals.FID = metric.value;
+            setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
+          });
+
+          getFCP((metric) => {
+            vitals.FCP = metric.value;
+            setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
+          });
+
+          getLCP((metric) => {
+            vitals.LCP = metric.value;
+            setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
+          });
+
+          getTTFB((metric) => {
+            vitals.TTFB = metric.value;
+            setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
+          });
+        }
+      );
     }
 
     // Fetch initial metrics
@@ -159,7 +168,12 @@ export function PerformanceMonitorEnhanced() {
         value: webVitals.LCP,
         unit: 'ms',
         trend: webVitals.LCP < 2500 ? 'down' : 'up',
-        status: webVitals.LCP < 2500 ? 'good' : webVitals.LCP < 4000 ? 'needs-improvement' : 'poor',
+        status:
+          webVitals.LCP < 2500
+            ? 'good'
+            : webVitals.LCP < 4000
+              ? 'needs-improvement'
+              : 'poor',
         threshold: { good: 2500, poor: 4000 },
       },
       {
@@ -167,7 +181,12 @@ export function PerformanceMonitorEnhanced() {
         value: webVitals.FID,
         unit: 'ms',
         trend: webVitals.FID < 100 ? 'down' : 'up',
-        status: webVitals.FID < 100 ? 'good' : webVitals.FID < 300 ? 'needs-improvement' : 'poor',
+        status:
+          webVitals.FID < 100
+            ? 'good'
+            : webVitals.FID < 300
+              ? 'needs-improvement'
+              : 'poor',
         threshold: { good: 100, poor: 300 },
       },
       {
@@ -175,7 +194,12 @@ export function PerformanceMonitorEnhanced() {
         value: webVitals.CLS,
         unit: '',
         trend: webVitals.CLS < 0.1 ? 'down' : 'up',
-        status: webVitals.CLS < 0.1 ? 'good' : webVitals.CLS < 0.25 ? 'needs-improvement' : 'poor',
+        status:
+          webVitals.CLS < 0.1
+            ? 'good'
+            : webVitals.CLS < 0.25
+              ? 'needs-improvement'
+              : 'poor',
         threshold: { good: 0.1, poor: 0.25 },
       },
       {
@@ -183,7 +207,12 @@ export function PerformanceMonitorEnhanced() {
         value: webVitals.FCP,
         unit: 'ms',
         trend: webVitals.FCP < 1800 ? 'down' : 'up',
-        status: webVitals.FCP < 1800 ? 'good' : webVitals.FCP < 3000 ? 'needs-improvement' : 'poor',
+        status:
+          webVitals.FCP < 1800
+            ? 'good'
+            : webVitals.FCP < 3000
+              ? 'needs-improvement'
+              : 'poor',
         threshold: { good: 1800, poor: 3000 },
       },
       {
@@ -191,7 +220,12 @@ export function PerformanceMonitorEnhanced() {
         value: webVitals.TTFB,
         unit: 'ms',
         trend: webVitals.TTFB < 800 ? 'down' : 'up',
-        status: webVitals.TTFB < 800 ? 'good' : webVitals.TTFB < 1800 ? 'needs-improvement' : 'poor',
+        status:
+          webVitals.TTFB < 800
+            ? 'good'
+            : webVitals.TTFB < 1800
+              ? 'needs-improvement'
+              : 'poor',
         threshold: { good: 800, poor: 1800 },
       },
     ];
@@ -200,24 +234,24 @@ export function PerformanceMonitorEnhanced() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'good':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'needs-improvement':
-        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'poor':
-        return <AlertTriangle className="w-4 h-4 text-red-500" />;
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-500" />;
+        return <Activity className="h-4 w-4 text-gray-500" />;
     }
   };
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'up':
-        return <TrendingUp className="w-4 h-4 text-red-500" />;
+        return <TrendingUp className="h-4 w-4 text-red-500" />;
       case 'down':
-        return <TrendingDown className="w-4 h-4 text-green-500" />;
+        return <TrendingDown className="h-4 w-4 text-green-500" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-500" />;
+        return <Activity className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -244,19 +278,17 @@ export function PerformanceMonitorEnhanced() {
             Métricas en tiempo real del sistema LookEscolar
           </p>
         </div>
-        <Button 
-          onClick={fetchMetrics} 
-          disabled={isLoading}
-          variant="outline"
-        >
-          <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+        <Button onClick={fetchMetrics} disabled={isLoading} variant="outline">
+          <RefreshCw
+            className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')}
+          />
           Actualizar
         </Button>
       </div>
 
       {/* Last updated */}
       {lastUpdated && (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-sm">
           Última actualización: {lastUpdated.toLocaleTimeString('es-AR')}
         </div>
       )}
@@ -264,19 +296,19 @@ export function PerformanceMonitorEnhanced() {
       <Tabs defaultValue="web-vitals" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="web-vitals">
-            <Eye className="w-4 h-4 mr-2" />
+            <Eye className="mr-2 h-4 w-4" />
             Web Vitals
           </TabsTrigger>
           <TabsTrigger value="database">
-            <Database className="w-4 h-4 mr-2" />
+            <Database className="mr-2 h-4 w-4" />
             Base de Datos
           </TabsTrigger>
           <TabsTrigger value="server">
-            <Server className="w-4 h-4 mr-2" />
+            <Server className="mr-2 h-4 w-4" />
             Servidor
           </TabsTrigger>
           <TabsTrigger value="bundle">
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Bundle
           </TabsTrigger>
         </TabsList>
@@ -287,7 +319,9 @@ export function PerformanceMonitorEnhanced() {
             {performanceMetrics.map((metric) => (
               <Card key={metric.name} className="relative overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">{metric.name}</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {metric.name}
+                  </CardTitle>
                   <div className="flex items-center gap-1">
                     {getStatusIcon(metric.status)}
                     {getTrendIcon(metric.trend)}
@@ -297,13 +331,22 @@ export function PerformanceMonitorEnhanced() {
                   <div className="text-2xl font-bold">
                     {formatValue(metric.value, metric.unit)}
                   </div>
-                  <Progress 
-                    value={Math.min((metric.value / metric.threshold.poor) * 100, 100)} 
+                  <Progress
+                    value={Math.min(
+                      (metric.value / metric.threshold.poor) * 100,
+                      100
+                    )}
                     className="mt-2"
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>Bueno: &lt;{formatValue(metric.threshold.good, metric.unit)}</span>
-                    <span>Malo: &gt;{formatValue(metric.threshold.poor, metric.unit)}</span>
+                  <div className="text-muted-foreground mt-1 flex justify-between text-xs">
+                    <span>
+                      Bueno: &lt;
+                      {formatValue(metric.threshold.good, metric.unit)}
+                    </span>
+                    <span>
+                      Malo: &gt;
+                      {formatValue(metric.threshold.poor, metric.unit)}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -314,7 +357,7 @@ export function PerformanceMonitorEnhanced() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Gauge className="w-5 h-5" />
+                <Gauge className="h-5 w-5" />
                 Puntuación General
               </CardTitle>
             </CardHeader>
@@ -322,21 +365,33 @@ export function PerformanceMonitorEnhanced() {
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-green-500">
-                    {performanceMetrics.filter(m => m.status === 'good').length}
+                    {
+                      performanceMetrics.filter((m) => m.status === 'good')
+                        .length
+                    }
                   </div>
-                  <div className="text-sm text-muted-foreground">Buenas</div>
+                  <div className="text-muted-foreground text-sm">Buenas</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-yellow-500">
-                    {performanceMetrics.filter(m => m.status === 'needs-improvement').length}
+                    {
+                      performanceMetrics.filter(
+                        (m) => m.status === 'needs-improvement'
+                      ).length
+                    }
                   </div>
-                  <div className="text-sm text-muted-foreground">Mejorables</div>
+                  <div className="text-muted-foreground text-sm">
+                    Mejorables
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-red-500">
-                    {performanceMetrics.filter(m => m.status === 'poor').length}
+                    {
+                      performanceMetrics.filter((m) => m.status === 'poor')
+                        .length
+                    }
                   </div>
-                  <div className="text-sm text-muted-foreground">Pobres</div>
+                  <div className="text-muted-foreground text-sm">Pobres</div>
                 </div>
               </div>
             </CardContent>
@@ -349,12 +404,20 @@ export function PerformanceMonitorEnhanced() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tiempo de Query</CardTitle>
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Tiempo de Query
+                  </CardTitle>
+                  <Clock className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dbMetrics.queryTime}ms</div>
-                  <Badge variant={dbMetrics.queryTime < 100 ? 'default' : 'destructive'}>
+                  <div className="text-2xl font-bold">
+                    {dbMetrics.queryTime}ms
+                  </div>
+                  <Badge
+                    variant={
+                      dbMetrics.queryTime < 100 ? 'default' : 'destructive'
+                    }
+                  >
                     {dbMetrics.queryTime < 100 ? 'Óptimo' : 'Lento'}
                   </Badge>
                 </CardContent>
@@ -362,23 +425,38 @@ export function PerformanceMonitorEnhanced() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Conexiones Activas</CardTitle>
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Conexiones Activas
+                  </CardTitle>
+                  <Activity className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dbMetrics.connectionCount}</div>
-                  <Progress value={(dbMetrics.connectionCount / 100) * 100} className="mt-2" />
+                  <div className="text-2xl font-bold">
+                    {dbMetrics.connectionCount}
+                  </div>
+                  <Progress
+                    value={(dbMetrics.connectionCount / 100) * 100}
+                    className="mt-2"
+                  />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Cache Hit Ratio</CardTitle>
-                  <Zap className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Cache Hit Ratio
+                  </CardTitle>
+                  <Zap className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{(dbMetrics.cacheHitRatio * 100).toFixed(1)}%</div>
-                  <Badge variant={dbMetrics.cacheHitRatio > 0.8 ? 'default' : 'secondary'}>
+                  <div className="text-2xl font-bold">
+                    {(dbMetrics.cacheHitRatio * 100).toFixed(1)}%
+                  </div>
+                  <Badge
+                    variant={
+                      dbMetrics.cacheHitRatio > 0.8 ? 'default' : 'secondary'
+                    }
+                  >
                     {dbMetrics.cacheHitRatio > 0.8 ? 'Excelente' : 'Mejorable'}
                   </Badge>
                 </CardContent>
@@ -386,12 +464,20 @@ export function PerformanceMonitorEnhanced() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Queries Lentas</CardTitle>
-                  <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Queries Lentas
+                  </CardTitle>
+                  <AlertTriangle className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dbMetrics.slowQueries}</div>
-                  <Badge variant={dbMetrics.slowQueries === 0 ? 'default' : 'destructive'}>
+                  <div className="text-2xl font-bold">
+                    {dbMetrics.slowQueries}
+                  </div>
+                  <Badge
+                    variant={
+                      dbMetrics.slowQueries === 0 ? 'default' : 'destructive'
+                    }
+                  >
                     {dbMetrics.slowQueries === 0 ? 'Perfecto' : 'Revisar'}
                   </Badge>
                 </CardContent>
@@ -406,34 +492,53 @@ export function PerformanceMonitorEnhanced() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Uso de CPU</CardTitle>
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Uso de CPU
+                  </CardTitle>
+                  <Activity className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{serverMetrics.cpuUsage}%</div>
+                  <div className="text-2xl font-bold">
+                    {serverMetrics.cpuUsage}%
+                  </div>
                   <Progress value={serverMetrics.cpuUsage} className="mt-2" />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Uso de Memoria</CardTitle>
-                  <Database className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Uso de Memoria
+                  </CardTitle>
+                  <Database className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{serverMetrics.memoryUsage}%</div>
-                  <Progress value={serverMetrics.memoryUsage} className="mt-2" />
+                  <div className="text-2xl font-bold">
+                    {serverMetrics.memoryUsage}%
+                  </div>
+                  <Progress
+                    value={serverMetrics.memoryUsage}
+                    className="mt-2"
+                  />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tiempo de Respuesta</CardTitle>
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Tiempo de Respuesta
+                  </CardTitle>
+                  <Clock className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{serverMetrics.responseTime}ms</div>
-                  <Badge variant={serverMetrics.responseTime < 200 ? 'default' : 'secondary'}>
+                  <div className="text-2xl font-bold">
+                    {serverMetrics.responseTime}ms
+                  </div>
+                  <Badge
+                    variant={
+                      serverMetrics.responseTime < 200 ? 'default' : 'secondary'
+                    }
+                  >
                     {serverMetrics.responseTime < 200 ? 'Rápido' : 'Aceptable'}
                   </Badge>
                 </CardContent>
@@ -441,22 +546,34 @@ export function PerformanceMonitorEnhanced() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Conexiones Activas</CardTitle>
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Conexiones Activas
+                  </CardTitle>
+                  <Activity className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{serverMetrics.activeConnections}</div>
+                  <div className="text-2xl font-bold">
+                    {serverMetrics.activeConnections}
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tasa de Error</CardTitle>
-                  <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Tasa de Error
+                  </CardTitle>
+                  <AlertTriangle className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{(serverMetrics.errorRate * 100).toFixed(2)}%</div>
-                  <Badge variant={serverMetrics.errorRate < 0.01 ? 'default' : 'destructive'}>
+                  <div className="text-2xl font-bold">
+                    {(serverMetrics.errorRate * 100).toFixed(2)}%
+                  </div>
+                  <Badge
+                    variant={
+                      serverMetrics.errorRate < 0.01 ? 'default' : 'destructive'
+                    }
+                  >
                     {serverMetrics.errorRate < 0.01 ? 'Bajo' : 'Alto'}
                   </Badge>
                 </CardContent>
@@ -471,31 +588,45 @@ export function PerformanceMonitorEnhanced() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tamaño Total</CardTitle>
-                  <Download className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Tamaño Total
+                  </CardTitle>
+                  <Download className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {formatValue(bundleMetrics.totalSize, 'MB')}
                   </div>
-                  <Badge variant={bundleMetrics.totalSize < 1024 * 1024 ? 'default' : 'secondary'}>
-                    {bundleMetrics.totalSize < 1024 * 1024 ? 'Óptimo' : 'Grande'}
+                  <Badge
+                    variant={
+                      bundleMetrics.totalSize < 1024 * 1024
+                        ? 'default'
+                        : 'secondary'
+                    }
+                  >
+                    {bundleMetrics.totalSize < 1024 * 1024
+                      ? 'Óptimo'
+                      : 'Grande'}
                   </Badge>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">JavaScript</CardTitle>
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    JavaScript
+                  </CardTitle>
+                  <Activity className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {formatValue(bundleMetrics.jsSize, 'MB')}
                   </div>
-                  <Progress 
-                    value={(bundleMetrics.jsSize / bundleMetrics.totalSize) * 100} 
-                    className="mt-2" 
+                  <Progress
+                    value={
+                      (bundleMetrics.jsSize / bundleMetrics.totalSize) * 100
+                    }
+                    className="mt-2"
                   />
                 </CardContent>
               </Card>
@@ -503,43 +634,57 @@ export function PerformanceMonitorEnhanced() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">CSS</CardTitle>
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <Activity className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {formatValue(bundleMetrics.cssSize, 'MB')}
                   </div>
-                  <Progress 
-                    value={(bundleMetrics.cssSize / bundleMetrics.totalSize) * 100} 
-                    className="mt-2" 
+                  <Progress
+                    value={
+                      (bundleMetrics.cssSize / bundleMetrics.totalSize) * 100
+                    }
+                    className="mt-2"
                   />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Imágenes</CardTitle>
-                  <Activity className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Imágenes
+                  </CardTitle>
+                  <Activity className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
                     {formatValue(bundleMetrics.imageSize, 'MB')}
                   </div>
-                  <Progress 
-                    value={(bundleMetrics.imageSize / bundleMetrics.totalSize) * 100} 
-                    className="mt-2" 
+                  <Progress
+                    value={
+                      (bundleMetrics.imageSize / bundleMetrics.totalSize) * 100
+                    }
+                    className="mt-2"
                   />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Tiempo de Carga</CardTitle>
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">
+                    Tiempo de Carga
+                  </CardTitle>
+                  <Clock className="text-muted-foreground h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{bundleMetrics.loadTime}s</div>
-                  <Badge variant={bundleMetrics.loadTime < 3 ? 'default' : 'secondary'}>
+                  <div className="text-2xl font-bold">
+                    {bundleMetrics.loadTime}s
+                  </div>
+                  <Badge
+                    variant={
+                      bundleMetrics.loadTime < 3 ? 'default' : 'secondary'
+                    }
+                  >
                     {bundleMetrics.loadTime < 3 ? 'Rápido' : 'Lento'}
                   </Badge>
                 </CardContent>

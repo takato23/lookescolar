@@ -19,7 +19,7 @@ describe('/api/admin/auth', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockSupabase = {
       auth: {
         signInWithPassword: vi.fn(),
@@ -184,7 +184,7 @@ describe('/api/admin/auth', () => {
       await POST(request);
       await POST(request);
       await POST(request);
-      
+
       // Fourth attempt should be rate limited
       const response = await POST(request);
       const data = await response.json();

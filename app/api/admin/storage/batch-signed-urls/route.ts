@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
+import {
+  SecurityLogger,
+  generateRequestId,
+} from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
 
 const batchSignedUrlsSchema = z.object({
@@ -9,10 +12,10 @@ const batchSignedUrlsSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId();
-  
+
   try {
     const body = await request.json();
-    
+
     // Validate input
     const validation = batchSignedUrlsSchema.safeParse(body);
     if (!validation.success) {
@@ -27,9 +30,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { photoIds } = validation.data;
-    
+
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Fetch photo paths
     const { data: photos, error: fetchError } = await supabase
       .from('photos')
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     for (const photo of photos) {
       const path = photo.preview_path || photo.storage_path;
-      
+
       if (!path) continue;
 
       try {
@@ -65,7 +68,10 @@ export async function POST(request: NextRequest) {
         if (!signError && signedUrl) {
           signedUrls[photo.id] = signedUrl.signedUrl;
         } else {
-          console.error(`Error creating signed URL for photo ${photo.id}:`, signError);
+          console.error(
+            `Error creating signed URL for photo ${photo.id}:`,
+            signError
+          );
         }
       } catch (error) {
         console.error(`Error processing photo ${photo.id}:`, error);
@@ -82,14 +88,16 @@ export async function POST(request: NextRequest) {
       'info'
     );
 
-    return NextResponse.json({
-      success: true,
-      signedUrls,
-    }, { headers: { 'X-Request-Id': requestId } });
-
+    return NextResponse.json(
+      {
+        success: true,
+        signedUrls,
+      },
+      { headers: { 'X-Request-Id': requestId } }
+    );
   } catch (error) {
     console.error('Error in batch signed URLs:', error);
-    
+
     SecurityLogger.logSecurityEvent(
       'batch_signed_urls_error',
       {

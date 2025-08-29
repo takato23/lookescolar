@@ -1,28 +1,28 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  UserIcon, 
-  SearchIcon, 
-  TagIcon, 
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  UserIcon,
+  SearchIcon,
+  TagIcon,
   XIcon,
   CheckIcon,
-  Loader2
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+  Loader2,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 export interface Student {
   id: string;
@@ -50,7 +50,7 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
   onTag,
   photoId,
   photoName,
-  selectedEvent
+  selectedEvent,
 }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,10 +69,10 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
     const fetchStudents = async () => {
       setIsLoading(true);
       try {
-        const url = selectedEvent 
+        const url = selectedEvent
           ? `/api/admin/students?eventId=${selectedEvent}`
           : '/api/admin/students';
-        
+
         let response = await fetch(url);
         // Fallback legacy eliminado: usar /api/admin/subjects
         if (response.status === 404) {
@@ -98,7 +98,9 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
                   'Sin nombre',
                 token: s.token ?? null,
                 event_id: s.event_id ?? null,
-                event: s.event ? { id: s.event.id, name: s.event.name } : undefined,
+                event: s.event
+                  ? { id: s.event.id, name: s.event.name }
+                  : undefined,
               }))
             : []);
         setStudents(students);
@@ -117,16 +119,17 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
   // Filter students based on search
   const filteredStudents = useMemo(() => {
     if (!searchQuery) return students;
-    
-    return students.filter(student =>
-      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.id.toLowerCase().includes(searchQuery.toLowerCase())
+
+    return students.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.id.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [students, searchQuery]);
 
   const handleTag = async (student: Student) => {
     if (!photoId) return;
-    
+
     setIsTagging(true);
     try {
       await onTag(student.id, student.name);
@@ -152,10 +155,10 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+      <DialogContent className="flex max-h-[80vh] max-w-md flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <TagIcon className="w-5 h-5" />
+            <TagIcon className="h-5 w-5" />
             Etiquetar Foto
           </DialogTitle>
           <DialogDescription>
@@ -165,10 +168,10 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col space-y-4 min-h-0">
+        <div className="flex min-h-0 flex-1 flex-col space-y-4">
           {/* Search Input */}
           <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
             <Input
               placeholder="Buscar estudiante..."
               value={searchQuery}
@@ -178,17 +181,21 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
           </div>
 
           {/* Student List */}
-          <div className="flex-1 min-h-0">
+          <div className="min-h-0 flex-1">
             {isLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
-                <span className="ml-2 text-sm text-gray-500">Cargando estudiantes...</span>
+              <div className="flex h-32 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                <span className="ml-2 text-sm text-gray-500">
+                  Cargando estudiantes...
+                </span>
               </div>
             ) : filteredStudents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-center">
-                <UserIcon className="w-8 h-8 text-gray-400 mb-2" />
+              <div className="flex h-32 flex-col items-center justify-center text-center">
+                <UserIcon className="mb-2 h-8 w-8 text-gray-400" />
                 <span className="text-sm text-gray-500">
-                  {searchQuery ? 'No se encontraron estudiantes' : 'No hay estudiantes disponibles'}
+                  {searchQuery
+                    ? 'No se encontraron estudiantes'
+                    : 'No hay estudiantes disponibles'}
                 </span>
               </div>
             ) : (
@@ -200,17 +207,17 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className={cn(
-                        "p-3 rounded-lg border cursor-pointer transition-all duration-200",
+                        'cursor-pointer rounded-lg border p-3 transition-all duration-200',
                         selectedStudent?.id === student.id
-                          ? "border-purple-500 bg-purple-50"
-                          : "border-gray-200 hover:border-purple-300 hover:bg-gray-50"
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
                       )}
                       onClick={() => handleSelectStudent(student)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-purple-100">
-                            <UserIcon className="w-4 h-4 text-purple-600" />
+                          <div className="rounded-lg bg-purple-100 p-2">
+                            <UserIcon className="h-4 w-4 text-purple-600" />
                           </div>
                           <div>
                             <h3 className="font-medium">{student.name}</h3>
@@ -226,7 +233,7 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
                           </div>
                         </div>
                         {selectedStudent?.id === student.id && (
-                          <CheckIcon className="w-5 h-5 text-purple-600" />
+                          <CheckIcon className="h-5 w-5 text-purple-600" />
                         )}
                       </div>
                     </motion.div>
@@ -243,10 +250,10 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="p-3 bg-purple-50 rounded-lg border border-purple-200"
+                className="rounded-lg border border-purple-200 bg-purple-50 p-3"
               >
                 <div className="flex items-center gap-2 text-sm">
-                  <TagIcon className="w-4 h-4 text-purple-600" />
+                  <TagIcon className="h-4 w-4 text-purple-600" />
                   <span className="text-purple-800">
                     Etiquetando para: <strong>{selectedStudent.name}</strong>
                   </span>
@@ -256,7 +263,7 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
           </AnimatePresence>
 
           {/* Actions */}
-          <div className="flex gap-2 pt-2 border-t">
+          <div className="flex gap-2 border-t pt-2">
             <Button
               variant="outline"
               onClick={onClose}
@@ -272,12 +279,12 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
             >
               {isTagging ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Etiquetando...
                 </>
               ) : (
                 <>
-                  <TagIcon className="w-4 h-4 mr-2" />
+                  <TagIcon className="mr-2 h-4 w-4" />
                   Etiquetar
                 </>
               )}

@@ -28,22 +28,22 @@ export default function AppShellCompact({
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50/50 via-pink-50/50 to-blue-50/50 dark:from-purple-950/20 dark:via-purple-900/10 dark:to-blue-950/20">
       {/* Compact Header */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
+      <header className="border-border/40 bg-background/80 sticky top-0 z-50 border-b backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo and Title */}
           <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary flex items-center gap-2 transition-colors"
             >
-              <div className="rounded-lg bg-gradient-to-r from-primary to-secondary p-2 text-white">
+              <div className="from-primary to-secondary rounded-lg bg-gradient-to-r p-2 text-white">
                 <Camera className="h-5 w-5" />
               </div>
               <span className="hidden font-semibold sm:block">{title}</span>
             </Link>
 
             {/* Context/Breadcrumb area */}
-            <div className="hidden text-sm text-muted-foreground md:block">
+            <div className="text-muted-foreground hidden text-sm md:block">
               {title !== 'LookEscolar' && (
                 <span className="text-foreground font-medium">{title}</span>
               )}
@@ -52,13 +52,13 @@ export default function AppShellCompact({
 
           {/* Center - Search */}
           {showSearch && (
-            <div className="flex-1 max-w-md mx-4">
+            <div className="mx-4 max-w-md flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                 <Input
                   type="search"
                   placeholder={searchPlaceholder}
-                  className="pl-10 bg-background/50 border-border/50 focus:bg-background"
+                  className="bg-background/50 border-border/50 focus:bg-background pl-10"
                   onChange={(e) => onSearch?.(e.target.value)}
                 />
               </div>
@@ -74,7 +74,7 @@ export default function AppShellCompact({
             {showNotifications && (
               <Button variant="ghost" size="sm" className="relative">
                 <Bell className="h-4 w-4" />
-                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500" />
+                <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500" />
               </Button>
             )}
 
@@ -92,15 +92,16 @@ export default function AppShellCompact({
       </header>
 
       {/* Main Content */}
-      <main className="relative">
-        {children}
-      </main>
+      <main className="relative">{children}</main>
     </div>
   );
 }
 
 // Utility components for common layouts
-export function AdminShell({ children, ...props }: Omit<AppShellCompactProps, 'title'>) {
+export function AdminShell({
+  children,
+  ...props
+}: Omit<AppShellCompactProps, 'title'>) {
   return (
     <AppShellCompact
       title="Admin Panel"
@@ -114,7 +115,10 @@ export function AdminShell({ children, ...props }: Omit<AppShellCompactProps, 't
   );
 }
 
-export function GalleryShell({ children, ...props }: Omit<AppShellCompactProps, 'title'>) {
+export function GalleryShell({
+  children,
+  ...props
+}: Omit<AppShellCompactProps, 'title'>) {
   return (
     <AppShellCompact
       title="Galería"

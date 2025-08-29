@@ -1,6 +1,6 @@
 /**
  * ENHANCED SECURITY TEST SUITE
- * 
+ *
  * Comprehensive security testing for LookEscolar system
  * Covers all security requirements from CLAUDE.md:
  * - Token security (≥20 chars, no logging)
@@ -10,8 +10,21 @@
  * - Input validation and sanitization
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import { setupTestData, cleanupTestData, createTestClient, setupMocks } from './test-utils';
+import {
+  describe,
+  test,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
+import {
+  setupTestData,
+  cleanupTestData,
+  createTestClient,
+  setupMocks,
+} from './test-utils';
 import crypto from 'crypto';
 
 const TEST_TIMEOUT = 10000;
@@ -30,13 +43,13 @@ let securityContext: SecurityTestContext;
 describe('Enhanced Security Test Suite', () => {
   beforeAll(async () => {
     setupMocks();
-    
+
     const testData = await setupTestData();
     securityContext = {
       eventId: testData.eventId,
       subjectToken: testData.validToken,
       expiredToken: testData.expiredToken,
-      testData
+      testData,
     };
 
     // Setup admin authentication
@@ -46,8 +59,8 @@ describe('Enhanced Security Test Suite', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: process.env.TEST_ADMIN_EMAIL,
-          password: process.env.TEST_ADMIN_PASSWORD
-        })
+          password: process.env.TEST_ADMIN_PASSWORD,
+        }),
       });
 
       if (adminAuth.ok) {
@@ -76,18 +89,21 @@ describe('Enhanced Security Test Suite', () => {
     });
 
     test('should use secure character set (no confusing characters)', () => {
-      const securePattern = /^[ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789]+$/;
+      const securePattern =
+        /^[ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789]+$/;
       expect(securityContext.subjectToken).toMatch(securePattern);
       expect(securityContext.expiredToken).toMatch(securePattern);
     });
 
     test('should reject tokens shorter than 20 characters', async () => {
       const shortTokens = ['abc', '12345', 'tooshort', 'nineteencharacters'];
-      
+
       for (const token of shortTokens) {
-        const response = await fetch(`${API_BASE_URL}/api/family/gallery/${token}`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/family/gallery/${token}`
+        );
         expect([400, 401, 404]).toContain(response.status);
-        
+
         const data = await response.json();
         expect(data.error).toBeDefined();
       }
@@ -98,19 +114,23 @@ describe('Enhanced Security Test Suite', () => {
         'A'.repeat(20), // Simple pattern
         '1'.repeat(20), // Number pattern
         'ABCDEFGHJKLMNPQRSTUV', // Sequential
-        'test'.repeat(5) // Repeated pattern
+        'test'.repeat(5), // Repeated pattern
       ];
 
       for (const token of attackTokens) {
-        const response = await fetch(`${API_BASE_URL}/api/family/gallery/${token}`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/family/gallery/${token}`
+        );
         expect([401, 404]).toContain(response.status);
       }
     });
 
     test('should validate token expiration properly', async () => {
-      const response = await fetch(`${API_BASE_URL}/api/family/gallery/${securityContext.expiredToken}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/family/gallery/${securityContext.expiredToken}`
+      );
       expect([401, 403]).toContain(response.status);
-      
+
       const data = await response.json();
       expect(data.error).toMatch(/expired|invalid/i);
     });
@@ -123,7 +143,7 @@ describe('Enhanced Security Test Suite', () => {
   describe('Rate Limiting Security', () => {
     test('should rate limit admin login attempts (prevent brute force)', async () => {
       const loginRequests = [];
-      
+
       // Attempt multiple login requests
       for (let i = 0; i < 12; i++) {
         loginRequests.push(
@@ -132,15 +152,15 @@ describe('Enhanced Security Test Suite', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: 'wrong@email.com',
-              password: 'wrongpassword'
-            })
+              password: 'wrongpassword',
+            }),
           })
         );
       }
 
       const responses = await Promise.all(loginRequests);
-      const rateLimitedResponses = responses.filter(r => r.status === 429);
-      
+      const rateLimitedResponses = responses.filter((r) => r.status === 429);
+
       // Should have rate limiting after multiple failed attempts
       expect(rateLimitedResponses.length).toBeGreaterThan(0);
     });
@@ -152,87 +172,97 @@ describe('Enhanced Security Test Suite', () => {
       }
 
       const uploadRequests = [];
-      
-      for (let i = 0; i < 15; i++) { // Exceed 10 req/min limit
+
+      for (let i = 0; i < 15; i++) {
+        // Exceed 10 req/min limit
         const formData = new FormData();
         formData.append('eventId', securityContext.eventId);
-        formData.append('photos', new Blob(['test'], { type: 'image/jpeg' }), `test${i}.jpg`);
+        formData.append(
+          'photos',
+          new Blob(['test'], { type: 'image/jpeg' }),
+          `test${i}.jpg`
+        );
 
         uploadRequests.push(
           fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${securityContext.adminToken}` },
-            body: formData
+            headers: { Authorization: `Bearer ${securityContext.adminToken}` },
+            body: formData,
           })
         );
       }
 
       const responses = await Promise.all(uploadRequests);
-      const rateLimitedCount = responses.filter(r => r.status === 429).length;
-      
+      const rateLimitedCount = responses.filter((r) => r.status === 429).length;
+
       expect(rateLimitedCount).toBeGreaterThan(0);
     });
 
     test('should rate limit signed URL requests (60 req/min per token)', async () => {
       const signedUrlRequests = [];
-      
-      for (let i = 0; i < 65; i++) { // Exceed 60 req/min limit
+
+      for (let i = 0; i < 65; i++) {
+        // Exceed 60 req/min limit
         signedUrlRequests.push(
           fetch(`${API_BASE_URL}/api/storage/signed-url`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               photoId: securityContext.testData.photoIds[0],
-              token: securityContext.subjectToken
-            })
+              token: securityContext.subjectToken,
+            }),
           })
         );
       }
 
       const responses = await Promise.all(signedUrlRequests);
-      const rateLimitedCount = responses.filter(r => r.status === 429).length;
-      
+      const rateLimitedCount = responses.filter((r) => r.status === 429).length;
+
       expect(rateLimitedCount).toBeGreaterThan(0);
     });
 
     test('should rate limit family gallery access (30 req/min per token)', async () => {
       const galleryRequests = [];
-      
-      for (let i = 0; i < 35; i++) { // Exceed 30 req/min limit
+
+      for (let i = 0; i < 35; i++) {
+        // Exceed 30 req/min limit
         galleryRequests.push(
-          fetch(`${API_BASE_URL}/api/family/gallery/${securityContext.subjectToken}`)
+          fetch(
+            `${API_BASE_URL}/api/family/gallery/${securityContext.subjectToken}`
+          )
         );
       }
 
       const responses = await Promise.all(galleryRequests);
-      const rateLimitedCount = responses.filter(r => r.status === 429).length;
-      
+      const rateLimitedCount = responses.filter((r) => r.status === 429).length;
+
       expect(rateLimitedCount).toBeGreaterThan(0);
     });
 
     test('should have global rate limit on webhook endpoint (100 req/min)', async () => {
       const webhookRequests = [];
-      
-      for (let i = 0; i < 105; i++) { // Exceed 100 req/min limit
+
+      for (let i = 0; i < 105; i++) {
+        // Exceed 100 req/min limit
         webhookRequests.push(
           fetch(`${API_BASE_URL}/api/payments/webhook`, {
             method: 'POST',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'x-signature': 'v1=mock-signature'
+              'x-signature': 'v1=mock-signature',
             },
             body: JSON.stringify({
               id: `test-${i}`,
               type: 'payment',
-              data: { id: `payment-${i}` }
-            })
+              data: { id: `payment-${i}` },
+            }),
           })
         );
       }
 
       const responses = await Promise.all(webhookRequests);
-      const rateLimitedCount = responses.filter(r => r.status === 429).length;
-      
+      const rateLimitedCount = responses.filter((r) => r.status === 429).length;
+
       expect(rateLimitedCount).toBeGreaterThan(0);
     });
   });
@@ -248,13 +278,15 @@ describe('Enhanced Security Test Suite', () => {
         "' OR '1'='1",
         "' UNION SELECT * FROM users --",
         "'; DELETE FROM events; --",
-        "' OR 1=1; --"
+        "' OR 1=1; --",
       ];
 
       for (const injection of sqlInjectionAttempts) {
         // Test on gallery endpoint
-        const response = await fetch(`${API_BASE_URL}/api/family/gallery/${securityContext.subjectToken}?search=${encodeURIComponent(injection)}`);
-        
+        const response = await fetch(
+          `${API_BASE_URL}/api/family/gallery/${securityContext.subjectToken}?search=${encodeURIComponent(injection)}`
+        );
+
         // Should not return SQL error or unauthorized data
         if (response.ok) {
           const data = await response.json();
@@ -278,19 +310,26 @@ describe('Enhanced Security Test Suite', () => {
         '<script>alert("xss")</script>.jpg',
         'file.jpg.exe',
         'file.php.jpg',
-        '../../uploads/malicious.php'
+        '../../uploads/malicious.php',
       ];
 
       for (const fileName of maliciousFileNames) {
         const formData = new FormData();
         formData.append('eventId', securityContext.eventId);
-        formData.append('photos', new Blob(['test'], { type: 'image/jpeg' }), fileName);
+        formData.append(
+          'photos',
+          new Blob(['test'], { type: 'image/jpeg' }),
+          fileName
+        );
 
-        const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${securityContext.adminToken}` },
-          body: formData
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/admin/photos/upload`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${securityContext.adminToken}` },
+            body: formData,
+          }
+        );
 
         // Should reject malicious file names
         expect([400, 422]).toContain(response.status);
@@ -304,25 +343,48 @@ describe('Enhanced Security Test Suite', () => {
       }
 
       const dangerousFiles = [
-        { content: '#!/bin/bash\nrm -rf /', type: 'application/x-sh', name: 'malicious.sh' },
-        { content: '<?php system($_GET["cmd"]); ?>', type: 'application/x-php', name: 'shell.php' },
-        { content: '<script>alert("xss")</script>', type: 'text/html', name: 'xss.html' },
-        { content: 'MZ...', type: 'application/octet-stream', name: 'virus.exe' }
+        {
+          content: '#!/bin/bash\nrm -rf /',
+          type: 'application/x-sh',
+          name: 'malicious.sh',
+        },
+        {
+          content: '<?php system($_GET["cmd"]); ?>',
+          type: 'application/x-php',
+          name: 'shell.php',
+        },
+        {
+          content: '<script>alert("xss")</script>',
+          type: 'text/html',
+          name: 'xss.html',
+        },
+        {
+          content: 'MZ...',
+          type: 'application/octet-stream',
+          name: 'virus.exe',
+        },
       ];
 
       for (const file of dangerousFiles) {
         const formData = new FormData();
         formData.append('eventId', securityContext.eventId);
-        formData.append('photos', new Blob([file.content], { type: file.type }), file.name);
+        formData.append(
+          'photos',
+          new Blob([file.content], { type: file.type }),
+          file.name
+        );
 
-        const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${securityContext.adminToken}` },
-          body: formData
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/admin/photos/upload`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${securityContext.adminToken}` },
+            body: formData,
+          }
+        );
 
         expect([400, 422]).toContain(response.status);
-        
+
         const data = await response.json();
         expect(data.error).toMatch(/file type|format|not allowed/i);
       }
@@ -338,16 +400,20 @@ describe('Enhanced Security Test Suite', () => {
       const largeFileContent = 'x'.repeat(11 * 1024 * 1024); // 11MB
       const formData = new FormData();
       formData.append('eventId', securityContext.eventId);
-      formData.append('photos', new Blob([largeFileContent], { type: 'image/jpeg' }), 'large.jpg');
+      formData.append(
+        'photos',
+        new Blob([largeFileContent], { type: 'image/jpeg' }),
+        'large.jpg'
+      );
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${securityContext.adminToken}` },
-        body: formData
+        headers: { Authorization: `Bearer ${securityContext.adminToken}` },
+        body: formData,
       });
 
       expect([400, 413, 422]).toContain(response.status);
-      
+
       const data = await response.json();
       expect(data.error).toMatch(/size|large|limit/i);
     });
@@ -358,7 +424,7 @@ describe('Enhanced Security Test Suite', () => {
         'javascript:alert("xss")',
         '<img src="x" onerror="alert(\'xss\')">',
         '<svg onload="alert(\'xss\')">',
-        '"><script>alert("xss")</script>'
+        '"><script>alert("xss")</script>',
       ];
 
       // Test XSS prevention in contact form (family checkout)
@@ -370,8 +436,8 @@ describe('Enhanced Security Test Suite', () => {
             token: securityContext.subjectToken,
             contact_name: xss,
             contact_email: 'test@example.com',
-            items: []
-          })
+            items: [],
+          }),
         });
 
         // Should reject or sanitize XSS attempts
@@ -390,29 +456,35 @@ describe('Enhanced Security Test Suite', () => {
         id: 'test-webhook-id',
         live_mode: false,
         type: 'payment',
-        data: { id: 'test-payment-id' }
+        data: { id: 'test-payment-id' },
       };
 
       const payloadString = JSON.stringify(webhookPayload);
-      
+
       // Test without signature
-      const noSigResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payloadString
-      });
+      const noSigResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloadString,
+        }
+      );
 
       expect([400, 401]).toContain(noSigResponse.status);
 
       // Test with invalid signature
-      const invalidSigResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': 'v1=invalid-signature'
-        },
-        body: payloadString
-      });
+      const invalidSigResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': 'v1=invalid-signature',
+          },
+          body: payloadString,
+        }
+      );
 
       expect([400, 401]).toContain(invalidSigResponse.status);
 
@@ -422,14 +494,17 @@ describe('Enhanced Security Test Suite', () => {
         .update(payloadString)
         .digest('hex');
 
-      const wrongSecretResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': `v1=${wrongSecretSig}`
-        },
-        body: payloadString
-      });
+      const wrongSecretResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': `v1=${wrongSecretSig}`,
+          },
+          body: payloadString,
+        }
+      );
 
       expect([400, 401]).toContain(wrongSecretResponse.status);
     });
@@ -439,7 +514,7 @@ describe('Enhanced Security Test Suite', () => {
         id: 'idempotency-test-webhook',
         live_mode: false,
         type: 'payment',
-        data: { id: 'idempotency-payment-id' }
+        data: { id: 'idempotency-payment-id' },
       };
 
       const payloadString = JSON.stringify(webhookPayload);
@@ -449,24 +524,30 @@ describe('Enhanced Security Test Suite', () => {
         .digest('hex');
 
       // First request
-      const firstResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': `v1=${validSignature}`
-        },
-        body: payloadString
-      });
+      const firstResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': `v1=${validSignature}`,
+          },
+          body: payloadString,
+        }
+      );
 
       // Second request (duplicate)
-      const secondResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': `v1=${validSignature}`
-        },
-        body: payloadString
-      });
+      const secondResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': `v1=${validSignature}`,
+          },
+          body: payloadString,
+        }
+      );
 
       // Both should return 200, but second should indicate already processed
       if (firstResponse.ok && secondResponse.ok) {
@@ -482,7 +563,7 @@ describe('Enhanced Security Test Suite', () => {
         live_mode: false,
         type: 'payment',
         data: { id: 'replay-payment-id' },
-        date_created: new Date(Date.now() - 10 * 60 * 1000).toISOString() // 10 minutes old
+        date_created: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutes old
       };
 
       const payloadString = JSON.stringify(oldWebhookPayload);
@@ -493,11 +574,11 @@ describe('Enhanced Security Test Suite', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'x-signature': `v1=${validSignature}`
+          'x-signature': `v1=${validSignature}`,
         },
-        body: payloadString
+        body: payloadString,
       });
 
       // Should reject old webhooks to prevent replay attacks
@@ -511,24 +592,26 @@ describe('Enhanced Security Test Suite', () => {
         '{"incomplete": "data"',
         '{"missing_required_fields": true}',
         JSON.stringify({ data: null }),
-        JSON.stringify({ type: null })
+        JSON.stringify({ type: null }),
       ];
 
       for (const payload of malformedPayloads) {
         const response = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'x-signature': 'v1=mock-signature'
+            'x-signature': 'v1=mock-signature',
           },
-          body: payload
+          body: payload,
         });
 
         expect([400, 422]).toContain(response.status);
-        
+
         // Verify error message doesn't leak sensitive information
         const errorData = await response.json();
-        expect(errorData.error).not.toMatch(/database|internal|password|secret/i);
+        expect(errorData.error).not.toMatch(
+          /database|internal|password|secret/i
+        );
       }
     });
   });
@@ -544,14 +627,14 @@ describe('Enhanced Security Test Suite', () => {
         '/api/admin/photos/upload',
         '/api/admin/subjects',
         '/api/admin/tagging',
-        '/api/admin/orders'
+        '/api/admin/orders',
       ];
 
       for (const endpoint of adminEndpoints) {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
+          body: JSON.stringify({}),
         });
 
         expect([401, 403]).toContain(response.status);
@@ -564,13 +647,13 @@ describe('Enhanced Security Test Suite', () => {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature',
         'bearer malformed-token',
         '',
-        'null'
+        'null',
       ];
 
       for (const token of invalidTokens) {
         const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
           method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         expect([401, 403]).toContain(response.status);
@@ -581,7 +664,7 @@ describe('Enhanced Security Test Suite', () => {
       // Try to access admin endpoints with family token
       const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${securityContext.subjectToken}` }
+        headers: { Authorization: `Bearer ${securityContext.subjectToken}` },
       });
 
       expect([401, 403]).toContain(response.status);
@@ -591,13 +674,13 @@ describe('Enhanced Security Test Suite', () => {
       // Create expired JWT token
       const expiredTokenPayload = {
         sub: 'test-user',
-        exp: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
+        exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
       };
 
       // This would need actual JWT signing, but for now test with malformed token
       const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
         method: 'GET',
-        headers: { 'Authorization': 'Bearer expired.token.here' }
+        headers: { Authorization: 'Bearer expired.token.here' },
       });
 
       expect([401, 403]).toContain(response.status);
@@ -613,19 +696,19 @@ describe('Enhanced Security Test Suite', () => {
       const sensitiveEndpoints = [
         '/api/admin/auth',
         '/api/family/gallery/invalid-token',
-        '/api/payments/webhook'
+        '/api/payments/webhook',
       ];
 
       for (const endpoint of sensitiveEndpoints) {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ invalid: 'data' })
+          body: JSON.stringify({ invalid: 'data' }),
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          
+
           // Should not contain sensitive information
           expect(errorText).not.toMatch(/password|secret|key|token|database/i);
           expect(errorText).not.toMatch(/stack trace|file path|sql/i);
@@ -636,14 +719,22 @@ describe('Enhanced Security Test Suite', () => {
 
     test('should return appropriate HTTP status codes', async () => {
       const testCases = [
-        { endpoint: '/api/admin/events', method: 'GET', expectedStatus: [401, 403] },
-        { endpoint: '/api/family/gallery/invalid', method: 'GET', expectedStatus: [400, 401, 404] },
-        { endpoint: '/api/nonexistent', method: 'GET', expectedStatus: [404] }
+        {
+          endpoint: '/api/admin/events',
+          method: 'GET',
+          expectedStatus: [401, 403],
+        },
+        {
+          endpoint: '/api/family/gallery/invalid',
+          method: 'GET',
+          expectedStatus: [400, 401, 404],
+        },
+        { endpoint: '/api/nonexistent', method: 'GET', expectedStatus: [404] },
       ];
 
       for (const testCase of testCases) {
         const response = await fetch(`${API_BASE_URL}${testCase.endpoint}`, {
-          method: testCase.method
+          method: testCase.method,
         });
 
         expect(testCase.expectedStatus).toContain(response.status);
@@ -653,12 +744,16 @@ describe('Enhanced Security Test Suite', () => {
     test('should handle database connection errors gracefully', async () => {
       // This would require mocking database connection failure
       // For now, test that errors don't leak database information
-      
-      const response = await fetch(`${API_BASE_URL}/api/family/gallery/test-token-for-db-error`);
-      
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/family/gallery/test-token-for-db-error`
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
-        expect(errorData.error).not.toMatch(/postgresql|supabase|connection string/i);
+        expect(errorData.error).not.toMatch(
+          /postgresql|supabase|connection string/i
+        );
       }
     });
   });
@@ -669,20 +764,22 @@ describe('Enhanced Security Test Suite', () => {
    */
   describe('Security Headers & CSP', () => {
     test('should include security headers in responses', async () => {
-      const response = await fetch(`${API_BASE_URL}/api/family/gallery/${securityContext.subjectToken}`);
-      
+      const response = await fetch(
+        `${API_BASE_URL}/api/family/gallery/${securityContext.subjectToken}`
+      );
+
       // Check for security headers (if implemented)
       const headers = response.headers;
-      
+
       // These headers should be present (check if available)
       const securityHeaders = [
         'x-frame-options',
         'x-content-type-options',
         'referrer-policy',
-        'x-xss-protection'
+        'x-xss-protection',
       ];
 
-      securityHeaders.forEach(header => {
+      securityHeaders.forEach((header) => {
         if (headers.has(header)) {
           console.log(`✓ Security header found: ${header}`);
         }
@@ -693,14 +790,14 @@ describe('Enhanced Security Test Suite', () => {
       // Test signed URL generation with invalid referer
       const response = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Referer': 'https://malicious-site.com'
+          Referer: 'https://malicious-site.com',
         },
         body: JSON.stringify({
           photoId: securityContext.testData.photoIds[0],
-          token: securityContext.subjectToken
-        })
+          token: securityContext.subjectToken,
+        }),
       });
 
       // Should reject requests from unauthorized referers

@@ -2,9 +2,17 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { decodeQR, extractEXIFDate, normalizeCode } from '@/lib/qr/decoder';
 import pLimit from 'p-limit';
 
-type RunOpts = { eventId: string; maxConcurrency?: number; onlyMissing?: boolean };
+type RunOpts = {
+  eventId: string;
+  maxConcurrency?: number;
+  onlyMissing?: boolean;
+};
 
-export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissing = true }: RunOpts) {
+export async function detectAnchorsRun({
+  eventId,
+  maxConcurrency = 4,
+  onlyMissing = true,
+}: RunOpts) {
   const supabase = await createServerSupabaseServiceClient();
 
   const { data: photos, error } = await (supabase as any)
@@ -14,14 +22,18 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
     .order('created_at', { ascending: true });
   if (error) throw error;
 
-  const targets = (photos ?? []).filter((p: any) => (onlyMissing ? !p.is_anchor && !p.code_id : true));
+  const targets = (photos ?? []).filter((p: any) =>
+    onlyMissing ? !p.is_anchor && !p.code_id : true
+  );
 
   const { data: codes } = await (supabase as any)
     .from('codes')
     .select('id, code_value')
     .eq('event_id', eventId);
   const codeMap = new Map<string, string>();
-  (codes ?? []).forEach((c: any) => codeMap.set(String(c.code_value).toUpperCase(), c.id));
+  (codes ?? []).forEach((c: any) =>
+    codeMap.set(String(c.code_value).toUpperCase(), c.id)
+  );
 
   const limit = pLimit(maxConcurrency);
   const results: {
@@ -56,7 +68,11 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
               .from('photos')
               .update({ is_anchor: true, anchor_raw: codeVal, code_id: codeId })
               .eq('id', p.id);
-            results.detected.push({ photo_id: p.id, code_value: codeVal, code_id: codeId });
+            results.detected.push({
+              photo_id: p.id,
+              code_value: codeVal,
+              code_id: codeId,
+            });
           } else {
             await (supabase as any)
               .from('photos')
@@ -65,7 +81,10 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
             results.unmatched.push({ photo_id: p.id, code_value: codeVal });
           }
         } catch (e: any) {
-          results.errors.push({ photo_id: p.id, error: e?.message ?? String(e) });
+          results.errors.push({
+            photo_id: p.id,
+            error: e?.message ?? String(e),
+          });
         }
       })
     )
@@ -74,13 +93,16 @@ export async function detectAnchorsRun({ eventId, maxConcurrency = 4, onlyMissin
   return results;
 }
 
-async function downloadFromStorage(supabase: any, storagePath: string): Promise<Buffer> {
+async function downloadFromStorage(
+  supabase: any,
+  storagePath: string
+): Promise<Buffer> {
   const bucket =
     process.env['STORAGE_BUCKET_ORIGINAL'] ||
     process.env['STORAGE_BUCKET'] ||
     'photo-private';
   const path = storagePath.startsWith('/') ? storagePath.slice(1) : storagePath;
-  
+
   try {
     const { data, error } = await supabase.storage.from(bucket).download(path);
     if (error) {
@@ -97,6 +119,3 @@ async function downloadFromStorage(supabase: any, storagePath: string): Promise<
     throw err;
   }
 }
-
-
-

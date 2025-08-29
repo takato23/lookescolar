@@ -1,7 +1,12 @@
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { Redis } from '@upstash/redis';
 
-export async function bumpRequest(eventId: string, dateISO: string, count: number, approxBytes: number) {
+export async function bumpRequest(
+  eventId: string,
+  dateISO: string,
+  count: number,
+  approxBytes: number
+) {
   const supabase = await createServerSupabaseServiceClient();
   // Upsert por (event_id, date)
   // Asumimos tabla egress_metrics(event_id, date, bytes_served, requests_count, unique_tokens)
@@ -36,7 +41,11 @@ export async function bumpRequest(eventId: string, dateISO: string, count: numbe
   }
 }
 
-export async function bumpUnique(eventId: string, dateISO: string, token: string) {
+export async function bumpUnique(
+  eventId: string,
+  dateISO: string,
+  token: string
+) {
   try {
     const redis = Redis.fromEnv();
     const key = `eg:${eventId}:${dateISO}:${token}`;
@@ -50,9 +59,11 @@ export async function bumpUnique(eventId: string, dateISO: string, token: string
         .eq('date', dateISO)
         .single();
       if (!data) {
-        await supabase
-          .from('egress_metrics')
-          .insert({ event_id: eventId, date: dateISO, unique_tokens: 1 } as any);
+        await supabase.from('egress_metrics').insert({
+          event_id: eventId,
+          date: dateISO,
+          unique_tokens: 1,
+        } as any);
       } else {
         await supabase
           .from('egress_metrics')
@@ -65,7 +76,3 @@ export async function bumpUnique(eventId: string, dateISO: string, token: string
     // ignorar si redis no está disponible
   }
 }
-
-
-
-

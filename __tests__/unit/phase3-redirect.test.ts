@@ -35,7 +35,7 @@ describe('Phase 3 - Token Redirect System', () => {
 
   it('should validate feature flags for redirect system', async () => {
     const { featureFlags } = await import('@/lib/feature-flags');
-    
+
     // Verificar que todas las flags necesarias están habilitadas
     expect(featureFlags.UNIFIED_GALLERY_ENABLED).toBe(true);
     expect(featureFlags.FAMILY_IN_GALLERY_ROUTE).toBe(true);
@@ -46,12 +46,12 @@ describe('Phase 3 - Token Redirect System', () => {
   it('should construct correct redirect URL with token parameter', () => {
     const token = '4ecebc495344b51b5b3cae049d27edd2';
     const eventId = 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74';
-    
+
     const expectedRedirectUrl = `/gallery/${eventId}?token=${token}&from=legacy`;
-    
+
     // Simular la lógica de construcción de URL de redirección
     const redirectUrl = `/gallery/${eventId}?token=${token}&from=legacy`;
-    
+
     expect(redirectUrl).toBe(expectedRedirectUrl);
     expect(redirectUrl).toContain('from=legacy'); // Para tracking
     expect(redirectUrl).toContain(`token=${token}`); // Para contexto familiar
@@ -81,7 +81,7 @@ describe('Phase 3 - Token Redirect System', () => {
   it('should handle token validation error responses', () => {
     const mockErrorResponse = {
       valid: false,
-      error: 'Token expirado'
+      error: 'Token expirado',
     };
 
     expect(mockErrorResponse.valid).toBe(false);
@@ -92,10 +92,10 @@ describe('Phase 3 - Token Redirect System', () => {
   it('should validate minimum token length', () => {
     const shortToken = 'short';
     const validToken = '4ecebc495344b51b5b3cae049d27edd2';
-    
+
     expect(shortToken.length).toBeLessThan(20);
     expect(validToken.length).toBeGreaterThanOrEqual(20);
-    
+
     // Token corto debería ser rechazado
     expect(shortToken.length < 20).toBe(true);
   });
@@ -104,10 +104,10 @@ describe('Phase 3 - Token Redirect System', () => {
     const redirectUrl = '/gallery/test-event?token=test-token&from=legacy';
     const url = new URL(redirectUrl, 'http://localhost:3000');
     const searchParams = url.searchParams;
-    
+
     expect(searchParams.get('from')).toBe('legacy');
     expect(searchParams.get('token')).toBe('test-token');
-    
+
     // Verificar que puede ser detectado por gallery context
     const hasLegacyFlag = searchParams.get('from') === 'legacy';
     expect(hasLegacyFlag).toBe(true);
@@ -122,7 +122,7 @@ describe('Phase 3 - Token Redirect System', () => {
       { status: 500, error: 'Error interno del servidor' },
     ];
 
-    errorScenarios.forEach(scenario => {
+    errorScenarios.forEach((scenario) => {
       expect(scenario.status).toBeGreaterThanOrEqual(400);
       expect(scenario.error).toBeDefined();
     });
@@ -133,16 +133,18 @@ describe('Phase 3 - Token Redirect System', () => {
       {
         eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74',
         token: '4ecebc495344b51b5b3cae049d27edd2',
-        expected: '/gallery/a7eed8dd-a432-4dbe-9cd8-328338fa5c74?token=4ecebc495344b51b5b3cae049d27edd2&from=legacy'
+        expected:
+          '/gallery/a7eed8dd-a432-4dbe-9cd8-328338fa5c74?token=4ecebc495344b51b5b3cae049d27edd2&from=legacy',
       },
       {
         eventId: 'b8ff4cfe-5543-5eef-ae9d-439449gb6d85',
         token: '5fdfcd506455c62c6c4dbf059e38fee3',
-        expected: '/gallery/b8ff4cfe-5543-5eef-ae9d-439449gb6d85?token=5fdfcd506455c62c6c4dbf059e38fee3&from=legacy'
-      }
+        expected:
+          '/gallery/b8ff4cfe-5543-5eef-ae9d-439449gb6d85?token=5fdfcd506455c62c6c4dbf059e38fee3&from=legacy',
+      },
     ];
 
-    testCases.forEach(testCase => {
+    testCases.forEach((testCase) => {
       const redirectUrl = `/gallery/${testCase.eventId}?token=${testCase.token}&from=legacy`;
       expect(redirectUrl).toBe(testCase.expected);
     });

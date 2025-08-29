@@ -16,7 +16,7 @@ describe('Family APIs Integration Tests', () => {
   let testEventId: string;
   let testSubjectId: string;
   let validToken: string;
-  let testPhotoIds: string[] = [];
+  const testPhotoIds: string[] = [];
 
   beforeAll(async () => {
     await cleanupTestData();
@@ -39,24 +39,24 @@ describe('Family APIs Integration Tests', () => {
   describe('Gallery API', () => {
     it('should reject invalid token format', async () => {
       const shortToken = 'short_token'; // <20 chars
-      
+
       const response = await fetch(`/api/family/gallery/${shortToken}`);
       expect(response.status).toBe(400);
     });
 
     it('should reject non-existent token', async () => {
       const fakeToken = 'nonexistent_token_1234567890123';
-      
+
       const response = await fetch(`/api/family/gallery/${fakeToken}`);
       expect(response.status).toBe(404);
     });
 
     it('should accept valid token and return gallery data', async () => {
       const response = await fetch(`/api/family/gallery/${validToken}`);
-      
+
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.subject).toBeDefined();
       expect(result.photos).toBeDefined();
       expect(Array.isArray(result.photos)).toBe(true);
@@ -70,14 +70,14 @@ describe('Family APIs Integration Tests', () => {
           event_id: testEventId,
           filename: 'unassigned.jpg',
           storage_path: 'eventos/test/unassigned.jpg',
-          status: 'processed'
+          status: 'processed',
         })
         .select()
         .single();
 
       const response = await fetch(`/api/family/gallery/${validToken}`);
       const result = await response.json();
-      
+
       // No debería incluir la foto no asignada
       const photoIds = result.photos.map((p: any) => p.id);
       expect(photoIds).not.toContain(unassignedPhoto.id);
@@ -88,23 +88,25 @@ describe('Family APIs Integration Tests', () => {
 
     it('should enforce rate limiting', async () => {
       const promises = [];
-      
+
       // Hacer 35 requests (excede límite de 30/min del middleware)
       for (let i = 0; i < 35; i++) {
         promises.push(fetch(`/api/family/gallery/${validToken}`));
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Algunos deberían ser rate limited (429)
-      const rateLimited = responses.filter(r => r.status === 429);
+      const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
 
     it('should handle pagination correctly', async () => {
-      const response = await fetch(`/api/family/gallery/${validToken}?page=1&limit=2`);
+      const response = await fetch(
+        `/api/family/gallery/${validToken}?page=1&limit=2`
+      );
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.photos.length).toBeLessThanOrEqual(2);
     });
@@ -120,7 +122,7 @@ describe('Family APIs Integration Tests', () => {
           first_name: 'Expired',
           last_name: 'Subject',
           token: expiredToken,
-          expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // Ayer
+          expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Ayer
         })
         .select()
         .single();
@@ -140,24 +142,26 @@ describe('Family APIs Integration Tests', () => {
         return;
       }
 
-      const cartItems = [{
-        photo_id: testPhotoIds[0],
-        quantity: 1,
-        filename: 'test-photo-1.jpg'
-      }];
+      const cartItems = [
+        {
+          photo_id: testPhotoIds[0],
+          quantity: 1,
+          filename: 'test-photo-1.jpg',
+        },
+      ];
 
       const response = await fetch('/api/family/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: cartItems
-        })
+          items: cartItems,
+        }),
       });
 
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.items).toBeDefined();
       expect(result.items.length).toBe(1);
       expect(result.total).toBeDefined();
@@ -167,19 +171,21 @@ describe('Family APIs Integration Tests', () => {
       if (testPhotoIds.length === 0) return;
 
       // Intentar agregar más de 50 items
-      const manyItems = Array(55).fill(null).map(() => ({
-        photo_id: testPhotoIds[0],
-        quantity: 1,
-        filename: 'test.jpg'
-      }));
+      const manyItems = Array(55)
+        .fill(null)
+        .map(() => ({
+          photo_id: testPhotoIds[0],
+          quantity: 1,
+          filename: 'test.jpg',
+        }));
 
       const response = await fetch('/api/family/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: manyItems
-        })
+          items: manyItems,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -194,7 +200,9 @@ describe('Family APIs Integration Tests', () => {
           type: 'student',
           first_name: 'Other',
           token: 'other_subject_token_123456789012',
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
         })
         .select()
         .single();
@@ -205,18 +213,16 @@ describe('Family APIs Integration Tests', () => {
           event_id: testEventId,
           filename: 'other-photo.jpg',
           storage_path: 'eventos/test/other-photo.jpg',
-          status: 'processed'
+          status: 'processed',
         })
         .select()
         .single();
 
       // Asignar foto al otro subject
-      await supabase
-        .from('photo_assignments')
-        .insert({
-          photo_id: otherPhoto.id,
-          subject_id: otherSubject.id
-        });
+      await supabase.from('photo_assignments').insert({
+        photo_id: otherPhoto.id,
+        subject_id: otherSubject.id,
+      });
 
       // Intentar agregar foto de otro subject al carrito
       const response = await fetch('/api/family/cart', {
@@ -224,18 +230,23 @@ describe('Family APIs Integration Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: [{
-            photo_id: otherPhoto.id,
-            quantity: 1,
-            filename: 'other-photo.jpg'
-          }]
-        })
+          items: [
+            {
+              photo_id: otherPhoto.id,
+              quantity: 1,
+              filename: 'other-photo.jpg',
+            },
+          ],
+        }),
       });
 
       expect(response.status).toBe(403);
 
       // Cleanup
-      await supabase.from('photo_assignments').delete().eq('photo_id', otherPhoto.id);
+      await supabase
+        .from('photo_assignments')
+        .delete()
+        .eq('photo_id', otherPhoto.id);
       await supabase.from('photos').delete().eq('id', otherPhoto.id);
       await supabase.from('subjects').delete().eq('id', otherSubject.id);
     });
@@ -244,7 +255,7 @@ describe('Family APIs Integration Tests', () => {
       const response = await fetch('/api/family/cart', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: validToken })
+        body: JSON.stringify({ token: validToken }),
       });
 
       expect(response.status).toBe(200);
@@ -261,12 +272,14 @@ describe('Family APIs Integration Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: [{
-            photo_id: testPhotoIds[0],
-            quantity: 15, // Excede límite de 10
-            filename: 'test.jpg'
-          }]
-        })
+          items: [
+            {
+              photo_id: testPhotoIds[0],
+              quantity: 15, // Excede límite de 10
+              filename: 'test.jpg',
+            },
+          ],
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -283,13 +296,13 @@ describe('Family APIs Integration Tests', () => {
         body: JSON.stringify({
           token: validToken,
           photo_id: testPhotoIds[0],
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.signed_url).toBeDefined();
       expect(result.signed_url).toContain('supabase.co');
       expect(result.expires_at).toBeDefined();
@@ -303,7 +316,7 @@ describe('Family APIs Integration Tests', () => {
           event_id: testEventId,
           filename: 'unassigned.jpg',
           storage_path: 'eventos/test/unassigned.jpg',
-          status: 'processed'
+          status: 'processed',
         })
         .select()
         .single();
@@ -314,8 +327,8 @@ describe('Family APIs Integration Tests', () => {
         body: JSON.stringify({
           token: validToken,
           photo_id: unassignedPhoto.id,
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -328,7 +341,7 @@ describe('Family APIs Integration Tests', () => {
       if (testPhotoIds.length === 0) return;
 
       const promises = [];
-      
+
       // Hacer 65 requests (excede límite de 60/min)
       for (let i = 0; i < 65; i++) {
         promises.push(
@@ -338,14 +351,14 @@ describe('Family APIs Integration Tests', () => {
             body: JSON.stringify({
               token: validToken,
               photo_id: testPhotoIds[0],
-              type: 'preview'
-            })
+              type: 'preview',
+            }),
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      const rateLimited = responses.filter(r => r.status === 429);
+      const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
 
@@ -354,15 +367,15 @@ describe('Family APIs Integration Tests', () => {
 
       const response = await fetch('/api/storage/signed-url', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Referer': 'https://malicious-site.com' // Referer inválido
+          Referer: 'https://malicious-site.com', // Referer inválido
         },
         body: JSON.stringify({
           token: validToken,
           photo_id: testPhotoIds[0],
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       // Middleware debería bloquear esto
@@ -378,8 +391,8 @@ describe('Family APIs Integration Tests', () => {
         body: JSON.stringify({
           token: 'short', // Token muy corto
           photo_id: testPhotoIds[0],
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -397,7 +410,7 @@ describe('Family APIs Integration Tests', () => {
           status: 'pending',
           contact_name: 'Test Parent',
           contact_email: 'parent@test.com',
-          contact_phone: '+541234567890'
+          contact_phone: '+541234567890',
         })
         .select()
         .single();
@@ -407,7 +420,7 @@ describe('Family APIs Integration Tests', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-Subject-Token': validToken, // Header approach o query param
-        }
+        },
       });
 
       if (response.status === 200) {
@@ -422,21 +435,21 @@ describe('Family APIs Integration Tests', () => {
 
     it('should enforce rate limiting on status checks', async () => {
       const promises = [];
-      
+
       // Hacer 35 requests
       for (let i = 0; i < 35; i++) {
         promises.push(
           fetch('/api/family/order/status', {
             method: 'GET',
             headers: {
-              'X-Subject-Token': validToken
-            }
+              'X-Subject-Token': validToken,
+            },
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      const rateLimited = responses.filter(r => r.status === 429);
+      const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
   });
@@ -448,13 +461,13 @@ describe('Family APIs Integration Tests', () => {
         .select('token')
         .eq('event_id', testEventId);
 
-      subjects?.forEach(subject => {
+      subjects?.forEach((subject) => {
         // Token debe tener al menos 20 caracteres
         expect(subject.token.length).toBeGreaterThanOrEqual(20);
-        
+
         // Token debe ser alphanumeric con - y _
         expect(/^[A-Za-z0-9_-]+$/.test(subject.token)).toBe(true);
-        
+
         // Token no debe contener espacios
         expect(subject.token).not.toContain(' ');
       });
@@ -467,12 +480,12 @@ describe('Family APIs Integration Tests', () => {
         'token with spaces 123456789', // Con espacios
         'token@special#chars$1234567', // Caracteres especiales
         null, // Null
-        undefined // Undefined
+        undefined, // Undefined
       ];
 
       for (const token of invalidTokens) {
         if (token === null || token === undefined) continue;
-        
+
         const response = await fetch(`/api/family/gallery/${token}`);
         expect(response.status).toBeGreaterThanOrEqual(400);
       }
@@ -489,11 +502,11 @@ async function setupTestData() {
       name: 'Family Test Event',
       school: 'Test School',
       date: '2024-01-20',
-      active: true
+      active: true,
     })
     .select()
     .single();
-  
+
   testEventId = event.id;
 
   // Crear subject con token válido
@@ -506,11 +519,11 @@ async function setupTestData() {
       first_name: 'Test',
       last_name: 'Student',
       token: validToken,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
     .select()
     .single();
-  
+
   testSubjectId = subject.id;
 
   // Crear fotos de prueba
@@ -519,33 +532,31 @@ async function setupTestData() {
       event_id: testEventId,
       filename: 'test-photo-1.jpg',
       storage_path: 'eventos/test/test-photo-1.jpg',
-      status: 'processed' as const
+      status: 'processed' as const,
     },
     {
       event_id: testEventId,
       filename: 'test-photo-2.jpg',
       storage_path: 'eventos/test/test-photo-2.jpg',
-      status: 'processed' as const
-    }
+      status: 'processed' as const,
+    },
   ];
 
   const { data: photos } = await supabase
     .from('photos')
     .insert(photoData)
     .select();
-  
+
   if (photos) {
-    testPhotoIds = photos.map(p => p.id);
+    testPhotoIds = photos.map((p) => p.id);
 
     // Asignar fotos al subject
-    const assignments = testPhotoIds.map(photoId => ({
+    const assignments = testPhotoIds.map((photoId) => ({
       photo_id: photoId,
-      subject_id: testSubjectId
+      subject_id: testSubjectId,
     }));
 
-    await supabase
-      .from('photo_assignments')
-      .insert(assignments);
+    await supabase.from('photo_assignments').insert(assignments);
   }
 }
 

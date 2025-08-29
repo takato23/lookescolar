@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
     }
 
     const items = (body.items ?? []).filter(
-      (i): i is BulkItem => !!i && typeof i.name === 'string' && typeof i.event_id === 'string'
+      (i): i is BulkItem =>
+        !!i && typeof i.name === 'string' && typeof i.event_id === 'string'
     );
 
     if (items.length === 0) {
@@ -37,7 +38,12 @@ export async function POST(request: NextRequest) {
 
     const service = await createServerSupabaseServiceClient();
 
-    const created: Array<{ id: string; name: string; token: string; token_expires_at: string }> = [];
+    const created: Array<{
+      id: string;
+      name: string;
+      token: string;
+      token_expires_at: string;
+    }> = [];
     const errors: Array<{ name?: string; reason: string }> = [];
 
     for (const item of items) {
@@ -49,20 +55,21 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (insert.error || !insert.data) {
-          errors.push({ name: item.name, reason: insert.error?.message || 'Error creando sujeto' });
+          errors.push({
+            name: item.name,
+            reason: insert.error?.message || 'Error creando sujeto',
+          });
           continue;
         }
 
         const token = randomBytes(24).toString('base64url');
         const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-        const tokenRes = await service
-          .from('subject_tokens')
-          .insert({
-            subject_id: insert.data.id,
-            token,
-            expires_at: expiresAt.toISOString(),
-          });
+        const tokenRes = await service.from('subject_tokens').insert({
+          subject_id: insert.data.id,
+          token,
+          expires_at: expiresAt.toISOString(),
+        });
 
         if (tokenRes.error) {
           errors.push({ name: item.name, reason: tokenRes.error.message });
@@ -77,7 +84,10 @@ export async function POST(request: NextRequest) {
         });
       } catch (e: any) {
         console.error('[Service] Error en bulk subject', e);
-        errors.push({ name: item.name, reason: e?.message || 'Error desconocido' });
+        errors.push({
+          name: item.name,
+          reason: e?.message || 'Error desconocido',
+        });
       }
     }
 
@@ -95,5 +105,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

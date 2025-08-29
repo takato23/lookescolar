@@ -12,10 +12,7 @@ async function globalTeardown(config: FullConfig) {
 
   try {
     // Clean up temporary test files (but keep reports)
-    const tempDirs = [
-      '__tests__/temp',
-      'test-artifacts/temp',
-    ];
+    const tempDirs = ['__tests__/temp', 'test-artifacts/temp'];
 
     for (const dir of tempDirs) {
       const fullPath = path.join(process.cwd(), dir);

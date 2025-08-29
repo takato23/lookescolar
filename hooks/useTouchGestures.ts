@@ -67,10 +67,13 @@ export function useTouchGestures(
   }, []);
 
   // Calcular punto medio entre dos toques
-  const getMidpoint = useCallback((touch1: Touch, touch2: Touch) => ({
-    x: (touch1.clientX + touch2.clientX) / 2,
-    y: (touch1.clientY + touch2.clientY) / 2,
-  }), []);
+  const getMidpoint = useCallback(
+    (touch1: Touch, touch2: Touch) => ({
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    }),
+    []
+  );
 
   // Limpiar timeout de long press
   const clearLongPressTimeout = useCallback(() => {
@@ -81,119 +84,140 @@ export function useTouchGestures(
   }, []);
 
   // Manejar inicio de toque
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    e.preventDefault();
-    
-    const touch = e.touches[0];
-    const touchPoint: TouchPoint = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    };
+  const handleTouchStart = useCallback(
+    (e: TouchEvent) => {
+      e.preventDefault();
 
-    gestureState.current.touchStart = touchPoint;
-
-    if (e.touches.length === 2) {
-      // Inicio de pinch
-      gestureState.current.initialDistance = getDistance(e.touches[0], e.touches[1]);
-      gestureState.current.initialScale = 1;
-    } else if (e.touches.length === 1) {
-      // Configurar long press
-      gestureState.current.longPressTimeout = setTimeout(() => {
-        if (handlers.onLongPress) {
-          handlers.onLongPress(touchPoint);
-        }
-      }, config.longPressDelay);
-    }
-  }, [handlers, config, getDistance]);
-
-  // Manejar movimiento de toque
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    e.preventDefault();
-    clearLongPressTimeout();
-
-    if (e.touches.length === 2 && handlers.onPinch) {
-      // Manejar pinch
-      const currentDistance = getDistance(e.touches[0], e.touches[1]);
-      const scale = currentDistance / gestureState.current.initialDistance;
-      
-      if (Math.abs(scale - gestureState.current.initialScale) > config.pinchThreshold) {
-        const center = getMidpoint(e.touches[0], e.touches[1]);
-        handlers.onPinch({ scale, center });
-        gestureState.current.initialScale = scale;
-      }
-    }
-  }, [handlers, config, getDistance, getMidpoint, clearLongPressTimeout]);
-
-  // Manejar fin de toque
-  const handleTouchEnd = useCallback((e: TouchEvent) => {
-    e.preventDefault();
-    clearLongPressTimeout();
-
-    if (e.changedTouches.length === 1 && gestureState.current.touchStart) {
-      const touch = e.changedTouches[0];
-      const touchEnd: TouchPoint = {
+      const touch = e.touches[0];
+      const touchPoint: TouchPoint = {
         x: touch.clientX,
         y: touch.clientY,
         time: Date.now(),
       };
 
-      const deltaX = touchEnd.x - gestureState.current.touchStart.x;
-      const deltaY = touchEnd.y - gestureState.current.touchStart.y;
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      const duration = touchEnd.time - gestureState.current.touchStart.time;
-      const velocity = distance / duration;
+      gestureState.current.touchStart = touchPoint;
 
-      // Detectar swipe
-      if (distance > config.swipeThreshold && velocity > config.velocityThreshold && handlers.onSwipe) {
-        let direction: SwipeGesture['direction'];
-        
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-          direction = deltaX > 0 ? 'right' : 'left';
-        } else {
-          direction = deltaY > 0 ? 'down' : 'up';
-        }
+      if (e.touches.length === 2) {
+        // Inicio de pinch
+        gestureState.current.initialDistance = getDistance(
+          e.touches[0],
+          e.touches[1]
+        );
+        gestureState.current.initialScale = 1;
+      } else if (e.touches.length === 1) {
+        // Configurar long press
+        gestureState.current.longPressTimeout = setTimeout(() => {
+          if (handlers.onLongPress) {
+            handlers.onLongPress(touchPoint);
+          }
+        }, config.longPressDelay);
+      }
+    },
+    [handlers, config, getDistance]
+  );
 
-        handlers.onSwipe({
-          direction,
-          distance,
-          velocity,
-          duration,
-        });
-      } 
-      // Detectar tap
-      else if (distance < config.swipeThreshold) {
-        const now = Date.now();
-        
-        // Verificar doble tap
+  // Manejar movimiento de toque
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      e.preventDefault();
+      clearLongPressTimeout();
+
+      if (e.touches.length === 2 && handlers.onPinch) {
+        // Manejar pinch
+        const currentDistance = getDistance(e.touches[0], e.touches[1]);
+        const scale = currentDistance / gestureState.current.initialDistance;
+
         if (
-          gestureState.current.lastTap &&
-          now - gestureState.current.lastTap.time < config.doubleTapDelay &&
-          Math.abs(touchEnd.x - gestureState.current.lastTap.x) < 50 &&
-          Math.abs(touchEnd.y - gestureState.current.lastTap.y) < 50
+          Math.abs(scale - gestureState.current.initialScale) >
+          config.pinchThreshold
         ) {
-          if (handlers.onDoubleTap) {
-            handlers.onDoubleTap(touchEnd);
-          }
-          gestureState.current.lastTap = null;
-        } else {
-          if (handlers.onTap) {
-            handlers.onTap(touchEnd);
-          }
-          gestureState.current.lastTap = touchEnd;
+          const center = getMidpoint(e.touches[0], e.touches[1]);
+          handlers.onPinch({ scale, center });
+          gestureState.current.initialScale = scale;
         }
       }
-    }
+    },
+    [handlers, config, getDistance, getMidpoint, clearLongPressTimeout]
+  );
 
-    gestureState.current.touchStart = null;
-  }, [handlers, config, clearLongPressTimeout]);
+  // Manejar fin de toque
+  const handleTouchEnd = useCallback(
+    (e: TouchEvent) => {
+      e.preventDefault();
+      clearLongPressTimeout();
+
+      if (e.changedTouches.length === 1 && gestureState.current.touchStart) {
+        const touch = e.changedTouches[0];
+        const touchEnd: TouchPoint = {
+          x: touch.clientX,
+          y: touch.clientY,
+          time: Date.now(),
+        };
+
+        const deltaX = touchEnd.x - gestureState.current.touchStart.x;
+        const deltaY = touchEnd.y - gestureState.current.touchStart.y;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const duration = touchEnd.time - gestureState.current.touchStart.time;
+        const velocity = distance / duration;
+
+        // Detectar swipe
+        if (
+          distance > config.swipeThreshold &&
+          velocity > config.velocityThreshold &&
+          handlers.onSwipe
+        ) {
+          let direction: SwipeGesture['direction'];
+
+          if (Math.abs(deltaX) > Math.abs(deltaY)) {
+            direction = deltaX > 0 ? 'right' : 'left';
+          } else {
+            direction = deltaY > 0 ? 'down' : 'up';
+          }
+
+          handlers.onSwipe({
+            direction,
+            distance,
+            velocity,
+            duration,
+          });
+        }
+        // Detectar tap
+        else if (distance < config.swipeThreshold) {
+          const now = Date.now();
+
+          // Verificar doble tap
+          if (
+            gestureState.current.lastTap &&
+            now - gestureState.current.lastTap.time < config.doubleTapDelay &&
+            Math.abs(touchEnd.x - gestureState.current.lastTap.x) < 50 &&
+            Math.abs(touchEnd.y - gestureState.current.lastTap.y) < 50
+          ) {
+            if (handlers.onDoubleTap) {
+              handlers.onDoubleTap(touchEnd);
+            }
+            gestureState.current.lastTap = null;
+          } else {
+            if (handlers.onTap) {
+              handlers.onTap(touchEnd);
+            }
+            gestureState.current.lastTap = touchEnd;
+          }
+        }
+      }
+
+      gestureState.current.touchStart = null;
+    },
+    [handlers, config, clearLongPressTimeout]
+  );
 
   // Configurar event listeners
   useEffect(() => {
     const element = gestureRef.current;
     if (!element) return;
 
-    element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    element.addEventListener('touchstart', handleTouchStart, {
+      passive: false,
+    });
     element.addEventListener('touchmove', handleTouchMove, { passive: false });
     element.addEventListener('touchend', handleTouchEnd, { passive: false });
 

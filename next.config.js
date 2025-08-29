@@ -1,59 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable experimental features for better performance
-  experimental: {
-    // Enable optimized client for dev
-    optimizePackageImports: ['@supabase/ssr', '@supabase/supabase-js'],
-    // Reduce stale times for faster HMR
-    staleTimes: {
-      dynamic: 0,
-      static: 30,
-    },
-  },
-
-  // Optimized webpack configuration for dev performance
-  webpack: (config, { dev, isServer }) => {
-    // Development optimizations
-    if (dev) {
-      // Faster rebuilds
-      config.watchOptions = {
-        poll: false,
-        aggregateTimeout: 300,
-        ignored: /node_modules/,
-      };
-      
-      // Reduce optimization in development
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: false,
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
-        mergeDuplicateChunks: false,
-      };
-    }
-
-    // Basic path alias
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, './'),
-    };
-
-    return config;
-  },
+  // Basic configuration
+  reactStrictMode: true,
+  poweredByHeader: false,
 
   // Image optimization
   images: {
-    // Optimize images served by Next.js
-    formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60, // Reduced cache for signed URLs (1 minute)
-    dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    // Disable optimization for signed URLs (they have expiring tokens)
-    unoptimized: false,
-    loader: 'default',
-    // Supabase storage configuration
     remotePatterns: [
       {
         protocol: 'https',
@@ -66,128 +18,135 @@ const nextConfig = {
         hostname: '*.supabase.co',
         pathname: '/storage/v1/object/**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '54321',
+        pathname: '/storage/v1/object/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '54321',
+        pathname: '/storage/v1/object/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 
-  // External packages that should not be bundled
-  serverExternalPackages: ['sharp', 'qrcode', 'pdfkit', 'canvas'],
+  // External packages that should not be bundled (server-side only)
+  serverExternalPackages: ['sharp', 'pdfkit', 'canvas'],
 
-  // Compression
-  compress: true,
+  // Set output file tracing root to silence workspace warning
+  outputFileTracingRoot: process.cwd(),
 
-  // Security headers
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+  // Webpack configuration to handle Sharp and worker dependencies
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Handle Sharp worker issues
+    if (isServer) {
+      config.externals.push({
+        sharp: 'commonjs sharp',
+        canvas: 'commonjs canvas',
+      });
+    }
+
+    // Development optimizations for Fast Refresh - temporarily disabled
+    if (dev && false) {
+      // Enable persistent caching for faster rebuilds
+      config.cache = {
+        type: 'filesystem',
+        buildDependencies: {
+          config: ['next.config.js'],
+        },
+      };
+
+      // Optimize module resolution
+      config.resolve.cache = true;
+
+      // Reduce bundle analyzing overhead in development
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'named',
+        chunkIds: 'named',
+      };
+
+      // Split chunks more aggressively
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          default: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true,
           },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            priority: -10,
+            chunks: 'all',
           },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block'
+          lucideReact: {
+            test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+            name: 'lucide-react',
+            priority: 20,
+            chunks: 'all',
           },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+          framerMotion: {
+            test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+            name: 'framer-motion',
+            priority: 20,
+            chunks: 'all',
           },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
-          },
-        ],
-      },
-      // Cache optimization for static assets
-      {
-        source: '/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Cache for Next.js static files
-      {
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      // Cache for API routes (short lived)
-      {
-        source: '/api/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=0, must-revalidate',
-          },
-        ],
-      },
-    ];
+        },
+      };
+    }
+
+    // Configure module resolution for better compatibility
+    // Add fallbacks for node modules
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      crypto: false,
+    };
+
+    return config;
   },
 
-  // Redirects for SEO and UX
-  async redirects() {
-    return [
-      // Redirect root admin to dashboard
-      {
-        source: '/admin',
-        destination: '/admin/dashboard-pro',
-        permanent: false,
-      },
-    ];
+  // Experimental features for better performance
+  experimental: {
+    // Optimize chunk loading for heavy packages
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      '@tanstack/react-query',
+      '@tanstack/react-virtual',
+      'framer-motion',
+      'recharts',
+      'date-fns',
+      'clsx',
+      'class-variance-authority',
+    ],
+    // Improve Fast Refresh performance
+    optimizeServerReact: true,
+    // Remove esmExternals to prevent module format conflicts
+    // esmExternals: true,
   },
 
-  // Production build optimization
-  output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
-
-  // Security and performance
-  poweredByHeader: false,
-  reactStrictMode: true,
-
-  // Compiler options
-  compiler: {
-    // Remove console.log in production
-    removeConsole: process.env.NODE_ENV === 'production' ? {
-      exclude: ['error', 'warn']
-    } : false,
-  },
-
-  // Build-time type checking and linting
-  typescript: {
-    ignoreBuildErrors: true,
-    tsconfigPath: './tsconfig.json',
-  },
-
-  eslint: {
-    // Deshabilitado temporalmente para permitir compilar mientras limpiamos lints
-    ignoreDuringBuilds: true,
-    dirs: ['app', 'components', 'lib', 'types'],
-  },
-
-  // Production optimizations
-  productionBrowserSourceMaps: false,
-
-  // Logging configuration
-  logging: {
-    fetches: {
-      fullUrl: process.env.NODE_ENV === 'development',
+  // Development optimizations (keep dev chunks around longer to avoid 404s)
+  ...(process.env.NODE_ENV === 'development' && {
+    onDemandEntries: {
+      // Keep pages in memory longer to avoid disposed chunk 404s during HMR/navigation
+      maxInactiveAge: 120 * 1000, // 2 minutes
+      // Keep more pages buffered in dev
+      pagesBufferLength: 10,
     },
-  },
-}
+  }),
+};
 
-module.exports = nextConfig
+export default nextConfig;

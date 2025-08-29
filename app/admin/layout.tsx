@@ -5,8 +5,16 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import { MobileNavigation, adminNavigationItems } from '@/components/ui/mobile-navigation';
+import {
+  MobileNavigation,
+  adminNavigationItems,
+} from '@/components/ui/mobile-navigation';
 import { MobileOptimizations } from '@/components/family/MobileOptimizations';
+import {
+  NotificationProvider,
+  useRealTimeNotifications,
+} from '@/components/ui/NotificationSystem';
+import { KeyboardProvider } from '@/components/ui/KeyboardShortcuts';
 
 export default function AdminLayout({
   children,
@@ -135,19 +143,42 @@ export default function AdminLayout({
   }
 
   return (
+    <NotificationProvider>
+      <KeyboardProvider>
+        <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
+      </KeyboardProvider>
+    </NotificationProvider>
+  );
+}
+
+function AdminLayoutContent({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: User;
+}) {
+  // Initialize real-time notifications
+  useRealTimeNotifications();
+
+  return (
     <MobileOptimizations>
       <div className="liquid-glass-app min-h-screen">
         {/* Mobile Navigation */}
         <MobileNavigation
           items={adminNavigationItems}
-          user={user && user.email ? {
-            name: user.email.split('@')[0],
-            email: user.email,
-          } : null}
+          user={
+            user && user.email
+              ? {
+                  name: user.email.split('@')[0],
+                  email: user.email,
+                }
+              : null
+          }
           onLogout={async () => {
             const { authClient } = await import('@/lib/supabase/auth-client');
             await authClient.logout();
-            router.replace('/login');
+            window.location.href = '/login';
           }}
           className="lg:hidden"
         />
@@ -155,30 +186,25 @@ export default function AdminLayout({
         <div className="relative flex">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block">
-            <AdminSidebar
-              isMobileOpen={isMobileMenuOpen}
-              onMobileToggle={toggleMobileMenu}
-            />
+            <AdminSidebar isMobileOpen={false} onMobileToggle={() => {}} />
           </div>
 
           {/* Main Content */}
           <div className="flex min-w-0 flex-1 flex-col">
             {/* Desktop Header */}
             <div className="hidden lg:block">
-              <AdminHeader user={user} onMobileMenuToggle={toggleMobileMenu} />
+              <AdminHeader user={user} onMobileMenuToggle={() => {}} />
             </div>
 
             {/* Page Content - Adjusted for mobile navigation */}
-            <main className="flex-1 overflow-x-hidden min-h-screen">
+            <main className="min-h-screen flex-1 overflow-x-hidden">
               {/* Mobile content with proper spacing */}
-              <div className="lg:hidden pt-14 pb-20 px-2 min-h-screen overflow-y-auto">
+              <div className="min-h-screen overflow-y-auto px-2 pb-20 pt-14 lg:hidden">
                 {children}
               </div>
-              
+
               {/* Desktop content */}
-              <div className="hidden lg:block">
-                {children}
-              </div>
+              <div className="hidden lg:block">{children}</div>
             </main>
           </div>
         </div>

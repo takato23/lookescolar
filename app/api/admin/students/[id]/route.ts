@@ -13,7 +13,7 @@ const RouteParamsSchema = z.object({
  * GET /api/admin/students/[id]
  * Retrieves student details by ID with associated event information
  */
-export const GET = withAuth(async function(
+export const GET = withAuth(async function (
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -127,12 +127,10 @@ export const GET = withAuth(async function(
       });
     }
 
-    const approvedPhotos = photoBreakdown?.filter(
-      (p) => p.photos?.approved
-    ).length || 0;
-    const pendingPhotos = photoBreakdown?.filter(
-      (p) => !p.photos?.approved
-    ).length || 0;
+    const approvedPhotos =
+      photoBreakdown?.filter((p) => p.photos?.approved).length || 0;
+    const pendingPhotos =
+      photoBreakdown?.filter((p) => !p.photos?.approved).length || 0;
 
     // Get recent photo assignments (last 5)
     const { data: recentPhotos, error: recentPhotosError } = await supabase
@@ -211,7 +209,7 @@ export const GET = withAuth(async function(
         token_expires_at: student.token_expires_at,
         created_at: student.created_at,
         updated_at: student.updated_at,
-        
+
         // Event information
         event: student.events
           ? {
@@ -243,19 +241,23 @@ export const GET = withAuth(async function(
           status: tokenStatus,
           expires_at: student.token_expires_at,
           days_until_expiry: tokenExpiresAt
-            ? Math.ceil((tokenExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            ? Math.ceil(
+                (tokenExpiresAt.getTime() - now.getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
             : null,
         },
 
         // Recent activity
-        recent_photos: recentPhotos?.map((rp) => ({
-          id: rp.photos?.id,
-          filename: rp.photos?.filename,
-          approved: rp.photos?.approved,
-          created_at: rp.photos?.created_at,
-          tagged_at: rp.tagged_at,
-          tagged_by: rp.tagged_by,
-        })) || [],
+        recent_photos:
+          recentPhotos?.map((rp) => ({
+            id: rp.photos?.id,
+            filename: rp.photos?.filename,
+            approved: rp.photos?.approved,
+            created_at: rp.photos?.created_at,
+            tagged_at: rp.tagged_at,
+            tagged_by: rp.tagged_by,
+          })) || [],
       },
 
       // Metadata

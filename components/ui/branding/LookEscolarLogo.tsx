@@ -7,12 +7,16 @@ interface LookEscolarLogoProps {
   className?: string;
 }
 
-export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' }: LookEscolarLogoProps) {
+export function LookEscolarLogo({
+  variant = 'blue',
+  size = 'md',
+  className = '',
+}: LookEscolarLogoProps) {
   const sizeClasses = {
     sm: 'w-8 h-8',
-    md: 'w-10 h-10', 
+    md: 'w-10 h-10',
     lg: 'w-12 h-12',
-    xl: 'w-16 h-16'
+    xl: 'w-16 h-16',
   };
 
   const getColors = () => {
@@ -24,7 +28,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           hat: '#8B5CF6', // Violet-500 - matches purple gradients
           hatDark: '#7C3AED', // Violet-600 - deeper purple
           face: '#10B981', // Emerald-500 - consistent green
-          strap: '#1E40AF' // Blue-800 - deep accent
+          strap: '#1E40AF', // Blue-800 - deep accent
         };
       case 'purple':
         return {
@@ -33,7 +37,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           hat: '#5B21B6', // Violet-800
           hatDark: '#4C1D95', // Violet-900
           face: '#10B981', // Emerald-500
-          strap: '#581C87' // Violet-900
+          strap: '#581C87', // Violet-900
         };
       case 'gradient':
         return {
@@ -42,7 +46,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           hat: '#8B5CF6', // Violet-500
           hatDark: '#7C3AED', // Violet-600
           face: '#10B981', // Emerald-500
-          strap: '#1D4ED8' // Blue-700
+          strap: '#1D4ED8', // Blue-700
         };
       case 'soft':
         return {
@@ -51,7 +55,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           hat: '#DDD6FE', // Violet-200
           hatDark: '#A78BFA', // Violet-400
           face: '#34D399', // Emerald-400
-          strap: '#8B5CF6' // Violet-500
+          strap: '#8B5CF6', // Violet-500
         };
       default:
         return {
@@ -60,7 +64,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           hat: '#7C3AED',
           hatDark: '#5B21B6',
           face: '#10B981',
-          strap: '#1E40AF'
+          strap: '#1E40AF',
         };
     }
   };
@@ -72,7 +76,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
       <svg
         viewBox="0 0 100 100"
         fill="none"
-        className="w-full h-full"
+        className="h-full w-full"
         aria-label="LookEscolar - Fotografía Escolar"
       >
         {/* Birrete Académico */}
@@ -98,7 +102,14 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           />
           {/* Borla */}
           <circle cx="45" cy="20" r="3" fill={colors.face} />
-          <line x1="42" y1="22" x2="38" y2="26" stroke={colors.strap} strokeWidth="1.5" />
+          <line
+            x1="42"
+            y1="22"
+            x2="38"
+            y2="26"
+            stroke={colors.strap}
+            strokeWidth="1.5"
+          />
         </g>
 
         {/* Cámara Principal */}
@@ -115,7 +126,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
             stroke="#1E293B"
             strokeWidth="3"
           />
-          
+
           {/* Parte superior de la cámara */}
           <rect
             x="5"
@@ -138,7 +149,7 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
             stroke="#0F172A"
             strokeWidth="2"
           />
-          
+
           {/* Lente interior */}
           <circle
             cx="35"
@@ -151,11 +162,11 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
 
           {/* Cara sonriente */}
           <circle cx="35" cy="37" r="10" fill={colors.face} />
-          
+
           {/* Ojos */}
           <circle cx="31" cy="34" r="1.5" fill="#1E293B" />
           <circle cx="39" cy="34" r="1.5" fill="#1E293B" />
-          
+
           {/* Sonrisa */}
           <path
             d="M 30 40 Q 35 44 40 40"
@@ -166,8 +177,16 @@ export function LookEscolarLogo({ variant = 'blue', size = 'md', className = '' 
           />
 
           {/* Flash */}
-          <rect x="10" y="15" width="6" height="4" rx="2" fill="#F8FAFC" opacity="0.9" />
-          
+          <rect
+            x="10"
+            y="15"
+            width="6"
+            height="4"
+            rx="2"
+            fill="#F8FAFC"
+            opacity="0.9"
+          />
+
           {/* Botón de disparo */}
           <circle cx="55" cy="20" r="3" fill={colors.hatDark} />
         </g>

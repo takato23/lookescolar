@@ -124,7 +124,7 @@ export function MobilePhotoGallery({
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 rounded-2xl bg-primary-50 border border-primary-200 p-4"
+            className="mb-4 rounded-2xl border border-primary-200 bg-primary-50 p-4"
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-primary-900">
@@ -160,7 +160,8 @@ export function MobilePhotoGallery({
                 className={clsx(
                   'relative aspect-square overflow-hidden rounded-lg bg-gray-100',
                   'cursor-pointer transition-all duration-200',
-                  isSelected && 'ring-2 ring-primary-500 ring-offset-2 shadow-lg'
+                  isSelected &&
+                    'shadow-lg ring-2 ring-primary-500 ring-offset-2'
                 )}
                 data-photo-id={photo.id}
                 ref={(el) => {
@@ -232,17 +233,20 @@ export function MobilePhotoGallery({
                 {/* Long press to view on mobile */}
                 {isTouchDevice && (
                   <div
-                    className="absolute inset-0 z-5"
+                    className="z-5 absolute inset-0"
                     onTouchStart={(e) => {
                       const timer = setTimeout(() => {
                         openViewer(index);
                       }, 500);
-                      
+
                       const handleTouchEnd = () => {
                         clearTimeout(timer);
-                        document.removeEventListener('touchend', handleTouchEnd);
+                        document.removeEventListener(
+                          'touchend',
+                          handleTouchEnd
+                        );
                       };
-                      
+
                       document.addEventListener('touchend', handleTouchEnd);
                     }}
                   />
@@ -326,7 +330,7 @@ function MobilePhotoViewer({
       direction === 'prev'
         ? (currentIndex - 1 + photos.length) % photos.length
         : (currentIndex + 1) % photos.length;
-    
+
     onIndexChange(newIndex);
     setScale(1);
     setRotation(0);
@@ -335,7 +339,7 @@ function MobilePhotoViewer({
   const handlePan = (event: any, info: PanInfo) => {
     // Swipe threshold
     const threshold = 100;
-    
+
     if (Math.abs(info.offset.x) > threshold) {
       if (info.offset.x > 0) {
         navigatePhoto('prev');
@@ -346,11 +350,11 @@ function MobilePhotoViewer({
   };
 
   const handleZoom = (delta: number) => {
-    setScale(prev => Math.max(0.5, Math.min(3, prev + delta)));
+    setScale((prev) => Math.max(0.5, Math.min(3, prev + delta)));
   };
 
   const handleRotate = () => {
-    setRotation(prev => prev + 90);
+    setRotation((prev) => prev + 90);
   };
 
   const currentPhoto = photos[currentIndex];
@@ -366,17 +370,17 @@ function MobilePhotoViewer({
         className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm"
       >
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-60 bg-gradient-to-b from-black/80 to-transparent p-4 pt-12 safe-area-padding">
+        <div className="z-60 safe-area-padding absolute left-0 right-0 top-0 bg-gradient-to-b from-black/80 to-transparent p-4 pt-12">
           <div className="flex items-center justify-between">
             <MobileIconButton
               icon={<X className="h-6 w-6" />}
               onClick={onClose}
               variant="ghost"
-              className="text-white bg-black/40 hover:bg-black/60"
+              className="bg-black/40 text-white hover:bg-black/60"
               label="Cerrar"
             />
-            
-            <div className="text-white text-center">
+
+            <div className="text-center text-white">
               <p className="text-sm font-medium">
                 {currentIndex + 1} de {photos.length}
               </p>
@@ -387,7 +391,7 @@ function MobilePhotoViewer({
                 icon={<RotateCw className="h-5 w-5" />}
                 onClick={handleRotate}
                 variant="ghost"
-                className="text-white bg-black/40 hover:bg-black/60"
+                className="bg-black/40 text-white hover:bg-black/60"
                 label="Rotar"
               />
             </div>
@@ -396,7 +400,7 @@ function MobilePhotoViewer({
 
         {/* Photo Container */}
         <motion.div
-          className="flex items-center justify-center h-full px-4 py-20"
+          className="flex h-full items-center justify-center px-4 py-20"
           drag={isMobileView ? 'x' : false}
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.2}
@@ -426,13 +430,13 @@ function MobilePhotoViewer({
           <>
             <button
               onClick={() => navigatePhoto('prev')}
-              className="absolute left-0 top-20 bottom-20 w-1/4 z-50 opacity-0 active:opacity-20 active:bg-white/10 transition-opacity"
+              className="absolute bottom-20 left-0 top-20 z-50 w-1/4 opacity-0 transition-opacity active:bg-white/10 active:opacity-20"
               aria-label="Foto anterior"
             />
-            
+
             <button
               onClick={() => navigatePhoto('next')}
-              className="absolute right-0 top-20 bottom-20 w-1/4 z-50 opacity-0 active:opacity-20 active:bg-white/10 transition-opacity"
+              className="absolute bottom-20 right-0 top-20 z-50 w-1/4 opacity-0 transition-opacity active:bg-white/10 active:opacity-20"
               aria-label="Foto siguiente"
             />
           </>
@@ -444,7 +448,7 @@ function MobilePhotoViewer({
             <MobileIconButton
               icon={<ChevronLeft className="h-6 w-6" />}
               onClick={() => navigatePhoto('prev')}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-60 text-white bg-black/40 hover:bg-black/60"
+              className="z-60 absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 text-white hover:bg-black/60"
               size="lg"
               label="Foto anterior"
             />
@@ -452,7 +456,7 @@ function MobilePhotoViewer({
             <MobileIconButton
               icon={<ChevronRight className="h-6 w-6" />}
               onClick={() => navigatePhoto('next')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-60 text-white bg-black/40 hover:bg-black/60"
+              className="z-60 absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 text-white hover:bg-black/60"
               size="lg"
               label="Foto siguiente"
             />
@@ -460,26 +464,26 @@ function MobilePhotoViewer({
         )}
 
         {/* Bottom Controls */}
-        <div className="absolute bottom-0 left-0 right-0 z-60 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8 safe-area-padding">
+        <div className="z-60 safe-area-padding absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8">
           {/* Zoom Controls */}
-          <div className="flex items-center justify-center space-x-4 mb-4">
+          <div className="mb-4 flex items-center justify-center space-x-4">
             <MobileIconButton
               icon={<ZoomOut className="h-5 w-5" />}
               onClick={() => handleZoom(-0.2)}
               variant="ghost"
-              className="text-white bg-black/40 hover:bg-black/60"
+              className="bg-black/40 text-white hover:bg-black/60"
               label="Alejar"
             />
-            
-            <span className="text-white text-sm font-medium min-w-[4rem] text-center">
+
+            <span className="min-w-[4rem] text-center text-sm font-medium text-white">
               {Math.round(scale * 100)}%
             </span>
-            
+
             <MobileIconButton
               icon={<ZoomIn className="h-5 w-5" />}
               onClick={() => handleZoom(0.2)}
               variant="ghost"
-              className="text-white bg-black/40 hover:bg-black/60"
+              className="bg-black/40 text-white hover:bg-black/60"
               label="Acercar"
             />
           </div>
@@ -490,49 +494,54 @@ function MobilePhotoViewer({
               icon={<Heart className="h-5 w-5" />}
               onClick={() => {}}
               variant="ghost"
-              className="text-white bg-black/40 hover:bg-black/60"
+              className="bg-black/40 text-white hover:bg-black/60"
               label="Me gusta"
             />
-            
+
             <MobileIconButton
               icon={<Download className="h-5 w-5" />}
               onClick={() => {}}
               variant="ghost"
-              className="text-white bg-black/40 hover:bg-black/60"
+              className="bg-black/40 text-white hover:bg-black/60"
               label="Descargar"
             />
-            
+
             <MobileIconButton
               icon={<Share2 className="h-5 w-5" />}
               onClick={() => {}}
               variant="ghost"
-              className="text-white bg-black/40 hover:bg-black/60"
+              className="bg-black/40 text-white hover:bg-black/60"
               label="Compartir"
             />
           </div>
 
           {/* Photo info */}
-          <div className="text-center mt-4">
-            <p className="text-white text-sm">{currentPhoto.alt}</p>
+          <div className="mt-4 text-center">
+            <p className="text-sm text-white">{currentPhoto.alt}</p>
           </div>
 
           {/* Photo indicators */}
-          <div className="flex justify-center space-x-2 mt-4">
-            {photos.slice(Math.max(0, currentIndex - 2), Math.min(photos.length, currentIndex + 3)).map((_, index) => {
-              const actualIndex = Math.max(0, currentIndex - 2) + index;
-              return (
-                <button
-                  key={actualIndex}
-                  onClick={() => onIndexChange(actualIndex)}
-                  className={clsx(
-                    'w-2 h-2 rounded-full transition-all duration-200',
-                    actualIndex === currentIndex
-                      ? 'bg-white scale-125'
-                      : 'bg-white/40 hover:bg-white/60'
-                  )}
-                />
-              );
-            })}
+          <div className="mt-4 flex justify-center space-x-2">
+            {photos
+              .slice(
+                Math.max(0, currentIndex - 2),
+                Math.min(photos.length, currentIndex + 3)
+              )
+              .map((_, index) => {
+                const actualIndex = Math.max(0, currentIndex - 2) + index;
+                return (
+                  <button
+                    key={actualIndex}
+                    onClick={() => onIndexChange(actualIndex)}
+                    className={clsx(
+                      'h-2 w-2 rounded-full transition-all duration-200',
+                      actualIndex === currentIndex
+                        ? 'scale-125 bg-white'
+                        : 'bg-white/40 hover:bg-white/60'
+                    )}
+                  />
+                );
+              })}
           </div>
         </div>
       </motion.div>

@@ -1,0 +1,623 @@
+'use client';
+
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  QrCode,
+  Copy,
+  ExternalLink,
+  RefreshCw,
+  Users,
+  FolderOpen,
+  Share2,
+  Eye,
+  EyeOff,
+  ImageIcon,
+  CheckCircle,
+  Clock,
+  ArrowRight,
+  Smartphone,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+type Event = {
+  id: string;
+  name: string;
+  date: string;
+};
+
+type Folder = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  depth: number;
+  photo_count: number;
+  is_published: boolean;
+  share_token: string | null;
+  published_at: string | null;
+  family_url: string | null;
+  qr_url: string | null;
+  settings: any;
+};
+
+type EventWithFolders = {
+  event_id: string;
+  event_name: string;
+  event_date: string;
+  folders: Folder[];
+};
+
+export default function PublishPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [publishData, setPublishData] = useState<EventWithFolders[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [folderLoading, setFolderLoading] = useState<Record<string, boolean>>({});
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [filter, setFilter] = useState('');
+  const [publishingFolder, setPublishingFolder] = useState<string | null>(null);
+
+  // Load events for selector
+  const loadEvents = async () => {
+    try {
+      const res = await fetch('/api/admin/events');
+      const json = await res.json();
+      // Handle both array response and {events: array} response
+      const events = Array.isArray(json) ? json : json.events;
+      if (res.ok && events) {
+        setEvents(events);
+        if (events.length > 0 && !selectedEventId) {
+          setSelectedEventId(events[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading events:', error);
+      toast.error('Error cargando eventos');
+    }
+  };
+
+  // Load published folders data with pagination
+  const loadPublishData = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        include_unpublished: 'true',
+        limit: '20',
+        page: '1'
+      });
+      
+      if (selectedEventId) {
+        params.set('event_id', selectedEventId);
+      }
+      
+      if (filter.trim()) {
+        params.set('search', filter.trim());
+      }
+      
+      const url = `/api/admin/folders/published?${params}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      
+      if (!res.ok) throw new Error(json.error || 'Error');
+      
+      // Convert flat folders list to grouped format for UI compatibility
+      const foldersByEvent: EventWithFolders[] = [];
+      const eventMap = new Map<string, EventWithFolders>();
+      
+      (json.folders || []).forEach((folder: any) => {
+        if (!eventMap.has(folder.event_id)) {
+          eventMap.set(folder.event_id, {
+            event_id: folder.event_id,
+            event_name: folder.event_name,
+            event_date: folder.event_date,
+            folders: []
+          });
+        }
+        eventMap.get(folder.event_id)?.folders.push(folder);
+      });
+      
+      setPublishData(Array.from(eventMap.values()));
+    } catch (error) {
+      console.error('[PublishPage] Error loading data:', error);
+      toast.error('Error cargando datos de publicación');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Publish folder with improved UX
+  const publishFolder = useCallback(async (folderId: string) => {
+    setPublishingFolder(folderId);
+    setFolderLoading(prev => ({ ...prev, [folderId]: true }));
+    
+    try {
+      const res = await fetch(`/api/admin/folders/${folderId}/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            allowDownload: false,
+            watermarkLevel: 'medium'
+          }
+        })
+      });
+      
+      const json = await res.json();
+      
+      if (!res.ok) {
+        if (json.error?.includes('migration')) {
+          toast.error(`Error: ${json.error}\\n\\nDetalles: ${json.details || 'Aplicar migración de base de datos'}`);
+        } else {
+          toast.error(json.error || 'Error publicando carpeta');
+        }
+        return;
+      }
+      
+      // Enhanced success feedback
+      toast.success(`✅ Carpeta "${json.folder_name}" publicada exitosamente!`);
+      
+      setTimeout(() => {
+        toast.info(`🔗 Link: ${json.family_url}`, {
+          duration: 10000,
+          action: {
+            label: "Copiar",
+            onClick: () => {
+              navigator.clipboard.writeText(json.family_url);
+              toast.success("Link copiado!");
+            }
+          }
+        });
+      }, 1000);
+      
+      await loadPublishData();
+    } catch (error) {
+      console.error('[PublishPage] Error publishing folder:', error);
+      toast.error(`Error: ${error.message || 'No se pudo publicar la carpeta'}`);
+    } finally {
+      setFolderLoading(prev => ({ ...prev, [folderId]: false }));
+      setPublishingFolder(null);
+    }
+  }, []);
+
+  // Unpublish folder
+  const unpublishFolder = async (folderId: string) => {
+    try {
+      const res = await fetch(`/api/admin/folders/${folderId}/publish`, {
+        method: 'DELETE'
+      });
+      
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Error despublicando carpeta');
+      
+      toast.success('Carpeta despublicada exitosamente');
+      await loadPublishData();
+    } catch (error) {
+      console.error('[PublishPage] Error unpublishing folder:', error);
+      toast.error('No se pudo despublicar la carpeta');
+    }
+  };
+
+  // Copy URL to clipboard
+  const copyToClipboard = async (text: string, type: string = 'enlace') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${type} copiado al portapapeles`);
+    } catch (error) {
+      toast.error('No se pudo copiar al portapapeles');
+    }
+  };
+
+  // Load data on mount and when event changes
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  useEffect(() => {
+    if (selectedEventId) {
+      loadPublishData();
+    }
+  }, [selectedEventId]);
+
+  // Reactive search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (selectedEventId) {
+        loadPublishData();
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [filter]);
+
+  const filteredData = publishData;
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalFolders = publishData.reduce((acc, e) => acc + e.folders.length, 0);
+    const publishedFolders = publishData.reduce(
+      (acc, e) => acc + e.folders.filter(f => f.is_published).length, 
+      0
+    );
+    return { totalFolders, publishedFolders };
+  }, [publishData]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="container mx-auto space-y-6 p-4 lg:p-6">
+        
+        {/* Mobile-First Header */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <Share2 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                    Publicación Familiar
+                  </h1>
+                  <p className="text-sm text-slate-600">
+                    Comparte galerías con las familias de forma segura
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Button 
+              onClick={loadPublishData} 
+              disabled={loading} 
+              variant="outline"
+              size="sm"
+              className="self-start sm:self-auto"
+            >
+              <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+              <span className="hidden sm:inline">Actualizar</span>
+            </Button>
+          </div>
+
+          {/* Mobile-optimized Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white rounded-lg p-3 border border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <FolderOpen className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Total</p>
+                  <p className="text-lg font-bold">{stats.totalFolders}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 border border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <Share2 className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Publicadas</p>
+                  <p className="text-lg font-bold">{stats.publishedFolders}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 border border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <Users className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Familias</p>
+                  <p className="text-lg font-bold">{stats.publishedFolders}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg p-3 border border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <Smartphone className="h-4 w-4 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-slate-600">Móvil Ready</p>
+                  <p className="text-lg font-bold">100%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Enhanced Controls - Mobile-First */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
+          <div className="space-y-4">
+            {/* Mobile-optimized Event Selection */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                Seleccionar Evento
+              </label>
+              <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+                <SelectTrigger className="w-full min-h-[44px] bg-white border-2 hover:border-blue-300 transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                  <SelectValue placeholder="Selecciona un evento para ver sus carpetas..." />
+                </SelectTrigger>
+                <SelectContent className="w-[400px] max-h-[400px]">
+                  {events.length === 0 ? (
+                    <div className="p-3 text-sm text-muted-foreground">
+                      No hay eventos disponibles. Crea uno desde Admin → Eventos.
+                    </div>
+                  ) : (
+                    events.map((event) => (
+                      <SelectItem key={event.id} value={event.id} className="cursor-pointer">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium text-sm">{event.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(event.date).toLocaleDateString('es-ES')}
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Mobile-optimized Search */}
+            <div className="space-y-3">
+              <label className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-purple-600"></span>
+                Buscar Carpetas
+              </label>
+              <Input
+                placeholder="Buscar carpetas por nombre..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full min-h-[44px] bg-white border-2 hover:border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all duration-200"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Folder Cards */}
+        {loading ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center">
+                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                Cargando carpetas...
+              </div>
+            </CardContent>
+          </Card>
+        ) : filteredData.length === 0 ? (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <FolderOpen className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium mb-2">No hay carpetas</h3>
+              <p className="text-muted-foreground">
+                {selectedEventId 
+                  ? 'Este evento no tiene carpetas con fotos'
+                  : 'Selecciona un evento para ver las carpetas'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredData.map((eventData) => (
+            <Card key={eventData.event_id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5" />
+                  {eventData.event_name}
+                  <Badge variant="outline">
+                    {eventData.folders.length} carpetas
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Mobile-first responsive grid: 1 col mobile, 2 tablet, 3+ desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
+                  {eventData.folders.map((folder) => {
+                    const isLoading = folderLoading[folder.id];
+                    const isPublishing = publishingFolder === folder.id;
+                    
+                    return (
+                      <Card key={folder.id} className="group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white border-slate-200">
+                        <CardContent className="p-5">
+                          {/* Mobile-optimized Folder Header */}
+                          <div className="space-y-4">
+                            {/* Enhanced Title and Status */}
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-slate-900 truncate text-lg leading-tight">{folder.name}</h4>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex items-center gap-1 text-sm text-slate-600">
+                                      <ImageIcon className="h-4 w-4" />
+                                      <span className="font-medium">{folder.photo_count}</span>
+                                      <span>fotos</span>
+                                    </div>
+                                    {folder.photo_count === 0 && (
+                                      <Badge variant="destructive" className="text-xs py-0.5">
+                                        Sin fotos
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge 
+                                  variant={folder.is_published ? "default" : "secondary"}
+                                  className={cn(
+                                    "shrink-0 font-medium",
+                                    folder.is_published 
+                                      ? "bg-green-100 text-green-800 border-green-200" 
+                                      : "bg-slate-100 text-slate-600 border-slate-200"
+                                  )}
+                                >
+                                  {folder.is_published ? (
+                                    <><CheckCircle className="h-3 w-3 mr-1" />Publicado</>
+                                  ) : (
+                                    <><Clock className="h-3 w-3 mr-1" />Pendiente</>
+                                  )}
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {/* Enhanced Photo Preview Strip */}
+                            {folder.photo_count > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-slate-600">Vista previa</span>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 px-2 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                    onClick={() => {
+                                      console.log('Preview folder:', folder.id);
+                                      toast.info('Vista previa próximamente');
+                                    }}
+                                  >
+                                    Ver todas <ArrowRight className="h-3 w-3 ml-1" />
+                                  </Button>
+                                </div>
+                                <div className="relative group cursor-pointer" onClick={() => {
+                                  console.log('Preview folder:', folder.id);
+                                  toast.info('Vista previa próximamente');
+                                }}>
+                                  <div className="flex gap-1 overflow-hidden rounded-lg">
+                                    {/* Enhanced thumbnails with better visual design */}
+                                    {Array.from({ length: Math.min(folder.photo_count, 3) }).map((_, i) => (
+                                      <div 
+                                        key={i}
+                                        className="flex-1 aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center hover:from-blue-100 hover:to-blue-200 transition-colors"
+                                      >
+                                        <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-blue-600" />
+                                      </div>
+                                    ))}
+                                    {folder.photo_count > 3 && (
+                                      <div className="flex-1 aspect-square bg-gradient-to-br from-slate-200 to-slate-300 rounded-lg flex items-center justify-center text-xs font-bold text-slate-600">
+                                        +{folder.photo_count - 3}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                                    <div className="opacity-0 group-hover:opacity-100 bg-white/90 px-3 py-1.5 rounded-full text-sm font-medium transition-opacity">
+                                      Ver fotos
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Mobile-optimized Actions with 44px min touch targets */}
+                          <div className="space-y-3 pt-2 border-t border-slate-100">
+                            {!folder.is_published ? (
+                              <Button
+                                onClick={() => publishFolder(folder.id)}
+                                className={cn(
+                                  "w-full min-h-[44px] font-semibold transition-all duration-300",
+                                  folder.photo_count === 0 
+                                    ? "opacity-50 cursor-not-allowed" 
+                                    : "hover:shadow-lg hover:scale-[1.02] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                                )}
+                                disabled={folder.photo_count === 0 || isLoading}
+                              >
+                                {isPublishing ? (
+                                  <>
+                                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                    Publicando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Share2 className="h-4 w-4 mr-2" />
+                                    Publicar para Familias
+                                  </>
+                                )}
+                              </Button>
+                            ) : (
+                              <div className="space-y-3">
+                                {/* Enhanced Action Buttons - Touch-friendly */}
+                                <div className="grid grid-cols-3 gap-2">
+                                  <Button
+                                    variant="outline"
+                                    className="min-h-[44px] hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                                    onClick={() => copyToClipboard(folder.family_url!, 'Enlace familiar')}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="min-h-[44px] hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                                    onClick={() => window.open(folder.qr_url!, '_blank')}
+                                  >
+                                    <QrCode className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="min-h-[44px] hover:bg-green-50 hover:border-green-300 transition-colors"
+                                    onClick={() => window.open(folder.family_url!, '_blank')}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                
+                                {/* Friendly URL Display */}
+                                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                                  <div className="text-xs font-medium text-slate-700 mb-1">Enlace familiar:</div>
+                                  <div className="text-sm font-mono text-slate-600 break-all">
+                                    {folder.family_url?.replace('https://', '').replace('http://', '')}
+                                  </div>
+                                </div>
+
+                                {/* Unpublish with confirmation */}
+                                <Button
+                                  variant="ghost"
+                                  className="w-full min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                  onClick={() => unpublishFolder(folder.id)}
+                                >
+                                  <EyeOff className="h-4 w-4 mr-2" />
+                                  Despublicar
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Enhanced Published Info */}
+                          {folder.published_at && (
+                            <div className="flex items-center gap-2 pt-2 text-xs text-slate-500">
+                              <CheckCircle className="h-3 w-3 text-green-600" />
+                              <span>
+                                Publicado {new Date(folder.published_at).toLocaleDateString('es-ES', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+        
+        {/* Photo Preview Modal - Coming Soon */}
+      </div>
+    </div>
+  );
+}

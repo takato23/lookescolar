@@ -331,7 +331,10 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
         newCache.set(photo.id, { url: photo.signed_url, expires });
         setSignedUrlCache(newCache);
         const cacheObject = Object.fromEntries(newCache);
-        sessionStorage.setItem(`signed_urls_${token}`, JSON.stringify(cacheObject));
+        sessionStorage.setItem(
+          `signed_urls_${token}`,
+          JSON.stringify(cacheObject)
+        );
         return photo.signed_url;
       }
 

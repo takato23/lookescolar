@@ -17,7 +17,7 @@ export async function generateSecureToken(): Promise<string> {
   try {
     // Generate 32 bytes (256 bits) of cryptographically secure random data
     const buffer = await randomBytesAsync(32);
-    
+
     // Convert to base64url (URL-safe base64 without padding)
     return buffer
       .toString('base64')
@@ -26,7 +26,10 @@ export async function generateSecureToken(): Promise<string> {
       .replace(/=/g, '');
   } catch (error) {
     // Fallback to nanoid if crypto fails
-    console.error('Crypto token generation failed, falling back to nanoid:', error);
+    console.error(
+      'Crypto token generation failed, falling back to nanoid:',
+      error
+    );
     const fallbackGenerator = customAlphabet(SAFE_ALPHABET, 43); // Same length as base64url(32 bytes)
     return fallbackGenerator();
   }
@@ -46,7 +49,10 @@ export async function generateCompatToken(): Promise<string> {
       .replace(/=/g, '');
   } catch (error) {
     // Fallback to nanoid
-    console.error('Crypto token generation failed, falling back to nanoid:', error);
+    console.error(
+      'Crypto token generation failed, falling back to nanoid:',
+      error
+    );
     const fallbackGenerator = customAlphabet(SAFE_ALPHABET, 27); // base64url(20 bytes) length
     return fallbackGenerator();
   }
@@ -60,7 +66,10 @@ export async function generateCSRFToken(): Promise<string> {
     const buffer = await randomBytesAsync(32);
     return buffer.toString('hex');
   } catch (error) {
-    console.error('CSRF token generation failed, falling back to nanoid:', error);
+    console.error(
+      'CSRF token generation failed, falling back to nanoid:',
+      error
+    );
     const fallbackGenerator = customAlphabet('0123456789abcdef', 64);
     return fallbackGenerator();
   }

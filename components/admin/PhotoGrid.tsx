@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Camera, Download, MoreVertical, Check } from 'lucide-react';
 
 interface Photo {
@@ -22,12 +22,12 @@ interface PhotoGridProps {
   onPhotoSelect?: (selectedPhotos: Set<string>) => void;
 }
 
-export function PhotoGrid({
+const PhotoGridComponent = ({
   photos,
   loading = false,
   selectedPhotos: externalSelectedPhotos,
   onPhotoSelect,
-}: PhotoGridProps) {
+}: PhotoGridProps) => {
   const [internalSelectedPhotos, setInternalSelectedPhotos] = useState<
     Set<string>
   >(new Set());
@@ -193,4 +193,14 @@ export function PhotoGrid({
       </div>
     </div>
   );
-}
+};
+
+// Memoized version with performance optimization
+export const PhotoGrid = memo(PhotoGridComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.photos.length === nextProps.photos.length &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.selectedPhotos?.size === nextProps.selectedPhotos?.size &&
+    prevProps.onPhotoSelect === nextProps.onPhotoSelect
+  );
+});

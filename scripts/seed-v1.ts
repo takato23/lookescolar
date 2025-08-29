@@ -24,7 +24,7 @@ type SeedResult = {
 
 function envOrDefault(name: string, fallback: string): string {
   const val = process.env[name];
-  return (val && val.length > 0) ? val : fallback;
+  return val && val.length > 0 ? val : fallback;
 }
 
 export async function seedV1(): Promise<SeedResult> {
@@ -41,11 +41,21 @@ export async function seedV1(): Promise<SeedResult> {
     // Línea temporal base
     const base = new Date();
     base.setHours(10, 0, 0, 0);
-    const mkDate = (mins: number) => new Date(base.getTime() + mins * 60_000).toISOString();
+    const mkDate = (mins: number) =>
+      new Date(base.getTime() + mins * 60_000).toISOString();
     const bucketFolder = `events/${eventId}`;
 
     const photos: Array<Record<string, unknown>> = [];
-    const addPhoto = (filename: string, createdAtMin: number, opts?: { codeId?: string | null; isAnchor?: boolean; anchorRaw?: string | null; approved?: boolean }) => {
+    const addPhoto = (
+      filename: string,
+      createdAtMin: number,
+      opts?: {
+        codeId?: string | null;
+        isAnchor?: boolean;
+        anchorRaw?: string | null;
+        approved?: boolean;
+      }
+    ) => {
       photos.push({
         id: crypto.randomUUID(),
         event_id: eventId,
@@ -57,31 +67,72 @@ export async function seedV1(): Promise<SeedResult> {
         created_at: mkDate(createdAtMin),
         original_filename: filename,
         is_anchor: opts?.isAnchor ?? false,
-        anchor_raw: typeof opts?.anchorRaw === 'undefined' ? null : opts?.anchorRaw,
+        anchor_raw:
+          typeof opts?.anchorRaw === 'undefined' ? null : opts?.anchorRaw,
         code_id: typeof opts?.codeId === 'undefined' ? null : opts?.codeId,
       });
     };
 
     // Extra: una foto previa para forzar unassigned >= 1
-    addPhoto('000_unassigned_preanchor.jpg', 0, { codeId: codeMap['SV-003'].id, isAnchor: false, anchorRaw: null });
+    addPhoto('000_unassigned_preanchor.jpg', 0, {
+      codeId: codeMap['SV-003'].id,
+      isAnchor: false,
+      anchorRaw: null,
+    });
     // SV-001
-    addPhoto('SV-001_ANCLA.jpg', 1, { isAnchor: false, anchorRaw: null, codeId: null });
-    addPhoto('SV-001_1.jpg', 2, { codeId: null, isAnchor: false, anchorRaw: null });
-    addPhoto('SV-001_2.jpg', 3, { codeId: null, isAnchor: false, anchorRaw: null });
-    addPhoto('SV-001_3.jpg', 4, { codeId: null, isAnchor: false, anchorRaw: null });
+    addPhoto('SV-001_ANCLA.jpg', 1, {
+      isAnchor: false,
+      anchorRaw: null,
+      codeId: null,
+    });
+    addPhoto('SV-001_1.jpg', 2, {
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+    });
+    addPhoto('SV-001_2.jpg', 3, {
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+    });
+    addPhoto('SV-001_3.jpg', 4, {
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+    });
     // SV-002
-    addPhoto('SV-002_ANCLA.jpg', 5, { isAnchor: false, anchorRaw: null, codeId: null });
-    addPhoto('SV-002_1.jpg', 6, { codeId: null, isAnchor: false, anchorRaw: null });
-    addPhoto('SV-002_2.jpg', 7, { codeId: null, isAnchor: false, anchorRaw: null });
+    addPhoto('SV-002_ANCLA.jpg', 5, {
+      isAnchor: false,
+      anchorRaw: null,
+      codeId: null,
+    });
+    addPhoto('SV-002_1.jpg', 6, {
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+    });
+    addPhoto('SV-002_2.jpg', 7, {
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+    });
 
     const dataset = {
       events: [
-        { id: eventId, name: 'EVENT_V1', date: new Date().toISOString().slice(0, 10), status: 'active' },
+        {
+          id: eventId,
+          name: 'EVENT_V1',
+          date: new Date().toISOString().slice(0, 10),
+          status: 'active',
+        },
       ],
-      courses: [
-        { id: courseId, event_id: eventId, name: 'Sala Verde' },
-      ],
-      codes: codeValues.map((cv) => ({ id: codeMap[cv].id, event_id: eventId, code_value: cv, is_published: false })),
+      courses: [{ id: courseId, event_id: eventId, name: 'Sala Verde' }],
+      codes: codeValues.map((cv) => ({
+        id: codeMap[cv].id,
+        event_id: eventId,
+        code_value: cv,
+        is_published: false,
+      })),
       photos,
       tokens: [] as Array<Record<string, unknown>>,
       orders: [] as Array<Record<string, unknown>>,
@@ -90,19 +141,26 @@ export async function seedV1(): Promise<SeedResult> {
 
     // Escribir fixtures
     const fixturesDir = path.resolve(process.cwd(), 'tests/fixtures');
-    if (!fs.existsSync(fixturesDir)) fs.mkdirSync(fixturesDir, { recursive: true });
+    if (!fs.existsSync(fixturesDir))
+      fs.mkdirSync(fixturesDir, { recursive: true });
     const fixturePath = path.join(fixturesDir, 'seed-v1.json');
     fs.writeFileSync(fixturePath, JSON.stringify(dataset, null, 2));
 
     // Copia a test-reports para trazabilidad
     const reportsDir = path.resolve(process.cwd(), 'test-reports');
-    if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
-    fs.writeFileSync(path.join(reportsDir, 'seed-v1.fixture.dump.json'), JSON.stringify(dataset, null, 2));
+    if (!fs.existsSync(reportsDir))
+      fs.mkdirSync(reportsDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(reportsDir, 'seed-v1.fixture.dump.json'),
+      JSON.stringify(dataset, null, 2)
+    );
 
     return {
       eventId,
       courseId,
-      codes: Object.fromEntries(Object.entries(codeMap).map(([k, v]) => [k, { id: v.id }])),
+      codes: Object.fromEntries(
+        Object.entries(codeMap).map(([k, v]) => [k, { id: v.id }])
+      ),
       photoIds: photos.map((p) => String(p.id)),
     };
   }
@@ -110,7 +168,11 @@ export async function seedV1(): Promise<SeedResult> {
   try {
     const testPath = path.resolve(process.cwd(), '.env.test');
     const localPath = path.resolve(process.cwd(), '.env.local');
-    const chosen = fs.existsSync(testPath) ? testPath : (fs.existsSync(localPath) ? localPath : null);
+    const chosen = fs.existsSync(testPath)
+      ? testPath
+      : fs.existsSync(localPath)
+        ? localPath
+        : null;
     if (chosen) {
       const lines = fs.readFileSync(chosen, 'utf-8').split(/\r?\n/);
       for (const line of lines) {
@@ -124,7 +186,10 @@ export async function seedV1(): Promise<SeedResult> {
     }
   } catch {}
 
-  const supabaseUrl = envOrDefault('SUPABASE_URL', envOrDefault('NEXT_PUBLIC_SUPABASE_URL', 'http://localhost:54321'));
+  const supabaseUrl = envOrDefault(
+    'SUPABASE_URL',
+    envOrDefault('NEXT_PUBLIC_SUPABASE_URL', 'http://localhost:54321')
+  );
   const serviceKey = envOrDefault('SUPABASE_SERVICE_ROLE_KEY', 'stub');
 
   const sb = createClient(supabaseUrl, serviceKey, {
@@ -140,21 +205,35 @@ export async function seedV1(): Promise<SeedResult> {
     let lastErr: unknown = null;
     const variants: Array<Record<string, unknown>> = [
       { id: eventId, school: 'EVENT_V1', date: today, active: true },
-      { id: eventId, name: 'EVENT_V1', date: today, location: 'Local', status: 'active' },
+      {
+        id: eventId,
+        name: 'EVENT_V1',
+        date: today,
+        location: 'Local',
+        status: 'active',
+      },
       { id: eventId, school_name: 'EVENT_V1', date: today, active: true },
       { id: eventId, name: 'EVENT_V1', date: today, status: 'active' },
     ];
     for (const payload of variants) {
       try {
         const { error } = await sb.from('events').insert(payload);
-        if (!error) { inserted = true; break; } else { lastErr = error; }
+        if (!error) {
+          inserted = true;
+          break;
+        } else {
+          lastErr = error;
+        }
       } catch (e) {
         lastErr = e;
       }
     }
     if (!inserted) {
       // eslint-disable-next-line no-console
-      console.warn('[Service] Seed V1: no se pudo insertar evento en DB, se continua con valores stub:', String((lastErr as any)?.message || lastErr));
+      console.warn(
+        '[Service] Seed V1: no se pudo insertar evento en DB, se continua con valores stub:',
+        String((lastErr as any)?.message || lastErr)
+      );
     }
   }
 
@@ -167,7 +246,9 @@ export async function seedV1(): Promise<SeedResult> {
       name: 'Sala Verde',
     } as Record<string, unknown>);
     if (error) {
-      console.warn('[Service] Courses no disponible, se continúa sin course_id');
+      console.warn(
+        '[Service] Courses no disponible, se continúa sin course_id'
+      );
     }
   }
 
@@ -176,17 +257,30 @@ export async function seedV1(): Promise<SeedResult> {
   const codeMap: { [codeValue: string]: { id: string } } = {};
   for (const cv of codeValues) {
     const codeId = crypto.randomUUID();
-    const payloadBase: Record<string, unknown> = { id: codeId, event_id: eventId, code_value: cv, is_published: false };
+    const payloadBase: Record<string, unknown> = {
+      id: codeId,
+      event_id: eventId,
+      code_value: cv,
+      is_published: false,
+    };
     if (courseId) payloadBase['course_id'] = courseId;
     try {
-      const { error } = await sb.from('codes' as unknown as string).insert(payloadBase);
+      const { error } = await sb
+        .from('codes' as unknown as string)
+        .insert(payloadBase);
       if (error) {
         // eslint-disable-next-line no-console
-        console.warn(`[Service] Codes no disponible o error insertando ${cv}:`, error.message);
+        console.warn(
+          `[Service] Codes no disponible o error insertando ${cv}:`,
+          error.message
+        );
       }
     } catch (e: any) {
       // eslint-disable-next-line no-console
-      console.warn(`[Service] Codes no disponible o error insertando ${cv}:`, e?.message || String(e));
+      console.warn(
+        `[Service] Codes no disponible o error insertando ${cv}:`,
+        e?.message || String(e)
+      );
     }
     // Siempre exponer un id stub para permitir que los tests no fallen por acceso a undefined
     codeMap[cv] = { id: codeId };
@@ -197,7 +291,8 @@ export async function seedV1(): Promise<SeedResult> {
   const base = new Date();
   base.setHours(10, 0, 0, 0);
 
-  const mkDate = (mins: number) => new Date(base.getTime() + mins * 60_000).toISOString();
+  const mkDate = (mins: number) =>
+    new Date(base.getTime() + mins * 60_000).toISOString();
   const bucketFolder = `events/${eventId}`;
 
   // Helper para insertar foto
@@ -226,25 +321,41 @@ export async function seedV1(): Promise<SeedResult> {
       { ...common, filename: opts.filename },
     ];
 
-    let inserted = false; let lastErr: unknown = null;
+    let inserted = false;
+    let lastErr: unknown = null;
     for (const basePayload of variants) {
       const payload = { ...basePayload } as Record<string, unknown>;
       // Solo setear columnas QR si existen
-      if (typeof opts.isAnchor === 'boolean') payload['is_anchor'] = opts.isAnchor;
-      if (typeof opts.anchorRaw !== 'undefined') payload['anchor_raw'] = opts.anchorRaw;
+      if (typeof opts.isAnchor === 'boolean')
+        payload['is_anchor'] = opts.isAnchor;
+      if (typeof opts.anchorRaw !== 'undefined')
+        payload['anchor_raw'] = opts.anchorRaw;
       if (typeof opts.codeId !== 'undefined') payload['code_id'] = opts.codeId;
       // Intento 1: con columnas QR
       let { error } = await sb.from('photos').insert(payload);
-      if (error && (String(error.message).includes('anchor_raw') || String(error.message).includes('is_anchor') || String(error.message).includes('code_id'))) {
+      if (
+        error &&
+        (String(error.message).includes('anchor_raw') ||
+          String(error.message).includes('is_anchor') ||
+          String(error.message).includes('code_id'))
+      ) {
         const fallback = { ...payload } as Record<string, unknown>;
         delete fallback['anchor_raw'];
         delete fallback['is_anchor'];
         delete fallback['code_id'];
         ({ error } = await sb.from('photos').insert(fallback));
       }
-      if (!error) { inserted = true; break; } else { lastErr = error; }
+      if (!error) {
+        inserted = true;
+        break;
+      } else {
+        lastErr = error;
+      }
     }
-    if (!inserted) throw new Error(`Seed error insertando foto ${opts.filename}: ${String((lastErr as any)?.message || lastErr)}`);
+    if (!inserted)
+      throw new Error(
+        `Seed error insertando foto ${opts.filename}: ${String((lastErr as any)?.message || lastErr)}`
+      );
     return id;
   }
 
@@ -264,27 +375,76 @@ export async function seedV1(): Promise<SeedResult> {
 
   // SV-001: ancla (inicialmente no ancla, anchor-detect la marcará) + 3 normales
   photoIds.push(
-    await insertPhoto({ filename: 'SV-001_ANCLA.jpg', createdAt: mkDate(1), isAnchor: false, anchorRaw: null, codeId: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-001_ANCLA.jpg',
+      createdAt: mkDate(1),
+      isAnchor: false,
+      anchorRaw: null,
+      codeId: null,
+      approved: true,
+    })
   );
   photoIds.push(
-    await insertPhoto({ filename: 'SV-001_1.jpg', createdAt: mkDate(2), codeId: null, isAnchor: false, anchorRaw: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-001_1.jpg',
+      createdAt: mkDate(2),
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+      approved: true,
+    })
   );
   photoIds.push(
-    await insertPhoto({ filename: 'SV-001_2.jpg', createdAt: mkDate(3), codeId: null, isAnchor: false, anchorRaw: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-001_2.jpg',
+      createdAt: mkDate(3),
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+      approved: true,
+    })
   );
   photoIds.push(
-    await insertPhoto({ filename: 'SV-001_3.jpg', createdAt: mkDate(4), codeId: null, isAnchor: false, anchorRaw: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-001_3.jpg',
+      createdAt: mkDate(4),
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+      approved: true,
+    })
   );
 
   // SV-002: ancla + 2 normales
   photoIds.push(
-    await insertPhoto({ filename: 'SV-002_ANCLA.jpg', createdAt: mkDate(5), isAnchor: false, anchorRaw: null, codeId: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-002_ANCLA.jpg',
+      createdAt: mkDate(5),
+      isAnchor: false,
+      anchorRaw: null,
+      codeId: null,
+      approved: true,
+    })
   );
   photoIds.push(
-    await insertPhoto({ filename: 'SV-002_1.jpg', createdAt: mkDate(6), codeId: null, isAnchor: false, anchorRaw: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-002_1.jpg',
+      createdAt: mkDate(6),
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+      approved: true,
+    })
   );
   photoIds.push(
-    await insertPhoto({ filename: 'SV-002_2.jpg', createdAt: mkDate(7), codeId: null, isAnchor: false, anchorRaw: null, approved: true })
+    await insertPhoto({
+      filename: 'SV-002_2.jpg',
+      createdAt: mkDate(7),
+      codeId: null,
+      isAnchor: false,
+      anchorRaw: null,
+      approved: true,
+    })
   );
 
   return {
@@ -303,7 +463,9 @@ if (require.main === module) {
       console.log('[Service] Seed V1 completado', {
         eventId: res.eventId,
         courseId: res.courseId,
-        codes: Object.fromEntries(Object.entries(res.codes).map(([k, v]) => [k, v.id])),
+        codes: Object.fromEntries(
+          Object.entries(res.codes).map(([k, v]) => [k, v.id])
+        ),
         photos: res.photoIds.length,
       });
       process.exit(0);
@@ -313,5 +475,3 @@ if (require.main === module) {
       process.exit(1);
     });
 }
-
-

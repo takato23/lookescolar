@@ -58,16 +58,16 @@ test.describe('Public Checkout E2E', () => {
     if (photosError || !photos) {
       throw new Error('Failed to create test photos');
     }
-    photoIds = photos.map(p => p.id);
+    photoIds = photos.map((p) => p.id);
   });
 
   test.afterAll(async () => {
     // Cleanup: eliminar datos de prueba
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Eliminar fotos (cascade eliminará order_items)
     await supabase.from('photos').delete().in('id', photoIds);
-    
+
     // Eliminar evento (cascade eliminará orders y subjects)
     await supabase.from('events').delete().eq('id', eventId);
   });
@@ -110,7 +110,7 @@ test.describe('Public Checkout E2E', () => {
 
     // 3. Verificar que la orden se creó correctamente en la BD
     const supabase = await createServerSupabaseServiceClient();
-    
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*, order_items(*), subjects(*)')

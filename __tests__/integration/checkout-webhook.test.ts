@@ -3,12 +3,12 @@ import { createMocks } from 'node-mocks-http';
 import { POST as FamilyCheckout } from '@/app/api/family/checkout/route';
 import { POST as PublicCheckout } from '@/app/api/gallery/checkout/route';
 import { POST as WebhookHandler } from '@/app/api/payments/webhook/route';
-import { 
-  createTestClient, 
-  setupTestData, 
-  setupPublicTestData, 
+import {
+  createTestClient,
+  setupTestData,
+  setupPublicTestData,
   cleanupTestData,
-  setupMocks 
+  setupMocks,
 } from '../test-utils';
 import crypto from 'crypto';
 
@@ -30,7 +30,7 @@ describe('Checkout → Webhook Integration', () => {
   describe('Family Checkout → Webhook Flow', () => {
     it('should create family order and process webhook successfully', async () => {
       const supabase = createTestClient();
-      
+
       // Step 1: Create family checkout
       const checkoutReq = createMocks({
         method: 'POST',
@@ -40,16 +40,16 @@ describe('Checkout → Webhook Integration', () => {
           contactInfo: {
             name: 'Test Parent',
             email: 'parent@test.com',
-            phone: '1234567890'
+            phone: '1234567890',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 2,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const checkoutResponse = await FamilyCheckout(checkoutReq.req);
@@ -88,21 +88,24 @@ describe('Checkout → Webhook Integration', () => {
         api_version: 'v1',
         action: 'payment.updated',
         data: {
-          id: mockPaymentId
-        }
+          id: mockPaymentId,
+        },
       };
 
       const webhookBodyStr = JSON.stringify(webhookBody);
-      const signature = createWebhookSignature(webhookBodyStr, 'test-webhook-secret');
+      const signature = createWebhookSignature(
+        webhookBodyStr,
+        'test-webhook-secret'
+      );
 
       const webhookReq = createMocks({
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           'x-signature': signature,
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': crypto.randomUUID(),
         },
-        body: webhookBodyStr
+        body: webhookBodyStr,
       });
 
       // Mock the payment info response
@@ -110,12 +113,12 @@ describe('Checkout → Webhook Integration', () => {
         id: mockPaymentId,
         status: 'approved',
         external_reference: orderId,
-        transaction_amount: 30.00,
-        payment_method: { id: 'visa', type: 'credit_card' }
+        transaction_amount: 30.0,
+        payment_method: { id: 'visa', type: 'credit_card' },
       });
 
       const webhookResponse = await WebhookHandler(webhookReq.req);
-      
+
       expect(webhookResponse.status).toBe(200);
 
       // Verify order was updated
@@ -134,7 +137,7 @@ describe('Checkout → Webhook Integration', () => {
   describe('Public Checkout → Webhook Flow', () => {
     it('should create public order and process webhook successfully', async () => {
       const supabase = createTestClient();
-      
+
       // Step 1: Create public checkout
       const checkoutReq = createMocks({
         method: 'POST',
@@ -144,16 +147,16 @@ describe('Checkout → Webhook Integration', () => {
           contactInfo: {
             name: 'Public Customer',
             email: 'customer@public.com',
-            phone: '1234567890'
+            phone: '1234567890',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const checkoutResponse = await PublicCheckout(checkoutReq.req);
@@ -193,21 +196,24 @@ describe('Checkout → Webhook Integration', () => {
         api_version: 'v1',
         action: 'payment.updated',
         data: {
-          id: mockPaymentId
-        }
+          id: mockPaymentId,
+        },
       };
 
       const webhookBodyStr = JSON.stringify(webhookBody);
-      const signature = createWebhookSignature(webhookBodyStr, 'test-webhook-secret');
+      const signature = createWebhookSignature(
+        webhookBodyStr,
+        'test-webhook-secret'
+      );
 
       const webhookReq = createMocks({
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           'x-signature': signature,
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': crypto.randomUUID(),
         },
-        body: webhookBodyStr
+        body: webhookBodyStr,
       });
 
       // Mock the payment info response
@@ -215,12 +221,12 @@ describe('Checkout → Webhook Integration', () => {
         id: mockPaymentId,
         status: 'approved',
         external_reference: orderId,
-        transaction_amount: 15.00,
-        payment_method: { id: 'account_money', type: 'account_money' }
+        transaction_amount: 15.0,
+        payment_method: { id: 'account_money', type: 'account_money' },
       });
 
       const webhookResponse = await WebhookHandler(webhookReq.req);
-      
+
       expect(webhookResponse.status).toBe(200);
 
       // Verify public order was updated
@@ -239,7 +245,7 @@ describe('Checkout → Webhook Integration', () => {
   describe('Webhook Idempotency', () => {
     it('should handle duplicate webhooks idempotently', async () => {
       const supabase = createTestClient();
-      
+
       // Create an order first
       const orderId = crypto.randomUUID();
       await supabase.from('orders').insert({
@@ -250,7 +256,7 @@ describe('Checkout → Webhook Integration', () => {
         status: 'pending',
         is_public_order: false,
         created_by: 'family_checkout',
-        total_amount_cents: 1500
+        total_amount_cents: 1500,
       });
 
       const mockPaymentId = 'duplicate-payment-123';
@@ -265,19 +271,22 @@ describe('Checkout → Webhook Integration', () => {
         api_version: 'v1',
         action: 'payment.updated',
         data: {
-          id: mockPaymentId
-        }
+          id: mockPaymentId,
+        },
       };
 
       const webhookBodyStr = JSON.stringify(webhookBody);
-      const signature = createWebhookSignature(webhookBodyStr, 'test-webhook-secret');
+      const signature = createWebhookSignature(
+        webhookBodyStr,
+        'test-webhook-secret'
+      );
 
       // Mock payment info
       mocks.mockMP.getPaymentInfo = vi.fn().mockResolvedValue({
         id: mockPaymentId,
         status: 'approved',
         external_reference: orderId,
-        transaction_amount: 15.00
+        transaction_amount: 15.0,
       });
 
       // First webhook call
@@ -286,9 +295,9 @@ describe('Checkout → Webhook Integration', () => {
         headers: {
           'content-type': 'application/json',
           'x-signature': signature,
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': crypto.randomUUID(),
         },
-        body: webhookBodyStr
+        body: webhookBodyStr,
       });
 
       const webhookResponse1 = await WebhookHandler(webhookReq1.req);
@@ -300,9 +309,9 @@ describe('Checkout → Webhook Integration', () => {
         headers: {
           'content-type': 'application/json',
           'x-signature': signature,
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': crypto.randomUUID(),
         },
-        body: webhookBodyStr
+        body: webhookBodyStr,
       });
 
       const webhookResponse2 = await WebhookHandler(webhookReq2.req);
@@ -335,8 +344,8 @@ describe('Checkout → Webhook Integration', () => {
         api_version: 'v1',
         action: 'payment.updated',
         data: {
-          id: 'payment-123'
-        }
+          id: 'payment-123',
+        },
       };
 
       const webhookBodyStr = JSON.stringify(webhookBody);
@@ -347,13 +356,13 @@ describe('Checkout → Webhook Integration', () => {
         headers: {
           'content-type': 'application/json',
           'x-signature': invalidSignature,
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': crypto.randomUUID(),
         },
-        body: webhookBodyStr
+        body: webhookBodyStr,
       });
 
       const webhookResponse = await WebhookHandler(webhookReq.req);
-      
+
       expect(webhookResponse.status).toBe(401);
     });
 
@@ -362,20 +371,20 @@ describe('Checkout → Webhook Integration', () => {
         id: 5,
         live_mode: false,
         type: 'payment',
-        data: { id: 'payment-456' }
+        data: { id: 'payment-456' },
       };
 
       const webhookReq = createMocks({
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': crypto.randomUUID(),
         },
-        body: JSON.stringify(webhookBody)
+        body: JSON.stringify(webhookBody),
       });
 
       const webhookResponse = await WebhookHandler(webhookReq.req);
-      
+
       expect(webhookResponse.status).toBe(400);
     });
   });
@@ -385,10 +394,7 @@ describe('Checkout → Webhook Integration', () => {
  * Create a valid webhook signature for testing
  */
 function createWebhookSignature(body: string, secret: string): string {
-  const hash = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('hex');
-  
+  const hash = crypto.createHmac('sha256', secret).update(body).digest('hex');
+
   return `v1=${hash}`;
 }

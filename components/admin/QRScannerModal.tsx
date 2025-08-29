@@ -2,10 +2,10 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Camera, 
-  X, 
-  CheckCircle, 
+import {
+  Camera,
+  X,
+  CheckCircle,
   AlertCircle,
   Loader2,
   RefreshCw,
@@ -13,7 +13,7 @@ import {
   ScanLine,
   FileImage,
   Zap,
-  QrCode
+  QrCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -38,23 +38,31 @@ interface StudentInfo {
 }
 
 // Visual states for the scanner
-type ScannerState = 'idle' | 'scanning' | 'detected' | 'success' | 'error' | 'processing';
+type ScannerState =
+  | 'idle'
+  | 'scanning'
+  | 'detected'
+  | 'success'
+  | 'error'
+  | 'processing';
 
 const QRScannerModal: React.FC<QRScannerModalProps> = ({
   isOpen,
   onClose,
   onStudentScanned,
-  className
+  className,
 }) => {
   // State management
   const [scannerState, setScannerState] = useState<ScannerState>('idle');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null);
-  const [scannedStudent, setScannedStudent] = useState<StudentInfo | null>(null);
+  const [scannedStudent, setScannedStudent] = useState<StudentInfo | null>(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastScanTime, setLastScanTime] = useState(0);
-  
+
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -77,28 +85,37 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
       }
 
       // Request camera access with better error handling
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', // Prefer back camera for QR scanning
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      }).catch((err) => {
-        // Handle permission errors gracefully
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setError('Acceso a cámara denegado. Por favor, permite el acceso a la cámara en la configuración del navegador.');
-        } else if (err.name === 'NotFoundError') {
-          setError('No se encontró una cámara en este dispositivo.');
-        } else {
-          setError('Error al acceder a la cámara. Intenta usar la opción de subir archivo.');
-        }
-        throw err;
-      });
+      const mediaStream = await navigator.mediaDevices
+        .getUserMedia({
+          video: {
+            facingMode: 'environment', // Prefer back camera for QR scanning
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        })
+        .catch((err) => {
+          // Handle permission errors gracefully
+          if (
+            err.name === 'NotAllowedError' ||
+            err.name === 'PermissionDeniedError'
+          ) {
+            setError(
+              'Acceso a cámara denegado. Por favor, permite el acceso a la cámara en la configuración del navegador.'
+            );
+          } else if (err.name === 'NotFoundError') {
+            setError('No se encontró una cámara en este dispositivo.');
+          } else {
+            setError(
+              'Error al acceder a la cámara. Intenta usar la opción de subir archivo.'
+            );
+          }
+          throw err;
+        });
 
       setStream(mediaStream);
       setHasCamera(true);
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         videoRef.current.play();
@@ -109,14 +126,20 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
       console.error('Camera initialization failed:', error);
       setHasCamera(false);
       setScannerState('error');
-      
+
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          setErrorMessage('Acceso a cámara denegado. Permite el acceso en la configuración del navegador.');
+          setErrorMessage(
+            'Acceso a cámara denegado. Permite el acceso en la configuración del navegador.'
+          );
         } else if (error.name === 'NotFoundError') {
-          setErrorMessage('No se encontró cámara. Puedes subir una imagen del QR.');
+          setErrorMessage(
+            'No se encontró cámara. Puedes subir una imagen del QR.'
+          );
         } else {
-          setErrorMessage('Cámara no disponible. Puedes subir una imagen como alternativa.');
+          setErrorMessage(
+            'Cámara no disponible. Puedes subir una imagen como alternativa.'
+          );
         }
       }
     }
@@ -143,7 +166,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
   const scanQRCode = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    
+
     if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
       return;
     }
@@ -160,10 +183,10 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
 
     // Get image data for QR scanning
     const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    
+
     try {
       const code = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert'
+        inversionAttempts: 'dontInvert',
       });
 
       if (code && code.data) {
@@ -182,168 +205,188 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
   }, [lastScanTime]);
 
   // Handle QR code detection
-  const handleQRDetected = useCallback(async (qrData: string) => {
-    setScannerState('detected');
-    stopScanning();
-    setIsProcessing(true);
+  const handleQRDetected = useCallback(
+    async (qrData: string) => {
+      setScannerState('detected');
+      stopScanning();
+      setIsProcessing(true);
 
-    try {
-      // Parse QR data - expecting format like "STUDENT:12345:JUAN_PEREZ"
-      const student = await parseQRData(qrData);
-      
-      if (student) {
-        setScannedStudent(student);
-        setScannerState('success');
-        
-        // Visual feedback
-        toast.success(`Estudiante detectado: ${student.name}`);
-        
-        // Call parent callback after brief delay for UX
+      try {
+        // Parse QR data - expecting format like "STUDENT:12345:JUAN_PEREZ"
+        const student = await parseQRData(qrData);
+
+        if (student) {
+          setScannedStudent(student);
+          setScannerState('success');
+
+          // Visual feedback
+          toast.success(`Estudiante detectado: ${student.name}`);
+
+          // Call parent callback after brief delay for UX
+          setTimeout(() => {
+            onStudentScanned(student);
+          }, 800);
+        } else {
+          throw new Error('Invalid QR code format');
+        }
+      } catch (error) {
+        console.error('QR parsing error:', error);
+        setScannerState('error');
+        setErrorMessage('QR code no válido. Intenta con otro código.');
+
+        // Reset to scanning after error
         setTimeout(() => {
-          onStudentScanned(student);
-        }, 800);
-      } else {
-        throw new Error('Invalid QR code format');
+          setScannerState('scanning');
+          startScanning();
+          setErrorMessage('');
+        }, 2000);
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error) {
-      console.error('QR parsing error:', error);
-      setScannerState('error');
-      setErrorMessage('QR code no válido. Intenta con otro código.');
-      
-      // Reset to scanning after error
-      setTimeout(() => {
-        setScannerState('scanning');
-        startScanning();
-        setErrorMessage('');
-      }, 2000);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [onStudentScanned, stopScanning]);
+    },
+    [onStudentScanned, stopScanning]
+  );
 
   // Parse QR data into student info
-  const parseQRData = useCallback(async (qrData: string): Promise<StudentInfo | null> => {
-    try {
-      // Try to parse as student QR format: "STUDENT:ID:NAME:EVENT_ID?"
-      const parts = qrData.split(':');
-      if (parts.length >= 3 && parts[0] === 'STUDENT') {
-        const studentId = parts[1];
-        const studentName = parts[2].replace(/_/g, ' ');
-        const eventId = parts[3] || undefined;
+  const parseQRData = useCallback(
+    async (qrData: string): Promise<StudentInfo | null> => {
+      try {
+        // Try to parse as student QR format: "STUDENT:ID:NAME:EVENT_ID?"
+        const parts = qrData.split(':');
+        if (parts.length >= 3 && parts[0] === 'STUDENT') {
+          const studentId = parts[1];
+          const studentName = parts[2].replace(/_/g, ' ');
+          const eventId = parts[3] || undefined;
 
-        return {
-          id: studentId,
-          name: studentName,
-          code: qrData,
-          event_id: eventId
-        };
-      }
-
-      // Alternative format: Just the token/ID
-      if (qrData.length >= 10) {
-        // Try to fetch student info from API
-        try {
-          const response = await fetch(`/api/admin/students/by-token?token=${encodeURIComponent(qrData)}`);
-          if (response.ok) {
-            const studentData = await response.json();
-            return {
-              id: studentData.id,
-              name: studentData.name,
-              code: qrData,
-              event_id: studentData.event_id
-            };
-          }
-        } catch (apiError) {
-          console.warn('Failed to fetch student data:', apiError);
+          return {
+            id: studentId,
+            name: studentName,
+            code: qrData,
+            event_id: eventId,
+          };
         }
-      }
 
-      // Fallback: try to extract student ID from various formats
-      const studentIdMatch = qrData.match(/\d+/);
-      if (studentIdMatch) {
-        return {
-          id: studentIdMatch[0],
-          name: `Estudiante ${studentIdMatch[0]}`,
-          code: qrData
-        };
-      }
+        // Alternative format: Just the token/ID
+        if (qrData.length >= 10) {
+          // Try to fetch student info from API
+          try {
+            const response = await fetch(
+              `/api/admin/students/by-token?token=${encodeURIComponent(qrData)}`
+            );
+            if (response.ok) {
+              const studentData = await response.json();
+              return {
+                id: studentData.id,
+                name: studentData.name,
+                code: qrData,
+                event_id: studentData.event_id,
+              };
+            }
+          } catch (apiError) {
+            console.warn('Failed to fetch student data:', apiError);
+          }
+        }
 
-      return null;
-    } catch (error) {
-      console.error('Error parsing QR data:', error);
-      return null;
-    }
-  }, []);
+        // Fallback: try to extract student ID from various formats
+        const studentIdMatch = qrData.match(/\d+/);
+        if (studentIdMatch) {
+          return {
+            id: studentIdMatch[0],
+            name: `Estudiante ${studentIdMatch[0]}`,
+            code: qrData,
+          };
+        }
+
+        return null;
+      } catch (error) {
+        console.error('Error parsing QR data:', error);
+        return null;
+      }
+    },
+    []
+  );
 
   // Handle file upload
-  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    setScannerState('processing');
-    setIsProcessing(true);
+      setScannerState('processing');
+      setIsProcessing(true);
 
-    try {
-      const canvas = canvasRef.current;
-      if (!canvas) throw new Error('Canvas not available');
+      try {
+        const canvas = canvasRef.current;
+        if (!canvas) throw new Error('Canvas not available');
 
-      const context = canvas.getContext('2d');
-      if (!context) throw new Error('Canvas context not available');
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas context not available');
 
-      // Create image element
-      const img = new Image();
-      img.onload = async () => {
-        // Set canvas size
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // Draw image to canvas
-        context.drawImage(img, 0, 0);
-        
-        // Get image data
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        
-        try {
-          const code = jsQR(imageData.data, imageData.width, imageData.height);
-          
-          if (code && code.data) {
-            await handleQRDetected(code.data);
-          } else {
-            throw new Error('No QR code found in image');
+        // Create image element
+        const img = new Image();
+        img.onload = async () => {
+          // Set canvas size
+          canvas.width = img.width;
+          canvas.height = img.height;
+
+          // Draw image to canvas
+          context.drawImage(img, 0, 0);
+
+          // Get image data
+          const imageData = context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
+
+          try {
+            const code = jsQR(
+              imageData.data,
+              imageData.width,
+              imageData.height
+            );
+
+            if (code && code.data) {
+              await handleQRDetected(code.data);
+            } else {
+              throw new Error('No QR code found in image');
+            }
+          } catch (error) {
+            console.error('File QR scanning error:', error);
+            setScannerState('error');
+            setErrorMessage('No se pudo detectar un código QR en la imagen.');
+            setTimeout(() => {
+              setScannerState('idle');
+              setErrorMessage('');
+            }, 3000);
           }
-        } catch (error) {
-          console.error('File QR scanning error:', error);
+        };
+
+        img.onerror = () => {
           setScannerState('error');
-          setErrorMessage('No se pudo detectar un código QR en la imagen.');
+          setErrorMessage('Error al cargar la imagen.');
           setTimeout(() => {
             setScannerState('idle');
             setErrorMessage('');
           }, 3000);
-        }
-      };
+        };
 
-      img.onerror = () => {
+        img.src = URL.createObjectURL(file);
+      } catch (error) {
+        console.error('File upload error:', error);
         setScannerState('error');
-        setErrorMessage('Error al cargar la imagen.');
-        setTimeout(() => {
-          setScannerState('idle');
-          setErrorMessage('');
-        }, 3000);
-      };
-
-      img.src = URL.createObjectURL(file);
-    } catch (error) {
-      console.error('File upload error:', error);
-      setScannerState('error');
-      setErrorMessage('Error al procesar el archivo.');
-    } finally {
-      setIsProcessing(false);
-      // Reset file input
-      if (event.target) {
-        event.target.value = '';
+        setErrorMessage('Error al procesar el archivo.');
+      } finally {
+        setIsProcessing(false);
+        // Reset file input
+        if (event.target) {
+          event.target.value = '';
+        }
       }
-    }
-  }, [handleQRDetected]);
+    },
+    [handleQRDetected]
+  );
 
   // Restart scanning
   const restartScanning = useCallback(() => {
@@ -358,7 +401,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
     if (!isOpen) {
       stopScanning();
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
         setStream(null);
       }
       setScannerState('idle');
@@ -382,7 +425,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -390,19 +433,21 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           className={cn(
-            "bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden",
+            'max-h-[90vh] w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl',
             className
           )}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-gray-100 p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <QrCode className="w-5 h-5 text-purple-600" />
+              <div className="rounded-lg bg-purple-100 p-2">
+                <QrCode className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Escanear Estudiante</h2>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Escanear Estudiante
+                </h2>
                 <p className="text-sm text-gray-500">
                   Escanea el QR para etiquetar fotos
                 </p>
@@ -415,21 +460,21 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
               className="text-gray-400 hover:text-gray-600"
               aria-label="Cerrar scanner"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
 
           {/* Content */}
           <div className="p-6">
             {/* Scanner Area */}
-            <Card className="relative overflow-hidden bg-gray-900 border-2 border-dashed border-gray-300 rounded-xl">
-              <div className="aspect-[4/3] relative">
+            <Card className="relative overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-900">
+              <div className="relative aspect-[4/3]">
                 {/* Video Element */}
                 <video
                   ref={videoRef}
                   className={cn(
-                    "w-full h-full object-cover rounded-lg",
-                    scannerState !== 'scanning' && "hidden"
+                    'h-full w-full rounded-lg object-cover',
+                    scannerState !== 'scanning' && 'hidden'
                   )}
                   playsInline
                   muted
@@ -437,42 +482,38 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                 />
 
                 {/* Canvas for QR processing (hidden) */}
-                <canvas
-                  ref={canvasRef}
-                  className="hidden"
-                  aria-hidden="true"
-                />
+                <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
                 {/* Scanner Overlay */}
                 {scannerState === 'scanning' && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <motion.div
-                      animate={{ 
+                      animate={{
                         scale: [1, 1.05, 1],
-                        opacity: [0.8, 1, 0.8]
+                        opacity: [0.8, 1, 0.8],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 2,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: 'easeInOut',
                       }}
-                      className="w-48 h-48 border-2 border-purple-500 rounded-xl relative"
+                      className="relative h-48 w-48 rounded-xl border-2 border-purple-500"
                     >
                       {/* Corner markers */}
-                      <div className="absolute top-0 left-0 w-8 h-8 border-l-4 border-t-4 border-purple-400 rounded-tl-lg" />
-                      <div className="absolute top-0 right-0 w-8 h-8 border-r-4 border-t-4 border-purple-400 rounded-tr-lg" />
-                      <div className="absolute bottom-0 left-0 w-8 h-8 border-l-4 border-b-4 border-purple-400 rounded-bl-lg" />
-                      <div className="absolute bottom-0 right-0 w-8 h-8 border-r-4 border-b-4 border-purple-400 rounded-br-lg" />
-                      
+                      <div className="absolute left-0 top-0 h-8 w-8 rounded-tl-lg border-l-4 border-t-4 border-purple-400" />
+                      <div className="absolute right-0 top-0 h-8 w-8 rounded-tr-lg border-r-4 border-t-4 border-purple-400" />
+                      <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-lg border-b-4 border-l-4 border-purple-400" />
+                      <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br-lg border-b-4 border-r-4 border-purple-400" />
+
                       {/* Scan line */}
                       <motion.div
                         animate={{ y: [0, 180, 0] }}
-                        transition={{ 
+                        transition={{
                           duration: 1.5,
                           repeat: Infinity,
-                          ease: "easeInOut"
+                          ease: 'easeInOut',
                         }}
-                        className="absolute top-2 left-2 right-2 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent rounded-full"
+                        className="absolute left-2 right-2 top-2 h-1 rounded-full bg-gradient-to-r from-transparent via-purple-400 to-transparent"
                       />
                     </motion.div>
                   </div>
@@ -486,9 +527,9 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center text-center p-8"
+                      className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                     >
-                      <Camera className="w-12 h-12 text-gray-400 mb-4" />
+                      <Camera className="mb-4 h-12 w-12 text-gray-400" />
                       <p className="text-gray-500">Inicializando cámara...</p>
                     </motion.div>
                   )}
@@ -499,9 +540,9 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center text-center p-8"
+                      className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                     >
-                      <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
+                      <Loader2 className="mb-4 h-12 w-12 animate-spin text-purple-600" />
                       <p className="text-gray-600">Procesando...</p>
                     </motion.div>
                   )}
@@ -512,14 +553,14 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center text-center p-8"
+                      className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                     >
                       <motion.div
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ duration: 0.6 }}
-                        className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4"
+                        className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100"
                       >
-                        <Zap className="w-8 h-8 text-purple-600" />
+                        <Zap className="h-8 w-8 text-purple-600" />
                       </motion.div>
                       <p className="text-gray-600">¡QR detectado!</p>
                     </motion.div>
@@ -531,20 +572,24 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-green-50 rounded-lg"
+                      className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-green-50 p-8 text-center"
                     >
                       <motion.div
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ duration: 0.6 }}
-                        className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"
+                        className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100"
                       >
-                        <CheckCircle className="w-8 h-8 text-green-600" />
+                        <CheckCircle className="h-8 w-8 text-green-600" />
                       </motion.div>
                       <div className="space-y-2">
-                        <p className="font-semibold text-green-800">¡Estudiante encontrado!</p>
-                        <div className="flex items-center gap-2 text-sm justify-center">
-                          <User className="w-4 h-4" />
-                          <span className="font-medium">{scannedStudent.name}</span>
+                        <p className="font-semibold text-green-800">
+                          ¡Estudiante encontrado!
+                        </p>
+                        <div className="flex items-center justify-center gap-2 text-sm">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium">
+                            {scannedStudent.name}
+                          </span>
                         </div>
                         <Badge variant="secondary" className="text-xs">
                           ID: {scannedStudent.id}
@@ -559,10 +604,12 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
-                      className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-red-50 rounded-lg"
+                      className="absolute inset-0 flex flex-col items-center justify-center rounded-lg bg-red-50 p-8 text-center"
                     >
-                      <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                      <p className="text-red-700 text-sm px-2">{errorMessage}</p>
+                      <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
+                      <p className="px-2 text-sm text-red-700">
+                        {errorMessage}
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -574,7 +621,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
               {/* File Upload Alternative */}
               {(hasCamera === false || scannerState === 'error') && (
                 <div className="text-center">
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="mb-3 text-sm text-gray-600">
                     ¿Sin cámara? Sube una imagen del código QR
                   </p>
                   <input
@@ -591,7 +638,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                     disabled={isProcessing}
                     className="w-full"
                   >
-                    <FileImage className="w-4 h-4 mr-2" />
+                    <FileImage className="mr-2 h-4 w-4" />
                     Subir imagen QR
                   </Button>
                 </div>
@@ -605,19 +652,19 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                     onClick={restartScanning}
                     className="flex-1"
                   >
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="mr-2 h-4 w-4" />
                     Escanear otro
                   </Button>
                 )}
-                
-                {(scannerState === 'error' && hasCamera) && (
+
+                {scannerState === 'error' && hasCamera && (
                   <Button
                     variant="outline"
                     onClick={initializeCamera}
                     disabled={isProcessing}
                     className="flex-1"
                   >
-                    <Camera className="w-4 h-4 mr-2" />
+                    <Camera className="mr-2 h-4 w-4" />
                     Reintentar cámara
                   </Button>
                 )}
@@ -634,9 +681,9 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
 
             {/* Instructions */}
             {scannerState === 'scanning' && (
-              <div className="mt-4 p-4 bg-purple-50 rounded-lg">
-                <p className="text-sm text-purple-700 text-center">
-                  <ScanLine className="w-4 h-4 inline mr-1" />
+              <div className="mt-4 rounded-lg bg-purple-50 p-4">
+                <p className="text-center text-sm text-purple-700">
+                  <ScanLine className="mr-1 inline h-4 w-4" />
                   Mantén el código QR dentro del marco para escanearlo
                 </p>
               </div>

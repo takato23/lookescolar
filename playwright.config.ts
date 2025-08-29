@@ -61,7 +61,7 @@ export default defineConfig({
     {
       name: 'performance',
       testMatch: '**/performance-web-vitals.test.ts',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         // Throttle network for realistic testing
         launchOptions: {
@@ -91,7 +91,7 @@ export default defineConfig({
     {
       name: 'visual-desktop',
       testMatch: '**/visual-regression.test.ts',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         // Consistent screenshots
         launchOptions: {
@@ -114,7 +114,7 @@ export default defineConfig({
     {
       name: 'error-handling',
       testMatch: '**/error-handling-edge-cases.test.ts',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         // Allow testing offline scenarios
         contextOptions: {
@@ -131,7 +131,7 @@ export default defineConfig({
         '**/user-journey-workflows.test.ts',
         '**/error-handling-edge-cases.test.ts',
       ],
-      use: { 
+      use: {
         ...devices['iPhone 14'],
         hasTouch: true,
         isMobile: true,
@@ -145,7 +145,7 @@ export default defineConfig({
         '**/responsive-design.test.ts',
         '**/user-journey-workflows.test.ts',
       ],
-      use: { 
+      use: {
         ...devices['iPad Pro'],
         hasTouch: true,
       },

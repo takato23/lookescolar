@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import {
+  useQuery,
+  useQueryClient,
+  useInfiniteQuery,
+} from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 // Types
@@ -72,14 +76,14 @@ const DEFAULT_OPTIONS: Required<UsePhotoGalleryOptions> = {
 export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const queryClient = useQueryClient();
-  
+
   // State management
   const [filters, setFilters] = useState<PhotoFilters>({
     search: '',
     approved: undefined,
     tagged: undefined,
   });
-  
+
   const [selection, setSelection] = useState<SelectionState>({
     selectedPhotos: new Set(),
     isSelectionMode: false,
@@ -98,61 +102,67 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
   });
 
   // Query key generation with memoization
-  const queryKey = useMemo(() => [
-    'photos-gallery',
-    filters,
-    sortBy,
-    sortOrder,
-    opts.pageSize,
-  ], [filters, sortBy, sortOrder, opts.pageSize]);
+  const queryKey = useMemo(
+    () => ['photos-gallery', filters, sortBy, sortOrder, opts.pageSize],
+    [filters, sortBy, sortOrder, opts.pageSize]
+  );
 
   // Photo fetching function with error handling
-  const fetchPhotos = useCallback(async ({ pageParam = 0 }) => {
-    const startTime = performance.now();
-    
-    try {
-      const params = new URLSearchParams({
-        offset: (pageParam * opts.pageSize).toString(),
-        limit: opts.pageSize.toString(),
-        sort_by: sortBy,
-        sort_order: sortOrder,
-        ...(filters.search && { search: filters.search }),
-        ...(filters.eventId && { event_id: filters.eventId }),
-        ...(filters.subjectId && { subject_id: filters.subjectId }),
-        ...(filters.approved !== undefined && { approved: filters.approved.toString() }),
-        ...(filters.tagged !== undefined && { tagged: filters.tagged.toString() }),
-        ...(filters.dateFrom && { date_from: filters.dateFrom }),
-        ...(filters.dateTo && { date_to: filters.dateTo }),
-      });
+  const fetchPhotos = useCallback(
+    async ({ pageParam = 0 }) => {
+      const startTime = performance.now();
 
-      const response = await fetch(`/api/admin/photos?${params}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      try {
+        const params = new URLSearchParams({
+          offset: (pageParam * opts.pageSize).toString(),
+          limit: opts.pageSize.toString(),
+          sort_by: sortBy,
+          sort_order: sortOrder,
+          ...(filters.search && { search: filters.search }),
+          ...(filters.eventId && { event_id: filters.eventId }),
+          ...(filters.subjectId && { subject_id: filters.subjectId }),
+          ...(filters.approved !== undefined && {
+            approved: filters.approved.toString(),
+          }),
+          ...(filters.tagged !== undefined && {
+            tagged: filters.tagged.toString(),
+          }),
+          ...(filters.dateFrom && { date_from: filters.dateFrom }),
+          ...(filters.dateTo && { date_to: filters.dateTo }),
+        });
+
+        const response = await fetch(`/api/admin/photos?${params}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Track performance
+        const queryTime = performance.now() - startTime;
+        performanceRef.current.queryCount++;
+        performanceRef.current.lastQueryTime = queryTime;
+        performanceRef.current.averageQueryTime =
+          (performanceRef.current.averageQueryTime *
+            (performanceRef.current.queryCount - 1) +
+            queryTime) /
+          performanceRef.current.queryCount;
+
+        return {
+          photos: data.photos || [],
+          totalCount: data.totalCount || 0,
+          hasMore: data.photos?.length === opts.pageSize,
+          nextPage: pageParam + 1,
+        };
+      } catch (error) {
+        console.error('Failed to fetch photos:', error);
+        toast.error('Error al cargar las fotos');
+        throw error;
       }
-
-      const data = await response.json();
-      
-      // Track performance
-      const queryTime = performance.now() - startTime;
-      performanceRef.current.queryCount++;
-      performanceRef.current.lastQueryTime = queryTime;
-      performanceRef.current.averageQueryTime = 
-        (performanceRef.current.averageQueryTime * (performanceRef.current.queryCount - 1) + queryTime) / 
-        performanceRef.current.queryCount;
-
-      return {
-        photos: data.photos || [],
-        totalCount: data.totalCount || 0,
-        hasMore: data.photos?.length === opts.pageSize,
-        nextPage: pageParam + 1,
-      };
-    } catch (error) {
-      console.error('Failed to fetch photos:', error);
-      toast.error('Error al cargar las fotos');
-      throw error;
-    }
-  }, [filters, sortBy, sortOrder, opts.pageSize]);
+    },
+    [filters, sortBy, sortOrder, opts.pageSize]
+  );
 
   // Infinite query with optimizations
   const {
@@ -167,7 +177,7 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
   } = useInfiniteQuery({
     queryKey,
     queryFn: fetchPhotos,
-    getNextPageParam: (lastPage) => 
+    getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextPage : undefined,
     staleTime: opts.staleTime,
     cacheTime: opts.cacheTime,
@@ -179,9 +189,10 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
   // Prefetch next page when approaching end
   useEffect(() => {
     if (opts.prefetchNextPage && hasNextPage && !isFetchingNextPage) {
-      const currentPhotosCount = data?.pages.reduce((acc, page) => acc + page.photos.length, 0) || 0;
+      const currentPhotosCount =
+        data?.pages.reduce((acc, page) => acc + page.photos.length, 0) || 0;
       const threshold = Math.max(opts.pageSize * 2, 100);
-      
+
       if (currentPhotosCount > threshold) {
         queryClient.prefetchInfiniteQuery({
           queryKey,
@@ -189,57 +200,73 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
         });
       }
     }
-  }, [data, hasNextPage, isFetchingNextPage, opts.prefetchNextPage, queryClient, queryKey, fetchPhotos, opts.pageSize]);
+  }, [
+    data,
+    hasNextPage,
+    isFetchingNextPage,
+    opts.prefetchNextPage,
+    queryClient,
+    queryKey,
+    fetchPhotos,
+    opts.pageSize,
+  ]);
 
   // Flattened photos with memoization
   const photos = useMemo(() => {
-    return data?.pages.flatMap(page => page.photos) || [];
+    return data?.pages.flatMap((page) => page.photos) || [];
   }, [data]);
 
   const totalCount = data?.pages[0]?.totalCount || 0;
 
   // Filter updates with debouncing
   const updateFilters = useCallback((newFilters: Partial<PhotoFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setSelection(prev => ({ ...prev, selectedPhotos: new Set() }));
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+    setSelection((prev) => ({ ...prev, selectedPhotos: new Set() }));
   }, []);
 
   // Selection management
-  const togglePhotoSelection = useCallback((photoId: string, index?: number, shiftKey = false) => {
-    setSelection(prev => {
-      const newSelected = new Set(prev.selectedPhotos);
-      
-      if (shiftKey && prev.lastSelectedIndex !== null && index !== undefined) {
-        // Range selection
-        const start = Math.min(prev.lastSelectedIndex, index);
-        const end = Math.max(prev.lastSelectedIndex, index);
-        
-        for (let i = start; i <= end; i++) {
-          if (photos[i]) {
-            newSelected.add(photos[i].id);
+  const togglePhotoSelection = useCallback(
+    (photoId: string, index?: number, shiftKey = false) => {
+      setSelection((prev) => {
+        const newSelected = new Set(prev.selectedPhotos);
+
+        if (
+          shiftKey &&
+          prev.lastSelectedIndex !== null &&
+          index !== undefined
+        ) {
+          // Range selection
+          const start = Math.min(prev.lastSelectedIndex, index);
+          const end = Math.max(prev.lastSelectedIndex, index);
+
+          for (let i = start; i <= end; i++) {
+            if (photos[i]) {
+              newSelected.add(photos[i].id);
+            }
+          }
+        } else {
+          // Single selection
+          if (newSelected.has(photoId)) {
+            newSelected.delete(photoId);
+          } else {
+            newSelected.add(photoId);
           }
         }
-      } else {
-        // Single selection
-        if (newSelected.has(photoId)) {
-          newSelected.delete(photoId);
-        } else {
-          newSelected.add(photoId);
-        }
-      }
 
-      return {
-        selectedPhotos: newSelected,
-        isSelectionMode: newSelected.size > 0,
-        lastSelectedIndex: index ?? null,
-      };
-    });
-  }, [photos]);
+        return {
+          selectedPhotos: newSelected,
+          isSelectionMode: newSelected.size > 0,
+          lastSelectedIndex: index ?? null,
+        };
+      });
+    },
+    [photos]
+  );
 
   const selectAllPhotos = useCallback(() => {
-    setSelection(prev => ({
+    setSelection((prev) => ({
       ...prev,
-      selectedPhotos: new Set(photos.map(p => p.id)),
+      selectedPhotos: new Set(photos.map((p) => p.id)),
       isSelectionMode: true,
     }));
   }, [photos]);
@@ -253,48 +280,62 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
   }, []);
 
   // Optimistic updates for photo operations
-  const updatePhotoOptimistic = useCallback((photoId: string, updates: Partial<PhotoItem>) => {
-    queryClient.setQueryData(queryKey, (oldData: any) => {
-      if (!oldData) return oldData;
-      
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: any) => ({
-          ...page,
-          photos: page.photos.map((photo: PhotoItem) =>
-            photo.id === photoId ? { ...photo, ...updates } : photo
-          ),
-        })),
-      };
-    });
-  }, [queryClient, queryKey]);
+  const updatePhotoOptimistic = useCallback(
+    (photoId: string, updates: Partial<PhotoItem>) => {
+      queryClient.setQueryData(queryKey, (oldData: any) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            photos: page.photos.map((photo: PhotoItem) =>
+              photo.id === photoId ? { ...photo, ...updates } : photo
+            ),
+          })),
+        };
+      });
+    },
+    [queryClient, queryKey]
+  );
 
   // Batch operations
-  const updatePhotosOptimistic = useCallback((photoIds: string[], updates: Partial<PhotoItem>) => {
-    queryClient.setQueryData(queryKey, (oldData: any) => {
-      if (!oldData) return oldData;
-      
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page: any) => ({
-          ...page,
-          photos: page.photos.map((photo: PhotoItem) =>
-            photoIds.includes(photo.id) ? { ...photo, ...updates } : photo
-          ),
-        })),
-      };
-    });
-  }, [queryClient, queryKey]);
+  const updatePhotosOptimistic = useCallback(
+    (photoIds: string[], updates: Partial<PhotoItem>) => {
+      queryClient.setQueryData(queryKey, (oldData: any) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            photos: page.photos.map((photo: PhotoItem) =>
+              photoIds.includes(photo.id) ? { ...photo, ...updates } : photo
+            ),
+          })),
+        };
+      });
+    },
+    [queryClient, queryKey]
+  );
 
   // Performance metrics
-  const getPerformanceMetrics = useCallback(() => ({
-    queryCount: performanceRef.current.queryCount,
-    lastQueryTime: performanceRef.current.lastQueryTime,
-    averageQueryTime: performanceRef.current.averageQueryTime,
-    cacheHitRatio: queryClient.getQueryCache().getAll().length > 0 ? 
-      queryClient.getQueryCache().getAll().filter(q => q.state.dataUpdatedAt > 0).length /
-      queryClient.getQueryCache().getAll().length : 0,
-  }), [queryClient]);
+  const getPerformanceMetrics = useCallback(
+    () => ({
+      queryCount: performanceRef.current.queryCount,
+      lastQueryTime: performanceRef.current.lastQueryTime,
+      averageQueryTime: performanceRef.current.averageQueryTime,
+      cacheHitRatio:
+        queryClient.getQueryCache().getAll().length > 0
+          ? queryClient
+              .getQueryCache()
+              .getAll()
+              .filter((q) => q.state.dataUpdatedAt > 0).length /
+            queryClient.getQueryCache().getAll().length
+          : 0,
+    }),
+    [queryClient]
+  );
 
   return {
     // Data
@@ -303,12 +344,12 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
     isLoading,
     isError,
     error,
-    
+
     // Pagination
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-    
+
     // Filters and sorting
     filters,
     updateFilters,
@@ -316,22 +357,22 @@ export function usePhotoGalleryOptimized(options: UsePhotoGalleryOptions = {}) {
     setSortBy,
     sortOrder,
     setSortOrder,
-    
+
     // View mode
     viewMode,
     setViewMode,
-    
+
     // Selection
     selection,
     togglePhotoSelection,
     selectAllPhotos,
     clearSelection,
-    
+
     // Operations
     refetch,
     updatePhotoOptimistic,
     updatePhotosOptimistic,
-    
+
     // Performance
     getPerformanceMetrics,
   };

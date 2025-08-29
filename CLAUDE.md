@@ -1,5 +1,8 @@
 # CLAUDE.md
 
+> **Nota para asistentes (Claude/Codex/Gemini):** usá `docs/CLAUDE_CONTEXT.md` como **contexto fijo** del proyecto. Para cada tarea, leé también `docs/specs/*.md`.
+
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -225,3 +228,151 @@ The app is mobile-first with:
 - Egress monitoring to prevent Supabase overage
 - Error logging with structured formats
 - Performance monitoring with Web Vitals
+
+## AI Coding Agents (Codex CLI & Gemini CLI)
+
+> Objetivo: poder usar **ChatGPT Codex CLI** y **Gemini CLI** como agentes de terminal sobre este repo, con seguridad y resultados reproducibles. Siempre trabajá en una rama (p. ej. `agent/codex-fix-previews`) y con el repo bajo git para poder revertir.
+
+### ChatGPT Codex CLI — Setup rápido
+
+**Instalación**
+```bash
+npm i -g @openai/codex
+```
+
+**Autenticación**
+```bash
+# Recomendado: API Key de OpenAI (cuenta con acceso a ChatGPT)
+export OPENAI_API_KEY="<tu_api_key>"
+```
+
+**Modos de aprobación**
+- `codex` ⇒ **Suggest** (lee/propone cambios y comandos, pide confirmación)
+- `codex --auto-edit` ⇒ **Auto Edit** (edita archivos, pide confirmación para shell)
+- `codex --full-auto` ⇒ **Full Auto** (lee/escribe/ejecuta comandos en sand
+**Uso recomendado en este repo** (desde la raíz):
+```bash
+# 1) Diagnóstico del código
+codex -p "Dame un mapa del proyecto y enumera puntos de mejora en previews, etiquetado y webhook de pagos"
+
+# 2) Fix guiado (mantener Suggest por seguridad)
+codex -p "Arreglá la política de fallback de previews: si falta preview_path usar watermark_path; si no, placeholder. Agregá tests"
+
+# 3) Refactor con más autonomía (en branch temporal)
+git checkout -b agent/codex-previews
+codex --auto-edit -p "Implementá WebP 512/1024 post-upload y prevení servir originales en UI. Actualizá docs"
+```
+
+> Buenas prácticas: corré `npm test` y `npm run test:integration` después de cada bloque de cambios; revisá los parches antes de aceptar.
+
+---
+
+### Gemini CLI — Setup rápido
+
+**Instalación**
+```bash
+# Opción A: Homebrew (macOS/Linux)
+brew install gemini-cli
+# Opción B: npm global
+npm i -g @google/gemini-cli
+```
+
+**Autenticación**
+```bash
+# OAuth (flujo en el navegador)
+gemini
+# o API Key
+export GEMINI_API_KEY="<tu_api_key>" && gemini
+```
+
+**Uso básico en este repo**
+```bash
+# Sesión interactiva con contexto del directorio
+gemini
+
+# Prompt directo (no interactivo)
+gemini -p "Revisa /app/api/admin/photos y proponé mejoras de rendimiento y accesibilidad"
+
+# Incluir dirs adicionales del monorepo
+gemini --include-directories lib,components,app/api
+```
+
+**Configuración optimizada para Codex CLI**:
+```bash
+# Usar ALWAYS esta configuración para Codex
+codex --ask-for-approval never --sandbox danger-full-access -c model_reasoning_effort="high" "tu prompt aquí"
+
+# O crear alias en ~/.zshrc:
+alias codex-opt='codex --ask-for-approval never --sandbox danger-full-access -c model_reasoning_effort="high"'
+```
+
+**Herramientas integradas**
+- **Shell commands** (requiere aprobación explícita la primera vez)  
+- **File ops** (lectura/escritura de archivos)  
+- **Web fetch & search** (para grounding puntual)
+
+> Seguridad: no habilites aprobación automática de `shell` por defecto. Mantené ramas separadas y verificá diffs antes de aplicar.
+
+---
+
+### Plantillas de contexto sugeridas
+
+> Crear estos archivos es **opcional**. Sirven para que los agentes entiendan el proyecto. (Si los creás, añadilos a git.)
+
+**`CODEX.md` (sugerido) — resumen operativo**
+```md
+# CODEX.md — LookEscolar
+- Norte del MVP: admin→familia (eventos, fotos, previews, checkout MP).
+- Guardrails: no servir originales; auth real en prod con Supabase + RLS.
+- Prioridades: previews 512/1024 WebP; etiquetado consistente; visibilidad pública/familiar.
+- Rutas críticas: /admin/events, /admin/photos, /gallery/[eventId], /f/[token].
+- KPIs: Admin<1.6s, Galerías<2s, filtros<300ms, 60fps mobile.
+```
+
+**`GEMINI.md` (sugerido) — pistas para Gemini CLI**
+```md
+# GEMINI.md — LookEscolar
+- Si necesitás ejecutar shell, pedí confirmación.
+- Revisar primero lib/services/* y app/api/* antes de tocar componentes.
+- No uses originales en UI; generar WebP 512/1024 en post-upload.
+- Después de cambios en pagos, correr `npm run test:integration`.
+```
+
+---
+
+### Flujo recomendado (ambos agentes)
+1. Crear rama: `git checkout -b agent/<tarea>`
+2. Correr agente en **Suggest** / **interactivo**
+3. Revisar diffs + correr tests
+4. Iterar con **Auto Edit** solo si es rutinario y seguro
+5. PR con checklist de performance/accesibilidad cumplido
+
+---
+
+## 🚨 DOCUMENTATION ANTI-SPRAWL POLICY
+
+**CRITICAL RULE**: NEVER CREATE NEW DOCUMENTATION FILES WITHOUT EXPLICIT JUSTIFICATION
+
+### File Creation Guardrails
+- ❌ **NO** temporary analysis files (UX_ANALYSIS_*.md, *_SUMMARY.md, *_REPORT.md)
+- ❌ **NO** archive directories (docs/archive/, etc.)  
+- ❌ **NO** duplicate specifications or planning docs
+- ❌ **NO** status reports or progress summaries
+- ✅ **ALWAYS** prefer editing existing files over creating new ones
+- ✅ **ALWAYS** use inline code comments for code-specific documentation
+- ✅ **ALWAYS** use git commits for change tracking
+
+### Maximum File Limits
+- **Total documentation**: 12 files maximum
+- **Root level**: README.md, CLAUDE.md, SECURITY.md, AGENTS.md only
+- **docs/ directory**: 8 files maximum (see docs/DOCUMENTATION_INDEX.md)
+
+### Before Creating ANY New File
+1. Can this be added to an existing document? 
+2. Is this permanent or temporary information?
+3. Can this be handled through code comments or git history?
+
+**Violation Response**: Run doc-curator-guardian agent immediately to restore order.
+
+---
+

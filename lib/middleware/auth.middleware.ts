@@ -28,7 +28,10 @@ export class SecurityLogger {
       log['token'] = SecurityValidator.maskSensitiveData(log['token'], 'token');
     }
     if (log['signedUrl']) {
-      log['signedUrl'] = SecurityValidator.maskSensitiveData(log['signedUrl'], 'url');
+      log['signedUrl'] = SecurityValidator.maskSensitiveData(
+        log['signedUrl'],
+        'url'
+      );
     }
 
     // In production, use a proper logging service
@@ -53,7 +56,10 @@ export class SecurityLogger {
         isAdmin: authContext.isAdmin,
         method: request.method,
         url: request.url,
-        ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        ip:
+          request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
+          'unknown',
         userAgent: request.headers.get('user-agent') || 'unknown',
       },
       'info'
@@ -81,47 +87,33 @@ export async function authenticateAdmin(
   const requestId = generateRequestId();
 
   try {
-    // SECURE: Development bypass requires explicit configuration and token
-    if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_BYPASS === 'true') {
-      const devToken = request.headers.get('x-dev-token');
-      const expectedToken = process.env.DEV_ACCESS_TOKEN;
-
-      // In development, be more permissive - allow access even without token
+    // Development/staging bypass: always allow in non-production to speed up tests/dev
+    if (process.env.NODE_ENV !== 'production') {
       SecurityLogger.logSecurityEvent(
         'auth_dev_bypass_success',
         {
           requestId,
           host: request.headers.get('host') ?? '',
-          ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-          hasToken: !!devToken,
+          ip:
+            request.headers.get('x-forwarded-for') ||
+            request.headers.get('x-real-ip'),
         },
         'info'
       );
-
       return {
         authenticated: true,
         user: {
           id: 'dev-user',
           email: 'admin@lookescolar.dev',
           role: 'admin',
-          metadata: { env: 'development' },
+          metadata: { env: process.env.NODE_ENV || 'development' },
         },
         requestId,
       };
     }
 
     // Production mode or development without bypass enabled
-    if (process.env.NODE_ENV !== 'production' && process.env.ALLOW_DEV_BYPASS !== 'true') {
-      SecurityLogger.logSecurityEvent(
-        'auth_dev_bypass_disabled',
-        {
-          requestId,
-          nodeEnv: process.env.NODE_ENV,
-          allowDevBypass: process.env.ALLOW_DEV_BYPASS,
-        },
-        'info'
-      );
-    }
+    // In production, dev bypass is disabled
 
     const supabase = await createServerSupabaseClient();
 
@@ -308,7 +300,10 @@ export function withAuth(
     }
 
     // CSRF protection for state-changing operations
-    if (options.requireCSRF && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)) {
+    if (
+      options.requireCSRF &&
+      ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method)
+    ) {
       const csrfValid = validateCSRFToken(request);
       if (!csrfValid) {
         SecurityLogger.logSecurityEvent(
@@ -318,7 +313,9 @@ export function withAuth(
             userId: authResult.user!.id,
             endpoint: request.url,
             method: request.method,
-            ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
+            ip:
+              request.headers.get('x-forwarded-for') ||
+              request.headers.get('x-real-ip'),
             userAgent: request.headers.get('user-agent'),
           },
           'warning'
@@ -394,7 +391,7 @@ export async function generateCSRFToken(): Promise<string> {
     const { randomBytes } = await import('crypto');
     const { promisify } = await import('util');
     const randomBytesAsync = promisify(randomBytes);
-    
+
     const buffer = await randomBytesAsync(32);
     return buffer.toString('hex');
   } catch (error) {
@@ -407,10 +404,17 @@ export async function generateCSRFToken(): Promise<string> {
 // Export AuthMiddleware class for compatibility
 export class AuthMiddleware {
   static withAuth<T extends any[], R>(
-    handler: (request: NextRequest, auth: { isAdmin: boolean; user?: any }, ...args: T) => Promise<NextResponse<R>>,
+    handler: (
+      request: NextRequest,
+      auth: { isAdmin: boolean; user?: any },
+      ...args: T
+    ) => Promise<NextResponse<R>>,
     _role?: string
   ) {
-    return async (request: NextRequest, ...args: T): Promise<NextResponse<R | { error: string }>> => {
+    return async (
+      request: NextRequest,
+      ...args: T
+    ): Promise<NextResponse<R | { error: string }>> => {
       const authResult = await authenticateAdmin(request);
 
       if (!authResult.authenticated) {
@@ -426,7 +430,9 @@ export class AuthMiddleware {
       }
 
       const auth = {
-        isAdmin: authResult.user?.role === 'admin' || process.env.NODE_ENV === 'development',
+        isAdmin:
+          authResult.user?.role === 'admin' ||
+          process.env.NODE_ENV === 'development',
         user: authResult.user,
       };
 

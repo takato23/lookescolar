@@ -4,11 +4,12 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 export async function GET(req: NextRequest) {
   try {
     const sb = await createServerSupabaseServiceClient();
-    
+
     // Get all codes with their associated events
     const { data: codes, error } = await sb
       .from('codes')
-      .select(`
+      .select(
+        `
         id,
         code_value,
         event_id,
@@ -16,7 +17,8 @@ export async function GET(req: NextRequest) {
           id,
           name
         )
-      `)
+      `
+      )
       .order('code_value', { ascending: true });
 
     if (error) {
@@ -27,7 +29,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, codes: codes || [] });
   } catch (e: any) {
     console.error('Error in codes GET:', e);
-    return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json(
+      { error: e?.message || 'Internal error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -58,21 +63,29 @@ export async function POST(req: NextRequest) {
           .select('id')
           .single();
         if (createErr) {
-          return NextResponse.json({ error: 'Failed to create default event' }, { status: 500 });
+          return NextResponse.json(
+            { error: 'Failed to create default event' },
+            { status: 500 }
+          );
         }
         finalEventId = (created as any).id as string;
       }
     }
     const { data, error } = await sb
       .from('codes')
-      .insert({ event_id: finalEventId as string, code_value: String(codeValue) })
+      .insert({
+        event_id: finalEventId as string,
+        code_value: String(codeValue),
+      })
       .select('id')
       .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error)
+      return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ id: data.id });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Internal error' }, { status: 500 });
+    return NextResponse.json(
+      { error: e?.message || 'Internal error' },
+      { status: 500 }
+    );
   }
 }
-
-

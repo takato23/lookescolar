@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { POST } from '@/app/api/payments/webhook/route';
 import { NextRequest } from 'next/server';
-import crypto from 'crypto';
 
 // Mock dependencies
 vi.mock('@/lib/mercadopago/mercadopago.service', () => ({
@@ -21,12 +20,14 @@ vi.mock('@upstash/redis', () => ({
   },
 }));
 
-const { verifyWebhookSignature, processWebhookNotification } = await import('@/lib/mercadopago/mercadopago.service');
+const { verifyWebhookSignature, processWebhookNotification } = await import(
+  '@/lib/mercadopago/mercadopago.service'
+);
 
 describe('Webhook API Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.MP_WEBHOOK_SECRET = 'test-secret-key';
+    process.env['MP_WEBHOOK_SECRET'] = 'test-secret-key';
   });
 
   afterEach(() => {

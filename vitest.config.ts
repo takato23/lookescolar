@@ -18,9 +18,7 @@ export default defineConfig({
     css: true,
     reporters: ['default'],
     // Usar entorno Node para tests de integración
-    environmentMatchGlobs: [
-      ['tests/integration/**', 'node'],
-    ],
+    environmentMatchGlobs: [['tests/integration/**', 'node']],
     coverage: {
       reporter: ['text', 'json', 'html'],
       exclude: [

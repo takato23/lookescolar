@@ -2,10 +2,10 @@
 
 /**
  * Comprehensive Security Audit Script
- * 
+ *
  * Performs a complete security audit of the LookEscolar system
  * before production deployment.
- * 
+ *
  * Usage: npm run security:audit
  */
 
@@ -70,7 +70,8 @@ class SecurityAuditor {
         critical.push(...envResult.critical);
         issues.push(...envResult.errors);
         warnings.push(...envResult.warnings);
-        score -= critical.length * 20 + issues.length * 10 + warnings.length * 5;
+        score -=
+          critical.length * 20 + issues.length * 10 + warnings.length * 5;
       }
 
       // Check for production-specific security
@@ -104,21 +105,29 @@ class SecurityAuditor {
 
       // Check for default/weak secrets
       const weakPatterns = ['secret', '123456', 'password', 'admin', 'test'];
-      if (weakPatterns.some(pattern => this.config.sessionSecret.toLowerCase().includes(pattern))) {
+      if (
+        weakPatterns.some((pattern) =>
+          this.config.sessionSecret.toLowerCase().includes(pattern)
+        )
+      ) {
         critical.push('Session secret contains weak patterns');
         score -= 25;
       }
 
       // Check HTTPS enforcement
-      if (this.config.isProduction && !this.config.appUrl.startsWith('https://')) {
+      if (
+        this.config.isProduction &&
+        !this.config.appUrl.startsWith('https://')
+      ) {
         critical.push('HTTPS is not enforced in production');
         score -= 30;
       }
 
       console.log('✅ Environment security audit completed');
-
     } catch (error) {
-      critical.push(`Environment audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Environment audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -128,7 +137,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -147,7 +156,8 @@ class SecurityAuditor {
       );
 
       // Test authentication configuration
-      const { data: config, error: configError } = await supabase.auth.admin.getUserById('test-user-id');
+      const { data: config, error: configError } =
+        await supabase.auth.admin.getUserById('test-user-id');
       if (configError && !configError.message.includes('User not found')) {
         issues.push('Authentication service configuration issue');
         score -= 15;
@@ -155,7 +165,9 @@ class SecurityAuditor {
 
       // Check password policy
       try {
-        const { data: policies } = await supabase.rpc('check_password_policies');
+        const { data: policies } = await supabase.rpc(
+          'check_password_policies'
+        );
         if (!policies) {
           warnings.push('Password policies are not configured');
           score -= 10;
@@ -166,7 +178,10 @@ class SecurityAuditor {
       }
 
       // Check session configuration
-      if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+      if (
+        !process.env.SESSION_SECRET ||
+        process.env.SESSION_SECRET.length < 32
+      ) {
         critical.push('Session secret is too weak for production use');
         score -= 30;
       }
@@ -175,7 +190,9 @@ class SecurityAuditor {
       try {
         const { data: mfaConfig } = await supabase.rpc('check_mfa_enabled');
         if (!mfaConfig && this.config.isProduction) {
-          warnings.push('Multi-factor authentication is not configured for production');
+          warnings.push(
+            'Multi-factor authentication is not configured for production'
+          );
           score -= 10;
         }
       } catch (error) {
@@ -183,9 +200,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ Authentication security audit completed');
-
     } catch (error) {
-      critical.push(`Authentication audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Authentication audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -195,7 +213,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -250,7 +268,7 @@ class SecurityAuditor {
       // Check for weak token patterns
       const weakPatterns = [/^[0-9]+$/, /^[a-zA-Z]+$/, /(.)\1{3,}/];
       for (const pattern of weakPatterns) {
-        if (testTokens.some(token => pattern.test(token))) {
+        if (testTokens.some((token) => pattern.test(token))) {
           issues.push('Generated tokens may contain weak patterns');
           score -= 15;
           break;
@@ -258,9 +276,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ Token security audit completed');
-
     } catch (error) {
-      critical.push(`Token audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Token audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -270,7 +289,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -289,18 +308,23 @@ class SecurityAuditor {
       );
 
       // Check RLS is enabled on all tables
-      const { data: rlsCheck, error: rlsError } = await supabase.rpc('audit_rls_policies');
-      
+      const { data: rlsCheck, error: rlsError } =
+        await supabase.rpc('audit_rls_policies');
+
       if (rlsError) {
         critical.push('Could not verify Row Level Security policies');
         score -= 30;
       } else if (rlsCheck) {
         for (const table of rlsCheck) {
           if (table.status === 'CRITICAL') {
-            critical.push(`Table "${table.table_name}" does not have RLS enabled or policies configured`);
+            critical.push(
+              `Table "${table.table_name}" does not have RLS enabled or policies configured`
+            );
             score -= 20;
           } else if (table.status === 'WARNING') {
-            warnings.push(`Table "${table.table_name}" has RLS enabled but no policies`);
+            warnings.push(
+              `Table "${table.table_name}" has RLS enabled but no policies`
+            );
             score -= 10;
           }
         }
@@ -314,9 +338,14 @@ class SecurityAuditor {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
 
-        const { data, error } = await anonClient.from('subjects').select('*').limit(1);
+        const { data, error } = await anonClient
+          .from('subjects')
+          .select('*')
+          .limit(1);
         if (!error || data) {
-          critical.push('Anonymous users can access sensitive data (RLS not working)');
+          critical.push(
+            'Anonymous users can access sensitive data (RLS not working)'
+          );
           score -= 40;
         }
       } catch (error) {
@@ -324,8 +353,13 @@ class SecurityAuditor {
       }
 
       // Check for database connection security
-      const dbUrl = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (dbUrl && !dbUrl.startsWith('postgres://') && !dbUrl.startsWith('postgresql://')) {
+      const dbUrl =
+        process.env.DATABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (
+        dbUrl &&
+        !dbUrl.startsWith('postgres://') &&
+        !dbUrl.startsWith('postgresql://')
+      ) {
         warnings.push('Database connection URL format may be insecure');
         score -= 5;
       }
@@ -333,7 +367,10 @@ class SecurityAuditor {
       // Check for SQL injection protections
       try {
         const maliciousQuery = "'; DROP TABLE events; --";
-        const { error } = await supabase.from('events').select('*').ilike('name', maliciousQuery);
+        const { error } = await supabase
+          .from('events')
+          .select('*')
+          .ilike('name', maliciousQuery);
         if (!error) {
           issues.push('Potential SQL injection vulnerability detected');
           score -= 20;
@@ -343,9 +380,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ Database security audit completed');
-
     } catch (error) {
-      critical.push(`Database audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Database audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -355,7 +393,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -372,13 +410,15 @@ class SecurityAuditor {
       const sensitiveEndpoints = [
         '/api/admin/',
         '/api/storage/signed-url',
-        '/api/payments/webhook'
+        '/api/payments/webhook',
       ];
 
       for (const endpoint of sensitiveEndpoints) {
         // These endpoints should have proper authentication and rate limiting
         if (endpoint === '/api/admin/' && this.config.skipAuth) {
-          critical.push(`Admin endpoint ${endpoint} has authentication disabled`);
+          critical.push(
+            `Admin endpoint ${endpoint} has authentication disabled`
+          );
           score -= 25;
         }
       }
@@ -393,7 +433,9 @@ class SecurityAuditor {
       if (this.config.isProduction) {
         const debugEnabled = process.env.DEBUG_ENABLED === 'true';
         if (debugEnabled) {
-          critical.push('Debug mode is enabled in production (may expose stack traces)');
+          critical.push(
+            'Debug mode is enabled in production (may expose stack traces)'
+          );
           score -= 25;
         }
       }
@@ -412,9 +454,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ API endpoint security audit completed');
-
     } catch (error) {
-      critical.push(`API audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `API audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -424,7 +467,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -444,24 +487,31 @@ class SecurityAuditor {
 
       // Check bucket privacy
       const { data: buckets, error } = await supabase.storage.listBuckets();
-      
+
       if (error) {
         critical.push('Could not verify storage bucket configuration');
         score -= 30;
       } else {
-        const photoBucket = buckets.find(b => b.name === this.config.storageBucket);
-        
+        const photoBucket = buckets.find(
+          (b) => b.name === this.config.storageBucket
+        );
+
         if (!photoBucket) {
-          critical.push(`Storage bucket "${this.config.storageBucket}" not found`);
+          critical.push(
+            `Storage bucket "${this.config.storageBucket}" not found`
+          );
           score -= 40;
         } else if (photoBucket.public) {
-          critical.push(`Storage bucket "${this.config.storageBucket}" is public (should be private)`);
+          critical.push(
+            `Storage bucket "${this.config.storageBucket}" is public (should be private)`
+          );
           score -= 35;
         }
       }
 
       // Check signed URL configuration
-      if (this.config.signedUrlExpiryMinutes > 240) { // 4 hours
+      if (this.config.signedUrlExpiryMinutes > 240) {
+        // 4 hours
         warnings.push('Signed URL expiry time is very long (> 4 hours)');
         score -= 10;
       }
@@ -472,18 +522,26 @@ class SecurityAuditor {
       }
 
       // Check file size limits
-      if (this.config.maxFileSize > 50 * 1024 * 1024) { // 50MB
+      if (this.config.maxFileSize > 50 * 1024 * 1024) {
+        // 50MB
         warnings.push('Maximum file size is very large (> 50MB)');
         score -= 10;
       }
 
       // Check file type restrictions
-      if (this.config.allowedFileTypes.includes('*/*') || this.config.allowedFileTypes.includes('*')) {
+      if (
+        this.config.allowedFileTypes.includes('*/*') ||
+        this.config.allowedFileTypes.includes('*')
+      ) {
         critical.push('File type restrictions allow all file types');
         score -= 25;
       }
 
-      const dangerousTypes = ['application/javascript', 'text/html', 'application/php'];
+      const dangerousTypes = [
+        'application/javascript',
+        'text/html',
+        'application/php',
+      ];
       for (const dangerousType of dangerousTypes) {
         if (this.config.allowedFileTypes.includes(dangerousType)) {
           critical.push(`Dangerous file type allowed: ${dangerousType}`);
@@ -492,9 +550,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ Storage security audit completed');
-
     } catch (error) {
-      critical.push(`Storage audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Storage audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -504,7 +563,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -518,7 +577,10 @@ class SecurityAuditor {
 
     try {
       // Check HTTPS enforcement
-      if (this.config.isProduction && !this.config.appUrl.startsWith('https://')) {
+      if (
+        this.config.isProduction &&
+        !this.config.appUrl.startsWith('https://')
+      ) {
         critical.push('HTTPS is not enforced in production');
         score -= 35;
       }
@@ -530,7 +592,8 @@ class SecurityAuditor {
       }
 
       // Check HSTS configuration
-      if (this.config.hstsMaxAge < 31536000) { // 1 year
+      if (this.config.hstsMaxAge < 31536000) {
+        // 1 year
         warnings.push('HSTS max-age is less than 1 year');
         score -= 10;
       }
@@ -541,7 +604,10 @@ class SecurityAuditor {
         score -= 25;
       }
 
-      if (this.config.allowedDomains.includes('localhost') && this.config.isProduction) {
+      if (
+        this.config.allowedDomains.includes('localhost') &&
+        this.config.isProduction
+      ) {
         warnings.push('Localhost is allowed in production');
         score -= 15;
       }
@@ -553,9 +619,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ Network security audit completed');
-
     } catch (error) {
-      critical.push(`Network audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Network audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -565,7 +632,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -582,7 +649,7 @@ class SecurityAuditor {
       const filesToCheck = [
         'middleware.ts',
         'next.config.js',
-        'app/api/**/*.ts'
+        'app/api/**/*.ts',
       ];
 
       // Pattern matching for potential secrets
@@ -604,7 +671,12 @@ class SecurityAuditor {
       }
 
       // Check for eval() usage (dangerous)
-      const dangerousFunctions = ['eval', 'Function', 'setTimeout', 'setInterval'];
+      const dangerousFunctions = [
+        'eval',
+        'Function',
+        'setTimeout',
+        'setInterval',
+      ];
       // This is a simplified check - in production, use a proper AST parser
       warnings.push('Manual review required for dangerous function usage');
       score -= 5;
@@ -617,21 +689,25 @@ class SecurityAuditor {
       // Check dependencies for known vulnerabilities
       try {
         const packageJsonPath = path.join(process.cwd(), 'package.json');
-        const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-        
+        const packageJson = JSON.parse(
+          await fs.readFile(packageJsonPath, 'utf-8')
+        );
+
         // Check for known vulnerable packages (simplified check)
         const knownVulnerablePackages = ['lodash@<4.17.21', 'axios@<0.21.1'];
         // This is a simplified example - use npm audit or snyk in production
-        
       } catch (error) {
-        warnings.push('Could not analyze package dependencies for vulnerabilities');
+        warnings.push(
+          'Could not analyze package dependencies for vulnerabilities'
+        );
         score -= 10;
       }
 
       console.log('✅ Code security audit completed');
-
     } catch (error) {
-      critical.push(`Code audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Code audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -641,7 +717,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -658,7 +734,9 @@ class SecurityAuditor {
 
       // Check webhook secret strength
       if (!mercadoPago.webhookSecret || mercadoPago.webhookSecret.length < 32) {
-        critical.push('Mercado Pago webhook secret is too weak (< 32 characters)');
+        critical.push(
+          'Mercado Pago webhook secret is too weak (< 32 characters)'
+        );
         score -= 30;
       }
 
@@ -668,13 +746,22 @@ class SecurityAuditor {
         score -= 35;
       }
 
-      if (!this.config.isProduction && mercadoPago.environment === 'production') {
-        warnings.push('Using production Mercado Pago environment in development');
+      if (
+        !this.config.isProduction &&
+        mercadoPago.environment === 'production'
+      ) {
+        warnings.push(
+          'Using production Mercado Pago environment in development'
+        );
         score -= 10;
       }
 
       // Check key format
-      if (this.config.isProduction && (mercadoPago.publicKey.includes('TEST-') || mercadoPago.accessToken.includes('TEST-'))) {
+      if (
+        this.config.isProduction &&
+        (mercadoPago.publicKey.includes('TEST-') ||
+          mercadoPago.accessToken.includes('TEST-'))
+      ) {
         critical.push('Using test Mercado Pago keys in production');
         score -= 40;
       }
@@ -693,9 +780,10 @@ class SecurityAuditor {
       }
 
       console.log('✅ Mercado Pago security audit completed');
-
     } catch (error) {
-      critical.push(`Mercado Pago audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Mercado Pago audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -705,7 +793,7 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
@@ -726,7 +814,9 @@ class SecurityAuditor {
 
       // Check log level
       if (this.config.logLevel === 'debug' && this.config.isProduction) {
-        warnings.push('Debug logging enabled in production (may expose sensitive data)');
+        warnings.push(
+          'Debug logging enabled in production (may expose sensitive data)'
+        );
         score -= 15;
       }
 
@@ -745,14 +835,17 @@ class SecurityAuditor {
       }
 
       if (logRetentionDays < 30 && this.config.isProduction) {
-        warnings.push('Log retention period is very short (< 30 days) for production');
+        warnings.push(
+          'Log retention period is very short (< 30 days) for production'
+        );
         score -= 10;
       }
 
       console.log('✅ Logging security audit completed');
-
     } catch (error) {
-      critical.push(`Logging audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Logging audit failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       score = 0;
     }
 
@@ -762,11 +855,15 @@ class SecurityAuditor {
       issues,
       warnings,
       critical,
-      score: Math.max(0, score)
+      score: Math.max(0, score),
     });
   }
 
-  private async checkDirectoryForSecrets(dir: string, patterns: RegExp[], issues: string[]): Promise<void> {
+  private async checkDirectoryForSecrets(
+    dir: string,
+    patterns: RegExp[],
+    issues: string[]
+  ): Promise<void> {
     // Simplified implementation - in production, use proper file traversal
     // This is just to demonstrate the concept
   }
@@ -776,15 +873,15 @@ class SecurityAuditor {
     for (const char of str) {
       freq[char] = (freq[char] || 0) + 1;
     }
-    
+
     let entropy = 0;
     const length = str.length;
-    
+
     for (const count of Object.values(freq)) {
       const p = count / length;
       entropy -= p * Math.log2(p);
     }
-    
+
     return entropy;
   }
 
@@ -798,39 +895,44 @@ class SecurityAuditor {
     let totalWarnings = 0;
     let passedCategories = 0;
 
-    this.results.forEach(result => {
+    this.results.forEach((result) => {
       const status = result.passed ? '✅ PASS' : '❌ FAIL';
-      const scoreColor = result.score >= 90 ? '🟢' : result.score >= 70 ? '🟡' : '🔴';
-      
-      console.log(`${status} ${result.category} ${scoreColor} ${result.score}%`);
-      
+      const scoreColor =
+        result.score >= 90 ? '🟢' : result.score >= 70 ? '🟡' : '🔴';
+
+      console.log(
+        `${status} ${result.category} ${scoreColor} ${result.score}%`
+      );
+
       if (result.critical.length > 0) {
         console.log('  🚨 CRITICAL ISSUES:');
-        result.critical.forEach(issue => console.log(`    - ${issue}`));
+        result.critical.forEach((issue) => console.log(`    - ${issue}`));
         totalCritical += result.critical.length;
       }
-      
+
       if (result.issues.length > 0) {
         console.log('  ❌ ISSUES:');
-        result.issues.forEach(issue => console.log(`    - ${issue}`));
+        result.issues.forEach((issue) => console.log(`    - ${issue}`));
         totalIssues += result.issues.length;
       }
-      
+
       if (result.warnings.length > 0) {
         console.log('  ⚠️  WARNINGS:');
-        result.warnings.forEach(warning => console.log(`    - ${warning}`));
+        result.warnings.forEach((warning) => console.log(`    - ${warning}`));
         totalWarnings += result.warnings.length;
       }
-      
+
       if (result.passed) {
         passedCategories++;
       }
-      
+
       console.log('');
     });
 
     console.log('='.repeat(60));
-    console.log(`📊 SECURITY SUMMARY: ${passedCategories}/${this.results.length} categories passed`);
+    console.log(
+      `📊 SECURITY SUMMARY: ${passedCategories}/${this.results.length} categories passed`
+    );
     console.log(`🚨 Critical Issues: ${totalCritical}`);
     console.log(`❌ Issues: ${totalIssues}`);
     console.log(`⚠️  Warnings: ${totalWarnings}`);
@@ -838,13 +940,19 @@ class SecurityAuditor {
     console.log('='.repeat(60));
 
     if (totalCritical > 0) {
-      console.log('\n🚨 DEPLOYMENT BLOCKED: Critical security issues must be resolved.');
+      console.log(
+        '\n🚨 DEPLOYMENT BLOCKED: Critical security issues must be resolved.'
+      );
       console.log('Fix all critical issues and run audit again.\n');
     } else if (this.overallScore < 85) {
-      console.log('\n⚠️  SECURITY CONCERNS: Overall security score is below recommended threshold (85%).');
+      console.log(
+        '\n⚠️  SECURITY CONCERNS: Overall security score is below recommended threshold (85%).'
+      );
       console.log('Address issues to improve security posture.\n');
     } else {
-      console.log('\n🛡️  SECURITY APPROVED: System meets production security requirements!');
+      console.log(
+        '\n🛡️  SECURITY APPROVED: System meets production security requirements!'
+      );
       console.log('All critical security measures are in place.\n');
     }
   }
@@ -855,7 +963,10 @@ class SecurityAuditor {
       return;
     }
 
-    const totalScore = this.results.reduce((sum, result) => sum + result.score, 0);
+    const totalScore = this.results.reduce(
+      (sum, result) => sum + result.score,
+      0
+    );
     this.overallScore = Math.round(totalScore / this.results.length);
   }
 }
@@ -864,13 +975,13 @@ class SecurityAuditor {
 async function main() {
   const auditor = new SecurityAuditor();
   const isSecure = await auditor.audit();
-  
+
   process.exit(isSecure ? 0 : 1);
 }
 
 // Run if called directly
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('❌ Security audit failed with error:', error);
     process.exit(1);
   });

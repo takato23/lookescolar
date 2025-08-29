@@ -8,6 +8,3 @@ export default async function EventPhotosRedirect({ params }: PageProps) {
   const { id } = await params;
   redirect(`/admin/photos?eventId=${id}`);
 }
-
-
-

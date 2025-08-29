@@ -27,9 +27,11 @@ export class PublicCheckoutService {
   /**
    * Método principal para procesar el checkout público
    */
-  async processCheckout(request: PublicCheckoutRequest): Promise<PublicCheckoutResponse> {
+  async processCheckout(
+    request: PublicCheckoutRequest
+  ): Promise<PublicCheckoutResponse> {
     const supabase = await createServerSupabaseServiceClient();
-    
+
     try {
       // 1. Validar evento
       const { data: event, error: eventError } = await supabase
@@ -52,12 +54,14 @@ export class PublicCheckoutService {
         .in('id', request.photoIds);
 
       if (photosError || !photos || photos.length !== request.photoIds.length) {
-        throw new Error('Algunas fotos no están disponibles o no están aprobadas');
+        throw new Error(
+          'Algunas fotos no están disponibles o no están aprobadas'
+        );
       }
 
       // 3. Resolver subject público (crear o encontrar existente)
       let subjectId: string;
-      
+
       const { data: existingSubject } = await supabase
         .from('subjects')
         .select('id')
@@ -176,7 +180,9 @@ export class PublicCheckoutService {
         statement_descriptor: 'LookEscolar Fotos',
         expires: true,
         expiration_date_from: new Date().toISOString(),
-        expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
+        expiration_date_to: new Date(
+          Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString(), // 24 horas
       };
 
       const mpResponse = await preferenceClient.create({ body: preference });

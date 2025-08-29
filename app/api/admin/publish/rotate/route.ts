@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
     };
 
     const base = await createServerSupabaseServiceClient();
-    const supabase = (base as unknown) as import('@supabase/supabase-js').SupabaseClient<AugmentedDb>;
+    const supabase =
+      base as unknown as import('@supabase/supabase-js').SupabaseClient<AugmentedDb>;
 
     const { data: code, error: codeErr } = await supabase
       .from('codes')
@@ -31,7 +32,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (codeErr || !code) {
-      return NextResponse.json({ error: 'Código no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Código no encontrado' },
+        { status: 404 }
+      );
     }
 
     const token = generateHexToken(16);
@@ -42,7 +46,10 @@ export async function POST(request: NextRequest) {
 
     if (updErr) {
       console.error('[Service] Error rotando token:', updErr);
-      return NextResponse.json({ error: 'No se pudo rotar token' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'No se pudo rotar token' },
+        { status: 500 }
+      );
     }
 
     const url = absoluteUrl(`/f/${token}`);
@@ -52,5 +59,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

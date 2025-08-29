@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseServiceClient, createServerSupabaseClient } from '@/lib/supabase/server';
+import {
+  createServerSupabaseServiceClient,
+  createServerSupabaseClient,
+} from '@/lib/supabase/server';
 import { randomBytes } from 'crypto';
 
 export async function GET(request: NextRequest) {
@@ -55,10 +58,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const subjectsRaw = (data || []) as Array<{ id: string; name: string; event_id: string; created_at: string }>;
+    const subjectsRaw = (data || []) as Array<{
+      id: string;
+      name: string;
+      event_id: string;
+      created_at: string;
+    }>;
 
     // Adjuntar último token si existe (compatibilidad con UI)
-    let tokensMap: Record<string, { token: string; expires_at: string } | undefined> = {};
+    const tokensMap: Record<
+      string,
+      { token: string; expires_at: string } | undefined
+    > = {};
     try {
       const subjectIds = subjectsRaw.map((s) => s.id);
       if (subjectIds.length > 0) {
@@ -70,7 +81,10 @@ export async function GET(request: NextRequest) {
         for (const t of tokens || []) {
           const sid = (t as any).subject_id as string;
           if (!tokensMap[sid]) {
-            tokensMap[sid] = { token: (t as any).token as string, expires_at: (t as any).expires_at as string };
+            tokensMap[sid] = {
+              token: (t as any).token as string,
+              expires_at: (t as any).expires_at as string,
+            };
           }
         }
       }
@@ -136,7 +150,9 @@ export async function POST(request: NextRequest) {
     if (!subject && creationError) {
       const needsLegacyColumns =
         typeof creationError.message === 'string' &&
-        (creationError.message.includes('access_token') || creationError.message.includes('token_expires_at') || creationError.message.toLowerCase().includes('null value in column'));
+        (creationError.message.includes('access_token') ||
+          creationError.message.includes('token_expires_at') ||
+          creationError.message.toLowerCase().includes('null value in column'));
 
       if (needsLegacyColumns) {
         const legacyInsert = await supabase
@@ -164,13 +180,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Registrar token en tabla subject_tokens (compatible con ambos esquemas)
-    const { error: tokenError } = await supabase
-      .from('subject_tokens')
-      .insert({
-        subject_id: subject.id,
-        token,
-        expires_at: expiresAt.toISOString(),
-      });
+    const { error: tokenError } = await supabase.from('subject_tokens').insert({
+      subject_id: subject.id,
+      token,
+      expires_at: expiresAt.toISOString(),
+    });
 
     if (tokenError) {
       console.error('[Service] Error creando token de sujeto', tokenError);

@@ -12,7 +12,11 @@ import {
   QrCode,
   Settings,
 } from 'lucide-react';
-import { DashboardIcon, EventsIcon, FoldersIcon } from '@/components/ui/icons/LiquidIcons';
+import {
+  DashboardIcon,
+  EventsIcon,
+  FoldersIcon,
+} from '@/components/ui/icons/LiquidIcons';
 import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
 import { clsx } from 'clsx';
 
@@ -146,7 +150,11 @@ export default function AdminSidebar({
         <div className="border-border/50 border-b bg-gradient-to-b from-surface/40 to-transparent p-6 lg:p-8">
           <div className="mb-6 flex items-center gap-4">
             <div className="from-primary to-secondary ring-primary/10 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br shadow-xl ring-4 lg:h-14 lg:w-14">
-              <LookEscolarLogo variant="soft" size="lg" className="drop-shadow-lg" />
+              <LookEscolarLogo
+                variant="soft"
+                size="lg"
+                className="drop-shadow-lg"
+              />
             </div>
             <div className="flex-1">
               <h1 className="text-foreground mb-1 text-xl font-bold tracking-tight drop-shadow-lg lg:text-2xl">
@@ -215,9 +223,7 @@ export default function AdminSidebar({
                           size={20}
                           className={clsx(
                             'relative z-10 flex-shrink-0 transition-all',
-                            active
-                              ? 'drop-shadow-md'
-                              : 'group-hover:scale-110'
+                            active ? 'drop-shadow-md' : 'group-hover:scale-110'
                           )}
                         />
                       ) : (
@@ -237,14 +243,14 @@ export default function AdminSidebar({
                             className={clsx(
                               'truncate transition-all',
                               active
-                                ? 'text-base text-menu-enhanced drop-shadow-md font-semibold'
-                                : 'text-sm text-button-enhanced group-hover:text-base'
+                                ? 'text-menu-enhanced text-base font-semibold drop-shadow-md'
+                                : 'text-button-enhanced text-sm group-hover:text-base'
                             )}
                           >
                             {item.label}
                           </span>
                           {item.shortcut && (
-                            <kbd className="hidden items-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-2 py-0.5 font-mono text-[10px] text-neutral-600 lg:inline-flex dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400">
+                            <kbd className="hidden items-center gap-1 rounded border border-neutral-300 bg-neutral-100 px-2 py-0.5 font-mono text-[10px] text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-400 lg:inline-flex">
                               {item.shortcut}
                             </kbd>
                           )}
@@ -283,22 +289,110 @@ export default function AdminSidebar({
 
           {/* Advanced Navigation Accordion - hidden if no items */}
           {advancedNavItems.length > 0 && (
-          <div className="mb-6">
-            <button
-              onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-              className="mb-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest text-neutral-600 transition-colors hover:bg-muted/40 dark:text-neutral-400"
-            >
-              <span>Avanzado</span>
-              {isAdvancedOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
+            <div className="mb-6">
+              <button
+                onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+                className="hover:bg-muted/40 mb-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-bold uppercase tracking-widest text-neutral-600 transition-colors dark:text-neutral-400"
+              >
+                <span>Avanzado</span>
+                {isAdvancedOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+
+              {isAdvancedOpen && (
+                <ul className="space-y-1.5">
+                  {advancedNavItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
+
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={handleLinkClick}
+                          className={clsx(
+                            'group relative flex items-center gap-3.5 overflow-hidden rounded-xl px-4 py-3.5 transition-all duration-200',
+                            active
+                              ? 'from-primary/20 to-primary/10 shadow-glow-primary border-l-primary border-l-4 bg-gradient-to-r font-semibold text-primary-900 dark:text-primary-100'
+                              : 'hover:bg-muted/40 text-neutral-700 hover:-translate-y-[1px] hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
+                            !active && 'hover:shadow-3d-sm active:translate-y-0'
+                          )}
+                        >
+                          {active && (
+                            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary-200/30 via-transparent to-primary-100/30 dark:from-primary-700/20 dark:to-primary-600/20" />
+                          )}
+
+                          {item.isLiquidIcon ? (
+                            <Icon
+                              size={20}
+                              className={clsx(
+                                'relative z-10 flex-shrink-0 transition-all',
+                                active
+                                  ? 'drop-shadow-md'
+                                  : 'group-hover:scale-110'
+                              )}
+                            />
+                          ) : (
+                            <Icon
+                              className={clsx(
+                                'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
+                                active
+                                  ? 'text-primary drop-shadow-md'
+                                  : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
+                              )}
+                            />
+                          )}
+
+                          <div className="relative z-10 min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={clsx(
+                                  'truncate font-medium drop-shadow-sm transition-all',
+                                  active
+                                    ? 'text-base drop-shadow-md'
+                                    : 'text-sm group-hover:text-base'
+                                )}
+                              >
+                                {item.label}
+                              </span>
+                            </div>
+                            {item.description && (
+                              <p
+                                className={clsx(
+                                  'mt-1 truncate text-xs transition-opacity',
+                                  active
+                                    ? 'text-neutral-600 opacity-90 dark:text-neutral-400'
+                                    : 'text-neutral-500 opacity-80 group-hover:opacity-100 dark:text-neutral-500'
+                                )}
+                              >
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {active && (
+                            <div className="bg-primary/90 shadow-glow-primary relative z-10 h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full" />
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-            </button>
-            
-            {isAdvancedOpen && (
+            </div>
+          )}
+
+          {/* Secondary Navigation - hidden if no items */}
+          {secondaryItems.length > 0 && (
+            <div>
+              <h2 className="text-muted-foreground/80 mb-4 px-3 text-xs font-bold uppercase tracking-widest">
+                Configuración
+              </h2>
               <ul className="space-y-1.5">
-                {advancedNavItems.map((item) => {
+                {secondaryItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
 
@@ -308,137 +402,47 @@ export default function AdminSidebar({
                         href={item.href}
                         onClick={handleLinkClick}
                         className={clsx(
-                          'group relative flex items-center gap-3.5 overflow-hidden rounded-xl px-4 py-3.5 transition-all duration-200',
+                          'group flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-200',
                           active
-                            ? 'from-primary/20 to-primary/10 shadow-glow-primary border-l-primary border-l-4 bg-gradient-to-r font-semibold text-primary-900 dark:text-primary-100'
-                            : 'hover:bg-muted/40 text-neutral-700 hover:-translate-y-[1px] hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100',
-                          !active && 'hover:shadow-3d-sm active:translate-y-0'
+                            ? 'bg-muted/80 text-foreground font-medium shadow-sm'
+                            : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:translate-x-0.5'
                         )}
                       >
-                        {active && (
-                          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-primary-200/30 via-transparent to-primary-100/30 dark:from-primary-700/20 dark:to-primary-600/20" />
-                        )}
-
                         {item.isLiquidIcon ? (
                           <Icon
-                            size={20}
+                            size={16}
                             className={clsx(
-                              'relative z-10 flex-shrink-0 transition-all',
-                              active
-                                ? 'drop-shadow-md'
-                                : 'group-hover:scale-110'
+                              'flex-shrink-0 transition-all',
+                              active ? '' : 'group-hover:scale-110'
                             )}
                           />
                         ) : (
                           <Icon
                             className={clsx(
-                              'relative z-10 h-5 w-5 flex-shrink-0 transition-all',
+                              'h-4 w-4 flex-shrink-0 transition-all',
                               active
-                                ? 'text-primary drop-shadow-md'
-                                : 'text-neutral-600 group-hover:scale-110 group-hover:text-neutral-800 dark:text-neutral-400 dark:group-hover:text-neutral-100'
+                                ? 'text-primary'
+                                : 'text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110'
                             )}
                           />
                         )}
 
-                        <div className="relative z-10 min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
-                            <span
-                              className={clsx(
-                                'truncate font-medium drop-shadow-sm transition-all',
-                                active
-                                  ? 'text-base drop-shadow-md'
-                                  : 'text-sm group-hover:text-base'
-                              )}
-                            >
-                              {item.label}
-                            </span>
-                          </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="truncate text-sm font-medium">
+                            {item.label}
+                          </span>
                           {item.description && (
-                            <p
-                              className={clsx(
-                                'mt-1 truncate text-xs transition-opacity',
-                                active
-                                  ? 'text-neutral-600 opacity-90 dark:text-neutral-400'
-                                  : 'text-neutral-500 opacity-80 group-hover:opacity-100 dark:text-neutral-500'
-                              )}
-                            >
+                            <p className="text-muted-foreground/70 mt-0.5 truncate text-xs">
                               {item.description}
                             </p>
                           )}
                         </div>
-
-                        {active && (
-                          <div className="bg-primary/90 shadow-glow-primary relative z-10 h-2.5 w-2.5 flex-shrink-0 animate-pulse rounded-full" />
-                        )}
                       </Link>
                     </li>
                   );
                 })}
               </ul>
-            )}
-          </div>
-          )}
-
-          {/* Secondary Navigation - hidden if no items */}
-          {secondaryItems.length > 0 && (
-          <div>
-            <h2 className="text-muted-foreground/80 mb-4 px-3 text-xs font-bold uppercase tracking-widest">
-              Configuración
-            </h2>
-            <ul className="space-y-1.5">
-              {secondaryItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
-
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={handleLinkClick}
-                      className={clsx(
-                        'group flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-200',
-                        active
-                          ? 'bg-muted/80 text-foreground font-medium shadow-sm'
-                          : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground hover:translate-x-0.5'
-                      )}
-                    >
-                      {item.isLiquidIcon ? (
-                        <Icon
-                          size={16}
-                          className={clsx(
-                            'flex-shrink-0 transition-all',
-                            active
-                              ? ''
-                              : 'group-hover:scale-110'
-                          )}
-                        />
-                      ) : (
-                        <Icon
-                          className={clsx(
-                            'h-4 w-4 flex-shrink-0 transition-all',
-                            active
-                              ? 'text-primary'
-                              : 'text-muted-foreground/60 group-hover:text-foreground group-hover:scale-110'
-                          )}
-                        />
-                      )}
-
-                      <div className="min-w-0 flex-1">
-                        <span className="truncate text-sm font-medium">
-                          {item.label}
-                        </span>
-                        {item.description && (
-                          <p className="text-muted-foreground/70 mt-0.5 truncate text-xs">
-                            {item.description}
-                          </p>
-                        )}
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+            </div>
           )}
         </nav>
 

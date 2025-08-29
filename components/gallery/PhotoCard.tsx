@@ -26,8 +26,6 @@ export function PhotoCard({ photo, index, onClick }: PhotoCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-
-
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();

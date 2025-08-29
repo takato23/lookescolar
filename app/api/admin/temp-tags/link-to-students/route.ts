@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerSupabaseServiceClient();
-    
+
     const results = [];
     const errors = [];
 
@@ -33,13 +33,15 @@ export async function POST(request: NextRequest) {
         // Buscar etiquetas temporales que coincidan
         let tempTagsQuery = supabase
           .from('temp_photo_tags')
-          .select(`
+          .select(
+            `
             id,
             photo_id,
             temp_name,
             temp_email,
             photos(event_id)
-          `)
+          `
+          )
           .eq('temp_name', tempName)
           .eq('photos.event_id', eventId);
 
@@ -50,7 +52,10 @@ export async function POST(request: NextRequest) {
         const { data: tempTags, error: tempTagsError } = await tempTagsQuery;
 
         if (tempTagsError) {
-          errors.push({ rule, error: `Error finding temp tags: ${tempTagsError.message}` });
+          errors.push({
+            rule,
+            error: `Error finding temp tags: ${tempTagsError.message}`,
+          });
           continue;
         }
 
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
 
         // Para cada etiqueta temporal encontrada, crear la asignación de foto
         const linkedPhotos = [];
-        
+
         for (const tempTag of tempTags) {
           try {
             // Crear asignación foto-estudiante
@@ -84,7 +89,7 @@ export async function POST(request: NextRequest) {
                 subject_id: studentId,
                 tagged_at: new Date().toISOString(),
                 tagged_by: null, // Automatic from temp tags
-                source: 'temp_tag_linking'
+                source: 'temp_tag_linking',
               });
 
             if (assignError) {
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
             } else {
               linkedPhotos.push({
                 photoId: tempTag.photo_id,
-                tempTagId: tempTag.id
+                tempTagId: tempTag.id,
               });
             }
 
@@ -104,7 +109,6 @@ export async function POST(request: NextRequest) {
               .from('temp_photo_tags')
               .delete()
               .eq('id', tempTag.id);
-
           } catch (error) {
             console.error('Error processing temp tag:', error);
           }
@@ -114,29 +118,32 @@ export async function POST(request: NextRequest) {
           rule,
           studentName: student.name,
           linkedPhotosCount: linkedPhotos.length,
-          linkedPhotos
+          linkedPhotos,
         });
-
       } catch (error) {
-        errors.push({ 
-          rule, 
-          error: error instanceof Error ? error.message : 'Unknown error' 
+        errors.push({
+          rule,
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       results,
       errors,
       processedRules: linkingRules.length,
       successfulLinks: results.length,
-      failedLinks: errors.length
+      failedLinks: errors.length,
     });
-
   } catch (error) {
-    console.error('Error in POST /api/admin/temp-tags/link-to-students:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error(
+      'Error in POST /api/admin/temp-tags/link-to-students:',
+      error
+    );
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
-

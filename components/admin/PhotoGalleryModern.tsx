@@ -1,16 +1,22 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FolderIcon, 
-  ImageIcon, 
-  UploadIcon, 
-  DownloadIcon, 
-  TrashIcon, 
-  GridIcon, 
-  ListIcon, 
-  CheckIcon, 
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FolderIcon,
+  ImageIcon,
+  UploadIcon,
+  DownloadIcon,
+  TrashIcon,
+  GridIcon,
+  ListIcon,
+  CheckIcon,
   XIcon,
   SearchIcon,
   MoreVerticalIcon,
@@ -21,47 +27,46 @@ import {
   CheckSquareIcon,
   RefreshCw,
   QrCode,
-  Zap
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+  Zap,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 // import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
-} from "@/components/ui/dropdown-menu";
-import { 
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogFooter,
   DialogTitle,
-  DialogDescription
-} from "@/components/ui/dialog";
+  DialogDescription,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { toast } from "sonner";
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 import { SessionMode } from './SessionMode';
-import { cn } from "@/lib/utils";
-import { buildPhotosUrl } from "@/lib/utils/photos-url-builder";
-import QRScannerModal, { type StudentInfo } from "./QRScannerModal";
-import TaggingModal from "./TaggingModal";
-import { PhotoModal as GalleryPhotoModal } from "@/components/gallery/PhotoModal";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-
+import { cn } from '@/lib/utils';
+import { buildPhotosUrl } from '@/lib/utils/photos-url-builder';
+import QRScannerModal, { type StudentInfo } from './QRScannerModal';
+import TaggingModal from './TaggingModal';
+import { PhotoModal as GalleryPhotoModal } from '@/components/gallery/PhotoModal';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // Types adapted for LookEscolar
 interface PhotoItem {
@@ -136,11 +141,28 @@ const PhotoCard: React.FC<{
   viewMode: 'grid' | 'list';
   handleDragStart?: (photoId: string, e: React.DragEvent) => void;
   handleDragEnd?: () => void;
-}> = ({ photo, isSelected, onSelect, onOpenPreview, onApprove, onTag, onDelete, onDownload, onMove, viewMode, handleDragStart, handleDragEnd }) => {
-  const [imageLoadState, setImageLoadState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [imageSrc, setImageSrc] = useState<string | null>(photo.preview_url || null);
+}> = ({
+  photo,
+  isSelected,
+  onSelect,
+  onOpenPreview,
+  onApprove,
+  onTag,
+  onDelete,
+  onDownload,
+  onMove,
+  viewMode,
+  handleDragStart,
+  handleDragEnd,
+}) => {
+  const [imageLoadState, setImageLoadState] = useState<
+    'loading' | 'loaded' | 'error'
+  >('loading');
+  const [imageSrc, setImageSrc] = useState<string | null>(
+    photo.preview_url || null
+  );
   const [isDragging, setIsDragging] = useState(false);
-  
+
   useEffect(() => {
     if (photo.preview_url && photo.preview_url !== imageSrc) {
       setImageSrc(photo.preview_url);
@@ -150,14 +172,14 @@ const PhotoCard: React.FC<{
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 Bytes';
     const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-AR', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -175,34 +197,35 @@ const PhotoCard: React.FC<{
   // Optimized Image Component
   const OptimizedImage = ({ className }: { className: string }) => {
     return (
-      <div className={cn("relative", className)}>
+      <div className={cn('relative', className)}>
         {imageSrc && imageLoadState !== 'error' && (
-            <img
+          <img
             src={imageSrc}
             alt={photo.original_filename}
             className={cn(
-              "w-full h-full object-cover transition-opacity duration-200 contrast-125",
-              imageLoadState === 'loading' ? "opacity-0" : "opacity-100"
+              'h-full w-full object-cover contrast-125 transition-opacity duration-200',
+              imageLoadState === 'loading' ? 'opacity-0' : 'opacity-100'
             )}
             onLoad={handleImageLoad}
             onError={handleImageError}
           />
         )}
-        
+
         {/* Loading State */}
         {imageLoadState === 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-purple-600"></div>
           </div>
         )}
-        
+
         {/* Error State */}
-        {imageLoadState === 'error' || !imageSrc && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted text-muted-foreground">
-            <ImageIcon className="w-8 h-8 mb-2" />
-            <span className="text-xs text-center px-2">Sin preview</span>
-          </div>
-        )}
+        {imageLoadState === 'error' ||
+          (!imageSrc && (
+            <div className="bg-muted text-muted-foreground absolute inset-0 flex flex-col items-center justify-center">
+              <ImageIcon className="mb-2 h-8 w-8" />
+              <span className="px-2 text-center text-xs">Sin preview</span>
+            </div>
+          ))}
       </div>
     );
   };
@@ -215,28 +238,30 @@ const PhotoCard: React.FC<{
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         className={cn(
-          "flex items-center gap-4 p-3 rounded-lg border transition-all duration-200",
-          isSelected ? "bg-purple-50 border-purple-500" : "bg-white hover:bg-gray-50",
-          photo.approved ? "border-l-4 border-l-green-500" : ""
+          'flex items-center gap-4 rounded-lg border p-3 transition-all duration-200',
+          isSelected
+            ? 'border-purple-500 bg-purple-50'
+            : 'bg-white hover:bg-gray-50',
+          photo.approved ? 'border-l-4 border-l-green-500' : ''
         )}
       >
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onSelect(photo.id)}
         />
-        <OptimizedImage className="w-12 h-12 rounded flex-shrink-0" />
-        <div className="flex-1 min-w-0">
+        <OptimizedImage className="h-12 w-12 flex-shrink-0 rounded" />
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-medium truncate">{photo.original_filename}</h3>
+            <h3 className="truncate font-medium">{photo.original_filename}</h3>
             <div className="flex gap-1">
               {photo.approved && (
-                <Badge variant="default" className="text-xs bg-green-500">
+                <Badge variant="default" className="bg-green-500 text-xs">
                   Aprobada
                 </Badge>
               )}
               {photo.tagged && (
                 <Badge variant="secondary" className="text-xs">
-                  <TagIcon className="w-3 h-3 mr-1" />
+                  <TagIcon className="mr-1 h-3 w-3" />
                   Etiquetada
                 </Badge>
               )}
@@ -246,11 +271,13 @@ const PhotoCard: React.FC<{
             <span>{formatFileSize(photo.file_size)}</span>
             <span>{formatDate(photo.created_at)}</span>
             {photo.width && photo.height && (
-              <span>{photo.width} × {photo.height}</span>
+              <span>
+                {photo.width} × {photo.height}
+              </span>
             )}
             {photo.subject && (
               <span className="flex items-center gap-1">
-                <UserIcon className="w-3 h-3" />
+                <UserIcon className="h-3 w-3" />
                 {photo.subject.name}
               </span>
             )}
@@ -259,7 +286,7 @@ const PhotoCard: React.FC<{
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              <MoreVerticalIcon className="w-4 h-4" />
+              <MoreVerticalIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -271,20 +298,20 @@ const PhotoCard: React.FC<{
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onApprove(photo.id)}>
-              <CheckSquareIcon className="w-4 h-4 mr-2" />
+              <CheckSquareIcon className="mr-2 h-4 w-4" />
               {photo.approved ? 'Desaprobar' : 'Aprobar'}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onTag}>
-              <TagIcon className="w-4 h-4 mr-2" />
+              <TagIcon className="mr-2 h-4 w-4" />
               Etiquetar alumno
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onDownload}>
-              <DownloadIcon className="w-4 h-4 mr-2" />
+              <DownloadIcon className="mr-2 h-4 w-4" />
               Descargar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-600" onClick={onDelete}>
-              <TrashIcon className="w-4 h-4 mr-2" />
+              <TrashIcon className="mr-2 h-4 w-4" />
               Eliminar
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -311,22 +338,27 @@ const PhotoCard: React.FC<{
         setIsDragging(true);
         handleDragStart?.(photo.id, e);
       }}
-      onDragEnd={() => { setIsDragging(false); handleDragEnd?.(); }}
+      onDragEnd={() => {
+        setIsDragging(false);
+        handleDragEnd?.();
+      }}
       className={cn(
-        "relative overflow-hidden rounded-xl border bg-card text-card-foreground transition-all duration-200 group cursor-pointer hover:shadow-lg",
-        "mobile:rounded-lg mobile:border-2", // Simpler styling on mobile
-        isSelected ? "ring-2 ring-primary shadow-lg border-primary" : "hover:border-gray-400",
-        isDragging ? "scale-[1.02] shadow-2xl cursor-grabbing" : "",
-        "draggable"
+        'bg-card text-card-foreground group relative cursor-pointer overflow-hidden rounded-xl border transition-all duration-200 hover:shadow-lg',
+        'mobile:rounded-lg mobile:border-2', // Simpler styling on mobile
+        isSelected
+          ? 'ring-primary border-primary shadow-lg ring-2'
+          : 'hover:border-gray-400',
+        isDragging ? 'scale-[1.02] cursor-grabbing shadow-2xl' : '',
+        'draggable'
       )}
       onClick={onOpenPreview}
     >
-      <div className="aspect-square relative bg-gray-100">
-        <OptimizedImage className="w-full h-full" />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
+      <div className="relative aspect-square bg-gray-100">
+        <OptimizedImage className="h-full w-full" />
+        <div className="absolute inset-0 bg-black/0 transition-all duration-200 group-hover:bg-black/20" />
         {/* 3-dot menu */}
         <div
-          className="absolute top-2 right-10 z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute right-10 top-2 z-20 opacity-0 transition-opacity group-hover:opacity-100"
           data-no-drag="true"
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => e.preventDefault()}
@@ -334,32 +366,66 @@ const PhotoCard: React.FC<{
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
-                <MoreVerticalIcon className="w-4 h-4" />
+                <MoreVerticalIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpenPreview(); }}>Ver grande</DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onMove(photo.id); }}>Mover a…</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenPreview();
+                }}
+              >
+                Ver grande
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove(photo.id);
+                }}
+              >
+                Mover a…
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onApprove(photo.id); }}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onApprove(photo.id);
+                }}
+              >
                 {photo.approved ? 'Desaprobar' : 'Aprobar'}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(); }}>Descargar</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload();
+                }}
+              >
+                Descargar
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600" onClick={(e) => { e.stopPropagation(); onDelete(); }}>Eliminar</DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                Eliminar
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        
+
         {/* Selection checkbox + visual tick overlay */}
         <div
-          className="absolute top-1 left-1 z-20"
+          className="absolute left-1 top-1 z-20"
           data-no-drag="true"
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => e.preventDefault()}
         >
-          <div 
-            className="bg-white/80 backdrop-blur-sm rounded p-px shadow-sm"
+          <div
+            className="rounded bg-white/80 p-px shadow-sm backdrop-blur-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <Checkbox
@@ -367,7 +433,7 @@ const PhotoCard: React.FC<{
               onCheckedChange={() => {
                 onSelect(photo.id);
               }}
-              className="h-3 w-3 sm:h-3.5 sm:w-3.5 rounded border border-gray-400 bg-white shadow-sm cursor-pointer hover:border-primary transition-colors data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary"
+              className="hover:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary h-3 w-3 cursor-pointer rounded border border-gray-400 bg-white shadow-sm transition-colors sm:h-3.5 sm:w-3.5"
               onClick={(e) => e.stopPropagation()}
               aria-label="Seleccionar foto"
             />
@@ -375,14 +441,14 @@ const PhotoCard: React.FC<{
         </div>
 
         {/* Status badges */}
-        <div className="absolute top-1 right-1 flex flex-col gap-0.5">
+        <div className="absolute right-1 top-1 flex flex-col gap-0.5">
           {photo.approved && (
-            <Badge className="rounded px-1.5 py-0.5 text-[10px] bg-emerald-600 text-white dark:bg-emerald-500 dark:text-foreground">
+            <Badge className="dark:text-foreground rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] text-white dark:bg-emerald-500">
               Aprobada
             </Badge>
           )}
           {photo.tagged && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+            <Badge variant="secondary" className="px-1.5 py-0.5 text-[10px]">
               Etiquetada
             </Badge>
           )}
@@ -392,59 +458,63 @@ const PhotoCard: React.FC<{
 
         {/* Actions overlay - Hidden on mobile, visible on hover for desktop */}
         <div
-          className="hidden lg:flex absolute inset-0 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10 cursor-default pointer-events-none"
+          className="pointer-events-none absolute inset-0 z-10 hidden cursor-default items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 lg:flex"
           data-no-drag="true"
           onMouseDown={(e) => e.stopPropagation()}
           onDragStart={(e) => e.preventDefault()}
         >
-          <div className="flex gap-1 pointer-events-auto">
+          <div className="pointer-events-auto flex gap-1">
             <Button
               size="sm"
               variant="secondary"
-              className="p-1 h-6 text-xs"
+              className="h-6 p-1 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onApprove(photo.id);
               }}
             >
-              {photo.approved ? <XIcon className="w-3 h-3" /> : <CheckIcon className="w-3 h-3" />}
+              {photo.approved ? (
+                <XIcon className="h-3 w-3" />
+              ) : (
+                <CheckIcon className="h-3 w-3" />
+              )}
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="secondary"
-              className="p-1 h-6 text-xs"
+              className="h-6 p-1 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onTag();
               }}
             >
-              <TagIcon className="w-3 h-3" />
+              <TagIcon className="h-3 w-3" />
             </Button>
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               variant="secondary"
-              className="p-1 h-6 text-xs"
+              className="h-6 p-1 text-xs"
               onClick={(e) => {
                 e.stopPropagation();
                 onDownload();
               }}
             >
-              <DownloadIcon className="w-3 h-3" />
+              <DownloadIcon className="h-3 w-3" />
             </Button>
           </div>
         </div>
 
         {/* Mobile action indicators */}
-        <div className="lg:hidden absolute top-2 right-2 z-10 pointer-events-none">
+        <div className="pointer-events-none absolute right-2 top-2 z-10 lg:hidden">
           <div className="flex flex-col gap-1">
             {photo.approved && (
-              <div className="bg-green-500 text-white rounded-full p-1">
-                <CheckIcon className="w-3 h-3" />
+              <div className="rounded-full bg-green-500 p-1 text-white">
+                <CheckIcon className="h-3 w-3" />
               </div>
             )}
             {photo.tagged && (
-              <div className="bg-blue-500 text-white rounded-full p-1">
-                <TagIcon className="w-3 h-3" />
+              <div className="rounded-full bg-blue-500 p-1 text-white">
+                <TagIcon className="h-3 w-3" />
               </div>
             )}
           </div>
@@ -452,15 +522,17 @@ const PhotoCard: React.FC<{
       </div>
 
       {/* Photo info */}
-      <div className="p-2 text-xs text-muted-foreground truncate">
-        <h3 className="font-medium truncate text-sm">{photo.original_filename}</h3>
-        <div className="flex items-center justify-between mt-1">
+      <div className="text-muted-foreground truncate p-2 text-xs">
+        <h3 className="truncate text-sm font-medium">
+          {photo.original_filename}
+        </h3>
+        <div className="mt-1 flex items-center justify-between">
           <span>{formatFileSize(photo.file_size)}</span>
           <span>{formatDate(photo.created_at)}</span>
         </div>
         {photo.subject && (
-          <div className="flex items-center gap-1 mt-2">
-            <UserIcon className="w-3 h-3" />
+          <div className="mt-2 flex items-center gap-1">
+            <UserIcon className="h-3 w-3" />
             <span>{photo.subject.name}</span>
           </div>
         )}
@@ -493,14 +565,18 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending' | 'tagged'>('all');
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'approved' | 'pending' | 'tagged'
+  >('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   // QR Tagging Mode State
   const [isQRTagMode, setIsQRTagMode] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState<StudentInfo | null>(null);
+  const [currentStudent, setCurrentStudent] = useState<StudentInfo | null>(
+    null
+  );
   const [isAssigningPhotos, setIsAssigningPhotos] = useState(false);
 
   // Drag & Drop State
@@ -517,7 +593,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   // Codes state for move operations
   const [codes, setCodes] = useState<CodeRow[]>([]);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
-  const [moveSelectedCodeId, setMoveSelectedCodeId] = useState<string>("");
+  const [moveSelectedCodeId, setMoveSelectedCodeId] = useState<string>('');
   const [movePhotoIds, setMovePhotoIds] = useState<string[]>([]);
 
   // Add state for selected events
@@ -528,23 +604,30 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
 
   // Filter photos based on search, event, and status
   const filteredPhotos = useMemo(() => {
-    return photos.filter(photo => {
-      const matchesSearch = photo.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           photo.subject?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return photos.filter((photo) => {
+      const matchesSearch =
+        photo.original_filename
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        photo.subject?.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesEvent = !selectedEvent || photo.event_id === selectedEvent;
-      const matchesStatus = filterStatus === 'all' ||
-                           (filterStatus === 'approved' && photo.approved) ||
-                           (filterStatus === 'pending' && !photo.approved) ||
-                           (filterStatus === 'tagged' && photo.tagged);
-      
+      const matchesStatus =
+        filterStatus === 'all' ||
+        (filterStatus === 'approved' && photo.approved) ||
+        (filterStatus === 'pending' && !photo.approved) ||
+        (filterStatus === 'tagged' && photo.tagged);
+
       return matchesSearch && matchesEvent && matchesStatus;
     });
   }, [photos, searchQuery, selectedEvent, filterStatus]);
 
   // Load photos for selected event or general gallery (server-side filtering)
   const fetchPhotosForEvent = useCallback(async () => {
-    const effectiveEvent = typeof externalSelectedEvent !== 'undefined' ? externalSelectedEvent : selectedEvent;
-    
+    const effectiveEvent =
+      typeof externalSelectedEvent !== 'undefined'
+        ? externalSelectedEvent
+        : selectedEvent;
+
     try {
       // Use buildPhotosUrl helper to ensure event_id is always included
       let url = '';
@@ -552,14 +635,14 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         url = buildPhotosUrl({
           eventId: effectiveEvent,
           codeId: externalCodeId === 'null' ? 'null' : (externalCodeId ?? null),
-          limit: 100
+          limit: 100,
         });
       } else {
         const usp = new URLSearchParams();
         usp.set('limit', '100');
         url = `/api/admin/photos?${usp.toString()}`;
       }
-      
+
       console.debug('[photos] Fetching:', url);
       const resp = await fetch(url);
       const data = await resp.json();
@@ -591,10 +674,12 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   // Load codes: if there is a selected event, fetch for that event; otherwise fetch all
   const fetchCodesForEvent = useCallback(async () => {
     try {
-      const url = selectedEvent ? `/api/admin/publish/list?eventId=${selectedEvent}` : `/api/admin/publish/list`;
+      const url = selectedEvent
+        ? `/api/admin/publish/list?eventId=${selectedEvent}`
+        : `/api/admin/publish/list`;
       const resp = await fetch(url);
       const data = await resp.json();
-      const arr = Array.isArray(data) ? data : (data.rows || data.data || []);
+      const arr = Array.isArray(data) ? data : data.rows || data.data || [];
       const rows: CodeRow[] = arr.map((c: any) => ({
         id: (c.id ?? c.code_id) as string,
         event_id: (selectedEvent ?? (c.event_id as string)) as string,
@@ -614,23 +699,28 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     void fetchCodesForEvent();
   }, [fetchCodesForEvent]);
 
-  const ensurePreviewUrl = useCallback(async (index: number) => {
-    const p = filteredPhotos[index];
-    if (!p) return;
-    if (p.preview_url) return;
-    try {
-      const resp = await fetch(`/api/admin/photos/download`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photoIds: [p.id], as: 'single' }),
-      });
-      if (!resp.ok) return;
-      const data = await resp.json();
-      const url = Array.isArray(data.urls) ? data.urls[0] : undefined;
-      if (!url) return;
-      setPhotos(prev => prev.map(ph => ph.id === p.id ? { ...ph, preview_url: url } : ph));
-    } catch {}
-  }, [filteredPhotos]);
+  const ensurePreviewUrl = useCallback(
+    async (index: number) => {
+      const p = filteredPhotos[index];
+      if (!p) return;
+      if (p.preview_url) return;
+      try {
+        const resp = await fetch(`/api/admin/photos/download`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photoIds: [p.id], as: 'single' }),
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const url = Array.isArray(data.urls) ? data.urls[0] : undefined;
+        if (!url) return;
+        setPhotos((prev) =>
+          prev.map((ph) => (ph.id === p.id ? { ...ph, preview_url: url } : ph))
+        );
+      } catch {}
+    },
+    [filteredPhotos]
+  );
 
   // Update photos when props change
   useEffect(() => {
@@ -641,13 +731,11 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     setEvents(initialEvents);
   }, [initialEvents]);
 
-  
-
   // Handle photo selection
   const handlePhotoSelect = useCallback((photoId: string) => {
-    setSelectedPhotos(prev => 
-      prev.includes(photoId) 
-        ? prev.filter(id => id !== photoId)
+    setSelectedPhotos((prev) =>
+      prev.includes(photoId)
+        ? prev.filter((id) => id !== photoId)
         : [...prev, photoId]
     );
   }, []);
@@ -657,47 +745,55 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     if (selectedPhotos.length === filteredPhotos.length) {
       setSelectedPhotos([]);
     } else {
-      setSelectedPhotos(filteredPhotos.map(photo => photo.id));
+      setSelectedPhotos(filteredPhotos.map((photo) => photo.id));
     }
   }, [selectedPhotos, filteredPhotos]);
 
   // Bulk move via codes is handled by modal; legacy event move removed
 
   // Handle approve toggle
-  const handleApprove = useCallback(async (photoId: string) => {
-    const photo = photos.find(p => p.id === photoId);
-    if (!photo) return;
+  const handleApprove = useCallback(
+    async (photoId: string) => {
+      const photo = photos.find((p) => p.id === photoId);
+      if (!photo) return;
 
-    try {
-      await onPhotoApprove?.([photoId], !photo.approved);
-      setPhotos(prev => prev.map(p => 
-        p.id === photoId 
-          ? { ...p, approved: !p.approved }
-          : p
-      ));
-      toast.success(photo.approved ? 'Foto desaprobada' : 'Foto aprobada');
-    } catch (error) {
-      toast.error('Error al cambiar el estado de la foto');
-    }
-  }, [photos, onPhotoApprove]);
+      try {
+        await onPhotoApprove?.([photoId], !photo.approved);
+        setPhotos((prev) =>
+          prev.map((p) =>
+            p.id === photoId ? { ...p, approved: !p.approved } : p
+          )
+        );
+        toast.success(photo.approved ? 'Foto desaprobada' : 'Foto aprobada');
+      } catch (error) {
+        toast.error('Error al cambiar el estado de la foto');
+      }
+    },
+    [photos, onPhotoApprove]
+  );
 
   // Handle bulk approve
-  const handleBulkApprove = useCallback(async (approved: boolean) => {
-    if (selectedPhotos.length === 0) return;
+  const handleBulkApprove = useCallback(
+    async (approved: boolean) => {
+      if (selectedPhotos.length === 0) return;
 
-    try {
-      await onPhotoApprove?.(selectedPhotos, approved);
-      setPhotos(prev => prev.map(photo => 
-        selectedPhotos.includes(photo.id) 
-          ? { ...photo, approved }
-          : photo
-      ));
-      toast.success(`${selectedPhotos.length} fotos ${approved ? 'aprobadas' : 'desaprobadas'}`);
-      setSelectedPhotos([]);
-    } catch (error) {
-      toast.error('Error al cambiar el estado de las fotos');
-    }
-  }, [selectedPhotos, onPhotoApprove]);
+      try {
+        await onPhotoApprove?.(selectedPhotos, approved);
+        setPhotos((prev) =>
+          prev.map((photo) =>
+            selectedPhotos.includes(photo.id) ? { ...photo, approved } : photo
+          )
+        );
+        toast.success(
+          `${selectedPhotos.length} fotos ${approved ? 'aprobadas' : 'desaprobadas'}`
+        );
+        setSelectedPhotos([]);
+      } catch (error) {
+        toast.error('Error al cambiar el estado de las fotos');
+      }
+    },
+    [selectedPhotos, onPhotoApprove]
+  );
 
   // Add state:
   const [autoProcess, setAutoProcess] = useState(() => {
@@ -715,74 +811,91 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   }, [autoProcess]);
 
   // Handle file upload - works with or without event
-  const handleFileUpload = useCallback(async (files: FileList) => {
-    // Get effective selected event (prioritize external over internal)
-    const effectiveEvent = typeof externalSelectedEvent !== 'undefined' ? externalSelectedEvent : selectedEvent;
-    
-    // No longer require event - can upload to general gallery
-    const eventId = effectiveEvent || null;
-    
-    setIsUploading(true);
-    try {
-      await onPhotoUpload?.(Array.from(files), eventId || undefined as unknown as string);
-      toast.success(`${files.length} fotos enviadas. Verificando procesamiento...`);
-      if (autoProcess && eventId) {
-        const t = toast.loading('Procesando fotos...');
-        try {
-          // Watermark
-          const watermarkRes = await fetch(`/api/admin/photos/watermark`, {
-            method: 'POST',
-            body: JSON.stringify({ eventId }),
-            headers: { 'Content-Type': 'application/json' }
-          });
-          if (!watermarkRes.ok) {
-            console.warn('Watermark processing failed:', await watermarkRes.text());
-          }
-          
-          // Anchor detection (opcional, no falla si hay error)
+  const handleFileUpload = useCallback(
+    async (files: FileList) => {
+      // Get effective selected event (prioritize external over internal)
+      const effectiveEvent =
+        typeof externalSelectedEvent !== 'undefined'
+          ? externalSelectedEvent
+          : selectedEvent;
+
+      // No longer require event - can upload to general gallery
+      const eventId = effectiveEvent || null;
+
+      setIsUploading(true);
+      try {
+        await onPhotoUpload?.(
+          Array.from(files),
+          eventId || (undefined as unknown as string)
+        );
+        toast.success(
+          `${files.length} fotos enviadas. Verificando procesamiento...`
+        );
+        if (autoProcess && eventId) {
+          const t = toast.loading('Procesando fotos...');
           try {
-            const anchorRes = await fetch(`/api/admin/anchor-detect`, {
-              method: 'POST',
-              body: JSON.stringify({ eventId, onlyMissing: true }),
-              headers: { 'Content-Type': 'application/json' }
-            });
-            if (!anchorRes.ok) {
-              console.warn('Anchor detection skipped:', await anchorRes.text());
-            }
-          } catch (err) {
-            console.warn('Anchor detection error (non-blocking):', err);
-          }
-          
-          // Grouping (opcional, no falla si hay error)
-          try {
-            const groupRes = await fetch(`/api/admin/group`, {
+            // Watermark
+            const watermarkRes = await fetch(`/api/admin/photos/watermark`, {
               method: 'POST',
               body: JSON.stringify({ eventId }),
-              headers: { 'Content-Type': 'application/json' }
+              headers: { 'Content-Type': 'application/json' },
             });
-            if (!groupRes.ok) {
-              console.warn('Photo grouping skipped:', await groupRes.text());
+            if (!watermarkRes.ok) {
+              console.warn(
+                'Watermark processing failed:',
+                await watermarkRes.text()
+              );
             }
+
+            // Anchor detection (opcional, no falla si hay error)
+            try {
+              const anchorRes = await fetch(`/api/admin/anchor-detect`, {
+                method: 'POST',
+                body: JSON.stringify({ eventId, onlyMissing: true }),
+                headers: { 'Content-Type': 'application/json' },
+              });
+              if (!anchorRes.ok) {
+                console.warn(
+                  'Anchor detection skipped:',
+                  await anchorRes.text()
+                );
+              }
+            } catch (err) {
+              console.warn('Anchor detection error (non-blocking):', err);
+            }
+
+            // Grouping (opcional, no falla si hay error)
+            try {
+              const groupRes = await fetch(`/api/admin/group`, {
+                method: 'POST',
+                body: JSON.stringify({ eventId }),
+                headers: { 'Content-Type': 'application/json' },
+              });
+              if (!groupRes.ok) {
+                console.warn('Photo grouping skipped:', await groupRes.text());
+              }
+            } catch (err) {
+              console.warn('Photo grouping error (non-blocking):', err);
+            }
+
+            toast.success('Fotos procesadas', { id: t });
           } catch (err) {
-            console.warn('Photo grouping error (non-blocking):', err);
+            console.error('Processing error:', err);
+            toast.warning('Procesamiento parcial completado', { id: t });
           }
-          
-          toast.success('Fotos procesadas', { id: t });
-        } catch (err) {
-          console.error('Processing error:', err);
-          toast.warning('Procesamiento parcial completado', { id: t });
         }
+        // Forzar refresh de lista para reflejar realmente lo subido
+        await onRefresh?.();
+        await onCountsChanged?.();
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        toast.error(error.message || 'Error al subir las fotos');
+      } finally {
+        setIsUploading(false);
       }
-      // Forzar refresh de lista para reflejar realmente lo subido
-      await onRefresh?.();
-      await onCountsChanged?.();
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast.error(error.message || 'Error al subir las fotos');
-    } finally {
-      setIsUploading(false);
-    }
-  }, [selectedEvent, onPhotoUpload, onRefresh, autoProcess, onCountsChanged]);
+    },
+    [selectedEvent, onPhotoUpload, onRefresh, autoProcess, onCountsChanged]
+  );
 
   // Handle delete selected
   const handleDeleteSelected = useCallback(async () => {
@@ -796,7 +909,11 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         return;
       }
 
-      if (confirm(`¿Estás seguro de eliminar TODAS las ${photosCount} fotos de esta vista?`)) {
+      if (
+        confirm(
+          `¿Estás seguro de eliminar TODAS las ${photosCount} fotos de esta vista?`
+        )
+      ) {
         try {
           if (selectedEvent) {
             // Preferred: Delete by filter (eventId + codeId)
@@ -805,8 +922,8 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 eventId: selectedEvent,
-                codeId: externalCodeId ?? 'null'
-              })
+                codeId: externalCodeId ?? 'null',
+              }),
             });
             const result = await response.json();
             if (!response.ok) {
@@ -829,7 +946,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               const response = await fetch('/api/admin/photos', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photoIds: chunk })
+                body: JSON.stringify({ photoIds: chunk }),
               });
               const result = await response.json().catch(() => ({}));
               if (!response.ok) {
@@ -848,10 +965,16 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       }
     } else {
       // Delete specific selected photos
-      if (confirm(`¿Estás seguro de eliminar ${selectedPhotos.length} fotos seleccionadas?`)) {
+      if (
+        confirm(
+          `¿Estás seguro de eliminar ${selectedPhotos.length} fotos seleccionadas?`
+        )
+      ) {
         try {
           await onPhotoDelete?.(selectedPhotos);
-          setPhotos(prev => prev.filter(photo => !selectedPhotos.includes(photo.id)));
+          setPhotos((prev) =>
+            prev.filter((photo) => !selectedPhotos.includes(photo.id))
+          );
           toast.success(`${selectedPhotos.length} fotos eliminadas`);
           setSelectedPhotos([]);
         } catch (error) {
@@ -859,7 +982,14 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         }
       }
     }
-  }, [selectedPhotos, selectedEvent, externalCodeId, photos.length, onPhotoDelete, onRefresh]);
+  }, [
+    selectedPhotos,
+    selectedEvent,
+    externalCodeId,
+    photos.length,
+    onPhotoDelete,
+    onRefresh,
+  ]);
 
   // QR Tagging Functions
   const handleStartQRTagging = useCallback(() => {
@@ -879,7 +1009,9 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   const handleStudentScanned = useCallback(async (student: StudentInfo) => {
     setCurrentStudent(student);
     setShowQRScanner(false);
-    toast.success(`Estudiante seleccionado: ${student.name}. Ahora selecciona las fotos para etiquetar.`);
+    toast.success(
+      `Estudiante seleccionado: ${student.name}. Ahora selecciona las fotos para etiquetar.`
+    );
   }, []);
 
   const handleAssignPhotosToStudent = useCallback(async () => {
@@ -893,21 +1025,25 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       }
 
       // Update local state to reflect the tagging
-      setPhotos(prev => prev.map(photo => 
-        selectedPhotos.includes(photo.id) 
-          ? { 
-              ...photo, 
-              tagged: true,
-              subject: {
-                id: currentStudent.id,
-                name: currentStudent.name
+      setPhotos((prev) =>
+        prev.map((photo) =>
+          selectedPhotos.includes(photo.id)
+            ? {
+                ...photo,
+                tagged: true,
+                subject: {
+                  id: currentStudent.id,
+                  name: currentStudent.name,
+                },
               }
-            }
-          : photo
-      ));
+            : photo
+        )
+      );
 
-      toast.success(`${selectedPhotos.length} fotos asignadas a ${currentStudent.name}`);
-      
+      toast.success(
+        `${selectedPhotos.length} fotos asignadas a ${currentStudent.name}`
+      );
+
       // Clear selection but keep student active for next batch
       setSelectedPhotos([]);
     } catch (error) {
@@ -919,37 +1055,42 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
   }, [currentStudent, selectedPhotos, onPhotoTag]);
 
   // Session Mode Functions
-  const handleSessionPhotoAssign = useCallback(async (photoIds: string[], subjectId: string) => {
-    try {
-      // Call the tagging function for each photo
-      for (const photoId of photoIds) {
-        await onPhotoTag?.(photoId, subjectId);
+  const handleSessionPhotoAssign = useCallback(
+    async (photoIds: string[], subjectId: string) => {
+      try {
+        // Call the tagging function for each photo
+        for (const photoId of photoIds) {
+          await onPhotoTag?.(photoId, subjectId);
+        }
+
+        // Update local state to reflect the tagging
+        setPhotos((prev) =>
+          prev.map((photo) =>
+            photoIds.includes(photo.id)
+              ? {
+                  ...photo,
+                  tagged: true,
+                  subject: {
+                    id: subjectId,
+                    name: 'Asignado', // This will be updated when photos refresh
+                  },
+                }
+              : photo
+          )
+        );
+
+        // Refresh to get updated data
+        await onRefresh?.();
+      } catch (error) {
+        console.error('Error assigning photos in session mode:', error);
+        throw error;
       }
-
-      // Update local state to reflect the tagging
-      setPhotos(prev => prev.map(photo => 
-        photoIds.includes(photo.id) 
-          ? { 
-              ...photo, 
-              tagged: true,
-              subject: {
-                id: subjectId,
-                name: 'Asignado' // This will be updated when photos refresh
-              }
-            }
-          : photo
-      ));
-
-      // Refresh to get updated data
-      await onRefresh?.();
-    } catch (error) {
-      console.error('Error assigning photos in session mode:', error);
-      throw error;
-    }
-  }, [onPhotoTag, onRefresh]);
+    },
+    [onPhotoTag, onRefresh]
+  );
 
   const handleToggleSessionMode = useCallback(() => {
-    setIsSessionMode(prev => !prev);
+    setIsSessionMode((prev) => !prev);
     if (isSessionMode) {
       // Exiting session mode
       setSelectedPhotos([]);
@@ -970,11 +1111,14 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     setIsDragMode(false);
   }, []);
 
-  const handleDragOverCode = useCallback((codeId: string, e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDropTargetCode(codeId);
-  }, []);
+  const handleDragOverCode = useCallback(
+    (codeId: string, e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDropTargetCode(codeId);
+    },
+    []
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     // Only clear drop target if we're actually leaving the drop zone
@@ -983,85 +1127,98 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     }
   }, []);
 
-  const handleDropToCode = useCallback(async (targetCodeId: string, e: React.DragEvent) => {
-    e.preventDefault();
-    const photoId = e.dataTransfer.getData('text/plain');
-    if (!photoId || !draggedPhoto || draggedPhoto !== photoId) return;
+  const handleDropToCode = useCallback(
+    async (targetCodeId: string, e: React.DragEvent) => {
+      e.preventDefault();
+      const photoId = e.dataTransfer.getData('text/plain');
+      if (!photoId || !draggedPhoto || draggedPhoto !== photoId) return;
 
-    try {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.debug('[MOVE] payload', { photoId, codeId: targetCodeId });
-      }
-      const response = await fetch(`/api/admin/photos/${photoId}/move`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ codeId: targetCodeId }),
-      });
+      try {
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.debug('[MOVE] payload', { photoId, codeId: targetCodeId });
+        }
+        const response = await fetch(`/api/admin/photos/${photoId}/move`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ codeId: targetCodeId }),
+        });
 
-      if (!response.ok) {
-        try {
-          const j = await response.json();
-          if (response.status === 400 && j?.error) {
-            toast.error(j.error);
-          } else {
+        if (!response.ok) {
+          try {
+            const j = await response.json();
+            if (response.status === 400 && j?.error) {
+              toast.error(j.error);
+            } else {
+              toast.error('Error al mover la foto');
+            }
+          } catch {
             toast.error('Error al mover la foto');
           }
-        } catch {
-          toast.error('Error al mover la foto');
+          return;
         }
-        return;
-      }
 
-      setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, code_id: targetCodeId } : p));
-      onCountsChanged?.();
-      toast.success('Foto movida');
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Error moving photo:', error);
-      toast.error('Error al mover la foto');
-    } finally {
-      handleDragEnd();
-    }
-  }, [draggedPhoto]);
+        setPhotos((prev) =>
+          prev.map((p) =>
+            p.id === photoId ? { ...p, code_id: targetCodeId } : p
+          )
+        );
+        onCountsChanged?.();
+        toast.success('Foto movida');
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error moving photo:', error);
+        toast.error('Error al mover la foto');
+      } finally {
+        handleDragEnd();
+      }
+    },
+    [draggedPhoto]
+  );
 
   // Download Functions
-  const handleDownloadPhoto = useCallback(async (photoId: string) => {
-    try {
-      const photo = photos.find(p => p.id === photoId);
-      if (!photo) return;
+  const handleDownloadPhoto = useCallback(
+    async (photoId: string) => {
+      try {
+        const photo = photos.find((p) => p.id === photoId);
+        if (!photo) return;
 
-      // Server-side signed URL via new admin endpoint
-      const response = await fetch(`/api/admin/photos/download`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photoIds: [photo.id], as: 'single' }),
-      });
+        // Server-side signed URL via new admin endpoint
+        const response = await fetch(`/api/admin/photos/download`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photoIds: [photo.id], as: 'single' }),
+        });
 
-      if (!response.ok) {
-        let msg = 'Failed to get download URL';
-        try { const j = await response.json(); msg = j?.error || msg } catch {}
-        throw new Error(msg);
+        if (!response.ok) {
+          let msg = 'Failed to get download URL';
+          try {
+            const j = await response.json();
+            msg = j?.error || msg;
+          } catch {}
+          throw new Error(msg);
+        }
+
+        const data = await response.json();
+        const url = Array.isArray(data.urls) ? data.urls[0] : undefined;
+        if (!url) throw new Error('Missing download URL');
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = photo.original_filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success('Descarga iniciada');
+      } catch (error: any) {
+        console.error('Error downloading photo:', error);
+        toast.error(error?.message || 'Error al descargar la foto');
       }
-
-      const data = await response.json();
-      const url = Array.isArray(data.urls) ? data.urls[0] : undefined;
-      if (!url) throw new Error('Missing download URL');
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = photo.original_filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('Descarga iniciada');
-    } catch (error: any) {
-      console.error('Error downloading photo:', error);
-      toast.error(error?.message || 'Error al descargar la foto');
-    }
-  }, [photos]);
+    },
+    [photos]
+  );
 
   const handleDownloadSelected = useCallback(async () => {
     if (selectedPhotos.length === 0) return;
@@ -1086,7 +1243,10 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
 
       if (!response.ok) {
         let msg = 'No se pudo preparar el ZIP';
-        try { const j = await response.json(); msg = j?.error || msg } catch {}
+        try {
+          const j = await response.json();
+          msg = j?.error || msg;
+        } catch {}
         throw new Error(msg);
       }
 
@@ -1095,7 +1255,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `fotos_${new Date().toISOString().slice(0,10)}.zip`;
+      link.download = `fotos_${new Date().toISOString().slice(0, 10)}.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1138,7 +1298,11 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           throw new Error(j?.error || 'Error moviendo foto');
         }
       }
-      setPhotos(prev => prev.map(p => movePhotoIds.includes(p.id) ? { ...p, code_id: codeId } : p));
+      setPhotos((prev) =>
+        prev.map((p) =>
+          movePhotoIds.includes(p.id) ? { ...p, code_id: codeId } : p
+        )
+      );
       toast.success(`Movida(s) ${movePhotoIds.length} foto(s)`);
       onCountsChanged?.();
       setSelectedPhotos([]);
@@ -1161,204 +1325,229 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     setTaggingPhoto(null);
   }, []);
 
-  const handleManualTag = useCallback(async (studentId: string, studentName: string) => {
-    if (!taggingPhoto) return;
+  const handleManualTag = useCallback(
+    async (studentId: string, studentName: string) => {
+      if (!taggingPhoto) return;
 
-    try {
-      // Use the existing onPhotoTag prop
-      await onPhotoTag?.(taggingPhoto.id, studentId);
+      try {
+        // Use the existing onPhotoTag prop
+        await onPhotoTag?.(taggingPhoto.id, studentId);
 
-      // Update local state
-      setPhotos(prev => prev.map(photo => 
-        photo.id === taggingPhoto.id 
-          ? { 
-              ...photo, 
-              tagged: true,
-              subject: {
-                id: studentId,
-                name: studentName
-              }
-            }
-          : photo
-      ));
+        // Update local state
+        setPhotos((prev) =>
+          prev.map((photo) =>
+            photo.id === taggingPhoto.id
+              ? {
+                  ...photo,
+                  tagged: true,
+                  subject: {
+                    id: studentId,
+                    name: studentName,
+                  },
+                }
+              : photo
+          )
+        );
 
-      handleCloseTaggingModal();
-      
-    } catch (error) {
-      console.error('Error tagging photo manually:', error);
-      throw error; // Re-throw to let TaggingModal handle the error display
-    }
-  }, [taggingPhoto, onPhotoTag]);
+        handleCloseTaggingModal();
+      } catch (error) {
+        console.error('Error tagging photo manually:', error);
+        throw error; // Re-throw to let TaggingModal handle the error display
+      }
+    },
+    [taggingPhoto, onPhotoTag]
+  );
 
-  const effectiveSelectedEvent = typeof externalSelectedEvent !== 'undefined' ? externalSelectedEvent : selectedEvent;
-  const currentEvent = events.find(e => e.id === effectiveSelectedEvent);
+  const effectiveSelectedEvent =
+    typeof externalSelectedEvent !== 'undefined'
+      ? externalSelectedEvent
+      : selectedEvent;
+  const currentEvent = events.find((e) => e.id === effectiveSelectedEvent);
   const codesForCurrentEvent = useMemo(() => {
     if (!effectiveSelectedEvent) return codes; // show all codes when no event is selected
-    return codes.filter(c => c.event_id === effectiveSelectedEvent);
+    return codes.filter((c) => c.event_id === effectiveSelectedEvent);
   }, [codes, effectiveSelectedEvent]);
 
   return (
-    <div className={cn("w-full", compact ? "space-y-2" : "space-y-6", "mobile:space-y-3")}> 
+    <div
+      className={cn(
+        'w-full',
+        compact ? 'space-y-2' : 'space-y-6',
+        'mobile:space-y-3'
+      )}
+    >
       {/* Header */}
       {!hideHeader && (
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-4">
-        <div>
-          <h1 className="text-lg lg:text-3xl font-bold">Gestión de fotos</h1>
-          <p className="text-gray-500 text-xs lg:text-sm">
-            {currentEvent ? `${currentEvent.name} - ` : ''}{filteredPhotos.length} fotos
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Switch
-            id="auto-process"
-            checked={autoProcess}
-            onCheckedChange={setAutoProcess}
-          />
-          <Label htmlFor="auto-process" className="text-xs lg:text-sm">Auto-proceso</Label>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={onRefresh}
-            title={autoProcess ? 'Auto-marcado, QR y agrupación activados' : 'Solo subida manual'}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Actualizar
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-          >
-            <UploadIcon className="w-4 h-4 mr-2" />
-            {isUploading ? 'Subiendo...' : 'Subir fotos'}
-          </Button>
-          
-          {/* Mode Toggles */}
-          {!isQRTagMode && !isSessionMode ? (
-            <>
-              <Button
-                variant="secondary"
-                size="xs"
-                onClick={handleStartQRTagging}
-                className="bg-purple-100 text-purple-700 hover:bg-purple-200"
-              >
-                <QrCode className="w-4 h-4 mr-2" />
-                Modo QR
-              </Button>
-              <Button
-                variant="secondary"
-                size="xs"
-                onClick={handleToggleSessionMode}
-                className="bg-orange-100 text-orange-700 hover:bg-orange-200"
-              >
-                <UserIcon className="w-4 h-4 mr-2" />
-                Modo Sesión
-              </Button>
-            </>
-          ) : isQRTagMode ? (
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+          <div>
+            <h1 className="text-lg font-bold lg:text-3xl">Gestión de fotos</h1>
+            <p className="text-xs text-gray-500 lg:text-sm">
+              {currentEvent ? `${currentEvent.name} - ` : ''}
+              {filteredPhotos.length} fotos
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Switch
+              id="auto-process"
+              checked={autoProcess}
+              onCheckedChange={setAutoProcess}
+            />
+            <Label htmlFor="auto-process" className="text-xs lg:text-sm">
+              Auto-proceso
+            </Label>
             <Button
               variant="outline"
               size="xs"
-              onClick={handleStopQRTagging}
-              className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              onClick={onRefresh}
+              title={
+                autoProcess
+                  ? 'Auto-marcado, QR y agrupación activados'
+                  : 'Solo subida manual'
+              }
             >
-              <XIcon className="w-4 h-4 mr-2" />
-              Salir QR
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Actualizar
             </Button>
-          ) : null}
-          {selectedPhotos.length > 0 && !isQRTagMode && !isSessionMode && (
-            <>
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => handleBulkApprove(true)}
-              >
-                <CheckIcon className="w-4 h-4 mr-2" />
-                Aprobar ({selectedPhotos.length})
-              </Button>
-              <Button variant="outline" size="xs" onClick={openMoveModalForSelection}>
-                <MoveIcon className="w-4 h-4 mr-2" />
-                Mover a…
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={handleDownloadSelected}
-              >
-                <DownloadIcon className="w-4 h-4 mr-2" />
-                Descargar ({selectedPhotos.length})
-              </Button>
-              <Button
-                variant="danger"
-                size="xs"
-                onClick={handleDeleteSelected}
-              >
-                <TrashIcon className="w-4 h-4 mr-2" />
-                Eliminar ({selectedPhotos.length})
-              </Button>
-              <Button
-                variant="outline"
-                size="xs"
-                onClick={() => setSelectedPhotos([])}
-              >
-                <XIcon className="w-4 h-4 mr-2" />
-                Limpiar selección
-              </Button>
-            </>
-          )}
-          
-          {/* QR Tagging Actions */}
-          {isQRTagMode && (
-            <>
-              {!currentStudent && (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+            >
+              <UploadIcon className="mr-2 h-4 w-4" />
+              {isUploading ? 'Subiendo...' : 'Subir fotos'}
+            </Button>
+
+            {/* Mode Toggles */}
+            {!isQRTagMode && !isSessionMode ? (
+              <>
                 <Button
-                  variant="primary"
+                  variant="secondary"
                   size="xs"
-                  onClick={() => setShowQRScanner(true)}
+                  onClick={handleStartQRTagging}
+                  className="bg-purple-100 text-purple-700 hover:bg-purple-200"
                 >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Escanear QR
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Modo QR
                 </Button>
-              )}
-              
-              {currentStudent && selectedPhotos.length > 0 && (
                 <Button
-                  variant="primary"
+                  variant="secondary"
                   size="xs"
-                  onClick={handleAssignPhotosToStudent}
-                  disabled={isAssigningPhotos}
-                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleToggleSessionMode}
+                  className="bg-orange-100 text-orange-700 hover:bg-orange-200"
                 >
-                  {isAssigningPhotos ? (
-                    <>
-                      <Zap className="w-4 h-4 mr-2 animate-pulse" />
-                      Asignando...
-                    </>
-                  ) : (
-                    <>
-                      <TagIcon className="w-4 h-4 mr-2" />
-                      Asignar a {currentStudent.name} ({selectedPhotos.length})
-                    </>
-                  )}
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  Modo Sesión
                 </Button>
-              )}
-              
-              {currentStudent && (
+              </>
+            ) : isQRTagMode ? (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={handleStopQRTagging}
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                <XIcon className="mr-2 h-4 w-4" />
+                Salir QR
+              </Button>
+            ) : null}
+            {selectedPhotos.length > 0 && !isQRTagMode && !isSessionMode && (
+              <>
                 <Button
                   variant="outline"
                   size="xs"
-                  onClick={() => setShowQRScanner(true)}
-                  className="border-purple-300 text-purple-700"
+                  onClick={() => handleBulkApprove(true)}
                 >
-                  <QrCode className="w-4 h-4 mr-2" />
-                  Cambiar estudiante
+                  <CheckIcon className="mr-2 h-4 w-4" />
+                  Aprobar ({selectedPhotos.length})
                 </Button>
-              )}
-            </>
-          )}
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={openMoveModalForSelection}
+                >
+                  <MoveIcon className="mr-2 h-4 w-4" />
+                  Mover a…
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={handleDownloadSelected}
+                >
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Descargar ({selectedPhotos.length})
+                </Button>
+                <Button
+                  variant="danger"
+                  size="xs"
+                  onClick={handleDeleteSelected}
+                >
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Eliminar ({selectedPhotos.length})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  onClick={() => setSelectedPhotos([])}
+                >
+                  <XIcon className="mr-2 h-4 w-4" />
+                  Limpiar selección
+                </Button>
+              </>
+            )}
+
+            {/* QR Tagging Actions */}
+            {isQRTagMode && (
+              <>
+                {!currentStudent && (
+                  <Button
+                    variant="primary"
+                    size="xs"
+                    onClick={() => setShowQRScanner(true)}
+                  >
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Escanear QR
+                  </Button>
+                )}
+
+                {currentStudent && selectedPhotos.length > 0 && (
+                  <Button
+                    variant="primary"
+                    size="xs"
+                    onClick={handleAssignPhotosToStudent}
+                    disabled={isAssigningPhotos}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isAssigningPhotos ? (
+                      <>
+                        <Zap className="mr-2 h-4 w-4 animate-pulse" />
+                        Asignando...
+                      </>
+                    ) : (
+                      <>
+                        <TagIcon className="mr-2 h-4 w-4" />
+                        Asignar a {currentStudent.name} ({selectedPhotos.length}
+                        )
+                      </>
+                    )}
+                  </Button>
+                )}
+
+                {currentStudent && (
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => setShowQRScanner(true)}
+                    className="border-purple-300 text-purple-700"
+                  >
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Cambiar estudiante
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Session Mode */}
@@ -1367,13 +1556,13 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         return eventId ? (
           <div className="flex items-center gap-2">
             {!isSessionMode ? (
-              <Button 
-                variant="outline" 
-            size="xs" 
-                className="h-8 text-xs bg-white border-gray-300 hover:bg-gray-50"
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-8 border-gray-300 bg-white text-xs hover:bg-gray-50"
                 onClick={handleToggleSessionMode}
               >
-                <UserIcon className="w-3 h-3 mr-1" />
+                <UserIcon className="mr-1 h-3 w-3" />
                 Sesión
               </Button>
             ) : (
@@ -1398,19 +1587,23 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-4"
+          className="rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50 p-4"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <QrCode className="w-5 h-5 text-purple-600" />
+              <div className="rounded-lg bg-purple-100 p-2">
+                <QrCode className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-purple-900">Modo Etiquetado QR Activo</h3>
+                <h3 className="font-semibold text-purple-900">
+                  Modo Etiquetado QR Activo
+                </h3>
                 {currentStudent ? (
                   <div className="flex items-center gap-2 text-sm text-purple-700">
-                    <User className="w-4 h-4" />
-                    <span>Etiquetando para: <strong>{currentStudent.name}</strong></span>
+                    <User className="h-4 w-4" />
+                    <span>
+                      Etiquetando para: <strong>{currentStudent.name}</strong>
+                    </span>
                     <Badge variant="secondary" className="text-xs">
                       ID: {currentStudent.id}
                     </Badge>
@@ -1422,10 +1615,10 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 )}
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {selectedPhotos.length > 0 && currentStudent && (
-                <Badge className="bg-green-100 text-green-800 border-green-300">
+                <Badge className="border-green-300 bg-green-100 text-green-800">
                   {selectedPhotos.length} fotos seleccionadas
                 </Badge>
               )}
@@ -1435,18 +1628,19 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                   onClick={() => setShowQRScanner(true)}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
-                  <QrCode className="w-4 h-4 mr-2" />
+                  <QrCode className="mr-2 h-4 w-4" />
                   Escanear QR
                 </Button>
               )}
             </div>
           </div>
-          
+
           {currentStudent && selectedPhotos.length === 0 && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4" />
-                Selecciona las fotos que deseas asignar a <strong>{currentStudent.name}</strong>
+            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <p className="flex items-center gap-2 text-sm text-blue-800">
+                <ImageIcon className="h-4 w-4" />
+                Selecciona las fotos que deseas asignar a{' '}
+                <strong>{currentStudent.name}</strong>
               </p>
             </div>
           )}
@@ -1454,77 +1648,110 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       )}
 
       {/* Controls mejorados */}
-      <div className={cn("space-y-3", compact && "space-y-2")}>
+      <div className={cn('space-y-3', compact && 'space-y-2')}>
         {/* Barra de búsqueda */}
         <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-[200px]">
+          <div className="min-w-[200px] flex-1">
             <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
               <Input
                 placeholder="Buscar fotos por nombre o estudiante..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={cn("pl-9 border-gray-300 focus:border-blue-500 focus:ring-blue-500", compact ? "h-8 text-sm" : "h-10")}
+                className={cn(
+                  'border-gray-300 pl-9 focus:border-blue-500 focus:ring-blue-500',
+                  compact ? 'h-8 text-sm' : 'h-10'
+                )}
               />
             </div>
           </div>
-          
+
           {/* Vista toggle */}
-          <div className="flex items-center border border-gray-300 rounded-lg bg-white p-1">
+          <div className="flex items-center rounded-lg border border-gray-300 bg-white p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="xs"
               onClick={() => setViewMode('grid')}
-              className={cn('rounded-r-none h-7', viewMode === 'grid' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100')}
+              className={cn(
+                'h-7 rounded-r-none',
+                viewMode === 'grid'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              )}
               aria-label="Vista en grilla"
             >
-              <GridIcon className="w-4 h-4" />
+              <GridIcon className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="xs"
               onClick={() => setViewMode('list')}
-              className={cn('rounded-l-none -ml-px h-7', viewMode === 'list' ? 'bg-blue-500 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100')}
+              className={cn(
+                '-ml-px h-7 rounded-l-none',
+                viewMode === 'list'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              )}
               aria-label="Vista en lista"
             >
-              <ListIcon className="w-4 h-4" />
+              <ListIcon className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         {/* Filtros y acciones */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">Filtros:</span>
-            <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-1">
+            <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
               <Button
-                variant={filterStatus === 'all' ? "default" : "ghost"}
+                variant={filterStatus === 'all' ? 'default' : 'ghost'}
                 size="xs"
-                className={cn("font-medium h-7", filterStatus === 'all' ? "bg-gray-800 text-white" : "text-gray-600 hover:bg-gray-200")}
+                className={cn(
+                  'h-7 font-medium',
+                  filterStatus === 'all'
+                    ? 'bg-gray-800 text-white'
+                    : 'text-gray-600 hover:bg-gray-200'
+                )}
                 onClick={() => setFilterStatus('all')}
               >
                 Todas
               </Button>
               <Button
-                variant={filterStatus === 'approved' ? "default" : "ghost"}
+                variant={filterStatus === 'approved' ? 'default' : 'ghost'}
                 size="xs"
-                className={cn("font-medium h-7", filterStatus === 'approved' ? "bg-green-600 text-white" : "text-gray-600 hover:bg-green-100")}
+                className={cn(
+                  'h-7 font-medium',
+                  filterStatus === 'approved'
+                    ? 'bg-green-600 text-white'
+                    : 'text-gray-600 hover:bg-green-100'
+                )}
                 onClick={() => setFilterStatus('approved')}
               >
                 Aprobadas
               </Button>
               <Button
-                variant={filterStatus === 'pending' ? "default" : "ghost"}
+                variant={filterStatus === 'pending' ? 'default' : 'ghost'}
                 size="xs"
-                className={cn("font-medium h-7", filterStatus === 'pending' ? "bg-orange-600 text-white" : "text-gray-600 hover:bg-orange-100")}
+                className={cn(
+                  'h-7 font-medium',
+                  filterStatus === 'pending'
+                    ? 'bg-orange-600 text-white'
+                    : 'text-gray-600 hover:bg-orange-100'
+                )}
                 onClick={() => setFilterStatus('pending')}
               >
                 Pendientes
               </Button>
               <Button
-                variant={filterStatus === 'tagged' ? "default" : "ghost"}
+                variant={filterStatus === 'tagged' ? 'default' : 'ghost'}
                 size="xs"
-                className={cn("font-medium h-7", filterStatus === 'tagged' ? "bg-purple-600 text-white" : "text-gray-600 hover:bg-purple-100")}
+                className={cn(
+                  'h-7 font-medium',
+                  filterStatus === 'tagged'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-gray-600 hover:bg-purple-100'
+                )}
                 onClick={() => setFilterStatus('tagged')}
               >
                 Etiquetadas
@@ -1536,16 +1763,19 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           {filteredPhotos.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">
-                {selectedPhotos.length > 0 && `${selectedPhotos.length} seleccionadas`}
+                {selectedPhotos.length > 0 &&
+                  `${selectedPhotos.length} seleccionadas`}
               </span>
               <Button
                 variant="outline"
                 size="xs"
                 onClick={handleSelectAll}
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 font-medium"
+                className="border-blue-200 bg-blue-50 font-medium text-blue-700 hover:bg-blue-100"
               >
-                <CheckIcon className="w-4 h-4 mr-1" />
-                {selectedPhotos.length === filteredPhotos.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                <CheckIcon className="mr-1 h-4 w-4" />
+                {selectedPhotos.length === filteredPhotos.length
+                  ? 'Deseleccionar todas'
+                  : 'Seleccionar todas'}
               </Button>
             </div>
           )}
@@ -1555,30 +1785,44 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       {/* Optional external layout: hide built-in sidebar when requested */}
       {hideSidebar ? (
         <div>
-          <ScrollArea className={cn(compact ? "h-[calc(100dvh-220px)]" : "h-[calc(100vh-300px)]")}>
+          <ScrollArea
+            className={cn(
+              compact ? 'h-[calc(100dvh-220px)]' : 'h-[calc(100vh-300px)]'
+            )}
+          >
             {filteredPhotos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No se encontraron fotos</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchQuery ? 'Intenta ajustar tu búsqueda' : 
-                   !currentEvent ? 'Seleccioná un evento para comenzar' :
-                   externalCodeId === 'null' ? 'No hay fotos sin carpeta. Subí fotos o elegí otra carpeta.' :
-                   'Sube algunas fotos para comenzar'}
+              <div className="flex h-64 flex-col items-center justify-center text-center">
+                <ImageIcon className="mb-4 h-12 w-12 text-gray-400" />
+                <h3 className="mb-2 text-lg font-semibold">
+                  No se encontraron fotos
+                </h3>
+                <p className="mb-4 text-gray-500">
+                  {searchQuery
+                    ? 'Intenta ajustar tu búsqueda'
+                    : !currentEvent
+                      ? 'Seleccioná un evento para comenzar'
+                      : externalCodeId === 'null'
+                        ? 'No hay fotos sin carpeta. Subí fotos o elegí otra carpeta.'
+                        : 'Sube algunas fotos para comenzar'}
                 </p>
-                <Button onClick={() => fileInputRef.current?.click()} aria-label="Subir fotos">
-                  <UploadIcon className="w-4 h-4 mr-2" />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  aria-label="Subir fotos"
+                >
+                  <UploadIcon className="mr-2 h-4 w-4" />
                   Subir fotos
                 </Button>
               </div>
             ) : (
-              <div className={cn(
-                viewMode === 'grid' 
-                  ? (compact 
-                      ? "grid gap-1 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-                      : "grid gap-2 mobile:grid-cols-3 mobile:gap-0.5 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5 lg:gap-3 xl:grid-cols-6 xl:gap-4")
-                  : "space-y-2"
-              )}>
+              <div
+                className={cn(
+                  viewMode === 'grid'
+                    ? compact
+                      ? 'grid gap-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 mobile:grid-cols-3'
+                      : 'grid gap-2 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5 lg:gap-3 xl:grid-cols-6 xl:gap-4 mobile:grid-cols-3 mobile:gap-0.5'
+                    : 'space-y-2'
+                )}
+              >
                 <AnimatePresence>
                   {filteredPhotos.map((photo, idx) => (
                     <PhotoCard
@@ -1602,7 +1846,9 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                         if (confirm('¿Estás seguro de eliminar esta foto?')) {
                           try {
                             await onPhotoDelete?.([photo.id]);
-                            setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                            setPhotos((prev) =>
+                              prev.filter((p) => p.id !== photo.id)
+                            );
                             toast.success('Foto eliminada');
                             onCountsChanged?.();
                           } catch (error) {
@@ -1621,236 +1867,296 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           </ScrollArea>
         </div>
       ) : (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-5">
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <Card className="p-1">
-            <h3 className="text-xs font-medium mb-0.5">Carpetas</h3>
-            <ScrollArea className="h-auto max-h-[150px]">
-              <div className="space-y-1">
-                <Button
-                  variant={selectedEvent === null ? "default" : "ghost"}
-                  className="w-full justify-start py-1 min-h-[28px] text-xs font-medium text-gray-900"
-                  onClick={() => setSelectedEvent(null)}
-                >
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  Todas las fotos ({photos.length})
-                </Button>
-                {events.map(event => (
-                  <div key={event.id} className="relative">
-                    <div className="flex items-center">
-                      <Checkbox
-                        checked={selectedEvents.includes(event.id)}
-                        onCheckedChange={(isChecked) => {
-                          setSelectedEvents(prev =>
-                            isChecked
-                              ? [...prev, event.id]
-                              : prev.filter(id => id !== event.id)
-                          );
-                        }}
-                      />
-                      <Button
-                        variant={selectedEvent === event.id ? "default" : "ghost"}
-                        className={cn(
-                          "w-full justify-start text-left transition-all duration-200 py-1 min-h-[28px] text-xs font-medium text-gray-900",
-                          isDragMode ? "" : "",
-                        )}
-                        onClick={() => setSelectedEvent(event.id)}
-                        // Drag-over on per-code pills, not the event button
-                      >
-                        <FolderIcon className={cn(
-                          "w-4 h-4 mr-2 flex-shrink-0 transition-colors",
-                          ""
-                        )} />
-                        <div className="flex-1 min-w-0 text-left">
-                          <div className="text-sm font-medium break-words">{event.name}</div>
-                          {event.school_name && (
-                            <div className="text-xs opacity-70 break-words">{event.school_name}</div>
-                          )}
-                        </div>
-                        {event.photo_count !== undefined && (
-                          <span className="text-xs opacity-70 ml-auto">({event.photo_count})</span>
-                        )}
-                      </Button>
-
-                      {/* Folder actions menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="ml-1"
-                            aria-label={`Opciones para ${event.name}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVerticalIcon className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => setSelectedEvent(event.id)}>
-                            Abrir
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => navigator.clipboard.writeText(event.id)}>
-                            Copiar ID
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={async () => {
-                              const name = prompt('Nuevo nombre del evento:', event.name);
-                              if (!name) return;
-                              try {
-                                const res = await fetch(`/api/admin/events/${event.id}`, {
-                                  method: 'PATCH',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ name })
-                                });
-                                if (!res.ok) throw new Error('Error renombrando');
-                                const data = await res.json();
-                                setEvents(prev => prev.map(e => e.id === event.id ? { ...e, name: data.event?.name || name } : e));
-                              } catch {}
-                            }}
-                          >
-                            Renombrar
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={async () => {
-                              if (!confirm(`Eliminar evento "${event.name}"? Esta acción no se puede deshacer.`)) return;
-                              try {
-                                const res = await fetch(`/api/admin/events/${event.id}`, { method: 'DELETE' });
-                                const data = await res.json();
-                                if (!res.ok) {
-                                  alert(data?.error || 'No se pudo eliminar');
-                                  return;
-                                }
-                                setEvents(prev => prev.filter(e => e.id !== event.id));
-                                if (selectedEvent === event.id) setSelectedEvent(null);
-                              } catch {}
-                            }}
-                          >
-                            Eliminar evento
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </Card>
-
-          {/* Statistics */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3">Estadísticas</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Total fotos:</span>
-                <span className="font-medium">{photos.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Aprobadas:</span>
-                <span className="font-medium text-green-600">
-                  {photos.filter(p => p.approved).length}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Pendientes:</span>
-                <span className="font-medium text-yellow-600">
-                  {photos.filter(p => !p.approved).length}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Etiquetadas:</span>
-                <span className="font-medium text-blue-600">
-                  {photos.filter(p => p.tagged).length}
-                </span>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <div className="lg:col-span-3">
-          <ScrollArea className={cn(compact ? "h-[calc(100dvh-220px)]" : "h-[calc(100vh-300px)]")}> 
-            {filteredPhotos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <ImageIcon className="w-12 h-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No se encontraron fotos</h3>
-                <p className="text-gray-500 mb-4">
-                  {searchQuery ? 'Intenta ajustar tu búsqueda' : 
-                   !selectedEvent ? 'Selecciona un evento para ver las fotos' :
-                   'Sube algunas fotos para comenzar'}
-                </p>
-                <Button onClick={() => fileInputRef.current?.click()} aria-label="Subir fotos">
-                  <UploadIcon className="w-4 h-4 mr-2" />
-                  Subir fotos
-                </Button>
-              </div>
-            ) : (
-      <div className={cn(
-        viewMode === 'grid' 
-          ? (compact 
-              ? "grid gap-1 mobile:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-              : "grid gap-2 mobile:grid-cols-2 mobile:gap-1 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5 lg:gap-3 xl:grid-cols-6 xl:gap-4")
-          : "space-y-2"
-      )}>
-                <AnimatePresence>
-                  {filteredPhotos.map((photo, idx) => (
-                    <PhotoCard
-                      key={photo.id}
-                      photo={photo}
-                      isSelected={selectedPhotos.includes(photo.id)}
-                      onSelect={(id) => {
-                        handlePhotoSelect(id);
-                      }}
-                      onOpenPreview={() => {
-                        setPreviewIndex(idx);
-                        setIsPreviewOpen(true);
-                        const p = filteredPhotos[idx];
-                        if (!p?.preview_url) void ensurePreviewUrl(idx);
-                      }}
-                      onApprove={handleApprove}
-                      onTag={() => handleOpenTaggingModal(photo)}
-                      onDownload={() => handleDownloadPhoto(photo.id)}
-                      onMove={(id) => openMoveModalForPhoto(id)}
-                      onDelete={async () => {
-                        if (confirm('¿Estás seguro de eliminar esta foto?')) {
-                          try {
-                            await onPhotoDelete?.([photo.id]);
-                            setPhotos(prev => prev.filter(p => p.id !== photo.id));
-                            toast.success('Foto eliminada');
-                          } catch (error) {
-                            toast.error('Error al eliminar la foto');
+        <div className="grid grid-cols-1 gap-4 md:gap-5 lg:grid-cols-4">
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <Card className="p-1">
+              <h3 className="mb-0.5 text-xs font-medium">Carpetas</h3>
+              <ScrollArea className="h-auto max-h-[150px]">
+                <div className="space-y-1">
+                  <Button
+                    variant={selectedEvent === null ? 'default' : 'ghost'}
+                    className="min-h-[28px] w-full justify-start py-1 text-xs font-medium text-gray-900"
+                    onClick={() => setSelectedEvent(null)}
+                  >
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    Todas las fotos ({photos.length})
+                  </Button>
+                  {events.map((event) => (
+                    <div key={event.id} className="relative">
+                      <div className="flex items-center">
+                        <Checkbox
+                          checked={selectedEvents.includes(event.id)}
+                          onCheckedChange={(isChecked) => {
+                            setSelectedEvents((prev) =>
+                              isChecked
+                                ? [...prev, event.id]
+                                : prev.filter((id) => id !== event.id)
+                            );
+                          }}
+                        />
+                        <Button
+                          variant={
+                            selectedEvent === event.id ? 'default' : 'ghost'
                           }
-                        }
-                      }}
-                      viewMode={viewMode}
-                      handleDragStart={handleDragStart}
-                      handleDragEnd={handleDragEnd}
-                    />
+                          className={cn(
+                            'min-h-[28px] w-full justify-start py-1 text-left text-xs font-medium text-gray-900 transition-all duration-200',
+                            isDragMode ? '' : ''
+                          )}
+                          onClick={() => setSelectedEvent(event.id)}
+                          // Drag-over on per-code pills, not the event button
+                        >
+                          <FolderIcon
+                            className={cn(
+                              'mr-2 h-4 w-4 flex-shrink-0 transition-colors',
+                              ''
+                            )}
+                          />
+                          <div className="min-w-0 flex-1 text-left">
+                            <div className="break-words text-sm font-medium">
+                              {event.name}
+                            </div>
+                            {event.school_name && (
+                              <div className="break-words text-xs opacity-70">
+                                {event.school_name}
+                              </div>
+                            )}
+                          </div>
+                          {event.photo_count !== undefined && (
+                            <span className="ml-auto text-xs opacity-70">
+                              ({event.photo_count})
+                            </span>
+                          )}
+                        </Button>
+
+                        {/* Folder actions menu */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-1"
+                              aria-label={`Opciones para ${event.name}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <MoreVerticalIcon className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={() => setSelectedEvent(event.id)}
+                            >
+                              Abrir
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() =>
+                                navigator.clipboard.writeText(event.id)
+                              }
+                            >
+                              Copiar ID
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                const name = prompt(
+                                  'Nuevo nombre del evento:',
+                                  event.name
+                                );
+                                if (!name) return;
+                                try {
+                                  const res = await fetch(
+                                    `/api/admin/events/${event.id}`,
+                                    {
+                                      method: 'PATCH',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({ name }),
+                                    }
+                                  );
+                                  if (!res.ok)
+                                    throw new Error('Error renombrando');
+                                  const data = await res.json();
+                                  setEvents((prev) =>
+                                    prev.map((e) =>
+                                      e.id === event.id
+                                        ? {
+                                            ...e,
+                                            name: data.event?.name || name,
+                                          }
+                                        : e
+                                    )
+                                  );
+                                } catch {}
+                              }}
+                            >
+                              Renombrar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={async () => {
+                                if (
+                                  !confirm(
+                                    `Eliminar evento "${event.name}"? Esta acción no se puede deshacer.`
+                                  )
+                                )
+                                  return;
+                                try {
+                                  const res = await fetch(
+                                    `/api/admin/events/${event.id}`,
+                                    { method: 'DELETE' }
+                                  );
+                                  const data = await res.json();
+                                  if (!res.ok) {
+                                    alert(data?.error || 'No se pudo eliminar');
+                                    return;
+                                  }
+                                  setEvents((prev) =>
+                                    prev.filter((e) => e.id !== event.id)
+                                  );
+                                  if (selectedEvent === event.id)
+                                    setSelectedEvent(null);
+                                } catch {}
+                              }}
+                            >
+                              Eliminar evento
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
                   ))}
-                </AnimatePresence>
+                </div>
+              </ScrollArea>
+            </Card>
+
+            {/* Statistics */}
+            <Card className="p-4">
+              <h3 className="mb-3 font-semibold">Estadísticas</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Total fotos:</span>
+                  <span className="font-medium">{photos.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Aprobadas:</span>
+                  <span className="font-medium text-green-600">
+                    {photos.filter((p) => p.approved).length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Pendientes:</span>
+                  <span className="font-medium text-yellow-600">
+                    {photos.filter((p) => !p.approved).length}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Etiquetadas:</span>
+                  <span className="font-medium text-blue-600">
+                    {photos.filter((p) => p.tagged).length}
+                  </span>
+                </div>
               </div>
-            )}
-          </ScrollArea>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <ScrollArea
+              className={cn(
+                compact ? 'h-[calc(100dvh-220px)]' : 'h-[calc(100vh-300px)]'
+              )}
+            >
+              {filteredPhotos.length === 0 ? (
+                <div className="flex h-64 flex-col items-center justify-center text-center">
+                  <ImageIcon className="mb-4 h-12 w-12 text-gray-400" />
+                  <h3 className="mb-2 text-lg font-semibold">
+                    No se encontraron fotos
+                  </h3>
+                  <p className="mb-4 text-gray-500">
+                    {searchQuery
+                      ? 'Intenta ajustar tu búsqueda'
+                      : !selectedEvent
+                        ? 'Selecciona un evento para ver las fotos'
+                        : 'Sube algunas fotos para comenzar'}
+                  </p>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label="Subir fotos"
+                  >
+                    <UploadIcon className="mr-2 h-4 w-4" />
+                    Subir fotos
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  className={cn(
+                    viewMode === 'grid'
+                      ? compact
+                        ? 'grid gap-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 mobile:grid-cols-3'
+                        : 'grid gap-2 sm:grid-cols-3 sm:gap-2 md:grid-cols-4 md:gap-3 lg:grid-cols-5 lg:gap-3 xl:grid-cols-6 xl:gap-4 mobile:grid-cols-2 mobile:gap-1'
+                      : 'space-y-2'
+                  )}
+                >
+                  <AnimatePresence>
+                    {filteredPhotos.map((photo, idx) => (
+                      <PhotoCard
+                        key={photo.id}
+                        photo={photo}
+                        isSelected={selectedPhotos.includes(photo.id)}
+                        onSelect={(id) => {
+                          handlePhotoSelect(id);
+                        }}
+                        onOpenPreview={() => {
+                          setPreviewIndex(idx);
+                          setIsPreviewOpen(true);
+                          const p = filteredPhotos[idx];
+                          if (!p?.preview_url) void ensurePreviewUrl(idx);
+                        }}
+                        onApprove={handleApprove}
+                        onTag={() => handleOpenTaggingModal(photo)}
+                        onDownload={() => handleDownloadPhoto(photo.id)}
+                        onMove={(id) => openMoveModalForPhoto(id)}
+                        onDelete={async () => {
+                          if (confirm('¿Estás seguro de eliminar esta foto?')) {
+                            try {
+                              await onPhotoDelete?.([photo.id]);
+                              setPhotos((prev) =>
+                                prev.filter((p) => p.id !== photo.id)
+                              );
+                              toast.success('Foto eliminada');
+                            } catch (error) {
+                              toast.error('Error al eliminar la foto');
+                            }
+                          }
+                        }}
+                        viewMode={viewMode}
+                        handleDragStart={handleDragStart}
+                        handleDragEnd={handleDragEnd}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
         </div>
-      </div>
       )}
 
       {/* Per-event Codes list with DnD targets */}
       {selectedEvent && codesForCurrentEvent.length > 0 && (
         <div className="mt-2">
-          <div className="text-sm text-gray-500 mb-1">Códigos del evento</div>
+          <div className="mb-1 text-sm text-gray-500">Códigos del evento</div>
           <div className="flex flex-wrap gap-2">
             {codesForCurrentEvent.map((c) => (
               <div
                 key={c.id}
                 className={cn(
-                  "px-2 py-1 rounded-md border text-xs cursor-default",
+                  'cursor-default rounded-md border px-2 py-1 text-xs',
                   dropTargetCode === c.id && isDragMode
-                    ? "bg-purple-100 border-purple-500"
-                    : "bg-white border-gray-200"
+                    ? 'border-purple-500 bg-purple-100'
+                    : 'border-gray-200 bg-white'
                 )}
                 onDragOver={(e) => handleDragOverCode(c.id, e)}
                 onDragLeave={handleDragLeave}
@@ -1879,7 +2185,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           }
         }}
       />
-      
+
       {/* QR Scanner Modal */}
       <QRScannerModal
         isOpen={showQRScanner}
@@ -1900,25 +2206,33 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       {/* Photo Preview Modal */}
       {isPreviewOpen && filteredPhotos[previewIndex] && (
         <GalleryPhotoModal
-          photo={filteredPhotos[previewIndex] ? {
-            id: filteredPhotos[previewIndex].id,
-            storage_path: filteredPhotos[previewIndex].storage_path,
-            width: filteredPhotos[previewIndex].width || null,
-            height: filteredPhotos[previewIndex].height || null,
-            created_at: filteredPhotos[previewIndex].created_at,
-            signed_url: filteredPhotos[previewIndex].preview_url || ''
-          } : null}
+          photo={
+            filteredPhotos[previewIndex]
+              ? {
+                  id: filteredPhotos[previewIndex].id,
+                  storage_path: filteredPhotos[previewIndex].storage_path,
+                  width: filteredPhotos[previewIndex].width || null,
+                  height: filteredPhotos[previewIndex].height || null,
+                  created_at: filteredPhotos[previewIndex].created_at,
+                  signed_url: filteredPhotos[previewIndex].preview_url || '',
+                }
+              : null
+          }
           isOpen={isPreviewOpen}
           onClose={() => setIsPreviewOpen(false)}
           onPrevious={() => {
-            const newIndex = previewIndex > 0 ? previewIndex - 1 : filteredPhotos.length - 1;
+            const newIndex =
+              previewIndex > 0 ? previewIndex - 1 : filteredPhotos.length - 1;
             setPreviewIndex(newIndex);
-            if (!filteredPhotos[newIndex]?.preview_url) void ensurePreviewUrl(newIndex);
+            if (!filteredPhotos[newIndex]?.preview_url)
+              void ensurePreviewUrl(newIndex);
           }}
           onNext={() => {
-            const newIndex = previewIndex < filteredPhotos.length - 1 ? previewIndex + 1 : 0;
+            const newIndex =
+              previewIndex < filteredPhotos.length - 1 ? previewIndex + 1 : 0;
             setPreviewIndex(newIndex);
-            if (!filteredPhotos[newIndex]?.preview_url) void ensurePreviewUrl(newIndex);
+            if (!filteredPhotos[newIndex]?.preview_url)
+              void ensurePreviewUrl(newIndex);
           }}
           currentIndex={previewIndex}
           totalPhotos={filteredPhotos.length}
@@ -1935,7 +2249,10 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Select value={moveSelectedCodeId} onValueChange={setMoveSelectedCodeId}>
+            <Select
+              value={moveSelectedCodeId}
+              onValueChange={setMoveSelectedCodeId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona un código" />
               </SelectTrigger>
@@ -1950,8 +2267,12 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsMoveOpen(false)}>Cancelar</Button>
-            <Button onClick={handleConfirmMove} disabled={!moveSelectedCodeId}>Mover</Button>
+            <Button variant="outline" onClick={() => setIsMoveOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmMove} disabled={!moveSelectedCodeId}>
+              Mover
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1962,16 +2283,26 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           variant="danger"
           size="sm"
           onClick={async () => {
-            if (!confirm(`Eliminar ${selectedEvents.length} eventos seleccionados?`)) return;
+            if (
+              !confirm(
+                `Eliminar ${selectedEvents.length} eventos seleccionados?`
+              )
+            )
+              return;
             try {
               await Promise.all(
                 selectedEvents.map(async (id) => {
-                  const res = await fetch(`/api/admin/events/${id}`, { method: 'DELETE' });
+                  const res = await fetch(`/api/admin/events/${id}`, {
+                    method: 'DELETE',
+                  });
                   if (!res.ok) throw new Error('Error eliminando evento');
                 })
               );
-              setEvents(prev => prev.filter(e => !selectedEvents.includes(e.id)));
-              if (selectedEvents.includes(selectedEvent ?? '')) setSelectedEvent(null);
+              setEvents((prev) =>
+                prev.filter((e) => !selectedEvents.includes(e.id))
+              );
+              if (selectedEvents.includes(selectedEvent ?? ''))
+                setSelectedEvent(null);
               setSelectedEvents([]);
               toast.success(`${selectedEvents.length} eventos eliminados`);
             } catch {

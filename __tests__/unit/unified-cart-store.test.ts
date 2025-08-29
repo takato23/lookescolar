@@ -26,11 +26,11 @@ describe('Unified Cart Store Phase 4', () => {
 
   it('should set family context correctly', () => {
     const { result } = renderHook(() => useUnifiedCartStore());
-    
+
     const familyContext: GalleryContextData = {
       context: 'family',
       eventId: 'test-event-id',
-      token: '4ecebc495344b51b5b3cae049d27edd2'
+      token: '4ecebc495344b51b5b3cae049d27edd2',
     };
 
     act(() => {
@@ -39,15 +39,17 @@ describe('Unified Cart Store Phase 4', () => {
 
     expect(result.current.context).toEqual(familyContext);
     expect(result.current.context?.context).toBe('family');
-    expect(result.current.context?.token).toBe('4ecebc495344b51b5b3cae049d27edd2');
+    expect(result.current.context?.token).toBe(
+      '4ecebc495344b51b5b3cae049d27edd2'
+    );
   });
 
   it('should set public context correctly', () => {
     const { result } = renderHook(() => useUnifiedCartStore());
-    
+
     const publicContext: GalleryContextData = {
       context: 'public',
-      eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74'
+      eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74',
     };
 
     act(() => {
@@ -61,11 +63,11 @@ describe('Unified Cart Store Phase 4', () => {
 
   it('should add items with family context metadata', () => {
     const { result } = renderHook(() => useUnifiedCartStore());
-    
+
     const familyContext: GalleryContextData = {
       context: 'family',
       eventId: 'test-event-id',
-      token: '4ecebc495344b51b5b3cae049d27edd2'
+      token: '4ecebc495344b51b5b3cae049d27edd2',
     };
 
     act(() => {
@@ -74,7 +76,7 @@ describe('Unified Cart Store Phase 4', () => {
         photoId: 'photo-123',
         filename: 'test.jpg',
         price: 1000,
-        watermarkUrl: 'http://example.com/photo.jpg'
+        watermarkUrl: 'http://example.com/photo.jpg',
       });
     });
 
@@ -82,17 +84,21 @@ describe('Unified Cart Store Phase 4', () => {
     expect(result.current.items[0].photoId).toBe('photo-123');
     expect(result.current.items[0].quantity).toBe(1);
     expect(result.current.items[0].metadata?.context).toBe('family');
-    expect(result.current.items[0].metadata?.token).toBe('4ecebc495344b51b5b3cae049d27edd2');
+    expect(result.current.items[0].metadata?.token).toBe(
+      '4ecebc495344b51b5b3cae049d27edd2'
+    );
     expect(result.current.items[0].metadata?.eventId).toBe('test-event-id');
-    expect(result.current.items[0].watermarkUrl).toBe('http://example.com/photo.jpg');
+    expect(result.current.items[0].watermarkUrl).toBe(
+      'http://example.com/photo.jpg'
+    );
   });
 
   it('should add items with public context metadata', () => {
     const { result } = renderHook(() => useUnifiedCartStore());
-    
+
     const publicContext: GalleryContextData = {
       context: 'public',
-      eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74'
+      eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74',
     };
 
     act(() => {
@@ -101,7 +107,7 @@ describe('Unified Cart Store Phase 4', () => {
         photoId: 'photo-456',
         filename: 'test2.jpg',
         price: 1500,
-        priceType: 'base'
+        priceType: 'base',
       });
     });
 
@@ -110,7 +116,9 @@ describe('Unified Cart Store Phase 4', () => {
     expect(result.current.items[0].quantity).toBe(1);
     expect(result.current.items[0].metadata?.context).toBe('public');
     expect(result.current.items[0].metadata?.token).toBeUndefined();
-    expect(result.current.items[0].metadata?.eventId).toBe('a7eed8dd-a432-4dbe-9cd8-328338fa5c74');
+    expect(result.current.items[0].metadata?.eventId).toBe(
+      'a7eed8dd-a432-4dbe-9cd8-328338fa5c74'
+    );
     expect(result.current.items[0].priceType).toBe('base');
   });
 
@@ -121,7 +129,7 @@ describe('Unified Cart Store Phase 4', () => {
       result.current.addItem({
         photoId: 'photo-123',
         filename: 'test.jpg',
-        price: 1000
+        price: 1000,
       });
     });
 
@@ -131,7 +139,7 @@ describe('Unified Cart Store Phase 4', () => {
       result.current.addItem({
         photoId: 'photo-123',
         filename: 'test.jpg',
-        price: 1000
+        price: 1000,
       });
     });
 
@@ -146,12 +154,12 @@ describe('Unified Cart Store Phase 4', () => {
       result.current.addItem({
         photoId: 'photo-1',
         filename: 'test1.jpg',
-        price: 1000
+        price: 1000,
       });
       result.current.addItem({
         photoId: 'photo-2',
         filename: 'test2.jpg',
-        price: 1500
+        price: 1500,
       });
     });
 
@@ -172,7 +180,7 @@ describe('Unified Cart Store Phase 4', () => {
       result.current.addItem({
         photoId: 'photo-123',
         filename: 'test.jpg',
-        price: 1000
+        price: 1000,
       });
     });
 
@@ -199,12 +207,12 @@ describe('Unified Cart Store Phase 4', () => {
       result.current.addItem({
         photoId: 'photo-1',
         filename: 'test1.jpg',
-        price: 1000
+        price: 1000,
       });
       result.current.addItem({
         photoId: 'photo-2',
         filename: 'test2.jpg',
-        price: 1500
+        price: 1500,
       });
       result.current.updateQuantity('photo-1', 3);
     });
@@ -248,7 +256,7 @@ describe('Unified Cart Store Phase 4', () => {
       result.current.addItem({
         photoId: 'photo-123',
         filename: 'test.jpg',
-        price: 1000
+        price: 1000,
       });
     });
 
@@ -262,7 +270,7 @@ describe('Unified Cart Store Phase 4', () => {
     const contactInfo = {
       name: 'Juan Pérez',
       email: 'juan@example.com',
-      phone: '+54911234567'
+      phone: '+54911234567',
     };
 
     act(() => {
@@ -278,14 +286,14 @@ describe('Unified Cart Store Phase 4', () => {
     const contactInfo = {
       name: 'Test User',
       email: 'test@example.com',
-      phone: '123456789'
+      phone: '123456789',
     };
 
     act(() => {
       result.current.addItem({
         photoId: 'photo-123',
         filename: 'test.jpg',
-        price: 1000
+        price: 1000,
       });
       result.current.setContactInfo(contactInfo);
     });

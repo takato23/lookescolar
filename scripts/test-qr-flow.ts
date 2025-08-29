@@ -2,14 +2,14 @@
 
 /**
  * @fileoverview E2E Test Script for Complete QR Tagging Workflow
- * 
+ *
  * This script simulates the complete QR tagging workflow:
  * 1. Creates test event with students
  * 2. Generates QR codes for each student
  * 3. Uploads test photos
  * 4. Simulates QR scanning and photo tagging
  * 5. Verifies database state and data consistency
- * 
+ *
  * Usage:
  *   npm run test:qr-flow
  *   tsx scripts/test-qr-flow.ts [--cleanup] [--verbose] [--students=N] [--photos=N]
@@ -118,11 +118,12 @@ class QRWorkflowTester {
 
       this.log('✅ QR Workflow E2E Test Suite Completed');
       this.printResults();
-
     } catch (error) {
-      this.results.errors.push(`Test suite failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.results.errors.push(
+        `Test suite failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       this.results.duration = Date.now() - startTime;
-      
+
       this.log('❌ QR Workflow E2E Test Suite Failed');
       this.printResults();
 
@@ -160,7 +161,9 @@ class QRWorkflowTester {
       this.log(`✅ Test event created: ${event.name} (ID: ${event.id})`);
     } catch (error) {
       this.results.failedTests++;
-      this.results.errors.push(`Failed to create test event: ${error instanceof Error ? error.message : String(error)}`);
+      this.results.errors.push(
+        `Failed to create test event: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -185,7 +188,8 @@ class QRWorkflowTester {
 
       const studentsToCreate = [];
       for (let i = 0; i < this.config.studentCount; i++) {
-        const name = studentNames[i % studentNames.length] || `Test Student ${i + 1}`;
+        const name =
+          studentNames[i % studentNames.length] || `Test Student ${i + 1}`;
         const grade = `${Math.floor(i / 5) + 1}${String.fromCharCode(65 + (i % 5))}`;
         const token = this.generateSecureToken(24);
 
@@ -219,7 +223,9 @@ class QRWorkflowTester {
       this.log(`✅ Created ${students.length} test students`);
     } catch (error) {
       this.results.failedTests++;
-      this.results.errors.push(`Failed to create test students: ${error instanceof Error ? error.message : String(error)}`);
+      this.results.errors.push(
+        `Failed to create test students: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -246,7 +252,9 @@ class QRWorkflowTester {
       }
     } catch (error) {
       this.results.failedTests++;
-      this.results.errors.push(`Failed to generate QR codes: ${error instanceof Error ? error.message : String(error)}`);
+      this.results.errors.push(
+        `Failed to generate QR codes: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -293,7 +301,9 @@ class QRWorkflowTester {
       this.log(`✅ Created ${photos.length} test photos`);
     } catch (error) {
       this.results.failedTests++;
-      this.results.errors.push(`Failed to create test photos: ${error instanceof Error ? error.message : String(error)}`);
+      this.results.errors.push(
+        `Failed to create test photos: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -310,32 +320,43 @@ class QRWorkflowTester {
         await this.simulateQRDecode(student);
 
         // Step 2: Assign random photos to student
-        const photosToAssign = this.getRandomPhotos(Math.floor(Math.random() * 5) + 1);
+        const photosToAssign = this.getRandomPhotos(
+          Math.floor(Math.random() * 5) + 1
+        );
         await this.simulateBatchTagging(student, photosToAssign);
 
         successfulOperations++;
         this.results.passedTests++;
 
-        this.log(`✅ Tagged ${photosToAssign.length} photos for ${student.name}`);
+        this.log(
+          `✅ Tagged ${photosToAssign.length} photos for ${student.name}`
+        );
 
         if (this.config.verbose) {
           this.log(`  Student: ${student.name}`);
-          this.log(`  Photos: ${photosToAssign.map(p => p.filename).join(', ')}`);
+          this.log(
+            `  Photos: ${photosToAssign.map((p) => p.filename).join(', ')}`
+          );
         }
-
       } catch (error) {
         this.results.failedTests++;
-        this.results.errors.push(`Tagging failed for ${student.name}: ${error instanceof Error ? error.message : String(error)}`);
-        
+        this.results.errors.push(
+          `Tagging failed for ${student.name}: ${error instanceof Error ? error.message : String(error)}`
+        );
+
         if (this.config.verbose) {
-          this.log(`❌ Tagging failed for ${student.name}: ${error instanceof Error ? error.message : String(error)}`);
+          this.log(
+            `❌ Tagging failed for ${student.name}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     }
 
     this.results.details.taggingOperations = successfulOperations;
 
-    this.log(`📊 Tagging Summary: ${successfulOperations}/${this.testStudents.length} students tagged successfully`);
+    this.log(
+      `📊 Tagging Summary: ${successfulOperations}/${this.testStudents.length} students tagged successfully`
+    );
   }
 
   private async simulateQRDecode(student: TestStudent): Promise<any> {
@@ -347,11 +368,13 @@ class QRWorkflowTester {
     });
 
     if (!response.ok) {
-      throw new Error(`QR decode failed for ${student.name}: ${response.status}`);
+      throw new Error(
+        `QR decode failed for ${student.name}: ${response.status}`
+      );
     }
 
     const data = await response.json();
-    
+
     if (!data.success) {
       throw new Error(`QR decode returned error: ${data.error}`);
     }
@@ -359,14 +382,17 @@ class QRWorkflowTester {
     return data.student;
   }
 
-  private async simulateBatchTagging(student: TestStudent, photos: TestPhoto[]): Promise<void> {
+  private async simulateBatchTagging(
+    student: TestStudent,
+    photos: TestPhoto[]
+  ): Promise<void> {
     // Simulate the batch tagging API call
     const response = await fetch('/api/admin/tagging/batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         eventId: this.testEventId,
-        photoIds: photos.map(p => p.id),
+        photoIds: photos.map((p) => p.id),
         studentId: student.id,
       }),
     });
@@ -376,7 +402,7 @@ class QRWorkflowTester {
     }
 
     const data = await response.json();
-    
+
     if (!data.success) {
       throw new Error(`Batch tagging returned error: ${data.error}`);
     }
@@ -390,54 +416,68 @@ class QRWorkflowTester {
       // Verify photo_subjects assignments
       const { data: assignments, error: assignmentsError } = await this.supabase
         .from('photo_subjects')
-        .select(`
+        .select(
+          `
           photo_id,
           subject_id,
           photos (id, filename, event_id),
           subjects (id, name, event_id)
-        `)
-        .in('subject_id', this.testStudents.map(s => s.id));
+        `
+        )
+        .in(
+          'subject_id',
+          this.testStudents.map((s) => s.id)
+        );
 
       if (assignmentsError) throw assignmentsError;
 
       // Verify all assignments belong to correct event
-      const invalidAssignments = assignments.filter((assignment: any) => 
-        assignment.photos.event_id !== this.testEventId || 
-        assignment.subjects.event_id !== this.testEventId
+      const invalidAssignments = assignments.filter(
+        (assignment: any) =>
+          assignment.photos.event_id !== this.testEventId ||
+          assignment.subjects.event_id !== this.testEventId
       );
 
       if (invalidAssignments.length > 0) {
-        throw new Error(`Found ${invalidAssignments.length} invalid assignments across events`);
+        throw new Error(
+          `Found ${invalidAssignments.length} invalid assignments across events`
+        );
       }
 
       // Verify referential integrity
-      const photoIds = new Set(this.testPhotos.map(p => p.id));
-      const studentIds = new Set(this.testStudents.map(s => s.id));
+      const photoIds = new Set(this.testPhotos.map((p) => p.id));
+      const studentIds = new Set(this.testStudents.map((s) => s.id));
 
-      const invalidPhotoRefs = assignments.filter((assignment: any) => 
-        !photoIds.has(assignment.photo_id)
+      const invalidPhotoRefs = assignments.filter(
+        (assignment: any) => !photoIds.has(assignment.photo_id)
       );
 
-      const invalidStudentRefs = assignments.filter((assignment: any) => 
-        !studentIds.has(assignment.subject_id)
+      const invalidStudentRefs = assignments.filter(
+        (assignment: any) => !studentIds.has(assignment.subject_id)
       );
 
       if (invalidPhotoRefs.length > 0) {
-        throw new Error(`Found ${invalidPhotoRefs.length} assignments with invalid photo references`);
+        throw new Error(
+          `Found ${invalidPhotoRefs.length} assignments with invalid photo references`
+        );
       }
 
       if (invalidStudentRefs.length > 0) {
-        throw new Error(`Found ${invalidStudentRefs.length} assignments with invalid student references`);
+        throw new Error(
+          `Found ${invalidStudentRefs.length} assignments with invalid student references`
+        );
       }
 
       // Verify no duplicate assignments
-      const assignmentKeys = assignments.map((assignment: any) => 
-        `${assignment.photo_id}:${assignment.subject_id}`
+      const assignmentKeys = assignments.map(
+        (assignment: any) => `${assignment.photo_id}:${assignment.subject_id}`
       );
       const uniqueKeys = new Set(assignmentKeys);
 
       if (assignmentKeys.length !== uniqueKeys.size) {
-        throw new Error(`Found duplicate assignments: ${assignmentKeys.length - uniqueKeys.size} duplicates`);
+        throw new Error(
+          `Found duplicate assignments: ${assignmentKeys.length - uniqueKeys.size} duplicates`
+        );
       }
 
       this.results.details.verificationPassed = true;
@@ -450,23 +490,29 @@ class QRWorkflowTester {
       this.log(`  - No duplicates: ✅`);
 
       // Additional statistics
-      const assignmentsByStudent = assignments.reduce((acc: any, assignment: any) => {
-        acc[assignment.subject_id] = (acc[assignment.subject_id] || 0) + 1;
-        return acc;
-      }, {});
+      const assignmentsByStudent = assignments.reduce(
+        (acc: any, assignment: any) => {
+          acc[assignment.subject_id] = (acc[assignment.subject_id] || 0) + 1;
+          return acc;
+        },
+        {}
+      );
 
       const avgPhotosPerStudent = assignments.length / this.testStudents.length;
       const minPhotos = Math.min(...Object.values(assignmentsByStudent));
       const maxPhotos = Math.max(...Object.values(assignmentsByStudent));
 
       this.log(`📈 Assignment Statistics:`);
-      this.log(`  - Average photos per student: ${avgPhotosPerStudent.toFixed(2)}`);
+      this.log(
+        `  - Average photos per student: ${avgPhotosPerStudent.toFixed(2)}`
+      );
       this.log(`  - Min photos assigned: ${minPhotos}`);
       this.log(`  - Max photos assigned: ${maxPhotos}`);
-
     } catch (error) {
       this.results.failedTests++;
-      this.results.errors.push(`Database verification failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.results.errors.push(
+        `Database verification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw error;
     }
   }
@@ -480,7 +526,10 @@ class QRWorkflowTester {
         await this.supabase
           .from('photo_subjects')
           .delete()
-          .in('subject_id', this.testStudents.map(s => s.id));
+          .in(
+            'subject_id',
+            this.testStudents.map((s) => s.id)
+          );
 
         // Delete photos
         await this.supabase
@@ -495,15 +544,14 @@ class QRWorkflowTester {
           .eq('event_id', this.testEventId);
 
         // Delete event
-        await this.supabase
-          .from('events')
-          .delete()
-          .eq('id', this.testEventId);
+        await this.supabase.from('events').delete().eq('id', this.testEventId);
 
         this.log('✅ Test data cleaned up successfully');
       }
     } catch (error) {
-      this.log(`⚠️ Cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.log(
+        `⚠️ Cleanup failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       // Don't throw cleanup errors
     }
   }
@@ -514,7 +562,8 @@ class QRWorkflowTester {
   }
 
   private generateSecureToken(length: number): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
     for (let i = 0; i < length; i++) {
       result += chars.charAt(crypto.randomInt(0, chars.length));
@@ -531,7 +580,7 @@ class QRWorkflowTester {
   private log(message: string): void {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ${message}`);
-    
+
     logger.info('QR E2E Test', {
       message,
       testEvent: this.testEventId,
@@ -545,15 +594,25 @@ class QRWorkflowTester {
     console.log('='.repeat(80));
     console.log(`Status: ${this.results.success ? '✅ PASSED' : '❌ FAILED'}`);
     console.log(`Duration: ${(this.results.duration / 1000).toFixed(2)}s`);
-    console.log(`Tests: ${this.results.passedTests}/${this.results.totalTests} passed`);
-    
+    console.log(
+      `Tests: ${this.results.passedTests}/${this.results.totalTests} passed`
+    );
+
     console.log('\n📋 Test Details:');
-    console.log(`  Event Created: ${this.results.details.eventCreated ? '✅' : '❌'}`);
+    console.log(
+      `  Event Created: ${this.results.details.eventCreated ? '✅' : '❌'}`
+    );
     console.log(`  Students Created: ${this.results.details.studentsCreated}`);
-    console.log(`  QR Codes Generated: ${this.results.details.qrCodesGenerated}`);
+    console.log(
+      `  QR Codes Generated: ${this.results.details.qrCodesGenerated}`
+    );
     console.log(`  Photos Uploaded: ${this.results.details.photosUploaded}`);
-    console.log(`  Tagging Operations: ${this.results.details.taggingOperations}`);
-    console.log(`  Verification Passed: ${this.results.details.verificationPassed ? '✅' : '❌'}`);
+    console.log(
+      `  Tagging Operations: ${this.results.details.taggingOperations}`
+    );
+    console.log(
+      `  Verification Passed: ${this.results.details.verificationPassed ? '✅' : '❌'}`
+    );
 
     if (this.results.errors.length > 0) {
       console.log('\n❌ Errors:');
@@ -569,12 +628,16 @@ class QRWorkflowTester {
 // CLI interface
 async function main() {
   const args = process.argv.slice(2);
-  
+
   const config: TestConfig = {
     cleanup: args.includes('--cleanup'),
     verbose: args.includes('--verbose'),
-    studentCount: parseInt(args.find(arg => arg.startsWith('--students='))?.split('=')[1] || '10'),
-    photoCount: parseInt(args.find(arg => arg.startsWith('--photos='))?.split('=')[1] || '20'),
+    studentCount: parseInt(
+      args.find((arg) => arg.startsWith('--students='))?.split('=')[1] || '10'
+    ),
+    photoCount: parseInt(
+      args.find((arg) => arg.startsWith('--photos='))?.split('=')[1] || '20'
+    ),
     testEventName: `E2E Test Event ${new Date().toISOString().substring(0, 16)}`,
   };
 
@@ -582,7 +645,11 @@ async function main() {
   const results = await tester.run();
 
   // Write results to file for CI/CD
-  const resultsPath = path.join(process.cwd(), 'test-reports', 'qr-workflow-e2e.json');
+  const resultsPath = path.join(
+    process.cwd(),
+    'test-reports',
+    'qr-workflow-e2e.json'
+  );
   await fs.mkdir(path.dirname(resultsPath), { recursive: true });
   await fs.writeFile(resultsPath, JSON.stringify(results, null, 2));
 

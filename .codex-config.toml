@@ -1,0 +1,44 @@
+# Codex CLI Configuration for LookEscolar /admin/publish optimization
+# Usage: codex -p publish-optimization "your prompt here"
+
+[profiles.publish-optimization]
+model = "gpt-4o"
+ask_for_approval = "never"
+sandbox = "danger-full-access" 
+model_reasoning_effort = "high"
+reasoning_summaries = "auto"
+
+[profiles.security-focus]
+model = "gpt-4o"
+ask_for_approval = "untrusted"
+sandbox = "workspace-write"
+model_reasoning_effort = "high"
+shell_environment_policy.inherit = "safe"
+
+[profiles.quick-fix]
+model = "gpt-4o-mini"
+ask_for_approval = "never"
+sandbox = "workspace-write"
+model_reasoning_effort = "medium"
+
+# Agent specialization profiles
+[profiles.agent-security]
+model = "gpt-4o"
+ask_for_approval = "untrusted"
+sandbox = "workspace-write"
+model_reasoning_effort = "high"
+focus_areas = ["authentication", "authorization", "input-validation", "rate-limiting"]
+
+[profiles.agent-performance]
+model = "gpt-4o"
+ask_for_approval = "never"
+sandbox = "danger-full-access"
+model_reasoning_effort = "high"
+focus_areas = ["database-optimization", "react-query", "frontend-performance", "caching"]
+
+[profiles.agent-ux]
+model = "gpt-4o"
+ask_for_approval = "never" 
+sandbox = "workspace-write"
+model_reasoning_effort = "medium"
+focus_areas = ["mobile-first", "accessibility", "user-experience", "responsive-design"]

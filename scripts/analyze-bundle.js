@@ -13,11 +13,11 @@ const path = require('path');
 const analyzeBundle = () => {
   try {
     console.log('🔍 Analyzing bundle...');
-    
+
     // Build with analyzer
     process.env.ANALYZE = 'true';
     execSync('npm run build', { stdio: 'inherit' });
-    
+
     console.log('✅ Bundle analysis complete!');
     console.log('📊 Check the generated report in your browser');
   } catch (error) {
@@ -30,11 +30,15 @@ const analyzeBundle = () => {
 const checkUnusedDeps = () => {
   try {
     console.log('📦 Checking for unused dependencies...');
-    
+
     // This would require depcheck package: npm install -D depcheck
-    execSync('npx depcheck --ignore-bin-package --skip-missing', { stdio: 'inherit' });
+    execSync('npx depcheck --ignore-bin-package --skip-missing', {
+      stdio: 'inherit',
+    });
   } catch (error) {
-    console.log('ℹ️ To check unused dependencies, install depcheck: npm install -D depcheck');
+    console.log(
+      'ℹ️ To check unused dependencies, install depcheck: npm install -D depcheck'
+    );
   }
 };
 
@@ -61,7 +65,7 @@ const analyzeChunks = () => {
 // Main execution
 if (require.main === module) {
   const command = process.argv[2];
-  
+
   switch (command) {
     case 'analyze':
       analyzeBundle();
@@ -73,7 +77,9 @@ if (require.main === module) {
       analyzeChunks();
       break;
     default:
-      console.log('Usage: node scripts/analyze-bundle.js [analyze|deps|recommendations]');
+      console.log(
+        'Usage: node scripts/analyze-bundle.js [analyze|deps|recommendations]'
+      );
       break;
   }
 }

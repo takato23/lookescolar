@@ -30,17 +30,33 @@ export async function POST(request: NextRequest) {
       if (eventParse.success) {
         eventId = eventParse.data.eventId;
       } else {
-        return NextResponse.json({ error: 'Se requiere codeId o eventId válido' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Se requiere codeId o eventId válido' },
+          { status: 400 }
+        );
       }
     }
 
     // Extiende el tipo para incluir tabla codes sin usar any
     type AugmentedDb = typeof import('@/types/database').Database & {
-      public: { Tables: { codes: { Row: { id: string; event_id: string; code_value: string; token: string | null; is_published: boolean } } } };
+      public: {
+        Tables: {
+          codes: {
+            Row: {
+              id: string;
+              event_id: string;
+              code_value: string;
+              token: string | null;
+              is_published: boolean;
+            };
+          };
+        };
+      };
     };
 
     const base = await createServerSupabaseServiceClient();
-    const supabase = (base as unknown) as import('@supabase/supabase-js').SupabaseClient<AugmentedDb>;
+    const supabase =
+      base as unknown as import('@supabase/supabase-js').SupabaseClient<AugmentedDb>;
 
     // Resolver codeId: si vino eventId, buscar o crear un code para el evento
     if (!codeId && eventId) {
@@ -61,7 +77,10 @@ export async function POST(request: NextRequest) {
           .select('id')
           .single();
         if (createErr || !created) {
-          return NextResponse.json({ error: 'No se pudo crear el código para publicar' }, { status: 500 });
+          return NextResponse.json(
+            { error: 'No se pudo crear el código para publicar' },
+            { status: 500 }
+          );
         }
         codeId = created.id as string;
       }
@@ -75,7 +94,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (codeErr || !code) {
-      return NextResponse.json({ error: 'Código no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Código no encontrado' },
+        { status: 404 }
+      );
     }
 
     let token: string = code.token as string | undefined;
@@ -91,7 +113,10 @@ export async function POST(request: NextRequest) {
 
       if (updErr) {
         console.error('[Service] Error publicando código:', updErr);
-        return NextResponse.json({ error: 'No se pudo publicar el código' }, { status: 500 });
+        return NextResponse.json(
+          { error: 'No se pudo publicar el código' },
+          { status: 500 }
+        );
       }
     } else if (!code.is_published) {
       const { error: updErr } = await supabase
@@ -100,7 +125,10 @@ export async function POST(request: NextRequest) {
         .eq('id', code.id);
       if (updErr) {
         console.error('[Service] Error activando publicación:', updErr);
-        return NextResponse.json({ error: 'No se pudo activar publicación' }, { status: 500 });
+        return NextResponse.json(
+          { error: 'No se pudo activar publicación' },
+          { status: 500 }
+        );
       }
     }
 
@@ -111,5 +139,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

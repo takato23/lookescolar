@@ -8,7 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   ArrowLeft,
   Plus,
@@ -18,7 +24,7 @@ import {
   AlertCircle,
   CheckCircle,
   Home,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -45,17 +51,19 @@ export default function SecuencialPage() {
   const params = useParams();
   const router = useRouter();
   const id = params?.['id'] as string;
-  
+
   const [event, setEvent] = useState<EventInfo | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [photoStats, setPhotoStats] = useState<PhotoStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Sequence state: map of subject_id -> count
   const [sequence, setSequence] = useState<Record<string, number>>({});
-  const [sortBy, setSortBy] = useState<'exif' | 'filename' | 'created_at'>('exif');
+  const [sortBy, setSortBy] = useState<'exif' | 'filename' | 'created_at'>(
+    'exif'
+  );
   const [onlyUnassigned, setOnlyUnassigned] = useState(true);
 
   useEffect(() => {
@@ -67,7 +75,7 @@ export default function SecuencialPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Load event info
       const eventResponse = await fetch(`/api/admin/events/${id}`);
       if (!eventResponse.ok) throw new Error('Failed to fetch event');
@@ -81,15 +89,16 @@ export default function SecuencialPage() {
       setSubjects(subjectsData.subjects || []);
 
       // Load photo stats
-      const photosResponse = await fetch(`/api/admin/photos?eventId=${id}&stats=true`);
+      const photosResponse = await fetch(
+        `/api/admin/photos?eventId=${id}&stats=true`
+      );
       if (!photosResponse.ok) throw new Error('Failed to fetch photo stats');
       const photosData = await photosResponse.json();
       setPhotoStats({
         total: photosData.total || 0,
         unassigned: photosData.unassigned || 0,
-        approved: photosData.approved || 0
+        approved: photosData.approved || 0,
       });
-
     } catch (err) {
       console.error('Error loading data:', err);
       setError(err instanceof Error ? err.message : 'Error loading data');
@@ -99,7 +108,7 @@ export default function SecuencialPage() {
   };
 
   const updateCount = (subjectId: string, delta: number) => {
-    setSequence(prev => {
+    setSequence((prev) => {
       const current = prev[subjectId] || 0;
       const newCount = Math.max(0, current + delta);
       if (newCount === 0) {
@@ -113,12 +122,12 @@ export default function SecuencialPage() {
   const setCount = (subjectId: string, count: string) => {
     const numCount = parseInt(count) || 0;
     if (numCount === 0) {
-      setSequence(prev => {
+      setSequence((prev) => {
         const { [subjectId]: _, ...rest } = prev;
         return rest;
       });
     } else {
-      setSequence(prev => ({ ...prev, [subjectId]: numCount }));
+      setSequence((prev) => ({ ...prev, [subjectId]: numCount }));
     }
   };
 
@@ -134,7 +143,7 @@ export default function SecuencialPage() {
 
     try {
       setApplying(true);
-      
+
       const response = await fetch('/api/admin/tagging/sequence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,9 +153,9 @@ export default function SecuencialPage() {
           onlyUnassigned,
           sequence: Object.entries(sequence).map(([subjectId, count]) => ({
             subjectId,
-            count
-          }))
-        })
+            count,
+          })),
+        }),
       });
 
       if (!response.ok) {
@@ -155,16 +164,19 @@ export default function SecuencialPage() {
       }
 
       const result = await response.json();
-      
-      toast.success(`Asignación completada: ${result.assignedCount} fotos asignadas`);
-      
+
+      toast.success(
+        `Asignación completada: ${result.assignedCount} fotos asignadas`
+      );
+
       // Reset sequence and reload stats
       setSequence({});
       await loadData();
-      
     } catch (err) {
       console.error('Error applying sequence:', err);
-      toast.error(err instanceof Error ? err.message : 'Error aplicando secuencia');
+      toast.error(
+        err instanceof Error ? err.message : 'Error aplicando secuencia'
+      );
     } finally {
       setApplying(false);
     }
@@ -187,13 +199,18 @@ export default function SecuencialPage() {
     return (
       <div className="gradient-mesh min-h-screen">
         <div className="container mx-auto px-6 py-8">
-          <Card variant="glass" className="max-w-md mx-auto">
+          <Card variant="glass" className="mx-auto max-w-md">
             <CardContent className="pt-6">
               <div className="text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Error</h3>
-                <p className="text-muted-foreground">{error || 'Evento no encontrado'}</p>
-                <Button className="mt-4" onClick={() => router.push('/admin/events')}>
+                <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+                <h3 className="mb-2 text-lg font-semibold">Error</h3>
+                <p className="text-muted-foreground">
+                  {error || 'Evento no encontrado'}
+                </p>
+                <Button
+                  className="mt-4"
+                  onClick={() => router.push('/admin/events')}
+                >
                   Volver a Eventos
                 </Button>
               </div>
@@ -235,7 +252,9 @@ export default function SecuencialPage() {
                 {event.school_name || event.name}
               </Link>
               <span>/</span>
-              <span className="text-foreground font-medium">Asignación Secuencial</span>
+              <span className="text-foreground font-medium">
+                Asignación Secuencial
+              </span>
             </nav>
 
             <div className="flex items-start justify-between">
@@ -267,7 +286,9 @@ export default function SecuencialPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Fotos</p>
+                  <p className="text-muted-foreground text-sm font-medium">
+                    Total Fotos
+                  </p>
                   <p className="text-2xl font-bold">{photoStats?.total || 0}</p>
                 </div>
                 <Camera className="h-8 w-8 text-blue-500 opacity-50" />
@@ -279,8 +300,12 @@ export default function SecuencialPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Sin Asignar</p>
-                  <p className="text-2xl font-bold">{photoStats?.unassigned || 0}</p>
+                  <p className="text-muted-foreground text-sm font-medium">
+                    Sin Asignar
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {photoStats?.unassigned || 0}
+                  </p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-orange-500 opacity-50" />
               </div>
@@ -291,8 +316,12 @@ export default function SecuencialPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">A Asignar</p>
-                  <p className="text-2xl font-bold text-primary-600">{getTotalAssigned()}</p>
+                  <p className="text-muted-foreground text-sm font-medium">
+                    A Asignar
+                  </p>
+                  <p className="text-2xl font-bold text-primary-600">
+                    {getTotalAssigned()}
+                  </p>
                 </div>
                 <Users className="h-8 w-8 text-green-500 opacity-50" />
               </div>
@@ -309,7 +338,10 @@ export default function SecuencialPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <Label htmlFor="sort-by">Ordenar por</Label>
-                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <Select
+                  value={sortBy}
+                  onValueChange={(value: any) => setSortBy(value)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -320,7 +352,7 @@ export default function SecuencialPage() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -345,18 +377,18 @@ export default function SecuencialPage() {
               {subjects.map((subject) => (
                 <div
                   key={subject.id}
-                  className="flex items-center justify-between rounded-lg border border-border/50 bg-background/50 p-4"
+                  className="border-border/50 bg-background/50 flex items-center justify-between rounded-lg border p-4"
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{subject.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{subject.name}</p>
                     {subject.parent_name && (
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-muted-foreground truncate text-sm">
                         {subject.parent_name}
                       </p>
                     )}
                   </div>
-                  
-                  <div className="flex items-center gap-2 ml-4">
+
+                  <div className="ml-4 flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -366,7 +398,7 @@ export default function SecuencialPage() {
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    
+
                     <Input
                       type="number"
                       min="0"
@@ -376,7 +408,7 @@ export default function SecuencialPage() {
                       className="w-16 text-center"
                       placeholder="0"
                     />
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -404,7 +436,7 @@ export default function SecuencialPage() {
               </Badge>
             )}
           </div>
-          
+
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -413,10 +445,14 @@ export default function SecuencialPage() {
             >
               Limpiar
             </Button>
-            
+
             <Button
               onClick={applySequence}
-              disabled={applying || Object.keys(sequence).length === 0 || getTotalAssigned() === 0}
+              disabled={
+                applying ||
+                Object.keys(sequence).length === 0 ||
+                getTotalAssigned() === 0
+              }
               className="min-w-32"
             >
               {applying ? (
@@ -437,4 +473,3 @@ export default function SecuencialPage() {
     </div>
   );
 }
-

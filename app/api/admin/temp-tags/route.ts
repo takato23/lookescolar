@@ -25,14 +25,16 @@ export async function GET(request: NextRequest) {
       // Join with photos to filter by event
       query = supabase
         .from('temp_photo_tags')
-        .select(`
+        .select(
+          `
           id,
           photo_id,
           temp_name,
           temp_email,
           created_at,
           photos(event_id)
-        `)
+        `
+        )
         .eq('photos.event_id', eventId)
         .order('created_at', { ascending: false });
     }
@@ -41,13 +43,19 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching temp tags:', error);
-      return NextResponse.json({ error: 'Error fetching temporary tags' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error fetching temporary tags' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ tempTags: data || [] });
   } catch (error) {
     console.error('Error in GET /api/admin/temp-tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -90,16 +98,22 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating temp tag:', error);
-      return NextResponse.json({ error: 'Error creating temporary tag' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error creating temporary tag' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      tempTag: data
+      tempTag: data,
     });
   } catch (error) {
     console.error('Error in POST /api/admin/temp-tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -110,7 +124,10 @@ export async function DELETE(request: NextRequest) {
     const tagId = searchParams.get('id');
 
     if (!tagId) {
-      return NextResponse.json({ error: 'Tag ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Tag ID is required' },
+        { status: 400 }
+      );
     }
 
     const supabase = await createServerSupabaseServiceClient();
@@ -122,13 +139,18 @@ export async function DELETE(request: NextRequest) {
 
     if (error) {
       console.error('Error deleting temp tag:', error);
-      return NextResponse.json({ error: 'Error deleting temporary tag' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error deleting temporary tag' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in DELETE /api/admin/temp-tags:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
-

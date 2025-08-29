@@ -4,10 +4,10 @@ import { withAuth } from '@/lib/middleware/auth.middleware';
 import { logger } from '@/lib/utils/logger';
 
 // GET: Export tokens as CSV for school distribution
-export const GET = withAuth(async function(request: NextRequest, context) {
+export const GET = withAuth(async function (request: NextRequest, context) {
   const eventId = context.params?.id as string;
   const requestId = crypto.randomUUID();
-  
+
   try {
     const supabase = await createServerSupabaseServiceClient();
 
@@ -19,16 +19,14 @@ export const GET = withAuth(async function(request: NextRequest, context) {
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Get all subjects with their tokens
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
-      .select(`
+      .select(
+        `
         id,
         name,
         parent_name,
@@ -36,7 +34,8 @@ export const GET = withAuth(async function(request: NextRequest, context) {
         token,
         token_expires_at,
         created_at
-      `)
+      `
+      )
       .eq('event_id', eventId)
       .order('name');
 
@@ -61,7 +60,8 @@ export const GET = withAuth(async function(request: NextRequest, context) {
     }
 
     // Generate CSV content
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com';
     const csvHeaders = [
       'Nombre del Alumno',
       'Padre/Tutor',
@@ -69,15 +69,17 @@ export const GET = withAuth(async function(request: NextRequest, context) {
       'Token',
       'Link de Acceso',
       'Fecha de Expiración',
-      'Instrucciones'
+      'Instrucciones',
     ];
 
-    const csvRows = subjects.map(subject => {
-      const accessLink = subject.token ? `${baseUrl}/f/${subject.token}` : 'Sin token generado';
-      const expirationDate = subject.token_expires_at 
+    const csvRows = subjects.map((subject) => {
+      const accessLink = subject.token
+        ? `${baseUrl}/f/${subject.token}`
+        : 'Sin token generado';
+      const expirationDate = subject.token_expires_at
         ? new Date(subject.token_expires_at).toLocaleDateString('es-ES')
         : 'Sin fecha';
-      
+
       return [
         subject.name || '',
         subject.parent_name || '',
@@ -85,16 +87,16 @@ export const GET = withAuth(async function(request: NextRequest, context) {
         subject.token || 'Sin token',
         accessLink,
         expirationDate,
-        'Comparta este link con la familia para ver y comprar las fotos'
+        'Comparta este link con la familia para ver y comprar las fotos',
       ];
     });
 
     // Create CSV content
     const csvContent = [
       csvHeaders.join(','),
-      ...csvRows.map(row => 
-        row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
-      )
+      ...csvRows.map((row) =>
+        row.map((cell) => `"${cell.toString().replace(/"/g, '""')}"`).join(',')
+      ),
     ].join('\n');
 
     // Add BOM for proper UTF-8 handling in Excel
@@ -116,7 +118,6 @@ export const GET = withAuth(async function(request: NextRequest, context) {
         'X-Request-Id': requestId,
       },
     });
-
   } catch (error) {
     logger.error('Error in token export', {
       requestId,
@@ -125,7 +126,7 @@ export const GET = withAuth(async function(request: NextRequest, context) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         message: 'Failed to export tokens',
         requestId,

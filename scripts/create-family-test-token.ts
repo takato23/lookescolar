@@ -12,13 +12,19 @@ async function main(): Promise<void> {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error('[Script] Variables de entorno faltantes: NEXT_PUBLIC_SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY');
+    console.error(
+      '[Script] Variables de entorno faltantes: NEXT_PUBLIC_SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY'
+    );
     process.exit(1);
   }
 
-  const supabase: SupabaseClient<Database> = createClient<Database>(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const supabase: SupabaseClient<Database> = createClient<Database>(
+    supabaseUrl,
+    serviceRoleKey,
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+    }
+  );
 
   try {
     // 1) Asegurar evento existente o crear uno compatible con distintos esquemas
@@ -36,7 +42,9 @@ async function main(): Promise<void> {
 
       if (existingEvents && existingEvents.length > 0) {
         eventId = existingEvents[0].id as string;
-        console.log(`[Script] Usando evento existente: ${existingEvents[0].name}`);
+        console.log(
+          `[Script] Usando evento existente: ${existingEvents[0].name}`
+        );
       } else {
         const today = new Date().toISOString().slice(0, 10);
 
@@ -54,7 +62,9 @@ async function main(): Promise<void> {
 
         if (!createErr1 && createdWithLocation) {
           eventId = createdWithLocation.id as string;
-          console.log('[Script] Evento creado (con location): Evento de Prueba');
+          console.log(
+            '[Script] Evento creado (con location): Evento de Prueba'
+          );
         } else {
           // Intento 2: esquema sin location
           const { data: createdBasic, error: createErr2 } = await supabase
@@ -68,7 +78,10 @@ async function main(): Promise<void> {
             .single();
 
           if (createErr2 || !createdBasic) {
-            console.error('[Script] Error creando evento:', createErr1 || createErr2);
+            console.error(
+              '[Script] Error creando evento:',
+              createErr1 || createErr2
+            );
             process.exit(1);
           }
 
@@ -104,7 +117,10 @@ async function main(): Promise<void> {
         .single();
 
       if (subjectErr || !createdSubject) {
-        console.error('[Script] Error creando sujeto (con token embebido):', subjectErr);
+        console.error(
+          '[Script] Error creando sujeto (con token embebido):',
+          subjectErr
+        );
         process.exit(1);
       }
 
@@ -130,7 +146,10 @@ async function main(): Promise<void> {
       } as Database['public']['Tables']['subject_tokens']['Insert']);
 
     if (tokenInsertError) {
-      console.error('[Script] Error insertando token en subject_tokens:', tokenInsertError);
+      console.error(
+        '[Script] Error insertando token en subject_tokens:',
+        tokenInsertError
+      );
       process.exit(1);
     }
 
@@ -149,5 +168,3 @@ async function main(): Promise<void> {
 }
 
 main();
-
-

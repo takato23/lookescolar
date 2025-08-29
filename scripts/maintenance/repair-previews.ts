@@ -5,15 +5,22 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env['NEXT_PUBLIC_SUPABASE_URL'] as string;
 const SERVICE_ROLE = process.env['SUPABASE_SERVICE_ROLE_KEY'] as string;
-const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+const ORIGINAL_BUCKET =
+  process.env['STORAGE_BUCKET_ORIGINAL'] ||
+  process.env['STORAGE_BUCKET'] ||
+  'photo-private';
 const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
 if (!SUPABASE_URL || !SERVICE_ROLE) {
-  console.error('[repair-previews] Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
+  console.error(
+    '[repair-previews] Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY'
+  );
   process.exit(1);
 }
 
-const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
+const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
+  auth: { persistSession: false },
+});
 
 async function repairEvent(eventId: string): Promise<void> {
   console.log(`[repair-previews] Procesando eventId=${eventId}`);
@@ -31,7 +38,9 @@ async function repairEvent(eventId: string): Promise<void> {
       const needWatermark = !(p as any).watermark_path;
       if (!needPreview && !needWatermark) continue;
 
-      const dl = await sb.storage.from(ORIGINAL_BUCKET).download((p as any).storage_path as string);
+      const dl = await sb.storage
+        .from(ORIGINAL_BUCKET)
+        .download((p as any).storage_path as string);
       if (dl.error) throw dl.error;
       const buf = Buffer.from(await dl.data!.arrayBuffer());
 
@@ -52,7 +61,12 @@ async function repairEvent(eventId: string): Promise<void> {
 
       // Preview comprimida (objetivo 120–250 KB aprox)
       const previewBuf = await sharp(buf)
-        .resize({ width: newW, height: newH, fit: 'inside', withoutEnlargement: true })
+        .resize({
+          width: newW,
+          height: newH,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
         .webp({ quality: 72 })
         .toBuffer();
 
@@ -64,31 +78,46 @@ async function repairEvent(eventId: string): Promise<void> {
         <svg width="${newW}" height="${newH}" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="wm" x="0" y="0" width="${pattern}" height="${pattern}" patternUnits="userSpaceOnUse">
-              <text x="${pattern/2}" y="${pattern/2}"
+              <text x="${pattern / 2}" y="${pattern / 2}"
                 font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700"
                 fill="white" fill-opacity="0.4" text-anchor="middle"
-                transform="rotate(-45 ${pattern/2} ${pattern/2})">LOOK ESCOLAR</text>
-              <text x="${pattern/2}" y="${pattern/2 + textOffset}"
-                font-family="Arial, sans-serif" font-size="${Math.floor(fontSize*0.7)}"
+                transform="rotate(-45 ${pattern / 2} ${pattern / 2})">LOOK ESCOLAR</text>
+              <text x="${pattern / 2}" y="${pattern / 2 + textOffset}"
+                font-family="Arial, sans-serif" font-size="${Math.floor(fontSize * 0.7)}"
                 fill="white" fill-opacity="0.32" text-anchor="middle"
-                transform="rotate(-45 ${pattern/2} ${pattern/2 + textOffset})">VISTA PREVIA</text>
+                transform="rotate(-45 ${pattern / 2} ${pattern / 2 + textOffset})">VISTA PREVIA</text>
             </pattern>
           </defs>
           <rect width="${newW}" height="${newH}" fill="url(#wm)"/>
         </svg>
       `);
       const watermarkBuf = await sharp(buf)
-        .resize({ width: newW, height: newH, fit: 'inside', withoutEnlargement: true })
+        .resize({
+          width: newW,
+          height: newH,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
         .composite([{ input: svg, blend: 'over' }])
         .webp({ quality: 72 })
         .toBuffer();
 
       if (needPreview) {
-        const up1 = await sb.storage.from(PREVIEW_BUCKET).upload(previewKey, previewBuf, { contentType: 'image/webp', upsert: true });
+        const up1 = await sb.storage
+          .from(PREVIEW_BUCKET)
+          .upload(previewKey, previewBuf, {
+            contentType: 'image/webp',
+            upsert: true,
+          });
         if (up1.error) throw up1.error;
       }
       if (needWatermark) {
-        const up2 = await sb.storage.from(PREVIEW_BUCKET).upload(watermarkKey, watermarkBuf, { contentType: 'image/webp', upsert: true });
+        const up2 = await sb.storage
+          .from(PREVIEW_BUCKET)
+          .upload(watermarkKey, watermarkBuf, {
+            contentType: 'image/webp',
+            upsert: true,
+          });
         if (up2.error) throw up2.error;
       }
 
@@ -108,7 +137,9 @@ async function repairEvent(eventId: string): Promise<void> {
 async function main() {
   const ids = process.argv.slice(2);
   if (ids.length === 0) {
-    console.error('Uso: pnpm ts-node scripts/maintenance/repair-previews.ts <eventId> [eventId2 ...]');
+    console.error(
+      'Uso: pnpm ts-node scripts/maintenance/repair-previews.ts <eventId> [eventId2 ...]'
+    );
     process.exit(1);
   }
   for (const id of ids) {
@@ -120,5 +151,3 @@ main().catch((e) => {
   console.error('[repair-previews] fatal', e);
   process.exit(1);
 });
-
-

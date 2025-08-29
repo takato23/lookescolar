@@ -2,9 +2,9 @@
 
 /**
  * @fileoverview QR Workflow Test Runner
- * 
+ *
  * Executes all QR workflow tests in sequence and generates comprehensive reports.
- * 
+ *
  * Usage:
  *   npm run test:qr-complete
  *   tsx scripts/run-qr-tests.ts [--verbose] [--parallel] [--skip-load]
@@ -93,7 +93,12 @@ class QRTestRunner {
       name: 'QR E2E Workflow',
       description: 'End-to-end workflow simulation',
       command: 'tsx',
-      args: ['scripts/test-qr-flow.ts', '--students=10', '--photos=20', '--cleanup'],
+      args: [
+        'scripts/test-qr-flow.ts',
+        '--students=10',
+        '--photos=20',
+        '--cleanup',
+      ],
       timeout: 240000, // 4 minutes
       critical: true,
     },
@@ -101,9 +106,11 @@ class QRTestRunner {
 
   constructor(args: string[]) {
     this.parseArgs(args);
-    
+
     if (this.config.skipLoad) {
-      this.testSuites = this.testSuites.filter(suite => suite.name !== 'QR Load Tests');
+      this.testSuites = this.testSuites.filter(
+        (suite) => suite.name !== 'QR Load Tests'
+      );
     }
   }
 
@@ -115,15 +122,15 @@ class QRTestRunner {
 
   async run(): Promise<TestSummary> {
     const startTime = Date.now();
-    
+
     this.log('🧪 Starting QR Workflow Test Suite');
     this.log(`Configuration: ${JSON.stringify(this.config, null, 2)}`);
-    
+
     // Ensure output directory exists
     await fs.mkdir(this.config.outputDir, { recursive: true });
 
     let results: TestResult[];
-    
+
     if (this.config.parallel) {
       results = await this.runTestsParallel();
     } else {
@@ -132,10 +139,14 @@ class QRTestRunner {
 
     const summary: TestSummary = {
       totalSuites: this.testSuites.length,
-      passedSuites: results.filter(r => r.success).length,
-      failedSuites: results.filter(r => !r.success).length,
+      passedSuites: results.filter((r) => r.success).length,
+      failedSuites: results.filter((r) => !r.success).length,
       totalDuration: Date.now() - startTime,
-      overallSuccess: results.every(r => r.success || !this.testSuites.find(s => s.name === r.suite)?.critical),
+      overallSuccess: results.every(
+        (r) =>
+          r.success ||
+          !this.testSuites.find((s) => s.name === r.suite)?.critical
+      ),
       results,
       timestamp: new Date().toISOString(),
     };
@@ -157,12 +168,16 @@ class QRTestRunner {
       results.push(result);
 
       if (result.success) {
-        this.log(`✅ ${suite.name} completed successfully (${result.duration}ms)`);
+        this.log(
+          `✅ ${suite.name} completed successfully (${result.duration}ms)`
+        );
       } else {
         this.log(`❌ ${suite.name} failed (${result.duration}ms)`);
-        
+
         if (suite.critical) {
-          this.log(`🚨 Critical test failed, continuing with remaining tests...`);
+          this.log(
+            `🚨 Critical test failed, continuing with remaining tests...`
+          );
         }
       }
     }
@@ -173,8 +188,8 @@ class QRTestRunner {
   private async runTestsParallel(): Promise<TestResult[]> {
     this.log('\n🚀 Running tests in parallel...');
 
-    const promises = this.testSuites.map(suite => 
-      this.runTestSuite(suite).then(result => {
+    const promises = this.testSuites.map((suite) =>
+      this.runTestSuite(suite).then((result) => {
         if (result.success) {
           this.log(`✅ ${suite.name} completed (${result.duration}ms)`);
         } else {
@@ -189,14 +204,14 @@ class QRTestRunner {
 
   private async runTestSuite(suite: TestSuite): Promise<TestResult> {
     const startTime = Date.now();
-    
+
     return new Promise((resolve) => {
       let output = '';
       let errorOutput = '';
 
       const childProcess = spawn(suite.command, suite.args, {
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: { 
+        env: {
           ...process.env,
           NODE_ENV: 'test',
           CI: 'true',
@@ -234,14 +249,16 @@ class QRTestRunner {
 
       process.on('close', (code) => {
         clearTimeout(timeout);
-        
+
         const duration = Date.now() - startTime;
         const success = code === 0;
 
         // Extract coverage information if available
         let coverage;
         try {
-          const coverageMatch = output.match(/Coverage: (\d+\.?\d*)% statements.*?(\d+\.?\d*)% branches.*?(\d+\.?\d*)% functions.*?(\d+\.?\d*)% lines/);
+          const coverageMatch = output.match(
+            /Coverage: (\d+\.?\d*)% statements.*?(\d+\.?\d*)% branches.*?(\d+\.?\d*)% functions.*?(\d+\.?\d*)% lines/
+          );
           if (coverageMatch) {
             coverage = {
               statements: parseFloat(coverageMatch[1]),
@@ -293,13 +310,16 @@ class QRTestRunner {
     await fs.writeFile(junitReport, junitContent);
 
     // Coverage report if available
-    if (summary.results.some(r => r.coverage)) {
-      const coverageReport = path.join(this.config.outputDir, 'qr-coverage-summary.json');
+    if (summary.results.some((r) => r.coverage)) {
+      const coverageReport = path.join(
+        this.config.outputDir,
+        'qr-coverage-summary.json'
+      );
       const coverageData = {
         timestamp: summary.timestamp,
         suites: summary.results
-          .filter(r => r.coverage)
-          .map(r => ({
+          .filter((r) => r.coverage)
+          .map((r) => ({
             suite: r.suite,
             coverage: r.coverage,
           })),
@@ -312,28 +332,34 @@ class QRTestRunner {
 
   private generateTextReport(summary: TestSummary): string {
     const lines: string[] = [];
-    
+
     lines.push('QR WORKFLOW TEST SUITE - DETAILED REPORT');
     lines.push('='.repeat(50));
     lines.push(`Timestamp: ${summary.timestamp}`);
     lines.push(`Total Duration: ${(summary.totalDuration / 1000).toFixed(2)}s`);
-    lines.push(`Overall Success: ${summary.overallSuccess ? 'PASSED' : 'FAILED'}`);
-    lines.push(`Test Suites: ${summary.passedSuites}/${summary.totalSuites} passed`);
+    lines.push(
+      `Overall Success: ${summary.overallSuccess ? 'PASSED' : 'FAILED'}`
+    );
+    lines.push(
+      `Test Suites: ${summary.passedSuites}/${summary.totalSuites} passed`
+    );
     lines.push('');
 
     for (const result of summary.results) {
       lines.push(`Test Suite: ${result.suite}`);
       lines.push(`Status: ${result.success ? 'PASSED' : 'FAILED'}`);
       lines.push(`Duration: ${result.duration}ms`);
-      
+
       if (result.coverage) {
-        lines.push(`Coverage: ${result.coverage.statements}% statements, ${result.coverage.lines}% lines`);
+        lines.push(
+          `Coverage: ${result.coverage.statements}% statements, ${result.coverage.lines}% lines`
+        );
       }
-      
+
       if (result.error) {
         lines.push(`Error: ${result.error}`);
       }
-      
+
       lines.push('');
     }
 
@@ -341,17 +367,19 @@ class QRTestRunner {
   }
 
   private generateJUnitReport(summary: TestSummary): string {
-    const testSuites = summary.results.map(result => {
-      const duration = (result.duration / 1000).toFixed(3);
-      
-      if (result.success) {
-        return `    <testcase name="${result.suite}" classname="QRWorkflow" time="${duration}"/>`;
-      } else {
-        return `    <testcase name="${result.suite}" classname="QRWorkflow" time="${duration}">
+    const testSuites = summary.results
+      .map((result) => {
+        const duration = (result.duration / 1000).toFixed(3);
+
+        if (result.success) {
+          return `    <testcase name="${result.suite}" classname="QRWorkflow" time="${duration}"/>`;
+        } else {
+          return `    <testcase name="${result.suite}" classname="QRWorkflow" time="${duration}">
       <failure message="Test suite failed">${this.escapeXml(result.error || 'Unknown error')}</failure>
     </testcase>`;
-      }
-    }).join('\n');
+        }
+      })
+      .join('\n');
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <testsuite name="QRWorkflowTests" tests="${summary.totalSuites}" failures="${summary.failedSuites}" time="${(summary.totalDuration / 1000).toFixed(3)}">
@@ -372,50 +400,59 @@ ${testSuites}
     console.log('\n' + '='.repeat(60));
     console.log('🧪 QR WORKFLOW TEST SUITE SUMMARY');
     console.log('='.repeat(60));
-    
-    console.log(`📊 Results: ${summary.passedSuites}/${summary.totalSuites} suites passed`);
-    console.log(`⏱️  Duration: ${(summary.totalDuration / 1000).toFixed(2)} seconds`);
-    console.log(`🎯 Status: ${summary.overallSuccess ? '✅ PASSED' : '❌ FAILED'}`);
-    
+
+    console.log(
+      `📊 Results: ${summary.passedSuites}/${summary.totalSuites} suites passed`
+    );
+    console.log(
+      `⏱️  Duration: ${(summary.totalDuration / 1000).toFixed(2)} seconds`
+    );
+    console.log(
+      `🎯 Status: ${summary.overallSuccess ? '✅ PASSED' : '❌ FAILED'}`
+    );
+
     console.log('\n📋 Test Suite Details:');
     for (const result of summary.results) {
       const status = result.success ? '✅' : '❌';
       const duration = `${(result.duration / 1000).toFixed(2)}s`;
       console.log(`  ${status} ${result.suite} (${duration})`);
-      
+
       if (result.coverage) {
-        console.log(`    📈 Coverage: ${result.coverage.statements}% statements, ${result.coverage.lines}% lines`);
+        console.log(
+          `    📈 Coverage: ${result.coverage.statements}% statements, ${result.coverage.lines}% lines`
+        );
       }
-      
+
       if (!result.success && result.error) {
         console.log(`    ❌ Error: ${result.error.split('\n')[0]}`);
       }
     }
 
-    if (summary.results.some(r => r.coverage)) {
-      const avgCoverage = summary.results
-        .filter(r => r.coverage)
-        .reduce((sum, r) => sum + r.coverage!.statements, 0) / 
-        summary.results.filter(r => r.coverage).length;
-      
+    if (summary.results.some((r) => r.coverage)) {
+      const avgCoverage =
+        summary.results
+          .filter((r) => r.coverage)
+          .reduce((sum, r) => sum + r.coverage!.statements, 0) /
+        summary.results.filter((r) => r.coverage).length;
+
       console.log(`\n📈 Average Coverage: ${avgCoverage.toFixed(1)}%`);
     }
 
     console.log('\n📁 Reports saved to: test-reports/');
     console.log('  - qr-test-summary.json (detailed results)');
-    console.log('  - qr-test-detailed.txt (human-readable)'); 
+    console.log('  - qr-test-detailed.txt (human-readable)');
     console.log('  - qr-test-junit.xml (CI/CD integration)');
-    
-    if (summary.results.some(r => r.coverage)) {
+
+    if (summary.results.some((r) => r.coverage)) {
       console.log('  - qr-coverage-summary.json (coverage data)');
     }
-    
+
     console.log('='.repeat(60));
   }
 
   private log(message: string): void {
     console.log(message);
-    
+
     logger.info('QR Test Runner', {
       message,
       timestamp: new Date().toISOString(),
@@ -427,13 +464,12 @@ ${testSuites}
 async function main() {
   const args = process.argv.slice(2);
   const runner = new QRTestRunner(args);
-  
+
   try {
     const summary = await runner.run();
-    
+
     // Exit with appropriate code
     process.exit(summary.overallSuccess ? 0 : 1);
-    
   } catch (error) {
     console.error('❌ Test runner failed:', error);
     logger.error('QR Test Runner Failed', {

@@ -12,23 +12,23 @@ const TEST_CONFIG = {
   subject: {
     name: 'Test Student',
     email: 'student@test.com',
-    token: 'test_family_token_123456789012345' // 31 chars, secure
+    token: 'test_family_token_123456789012345', // 31 chars, secure
   },
   event: {
     name: 'Family Test Event',
     school: 'Test School',
-    date: '2024-01-20'
+    date: '2024-01-20',
   },
   order: {
     contact_name: 'Test Parent',
     contact_email: 'parent@test.com',
-    contact_phone: '+541234567890'
+    contact_phone: '+541234567890',
   },
   photos: [
     { filename: 'photo1.jpg' },
     { filename: 'photo2.jpg' },
-    { filename: 'photo3.jpg' }
-  ]
+    { filename: 'photo3.jpg' },
+  ],
 };
 
 let supabase: ReturnType<typeof createClient<Database>>;
@@ -59,14 +59,14 @@ describe('Family Workflow E2E Tests', () => {
     it('should reject invalid token format', async () => {
       const shortToken = 'short_token';
       const response = await fetch(`/api/family/gallery/${shortToken}`);
-      
+
       expect(response.status).toBe(400);
     });
 
     it('should reject non-existent token', async () => {
       const fakeToken = 'nonexistent_token_1234567890123';
       const response = await fetch(`/api/family/gallery/${fakeToken}`);
-      
+
       expect(response.status).toBe(404);
     });
 
@@ -80,7 +80,7 @@ describe('Family Workflow E2E Tests', () => {
           name: 'Expired Subject',
           email: 'expired@test.com',
           token: expiredToken,
-          expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString() // Expired yesterday
+          expires_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Expired yesterday
         })
         .select()
         .single();
@@ -94,10 +94,10 @@ describe('Family Workflow E2E Tests', () => {
 
     it('should accept valid token and return gallery data', async () => {
       const response = await fetch(`/api/family/gallery/${validToken}`);
-      
+
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.subject).toBeDefined();
       expect(result.subject.name).toBe(TEST_CONFIG.subject.name);
       expect(result.photos).toBeDefined();
@@ -106,23 +106,23 @@ describe('Family Workflow E2E Tests', () => {
 
     it('should enforce rate limiting on gallery access', async () => {
       const promises = [];
-      
+
       // Make 35 requests (exceeds limit of 30/min)
       for (let i = 0; i < 35; i++) {
         promises.push(fetch(`/api/family/gallery/${validToken}`));
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Some should be rate limited
-      expect(responses.some(r => r.status === 429)).toBe(true);
+      expect(responses.some((r) => r.status === 429)).toBe(true);
     });
 
     it('should log family access without exposing token', async () => {
       // This test would verify that logs are created but tokens are masked
       const response = await fetch(`/api/family/gallery/${validToken}`);
       expect(response.status).toBe(200);
-      
+
       // In a real test, you'd check the log system for entries like:
       // "Family portal access - Token: tok_***, IP: xxx.xxx.xxx.***"
     });
@@ -139,26 +139,27 @@ describe('Family Workflow E2E Tests', () => {
       const response = await fetch(`/api/storage/signed-url`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           token: validToken,
           photo_id: photoId,
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.signed_url).toBeDefined();
       expect(result.signed_url).toContain('supabase.co');
       expect(result.expires_at).toBeDefined();
-      
+
       // URL should be valid for 1 hour
       const expiresAt = new Date(result.expires_at);
       const now = new Date();
-      const diffHours = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+      const diffHours =
+        (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
       expect(diffHours).toBeLessThanOrEqual(1);
       expect(diffHours).toBeGreaterThan(0.9);
     });
@@ -168,7 +169,7 @@ describe('Family Workflow E2E Tests', () => {
 
       const promises = [];
       const photoId = testPhotoIds[0];
-      
+
       // Make 65 requests (exceeds limit of 60/min)
       for (let i = 0; i < 65; i++) {
         promises.push(
@@ -178,14 +179,14 @@ describe('Family Workflow E2E Tests', () => {
             body: JSON.stringify({
               token: validToken,
               photo_id: photoId,
-              type: 'preview'
-            })
+              type: 'preview',
+            }),
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      expect(responses.some(r => r.status === 429)).toBe(true);
+      expect(responses.some((r) => r.status === 429)).toBe(true);
     });
 
     it('should reject signed URL requests for photos not assigned to subject', async () => {
@@ -196,7 +197,7 @@ describe('Family Workflow E2E Tests', () => {
           event_id: testEventId,
           filename: 'unassigned.jpg',
           storage_path: 'photos/2024/01/unassigned.jpg',
-          status: 'processed'
+          status: 'processed',
         })
         .select()
         .single();
@@ -207,8 +208,8 @@ describe('Family Workflow E2E Tests', () => {
         body: JSON.stringify({
           token: validToken,
           photo_id: unassignedPhoto.id,
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -220,15 +221,15 @@ describe('Family Workflow E2E Tests', () => {
     it('should validate anti-hotlinking protection', async () => {
       const response = await fetch(`/api/storage/signed-url`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Referer': 'https://malicious-site.com'
+          Referer: 'https://malicious-site.com',
         },
         body: JSON.stringify({
           token: validToken,
           photo_id: testPhotoIds[0],
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -239,11 +240,11 @@ describe('Family Workflow E2E Tests', () => {
     it('should add photos to cart', async () => {
       if (testPhotoIds.length === 0) return;
 
-      const cartItems = testPhotoIds.slice(0, 2).map(photoId => ({
+      const cartItems = testPhotoIds.slice(0, 2).map((photoId) => ({
         photo_id: photoId,
         quantity: 1,
         format: 'digital',
-        price: 500
+        price: 500,
       }));
 
       const response = await fetch('/api/family/cart', {
@@ -251,13 +252,13 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: cartItems
-        })
+          items: cartItems,
+        }),
       });
 
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.items).toBeDefined();
       expect(result.items.length).toBe(cartItems.length);
       expect(result.total).toBe(1000); // 2 × 500
@@ -267,20 +268,22 @@ describe('Family Workflow E2E Tests', () => {
       if (testPhotoIds.length === 0) return;
 
       // Try to add too many items (>50)
-      const manyItems = Array(55).fill(null).map((_, i) => ({
-        photo_id: testPhotoIds[0],
-        quantity: 1,
-        format: 'digital',
-        price: 500
-      }));
+      const manyItems = Array(55)
+        .fill(null)
+        .map((_, i) => ({
+          photo_id: testPhotoIds[0],
+          quantity: 1,
+          format: 'digital',
+          price: 500,
+        }));
 
       const response = await fetch('/api/family/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: manyItems
-        })
+          items: manyItems,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -294,7 +297,7 @@ describe('Family Workflow E2E Tests', () => {
           event_id: testEventId,
           filename: 'unassigned.jpg',
           storage_path: 'photos/2024/01/unassigned.jpg',
-          status: 'processed'
+          status: 'processed',
         })
         .select()
         .single();
@@ -304,13 +307,15 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: [{
-            photo_id: unassignedPhoto.id,
-            quantity: 1,
-            format: 'digital',
-            price: 500
-          }]
-        })
+          items: [
+            {
+              photo_id: unassignedPhoto.id,
+              quantity: 1,
+              format: 'digital',
+              price: 500,
+            },
+          ],
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -328,13 +333,15 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: [{
-            photo_id: testPhotoIds[0],
-            quantity: 1,
-            format: 'digital',
-            price: 500
-          }]
-        })
+          items: [
+            {
+              photo_id: testPhotoIds[0],
+              quantity: 1,
+              format: 'digital',
+              price: 500,
+            },
+          ],
+        }),
       });
 
       // Then update
@@ -343,13 +350,15 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          items: [{
-            photo_id: testPhotoIds[0],
-            quantity: 2,
-            format: 'print',
-            price: 800
-          }]
-        })
+          items: [
+            {
+              photo_id: testPhotoIds[0],
+              quantity: 2,
+              format: 'print',
+              price: 800,
+            },
+          ],
+        }),
       });
 
       expect(response.status).toBe(200);
@@ -362,7 +371,7 @@ describe('Family Workflow E2E Tests', () => {
       const response = await fetch('/api/family/cart', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: validToken })
+        body: JSON.stringify({ token: validToken }),
       });
 
       expect(response.status).toBe(200);
@@ -381,13 +390,15 @@ describe('Family Workflow E2E Tests', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: validToken,
-            items: [{
-              photo_id: testPhotoIds[0],
-              quantity: 1,
-              format: 'digital',
-              price: 500
-            }]
-          })
+            items: [
+              {
+                photo_id: testPhotoIds[0],
+                quantity: 1,
+                format: 'digital',
+                price: 500,
+              },
+            ],
+          }),
         });
       }
     });
@@ -396,7 +407,7 @@ describe('Family Workflow E2E Tests', () => {
       const incompleteContact = {
         contact_name: '', // Missing required field
         contact_email: 'invalid-email', // Invalid format
-        contact_phone: '123' // Too short
+        contact_phone: '123', // Too short
       };
 
       const response = await fetch('/api/family/checkout', {
@@ -404,8 +415,8 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          ...incompleteContact
-        })
+          ...incompleteContact,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -419,13 +430,13 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          ...TEST_CONFIG.order
-        })
+          ...TEST_CONFIG.order,
+        }),
       });
 
       expect(response.status).toBe(201);
       const result = await response.json();
-      
+
       expect(result.order_id).toBeDefined();
       expect(result.total_amount).toBeGreaterThan(0);
       expect(result.status).toBe('pending');
@@ -438,8 +449,8 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          ...TEST_CONFIG.order
-        })
+          ...TEST_CONFIG.order,
+        }),
       });
 
       // Try to create another order (should fail)
@@ -448,8 +459,8 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          ...TEST_CONFIG.order
-        })
+          ...TEST_CONFIG.order,
+        }),
       });
 
       expect(response.status).toBe(409); // Conflict
@@ -460,7 +471,7 @@ describe('Family Workflow E2E Tests', () => {
       await fetch('/api/family/cart', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: validToken })
+        body: JSON.stringify({ token: validToken }),
       });
 
       const response = await fetch('/api/family/checkout', {
@@ -468,8 +479,8 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          ...TEST_CONFIG.order
-        })
+          ...TEST_CONFIG.order,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -488,13 +499,15 @@ describe('Family Workflow E2E Tests', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: validToken,
-            items: [{
-              photo_id: testPhotoIds[0],
-              quantity: 1,
-              format: 'digital',
-              price: 1500
-            }]
-          })
+            items: [
+              {
+                photo_id: testPhotoIds[0],
+                quantity: 1,
+                format: 'digital',
+                price: 1500,
+              },
+            ],
+          }),
         });
 
         // Create order
@@ -503,8 +516,8 @@ describe('Family Workflow E2E Tests', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             token: validToken,
-            ...TEST_CONFIG.order
-          })
+            ...TEST_CONFIG.order,
+          }),
         });
 
         if (checkoutResponse.ok) {
@@ -522,13 +535,13 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order_id: testOrderId,
-          token: validToken
-        })
+          token: validToken,
+        }),
       });
 
       expect(response.status).toBe(201);
       const result = await response.json();
-      
+
       expect(result.preference_id).toBeDefined();
       expect(result.init_point).toBeDefined();
       expect(result.init_point).toContain('mercadopago.com');
@@ -546,8 +559,8 @@ describe('Family Workflow E2E Tests', () => {
         api_version: 'v1',
         action: 'payment.created',
         data: {
-          id: '987654321'
-        }
+          id: '987654321',
+        },
       };
 
       // Create valid signature
@@ -562,9 +575,9 @@ describe('Family Workflow E2E Tests', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Signature': `sha256=${signature}`
+          'X-Signature': `sha256=${signature}`,
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(webhookPayload),
       });
 
       expect(response.status).toBe(200);
@@ -574,16 +587,16 @@ describe('Family Workflow E2E Tests', () => {
       const webhookPayload = {
         id: 123456789,
         type: 'payment',
-        data: { id: '987654321' }
+        data: { id: '987654321' },
       };
 
       const response = await fetch('/api/payments/webhook', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Signature': 'sha256=invalid_signature'
+          'X-Signature': 'sha256=invalid_signature',
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(webhookPayload),
       });
 
       expect(response.status).toBe(401);
@@ -599,13 +612,13 @@ describe('Family Workflow E2E Tests', () => {
           fetch('/api/payments/webhook', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...webhookPayload, id: i })
+            body: JSON.stringify({ ...webhookPayload, id: i }),
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      expect(responses.some(r => r.status === 429)).toBe(true);
+      expect(responses.some((r) => r.status === 429)).toBe(true);
     });
   });
 
@@ -620,7 +633,7 @@ describe('Family Workflow E2E Tests', () => {
           subject_id: testSubjectId,
           total_amount: 1500,
           status: 'pending',
-          ...TEST_CONFIG.order
+          ...TEST_CONFIG.order,
         })
         .select()
         .single();
@@ -634,13 +647,13 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: validToken,
-          order_id: testOrderId
-        })
+          order_id: testOrderId,
+        }),
       });
 
       expect(response.status).toBe(200);
       const result = await response.json();
-      
+
       expect(result.order_id).toBe(testOrderId);
       expect(result.status).toBeDefined();
       expect(result.total_amount).toBe(1500);
@@ -655,7 +668,9 @@ describe('Family Workflow E2E Tests', () => {
           name: 'Other Subject',
           email: 'other@test.com',
           token: 'other_subject_token_123456789',
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
         })
         .select()
         .single();
@@ -665,8 +680,8 @@ describe('Family Workflow E2E Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: otherSubject.token,
-          order_id: testOrderId
-        })
+          order_id: testOrderId,
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -685,7 +700,7 @@ async function setupTestData() {
     .insert(TEST_CONFIG.event)
     .select()
     .single();
-  
+
   testEventId = event.id;
 
   // Create test subject with valid token
@@ -695,32 +710,32 @@ async function setupTestData() {
     .insert({
       ...TEST_CONFIG.subject,
       event_id: testEventId,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
     })
     .select()
     .single();
-  
+
   testSubjectId = subject.id;
 
   // Create test photos
-  const photoInserts = TEST_CONFIG.photos.map(photo => ({
+  const photoInserts = TEST_CONFIG.photos.map((photo) => ({
     event_id: testEventId,
     filename: photo.filename,
     storage_path: `photos/2024/01/${photo.filename}`,
-    status: 'processed' as const
+    status: 'processed' as const,
   }));
 
   const { data: photos } = await supabase
     .from('photos')
     .insert(photoInserts)
     .select();
-  
-  testPhotoIds = photos.map(p => p.id);
+
+  testPhotoIds = photos.map((p) => p.id);
 
   // Assign photos to subject
-  const assignments = testPhotoIds.map(photoId => ({
+  const assignments = testPhotoIds.map((photoId) => ({
     photo_id: photoId,
-    subject_id: testSubjectId
+    subject_id: testSubjectId,
   }));
 
   await supabase.from('photo_assignments').insert(assignments);
@@ -729,7 +744,10 @@ async function setupTestData() {
 async function cleanupTestData() {
   if (testEventId) {
     // Clean up in correct order
-    await supabase.from('photo_assignments').delete().eq('subject_id', testSubjectId);
+    await supabase
+      .from('photo_assignments')
+      .delete()
+      .eq('subject_id', testSubjectId);
     await supabase.from('order_items').delete().in('order_id', []);
     await supabase.from('orders').delete().eq('subject_id', testSubjectId);
     await supabase.from('photos').delete().eq('event_id', testEventId);

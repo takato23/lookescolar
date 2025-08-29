@@ -1,5 +1,25 @@
 import QRCode from 'qrcode';
+import { createClient } from '@supabase/supabase-js';
 import { TokenService } from './token.service';
+import { logger } from '@/lib/utils/logger';
+import { qrSignatureService } from '@/lib/security/qr-signatures';
+import { securityAuditService } from '@/lib/security/qr-audit.service';
+import {
+  qrCacheService,
+  QRCacheEntry,
+} from '@/lib/cache/qr-enhanced-cache.service';
+import 'server-only';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+);
 
 export interface QRGenerationOptions {
   size?: number;
@@ -9,6 +29,40 @@ export interface QRGenerationOptions {
     dark?: string;
     light?: string;
   };
+}
+
+export interface StudentQRData {
+  id: string;
+  eventId: string;
+  courseId?: string;
+  studentId: string;
+  codeValue: string;
+  token: string;
+  type: 'student_identification';
+  metadata?: Record<string, any>;
+}
+
+export interface QRDetectionResult {
+  qrCode: string;
+  data: StudentQRData | null;
+  confidence: number;
+  position?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+export interface BatchStudentQRRequest {
+  eventId: string;
+  students: Array<{
+    id: string;
+    name: string;
+    courseId?: string;
+    metadata?: Record<string, any>;
+  }>;
+  options?: QRGenerationOptions;
 }
 
 export interface QRResult {
@@ -23,6 +77,9 @@ export interface QRResult {
  * Integra con TokenService para URLs seguras al portal
  */
 export class QRService {
+  private readonly QR_PREFIX_STUDENT = 'LKSTUDENT_';
+  private readonly QR_PREFIX_FAMILY = 'LKFAMILY_';
+
   private defaultOptions: QRGenerationOptions = {
     size: 200,
     errorCorrectionLevel: 'M',
@@ -34,20 +91,61 @@ export class QRService {
   };
 
   /**
-   * Genera QR individual para un sujeto específico
+   * Genera QR individual para un sujeto específico con seguridad mejorada
    */
   async generateQRForSubject(
     subjectId: string,
     subjectName: string,
-    options: QRGenerationOptions = {}
+    options: QRGenerationOptions = {},
+    userId?: string
   ): Promise<QRResult> {
     try {
+      // Check cache first
+      const cachedQR = await qrCacheService.getQR(subjectId);
+      if (cachedQR) {
+        logger.debug('qr_cache_hit', {
+          subjectId,
+          subjectName,
+          cacheHit: true,
+          businessMetric: {
+            type: 'photo_view',
+            value: 1,
+            unit: 'hit',
+          },
+        });
+
+        return {
+          dataUrl: cachedQR.dataUrl,
+          token: cachedQR.token,
+          portalUrl: cachedQR.portalUrl,
+          subjectName: cachedQR.subjectName,
+        };
+      }
+
+      const startTime = Date.now();
+
       // Generar o obtener token existente
       const tokenResult =
         await TokenService.prototype.generateTokenForSubject(subjectId);
 
-      // Generar URL del portal
-      const portalUrl = TokenService.generatePortalUrl(tokenResult.token);
+      // Crear datos para firma digital
+      const qrData = {
+        subjectId,
+        token: tokenResult.token,
+        timestamp: Date.now(),
+        userId: userId || 'system',
+      };
+
+      // Aplicar firma digital si está configurada
+      let portalUrl = TokenService.generatePortalUrl(tokenResult.token);
+      if (qrSignatureService.isConfigured()) {
+        const signedData = await qrSignatureService.signQRData(
+          JSON.stringify(qrData)
+        );
+        const secureToken =
+          await qrSignatureService.generateSecureToken(qrData);
+        portalUrl = TokenService.generatePortalUrl(secureToken);
+      }
 
       // Configurar opciones de QR
       const qrOptions = {
@@ -63,11 +161,52 @@ export class QRService {
       // Generar QR como data URL
       const dataUrl = await QRCode.toDataURL(portalUrl, qrOptions);
 
-      console.log({
-        event: 'qr_generated',
+      // Record generation time
+      const generationTime = Date.now() - startTime;
+      qrCacheService.recordGenerationTime(generationTime);
+
+      // Cache the result
+      const qrResult: Omit<
+        QRCacheEntry,
+        'generatedAt' | 'expiresAt' | 'accessCount' | 'lastAccessed'
+      > = {
+        dataUrl,
+        token: tokenResult.token,
+        portalUrl,
+        subjectName,
+      };
+
+      await qrCacheService.setQR(subjectId, qrResult);
+
+      // Log de auditoría
+      await securityAuditService.logQRGeneration({
+        userId: userId || 'system',
+        studentId: subjectId,
+        eventId: 'unknown', // Se puede mejorar pasando el eventId
+        qrType: 'family_portal',
+        metadata: {
+          size: qrOptions.width,
+          subjectName,
+          signatureEnabled: qrSignatureService.isConfigured(),
+          generationTimeMs: generationTime,
+        },
+      });
+
+      logger.info('qr_generated', {
         subjectId,
         subjectName,
         size: qrOptions.width,
+        secure: qrSignatureService.isConfigured(),
+        generationTimeMs: generationTime,
+        cacheHit: false,
+        businessMetric: {
+          type: 'photo_view',
+          value: 1,
+          unit: 'generation',
+        },
+        performance: {
+          totalTime: generationTime,
+        },
       });
 
       return {
@@ -77,11 +216,11 @@ export class QRService {
         subjectName,
       };
     } catch (error: any) {
-      console.error({
-        event: 'qr_generation_error',
+      logger.error('qr_generation_error', {
         subjectId,
         subjectName,
         error: error.message,
+        stack: error.stack,
       });
       throw new Error(
         `Error generando QR para ${subjectName}: ${error.message}`
@@ -211,6 +350,413 @@ export class QRService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Generate a unique QR code for student identification in photos
+   */
+  async generateStudentIdentificationQR(
+    eventId: string,
+    studentId: string,
+    studentName: string,
+    courseId?: string,
+    options: QRGenerationOptions = {}
+  ): Promise<{ qrCode: string; dataUrl: string; token: string }> {
+    const requestId = crypto.randomUUID();
+
+    try {
+      // Generate secure token for student identification
+      const token = this.generateSecureToken();
+      const codeValue = `${this.QR_PREFIX_STUDENT}${token}`;
+
+      // Store QR code data in database
+      const { data: qrData, error } = await supabase
+        .from('codes')
+        .insert({
+          event_id: eventId,
+          course_id: courseId,
+          code_value: codeValue,
+          token: token,
+          title: `QR Identificación - ${studentName}`,
+          is_published: true,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to store student QR code: ${error.message}`);
+      }
+
+      // Link QR code to student in subjects table
+      await supabase
+        .from('subjects')
+        .update({
+          qr_code: qrData.id,
+          metadata: {
+            ...((
+              await supabase
+                .from('subjects')
+                .select('metadata')
+                .eq('id', studentId)
+                .single()
+            ).data?.metadata || {}),
+            qr_token: token,
+            qr_code_value: codeValue,
+            qr_type: 'student_identification',
+          },
+        })
+        .eq('id', studentId);
+
+      // Generate QR code image
+      const qrOptions = { ...this.defaultOptions, ...options };
+      const dataUrl = await QRCode.toDataURL(codeValue, {
+        errorCorrectionLevel: qrOptions.errorCorrectionLevel,
+        type: 'image/png',
+        quality: 0.92,
+        margin: qrOptions.margin,
+        color: qrOptions.color,
+        width: qrOptions.size,
+      });
+
+      logger.info('Student identification QR code generated', {
+        requestId,
+        eventId,
+        studentId: studentId.substring(0, 8) + '***',
+        qrCodeId: qrData.id,
+      });
+
+      return {
+        qrCode: qrData.id,
+        dataUrl,
+        token,
+      };
+    } catch (error) {
+      logger.error('Failed to generate student identification QR', {
+        requestId,
+        eventId,
+        studentId: studentId.substring(0, 8) + '***',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate QR codes for multiple students in batch
+   */
+  async generateBatchStudentQRCodes(request: BatchStudentQRRequest): Promise<
+    Array<{
+      studentId: string;
+      qrCode: string;
+      dataUrl: string;
+      token: string;
+      error?: string;
+    }>
+  > {
+    const requestId = crypto.randomUUID();
+    const startTime = Date.now();
+
+    try {
+      const results = [];
+
+      // Process in smaller batches to avoid overwhelming the database
+      const batchSize = 10;
+      for (let i = 0; i < request.students.length; i += batchSize) {
+        const batch = request.students.slice(i, i + batchSize);
+
+        const batchPromises = batch.map(async (student) => {
+          try {
+            const result = await this.generateStudentIdentificationQR(
+              request.eventId,
+              student.id,
+              student.name,
+              student.courseId,
+              request.options
+            );
+
+            return {
+              studentId: student.id,
+              ...result,
+            };
+          } catch (error) {
+            return {
+              studentId: student.id,
+              qrCode: '',
+              dataUrl: '',
+              token: '',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+        results.push(...batchResults);
+      }
+
+      const duration = Date.now() - startTime;
+      const successCount = results.filter((r) => !r.error).length;
+
+      logger.info('Batch student QR codes generated', {
+        requestId,
+        eventId: request.eventId,
+        totalStudents: request.students.length,
+        successCount,
+        failureCount: request.students.length - successCount,
+        duration,
+      });
+
+      return results;
+    } catch (error) {
+      logger.error('Failed to generate batch student QR codes', {
+        requestId,
+        eventId: request.eventId,
+        totalStudents: request.students.length,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Validate and decode student QR code data
+   */
+  async validateStudentQRCode(
+    qrCodeValue: string,
+    eventId?: string
+  ): Promise<StudentQRData | null> {
+    try {
+      // Check if QR code follows student identification format
+      if (!qrCodeValue.startsWith(this.QR_PREFIX_STUDENT)) {
+        return null;
+      }
+
+      // Extract token
+      const token = qrCodeValue.replace(this.QR_PREFIX_STUDENT, '');
+
+      // Look up QR code in database
+      let query = supabase
+        .from('codes')
+        .select(
+          `
+          id,
+          event_id,
+          course_id,
+          code_value,
+          token,
+          title,
+          is_published,
+          created_at
+        `
+        )
+        .eq('token', token)
+        .eq('is_published', true);
+
+      if (eventId) {
+        query = query.eq('event_id', eventId);
+      }
+
+      const { data, error } = await query.single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      // Find associated student
+      const { data: student } = await supabase
+        .from('subjects')
+        .select('id, name, metadata')
+        .eq('qr_code', data.id)
+        .single();
+
+      if (!student) {
+        return null;
+      }
+
+      return {
+        id: data.id,
+        eventId: data.event_id,
+        courseId: data.course_id,
+        studentId: student.id,
+        codeValue: data.code_value,
+        token: data.token,
+        type: 'student_identification',
+        metadata: {
+          title: data.title,
+          studentName: student.name,
+          createdAt: data.created_at,
+          ...student.metadata,
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to validate student QR code', {
+        qrCodeValue: qrCodeValue.substring(0, 20) + '***',
+        eventId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get all student QR codes for an event
+   */
+  async getEventStudentQRCodes(eventId: string): Promise<StudentQRData[]> {
+    try {
+      const { data, error } = await supabase
+        .from('codes')
+        .select(
+          `
+          id,
+          event_id,
+          course_id,
+          code_value,
+          token,
+          title,
+          is_published,
+          created_at
+        `
+        )
+        .eq('event_id', eventId)
+        .eq('is_published', true)
+        .like('code_value', `${this.QR_PREFIX_STUDENT}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(
+          `Failed to get event student QR codes: ${error.message}`
+        );
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // Get associated students for each QR code
+      const qrCodes = await Promise.all(
+        data.map(async (code) => {
+          const { data: student } = await supabase
+            .from('subjects')
+            .select('id, name, metadata')
+            .eq('qr_code', code.id)
+            .single();
+
+          if (!student) {
+            return null;
+          }
+
+          return {
+            id: code.id,
+            eventId: code.event_id,
+            courseId: code.course_id,
+            studentId: student.id,
+            codeValue: code.code_value,
+            token: code.token,
+            type: 'student_identification' as const,
+            metadata: {
+              title: code.title,
+              studentName: student.name,
+              createdAt: code.created_at,
+              ...student.metadata,
+            },
+          };
+        })
+      );
+
+      return qrCodes.filter((qr): qr is StudentQRData => qr !== null);
+    } catch (error) {
+      logger.error('Failed to get event student QR codes', {
+        eventId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get QR code statistics for event
+   */
+  async getQRCodeStats(eventId: string): Promise<{
+    totalStudentCodes: number;
+    activeStudentCodes: number;
+    detectedStudentCodes: number;
+    studentsWithCodes: number;
+    studentsWithoutCodes: number;
+  }> {
+    try {
+      // Get student QR codes for event
+      const { data: codes, error: codesError } = await supabase
+        .from('codes')
+        .select('id, is_published')
+        .eq('event_id', eventId)
+        .like('code_value', `${this.QR_PREFIX_STUDENT}%`);
+
+      if (codesError) {
+        throw new Error(
+          `Failed to get student QR codes: ${codesError.message}`
+        );
+      }
+
+      // Get students with QR codes
+      const { data: studentsWithQR, error: studentsError } = await supabase
+        .from('subjects')
+        .select('id, qr_code')
+        .eq('event_id', eventId);
+
+      if (studentsError) {
+        throw new Error(`Failed to get students: ${studentsError.message}`);
+      }
+
+      // Get photos with detected student QR codes
+      const { data: photosWithQR, error: photosError } = await supabase
+        .from('photos')
+        .select('id, code_id')
+        .eq('event_id', eventId)
+        .not('code_id', 'is', null);
+
+      if (photosError) {
+        throw new Error(`Failed to get photos with QR: ${photosError.message}`);
+      }
+
+      const totalStudentCodes = codes?.length || 0;
+      const activeStudentCodes =
+        codes?.filter((c) => c.is_published).length || 0;
+      const detectedStudentCodes = new Set(photosWithQR?.map((p) => p.code_id))
+        .size;
+      const studentsWithCodes =
+        studentsWithQR?.filter((s) => s.qr_code).length || 0;
+      const studentsWithoutCodes =
+        (studentsWithQR?.length || 0) - studentsWithCodes;
+
+      return {
+        totalStudentCodes,
+        activeStudentCodes,
+        detectedStudentCodes,
+        studentsWithCodes,
+        studentsWithoutCodes,
+      };
+    } catch (error) {
+      logger.error('Failed to get QR code stats', {
+        eventId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate secure token for QR codes
+   */
+  private generateSecureToken(): string {
+    // Generate a cryptographically secure random token
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+
+    // Convert to base64url format (URL-safe)
+    return Buffer.from(bytes)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
   }
 
   /**

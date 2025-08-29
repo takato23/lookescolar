@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
-import { AuthClient, ServerAuth } from '@/lib/supabase/auth';
+import { AuthClient } from '@/lib/supabase/auth-client';
+import { ServerAuth } from '@/lib/supabase/auth-server';
 
 // Mocks
 vi.mock('@/lib/supabase/client', () => ({
@@ -9,7 +10,9 @@ vi.mock('@/lib/supabase/client', () => ({
       signOut: vi.fn(),
       getUser: vi.fn(),
       refreshSession: vi.fn(),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      })),
     },
   }),
 }));
@@ -33,7 +36,7 @@ describe('AuthClient', () => {
     authClient = new AuthClient();
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Get the mocked supabase instance
     const { createClient } = require('@/lib/supabase/client');
     mockSupabase = createClient();

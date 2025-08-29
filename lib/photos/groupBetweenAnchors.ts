@@ -55,8 +55,12 @@ export async function groupBetweenAnchors(
 
   // Orden estable por fecha y nombre de archivo
   photos.sort((a, b) => {
-    const da = a.exif_taken_at ? new Date(a.exif_taken_at).getTime() : new Date(a.created_at).getTime();
-    const db = b.exif_taken_at ? new Date(b.exif_taken_at).getTime() : new Date(b.created_at).getTime();
+    const da = a.exif_taken_at
+      ? new Date(a.exif_taken_at).getTime()
+      : new Date(a.created_at).getTime();
+    const db = b.exif_taken_at
+      ? new Date(b.exif_taken_at).getTime()
+      : new Date(b.created_at).getTime();
     if (da !== db) return da - db;
     const na = a.original_filename ?? '';
     const nb = b.original_filename ?? '';
@@ -122,7 +126,10 @@ export async function groupBetweenAnchors(
       // Intentar paralelismo controlado por lotes pequeños
       await Promise.all(
         chunk.map(async (u) => {
-          await supabase.from('photos').update({ code_id: u.code_id }).eq('id', u.id);
+          await supabase
+            .from('photos')
+            .update({ code_id: u.code_id })
+            .eq('id', u.id);
         })
       );
     }
@@ -138,7 +145,10 @@ export async function groupBetweenAnchors(
       if (upd) effectiveCodeId = upd.code_id;
     }
     if (effectiveCodeId) {
-      codeCounts.set(effectiveCodeId, (codeCounts.get(effectiveCodeId) ?? 0) + 1);
+      codeCounts.set(
+        effectiveCodeId,
+        (codeCounts.get(effectiveCodeId) ?? 0) + 1
+      );
     }
   }
 
@@ -158,6 +168,3 @@ export async function groupBetweenAnchors(
 
   return summary;
 }
-
-
-

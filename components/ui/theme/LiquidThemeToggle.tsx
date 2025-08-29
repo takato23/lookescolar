@@ -7,29 +7,32 @@ interface LiquidThemeToggleProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export function LiquidThemeToggle({ className = '', size = 'md' }: LiquidThemeToggleProps) {
+export function LiquidThemeToggle({
+  className = '',
+  size = 'md',
+}: LiquidThemeToggleProps) {
   const { resolvedTheme, toggleTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
 
   const sizeClasses = {
     sm: 'w-12 h-12',
-    md: 'w-14 h-14', 
-    lg: 'w-16 h-16'
+    md: 'w-14 h-14',
+    lg: 'w-16 h-16',
   };
 
   const iconSizeClasses = {
     sm: 'text-xl',
     md: 'text-2xl',
-    lg: 'text-3xl'
+    lg: 'text-3xl',
   };
 
   return (
     <button
       onClick={toggleTheme}
-      className={`${sizeClasses[size]} relative rounded-3xl overflow-hidden transition-all duration-300 hover:scale-105 active:scale-95 ${className}`}
+      className={`${sizeClasses[size]} relative overflow-hidden rounded-3xl transition-all duration-300 hover:scale-105 active:scale-95 ${className}`}
       style={{
-        background: isDark 
-          ? 'linear-gradient(135deg, #c084fc 0%, #f472b6 50%, #ec4899 100%)'  // Rosa suave para modo oscuro
+        background: isDark
+          ? 'linear-gradient(135deg, #c084fc 0%, #f472b6 50%, #ec4899 100%)' // Rosa suave para modo oscuro
           : 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 40%, #8b5cf6 100%)', // Cyan a púrpura para modo claro
         boxShadow: `
           0 20px 40px rgba(0, 0, 0, 0.15),
@@ -37,37 +40,40 @@ export function LiquidThemeToggle({ className = '', size = 'md' }: LiquidThemeTo
           inset 0 2px 4px rgba(255, 255, 255, 0.3),
           inset 0 -2px 4px rgba(0, 0, 0, 0.1)
         `,
-        border: '1px solid rgba(255, 255, 255, 0.2)'
+        border: '1px solid rgba(255, 255, 255, 0.2)',
       }}
       aria-label={`Cambiar a modo ${isDark ? 'claro' : 'oscuro'}`}
     >
       {/* Liquid Glass Shine Effect */}
-      <div 
+      <div
         className="absolute inset-0 rounded-3xl"
         style={{
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, transparent 70%)',
+          background:
+            'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, transparent 70%)',
         }}
       />
 
       {/* Icon Container */}
-      <div className={`relative w-full h-full flex items-center justify-center ${iconSizeClasses[size]}`}>
+      <div
+        className={`relative flex h-full w-full items-center justify-center ${iconSizeClasses[size]}`}
+      >
         {/* Sol - Modo Día */}
-        <span 
+        <span
           className={`absolute transition-all duration-300 ${
-            isDark 
-              ? 'opacity-0 scale-75 rotate-90' 
-              : 'opacity-100 scale-100 rotate-0'
+            isDark
+              ? 'rotate-90 scale-75 opacity-0'
+              : 'rotate-0 scale-100 opacity-100'
           }`}
         >
           ☀️
         </span>
 
         {/* Luna - Modo Noche */}
-        <span 
+        <span
           className={`absolute transition-all duration-300 ${
-            isDark 
-              ? 'opacity-100 scale-100 rotate-0' 
-              : 'opacity-0 scale-75 rotate-90'
+            isDark
+              ? 'rotate-0 scale-100 opacity-100'
+              : 'rotate-90 scale-75 opacity-0'
           }`}
         >
           🌙
@@ -75,7 +81,7 @@ export function LiquidThemeToggle({ className = '', size = 'md' }: LiquidThemeTo
       </div>
 
       {/* Glow interno dinámico */}
-      <div 
+      <div
         className="absolute inset-2 rounded-2xl transition-all duration-300"
         style={{
           background: isDark

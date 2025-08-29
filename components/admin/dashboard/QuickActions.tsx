@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Camera, Users, Package } from 'lucide-react';
+import { Calendar, Camera, Users, Package, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickAction {
@@ -40,6 +40,15 @@ const actions: QuickAction[] = [
     title: 'Asignar Fotos',
     subtitle: 'Con QR codes',
     gradient: 'from-amber-500 to-amber-600',
+    iconBg: 'bg-white/20',
+    textColor: 'text-white',
+  },
+  {
+    href: '/admin/quick-flow',
+    icon: Zap,
+    title: 'Flujo rápido',
+    subtitle: '4 pasos',
+    gradient: 'from-pink-500 to-pink-600',
     iconBg: 'bg-white/20',
     textColor: 'text-white',
   },

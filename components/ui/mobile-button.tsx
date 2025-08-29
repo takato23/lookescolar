@@ -17,20 +17,23 @@ interface MobileButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const MobileButton = forwardRef<HTMLButtonElement, MobileButtonProps>(
-  ({
-    variant = 'primary',
-    size = 'md',
-    icon,
-    iconPosition = 'left',
-    isLoading = false,
-    loadingText,
-    haptic = true,
-    className,
-    children,
-    onClick,
-    disabled,
-    ...props
-  }, ref) => {
+  (
+    {
+      variant = 'primary',
+      size = 'md',
+      icon,
+      iconPosition = 'left',
+      isLoading = false,
+      loadingText,
+      haptic = true,
+      className,
+      children,
+      onClick,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
     const { isTouchDevice } = useMobileDetection();
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -108,7 +111,7 @@ export const MobileButton = forwardRef<HTMLButtonElement, MobileButtonProps>(
         transition={{ duration: 0.1 }}
         className={clsx(
           'relative flex items-center justify-center border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
+          'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
           'select-none', // Prevent text selection on mobile
           getSizeClasses(),
           getVariantClasses(),
@@ -196,7 +199,7 @@ export function MobileFAB({
       className={clsx(
         'fixed z-40 flex items-center justify-center rounded-full transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
+        'disabled:cursor-not-allowed disabled:opacity-50',
         'safe-area-padding',
         getPositionClasses(),
         getVariantClasses(),
@@ -235,22 +238,22 @@ export function MobileButtonGroup({
 }
 
 // Icon Button optimized for mobile
-interface MobileIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface MobileIconButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: ReactNode;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'ghost' | 'outline' | 'filled';
   label?: string; // For accessibility
 }
 
-export const MobileIconButton = forwardRef<HTMLButtonElement, MobileIconButtonProps>(
-  ({
-    icon,
-    size = 'md',
-    variant = 'ghost',
-    label,
-    className,
-    ...props
-  }, ref) => {
+export const MobileIconButton = forwardRef<
+  HTMLButtonElement,
+  MobileIconButtonProps
+>(
+  (
+    { icon, size = 'md', variant = 'ghost', label, className, ...props },
+    ref
+  ) => {
     const getSizeClasses = () => {
       switch (size) {
         case 'sm':
@@ -284,7 +287,7 @@ export const MobileIconButton = forwardRef<HTMLButtonElement, MobileIconButtonPr
         className={clsx(
           'flex items-center justify-center rounded-xl transition-all duration-200',
           'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'disabled:cursor-not-allowed disabled:opacity-50',
           'mobile-touch-target',
           getSizeClasses(),
           getVariantClasses(),

@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, ExternalLink, AlertCircle, Eye, EyeOff, TestTube, CheckCircle, XCircle, Info, CreditCard } from 'lucide-react';
+import {
+  Save,
+  ExternalLink,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  TestTube,
+  CheckCircle,
+  XCircle,
+  Info,
+  CreditCard,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,13 +32,15 @@ export default function MercadoPagoSettingsPage() {
     publicKey: '',
     accessToken: '',
     webhookSecret: '',
-    environment: 'sandbox'
+    environment: 'sandbox',
   });
   const [showAccessToken, setShowAccessToken] = useState(false);
   const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
+  const [testResult, setTestResult] = useState<'success' | 'error' | null>(
+    null
+  );
 
   useEffect(() => {
     loadConfig();
@@ -41,7 +54,7 @@ export default function MercadoPagoSettingsPage() {
         setConfig({
           ...config,
           ...data,
-          webhookUrl: `${window.location.origin}/api/payments/webhook`
+          webhookUrl: `${window.location.origin}/api/payments/webhook`,
         });
       }
     } catch (error) {
@@ -55,7 +68,7 @@ export default function MercadoPagoSettingsPage() {
       const response = await fetch('/api/admin/settings/mercadopago', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify(config),
       });
 
       if (!response.ok) {
@@ -74,15 +87,15 @@ export default function MercadoPagoSettingsPage() {
   const testConnection = async () => {
     setTesting(true);
     setTestResult(null);
-    
+
     try {
       const response = await fetch('/api/admin/settings/mercadopago/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           accessToken: config.accessToken,
-          environment: config.environment
-        })
+          environment: config.environment,
+        }),
       });
 
       if (response.ok) {
@@ -102,18 +115,23 @@ export default function MercadoPagoSettingsPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Configuración de Mercado Pago</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="mt-2 text-gray-600">
             Configura las credenciales para procesar pagos con Mercado Pago
           </p>
         </div>
         <Button
-          onClick={() => window.open('https://www.mercadopago.com.ar/developers/panel', '_blank')}
+          onClick={() =>
+            window.open(
+              'https://www.mercadopago.com.ar/developers/panel',
+              '_blank'
+            )
+          }
           variant="outline"
         >
-          <ExternalLink className="h-4 w-4 mr-2" />
+          <ExternalLink className="mr-2 h-4 w-4" />
           Panel de Desarrolladores
         </Button>
       </div>
@@ -127,9 +145,11 @@ export default function MercadoPagoSettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-semibold mb-2">Pasos para configurar Mercado Pago:</h3>
-            <ol className="list-decimal list-inside space-y-2 text-sm">
+          <div className="rounded-lg bg-blue-50 p-4">
+            <h3 className="mb-2 font-semibold">
+              Pasos para configurar Mercado Pago:
+            </h3>
+            <ol className="list-inside list-decimal space-y-2 text-sm">
               <li>
                 Ingresa al{' '}
                 <a
@@ -143,16 +163,22 @@ export default function MercadoPagoSettingsPage() {
               </li>
               <li>Crea una aplicación nueva o selecciona una existente</li>
               <li>
-                En la sección <strong>"Credenciales de prueba"</strong> (para sandbox) o{' '}
-                <strong>"Credenciales de producción"</strong> encontrarás:
-                <ul className="list-disc list-inside ml-4 mt-1">
-                  <li><strong>Public Key</strong>: Para el checkout en el frontend</li>
-                  <li><strong>Access Token</strong>: Para crear pagos desde el backend</li>
+                En la sección <strong>"Credenciales de prueba"</strong> (para
+                sandbox) o <strong>"Credenciales de producción"</strong>{' '}
+                encontrarás:
+                <ul className="ml-4 mt-1 list-inside list-disc">
+                  <li>
+                    <strong>Public Key</strong>: Para el checkout en el frontend
+                  </li>
+                  <li>
+                    <strong>Access Token</strong>: Para crear pagos desde el
+                    backend
+                  </li>
                 </ul>
               </li>
               <li>
                 Para el <strong>Webhook Secret</strong>:
-                <ul className="list-disc list-inside ml-4 mt-1">
+                <ul className="ml-4 mt-1 list-inside list-disc">
                   <li>Ve a "Webhooks" en tu aplicación</li>
                   <li>Configura la URL de webhook (copiala de abajo)</li>
                   <li>Selecciona el evento "Payment notifications"</li>
@@ -162,14 +188,20 @@ export default function MercadoPagoSettingsPage() {
             </ol>
           </div>
 
-          <div className="bg-yellow-50 p-4 rounded-lg">
+          <div className="rounded-lg bg-yellow-50 p-4">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+              <AlertCircle className="mt-0.5 h-5 w-5 text-yellow-600" />
               <div className="text-sm">
                 <p className="font-semibold">Importante:</p>
-                <ul className="list-disc list-inside mt-1 space-y-1">
-                  <li>Usa credenciales de <strong>prueba (sandbox)</strong> para desarrollo</li>
-                  <li>Solo usa credenciales de <strong>producción</strong> cuando estés listo para cobrar real</li>
+                <ul className="mt-1 list-inside list-disc space-y-1">
+                  <li>
+                    Usa credenciales de <strong>prueba (sandbox)</strong> para
+                    desarrollo
+                  </li>
+                  <li>
+                    Solo usa credenciales de <strong>producción</strong> cuando
+                    estés listo para cobrar real
+                  </li>
                   <li>Nunca compartas tu Access Token con nadie</li>
                 </ul>
               </div>
@@ -190,13 +222,15 @@ export default function MercadoPagoSettingsPage() {
           {/* Environment Selection */}
           <div>
             <Label>Entorno</Label>
-            <div className="flex gap-4 mt-2">
+            <div className="mt-2 flex gap-4">
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
                   value="sandbox"
                   checked={config.environment === 'sandbox'}
-                  onChange={(e) => setConfig({ ...config, environment: 'sandbox' })}
+                  onChange={(e) =>
+                    setConfig({ ...config, environment: 'sandbox' })
+                  }
                   className="text-primary"
                 />
                 <span>Sandbox (Pruebas)</span>
@@ -206,14 +240,16 @@ export default function MercadoPagoSettingsPage() {
                   type="radio"
                   value="production"
                   checked={config.environment === 'production'}
-                  onChange={(e) => setConfig({ ...config, environment: 'production' })}
+                  onChange={(e) =>
+                    setConfig({ ...config, environment: 'production' })
+                  }
                   className="text-primary"
                 />
                 <span>Producción (Real)</span>
               </label>
             </div>
             {config.environment === 'production' && (
-              <p className="text-sm text-red-600 mt-1">
+              <p className="mt-1 text-sm text-red-600">
                 ⚠️ Modo producción: Los pagos serán reales
               </p>
             )}
@@ -225,11 +261,13 @@ export default function MercadoPagoSettingsPage() {
             <Input
               id="publicKey"
               value={config.publicKey}
-              onChange={(e) => setConfig({ ...config, publicKey: e.target.value })}
+              onChange={(e) =>
+                setConfig({ ...config, publicKey: e.target.value })
+              }
               placeholder="TEST-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               className="font-mono"
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-500">
               Se usa en el frontend para inicializar el checkout
             </p>
           </div>
@@ -242,19 +280,25 @@ export default function MercadoPagoSettingsPage() {
                 id="accessToken"
                 type={showAccessToken ? 'text' : 'password'}
                 value={config.accessToken}
-                onChange={(e) => setConfig({ ...config, accessToken: e.target.value })}
+                onChange={(e) =>
+                  setConfig({ ...config, accessToken: e.target.value })
+                }
                 placeholder="TEST-xxxxxxxxxxxx..."
-                className="font-mono pr-10"
+                className="pr-10 font-mono"
               />
               <button
                 type="button"
                 onClick={() => setShowAccessToken(!showAccessToken)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
-                {showAccessToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showAccessToken ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-500">
               Token secreto para crear pagos desde el servidor
             </p>
           </div>
@@ -267,19 +311,25 @@ export default function MercadoPagoSettingsPage() {
                 id="webhookSecret"
                 type={showWebhookSecret ? 'text' : 'password'}
                 value={config.webhookSecret}
-                onChange={(e) => setConfig({ ...config, webhookSecret: e.target.value })}
+                onChange={(e) =>
+                  setConfig({ ...config, webhookSecret: e.target.value })
+                }
                 placeholder="tu_webhook_secret_de_mp"
-                className="font-mono pr-10"
+                className="pr-10 font-mono"
               />
               <button
                 type="button"
                 onClick={() => setShowWebhookSecret(!showWebhookSecret)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
               >
-                {showWebhookSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showWebhookSecret ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-500">
               Para verificar que las notificaciones vienen de MP (recomendado)
             </p>
           </div>
@@ -289,9 +339,12 @@ export default function MercadoPagoSettingsPage() {
             <Label>URL de Webhook</Label>
             <div className="flex gap-2">
               <Input
-                value={config.webhookUrl || `${window.location.origin}/api/payments/webhook`}
+                value={
+                  config.webhookUrl ||
+                  `${window.location.origin}/api/payments/webhook`
+                }
                 readOnly
-                className="font-mono bg-gray-50"
+                className="bg-gray-50 font-mono"
               />
               <Button
                 variant="outline"
@@ -303,7 +356,7 @@ export default function MercadoPagoSettingsPage() {
                 Copiar
               </Button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-500">
               Configura esta URL en tu aplicación de Mercado Pago
             </p>
           </div>
@@ -318,7 +371,7 @@ export default function MercadoPagoSettingsPage() {
                 <>Guardando...</>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="mr-2 h-4 w-4" />
                   Guardar Configuración
                 </>
               )}
@@ -333,7 +386,7 @@ export default function MercadoPagoSettingsPage() {
                 <>Probando...</>
               ) : (
                 <>
-                  <TestTube className="h-4 w-4 mr-2" />
+                  <TestTube className="mr-2 h-4 w-4" />
                   Probar Conexión
                 </>
               )}
@@ -342,16 +395,21 @@ export default function MercadoPagoSettingsPage() {
 
           {/* Test Result */}
           {testResult && (
-            <div className={`p-4 rounded-lg flex items-center gap-3 ${
-              testResult === 'success' ? 'bg-green-50' : 'bg-red-50'
-            }`}>
+            <div
+              className={`flex items-center gap-3 rounded-lg p-4 ${
+                testResult === 'success' ? 'bg-green-50' : 'bg-red-50'
+              }`}
+            >
               {testResult === 'success' ? (
                 <>
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="font-semibold text-green-800">Conexión exitosa</p>
+                    <p className="font-semibold text-green-800">
+                      Conexión exitosa
+                    </p>
                     <p className="text-sm text-green-700">
-                      Las credenciales son válidas y Mercado Pago está respondiendo correctamente
+                      Las credenciales son válidas y Mercado Pago está
+                      respondiendo correctamente
                     </p>
                   </div>
                 </>
@@ -359,9 +417,12 @@ export default function MercadoPagoSettingsPage() {
                 <>
                   <XCircle className="h-5 w-5 text-red-600" />
                   <div>
-                    <p className="font-semibold text-red-800">Error de conexión</p>
+                    <p className="font-semibold text-red-800">
+                      Error de conexión
+                    </p>
                     <p className="text-sm text-red-700">
-                      Verifica que las credenciales sean correctas y correspondan al entorno seleccionado
+                      Verifica que las credenciales sean correctas y
+                      correspondan al entorno seleccionado
                     </p>
                   </div>
                 </>
@@ -377,38 +438,42 @@ export default function MercadoPagoSettingsPage() {
           <CardTitle>Enlaces Útiles</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <a
               href="https://www.mercadopago.com.ar/developers/es/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
                 <p className="font-semibold">Documentación</p>
-                <p className="text-sm text-gray-600">Guías y referencias de la API</p>
+                <p className="text-sm text-gray-600">
+                  Guías y referencias de la API
+                </p>
               </div>
             </a>
-            
+
             <a
               href="https://www.mercadopago.com.ar/developers/panel/test-users"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
                 <p className="font-semibold">Usuarios de Prueba</p>
-                <p className="text-sm text-gray-600">Crea usuarios para testing</p>
+                <p className="text-sm text-gray-600">
+                  Crea usuarios para testing
+                </p>
               </div>
             </a>
-            
+
             <a
               href="https://www.mercadopago.com.ar/activities"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
@@ -416,12 +481,12 @@ export default function MercadoPagoSettingsPage() {
                 <p className="text-sm text-gray-600">Ve tus transacciones</p>
               </div>
             </a>
-            
+
             <a
               href="https://vendedores.mercadolibre.com.ar/ingresos-mercadopago"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 p-3 border rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
             >
               <ExternalLink className="h-4 w-4" />
               <div>

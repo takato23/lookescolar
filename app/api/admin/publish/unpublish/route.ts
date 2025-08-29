@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
       .eq('id', codeId);
 
     if (error) {
-      return NextResponse.json({ error: 'No se pudo despublicar' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'No se pudo despublicar' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true });
@@ -25,5 +28,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

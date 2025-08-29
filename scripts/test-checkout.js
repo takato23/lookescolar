@@ -14,36 +14,36 @@ const MOCK_DATA = {
     contactInfo: {
       name: 'Test Parent',
       email: 'parent@test.com',
-      phone: '1234567890'
+      phone: '1234567890',
     },
     items: [
       {
         photoId: '550e8400-e29b-41d4-a716-446655440001',
         quantity: 1,
-        priceType: 'base'
+        priceType: 'base',
       },
       {
-        photoId: '550e8400-e29b-41d4-a716-446655440002', 
+        photoId: '550e8400-e29b-41d4-a716-446655440002',
         quantity: 2,
-        priceType: 'base'
-      }
-    ]
+        priceType: 'base',
+      },
+    ],
   },
   public: {
     eventId: '550e8400-e29b-41d4-a716-446655440000',
     contactInfo: {
       name: 'Public Customer',
       email: 'customer@public.com',
-      phone: '0987654321'
+      phone: '0987654321',
     },
     items: [
       {
         photoId: '550e8400-e29b-41d4-a716-446655440003',
         quantity: 1,
-        priceType: 'base'
-      }
-    ]
-  }
+        priceType: 'base',
+      },
+    ],
+  },
 };
 
 /**
@@ -51,21 +51,21 @@ const MOCK_DATA = {
  */
 async function testFamilyCheckout() {
   console.log('🔸 Testing Family Checkout API...\n');
-  
+
   try {
     const response = await fetch(`${BASE_URL}/api/family/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(MOCK_DATA.family)
+      body: JSON.stringify(MOCK_DATA.family),
     });
 
     const data = await response.json();
-    
+
     console.log(`Status: ${response.status}`);
     console.log('Response:', JSON.stringify(data, null, 2));
-    
+
     if (response.ok && data.success) {
       console.log('\n✅ Family checkout test PASSED');
       console.log(`Order ID: ${data.orderId}`);
@@ -83,7 +83,7 @@ async function testFamilyCheckout() {
     console.log('\n💥 Family checkout test ERROR');
     console.error('Error:', error.message);
   }
-  
+
   console.log('\n' + '='.repeat(60) + '\n');
 }
 
@@ -92,21 +92,21 @@ async function testFamilyCheckout() {
  */
 async function testPublicCheckout() {
   console.log('🔸 Testing Public Checkout API...\n');
-  
+
   try {
     const response = await fetch(`${BASE_URL}/api/gallery/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(MOCK_DATA.public)
+      body: JSON.stringify(MOCK_DATA.public),
     });
 
     const data = await response.json();
-    
+
     console.log(`Status: ${response.status}`);
     console.log('Response:', JSON.stringify(data, null, 2));
-    
+
     if (response.ok && data.success) {
       console.log('\n✅ Public checkout test PASSED');
       console.log(`Order ID: ${data.orderId}`);
@@ -125,7 +125,7 @@ async function testPublicCheckout() {
     console.log('\n💥 Public checkout test ERROR');
     console.error('Error:', error.message);
   }
-  
+
   console.log('\n' + '='.repeat(60) + '\n');
 }
 
@@ -134,7 +134,7 @@ async function testPublicCheckout() {
  */
 async function testValidationErrors() {
   console.log('🔸 Testing Validation Errors...\n');
-  
+
   // Test 1: Invalid token (too short)
   console.log('Test 1: Invalid token');
   try {
@@ -145,18 +145,20 @@ async function testValidationErrors() {
       },
       body: JSON.stringify({
         ...MOCK_DATA.family,
-        token: 'short'
-      })
+        token: 'short',
+      }),
     });
 
     const data = await response.json();
     console.log(`Status: ${response.status}`);
-    console.log(`Expected 400, got ${response.status}: ${response.status === 400 ? '✅' : '❌'}`);
+    console.log(
+      `Expected 400, got ${response.status}: ${response.status === 400 ? '✅' : '❌'}`
+    );
     console.log(`Error: ${data.error}\n`);
   } catch (error) {
     console.error('Error:', error.message);
   }
-  
+
   // Test 2: Empty cart
   console.log('Test 2: Empty cart');
   try {
@@ -167,18 +169,20 @@ async function testValidationErrors() {
       },
       body: JSON.stringify({
         ...MOCK_DATA.family,
-        items: []
-      })
+        items: [],
+      }),
     });
 
     const data = await response.json();
     console.log(`Status: ${response.status}`);
-    console.log(`Expected 400, got ${response.status}: ${response.status === 400 ? '✅' : '❌'}`);
+    console.log(
+      `Expected 400, got ${response.status}: ${response.status === 400 ? '✅' : '❌'}`
+    );
     console.log(`Error: ${data.error}\n`);
   } catch (error) {
     console.error('Error:', error.message);
   }
-  
+
   // Test 3: Invalid email
   console.log('Test 3: Invalid email');
   try {
@@ -191,19 +195,21 @@ async function testValidationErrors() {
         ...MOCK_DATA.public,
         contactInfo: {
           ...MOCK_DATA.public.contactInfo,
-          email: 'invalid-email'
-        }
-      })
+          email: 'invalid-email',
+        },
+      }),
     });
 
     const data = await response.json();
     console.log(`Status: ${response.status}`);
-    console.log(`Expected 400, got ${response.status}: ${response.status === 400 ? '✅' : '❌'}`);
+    console.log(
+      `Expected 400, got ${response.status}: ${response.status === 400 ? '✅' : '❌'}`
+    );
     console.log(`Error: ${data.error}\n`);
   } catch (error) {
     console.error('Error:', error.message);
   }
-  
+
   console.log('='.repeat(60) + '\n');
 }
 
@@ -212,9 +218,9 @@ async function testValidationErrors() {
  */
 async function testRateLimit() {
   console.log('🔸 Testing Rate Limiting...\n');
-  
+
   console.log('Making 6 requests quickly (limit is 5/min)...');
-  
+
   const requests = [];
   for (let i = 0; i < 6; i++) {
     requests.push(
@@ -222,44 +228,51 @@ async function testRateLimit() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Forwarded-For': '127.0.0.1' // Simulate same IP
+          'X-Forwarded-For': '127.0.0.1', // Simulate same IP
         },
         body: JSON.stringify({
           ...MOCK_DATA.family,
           contactInfo: {
             ...MOCK_DATA.family.contactInfo,
-            email: `test${i}@example.com` // Different emails
-          }
-        })
+            email: `test${i}@example.com`, // Different emails
+          },
+        }),
       })
     );
   }
-  
+
   try {
     const responses = await Promise.all(requests);
-    const statuses = responses.map(r => r.status);
-    
+    const statuses = responses.map((r) => r.status);
+
     console.log('Response statuses:', statuses);
-    
-    const rateLimited = statuses.filter(status => status === 429);
+
+    const rateLimited = statuses.filter((status) => status === 429);
     console.log(`Rate limited requests: ${rateLimited.length}`);
-    console.log(`Expected at least 1 rate limited: ${rateLimited.length > 0 ? '✅' : '❌'}`);
-    
+    console.log(
+      `Expected at least 1 rate limited: ${rateLimited.length > 0 ? '✅' : '❌'}`
+    );
+
     // Check last response
     const lastResponse = responses[responses.length - 1];
     const lastData = await lastResponse.json();
-    
+
     if (lastResponse.status === 429) {
       console.log('Rate limit headers:');
-      console.log(`X-RateLimit-Limit: ${lastResponse.headers.get('X-RateLimit-Limit')}`);
-      console.log(`X-RateLimit-Remaining: ${lastResponse.headers.get('X-RateLimit-Remaining')}`);
-      console.log(`X-RateLimit-Reset: ${lastResponse.headers.get('X-RateLimit-Reset')}`);
+      console.log(
+        `X-RateLimit-Limit: ${lastResponse.headers.get('X-RateLimit-Limit')}`
+      );
+      console.log(
+        `X-RateLimit-Remaining: ${lastResponse.headers.get('X-RateLimit-Remaining')}`
+      );
+      console.log(
+        `X-RateLimit-Reset: ${lastResponse.headers.get('X-RateLimit-Reset')}`
+      );
     }
-    
   } catch (error) {
     console.error('Error:', error.message);
   }
-  
+
   console.log('\n' + '='.repeat(60) + '\n');
 }
 
@@ -268,17 +281,17 @@ async function testRateLimit() {
  */
 async function testWebhookHealth() {
   console.log('🔸 Testing Webhook Health...\n');
-  
+
   try {
     const response = await fetch(`${BASE_URL}/api/payments/webhook`, {
-      method: 'GET'
+      method: 'GET',
     });
 
     const data = await response.json();
-    
+
     console.log(`Status: ${response.status}`);
     console.log('Response:', JSON.stringify(data, null, 2));
-    
+
     if (response.ok && data.status === 'ok') {
       console.log('\n✅ Webhook health check PASSED');
     } else {
@@ -288,7 +301,7 @@ async function testWebhookHealth() {
     console.log('\n💥 Webhook health check ERROR');
     console.error('Error:', error.message);
   }
-  
+
   console.log('\n' + '='.repeat(60) + '\n');
 }
 
@@ -297,32 +310,32 @@ async function testWebhookHealth() {
  */
 async function main() {
   const testType = process.argv[2];
-  
+
   console.log('🚀 Checkout API Test Suite');
   console.log(`Base URL: ${BASE_URL}`);
   console.log('='.repeat(60) + '\n');
-  
+
   switch (testType) {
     case 'family':
       await testFamilyCheckout();
       break;
-      
+
     case 'public':
       await testPublicCheckout();
       break;
-      
+
     case 'validation':
       await testValidationErrors();
       break;
-      
+
     case 'ratelimit':
       await testRateLimit();
       break;
-      
+
     case 'webhook':
       await testWebhookHealth();
       break;
-      
+
     case 'all':
     default:
       await testFamilyCheckout();
@@ -332,7 +345,7 @@ async function main() {
       await testWebhookHealth();
       break;
   }
-  
+
   console.log('🏁 Test suite completed');
 }
 
@@ -352,5 +365,5 @@ module.exports = {
   testPublicCheckout,
   testValidationErrors,
   testRateLimit,
-  testWebhookHealth
+  testWebhookHealth,
 };

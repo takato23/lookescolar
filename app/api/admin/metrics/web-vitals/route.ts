@@ -29,8 +29,8 @@ export async function GET() {
     };
 
     // Return latest metrics or defaults
-    const webVitals = metrics?.[0]?.metric_value 
-      ? JSON.parse(metrics[0].metric_value.toString()) 
+    const webVitals = metrics?.[0]?.metric_value
+      ? JSON.parse(metrics[0].metric_value.toString())
       : defaultVitals;
 
     return NextResponse.json(webVitals);
@@ -63,14 +63,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Store the metrics
-    const { error } = await supabase
-      .from('performance_metrics')
-      .insert({
-        metric_name: 'web-vitals',
-        metric_value: JSON.stringify(vitals),
-        metric_unit: 'mixed',
-        created_at: new Date().toISOString(),
-      });
+    const { error } = await supabase.from('performance_metrics').insert({
+      metric_name: 'web-vitals',
+      metric_value: JSON.stringify(vitals),
+      metric_unit: 'mixed',
+      created_at: new Date().toISOString(),
+    });
 
     if (error) {
       logger.error('Failed to store web vitals', { error: error.message });

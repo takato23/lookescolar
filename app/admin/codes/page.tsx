@@ -6,12 +6,9 @@ export default function CodesPage() {
         <p className="text-muted-foreground">Generación y PDF de tarjetas</p>
       </div>
 
-      <div className="rounded-lg border bg-card p-8 text-center">
-        <p className="text-sm text-muted-foreground">Sin contenido aún</p>
+      <div className="bg-card rounded-lg border p-8 text-center">
+        <p className="text-muted-foreground text-sm">Sin contenido aún</p>
       </div>
     </div>
   );
 }
-
-
-

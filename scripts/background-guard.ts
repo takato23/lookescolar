@@ -58,7 +58,10 @@ async function runCommand(
 ): Promise<{ code: number | null }> {
   return new Promise((resolve) => {
     const [cmd, ...args] = fullCmd.split(' ').filter(Boolean);
-    const child = spawn(cmd, args, { cwd: opts.cwd || WORKSPACE, env: process.env });
+    const child = spawn(cmd, args, {
+      cwd: opts.cwd || WORKSPACE,
+      env: process.env,
+    });
     logStream.write(`\n$ ${fullCmd}\n`);
     child.stdout.on('data', (d) => logStream.write(d));
     child.stderr.on('data', (d) => logStream.write(d));
@@ -82,7 +85,10 @@ async function securityHeuristics(logStream: fs.WriteStream): Promise<void> {
     'authorization',
     'Bearer ',
   ];
-  const targetDirs = [path.join(WORKSPACE, 'app', 'api'), path.join(WORKSPACE, 'lib')];
+  const targetDirs = [
+    path.join(WORKSPACE, 'app', 'api'),
+    path.join(WORKSPACE, 'lib'),
+  ];
 
   const findings: string[] = [];
   for (const dir of targetDirs) {
@@ -108,17 +114,24 @@ async function securityHeuristics(logStream: fs.WriteStream): Promise<void> {
   }
 
   if (findings.length) {
-    logStream.write(`\n[SECURITY][WARN] Potential sensitive identifiers found:\n- ${findings.join('\n- ')}\n`);
+    logStream.write(
+      `\n[SECURITY][WARN] Potential sensitive identifiers found:\n- ${findings.join('\n- ')}\n`
+    );
   } else {
     logStream.write(`\n[SECURITY] No obvious sensitive identifiers found.\n`);
   }
 }
 
-async function enforceSignedUrlBestPractice(logStream: fs.WriteStream): Promise<void> {
+async function enforceSignedUrlBestPractice(
+  logStream: fs.WriteStream
+): Promise<void> {
   // Ensure no direct createSignedUrl calls outside lib/storage/signedUrl.ts
   const srcRoot = WORKSPACE;
   const offenders: string[] = [];
-  const stack: string[] = [path.join(srcRoot, 'app', 'api'), path.join(srcRoot, 'lib')];
+  const stack: string[] = [
+    path.join(srcRoot, 'app', 'api'),
+    path.join(srcRoot, 'lib'),
+  ];
   for (const base of stack.slice()) {
     if (!fs.existsSync(base)) stack.splice(stack.indexOf(base), 1);
   }
@@ -139,7 +152,9 @@ async function enforceSignedUrlBestPractice(logStream: fs.WriteStream): Promise<
     } catch {}
   }
   if (offenders.length) {
-    logStream.write(`\n[BEST-PRACTICES][FAIL] Direct storage.createSignedUrl usage found. Use lib/storage/signedUrl.ts:signedUrlForKey() instead:\n- ${offenders.join('\n- ')}\n`);
+    logStream.write(
+      `\n[BEST-PRACTICES][FAIL] Direct storage.createSignedUrl usage found. Use lib/storage/signedUrl.ts:signedUrlForKey() instead:\n- ${offenders.join('\n- ')}\n`
+    );
   } else {
     logStream.write(`\n[BEST-PRACTICES] Signed URL usage OK.\n`);
   }
@@ -150,12 +165,17 @@ async function docsUpdateHeuristic(logStream: fs.WriteStream): Promise<void> {
   try {
     const apiDir = path.join(WORKSPACE, 'app', 'api');
     if (!fs.existsSync(apiDir)) return;
-    const docsFiles = [path.join(WORKSPACE, 'docs', 'API_SPEC.md'), path.join(WORKSPACE, 'docs', 'FLOWS.md')];
+    const docsFiles = [
+      path.join(WORKSPACE, 'docs', 'API_SPEC.md'),
+      path.join(WORKSPACE, 'docs', 'FLOWS.md'),
+    ];
 
     const apiMtime = await dirMTime(apiDir);
     const docsMtime = await maxFileMTime(docsFiles);
     if (apiMtime && docsMtime && apiMtime > docsMtime) {
-      logStream.write(`\n[DOCS][WARN] API changed more recently than docs. Please update docs/API_SPEC.md and docs/FLOWS.md.\n`);
+      logStream.write(
+        `\n[DOCS][WARN] API changed more recently than docs. Please update docs/API_SPEC.md and docs/FLOWS.md.\n`
+      );
     }
   } catch {}
 }
@@ -186,13 +206,18 @@ async function maxFileMTime(files: string[]): Promise<number | null> {
   return latest || null;
 }
 
-async function updateTypesIfNeeded(triggeredByMigrations: boolean, logStream: fs.WriteStream) {
+async function updateTypesIfNeeded(
+  triggeredByMigrations: boolean,
+  logStream: fs.WriteStream
+) {
   if (!triggeredByMigrations) return;
   const { bin, args } = chooseRunner();
   const cmd = `${bin} ${args.join(' ')} db:types:update`;
   const res = await runCommand(cmd, logStream);
   if (res.code !== 0) {
-    logStream.write(`[TYPES][FAIL] Failed to update types/database.ts (exit ${res.code}).\n`);
+    logStream.write(
+      `[TYPES][FAIL] Failed to update types/database.ts (exit ${res.code}).\n`
+    );
   } else {
     logStream.write(`[TYPES] database types updated.\n`);
   }
@@ -203,7 +228,9 @@ async function runSecurityCheck(logStream: fs.WriteStream) {
   const cmd = `${bin} ${args.join(' ')} security:check`;
   const res = await runCommand(cmd, logStream);
   if (res.code !== 0) {
-    logStream.write(`[SECURITY][FAIL] security:check failed (exit ${res.code}). Consider creating a hotfix branch and PR.\n`);
+    logStream.write(
+      `[SECURITY][FAIL] security:check failed (exit ${res.code}). Consider creating a hotfix branch and PR.\n`
+    );
   } else {
     logStream.write(`[SECURITY] security:check passed.\n`);
   }
@@ -237,7 +264,10 @@ async function loadGitHead(): Promise<string> {
   }
 }
 
-async function performRun(source: TriggerSource, options?: { migrationsChanged?: boolean }) {
+async function performRun(
+  source: TriggerSource,
+  options?: { migrationsChanged?: boolean }
+) {
   if (isRunning) {
     runQueued = true;
     return;
@@ -247,7 +277,9 @@ async function performRun(source: TriggerSource, options?: { migrationsChanged?:
   await ensureDir(LOG_DIR);
   const logFile = path.join(LOG_DIR, `${timestamp()}.log`);
   const logStream = fs.createWriteStream(logFile, { flags: 'a' });
-  logStream.write(`[START] Background guard run - source=${source} - ${new Date().toISOString()}\n`);
+  logStream.write(
+    `[START] Background guard run - source=${source} - ${new Date().toISOString()}\n`
+  );
 
   try {
     // Core checks
@@ -259,11 +291,17 @@ async function performRun(source: TriggerSource, options?: { migrationsChanged?:
 
     const ok = await runSeedsAndTests(logStream);
     if (!ok) {
-      console.error(`[Background-Agent] Failures detected. See log: ${logFile}`);
+      console.error(
+        `[Background-Agent] Failures detected. See log: ${logFile}`
+      );
     }
   } catch (err: any) {
-    logStream.write(`Unexpected error: ${err?.stack || err?.message || String(err)}\n`);
-    console.error(`[Background-Agent] Error during run: ${err?.message || String(err)}`);
+    logStream.write(
+      `Unexpected error: ${err?.stack || err?.message || String(err)}\n`
+    );
+    console.error(
+      `[Background-Agent] Error during run: ${err?.message || String(err)}`
+    );
   } finally {
     logStream.write(`[END] ${new Date().toISOString()}\n`);
     logStream.end();
@@ -283,7 +321,10 @@ function startWatchers() {
 
   const schedule = (src: TriggerSource) => {
     if (timer) clearTimeout(timer);
-    timer = setTimeout(() => performRun(src, { migrationsChanged }), debounceMs);
+    timer = setTimeout(
+      () => performRun(src, { migrationsChanged }),
+      debounceMs
+    );
     migrationsChanged = false;
   };
 
@@ -331,7 +372,9 @@ function startWatchers() {
 async function main() {
   await ensureDir(LOG_DIR);
   console.log('[Background-Agent] Starting continuous guard...');
-  console.log(` - Watching: ${WATCH_PATHS.filter((p) => fs.existsSync(p)).join(', ')}`);
+  console.log(
+    ` - Watching: ${WATCH_PATHS.filter((p) => fs.existsSync(p)).join(', ')}`
+  );
   console.log(' - Also monitoring git HEAD and refs');
   console.log(' - Interval: every 30 minutes');
 

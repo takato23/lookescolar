@@ -19,8 +19,7 @@ export function makeRateLimiter(limit: number, window: string) {
     : null;
 
   return {
-    async check(key: string): Promise<{ allowed: boolean }>
-    {
+    async check(key: string): Promise<{ allowed: boolean }> {
       // Temporally disabled for development - Redis config issues
       return { allowed: true };
       // if (!limiter) return { allowed: true };
@@ -32,5 +31,3 @@ export function makeRateLimiter(limit: number, window: string) {
 
 export const Soft60per10m = makeRateLimiter(60, '10 m');
 export const Strong20per10m = makeRateLimiter(20, '10 m');
-
-

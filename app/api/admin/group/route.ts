@@ -8,7 +8,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (req: NextRequest, auth) => {
     // En desarrollo, permitir sin autenticación
     if (!auth.isAdmin && process.env.NODE_ENV !== 'development') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
     }
 
     let body: { eventId?: string; dryRun?: boolean } = {};
@@ -41,7 +44,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const summary = await groupBetweenAnchors(eventId, { dryRun });
       return NextResponse.json({ success: true, ...summary });
     } catch (e: any) {
-      console.warn('group endpoint noop due to error:', e?.message || String(e));
+      console.warn(
+        'group endpoint noop due to error:',
+        e?.message || String(e)
+      );
       return NextResponse.json({
         success: true,
         grouping_disabled: true,
@@ -57,13 +63,3 @@ export const POST = RateLimitMiddleware.withRateLimit(
 );
 
 export const runtime = 'nodejs';
-
-
-
-
-
-
-
-
-
-

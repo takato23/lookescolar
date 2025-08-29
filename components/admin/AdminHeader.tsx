@@ -108,7 +108,7 @@ export default function AdminHeader({
             <h1 className="liquid-nav-text text-xl font-bold tracking-tight sm:text-2xl">
               {getPageTitle()}
             </h1>
-            <p className="hidden text-xs font-medium sm:block sm:text-sm liquid-description">
+            <p className="liquid-description hidden text-xs font-medium sm:block sm:text-sm">
               {new Date().toLocaleDateString('es-AR', {
                 weekday: 'long',
                 year: 'numeric',
@@ -201,7 +201,7 @@ export default function AdminHeader({
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="liquid-button group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium transition-all duration-200 hover:bg-red-50/50 dark:hover:bg-red-900/20 disabled:opacity-50"
+                    className="liquid-button group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium transition-all duration-200 hover:bg-red-50/50 disabled:opacity-50 dark:hover:bg-red-900/20"
                   >
                     <LogOut className="h-4 w-4 transition-colors group-hover:text-red-600" />
                     <span className="liquid-button-text text-sm">

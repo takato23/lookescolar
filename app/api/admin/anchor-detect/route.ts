@@ -8,10 +8,17 @@ export const POST = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (req: NextRequest, auth) => {
     // En desarrollo, permitir sin autenticación
     if (!auth.isAdmin && process.env.NODE_ENV !== 'development') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
     }
 
-    let body: { eventId?: string; onlyMissing?: boolean; maxConcurrency?: number } = {};
+    let body: {
+      eventId?: string;
+      onlyMissing?: boolean;
+      maxConcurrency?: number;
+    } = {};
     try {
       body = await req.json();
     } catch {
@@ -37,7 +44,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
           updatedExif: 0,
         });
       }
-      const summary = await detectAnchorsRun({ eventId, onlyMissing, maxConcurrency });
+      const summary = await detectAnchorsRun({
+        eventId,
+        onlyMissing,
+        maxConcurrency,
+      });
       return NextResponse.json({ success: true, ...summary });
     } catch (e: any) {
       console.warn('anchor-detect noop due to error:', e?.message || String(e));
@@ -55,6 +66,3 @@ export const POST = RateLimitMiddleware.withRateLimit(
 );
 
 export const runtime = 'nodejs';
-
-
-
