@@ -18,185 +18,57 @@ Specialist in interface development with Next.js 14, React, and Tailwind CSS, fo
 - Responsive design
 - Accessibility (WCAG 2.1 AA)
 - Image optimization
-- Virtual scrolling
+- Virtualized scrolling (react-virtual)
 - Progressive enhancement
-- State management
+- State management with Zustand or React Context
 
-## Admin Panel Components
+## Component Guidelines
+1. **Separation of Concerns**: Keep presentational components stateless; move data fetching and business logic into hooks or Server Components.
+2. **Server vs Client**: Use Server Components (`'use client'` only where browser APIs or client UI state is necessary).
+3. **Type Safety**: All props, hooks, and API payloads must be fully typed.
+4. **Accessibility**: Ensure keyboard navigation, ARIA labels, focus states, and contrast ratios.
+5. **Styling**: Follow Tailwind utility-first conventions; avoid inline styles.
+6. **Error & Loading States**: Provide skeletons or spinners; handle API errors gracefully.
+7. **Testing**: Unit tests for hooks and components; integration tests for critical flows.
 
-### Photo Uploader Component
-```typescript
-// components/admin/PhotoUploader.tsx
-'use client'
+## File Structure
+```text
+app/
+  f/[token]/       # Public family pages (simple-page, checkout, wizard if implemented)
+  admin/
+    photos/        # Photo management and tagging pages/components
+    events/        # Event detail and configuration
+components/
+  admin/           # Admin-only UI components
+  family/          # Public-facing gallery and checkout widgets
+lib/              # Shared utilities and services
+hooks/            # Custom React hooks
+```
 
-import { useState, useCallback } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { Upload, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
-import { useUploadPhotos } from '@/hooks/use-upload-photos'
-
-interface PhotoUploaderProps {
-  eventId: string
-  onComplete: () => void
-}
-
-export function PhotoUploader({ eventId, onComplete }: PhotoUploaderProps) {
-  const [files, setFiles] = useState<File[]>([])
-  const { mutate: upload, isPending, progress } = useUploadPhotos()
-  
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    // Client-side validation
-    const validFiles = acceptedFiles.filter(file => {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 10MB`)
-        return false
-      }
-      return true
-    })
-    setFiles(prev => [...prev, ...validFiles])
-  }, [])
-  
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png']
-    },
-    maxFiles: 50
-  })
-  
-  const handleUpload = async () => {
-    const formData = new FormData()
-    files.forEach(file => formData.append('photos', file))
-    formData.append('eventId', eventId)
-    
-    upload(formData, {
-      onSuccess: () => {
-        toast.success('Photos processed')
-        onComplete()
-      }
-    })
+## Tools & Libraries
+```json
+{
+  "dependencies": {
+    "next": "14.x",
+    "react": "^18.x",
+    "tailwindcss": "^3.x",
+    "@radix-ui/react-*": "latest",
+    "react-hook-form": "^7.x",
+    "zod": "^3.x",
+    "@tanstack/react-query": "^5.x",
+    "@tanstack/react-virtual": "^3.x",
+    "zustand": "^4.x",
+    "react-dropzone": "^14.x",
+    "framer-motion": "^7.x",
+    "sonner": "^0.x",
+    "barcode-detector": "^2.x",
+    "lucide-react": "latest"
   }
-  
-  return (
-    <div className="space-y-4">
-      <div
-        {...getRootProps()}
-        className={cn(
-          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer",
-          "hover:border-primary transition-colors",
-          isDragActive && "border-primary bg-primary/5"
-        )}
-      >
-        <input {...getInputProps()} />
-        <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-        <p className="mt-2 text-sm text-muted-foreground">
-          Drag photos or click to select
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          JPG, PNG up to 10MB each
-        </p>
-      </div>
-      
-      {files.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">
-              {files.length} photos selected
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setFiles([])}
-            >
-              Clear
-            </Button>
-          </div>
-          
-          {isPending && (
-            <Progress value={progress} className="h-2" />
-          )}
-          
-          <Button
-            onClick={handleUpload}
-            disabled={isPending || files.length === 0}
-            className="w-full"
-          >
-            {isPending ? 'Processing...' : 'Upload and Process'}
-          </Button>
-        </div>
-      )}
-    </div>
-  )
 }
 ```
 
-## Family Portal with Token
-
-### Family Portal Page
-```typescript
-// app/f/[token]/page.tsx
-import { notFound } from 'next/navigation'
-import { PhotoGallery } from '@/components/family/PhotoGallery'
-import { Cart } from '@/components/family/Cart'
-import { validateToken } from '@/lib/services/token'
-
-export default async function FamilyPortal({ 
-  params 
-}: { 
-  params: { token: string } 
-}) {
-  // Server-side validation
-  const subject = await validateToken(params.token)
-  
-  if (!subject) {
-    notFound()
-  }
-  
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">
-          Hello {subject.first_name}!
-        </h1>
-        <p className="text-muted-foreground">
-          Select the photos you want to purchase
-        </p>
-      </header>
-      
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <PhotoGallery subjectId={subject.id} token={params.token} />
-        </div>
-        <div className="lg:col-span-1">
-          <div className="sticky top-4">
-            <Cart />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-```
-
-## Gallery with Virtual Scroll
-
-### Photo Gallery Component
-```typescript
-// components/family/PhotoGallery.tsx
-'use client'
-
-import { useVirtualizer } from '@tanstack/react-virtual'
-import { usePhotos } from '@/hooks/use-photos'
-import { PhotoCard } from './PhotoCard'
-
-export function PhotoGallery({ subjectId, token }: Props) {
-  const { data: photos, isLoading } = usePhotos(subjectId, token)
-  const parentRef = useRef<HTMLDivElement>(null)
-  
-  const virtualizer = useVirtualizer({
-    count: photos?.length ?? 0,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 400,
-    overscan: 2,
-```
+## Command Line
+- `npm run dev` — start dev server
+- `npm run build` — production build
+- `npm run lint` — run ESLint
+- `npm run test` — run all tests
