@@ -1,0 +1,593 @@
+BEGIN-PLAYBOOK
+# PLAYBOOK — Rediseño UI Biblioteca de Fotos (Next.js + Tailwind + shadcn)
+
+**Propósito**  
+Aplicar un rediseño incremental (sin romper flujos) que:
+- Simplifique jerarquías visuales.
+- Agregue un **modo selección** claro con **barra inferior sticky**.
+- Provea **MoveDialog** (árbol con búsqueda) y **Inspector con tabs** (Info / Asignación / Publicar).
+- Compacte el **header** en Biblioteca: Breadcrumb + Scope + Search + Filtros + Subir.
+
+> Stack esperada: Next.js (App Router), Tailwind, shadcn/ui, Zustand/TanStack Query presentes.  
+> Si algunos componentes shadcn faltan, **instalarlos** en el paso 0.
+
+---
+
+## 0) Preflight
+
+- Asegurarse de tener `lucide-react` y componentes shadcn requeridos.
+
+```bash
+pnpm add lucide-react
+# Agregar sólo si faltan en el proyecto:
+npx shadcn@latest add dialog input scroll-area tabs popover tooltip separator command badge sheet toast
+Correr formateo/lint al final de cada bloque de cambios.
+
+1) Tokens suaves y utilidades
+1.1) Ajuste leve en app/globals.css (o donde definan globals)
+Si existe, sólo añadir utilidades; no borrar estilos del proyecto.
+
+diff
+Copy code
+/* globals.css — añadir utilidades suaves */
++.surface {
++  @apply bg-white border border-gray-200 rounded-xl;
++}
++.soft {
++  @apply bg-indigo-50 text-indigo-700 border border-indigo-100;
++}
++.muted {
++  @apply text-gray-600;
++}
++.shadow-soft {
++  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
++}
+2) Unificar botones (shadcn) con variante soft
+Si components/ui/button.tsx ya existe, mergear las variantes; si no, crear el archivo completo.
+
+2.1) Crear/actualizar components/ui/button.tsx
+tsx
+Copy code
+// components/ui/button.tsx
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3",
+  {
+    variants: {
+      variant: {
+        default: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-600",
+        primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-600",
+        outline: "border border-gray-200 hover:bg-gray-50",
+        ghost: "hover:bg-gray-100 text-gray-700",
+        destructive: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
+        // NUEVA variante suave
+        soft: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100",
+      },
+      size: {
+        sm: "h-8 px-2 text-xs",
+        default: "h-9 px-3",
+        lg: "h-10 px-4 text-base",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size }), className)}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+3) Sidebar limpia (opcional pero recomendado)
+Si ya existe una Sidebar, reducir ruido: counters discretos y una sola marca de color para activo.
+
+3.1) Crear components/admin/Sidebar.tsx (si no existe)
+tsx
+Copy code
+// components/admin/Sidebar.tsx
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { LayoutDashboard, CalendarRange, Images, ShoppingCart, Settings } from "lucide-react"
+
+const items = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, key: "dashboard" },
+  { href: "/admin/events", label: "Eventos", icon: CalendarRange, key: "events" },
+  { href: "/admin/photos", label: "Biblioteca", icon: Images, key: "photos" },
+  { href: "/admin/orders", label: "Pedidos", icon: ShoppingCart, key: "orders" },
+  { href: "/admin/settings", label: "Ajustes", icon: Settings, key: "settings" },
+]
+
+export function Sidebar({ active, counters = {} as Record<string, number> }) {
+  return (
+    <aside className="w-60 border-r border-gray-200 bg-white">
+      <div className="p-3 text-xs text-gray-500">LookEscolar</div>
+      <nav className="px-2 space-y-1">
+        {items.map(({ href, label, icon: Icon, key }) => {
+          const isActive = active?.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                "flex items-center justify-between rounded-md px-2 py-2 text-sm",
+                isActive ? "bg-indigo-50 text-indigo-700" : "text-gray-700 hover:bg-gray-100"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <Icon className="h-4 w-4" />
+                {label}
+              </span>
+              {counters[key] > 0 && (
+                <span className="text-[11px] rounded-md border border-gray-200 px-1.5 py-0.5 bg-white text-gray-600">
+                  {counters[key]}
+                </span>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+    </aside>
+  )
+}
+4) Barra de selección sticky (modo selección claro)
+4.1) Crear components/admin/SelectionBar.tsx
+tsx
+Copy code
+// components/admin/SelectionBar.tsx
+import { Button } from "@/components/ui/button"
+
+type Props = {
+  count: number
+  onMove?: () => void
+  onAssign?: () => void
+  onPublish?: () => void
+  onDownload?: () => void
+  onDelete?: () => void
+}
+export function SelectionBar({ count, onMove, onAssign, onPublish, onDownload, onDelete }: Props) {
+  if (!count) return null
+  return (
+    <div className="fixed bottom-0 left-60 right-0 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+      <div className="mx-auto max-w-[1440px] px-4 h-14 flex items-center justify-between">
+        <span className="text-sm text-gray-700"><strong>{count}</strong> seleccionadas</span>
+        <div className="flex gap-2">
+          <Button variant="soft" onClick={onMove}>Mover</Button>
+          <Button variant="soft" onClick={onAssign}>Asignar</Button>
+          <Button variant="soft" onClick={onPublish}>Publicar</Button>
+          <Button variant="ghost" onClick={onDownload}>Descargar</Button>
+          <Button variant="destructive" onClick={onDelete}>Eliminar</Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+5) MoveDialog (árbol + búsqueda, scope seguro)
+5.1) Crear components/admin/MoveDialog.tsx
+tsx
+Copy code
+// components/admin/MoveDialog.tsx
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useMemo, useState } from "react"
+
+export type TreeNode = { id: string; label: string; children?: TreeNode[] }
+
+function TreeList({ nodes }: { nodes: TreeNode[] }) {
+  return (
+    <ul className="p-2 text-sm">
+      {nodes.map((n) => (
+        <li key={n.id} className="py-1">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-gray-300" />
+            {n.label}
+          </div>
+          {n.children?.length ? (
+            <div className="pl-4">
+              <TreeList nodes={n.children} />
+            </div>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+export function MoveDialog({
+  open, onOpenChange, tree, onConfirm,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  tree: TreeNode[]
+  onConfirm: () => void
+}) {
+  const [q, setQ] = useState("")
+  const filtered = useMemo(() => {
+    if (!q) return tree
+    const match = (n: TreeNode): TreeNode | null => {
+      const ok = n.label.toLowerCase().includes(q.toLowerCase())
+      const kids = n.children?.map(match).filter(Boolean) as TreeNode[] | undefined
+      if (ok || (kids && kids.length)) return { ...n, children: kids }
+      return null
+    }
+    return tree.map(match).filter(Boolean) as TreeNode[]
+  }, [q, tree])
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader><DialogTitle>Mover a…</DialogTitle></DialogHeader>
+        <Input placeholder="Buscar carpeta…" className="mb-2" value={q} onChange={(e)=>setQ(e.target.value)} />
+        <ScrollArea className="h-72 rounded-md border border-gray-200">
+          <TreeList nodes={filtered} />
+        </ScrollArea>
+        <div className="flex justify-end gap-2 pt-3">
+          <button className="text-sm text-gray-600" onClick={()=>onOpenChange(false)}>Cancelar</button>
+          <button className="bg-indigo-600 text-white rounded-md px-3 h-9" onClick={onConfirm}>Mover</button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+6) Inspector con tabs (Info / Asignación / Publicar)
+6.1) Crear components/admin/PhotoInspector.tsx
+tsx
+Copy code
+// components/admin/PhotoInspector.tsx
+import Image from "next/image"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+
+type Photo = {
+  id: string
+  previewUrl: string
+  name?: string
+  sizeLabel?: string
+  createdAt?: string
+  subjectNames?: string[]
+  courseName?: string
+  publicLinks?: {label: string; url: string}[]
+}
+
+export function PhotoInspector({
+  photo,
+  onAssign,
+  onPublish,
+}: {
+  photo: Photo | null
+  onAssign?: () => void
+  onPublish?: () => void
+}) {
+  if (!photo) return (
+    <aside className="w-96 border-l border-gray-200 p-4 hidden xl:block">
+      <div className="text-sm text-gray-500">Seleccioná una foto para ver detalles</div>
+    </aside>
+  )
+
+  return (
+    <aside className="w-96 border-l border-gray-200 p-4 hidden xl:block">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg border">
+        {/* Usa next/image o img según tu proyecto */}
+        <Image src={photo.previewUrl} alt={photo.name ?? "preview"} fill className="object-cover" />
+      </div>
+
+      <Tabs defaultValue="info" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="info">Info</TabsTrigger>
+          <TabsTrigger value="assign">Asignación</TabsTrigger>
+          <TabsTrigger value="publish">Publicar</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="info" className="mt-3 space-y-2 text-sm">
+          <div className="text-gray-900 font-medium">{photo.name}</div>
+          {photo.sizeLabel && <div className="text-gray-600">{photo.sizeLabel}</div>}
+          {photo.createdAt && <div className="text-gray-600">Creado: {photo.createdAt}</div>}
+          {photo.courseName && <div className="text-gray-600">Curso: {photo.courseName}</div>}
+          {photo.subjectNames?.length ? (
+            <div className="text-gray-600">Alumnos: {photo.subjectNames.join(", ")}</div>
+          ) : null}
+        </TabsContent>
+
+        <TabsContent value="assign" className="mt-3 space-y-2">
+          <p className="text-sm text-gray-600">Asigná esta foto a alumnos o al curso.</p>
+          <Button variant="soft" onClick={onAssign}>Asignar a…</Button>
+        </TabsContent>
+
+        <TabsContent value="publish" className="mt-3 space-y-2">
+          <Button variant="soft" onClick={onPublish}>Publicar</Button>
+          {photo.publicLinks?.length ? (
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500">Enlaces de publicación</div>
+              <ul className="text-sm list-disc pl-5">
+                {photo.publicLinks.map((l)=>(
+                  <li key={l.url}><a href={l.url} className="text-indigo-600 hover:underline">{l.label}</a></li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </TabsContent>
+      </Tabs>
+    </aside>
+  )
+}
+7) Header compacto + Filtros + Scope
+7.1) Crear components/admin/PhotosHeader.tsx
+tsx
+Copy code
+// components/admin/PhotosHeader.tsx
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Separator } from "@/components/ui/separator"
+import { Funnel, Upload } from "lucide-react"
+
+export function PhotosHeader({
+  breadcrumb,
+  onUpload,
+  FiltersPanel,
+  ScopeSelector,
+  SearchBox,
+}: {
+  breadcrumb: React.ReactNode
+  onUpload?: () => void
+  FiltersPanel: React.ComponentType
+  ScopeSelector: React.ComponentType
+  SearchBox: React.ComponentType
+}) {
+  const Filters = FiltersPanel
+  const Scope = ScopeSelector
+  const Search = SearchBox
+  return (
+    <header className="border-b border-gray-200 bg-white">
+      <div className="mx-auto max-w-[1440px] px-4 py-2 flex items-center gap-3">
+        <div className="text-sm text-gray-500">{breadcrumb}</div>
+        <Separator orientation="vertical" />
+        <Scope />
+        <div className="flex-1">{/* push */}</div>
+        <Search />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline"><Funnel className="h-4 w-4 mr-1" /> Filtros</Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80">
+            <Filters />
+          </PopoverContent>
+        </Popover>
+        <Button onClick={onUpload}><Upload className="h-4 w-4 mr-1" /> Subir</Button>
+      </div>
+    </header>
+  )
+}
+Implementación interna de FiltersPanel, ScopeSelector, SearchBox queda al repo (el agente debe conectarlo a tus stores actuales).
+
+8) Integración en Biblioteca (sin romper tu grilla)
+Regla: no tocar la lógica de virtualización; sólo componer la vista y conectar callbacks.
+
+8.1) Crear components/admin/photo-management/PhotosView.tsx
+tsx
+Copy code
+// components/admin/photo-management/PhotosView.tsx
+// Composición no invasiva alrededor de tu PhotoGridDisplay.tsx
+
+"use client"
+import { useMemo, useState } from "react"
+import dynamic from "next/dynamic"
+import { SelectionBar } from "@/components/admin/SelectionBar"
+import { MoveDialog, TreeNode } from "@/components/admin/MoveDialog"
+import { PhotoInspector } from "@/components/admin/PhotoInspector"
+import { PhotosHeader } from "@/components/admin/PhotosHeader"
+
+const PhotoGridDisplay = dynamic(() => import("./PhotoGridDisplay"), { ssr: false })
+
+type PhotoItem = {
+  id: string
+  previewUrl: string
+  name?: string
+  // …extensible con lo que ya exponga tu grid
+}
+
+export default function PhotosView({
+  initialItems = [],
+  tree = [],
+  breadcrumb,
+  FiltersPanel,
+  ScopeSelector,
+  SearchBox,
+}: {
+  initialItems?: PhotoItem[]
+  tree?: TreeNode[]
+  breadcrumb: React.ReactNode
+  FiltersPanel: React.ComponentType
+  ScopeSelector: React.ComponentType
+  SearchBox: React.ComponentType
+}) {
+  const [selected, setSelected] = useState<string[]>([])
+  const [focus, setFocus] = useState<PhotoItem | null>(null)
+  const [moveOpen, setMoveOpen] = useState(false)
+
+  const selectedCount = selected.length
+  const onMove = () => setMoveOpen(true)
+  const onAssign = () => {/* TODO: integrar con flujo de asignación existente */}
+  const onPublish = () => {/* TODO: integrar con publicación existente */}
+  const onDownload = () => {/* TODO: batch download si existe */}
+  const onDelete = () => {/* TODO: confirm + delete */}
+
+  // Adapter: PhotoGridDisplay debe admitir onSelect/onFocus si existen; si no, el agente los agrega.
+  return (
+    <div className="flex flex-col h-full">
+      <PhotosHeader
+        breadcrumb={breadcrumb}
+        onUpload={()=>{/* open uploader existente */}}
+        FiltersPanel={FiltersPanel}
+        ScopeSelector={ScopeSelector}
+        SearchBox={SearchBox}
+      />
+      <div className="flex-1 grid grid-cols-[1fr_auto]">
+        <div className="min-w-0">
+          <PhotoGridDisplay
+            items={initialItems}
+            selectedIds={selected}
+            onSelectionChange={setSelected}
+            onFocusItem={setFocus}
+          />
+        </div>
+        <PhotoInspector photo={focus ? {
+          id: focus.id,
+          previewUrl: focus.previewUrl,
+          name: focus.name,
+        } : null}
+        onAssign={onAssign}
+        onPublish={onPublish}
+        />
+      </div>
+
+      <SelectionBar
+        count={selectedCount}
+        onMove={onMove}
+        onAssign={onAssign}
+        onPublish={onPublish}
+        onDownload={onDownload}
+        onDelete={onDelete}
+      />
+
+      <MoveDialog open={moveOpen} onOpenChange={setMoveOpen} tree={tree} onConfirm={()=>{ /* mover */ setMoveOpen(false)}} />
+    </div>
+  )
+}
+8.2) Adaptar PhotoGridDisplay.tsx (si hace falta)
+Debe aceptar props:
+
+selectedIds: string[]
+
+onSelectionChange(ids: string[])
+
+onFocusItem(item)
+
+Si ya existen con otros nombres, mapear en el componente contenedor.
+
+9) Montaje en la página /admin/photos
+9.1) Parche en app/admin/photos/page.tsx
+Objetivo: usar PhotosView como layout; pasar breadcrumb, tree (filtrado por scope actual) y paneles (Filters/Scope/Search) ya existentes.
+
+tsx
+Copy code
+// app/admin/photos/page.tsx — ejemplo de integración
+import PhotosView from "@/components/admin/photo-management/PhotosView"
+
+// Ejemplos de paneles; reemplazar por los reales del repo:
+function FiltersPanel() {
+  return (
+    <div className="space-y-2 text-sm">
+      <label className="flex items-center gap-2"><input type="checkbox" /> Solo sin asignación</label>
+      <label className="flex items-center gap-2"><input type="checkbox" /> Solo publicadas</label>
+      <label className="flex items-center gap-2"><input type="checkbox" /> Con consentimiento</label>
+    </div>
+  )
+}
+function ScopeSelector() {
+  return <div className="text-sm text-gray-600">[Selector de Evento ▸ Curso]</div>
+}
+function SearchBox() {
+  return <input className="h-9 px-3 border border-gray-200 rounded-md text-sm" placeholder="Buscar fotos…" />
+}
+
+export default async function Page() {
+  // TODO: fetch reales
+  const breadcrumb = <>Colegio del Huerto ▸ Primaria</>
+  const tree = [] // TODO: árbol de carpetas del scope actual
+  const initialItems = [] // TODO: listado inicial
+
+  return (
+    <PhotosView
+      breadcrumb={breadcrumb}
+      tree={tree}
+      initialItems={initialItems}
+      FiltersPanel={FiltersPanel}
+      ScopeSelector={ScopeSelector}
+      SearchBox={SearchBox}
+    />
+  )
+}
+Nota: Si tu /admin/photos ya es un Client Component complejo, crear en su lugar app/admin/photos/_view/PhotosPage.tsx y montarlo desde page.tsx para no romper SSR/ISR.
+
+10) Micro‑ajustes visuales globales
+Reemplazar botones secundarios por defecto a variant="soft" en acciones frecuentes (Mover, Asignar, Publicar).
+
+Reducir badges/counters a text-[11px], bordes border-gray-200, fondo bg-white.
+
+Quitar “1 photo selected” flotante si existe; confiar en SelectionBar.
+
+11) Accesibilidad y atajos
+Focus visible: asegurarse que botones/links con ring indigo (ya provisto por shadcn).
+
+Atajos (opcional): en el contenedor de Biblioteca, interceptar keydown:
+
+KeyA → Asignar, KeyM → Mover, KeyP → Publicar, Meta+A/Ctrl+A → seleccionar todo.
+
+No bloquear campos de entrada.
+
+12) Aceptación (criterios)
+La grilla virtualizada sigue funcionando y no hay jank al seleccionar cientos de ítems.
+
+SelectionBar aparece sólo con selección > 0.
+
+MoveDialog muestra un árbol filtrado al scope actual; permite buscar.
+
+PhotoInspector cambia al cambiar el foco; tabs visibles.
+
+El header queda compacto y claro; un solo botón primary por vista.
+
+pnpm build && pnpm typecheck && pnpm lint pasan sin errores.
+
+13) Commits sugeridos
+style: add soft tokens and button variant
+
+feat: sidebar tidy and counters
+
+feat: selection bar sticky
+
+feat: move dialog with tree filter
+
+feat: photo inspector with tabs
+
+feat: photos header (breadcrumb+scope+filters+upload)
+
+feat: compose PhotosView around existing grid
+
+chore: wire /admin/photos to new view
+
+fix: typings and subtle UI polish
+
+14) Post‑checks
+bash
+Copy code
+pnpm lint
+pnpm typecheck
+pnpm build
+Si PhotoGridDisplay no expone los handlers requeridos, el agente debe añadirlos mínimamente (sin romper la virtualización).
+
+FIN DEL PLAYBOOK
+END-PLAYBOOK

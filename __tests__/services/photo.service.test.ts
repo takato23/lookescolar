@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi, MockedFunction } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  MockedFunction,
+} from 'vitest';
 import { photoService } from '@/lib/services/photo.service';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
@@ -36,7 +44,7 @@ const mockStorage = {
 };
 
 // Chain all methods to return mockFrom for method chaining
-Object.keys(mockFrom).forEach(key => {
+Object.keys(mockFrom).forEach((key) => {
   if (key !== 'single' && key !== 'count') {
     mockFrom[key] = vi.fn().mockReturnValue(mockFrom);
   }
@@ -44,7 +52,9 @@ Object.keys(mockFrom).forEach(key => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (createServerSupabaseServiceClient as MockedFunction<any>).mockResolvedValue(mockSupabase);
+  (createServerSupabaseServiceClient as MockedFunction<any>).mockResolvedValue(
+    mockSupabase
+  );
   mockSupabase.from.mockReturnValue(mockFrom);
   mockSupabase.storage.from.mockReturnValue(mockStorage);
 });
@@ -82,17 +92,17 @@ describe('PhotoService', () => {
 
     it('should return photos with pagination', async () => {
       const mockPhotos = [mockPhoto, { ...mockPhoto, id: 'photo-456' }];
-      
+
       // Mock count query
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        count: vi.fn().mockResolvedValue({ count: 2, error: null })
+        count: vi.fn().mockResolvedValue({ count: 2, error: null }),
       });
-      
+
       // Mock data query
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       const result = await photoService.getPhotos(filters);
@@ -113,7 +123,7 @@ describe('PhotoService', () => {
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
         count: vi.fn().mockResolvedValue({ count: 0, error: null }),
-        single: vi.fn().mockResolvedValue({ data: [], error: null })
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await photoService.getPhotos(filters);
@@ -123,11 +133,11 @@ describe('PhotoService', () => {
 
     it('should filter by null folder ID (root photos)', async () => {
       const rootFilters = { ...filters, folderId: null };
-      
+
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
         count: vi.fn().mockResolvedValue({ count: 0, error: null }),
-        single: vi.fn().mockResolvedValue({ data: [], error: null })
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await photoService.getPhotos(rootFilters);
@@ -137,30 +147,39 @@ describe('PhotoService', () => {
 
     it('should apply search filter', async () => {
       const searchFilters = { ...filters, searchTerm: 'test' };
-      
+
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
         count: vi.fn().mockResolvedValue({ count: 0, error: null }),
-        single: vi.fn().mockResolvedValue({ data: [], error: null })
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await photoService.getPhotos(searchFilters);
 
-      expect(mockFrom.ilike).toHaveBeenCalledWith('original_filename', '%test%');
+      expect(mockFrom.ilike).toHaveBeenCalledWith(
+        'original_filename',
+        '%test%'
+      );
     });
 
     it('should apply sorting', async () => {
-      const sortedFilters = { ...filters, sortBy: 'original_filename' as const, sortOrder: 'asc' as const };
-      
+      const sortedFilters = {
+        ...filters,
+        sortBy: 'original_filename' as const,
+        sortOrder: 'asc' as const,
+      };
+
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
         count: vi.fn().mockResolvedValue({ count: 0, error: null }),
-        single: vi.fn().mockResolvedValue({ data: [], error: null })
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await photoService.getPhotos(sortedFilters);
 
-      expect(mockFrom.order).toHaveBeenCalledWith('original_filename', { ascending: true });
+      expect(mockFrom.order).toHaveBeenCalledWith('original_filename', {
+        ascending: true,
+      });
     });
 
     it('should handle database errors', async () => {
@@ -168,7 +187,7 @@ describe('PhotoService', () => {
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
         count: vi.fn().mockResolvedValue({ count: null, error }),
-        single: vi.fn().mockResolvedValue({ data: null, error })
+        single: vi.fn().mockResolvedValue({ data: null, error }),
       });
 
       const result = await photoService.getPhotos(filters);
@@ -216,23 +235,26 @@ describe('PhotoService', () => {
       // Mock photo validation
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       // Mock folder validation
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ 
-          data: { id: moveOptions.targetFolderId, event_id: mockEventId }, 
-          error: null 
-        })
+        single: vi.fn().mockResolvedValue({
+          data: { id: moveOptions.targetFolderId, event_id: mockEventId },
+          error: null,
+        }),
       });
 
       // Mock update operation
-      const updatedPhotos = mockPhotos.map(p => ({ ...p, folder_id: moveOptions.targetFolderId }));
+      const updatedPhotos = mockPhotos.map((p) => ({
+        ...p,
+        folder_id: moveOptions.targetFolderId,
+      }));
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: updatedPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: updatedPhotos, error: null }),
       });
 
       const result = await photoService.batchMovePhotos(moveOptions);
@@ -244,7 +266,9 @@ describe('PhotoService', () => {
     it('should validate photo count limit', async () => {
       const invalidOptions = {
         ...moveOptions,
-        photoIds: Array(101).fill('photo').map((_, i) => `photo-${i}`),
+        photoIds: Array(101)
+          .fill('photo')
+          .map((_, i) => `photo-${i}`),
       };
 
       const result = await photoService.batchMovePhotos(invalidOptions);
@@ -254,13 +278,11 @@ describe('PhotoService', () => {
     });
 
     it('should validate photos belong to event', async () => {
-      const mockPhotos = [
-        { id: mockPhotoId, event_id: 'different-event' },
-      ];
+      const mockPhotos = [{ id: mockPhotoId, event_id: 'different-event' }];
 
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       const result = await photoService.batchMovePhotos(moveOptions);
@@ -275,13 +297,15 @@ describe('PhotoService', () => {
       // Mock photo validation
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       // Mock folder validation - folder not found
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: new Error('Not found') })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: null, error: new Error('Not found') }),
       });
 
       const result = await photoService.batchMovePhotos(moveOptions);
@@ -297,14 +321,14 @@ describe('PhotoService', () => {
       // Mock photo validation
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       // Mock update operation
-      const updatedPhotos = mockPhotos.map(p => ({ ...p, folder_id: null }));
+      const updatedPhotos = mockPhotos.map((p) => ({ ...p, folder_id: null }));
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: updatedPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: updatedPhotos, error: null }),
       });
 
       const result = await photoService.batchMovePhotos(rootMoveOptions);
@@ -323,19 +347,33 @@ describe('PhotoService', () => {
 
     it('should generate signed URLs for photos', async () => {
       const mockPhotos = [
-        { id: mockPhotoId, storage_path: 'path1.jpg', preview_path: 'preview1.jpg' },
-        { id: 'photo-456', storage_path: 'path2.jpg', preview_path: 'preview2.jpg' },
+        {
+          id: mockPhotoId,
+          storage_path: 'path1.jpg',
+          preview_path: 'preview1.jpg',
+        },
+        {
+          id: 'photo-456',
+          storage_path: 'path2.jpg',
+          preview_path: 'preview2.jpg',
+        },
       ];
 
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       // Mock signed URL generation
       mockStorage.createSignedUrl
-        .mockResolvedValueOnce({ data: { signedUrl: 'signed-url-1' }, error: null })
-        .mockResolvedValueOnce({ data: { signedUrl: 'signed-url-2' }, error: null });
+        .mockResolvedValueOnce({
+          data: { signedUrl: 'signed-url-1' },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: { signedUrl: 'signed-url-2' },
+          error: null,
+        });
 
       const result = await photoService.batchGenerateSignedUrls(urlOptions);
 
@@ -353,36 +391,49 @@ describe('PhotoService', () => {
 
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
-      mockStorage.createSignedUrl.mockResolvedValueOnce({ 
-        data: { signedUrl: 'signed-url-1' }, 
-        error: null 
+      mockStorage.createSignedUrl.mockResolvedValueOnce({
+        data: { signedUrl: 'signed-url-1' },
+        error: null,
       });
 
-      await photoService.batchGenerateSignedUrls({ ...urlOptions, photoIds: [mockPhotoId] });
+      await photoService.batchGenerateSignedUrls({
+        ...urlOptions,
+        photoIds: [mockPhotoId],
+      });
 
-      expect(mockStorage.createSignedUrl).toHaveBeenCalledWith('path1.jpg', 3600);
+      expect(mockStorage.createSignedUrl).toHaveBeenCalledWith(
+        'path1.jpg',
+        3600
+      );
     });
 
     it('should handle URL generation errors gracefully', async () => {
       const mockPhotos = [
-        { id: mockPhotoId, storage_path: 'path1.jpg', preview_path: 'preview1.jpg' },
+        {
+          id: mockPhotoId,
+          storage_path: 'path1.jpg',
+          preview_path: 'preview1.jpg',
+        },
       ];
 
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       // Mock URL generation error
-      mockStorage.createSignedUrl.mockResolvedValueOnce({ 
-        data: null, 
-        error: new Error('Storage error') 
+      mockStorage.createSignedUrl.mockResolvedValueOnce({
+        data: null,
+        error: new Error('Storage error'),
       });
 
-      const result = await photoService.batchGenerateSignedUrls({ ...urlOptions, photoIds: [mockPhotoId] });
+      const result = await photoService.batchGenerateSignedUrls({
+        ...urlOptions,
+        photoIds: [mockPhotoId],
+      });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({}); // Empty because URL generation failed
@@ -398,9 +449,11 @@ describe('PhotoService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.approved).toBe(false);
-      expect(mockFrom.update).toHaveBeenCalledWith(expect.objectContaining({
-        approved: false,
-      }));
+      expect(mockFrom.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          approved: false,
+        })
+      );
     });
   });
 
@@ -409,32 +462,32 @@ describe('PhotoService', () => {
 
     it('should delete photos and cleanup storage', async () => {
       const mockPhotos = [
-        { 
-          id: mockPhotoId, 
-          event_id: mockEventId, 
+        {
+          id: mockPhotoId,
+          event_id: mockEventId,
           storage_path: 'path1.jpg',
           preview_path: 'preview1.jpg',
-          watermark_path: 'watermark1.jpg'
+          watermark_path: 'watermark1.jpg',
         },
-        { 
-          id: 'photo-456', 
-          event_id: mockEventId, 
+        {
+          id: 'photo-456',
+          event_id: mockEventId,
           storage_path: 'path2.jpg',
           preview_path: null,
-          watermark_path: null
+          watermark_path: null,
         },
       ];
 
       // Mock photo fetch
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
       // Mock delete operation
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
 
       // Mock storage cleanup
@@ -448,9 +501,14 @@ describe('PhotoService', () => {
     });
 
     it('should validate photo count limit', async () => {
-      const tooManyPhotos = Array(51).fill('photo').map((_, i) => `photo-${i}`);
+      const tooManyPhotos = Array(51)
+        .fill('photo')
+        .map((_, i) => `photo-${i}`);
 
-      const result = await photoService.deletePhotos(tooManyPhotos, mockEventId);
+      const result = await photoService.deletePhotos(
+        tooManyPhotos,
+        mockEventId
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Cannot delete more than 50 photos at once');
@@ -458,15 +516,22 @@ describe('PhotoService', () => {
 
     it('should validate photos belong to event', async () => {
       const mockPhotos = [
-        { id: mockPhotoId, event_id: 'different-event', storage_path: 'path1.jpg' },
+        {
+          id: mockPhotoId,
+          event_id: 'different-event',
+          storage_path: 'path1.jpg',
+        },
       ];
 
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockPhotos, error: null }),
       });
 
-      const result = await photoService.deletePhotos([mockPhotoId], mockEventId);
+      const result = await photoService.deletePhotos(
+        [mockPhotoId],
+        mockEventId
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Some photos do not belong to this event');
@@ -483,7 +548,9 @@ describe('PhotoService', () => {
 
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockStatsPhotos, error: null })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: mockStatsPhotos, error: null }),
       });
 
       const result = await photoService.getPhotoStats(mockEventId);
@@ -502,7 +569,7 @@ describe('PhotoService', () => {
     it('should filter by folder', async () => {
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: [], error: null })
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await photoService.getPhotoStats(mockEventId, mockFolderId);
@@ -513,7 +580,7 @@ describe('PhotoService', () => {
     it('should handle null folder (root photos)', async () => {
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: [], error: null })
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
       });
 
       await photoService.getPhotoStats(mockEventId, null);
@@ -549,7 +616,7 @@ describe('PhotoService', () => {
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
         count: vi.fn().mockResolvedValue({ count: 0, error: null }),
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
 
       const result = await photoService.getPhotos({ eventId: mockEventId });

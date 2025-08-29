@@ -70,27 +70,25 @@ export const GET = RateLimitMiddleware.withRateLimit(
         }
 
         // Get only group photos for the student
-        const { photos, total, has_more } = await familyService.getStudentGroupPhotos(
-          student.id,
-          page,
-          limit
-        );
+        const { photos, total, has_more } =
+          await familyService.getStudentGroupPhotos(student.id, page, limit);
 
         // Filter by photo_type if specified
-        const filteredPhotos = photo_type 
-          ? photos.filter(photo => photo.photo_type === photo_type)
+        const filteredPhotos = photo_type
+          ? photos.filter((photo) => photo.photo_type === photo_type)
           : photos;
 
         // Generate signed URLs for group photos
         const photosWithUrls = (
           await Promise.all(
             filteredPhotos.map(async (groupPhoto) => {
-              const key = (groupPhoto.photo as any).watermark_path || 
-                          (groupPhoto.photo as any).preview_path;
+              const key =
+                (groupPhoto.photo as any).watermark_path ||
+                (groupPhoto.photo as any).preview_path;
               if (!key) return null;
-              
+
               const signedUrl = await signedUrlForKey(key, 900); // 15 min expiry
-              
+
               return {
                 id: groupPhoto.photo.id,
                 filename: groupPhoto.photo.filename,
@@ -131,7 +129,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
             limit,
             total: photo_type ? photosWithUrls.length : total,
             has_more: photo_type ? false : has_more,
-            total_pages: Math.ceil((photo_type ? photosWithUrls.length : total) / limit),
+            total_pages: Math.ceil(
+              (photo_type ? photosWithUrls.length : total) / limit
+            ),
           },
           filters: {
             photo_type: photo_type || 'all',

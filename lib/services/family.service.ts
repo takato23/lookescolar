@@ -118,10 +118,54 @@ export class FamilyService {
     }
 
     try {
-      // 1) Resolver token → student (supporting both new and legacy table names)
+      // ENHANCED: First try folder share tokens (new system)
+      const { data: folderData, error: folderError } = await this.supabase
+        .from('folders')
+        .select(`
+          id,
+          name,
+          event_id,
+          events (
+            id,
+            name,
+            date
+          )
+        `)
+        .eq('share_token', token)
+        .eq('is_published', true)
+        .single();
+
+      if (folderData && !folderError) {
+        // Return a folder-based "student" object for compatibility
+        return {
+          id: `folder_${folderData.id}`,
+          event_id: folderData.event_id,
+          course_id: undefined,
+          name: `Carpeta: ${folderData.name}`,
+          grade: undefined,
+          section: undefined,
+          parent_name: undefined,
+          parent_email: undefined,
+          token,
+          token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+          created_at: new Date().toISOString(),
+          event: folderData.events
+            ? {
+                id: folderData.events.id,
+                name: folderData.events.name,
+                date: folderData.events.date,
+                status: 'active',
+                photo_prices: {},
+              }
+            : undefined,
+          course: undefined,
+        } as Student;
+      }
+
+      // If not a folder token, try student/subject tokens (legacy system)
       const nowIso = new Date().toISOString();
       let tokenRow, tokenError;
-      
+
       // Try new student_tokens table first
       const { data: newTokenRow, error: newTokenError } = await this.supabase
         .from('student_tokens')
@@ -132,57 +176,69 @@ export class FamilyService {
         .maybeSingle();
 
       if (newTokenRow) {
-        tokenRow = { subject_id: newTokenRow.student_id, expires_at: newTokenRow.expires_at };
+        tokenRow = {
+          subject_id: newTokenRow.student_id,
+          expires_at: newTokenRow.expires_at,
+        };
       } else {
         // Fallback to legacy subject_tokens table
-        const { data: legacyTokenRow, error: legacyTokenError } = await this.supabase
-          .from('subject_tokens')
-          .select('subject_id, expires_at')
-          .eq('token', token)
-          .gt('expires_at', nowIso)
-          .limit(1)
-          .maybeSingle();
-        
+        const { data: legacyTokenRow, error: legacyTokenError } =
+          await this.supabase
+            .from('subject_tokens')
+            .select('subject_id, expires_at')
+            .eq('token', token)
+            .gt('expires_at', nowIso)
+            .limit(1)
+            .maybeSingle();
+
         tokenRow = legacyTokenRow;
         tokenError = legacyTokenError;
       }
 
       if (tokenError || !tokenRow) {
         console.warn(
-          `Token validation failed: ${tokenError?.message || 'Token not found/expired'} - Token: tok_***`
+          `Token validation failed: ${tokenError?.message || 'Token not found/expired'} - Token: ${token.slice(0, 8)}***`
         );
         return null;
       }
 
       // 2) Try students table first, then fallback to subjects table
       let studentData, studentError;
-      
-      const { data: newStudentData, error: newStudentError } = await this.supabase
-        .from('students')
-        .select(`
+
+      const { data: newStudentData, error: newStudentError } =
+        await this.supabase
+          .from('students')
+          .select(
+            `
           id, event_id, course_id, name, grade, section, parent_name, parent_email, created_at,
           event:events ( id, name, date ),
           course:courses ( id, name, grade, section )
-        `)
-        .eq('id', tokenRow.subject_id)
-        .single();
+        `
+          )
+          .eq('id', tokenRow.subject_id)
+          .single();
 
       if (newStudentData) {
         studentData = newStudentData;
       } else {
         // Fallback to legacy subjects table
-        const { data: legacySubjectData, error: legacySubjectError } = await this.supabase
-          .from('subjects')
-          .select(`id, event_id, name, parent_name, parent_email, created_at, event:events ( id, name, date )`)
-          .eq('id', tokenRow.subject_id)
-          .single();
-        
+        const { data: legacySubjectData, error: legacySubjectError } =
+          await this.supabase
+            .from('subjects')
+            .select(
+              `id, event_id, name, parent_name, parent_email, created_at, event:events ( id, name, date )`
+            )
+            .eq('id', tokenRow.subject_id)
+            .single();
+
         studentData = legacySubjectData;
         studentError = legacySubjectError;
       }
 
       if (studentError || !studentData) {
-        console.warn(`Token validation failed: student not found - Token: tok_***`);
+        console.warn(
+          `Token validation failed: student not found - Token: tok_***`
+        );
         return null;
       }
 
@@ -241,13 +297,17 @@ export class FamilyService {
     studentId: string,
     page: number = 1,
     limit: number = 50
-  ): Promise<{ photos: (PhotoAssignment | GroupPhoto)[]; total: number; has_more: boolean }> {
+  ): Promise<{
+    photos: (PhotoAssignment | GroupPhoto)[];
+    total: number;
+    has_more: boolean;
+  }> {
     try {
       const offset = (page - 1) * limit;
 
       // Get student info to access course_id for group photos
       const student = await this.validateToken(studentId); // This is not correct, let me fix it
-      
+
       // Let me get student by ID instead
       let studentData;
       const { data: newStudentData } = await this.supabase
@@ -255,7 +315,7 @@ export class FamilyService {
         .select('id, course_id')
         .eq('id', studentId)
         .single();
-      
+
       if (newStudentData) {
         studentData = newStudentData;
       } else {
@@ -278,7 +338,7 @@ export class FamilyService {
         .from('photo_students')
         .select('*', { count: 'exact', head: true })
         .eq('student_id', studentId);
-      
+
       if (newPhotoCount !== null) {
         individualCount = newPhotoCount;
       } else {
@@ -304,15 +364,16 @@ export class FamilyService {
 
       // Determine how many individual vs group photos to fetch for this page
       const allPhotos: (PhotoAssignment | GroupPhoto)[] = [];
-      
+
       // Fetch individual photos first
       if (offset < individualCount) {
         const individualLimit = Math.min(limit, individualCount - offset);
-        
+
         // Try new photo_students table first
         const { data: newPhotoData, error: newPhotoError } = await this.supabase
           .from('photo_students')
-          .select(`
+          .select(
+            `
             id,
             photo_id,
             student_id,
@@ -329,7 +390,8 @@ export class FamilyService {
               photo_type,
               approved
             )
-          `)
+          `
+          )
           .eq('student_id', studentId)
           .eq('photo.approved', true)
           .order('tagged_at', { ascending: false })
@@ -341,7 +403,8 @@ export class FamilyService {
           // Fallback to legacy table
           const { data: legacyPhotoData } = await this.supabase
             .from('photo_assignments')
-            .select(`
+            .select(
+              `
               id,
               photo_id,
               subject_id as student_id,
@@ -358,11 +421,12 @@ export class FamilyService {
                 photo_type,
                 approved
               )
-            `)
+            `
+            )
             .eq('subject_id', studentId)
             .order('assigned_at', { ascending: false })
             .range(offset, offset + individualLimit - 1);
-          
+
           if (legacyPhotoData) {
             allPhotos.push(...(legacyPhotoData as PhotoAssignment[]));
           }
@@ -373,10 +437,11 @@ export class FamilyService {
       if (allPhotos.length < limit && studentData.course_id) {
         const groupOffset = Math.max(0, offset - individualCount);
         const groupLimit = limit - allPhotos.length;
-        
+
         const { data: groupPhotoData } = await this.supabase
           .from('photo_courses')
-          .select(`
+          .select(
+            `
             id,
             photo_id,
             course_id,
@@ -394,7 +459,8 @@ export class FamilyService {
               photo_type,
               approved
             )
-          `)
+          `
+          )
           .eq('course_id', studentData.course_id)
           .eq('photo.approved', true)
           .order('tagged_at', { ascending: false })
@@ -440,7 +506,7 @@ export class FamilyService {
         .select('id, course_id')
         .eq('id', studentId)
         .single();
-      
+
       if (newStudentData) {
         studentData = newStudentData;
       } else {
@@ -461,7 +527,8 @@ export class FamilyService {
       // Get group photos with pagination
       const { data, error } = await this.supabase
         .from('photo_courses')
-        .select(`
+        .select(
+          `
           id,
           photo_id,
           course_id,
@@ -479,7 +546,8 @@ export class FamilyService {
             photo_type,
             approved
           )
-        `)
+        `
+        )
         .eq('course_id', studentData.course_id)
         .eq('photo.approved', true)
         .order('tagged_at', { ascending: false })
@@ -674,7 +742,8 @@ export class FamilyService {
       // Try to get individual photo first (new schema)
       const { data: individualPhoto } = await this.supabase
         .from('photo_students')
-        .select(`
+        .select(
+          `
           id,
           photo_id,
           student_id,
@@ -691,7 +760,8 @@ export class FamilyService {
             photo_type,
             approved
           )
-        `)
+        `
+        )
         .eq('photo_id', photoId)
         .eq('student_id', studentId)
         .single();
@@ -703,7 +773,8 @@ export class FamilyService {
       // Try legacy individual photo
       const { data: legacyPhoto } = await this.supabase
         .from('photo_assignments')
-        .select(`
+        .select(
+          `
           id,
           photo_id,
           subject_id as student_id,
@@ -720,7 +791,8 @@ export class FamilyService {
             photo_type,
             approved
           )
-        `)
+        `
+        )
         .eq('photo_id', photoId)
         .eq('subject_id', studentId)
         .single();
@@ -739,7 +811,8 @@ export class FamilyService {
       if (studentData?.course_id) {
         const { data: groupPhoto } = await this.supabase
           .from('photo_courses')
-          .select(`
+          .select(
+            `
             id,
             photo_id,
             course_id,
@@ -757,7 +830,8 @@ export class FamilyService {
               photo_type,
               approved
             )
-          `)
+          `
+          )
           .eq('photo_id', photoId)
           .eq('course_id', studentData.course_id)
           .single();
@@ -889,7 +963,9 @@ export class FamilyService {
         throw new Error('Subject not found');
       }
 
-      const eventPrices = (subject.data as any)?.event?.photo_prices || { base: 1000 };
+      const eventPrices = (subject.data as any)?.event?.photo_prices || {
+        base: 1000,
+      };
       const totalAmount = this.calculateCartTotal(items, eventPrices);
 
       // Crear pedido en transacción

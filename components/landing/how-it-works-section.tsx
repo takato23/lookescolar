@@ -6,7 +6,7 @@ export function HowItWorksSection() {
       description: 'Arrastra y suelta tus fotos en la plataforma',
     },
     {
-      step: '2', 
+      step: '2',
       title: 'Genera códigos QR',
       description: 'Crea códigos únicos para cada estudiante o familia',
     },
@@ -18,7 +18,7 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="relative px-6 py-32 bg-gray-50">
+    <section id="how-it-works" className="relative bg-gray-50 px-6 py-32">
       <div className="mx-auto max-w-7xl">
         <div className="mb-20 text-center">
           <h2 className="mb-6 text-4xl font-bold lg:text-6xl">

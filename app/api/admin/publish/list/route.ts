@@ -26,15 +26,18 @@ export async function GET(request: NextRequest) {
 
       // Contar fotos por code_id para el evento
       const { data: photoRows } = await supabase
-        .from('photos')
+        .from('assets')
         .select('code_id')
         .eq('event_id', eventId)
         .not('code_id', 'is', null);
 
       const countMap = new Map<string, number>();
-      (photoRows as Array<{ code_id: string | null }> | null)?.forEach((row) => {
-        if (row.code_id) countMap.set(row.code_id, (countMap.get(row.code_id) || 0) + 1);
-      });
+      (photoRows as Array<{ code_id: string | null }> | null)?.forEach(
+        (row) => {
+          if (row.code_id)
+            countMap.set(row.code_id, (countMap.get(row.code_id) || 0) + 1);
+        }
+      );
 
       const list = (codes || []).map((c: any) => ({
         code_id: c.id as string,
@@ -64,24 +67,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Contar por code_id si existe la columna; si no, ignorar silenciosamente
+    // Contar por code_id desde assets (nueva tabla)
     let allPhotoRows: Array<{ code_id: string | null }> | null = null;
     try {
       const { data: rows, error: rowsErr } = await supabase
-        .from('photos' as any)
-        .select('code_id')
-        .not('code_id', 'is', null as any);
-      if (!rowsErr) {
-        allPhotoRows = rows as any;
+        .from('assets')
+        .select('metadata')
+        .not('metadata->code_id', 'is', null);
+      if (!rowsErr && rows) {
+        allPhotoRows = rows.map(r => ({ 
+          code_id: r.metadata?.code_id || null 
+        }));
       }
     } catch {
-      // schema sin code_id: mantén allPhotoRows en null para conteo 0
+      // mantén allPhotoRows en null para conteo 0
     }
 
     const countMap = new Map<string, number>();
-    (allPhotoRows as Array<{ code_id: string | null }> | null)?.forEach((row) => {
-      if (row.code_id) countMap.set(row.code_id, (countMap.get(row.code_id) || 0) + 1);
-    });
+    (allPhotoRows as Array<{ code_id: string | null }> | null)?.forEach(
+      (row) => {
+        if (row.code_id)
+          countMap.set(row.code_id, (countMap.get(row.code_id) || 0) + 1);
+      }
+    );
 
     const list = (allCodes || []).map((c: any) => ({
       code_id: c.id as string,
@@ -96,11 +104,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
-      console.debug('publish_list', { error: (error as any)?.message || 'unknown' });
+      console.debug('publish_list', {
+        error: (error as any)?.message || 'unknown',
+      });
     }
     // Nunca 500; compat: devolver { rows: [] }
     return NextResponse.json({ rows: [] });
   }
 }
-
-

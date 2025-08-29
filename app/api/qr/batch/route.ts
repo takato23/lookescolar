@@ -1,6 +1,6 @@
 /**
  * QR Batch Processing API
- * 
+ *
  * Provides endpoints for batch QR code operations including generation,
  * validation, analytics, and data import/export.
  */
@@ -19,31 +19,34 @@ async function POST(request: NextRequest) {
     switch (action) {
       case 'generate':
         return generateBatchQRCodes(params);
-      
+
       case 'validate':
         return validateBatchQRCodes(params);
-      
+
       case 'analytics':
         return getBatchAnalytics(params);
-      
+
       case 'export':
         return exportQRCodes(params);
-      
+
       case 'import':
         return importQRCodes(params);
-      
+
       default:
         return NextResponse.json(
-          { error: 'Invalid action. Use generate, validate, analytics, export, or import' },
+          {
+            error:
+              'Invalid action. Use generate, validate, analytics, export, or import',
+          },
           { status: 400 }
         );
     }
   } catch (error) {
     logger.error('qr_batch_api_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -76,9 +79,9 @@ async function GET(request: NextRequest) {
   } catch (error) {
     logger.error('qr_batch_get_api_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -92,7 +95,7 @@ async function GET(request: NextRequest) {
 async function generateBatchQRCodes(params: any) {
   try {
     const result = await qrBatchProcessingService.generateBatchQRCodes(params);
-    
+
     return NextResponse.json({
       success: true,
       action: 'generate',
@@ -101,14 +104,14 @@ async function generateBatchQRCodes(params: any) {
   } catch (error) {
     logger.error('batch_qr_generation_api_failed', {
       eventId: params.eventId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         action: 'generate',
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -121,7 +124,7 @@ async function generateBatchQRCodes(params: any) {
 async function validateBatchQRCodes(params: any) {
   try {
     const result = await qrBatchProcessingService.validateBatchQRCodes(params);
-    
+
     return NextResponse.json({
       success: true,
       action: 'validate',
@@ -130,14 +133,14 @@ async function validateBatchQRCodes(params: any) {
   } catch (error) {
     logger.error('batch_qr_validation_api_failed', {
       eventId: params.eventId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         action: 'validate',
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -150,7 +153,7 @@ async function validateBatchQRCodes(params: any) {
 async function getBatchAnalytics(params: any) {
   try {
     const result = await qrBatchProcessingService.getBatchAnalytics(params);
-    
+
     return NextResponse.json({
       success: true,
       action: 'analytics',
@@ -159,14 +162,14 @@ async function getBatchAnalytics(params: any) {
   } catch (error) {
     logger.error('batch_qr_analytics_api_failed', {
       eventId: params.eventId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         action: 'analytics',
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -176,16 +179,28 @@ async function getBatchAnalytics(params: any) {
 /**
  * Export QR codes
  */
-async function exportQRCodes(params: { eventId: string; format?: 'json' | 'csv' }) {
+async function exportQRCodes(params: {
+  eventId: string;
+  format?: 'json' | 'csv';
+}) {
   try {
     const format = params.format || 'json';
-    const exportedData = await qrBatchProcessingService.exportEventQRCodes(params.eventId, format);
-    
+    const exportedData = await qrBatchProcessingService.exportEventQRCodes(
+      params.eventId,
+      format
+    );
+
     // Set appropriate headers for file download
     const headers = new Headers();
-    headers.set('Content-Type', format === 'csv' ? 'text/csv' : 'application/json');
-    headers.set('Content-Disposition', `attachment; filename="qr_codes_${params.eventId}.${format}"`);
-    
+    headers.set(
+      'Content-Type',
+      format === 'csv' ? 'text/csv' : 'application/json'
+    );
+    headers.set(
+      'Content-Disposition',
+      `attachment; filename="qr_codes_${params.eventId}.${format}"`
+    );
+
     return new NextResponse(exportedData, {
       headers,
       status: 200,
@@ -194,14 +209,14 @@ async function exportQRCodes(params: { eventId: string; format?: 'json' | 'csv' 
     logger.error('qr_export_api_failed', {
       eventId: params.eventId,
       format: params.format,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         action: 'export',
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -211,14 +226,18 @@ async function exportQRCodes(params: { eventId: string; format?: 'json' | 'csv' 
 /**
  * Import QR codes
  */
-async function importQRCodes(params: { eventId: string; qrData: any[]; userId?: string }) {
+async function importQRCodes(params: {
+  eventId: string;
+  qrData: any[];
+  userId?: string;
+}) {
   try {
     const result = await qrBatchProcessingService.importQRCodes(
-      params.eventId, 
-      params.qrData, 
+      params.eventId,
+      params.qrData,
       params.userId
     );
-    
+
     return NextResponse.json({
       success: true,
       action: 'import',
@@ -227,14 +246,14 @@ async function importQRCodes(params: { eventId: string; qrData: any[]; userId?: 
   } catch (error) {
     logger.error('qr_import_api_failed', {
       eventId: params.eventId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         action: 'import',
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

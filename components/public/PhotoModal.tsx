@@ -29,3 +29,6 @@ export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000 }: Pho
     />
   );
 }
+
+// Export as PublicPhotoModal for backward compatibility
+export { PhotoModal as PublicPhotoModal };

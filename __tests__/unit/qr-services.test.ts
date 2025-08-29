@@ -111,8 +111,9 @@ describe('QREnhancedService', () => {
 
     it('should handle generation errors gracefully', async () => {
       const mockError = new Error('QR generation failed');
-      vi.mocked(require('@/lib/services/qr.service').qrService.generateQRForSubject)
-        .mockRejectedValueOnce(mockError);
+      vi.mocked(
+        require('@/lib/services/qr.service').qrService.generateQRForSubject
+      ).mockRejectedValueOnce(mockError);
 
       await expect(
         qrEnhancedService.generateEnhancedQR('invalid-id', 'Test')
@@ -123,7 +124,7 @@ describe('QREnhancedService', () => {
   describe('analytics', () => {
     it('should initialize analytics for new QR codes', async () => {
       await qrEnhancedService.generateEnhancedQR('new-student', 'New Student');
-      
+
       const analytics = qrEnhancedService.getAnalytics('new-student');
       expect(analytics).toEqual({
         qrCodeId: 'new-student',
@@ -145,7 +146,7 @@ describe('QREnhancedService', () => {
       };
 
       qrEnhancedService.trackScan('test-qr', deviceInfo);
-      
+
       const analytics = qrEnhancedService.getAnalytics('test-qr');
       expect(analytics.totalScans).toBe(1);
       expect(analytics.deviceTypes.mobile).toBe(1);
@@ -161,7 +162,7 @@ describe('QREnhancedService', () => {
       });
 
       // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Clean cache
       qrEnhancedService.cleanCache();
@@ -201,14 +202,17 @@ describe('QRAnalyticsService', () => {
         success: true,
       };
 
-      await expect(qrAnalyticsService.recordScan(scanEvent)).resolves.not.toThrow();
+      await expect(
+        qrAnalyticsService.recordScan(scanEvent)
+      ).resolves.not.toThrow();
     });
 
     it('should handle database errors gracefully', async () => {
       // Mock database error
       const mockError = new Error('Database connection failed');
-      vi.mocked(require('@supabase/supabase-js').createClient().from().insert)
-        .mockReturnValueOnce({ error: mockError });
+      vi.mocked(
+        require('@supabase/supabase-js').createClient().from().insert
+      ).mockReturnValueOnce({ error: mockError });
 
       const scanEvent = {
         qrCodeId: 'qr-1',
@@ -220,14 +224,16 @@ describe('QRAnalyticsService', () => {
       };
 
       // Should not throw, but handle error internally
-      await expect(qrAnalyticsService.recordScan(scanEvent)).resolves.not.toThrow();
+      await expect(
+        qrAnalyticsService.recordScan(scanEvent)
+      ).resolves.not.toThrow();
     });
   });
 
   describe('getQRMetrics', () => {
     it('should return default metrics when no data', async () => {
       const metrics = await qrAnalyticsService.getQRMetrics('non-existent-qr');
-      
+
       expect(metrics).toEqual({
         totalScans: 0,
         uniqueScans: 0,
@@ -262,11 +268,18 @@ describe('QRAnalyticsService', () => {
         },
       ];
 
-      vi.mocked(require('@supabase/supabase-js').createClient().from().select()
-        .eq().gte().lte()).mockResolvedValueOnce({ data: mockEvents, error: null });
+      vi.mocked(
+        require('@supabase/supabase-js')
+          .createClient()
+          .from()
+          .select()
+          .eq()
+          .gte()
+          .lte()
+      ).mockResolvedValueOnce({ data: mockEvents, error: null });
 
       const metrics = await qrAnalyticsService.getQRMetrics('qr-1');
-      
+
       expect(metrics.totalScans).toBe(2);
       expect(metrics.uniqueScans).toBe(2);
       expect(metrics.successRate).toBe(0.5);
@@ -299,7 +312,9 @@ describe('QRSecurityService', () => {
       });
 
       expect(signature.signature).toHaveLength(64); // SHA256 hex length
-      expect(signature.expiresAt.getTime()).toBeGreaterThan(signature.timestamp.getTime());
+      expect(signature.expiresAt.getTime()).toBeGreaterThan(
+        signature.timestamp.getTime()
+      );
     });
 
     it('should generate different signatures for different data', () => {
@@ -324,7 +339,7 @@ describe('QRSecurityService', () => {
     it('should reject invalid signature', () => {
       const qrData = 'test-data';
       const signature = qrSecurityService.generateSignature(qrData);
-      
+
       // Tamper with signature
       signature.signature = 'invalid-signature';
 
@@ -338,7 +353,7 @@ describe('QRSecurityService', () => {
     it('should reject expired signature', () => {
       const qrData = 'test-data';
       const signature = qrSecurityService.generateSignature(qrData);
-      
+
       // Set expiration to past
       signature.expiresAt = new Date(Date.now() - 1000);
 
@@ -361,7 +376,9 @@ describe('QRSecurityService', () => {
         success: true,
       };
 
-      await expect(qrSecurityService.recordAuditEvent(auditEvent)).resolves.not.toThrow();
+      await expect(
+        qrSecurityService.recordAuditEvent(auditEvent)
+      ).resolves.not.toThrow();
     });
 
     it('should handle critical security events', async () => {
@@ -375,7 +392,9 @@ describe('QRSecurityService', () => {
         errorDetails: 'Signature tampering detected',
       };
 
-      await expect(qrSecurityService.recordAuditEvent(criticalEvent)).resolves.not.toThrow();
+      await expect(
+        qrSecurityService.recordAuditEvent(criticalEvent)
+      ).resolves.not.toThrow();
     });
   });
 
@@ -390,21 +409,39 @@ describe('QRSecurityService', () => {
         timestamp: new Date(Date.now() - i * 60000).toISOString(),
       }));
 
-      vi.mocked(require('@supabase/supabase-js').createClient().from().select()
-        .gte().lte().order()).mockResolvedValueOnce({ data: mockEvents, error: null });
+      vi.mocked(
+        require('@supabase/supabase-js')
+          .createClient()
+          .from()
+          .select()
+          .gte()
+          .lte()
+          .order()
+      ).mockResolvedValueOnce({ data: mockEvents, error: null });
 
-      const analysis = await qrSecurityService.detectSuspiciousActivity('event-1');
+      const analysis =
+        await qrSecurityService.detectSuspiciousActivity('event-1');
 
       expect(analysis.suspiciousIPs).toContain('192.168.1.100');
       expect(analysis.possibleBruteForce).toBe(true);
-      expect(analysis.recommendations).toContain('Consider implementing stricter rate limiting');
+      expect(analysis.recommendations).toContain(
+        'Consider implementing stricter rate limiting'
+      );
     });
 
     it('should return empty analysis when no suspicious activity', async () => {
-      vi.mocked(require('@supabase/supabase-js').createClient().from().select()
-        .gte().lte().order()).mockResolvedValueOnce({ data: [], error: null });
+      vi.mocked(
+        require('@supabase/supabase-js')
+          .createClient()
+          .from()
+          .select()
+          .gte()
+          .lte()
+          .order()
+      ).mockResolvedValueOnce({ data: [], error: null });
 
-      const analysis = await qrSecurityService.detectSuspiciousActivity('event-1');
+      const analysis =
+        await qrSecurityService.detectSuspiciousActivity('event-1');
 
       expect(analysis.suspiciousIPs).toHaveLength(0);
       expect(analysis.possibleBruteForce).toBe(false);
@@ -414,10 +451,14 @@ describe('QRSecurityService', () => {
 
   describe('device fingerprinting', () => {
     it('should generate device fingerprint', () => {
-      const userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)';
+      const userAgent =
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)';
       const ipAddress = '192.168.1.1';
 
-      const fingerprint = qrSecurityService.generateDeviceFingerprint(userAgent, ipAddress);
+      const fingerprint = qrSecurityService.generateDeviceFingerprint(
+        userAgent,
+        ipAddress
+      );
 
       expect(fingerprint).toHaveLength(16);
       expect(/^[a-f0-9]+$/i.test(fingerprint)).toBe(true);
@@ -427,17 +468,21 @@ describe('QRSecurityService', () => {
       const validFingerprint = 'a1b2c3d4e5f6789a';
       const invalidFingerprint = 'invalid';
 
-      expect(qrSecurityService.validateDeviceFingerprint(
-        validFingerprint,
-        'test-agent',
-        '192.168.1.1'
-      )).toBe(true);
+      expect(
+        qrSecurityService.validateDeviceFingerprint(
+          validFingerprint,
+          'test-agent',
+          '192.168.1.1'
+        )
+      ).toBe(true);
 
-      expect(qrSecurityService.validateDeviceFingerprint(
-        invalidFingerprint,
-        'test-agent',
-        '192.168.1.1'
-      )).toBe(false);
+      expect(
+        qrSecurityService.validateDeviceFingerprint(
+          invalidFingerprint,
+          'test-agent',
+          '192.168.1.1'
+        )
+      ).toBe(false);
     });
   });
 });

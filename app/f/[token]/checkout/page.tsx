@@ -8,7 +8,7 @@ export default function CheckoutPage() {
   const token = params.token as string;
 
   return (
-    <WizardPage 
+    <WizardPage
       onBackToGallery={() => {
         window.close(); // Close this tab and go back to gallery
       }}

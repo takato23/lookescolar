@@ -4,17 +4,17 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
 } from 'recharts';
 
 interface StorageStats {
@@ -74,7 +74,7 @@ export default function StorageDashboard() {
       // In a real implementation, this would call your API
       // const response = await fetch(`/api/admin/storage/stats?range=${timeRange}`);
       // const data = await response.json();
-      
+
       // Mock data for demonstration
       const mockStats: StorageStats = {
         totalPhotos: 15420,
@@ -87,7 +87,7 @@ export default function StorageDashboard() {
         bucketUsage: {
           previews: 820,
           originals: 0,
-          watermarks: 0
+          watermarks: 0,
         },
         compressionStats: {
           level0: 0,
@@ -95,7 +95,7 @@ export default function StorageDashboard() {
           level2: 3400,
           level3: 5600,
           level4: 3200,
-          level5: 2000
+          level5: 2000,
         },
         dailyUploads: [
           { date: '2023-05-01', count: 120, sizeMB: 4.8 },
@@ -105,9 +105,9 @@ export default function StorageDashboard() {
           { date: '2023-05-05', count: 210, sizeMB: 8.4 },
           { date: '2023-05-06', count: 85, sizeMB: 3.4 },
           { date: '2023-05-07', count: 165, sizeMB: 6.6 },
-        ]
+        ],
       };
-      
+
       setStats(mockStats);
     } catch (error) {
       console.error('Error fetching storage stats:', error);
@@ -121,7 +121,7 @@ export default function StorageDashboard() {
       // In a real implementation, this would call your API
       // const response = await fetch('/api/admin/storage/recent-photos');
       // const data = await response.json();
-      
+
       // Mock data for demonstration
       const mockPhotos: PhotoDetail[] = [
         {
@@ -133,7 +133,7 @@ export default function StorageDashboard() {
           optimizationRatio: 98.7,
           createdAt: '2023-05-07T14:30:00Z',
           eventId: 'event-1',
-          eventName: 'Spring School Photos 2023'
+          eventName: 'Spring School Photos 2023',
         },
         {
           id: '2',
@@ -144,7 +144,7 @@ export default function StorageDashboard() {
           optimizationRatio: 98.6,
           createdAt: '2023-05-07T13:45:00Z',
           eventId: 'event-1',
-          eventName: 'Spring School Photos 2023'
+          eventName: 'Spring School Photos 2023',
         },
         {
           id: '3',
@@ -155,10 +155,10 @@ export default function StorageDashboard() {
           optimizationRatio: 98.7,
           createdAt: '2023-05-06T16:20:00Z',
           eventId: 'event-2',
-          eventName: 'Senior Portraits 2023'
+          eventName: 'Senior Portraits 2023',
         },
       ];
-      
+
       setPhotos(mockPhotos);
     } catch (error) {
       console.error('Error fetching recent photos:', error);
@@ -171,15 +171,15 @@ export default function StorageDashboard() {
     '#8dd1e1',
     '#82ca9d',
     '#a4de6c',
-    '#d0ed57'
+    '#d0ed57',
   ];
 
   const bucketColors = ['#0088FE', '#00C49F', '#FFBB28'];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
       </div>
     );
   }
@@ -187,7 +187,7 @@ export default function StorageDashboard() {
   if (!stats) {
     return (
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Storage Dashboard</h1>
+        <h1 className="mb-6 text-3xl font-bold">Storage Dashboard</h1>
         <p>Error loading storage statistics.</p>
       </div>
     );
@@ -195,22 +195,22 @@ export default function StorageDashboard() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Storage Dashboard</h1>
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant={timeRange === '7d' ? 'default' : 'outline'}
             onClick={() => setTimeRange('7d')}
           >
             7 Days
           </Button>
-          <Button 
+          <Button
             variant={timeRange === '30d' ? 'default' : 'outline'}
             onClick={() => setTimeRange('30d')}
           >
             30 Days
           </Button>
-          <Button 
+          <Button
             variant={timeRange === '90d' ? 'default' : 'outline'}
             onClick={() => setTimeRange('90d')}
           >
@@ -220,7 +220,7 @@ export default function StorageDashboard() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Photos</CardTitle>
@@ -232,7 +232,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
+              className="text-muted-foreground h-4 w-4"
             >
               <rect width="18" height="18" x="3" y="3" rx="2" />
               <circle cx="9" cy="9" r="2" />
@@ -240,8 +240,10 @@ export default function StorageDashboard() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPhotos.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Photos optimized</p>
+            <div className="text-2xl font-bold">
+              {stats.totalPhotos.toLocaleString()}
+            </div>
+            <p className="text-muted-foreground text-xs">Photos optimized</p>
           </CardContent>
         </Card>
 
@@ -256,7 +258,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
+              className="text-muted-foreground h-4 w-4"
             >
               <path d="M3 6h18" />
               <path d="M7 12h10" />
@@ -264,9 +266,11 @@ export default function StorageDashboard() {
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSizeMB.toLocaleString()} MB</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-green-600 font-medium">
+            <div className="text-2xl font-bold">
+              {stats.totalSizeMB.toLocaleString()} MB
+            </div>
+            <p className="text-muted-foreground text-xs">
+              <span className="font-medium text-green-600">
                 {stats.savingsPercentage.toFixed(1)}% savings
               </span>
             </p>
@@ -275,7 +279,9 @@ export default function StorageDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Free Tier Usage</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Free Tier Usage
+            </CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -284,21 +290,23 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
+              className="text-muted-foreground h-4 w-4"
             >
               <path d="M12 2v20" />
               <path d="m19 9-7 7-7-7" />
             </svg>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.freeTierUsagePercentage.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              of 1GB limit
-            </p>
-            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
-                style={{ width: `${Math.min(stats.freeTierUsagePercentage, 100)}%` }}
+            <div className="text-2xl font-bold">
+              {stats.freeTierUsagePercentage.toFixed(1)}%
+            </div>
+            <p className="text-muted-foreground text-xs">of 1GB limit</p>
+            <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+              <div
+                className="h-2 rounded-full bg-blue-600"
+                style={{
+                  width: `${Math.min(stats.freeTierUsagePercentage, 100)}%`,
+                }}
               ></div>
             </div>
           </CardContent>
@@ -306,7 +314,9 @@ export default function StorageDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Compression</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg. Compression
+            </CardTitle>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -315,7 +325,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="h-4 w-4 text-muted-foreground"
+              className="text-muted-foreground h-4 w-4"
             >
               <path d="M7 12l5 5 5-5" />
               <path d="M7 7l5 5 5-5" />
@@ -323,7 +333,7 @@ export default function StorageDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">98.7%</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Average optimization ratio
             </p>
           </CardContent>
@@ -331,7 +341,7 @@ export default function StorageDashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Daily Uploads</CardTitle>
@@ -371,10 +381,19 @@ export default function StorageDashboard() {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {Object.keys(stats.compressionStats).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={compressionLevelColors[index % compressionLevelColors.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        compressionLevelColors[
+                          index % compressionLevelColors.length
+                        ]
+                      }
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -392,10 +411,13 @@ export default function StorageDashboard() {
         <CardContent>
           <div className="space-y-4">
             {photos.map((photo) => (
-              <div key={photo.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div
+                key={photo.id}
+                className="flex items-center justify-between rounded-lg border p-4"
+              >
                 <div className="flex-1">
                   <div className="font-medium">{photo.filename}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {photo.eventName}
                   </div>
                 </div>
@@ -404,7 +426,7 @@ export default function StorageDashboard() {
                     <div className="font-medium">
                       {photo.optimizedSizeKB} KB
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       <span className="text-green-600">
                         {photo.optimizationRatio.toFixed(1)}% saved
                       </span>

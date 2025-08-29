@@ -57,11 +57,16 @@ export function MobileModal({
 
   const getModalHeight = () => {
     switch (size) {
-      case 'small': return 'h-1/3';
-      case 'medium': return 'h-1/2';
-      case 'large': return 'h-2/3';
-      case 'fullscreen': return 'h-full';
-      default: return 'h-1/2';
+      case 'small':
+        return 'h-1/3';
+      case 'medium':
+        return 'h-1/2';
+      case 'large':
+        return 'h-2/3';
+      case 'fullscreen':
+        return 'h-full';
+      default:
+        return 'h-1/2';
     }
   };
 
@@ -85,13 +90,13 @@ export function MobileModal({
   };
 
   const modalVariants = {
-    hidden: { 
+    hidden: {
       y: '100%',
-      transition: { duration: 0.3, ease: 'easeInOut' }
+      transition: { duration: 0.3, ease: 'easeInOut' },
     },
-    visible: { 
+    visible: {
       y: 0,
-      transition: { duration: 0.3, ease: 'easeOut' }
+      transition: { duration: 0.3, ease: 'easeOut' },
     },
   };
 
@@ -121,8 +126,10 @@ export function MobileModal({
               className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 transform rounded-2xl bg-white p-6 shadow-xl"
             >
               {title && (
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {title}
+                  </h2>
                   <button
                     onClick={onClose}
                     className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
@@ -160,11 +167,13 @@ export function MobileModal({
             exit="hidden"
             variants={modalVariants}
             style={{
-              transform: isDragging ? `translateY(${Math.max(0, currentY)}px)` : undefined,
+              transform: isDragging
+                ? `translateY(${Math.max(0, currentY)}px)`
+                : undefined,
             }}
             className={clsx(
               'fixed bottom-0 left-0 right-0 z-50',
-              'bg-white rounded-t-3xl shadow-2xl',
+              'rounded-t-3xl bg-white shadow-2xl',
               getModalHeight(),
               'flex flex-col',
               className
@@ -182,7 +191,7 @@ export function MobileModal({
 
             {/* Header */}
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
                 <button
                   onClick={onClose}
@@ -194,9 +203,7 @@ export function MobileModal({
             )}
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {children}
-            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
           </motion.div>
         </>
       )}
@@ -248,7 +255,7 @@ export function MobileActionSheet({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl safe-area-padding"
+            className="safe-area-padding fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-white shadow-2xl"
           >
             {/* Handle */}
             <div className="flex justify-center py-3">
@@ -276,7 +283,7 @@ export function MobileActionSheet({
                       onClose();
                     }}
                     className={clsx(
-                      'flex w-full items-center justify-center mobile-touch-target rounded-xl px-4 py-4 text-base font-medium transition-colors',
+                      'mobile-touch-target flex w-full items-center justify-center rounded-xl px-4 py-4 text-base font-medium transition-colors',
                       'mb-2 last:mb-0',
                       action.variant === 'destructive'
                         ? 'text-red-600 hover:bg-red-50 active:bg-red-100'
@@ -284,10 +291,14 @@ export function MobileActionSheet({
                     )}
                   >
                     {Icon && (
-                      <Icon className={clsx(
-                        'mr-3 h-5 w-5',
-                        action.variant === 'destructive' ? 'text-red-600' : 'text-gray-500'
-                      )} />
+                      <Icon
+                        className={clsx(
+                          'mr-3 h-5 w-5',
+                          action.variant === 'destructive'
+                            ? 'text-red-600'
+                            : 'text-gray-500'
+                        )}
+                      />
                     )}
                     {action.label}
                   </button>
@@ -297,7 +308,7 @@ export function MobileActionSheet({
               {/* Cancel button */}
               <button
                 onClick={onClose}
-                className="mt-4 flex w-full items-center justify-center mobile-touch-target rounded-xl bg-gray-100 px-4 py-4 text-base font-semibold text-gray-900 transition-colors hover:bg-gray-200 active:bg-gray-300"
+                className="mobile-touch-target mt-4 flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-4 text-base font-semibold text-gray-900 transition-colors hover:bg-gray-200 active:bg-gray-300"
               >
                 Cancelar
               </button>
@@ -391,9 +402,7 @@ export function MobileDrawer({
             )}
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-              {children}
-            </div>
+            <div className="flex-1 overflow-y-auto">{children}</div>
           </motion.div>
         </>
       )}

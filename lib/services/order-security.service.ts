@@ -48,7 +48,8 @@ export interface RateLimitConfig {
 
 export class OrderSecurityService {
   private supabase;
-  private rateLimitStore: Map<string, { count: number; window_start: number }> = new Map();
+  private rateLimitStore: Map<string, { count: number; window_start: number }> =
+    new Map();
 
   constructor() {
     this.supabase = createServerSupabaseServiceClient();
@@ -57,14 +58,16 @@ export class OrderSecurityService {
   /**
    * Validate and create security context from request
    */
-  async createSecurityContext(request: Request): Promise<SecurityContext | null> {
+  async createSecurityContext(
+    request: Request
+  ): Promise<SecurityContext | null> {
     try {
       // Extract headers from request directly
       const authorization = request.headers.get('authorization');
       const userAgent = request.headers.get('user-agent') || 'Unknown';
       const forwardedFor = request.headers.get('x-forwarded-for');
       const realIp = request.headers.get('x-real-ip');
-      
+
       // Get IP address (prefer x-forwarded-for for proxied requests)
       const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
 
@@ -78,7 +81,7 @@ export class OrderSecurityService {
         id: 'admin_user_123',
         email: 'admin@lookescolar.com',
         role: 'admin' as const,
-        aud: 'session_123'
+        aud: 'session_123',
       };
 
       return {
@@ -90,7 +93,6 @@ export class OrderSecurityService {
         user_agent: userAgent,
         timestamp: new Date().toISOString(),
       };
-
     } catch (error) {
       console.error('[Security] Failed to create security context:', error);
       return null;
@@ -130,14 +132,14 @@ export class OrderSecurityService {
           action: 'export',
           required_role: ['admin', 'moderator'],
         },
-        
+
         // Analytics rules
         {
           resource: 'analytics',
           action: 'read',
           required_role: ['admin', 'moderator'],
         },
-        
+
         // Workflow rules
         {
           resource: 'workflow',
@@ -149,7 +151,7 @@ export class OrderSecurityService {
           action: 'execute',
           required_role: ['admin'],
         },
-        
+
         // Audit log rules
         {
           resource: 'audit',
@@ -159,7 +161,9 @@ export class OrderSecurityService {
       ];
 
       // Find applicable rule
-      const rule = rules.find(r => r.resource === resourceType && r.action === action);
+      const rule = rules.find(
+        (r) => r.resource === resourceType && r.action === action
+      );
       if (!rule) {
         console.warn(`[Security] No rule found for ${resourceType}:${action}`);
         return false;
@@ -167,7 +171,9 @@ export class OrderSecurityService {
 
       // Check role requirement
       if (!rule.required_role.includes(context.user_role)) {
-        console.warn(`[Security] Insufficient role for ${resourceType}:${action}. Required: ${rule.required_role}, User: ${context.user_role}`);
+        console.warn(
+          `[Security] Insufficient role for ${resourceType}:${action}. Required: ${rule.required_role}, User: ${context.user_role}`
+        );
         return false;
       }
 
@@ -184,7 +190,6 @@ export class OrderSecurityService {
       }
 
       return true;
-
     } catch (error) {
       console.error('[Security] Permission check failed:', error);
       return false;
@@ -199,12 +204,12 @@ export class OrderSecurityService {
     config: RateLimitConfig = {
       window_ms: 60 * 1000, // 1 minute
       max_requests: 100,
-      identifier_key: 'ip'
+      identifier_key: 'ip',
     }
   ): boolean {
     const now = Date.now();
     const windowStart = now - config.window_ms;
-    
+
     // Clean up old entries
     for (const [key, value] of this.rateLimitStore.entries()) {
       if (value.window_start < windowStart) {
@@ -214,7 +219,7 @@ export class OrderSecurityService {
 
     // Check current rate
     const current = this.rateLimitStore.get(identifier);
-    
+
     if (!current) {
       this.rateLimitStore.set(identifier, { count: 1, window_start: now });
       return true;
@@ -272,7 +277,6 @@ export class OrderSecurityService {
       } catch (dbError) {
         console.error('[Security] Failed to store audit log:', dbError);
       }
-
     } catch (error) {
       console.error('[Security] Audit logging failed:', error);
       // Don't throw - audit failures shouldn't break operations
@@ -282,22 +286,28 @@ export class OrderSecurityService {
   /**
    * Validate and sanitize input data
    */
-  validateInput<T>(data: unknown, schema: z.ZodSchema<T>): { success: true; data: T } | { success: false; errors: string[] } {
+  validateInput<T>(
+    data: unknown,
+    schema: z.ZodSchema<T>
+  ): { success: true; data: T } | { success: false; errors: string[] } {
     try {
       const result = schema.safeParse(data);
-      
+
       if (result.success) {
         return { success: true, data: result.data };
       } else {
-        const errors = result.error.issues.map(issue => 
-          `${issue.path.join('.')}: ${issue.message}`
+        const errors = result.error.issues.map(
+          (issue) => `${issue.path.join('.')}: ${issue.message}`
         );
         return { success: false, errors };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        errors: ['Validation failed: ' + (error instanceof Error ? error.message : 'Unknown error')] 
+      return {
+        success: false,
+        errors: [
+          'Validation failed: ' +
+            (error instanceof Error ? error.message : 'Unknown error'),
+        ],
       };
     }
   }
@@ -307,7 +317,7 @@ export class OrderSecurityService {
    */
   sanitizeString(input: string): string {
     if (typeof input !== 'string') return '';
-    
+
     return input
       .replace(/[<>]/g, '') // Remove < and >
       .replace(/javascript:/gi, '') // Remove javascript: protocol
@@ -319,9 +329,13 @@ export class OrderSecurityService {
   /**
    * Validate order update data
    */
-  validateOrderUpdate(data: unknown): { success: true; data: any } | { success: false; errors: string[] } {
+  validateOrderUpdate(
+    data: unknown
+  ): { success: true; data: any } | { success: false; errors: string[] } {
     const schema = z.object({
-      status: z.enum(['pending', 'approved', 'delivered', 'failed', 'cancelled']).optional(),
+      status: z
+        .enum(['pending', 'approved', 'delivered', 'failed', 'cancelled'])
+        .optional(),
       admin_notes: z.string().max(1000).optional(),
       priority_level: z.number().int().min(1).max(5).optional(),
       delivery_method: z.string().max(100).optional(),
@@ -335,7 +349,9 @@ export class OrderSecurityService {
   /**
    * Validate bulk operations data
    */
-  validateBulkOperation(data: unknown): { success: true; data: any } | { success: false; errors: string[] } {
+  validateBulkOperation(
+    data: unknown
+  ): { success: true; data: any } | { success: false; errors: string[] } {
     const schema = z.object({
       order_ids: z.array(z.string().uuid()).min(1).max(100),
       updates: z.object({
@@ -351,16 +367,26 @@ export class OrderSecurityService {
   /**
    * Validate export request
    */
-  validateExportRequest(data: unknown): { success: true; data: any } | { success: false; errors: string[] } {
+  validateExportRequest(
+    data: unknown
+  ): { success: true; data: any } | { success: false; errors: string[] } {
     const schema = z.object({
       format: z.enum(['csv', 'excel', 'pdf', 'json']),
-      template: z.enum(['standard', 'detailed', 'summary', 'financial', 'labels']),
-      filters: z.object({
-        status: z.array(z.string()).optional(),
-        event_id: z.string().uuid().optional(),
-        created_after: z.string().datetime().optional(),
-        created_before: z.string().datetime().optional(),
-      }).optional(),
+      template: z.enum([
+        'standard',
+        'detailed',
+        'summary',
+        'financial',
+        'labels',
+      ]),
+      filters: z
+        .object({
+          status: z.array(z.string()).optional(),
+          event_id: z.string().uuid().optional(),
+          created_after: z.string().datetime().optional(),
+          created_before: z.string().datetime().optional(),
+        })
+        .optional(),
     });
 
     return this.validateInput(data, schema);
@@ -374,27 +400,29 @@ export class OrderSecurityService {
     const suspiciousPatterns = [
       // Too many requests from same IP
       () => this.checkPatternFrequency(context.ip_address, 100, 60000),
-      
+
       // Unusual user agent
       () => this.checkSuspiciousUserAgent(context.user_agent),
-      
+
       // Bulk operations outside business hours
       () => action.includes('bulk') && this.isOutsideBusinessHours(),
-      
+
       // Multiple failed permission checks
       () => this.checkFailedPermissions(context.user_id),
     ];
 
-    return suspiciousPatterns.some(check => check());
+    return suspiciousPatterns.some((check) => check());
   }
 
   /**
    * Generate security report
    */
-  async generateSecurityReport(period: 'day' | 'week' | 'month' = 'day'): Promise<any> {
+  async generateSecurityReport(
+    period: 'day' | 'week' | 'month' = 'day'
+  ): Promise<any> {
     const now = new Date();
     const periodStart = new Date();
-    
+
     switch (period) {
       case 'day':
         periodStart.setDate(now.getDate() - 1);
@@ -447,7 +475,10 @@ export class OrderSecurityService {
 
   // Private helper methods
 
-  private async getResource(resourceType: string, resourceId: string): Promise<any> {
+  private async getResource(
+    resourceType: string,
+    resourceId: string
+  ): Promise<any> {
     try {
       if (resourceType === 'order') {
         // Mock order data for now
@@ -463,20 +494,26 @@ export class OrderSecurityService {
     }
   }
 
-  private evaluateCondition(condition: SecurityCondition, context: SecurityContext, resource: any): boolean {
+  private evaluateCondition(
+    condition: SecurityCondition,
+    context: SecurityContext,
+    resource: any
+  ): boolean {
     if (condition.custom_check) {
       return condition.custom_check(context, resource);
     }
 
     const fieldValue = this.getFieldValue(condition.field, resource);
-    
+
     switch (condition.operator) {
       case 'equals':
         return fieldValue === condition.value;
       case 'not_equals':
         return fieldValue !== condition.value;
       case 'in':
-        return Array.isArray(condition.value) && condition.value.includes(fieldValue);
+        return (
+          Array.isArray(condition.value) && condition.value.includes(fieldValue)
+        );
       default:
         return false;
     }
@@ -486,16 +523,23 @@ export class OrderSecurityService {
     return field.split('.').reduce((obj, key) => obj?.[key], object);
   }
 
-  private checkPatternFrequency(identifier: string, maxCount: number, windowMs: number): boolean {
+  private checkPatternFrequency(
+    identifier: string,
+    maxCount: number,
+    windowMs: number
+  ): boolean {
     // Simplified implementation - in production, use Redis or similar
     const entry = this.rateLimitStore.get(`pattern_${identifier}`);
     const now = Date.now();
-    
+
     if (!entry || now - entry.window_start > windowMs) {
-      this.rateLimitStore.set(`pattern_${identifier}`, { count: 1, window_start: now });
+      this.rateLimitStore.set(`pattern_${identifier}`, {
+        count: 1,
+        window_start: now,
+      });
       return false;
     }
-    
+
     return entry.count > maxCount;
   }
 
@@ -508,15 +552,15 @@ export class OrderSecurityService {
       /curl/i,
       /wget/i,
     ];
-    
-    return suspiciousPatterns.some(pattern => pattern.test(userAgent));
+
+    return suspiciousPatterns.some((pattern) => pattern.test(userAgent));
   }
 
   private isOutsideBusinessHours(): boolean {
     const now = new Date();
     const hour = now.getHours();
     const day = now.getDay();
-    
+
     // Weekend or outside 9 AM - 6 PM
     return day === 0 || day === 6 || hour < 9 || hour > 18;
   }

@@ -2,9 +2,22 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import type { OrderWithDetails, OrderAuditEvent } from '@/types/admin-api';
 import type { Tables } from '@/types/database';
 
-export type OrderStatus = 'pending' | 'approved' | 'delivered' | 'failed' | 'cancelled';
+export type OrderStatus =
+  | 'pending'
+  | 'approved'
+  | 'delivered'
+  | 'failed'
+  | 'cancelled';
 export type DeliveryMethod = 'pickup' | 'email' | 'postal' | 'hand_delivery';
-export type AuditActionType = 'created' | 'status_changed' | 'payment_updated' | 'delivered' | 'cancelled' | 'refunded' | 'notes_added' | 'admin_action';
+export type AuditActionType =
+  | 'created'
+  | 'status_changed'
+  | 'payment_updated'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded'
+  | 'notes_added'
+  | 'admin_action';
 
 export interface UpdateOrderRequest {
   status?: OrderStatus;
@@ -72,7 +85,11 @@ export class EnhancedOrderService {
   /**
    * Get orders with enhanced filtering and audit information
    */
-  async getOrders(filters: OrderFilters = {}, page = 1, limit = 50): Promise<{
+  async getOrders(
+    filters: OrderFilters = {},
+    page = 1,
+    limit = 50
+  ): Promise<{
     orders: OrderWithDetails[];
     stats: OrderStats;
     pagination: {
@@ -88,9 +105,7 @@ export class EnhancedOrderService {
 
     try {
       // Build the query with filters
-      let query = this.supabase
-        .from('order_details_with_audit')
-        .select('*');
+      let query = this.supabase.from('order_details_with_audit').select('*');
 
       // Apply filters
       if (filters.status && filters.status !== 'all') {
@@ -118,7 +133,10 @@ export class EnhancedOrderService {
       }
 
       if (filters.overdue_only) {
-        query = query.in('enhanced_status', ['pending_overdue', 'delivery_overdue']);
+        query = query.in('enhanced_status', [
+          'pending_overdue',
+          'delivery_overdue',
+        ]);
       }
 
       if (filters.search_query) {
@@ -132,7 +150,10 @@ export class EnhancedOrderService {
 
       // Get total count for pagination
       const countQuery = query;
-      const { count } = await countQuery.select('*', { count: 'exact', head: true });
+      const { count } = await countQuery.select('*', {
+        count: 'exact',
+        head: true,
+      });
       const total = count || 0;
 
       // Get paginated results
@@ -261,7 +282,8 @@ export class EnhancedOrderService {
     await this.ensureInitialized();
     const { data: auditEvents, error } = await this.supabase
       .from('order_audit_log')
-      .select(`
+      .select(
+        `
         action_type,
         old_values,
         new_values,
@@ -269,7 +291,8 @@ export class EnhancedOrderService {
         notes,
         created_at,
         admin_users!left(name)
-      `)
+      `
+      )
       .eq('order_id', orderId)
       .order('created_at', { ascending: false });
 
@@ -297,7 +320,9 @@ export class EnhancedOrderService {
         results.success++;
       } catch (error) {
         results.failed++;
-        results.errors.push(`Order ${orderId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        results.errors.push(
+          `Order ${orderId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
@@ -307,9 +332,15 @@ export class EnhancedOrderService {
   /**
    * Calculate order statistics
    */
-  private async calculateOrderStats(filters: OrderFilters = {}): Promise<OrderStats> {
+  private async calculateOrderStats(
+    filters: OrderFilters = {}
+  ): Promise<OrderStats> {
     await this.ensureInitialized();
-    let query = this.supabase.from('orders').select('status, total_cents, created_at, last_status_change, priority_level');
+    let query = this.supabase
+      .from('orders')
+      .select(
+        'status, total_cents, created_at, last_status_change, priority_level'
+      );
 
     // Apply same filters as main query
     if (filters.status && filters.status !== 'all') {
@@ -320,7 +351,7 @@ export class EnhancedOrderService {
     }
 
     const { data: orders, error } = await query;
-    
+
     if (error || !orders) {
       throw new Error('Failed to calculate stats');
     }
@@ -358,7 +389,8 @@ export class EnhancedOrderService {
       // Overdue calculations
       const createdAt = new Date(order.created_at);
       const now = new Date();
-      const hoursSinceCreated = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      const hoursSinceCreated =
+        (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
       if (order.status === 'pending' && hoursSinceCreated > 24) {
         stats.overdue_pending++;
@@ -367,14 +399,16 @@ export class EnhancedOrderService {
       // Processing time for delivered orders
       if (order.status === 'delivered' && order.last_status_change) {
         const lastChange = new Date(order.last_status_change);
-        const processingHours = (lastChange.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        const processingHours =
+          (lastChange.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
         totalProcessingTime += processingHours;
         processedOrders++;
       }
 
       // Priority distribution
       const priority = order.priority_level || 1;
-      stats.priority_distribution[priority] = (stats.priority_distribution[priority] || 0) + 1;
+      stats.priority_distribution[priority] =
+        (stats.priority_distribution[priority] || 0) + 1;
     }
 
     // Calculate average processing time
@@ -400,12 +434,10 @@ export class EnhancedOrderService {
     notes?: string;
   }): Promise<void> {
     await this.ensureInitialized();
-    const { error } = await this.supabase
-      .from('order_audit_log')
-      .insert({
-        ...event,
-        created_at: new Date().toISOString(),
-      });
+    const { error } = await this.supabase.from('order_audit_log').insert({
+      ...event,
+      created_at: new Date().toISOString(),
+    });
 
     if (error) {
       console.error('Failed to log audit event:', error);

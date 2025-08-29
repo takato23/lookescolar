@@ -1,18 +1,31 @@
 /**
  * TDD CRITICAL ENDPOINTS TESTS
- * 
+ *
  * Comprehensive test-driven development tests for the 5 critical endpoints
  * identified in CLAUDE.md:
- * 
+ *
  * 1. /api/admin/photos/upload - Upload and processing
- * 2. /api/family/gallery/[token] - Token-based access  
+ * 2. /api/family/gallery/[token] - Token-based access
  * 3. /api/payments/webhook - Webhook MP idempotency
  * 4. /api/admin/tagging - Photo-subject assignment
  * 5. /api/storage/signed-url - URL generation
  */
 
-import { describe, test, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
-import { setupTestData, cleanupTestData, createTestClient, setupMocks } from './test-utils';
+import {
+  describe,
+  test,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
+import {
+  setupTestData,
+  cleanupTestData,
+  createTestClient,
+  setupMocks,
+} from './test-utils';
 import type { Database } from '../types/database';
 
 // Test configuration
@@ -34,7 +47,7 @@ let testContext: TestContext;
 describe('TDD Critical Endpoints Test Suite', () => {
   beforeAll(async () => {
     setupMocks();
-    
+
     // Setup test data
     const testData = await setupTestData();
     testContext = {
@@ -42,7 +55,7 @@ describe('TDD Critical Endpoints Test Suite', () => {
       subjectId: testData.subjectId,
       subjectToken: testData.validToken,
       photoIds: testData.photoIds,
-      testData
+      testData,
     };
 
     // Create admin session for authenticated tests
@@ -52,8 +65,8 @@ describe('TDD Critical Endpoints Test Suite', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: process.env.TEST_ADMIN_EMAIL,
-          password: process.env.TEST_ADMIN_PASSWORD
-        })
+          password: process.env.TEST_ADMIN_PASSWORD,
+        }),
       });
 
       if (adminAuth.ok) {
@@ -61,7 +74,10 @@ describe('TDD Critical Endpoints Test Suite', () => {
         testContext.adminToken = authData.access_token;
       }
     } catch (error) {
-      console.warn('Admin authentication failed, some tests may be skipped:', error);
+      console.warn(
+        'Admin authentication failed, some tests may be skipped:',
+        error
+      );
     }
   }, TEST_TIMEOUT);
 
@@ -87,7 +103,7 @@ describe('TDD Critical Endpoints Test Suite', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(401);
@@ -104,57 +120,76 @@ describe('TDD Critical Endpoints Test Suite', () => {
       // Test invalid file type
       const invalidFormData = new FormData();
       invalidFormData.append('eventId', testContext.eventId);
-      invalidFormData.append('photos', new Blob(['test'], { type: 'text/plain' }), 'test.txt');
+      invalidFormData.append(
+        'photos',
+        new Blob(['test'], { type: 'text/plain' }),
+        'test.txt'
+      );
 
-      const invalidResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${testContext.adminToken}` },
-        body: invalidFormData
-      });
+      const invalidResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${testContext.adminToken}` },
+          body: invalidFormData,
+        }
+      );
 
       expect([400, 422]).toContain(invalidResponse.status);
       const invalidData = await invalidResponse.json();
       expect(invalidData.error).toMatch(/file type|format/i);
     });
 
-    test('should upload and process photo with watermark', async () => {
-      if (!testContext.adminToken) {
-        console.warn('Skipping authenticated test - no admin token');
-        return;
-      }
+    test(
+      'should upload and process photo with watermark',
+      async () => {
+        if (!testContext.adminToken) {
+          console.warn('Skipping authenticated test - no admin token');
+          return;
+        }
 
-      // Create mock image blob
-      const mockImageBlob = new Blob(['mock image data'], { type: 'image/jpeg' });
-      const formData = new FormData();
-      formData.append('eventId', testContext.eventId);
-      formData.append('photos', mockImageBlob, 'test-photo.jpg');
+        // Create mock image blob
+        const mockImageBlob = new Blob(['mock image data'], {
+          type: 'image/jpeg',
+        });
+        const formData = new FormData();
+        formData.append('eventId', testContext.eventId);
+        formData.append('photos', mockImageBlob, 'test-photo.jpg');
 
-      const startTime = Date.now();
-      const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${testContext.adminToken}` },
-        body: formData
-      });
-      const processingTime = Date.now() - startTime;
+        const startTime = Date.now();
+        const response = await fetch(
+          `${API_BASE_URL}/api/admin/photos/upload`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${testContext.adminToken}` },
+            body: formData,
+          }
+        );
+        const processingTime = Date.now() - startTime;
 
-      if (response.ok) {
-        const data = await response.json();
-        expect(data.success).toBe(true);
-        expect(data.photos).toBeDefined();
-        expect(data.photos.length).toBeGreaterThan(0);
-        expect(processingTime).toBeLessThan(3000); // <3s requirement
-        
-        // Verify watermark processing
-        const uploadedPhoto = data.photos[0];
-        expect(uploadedPhoto.storage_path).toBeDefined();
-        expect(uploadedPhoto.filename).toContain('.jpg');
-      } else {
-        // Log for debugging but don't fail test if infrastructure isn't ready
-        console.warn('Photo upload test failed with status:', response.status);
-        const errorData = await response.json();
-        console.warn('Error:', errorData);
-      }
-    }, TEST_TIMEOUT);
+        if (response.ok) {
+          const data = await response.json();
+          expect(data.success).toBe(true);
+          expect(data.photos).toBeDefined();
+          expect(data.photos.length).toBeGreaterThan(0);
+          expect(processingTime).toBeLessThan(3000); // <3s requirement
+
+          // Verify watermark processing
+          const uploadedPhoto = data.photos[0];
+          expect(uploadedPhoto.storage_path).toBeDefined();
+          expect(uploadedPhoto.filename).toContain('.jpg');
+        } else {
+          // Log for debugging but don't fail test if infrastructure isn't ready
+          console.warn(
+            'Photo upload test failed with status:',
+            response.status
+          );
+          const errorData = await response.json();
+          console.warn('Error:', errorData);
+        }
+      },
+      TEST_TIMEOUT
+    );
 
     test('should handle concurrent uploads with rate limiting', async () => {
       if (!testContext.adminToken) {
@@ -163,8 +198,11 @@ describe('TDD Critical Endpoints Test Suite', () => {
       }
 
       const uploadPromises = [];
-      for (let i = 0; i < 12; i++) { // Exceed rate limit of 10 req/min
-        const mockImageBlob = new Blob(['mock image data'], { type: 'image/jpeg' });
+      for (let i = 0; i < 12; i++) {
+        // Exceed rate limit of 10 req/min
+        const mockImageBlob = new Blob(['mock image data'], {
+          type: 'image/jpeg',
+        });
         const formData = new FormData();
         formData.append('eventId', testContext.eventId);
         formData.append('photos', mockImageBlob, `test-photo-${i}.jpg`);
@@ -172,15 +210,15 @@ describe('TDD Critical Endpoints Test Suite', () => {
         uploadPromises.push(
           fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${testContext.adminToken}` },
-            body: formData
+            headers: { Authorization: `Bearer ${testContext.adminToken}` },
+            body: formData,
           })
         );
       }
 
       const responses = await Promise.all(uploadPromises);
-      const rateLimitedResponses = responses.filter(r => r.status === 429);
-      
+      const rateLimitedResponses = responses.filter((r) => r.status === 429);
+
       // Should have some rate limited responses
       expect(rateLimitedResponses.length).toBeGreaterThan(0);
     });
@@ -201,37 +239,45 @@ describe('TDD Critical Endpoints Test Suite', () => {
       const invalidTokens = ['', 'short', '12345', 'invalid-token-format'];
 
       for (const token of invalidTokens) {
-        const response = await fetch(`${API_BASE_URL}/api/family/gallery/${token}`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/family/gallery/${token}`
+        );
         expect([400, 401, 404]).toContain(response.status);
       }
     });
 
     test('should reject expired tokens', async () => {
       if (!testContext.testData?.expiredToken) {
-        console.warn('Skipping expired token test - no expired token available');
+        console.warn(
+          'Skipping expired token test - no expired token available'
+        );
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/family/gallery/${testContext.testData.expiredToken}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/family/gallery/${testContext.testData.expiredToken}`
+      );
       expect([401, 403]).toContain(response.status);
-      
+
       const data = await response.json();
       expect(data.error).toMatch(/expired|invalid/i);
     });
 
     test('should return only assigned photos for valid token', async () => {
       const startTime = Date.now();
-      const response = await fetch(`${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`
+      );
       const responseTime = Date.now() - startTime;
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Verify response structure
         expect(data.photos).toBeDefined();
         expect(data.subject).toBeDefined();
         expect(data.event).toBeDefined();
-        
+
         // Verify security: only photos assigned to this subject
         if (data.photos.length > 0) {
           data.photos.forEach((photo: any) => {
@@ -239,7 +285,7 @@ describe('TDD Critical Endpoints Test Suite', () => {
             expect(photo.approved).toBe(true);
           });
         }
-        
+
         // Verify performance requirement <200ms
         expect(responseTime).toBeLessThan(200);
       } else {
@@ -251,27 +297,32 @@ describe('TDD Critical Endpoints Test Suite', () => {
 
     test('should implement rate limiting per token', async () => {
       const requests = [];
-      
+
       // Make multiple rapid requests
-      for (let i = 0; i < 35; i++) { // Exceed rate limit of 30 req/min
+      for (let i = 0; i < 35; i++) {
+        // Exceed rate limit of 30 req/min
         requests.push(
-          fetch(`${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`)
+          fetch(
+            `${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`
+          )
         );
       }
 
       const responses = await Promise.all(requests);
-      const rateLimitedResponses = responses.filter(r => r.status === 429);
-      
+      const rateLimitedResponses = responses.filter((r) => r.status === 429);
+
       // Should have rate limiting active
       expect(rateLimitedResponses.length).toBeGreaterThan(0);
     });
 
     test('should not leak photos from other subjects', async () => {
-      const response = await fetch(`${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`);
-      
+      const response = await fetch(
+        `${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`
+      );
+
       if (response.ok) {
         const data = await response.json();
-        
+
         // Verify no photos from other subjects are returned
         if (data.photos.length > 0) {
           data.photos.forEach((photo: any) => {
@@ -298,28 +349,34 @@ describe('TDD Critical Endpoints Test Suite', () => {
         live_mode: false,
         type: 'payment',
         data: {
-          id: 'test-payment-id'
-        }
+          id: 'test-payment-id',
+        },
       };
 
       // Test without signature
-      const noSignatureResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webhookPayload)
-      });
+      const noSignatureResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(webhookPayload),
+        }
+      );
 
       expect([400, 401]).toContain(noSignatureResponse.status);
 
       // Test with invalid signature
-      const invalidSignatureResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': 'invalid-signature'
-        },
-        body: JSON.stringify(webhookPayload)
-      });
+      const invalidSignatureResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': 'invalid-signature',
+          },
+          body: JSON.stringify(webhookPayload),
+        }
+      );
 
       expect([400, 401]).toContain(invalidSignatureResponse.status);
     });
@@ -330,35 +387,41 @@ describe('TDD Critical Endpoints Test Suite', () => {
         live_mode: false,
         type: 'payment',
         data: {
-          id: 'duplicate-payment-id-' + Date.now()
-        }
+          id: 'duplicate-payment-id-' + Date.now(),
+        },
       };
 
       // Create proper signature (mock implementation)
       const mockSignature = 'v1=mock-valid-signature';
 
-      const firstResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': mockSignature
-        },
-        body: JSON.stringify(webhookPayload)
-      });
+      const firstResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': mockSignature,
+          },
+          body: JSON.stringify(webhookPayload),
+        }
+      );
 
-      const secondResponse = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-signature': mockSignature
-        },
-        body: JSON.stringify(webhookPayload)
-      });
+      const secondResponse = await fetch(
+        `${API_BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': mockSignature,
+          },
+          body: JSON.stringify(webhookPayload),
+        }
+      );
 
       // Both should return success but second should detect duplicate
       if (firstResponse.ok) {
         expect(secondResponse.ok).toBe(true);
-        
+
         const secondData = await secondResponse.json();
         expect(secondData.processed).toBe(false); // Already processed
       }
@@ -370,18 +433,18 @@ describe('TDD Critical Endpoints Test Suite', () => {
         live_mode: false,
         type: 'payment',
         data: {
-          id: 'performance-payment-id'
-        }
+          id: 'performance-payment-id',
+        },
       };
 
       const startTime = Date.now();
       const response = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'x-signature': 'v1=mock-signature'
+          'x-signature': 'v1=mock-signature',
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(webhookPayload),
       });
       const responseTime = Date.now() - startTime;
 
@@ -393,17 +456,17 @@ describe('TDD Critical Endpoints Test Suite', () => {
         '{"invalid": "json"',
         '',
         '{"missing": "required_fields"}',
-        null
+        null,
       ];
 
       for (const payload of malformedPayloads) {
         const response = await fetch(`${API_BASE_URL}/api/payments/webhook`, {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'x-signature': 'v1=mock-signature'
+            'x-signature': 'v1=mock-signature',
           },
-          body: payload
+          body: payload,
         });
 
         expect([400, 422]).toContain(response.status);
@@ -424,13 +487,13 @@ describe('TDD Critical Endpoints Test Suite', () => {
     test('should require admin authentication', async () => {
       const taggingData = {
         photoIds: [testContext.photoIds[0]],
-        subjectId: testContext.subjectId
+        subjectId: testContext.subjectId,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/admin/tagging`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taggingData)
+        body: JSON.stringify(taggingData),
       });
 
       expect(response.status).toBe(401);
@@ -445,34 +508,40 @@ describe('TDD Critical Endpoints Test Suite', () => {
       // Test with invalid photo ID
       const invalidPhotoData = {
         photoIds: ['invalid-photo-id'],
-        subjectId: testContext.subjectId
+        subjectId: testContext.subjectId,
       };
 
-      const invalidPhotoResponse = await fetch(`${API_BASE_URL}/api/admin/tagging`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testContext.adminToken}`
-        },
-        body: JSON.stringify(invalidPhotoData)
-      });
+      const invalidPhotoResponse = await fetch(
+        `${API_BASE_URL}/api/admin/tagging`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${testContext.adminToken}`,
+          },
+          body: JSON.stringify(invalidPhotoData),
+        }
+      );
 
       expect([400, 404]).toContain(invalidPhotoResponse.status);
 
       // Test with invalid subject ID
       const invalidSubjectData = {
         photoIds: [testContext.photoIds[0]],
-        subjectId: 'invalid-subject-id'
+        subjectId: 'invalid-subject-id',
       };
 
-      const invalidSubjectResponse = await fetch(`${API_BASE_URL}/api/admin/tagging`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testContext.adminToken}`
-        },
-        body: JSON.stringify(invalidSubjectData)
-      });
+      const invalidSubjectResponse = await fetch(
+        `${API_BASE_URL}/api/admin/tagging`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${testContext.adminToken}`,
+          },
+          body: JSON.stringify(invalidSubjectData),
+        }
+      );
 
       expect([400, 404]).toContain(invalidSubjectResponse.status);
     });
@@ -485,16 +554,16 @@ describe('TDD Critical Endpoints Test Suite', () => {
 
       const taggingData = {
         photoIds: [testContext.photoIds[0]],
-        subjectId: testContext.subjectId
+        subjectId: testContext.subjectId,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/admin/tagging`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testContext.adminToken}`
+          Authorization: `Bearer ${testContext.adminToken}`,
         },
-        body: JSON.stringify(taggingData)
+        body: JSON.stringify(taggingData),
       });
 
       if (response.ok) {
@@ -515,16 +584,16 @@ describe('TDD Critical Endpoints Test Suite', () => {
 
       const batchTaggingData = {
         photoIds: testContext.photoIds,
-        subjectId: testContext.subjectId
+        subjectId: testContext.subjectId,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/admin/tagging`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testContext.adminToken}`
+          Authorization: `Bearer ${testContext.adminToken}`,
         },
-        body: JSON.stringify(batchTaggingData)
+        body: JSON.stringify(batchTaggingData),
       });
 
       if (response.ok) {
@@ -547,13 +616,13 @@ describe('TDD Critical Endpoints Test Suite', () => {
   describe('5. Signed URL API (/api/storage/signed-url)', () => {
     test('should require valid token or authentication', async () => {
       const signedUrlData = {
-        photoId: testContext.photoIds[0]
+        photoId: testContext.photoIds[0],
       };
 
       const response = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(signedUrlData)
+        body: JSON.stringify(signedUrlData),
       });
 
       expect([401, 403]).toContain(response.status);
@@ -562,28 +631,28 @@ describe('TDD Critical Endpoints Test Suite', () => {
     test('should generate valid signed URLs with proper expiration', async () => {
       const signedUrlData = {
         photoId: testContext.photoIds[0],
-        token: testContext.subjectToken
+        token: testContext.subjectToken,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(signedUrlData)
+        body: JSON.stringify(signedUrlData),
       });
 
       if (response.ok) {
         const data = await response.json();
         expect(data.signedUrl).toBeDefined();
         expect(data.expiresAt).toBeDefined();
-        
+
         // Verify URL structure
         expect(data.signedUrl).toMatch(/^https?:\/\//);
-        
+
         // Verify expiration is approximately 1 hour
         const expirationTime = new Date(data.expiresAt).getTime();
         const currentTime = Date.now();
         const timeUntilExpiration = expirationTime - currentTime;
-        
+
         expect(timeUntilExpiration).toBeGreaterThan(55 * 60 * 1000); // >55 min
         expect(timeUntilExpiration).toBeLessThan(65 * 60 * 1000); // <65 min
       } else {
@@ -595,7 +664,7 @@ describe('TDD Critical Endpoints Test Suite', () => {
       const requests = [];
       const signedUrlData = {
         photoId: testContext.photoIds[0],
-        token: testContext.subjectToken
+        token: testContext.subjectToken,
       };
 
       // Make multiple rapid requests to exceed 60 req/min limit
@@ -604,14 +673,14 @@ describe('TDD Critical Endpoints Test Suite', () => {
           fetch(`${API_BASE_URL}/api/storage/signed-url`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(signedUrlData)
+            body: JSON.stringify(signedUrlData),
           })
         );
       }
 
       const responses = await Promise.all(requests);
-      const rateLimitedResponses = responses.filter(r => r.status === 429);
-      
+      const rateLimitedResponses = responses.filter((r) => r.status === 429);
+
       // Should have some rate limited responses
       expect(rateLimitedResponses.length).toBeGreaterThan(0);
     });
@@ -619,19 +688,21 @@ describe('TDD Critical Endpoints Test Suite', () => {
     test('should validate photo access permissions', async () => {
       // Try to access photo not assigned to this subject
       if (!testContext.testData?.otherSubjectPhotoId) {
-        console.warn('Skipping permission test - no other subject photo available');
+        console.warn(
+          'Skipping permission test - no other subject photo available'
+        );
         return;
       }
 
       const unauthorizedData = {
         photoId: testContext.testData.otherSubjectPhotoId,
-        token: testContext.subjectToken
+        token: testContext.subjectToken,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(unauthorizedData)
+        body: JSON.stringify(unauthorizedData),
       });
 
       expect([403, 404]).toContain(response.status);
@@ -640,16 +711,16 @@ describe('TDD Critical Endpoints Test Suite', () => {
     test('should include anti-hotlinking protection', async () => {
       const signedUrlData = {
         photoId: testContext.photoIds[0],
-        token: testContext.subjectToken
+        token: testContext.subjectToken,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Referer': 'https://malicious-site.com' // Invalid referer
+          Referer: 'https://malicious-site.com', // Invalid referer
         },
-        body: JSON.stringify(signedUrlData)
+        body: JSON.stringify(signedUrlData),
       });
 
       if (response.status === 403) {
@@ -665,71 +736,90 @@ describe('TDD Critical Endpoints Test Suite', () => {
    * Test complete workflows using multiple critical endpoints
    */
   describe('Integration Tests - Critical Endpoint Workflows', () => {
-    test('Complete photo workflow: Upload → Tag → Family Access → Signed URL', async () => {
-      if (!testContext.adminToken) {
-        console.warn('Skipping integration test - no admin token');
-        return;
-      }
+    test(
+      'Complete photo workflow: Upload → Tag → Family Access → Signed URL',
+      async () => {
+        if (!testContext.adminToken) {
+          console.warn('Skipping integration test - no admin token');
+          return;
+        }
 
-      let uploadedPhotoId: string;
+        let uploadedPhotoId: string;
 
-      // 1. Upload photo
-      const mockImageBlob = new Blob(['integration test image'], { type: 'image/jpeg' });
-      const formData = new FormData();
-      formData.append('eventId', testContext.eventId);
-      formData.append('photos', mockImageBlob, 'integration-test.jpg');
-
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${testContext.adminToken}` },
-        body: formData
-      });
-
-      if (uploadResponse.ok) {
-        const uploadData = await uploadResponse.json();
-        uploadedPhotoId = uploadData.photos[0].id;
-
-        // 2. Tag photo to subject
-        const taggingResponse = await fetch(`${API_BASE_URL}/api/admin/tagging`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${testContext.adminToken}`
-          },
-          body: JSON.stringify({
-            photoIds: [uploadedPhotoId],
-            subjectId: testContext.subjectId
-          })
+        // 1. Upload photo
+        const mockImageBlob = new Blob(['integration test image'], {
+          type: 'image/jpeg',
         });
+        const formData = new FormData();
+        formData.append('eventId', testContext.eventId);
+        formData.append('photos', mockImageBlob, 'integration-test.jpg');
 
-        if (taggingResponse.ok) {
-          // 3. Family access - verify photo appears in gallery
-          const galleryResponse = await fetch(`${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`);
-          
-          if (galleryResponse.ok) {
-            const galleryData = await galleryResponse.json();
-            const hasUploadedPhoto = galleryData.photos.some((p: any) => p.id === uploadedPhotoId);
-            expect(hasUploadedPhoto).toBe(true);
+        const uploadResponse = await fetch(
+          `${API_BASE_URL}/api/admin/photos/upload`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${testContext.adminToken}` },
+            body: formData,
+          }
+        );
 
-            // 4. Generate signed URL for the photo
-            const signedUrlResponse = await fetch(`${API_BASE_URL}/api/storage/signed-url`, {
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          uploadedPhotoId = uploadData.photos[0].id;
+
+          // 2. Tag photo to subject
+          const taggingResponse = await fetch(
+            `${API_BASE_URL}/api/admin/tagging`,
+            {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${testContext.adminToken}`,
+              },
               body: JSON.stringify({
-                photoId: uploadedPhotoId,
-                token: testContext.subjectToken
-              })
-            });
+                photoIds: [uploadedPhotoId],
+                subjectId: testContext.subjectId,
+              }),
+            }
+          );
 
-            if (signedUrlResponse.ok) {
-              const signedUrlData = await signedUrlResponse.json();
-              expect(signedUrlData.signedUrl).toBeDefined();
-              expect(signedUrlData.expiresAt).toBeDefined();
+          if (taggingResponse.ok) {
+            // 3. Family access - verify photo appears in gallery
+            const galleryResponse = await fetch(
+              `${API_BASE_URL}/api/family/gallery/${testContext.subjectToken}`
+            );
+
+            if (galleryResponse.ok) {
+              const galleryData = await galleryResponse.json();
+              const hasUploadedPhoto = galleryData.photos.some(
+                (p: any) => p.id === uploadedPhotoId
+              );
+              expect(hasUploadedPhoto).toBe(true);
+
+              // 4. Generate signed URL for the photo
+              const signedUrlResponse = await fetch(
+                `${API_BASE_URL}/api/storage/signed-url`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    photoId: uploadedPhotoId,
+                    token: testContext.subjectToken,
+                  }),
+                }
+              );
+
+              if (signedUrlResponse.ok) {
+                const signedUrlData = await signedUrlResponse.json();
+                expect(signedUrlData.signedUrl).toBeDefined();
+                expect(signedUrlData.expiresAt).toBeDefined();
+              }
             }
           }
         }
-      }
-    }, TEST_TIMEOUT);
+      },
+      TEST_TIMEOUT
+    );
 
     test('Security validation across critical endpoints', async () => {
       // Test that all critical endpoints properly handle:
@@ -740,7 +830,7 @@ describe('TDD Critical Endpoints Test Suite', () => {
       const endpoints = [
         { url: '/api/admin/photos/upload', method: 'POST' },
         { url: '/api/admin/tagging', method: 'POST' },
-        { url: '/api/storage/signed-url', method: 'POST' }
+        { url: '/api/storage/signed-url', method: 'POST' },
       ];
 
       for (const endpoint of endpoints) {
@@ -748,17 +838,20 @@ describe('TDD Critical Endpoints Test Suite', () => {
         const unauthedResponse = await fetch(`${API_BASE_URL}${endpoint.url}`, {
           method: endpoint.method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
+          body: JSON.stringify({}),
         });
 
         expect([401, 403]).toContain(unauthedResponse.status);
 
         // Test malformed input
-        const malformedResponse = await fetch(`${API_BASE_URL}${endpoint.url}`, {
-          method: endpoint.method,
-          headers: { 'Content-Type': 'application/json' },
-          body: 'invalid json'
-        });
+        const malformedResponse = await fetch(
+          `${API_BASE_URL}${endpoint.url}`,
+          {
+            method: endpoint.method,
+            headers: { 'Content-Type': 'application/json' },
+            body: 'invalid json',
+          }
+        );
 
         expect([400, 401, 422]).toContain(malformedResponse.status);
       }

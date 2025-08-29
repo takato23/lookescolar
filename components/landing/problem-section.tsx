@@ -6,7 +6,7 @@ export function ProblemSection() {
           El <span className="text-gradient">problema</span>
         </h2>
         <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
-          Los métodos tradicionales de gestión de fotografía escolar son lentos, 
+          Los métodos tradicionales de gestión de fotografía escolar son lentos,
           inseguros y poco eficientes.
         </p>
       </div>

@@ -60,38 +60,31 @@ class Logger {
   private static instance: Logger;
 
   constructor() {
-    // Production-ready logger configuration
-    this.pino = pino({
-      level:
-        process.env['LOG_LEVEL'] ||
-        (process.env['NODE_ENV'] === 'production' ? 'info' : 'debug'),
-      formatters: {
-        level: (label) => {
-          return { level: label };
-        },
-        log: (object) => {
-          // Mask sensitive data before logging
-          return this.maskSensitiveData(object);
-        },
-      },
-      timestamp: pino.stdTimeFunctions.isoTime,
-      serializers: {
-        req: pino.stdSerializers.req,
-        res: pino.stdSerializers.res,
-        err: pino.stdSerializers.err,
-      },
-      // Pretty print in development
-      ...(process.env.NODE_ENV !== 'production' && {
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss Z',
-            ignore: 'pid,hostname',
+    // Temporalmente usar solo console.log para evitar problemas de worker threads
+    if (process.env.NODE_ENV === 'development') {
+      // En desarrollo usar console.log directo para evitar problemas
+      this.pino = null as any;
+    } else {
+      // Production-ready logger configuration (sin transports problemáticos)
+      this.pino = pino({
+        level: process.env['LOG_LEVEL'] || 'info',
+        formatters: {
+          level: (label) => {
+            return { level: label };
+          },
+          log: (object) => {
+            // Mask sensitive data before logging
+            return this.maskSensitiveData(object);
           },
         },
-      }),
-    });
+        timestamp: pino.stdTimeFunctions.isoTime,
+        serializers: {
+          req: pino.stdSerializers.req,
+          res: pino.stdSerializers.res,
+          err: pino.stdSerializers.err,
+        },
+      });
+    }
   }
 
   static getInstance(): Logger {
@@ -176,16 +169,22 @@ class Logger {
       ...context,
     };
 
-    // Usar console.log como fallback si pino falla (worker exit issue)
+    // En desarrollo o si pino no está disponible, usar console.log
+    if (!this.pino || process.env.NODE_ENV === 'development') {
+      console.log(`[${level.toUpperCase()}]`, event, this.maskSensitiveData(logEntry));
+      return;
+    }
+
+    // En producción usar pino de forma segura
     try {
-      if (this.pino && typeof this.pino[level] === 'function') {
+      if (typeof this.pino[level] === 'function') {
         this.pino[level](logEntry);
       } else {
-        console.log(`[${level.toUpperCase()}]`, event, logEntry);
+        console.log(`[${level.toUpperCase()}]`, event, this.maskSensitiveData(logEntry));
       }
     } catch (error) {
       // Fallback a console.log si pino falla
-      console.log(`[${level.toUpperCase()}]`, event, logEntry);
+      console.log(`[${level.toUpperCase()}]`, event, this.maskSensitiveData(logEntry));
     }
   }
 

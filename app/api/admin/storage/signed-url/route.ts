@@ -20,11 +20,14 @@ export async function POST(request: NextRequest) {
     // Determine bucket based on storage path or use preview bucket by default
     // Preview paths (watermarked) go to 'photos' bucket
     // Original paths go to 'photo-private' bucket
-    const bucketName = storagePath.includes('watermark') || storagePath.includes('preview') 
-      ? process.env.STORAGE_BUCKET_PREVIEW || 'photos'
-      : process.env.STORAGE_BUCKET_ORIGINAL || 'photo-private';
+    const bucketName =
+      storagePath.includes('watermark') || storagePath.includes('preview')
+        ? process.env.STORAGE_BUCKET_PREVIEW || 'photos'
+        : process.env.STORAGE_BUCKET_ORIGINAL || 'photo-private';
 
-    console.log(`Generating signed URL: photoId=${photoId}, storagePath=${storagePath}, bucket=${bucketName}`);
+    console.log(
+      `Generating signed URL: photoId=${photoId}, storagePath=${storagePath}, bucket=${bucketName}`
+    );
 
     // Generate signed URL for the photo
     const { data, error } = await supabase.storage
@@ -52,10 +55,9 @@ export async function POST(request: NextRequest) {
       photoId,
       expiresAt: Date.now() + 3600 * 1000, // 1 hour from now
     });
-
   } catch (error) {
     console.error('Signed URL API error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },

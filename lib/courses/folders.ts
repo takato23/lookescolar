@@ -51,7 +51,8 @@ export async function getCoursesInFolder(folderId: string) {
 
   const { data, error } = await supabase
     .from('courses')
-    .select(`
+    .select(
+      `
       *,
       students:students!left (
         id,
@@ -60,7 +61,8 @@ export async function getCoursesInFolder(folderId: string) {
       photo_courses:photo_courses!left (
         id
       )
-    `)
+    `
+    )
     .eq('parent_course_id', folderId)
     .order('sort_order', { ascending: true })
     .order('name', { ascending: true });
@@ -70,7 +72,7 @@ export async function getCoursesInFolder(folderId: string) {
   }
 
   // Process the data to add calculated fields
-  return (data || []).map(course => ({
+  return (data || []).map((course) => ({
     ...course,
     student_count: course.students?.filter((s: any) => s.active)?.length || 0,
     photo_count: course.photo_courses?.length || 0,
@@ -84,10 +86,10 @@ export async function getCoursesInFolder(folderId: string) {
  */
 export async function getFolderHierarchy(courseId: string): Promise<string[]> {
   const supabase = await createServerSupabaseServiceClient();
-  
+
   const hierarchy: string[] = [];
   let currentId = courseId;
-  
+
   // Traverse up the hierarchy until we reach the root
   while (currentId) {
     const { data: course, error } = await supabase
@@ -95,15 +97,15 @@ export async function getFolderHierarchy(courseId: string): Promise<string[]> {
       .select('name, parent_course_id')
       .eq('id', currentId)
       .single();
-      
+
     if (error || !course) {
       break;
     }
-    
+
     hierarchy.unshift(course.name);
     currentId = course.parent_course_id;
   }
-  
+
   return hierarchy;
 }
 
@@ -113,7 +115,10 @@ export async function getFolderHierarchy(courseId: string): Promise<string[]> {
  * @param newParentId The ID of the new parent folder (null for root)
  * @returns Updated course/folder
  */
-export async function moveCourseToFolder(courseId: string, newParentId: string | null) {
+export async function moveCourseToFolder(
+  courseId: string,
+  newParentId: string | null
+) {
   const supabase = await createServerSupabaseServiceClient();
 
   const { data, error } = await supabase

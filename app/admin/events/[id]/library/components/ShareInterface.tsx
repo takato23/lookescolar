@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { 
-  Share2, 
-  X, 
-  Copy, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Share2,
+  X,
+  Copy,
+  CheckCircle2,
+  AlertCircle,
   Loader2,
   Lock,
   Calendar,
@@ -16,14 +16,20 @@ import {
   Globe,
   Folder,
   Image as ImageIcon,
-  Users
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface ShareItem {
@@ -82,7 +88,7 @@ export function ShareInterface({
   currentFolderName,
   selectedItems,
   onClose,
-  className
+  className,
 }: ShareInterfaceProps) {
   const [shareData, setShareData] = useState({
     title: '',
@@ -101,12 +107,13 @@ export function ShareInterface({
 
   // Determine share type and default title
   const shareType = selectedItems.length > 0 ? 'photos' : 'folder';
-  const defaultTitle = shareType === 'folder' 
-    ? `${currentFolderName || 'Fotos'} - ${eventName}`
-    : `${selectedItems.length} foto${selectedItems.length !== 1 ? 's' : ''} - ${eventName}`;
+  const defaultTitle =
+    shareType === 'folder'
+      ? `${currentFolderName || 'Fotos'} - ${eventName}`
+      : `${selectedItems.length} foto${selectedItems.length !== 1 ? 's' : ''} - ${eventName}`;
 
   useEffect(() => {
-    setShareData(prev => ({
+    setShareData((prev) => ({
       ...prev,
       title: prev.title || defaultTitle,
     }));
@@ -115,10 +122,10 @@ export function ShareInterface({
   // Calculate expiration date
   const calculateExpirationDate = (expiry: string): Date | undefined => {
     if (!expiry) return undefined;
-    
+
     const now = new Date();
     const [amount, unit] = [parseInt(expiry.slice(0, -1)), expiry.slice(-1)];
-    
+
     switch (unit) {
       case 'h':
         return new Date(now.getTime() + amount * 60 * 60 * 1000);
@@ -136,7 +143,9 @@ export function ShareInterface({
       setError(null);
 
       const expiresAt = calculateExpirationDate(shareData.expiry);
-      const maxViews = shareData.maxViews ? parseInt(shareData.maxViews) : undefined;
+      const maxViews = shareData.maxViews
+        ? parseInt(shareData.maxViews)
+        : undefined;
 
       const payload = {
         eventId,
@@ -154,7 +163,7 @@ export function ShareInterface({
       if (shareType === 'folder') {
         payload.folderId = currentFolderId;
       } else {
-        payload.photoIds = selectedItems.map(item => item.id);
+        payload.photoIds = selectedItems.map((item) => item.id);
       }
 
       const response = await fetch('/api/admin/share', {
@@ -170,14 +179,22 @@ export function ShareInterface({
 
       const result = await response.json();
       setGeneratedShare(result.share);
-
     } catch (error) {
       console.error('Error generating share:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create share');
+      setError(
+        error instanceof Error ? error.message : 'Failed to create share'
+      );
     } finally {
       setLoading(false);
     }
-  }, [shareData, eventId, shareType, currentFolderId, selectedItems, defaultTitle]);
+  }, [
+    shareData,
+    eventId,
+    shareType,
+    currentFolderId,
+    selectedItems,
+    defaultTitle,
+  ]);
 
   // Handle copy to clipboard
   const handleCopy = useCallback(async (text: string) => {
@@ -192,13 +209,18 @@ export function ShareInterface({
 
   // Handle form field changes
   const handleFieldChange = useCallback((field: string, value: any) => {
-    setShareData(prev => ({ ...prev, [field]: value }));
+    setShareData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   return (
-    <div className={cn("bg-white rounded-lg border border-gray-200 shadow-lg", className)}>
+    <div
+      className={cn(
+        'rounded-lg border border-gray-200 bg-white shadow-lg',
+        className
+      )}
+    >
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="border-b border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Share2 className="h-6 w-6 text-blue-600" />
@@ -207,19 +229,21 @@ export function ShareInterface({
               <p className="text-sm text-gray-600">
                 {shareType === 'folder' ? (
                   <>
-                    <Folder className="h-4 w-4 inline mr-1" />
+                    <Folder className="mr-1 inline h-4 w-4" />
                     {currentFolderName || 'Carpeta raíz'}
                   </>
                 ) : (
                   <>
-                    <ImageIcon className="h-4 w-4 inline mr-1" />
-                    {selectedItems.length} foto{selectedItems.length !== 1 ? 's' : ''} seleccionada{selectedItems.length !== 1 ? 's' : ''}
+                    <ImageIcon className="mr-1 inline h-4 w-4" />
+                    {selectedItems.length} foto
+                    {selectedItems.length !== 1 ? 's' : ''} seleccionada
+                    {selectedItems.length !== 1 ? 's' : ''}
                   </>
                 )}
               </p>
             </div>
           </div>
-          
+
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -248,7 +272,9 @@ export function ShareInterface({
                 <Textarea
                   id="description"
                   value={shareData.description}
-                  onChange={(e) => handleFieldChange('description', e.target.value)}
+                  onChange={(e) =>
+                    handleFieldChange('description', e.target.value)
+                  }
                   placeholder="Descripción del contenido compartido"
                   className="mt-1"
                   rows={3}
@@ -258,7 +284,7 @@ export function ShareInterface({
 
             {/* Security Settings */}
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-gray-900">
                 <Lock className="h-4 w-4" />
                 Configuración de Seguridad
               </h4>
@@ -269,11 +295,13 @@ export function ShareInterface({
                   id="password"
                   type="password"
                   value={shareData.password}
-                  onChange={(e) => handleFieldChange('password', e.target.value)}
+                  onChange={(e) =>
+                    handleFieldChange('password', e.target.value)
+                  }
                   placeholder="Proteger con contraseña"
                   className="mt-1"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                   Deja vacío para compartir sin contraseña
                 </p>
               </div>
@@ -281,12 +309,17 @@ export function ShareInterface({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="expiry">Expiración</Label>
-                  <Select value={shareData.expiry} onValueChange={(value) => handleFieldChange('expiry', value)}>
+                  <Select
+                    value={shareData.expiry}
+                    onValueChange={(value) =>
+                      handleFieldChange('expiry', value)
+                    }
+                  >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Seleccionar expiración" />
                     </SelectTrigger>
                     <SelectContent>
-                      {EXPIRY_OPTIONS.map(option => (
+                      {EXPIRY_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -297,12 +330,17 @@ export function ShareInterface({
 
                 <div>
                   <Label htmlFor="maxViews">Límite de vistas</Label>
-                  <Select value={shareData.maxViews} onValueChange={(value) => handleFieldChange('maxViews', value)}>
+                  <Select
+                    value={shareData.maxViews}
+                    onValueChange={(value) =>
+                      handleFieldChange('maxViews', value)
+                    }
+                  >
                     <SelectTrigger className="mt-1">
                       <SelectValue placeholder="Sin límite" />
                     </SelectTrigger>
                     <SelectContent>
-                      {VIEW_LIMIT_OPTIONS.map(option => (
+                      {VIEW_LIMIT_OPTIONS.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -315,7 +353,7 @@ export function ShareInterface({
 
             {/* Permissions */}
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-gray-900">
                 <Users className="h-4 w-4" />
                 Permisos
               </h4>
@@ -329,7 +367,9 @@ export function ShareInterface({
                   <Switch
                     id="allowDownload"
                     checked={shareData.allowDownload}
-                    onCheckedChange={(checked) => handleFieldChange('allowDownload', checked)}
+                    onCheckedChange={(checked) =>
+                      handleFieldChange('allowDownload', checked)
+                    }
                   />
                 </div>
 
@@ -341,7 +381,9 @@ export function ShareInterface({
                   <Switch
                     id="allowComments"
                     checked={shareData.allowComments}
-                    onCheckedChange={(checked) => handleFieldChange('allowComments', checked)}
+                    onCheckedChange={(checked) =>
+                      handleFieldChange('allowComments', checked)
+                    }
                   />
                 </div>
               </div>
@@ -349,26 +391,26 @@ export function ShareInterface({
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+              <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <span className="text-sm text-red-700">{error}</span>
               </div>
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
               <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
               <Button onClick={handleGenerateShare} disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Generando...
                   </>
                 ) : (
                   <>
-                    <Share2 className="h-4 w-4 mr-2" />
+                    <Share2 className="mr-2 h-4 w-4" />
                     Crear enlace
                   </>
                 )}
@@ -379,8 +421,8 @@ export function ShareInterface({
           /* Generated Share Display */
           <div className="space-y-6">
             <div className="text-center">
-              <CheckCircle2 className="h-12 w-12 text-green-600 mx-auto mb-3" />
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
+              <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-600" />
+              <h4 className="mb-2 text-lg font-medium text-gray-900">
                 ¡Enlace creado exitosamente!
               </h4>
               <p className="text-sm text-gray-600">
@@ -413,7 +455,7 @@ export function ShareInterface({
             </div>
 
             {/* Share Details */}
-            <div className="space-y-3 p-4 bg-gray-50 rounded-md">
+            <div className="space-y-3 rounded-md bg-gray-50 p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Tipo:</span>
                 <span className="font-medium">
@@ -425,7 +467,7 @@ export function ShareInterface({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Protección:</span>
                   <span className="font-medium text-amber-600">
-                    <Lock className="h-3 w-3 inline mr-1" />
+                    <Lock className="mr-1 inline h-3 w-3" />
                     Con contraseña
                   </span>
                 </div>
@@ -435,14 +477,17 @@ export function ShareInterface({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Expira:</span>
                   <span className="font-medium">
-                    <Calendar className="h-3 w-3 inline mr-1" />
-                    {new Date(generatedShare.expiresAt).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    <Calendar className="mr-1 inline h-3 w-3" />
+                    {new Date(generatedShare.expiresAt).toLocaleDateString(
+                      'es-ES',
+                      {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }
+                    )}
                   </span>
                 </div>
               )}
@@ -451,7 +496,7 @@ export function ShareInterface({
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Límite de vistas:</span>
                   <span className="font-medium">
-                    <Eye className="h-3 w-3 inline mr-1" />
+                    <Eye className="mr-1 inline h-3 w-3" />
                     {generatedShare.maxViews} vistas
                   </span>
                 </div>
@@ -461,32 +506,31 @@ export function ShareInterface({
                 <span className="text-gray-600">Permisos:</span>
                 <div className="flex items-center gap-2">
                   {generatedShare.allowDownload && (
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                      <Download className="h-3 w-3 inline mr-1" />
+                    <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                      <Download className="mr-1 inline h-3 w-3" />
                       Descarga
                     </span>
                   )}
                   {generatedShare.allowComments && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                      <MessageSquare className="h-3 w-3 inline mr-1" />
+                    <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700">
+                      <MessageSquare className="mr-1 inline h-3 w-3" />
                       Comentarios
                     </span>
                   )}
-                  {!generatedShare.allowDownload && !generatedShare.allowComments && (
-                    <span className="text-xs text-gray-500">Solo vista</span>
-                  )}
+                  {!generatedShare.allowDownload &&
+                    !generatedShare.allowComments && (
+                      <span className="text-xs text-gray-500">Solo vista</span>
+                    )}
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between border-t border-gray-200 pt-4">
               <Button variant="outline" onClick={() => setGeneratedShare(null)}>
                 Crear otro enlace
               </Button>
-              <Button onClick={onClose}>
-                Cerrar
-              </Button>
+              <Button onClick={onClose}>Cerrar</Button>
             </div>
           </div>
         )}

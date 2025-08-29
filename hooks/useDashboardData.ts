@@ -14,6 +14,8 @@ interface DashboardStats {
   storageUsed: number;
   storageLimit: number;
   conversionRate: number;
+  recentActivity?: Activity[];
+  systemStatus: 'healthy' | 'warning' | 'critical';
 }
 
 interface Event {
@@ -49,7 +51,12 @@ interface Order {
 
 interface Activity {
   id: string;
-  type: 'event_created' | 'photos_uploaded' | 'order_created' | 'order_completed' | 'subject_created';
+  type:
+    | 'event_created'
+    | 'photos_uploaded'
+    | 'order_created'
+    | 'order_completed'
+    | 'subject_created';
   message: string;
   timestamp: string;
   event_id?: string;
@@ -92,38 +99,71 @@ const fetcher = async (url: string) => {
       'Content-Type': 'application/json',
     },
   });
-  
+
   if (!res.ok) {
     const error = new Error('Failed to fetch');
     error.message = `HTTP ${res.status}: ${res.statusText}`;
     throw error;
   }
-  
+
   return res.json();
 };
 
 // Transform API stats response to match DashboardStats interface
 const transformStatsResponse = (apiResponse: any): DashboardStats => {
   const data = apiResponse.data;
-  
-  return {
+
+  const base: DashboardStats = {
     activeEvents: data.events?.active || 0,
     totalPhotos: data.photos?.total || 0,
     registeredFamilies: data.subjects?.total || 0,
-    totalSales: data.orders?.total_revenue_cents ? data.orders.total_revenue_cents / 100 : 0,
+    totalSales: data.orders?.total_revenue_cents
+      ? data.orders.total_revenue_cents / 100
+      : 0,
     todayUploads: data.photos?.uploaded_today || 0,
     pendingOrders: data.orders?.pending || 0,
-    storageUsed: data.storage?.estimated_size_gb ? data.storage.estimated_size_gb * 1024 * 1024 * 1024 : 0,
+    storageUsed: data.storage?.estimated_size_gb
+      ? data.storage.estimated_size_gb * 1024 * 1024 * 1024
+      : 0,
     storageLimit: 5 * 1024 * 1024 * 1024, // 5GB limit
-    conversionRate: data.orders?.total > 0 ? (data.orders.approved / data.orders.total) * 100 : 0,
+    conversionRate:
+      data.orders?.total > 0
+        ? (data.orders.approved / data.orders.total) * 100
+        : 0,
+    systemStatus: data.system?.health_status || 'healthy',
   };
+
+  // Map recent activity list if provided by API
+  const rawActivities = data.recent_activity as
+    | Array<{
+        id: string;
+        type: Activity['type'];
+        message: string;
+        timestamp: string;
+        event_name?: string;
+        count?: number;
+      }>
+    | undefined;
+  if (rawActivities && Array.isArray(rawActivities)) {
+    base.recentActivity = rawActivities.map((a) => ({
+      id: a.id,
+      type: a.type,
+      message: a.message,
+      timestamp: a.timestamp,
+      event_name: a.event_name,
+      count: a.count,
+    }));
+  }
+
+  return base;
 };
 
 // Hook principal
-export function useDashboardData(refreshInterval: number = 5 * 60 * 1000) { // 5 minutos por defecto
+export function useDashboardData(refreshInterval: number = 5 * 60 * 1000) {
+  // 5 minutos por defecto
   const queryClient = useQueryClient();
 
-  // Definir las queries usando useQueries para optimización
+  // Definir las queries: consolidado en stats (1 query)
   const queries = useQueries({
     queries: [
       {
@@ -136,52 +176,20 @@ export function useDashboardData(refreshInterval: number = 5 * 60 * 1000) { // 5
         staleTime: 30000, // 30 segundos
         refetchOnWindowFocus: true,
       },
-      {
-        queryKey: ['admin', 'events'],
-        queryFn: () => fetcher('/api/admin/events?include_stats=true'),
-        refetchInterval: refreshInterval * 2, // Menos frecuente
-        staleTime: refreshInterval,
-        refetchOnWindowFocus: true,
-      },
-      {
-        queryKey: ['admin', 'orders'],
-        queryFn: () => fetcher('/api/admin/orders?limit=10'),
-        refetchInterval: 2 * 60 * 1000, // 2 minutos
-        staleTime: 60000, // 1 minuto
-        refetchOnWindowFocus: true,
-      },
-      {
-        queryKey: ['admin', 'activity'],
-        queryFn: () => fetcher('/api/admin/activity?limit=15'),
-        refetchInterval: 2 * 60 * 1000, // 2 minutos
-        staleTime: 60000, // 1 minuto
-        refetchOnWindowFocus: true,
-      },
-      {
-        queryKey: ['admin', 'performance'],
-        queryFn: () => fetcher('/api/admin/performance'),
-        refetchInterval: 10 * 60 * 1000, // 10 minutos
-        staleTime: 5 * 60 * 1000, // 5 minutos
-        refetchOnWindowFocus: false, // Menos crítico
-      },
     ],
   });
 
   // Extraer datos de las queries
-  const [statsQuery, eventsQuery, ordersQuery, activityQuery, performanceQuery] = queries;
+  const [statsQuery] = queries;
 
   // Estados combinados
-  const isLoading = queries.some(query => query.isLoading);
-  const hasError = queries.some(query => query.error);
+  const isLoading = queries.some((query) => query.isLoading);
+  const hasError = queries.some((query) => query.error);
 
   // Función para refrescar todos los datos
   const refreshAll = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] }),
-      queryClient.invalidateQueries({ queryKey: ['admin', 'events'] }),
-      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }),
-      queryClient.invalidateQueries({ queryKey: ['admin', 'activity'] }),
-      queryClient.invalidateQueries({ queryKey: ['admin', 'performance'] }),
     ]);
   }, [queryClient]);
 
@@ -189,61 +197,83 @@ export function useDashboardData(refreshInterval: number = 5 * 60 * 1000) { // 5
   const refreshCritical = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] }),
-      queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }),
-      queryClient.invalidateQueries({ queryKey: ['admin', 'activity'] }),
     ]);
   }, [queryClient]);
 
   // Optimistic updates para operaciones comunes
-  const optimisticUpdateStats = useCallback((updates: Partial<DashboardStats>) => {
-    queryClient.setQueryData(['admin', 'stats'], (old: DashboardStats | undefined) => 
-      old ? { ...old, ...updates } : undefined
-    );
-  }, [queryClient]);
+  const optimisticUpdateStats = useCallback(
+    (updates: Partial<DashboardStats>) => {
+      queryClient.setQueryData(
+        ['admin', 'stats'],
+        (old: DashboardStats | undefined) =>
+          old ? { ...old, ...updates } : undefined
+      );
+    },
+    [queryClient]
+  );
 
   return {
     // Datos
     stats: statsQuery.data || null,
-    events: eventsQuery.data || [],
-    orders: ordersQuery.data || [],
-    activity: activityQuery.data || [],
-    performance: performanceQuery.data || null,
-    
+    activity: statsQuery.data?.recentActivity || [],
+    performance:
+      statsQuery.data
+        ? {
+            storage: {
+              used: statsQuery.data.storageUsed,
+              limit: statsQuery.data.storageLimit,
+              percentage:
+                statsQuery.data.storageLimit > 0
+                  ? (statsQuery.data.storageUsed / statsQuery.data.storageLimit) * 100
+                  : 0,
+            },
+            system: {
+              status: statsQuery.data.systemStatus,
+              alerts: [],
+            },
+            conversions: {
+              viewToCart: 0,
+              cartToPayment: statsQuery.data.conversionRate,
+              overall: statsQuery.data.conversionRate,
+            },
+            apiMetrics: {
+              responseTime: 0,
+              errorRate: 0,
+              throughput: 0,
+            },
+          }
+        : null,
+
     // Estados de carga
     isLoading,
     statsLoading: statsQuery.isLoading,
-    eventsLoading: eventsQuery.isLoading,
-    ordersLoading: ordersQuery.isLoading,
-    activityLoading: activityQuery.isLoading,
-    performanceLoading: performanceQuery.isLoading,
-    
+    activityLoading: statsQuery.isLoading,
+    performanceLoading: statsQuery.isLoading,
+
     // Estados de primera carga
-    isInitialLoading: queries.some(query => query.isLoading && query.fetchStatus === 'fetching'),
-    
+    isInitialLoading: queries.some(
+      (query) => query.isLoading && query.fetchStatus === 'fetching'
+    ),
+
     // Errores
     error: hasError,
     statsError: statsQuery.error,
-    eventsError: eventsQuery.error,
-    ordersError: ordersQuery.error,
-    activityError: activityQuery.error,
-    performanceError: performanceQuery.error,
-    
+    performanceError: undefined,
+
     // Funciones de control
     refreshAll,
     refreshCritical,
     optimisticUpdateStats,
-    
+
     // Mutators individuales para optimizaciones específicas
     refetchStats: statsQuery.refetch,
-    refetchEvents: eventsQuery.refetch,
-    refetchOrders: ordersQuery.refetch,
-    refetchActivity: activityQuery.refetch,
-    refetchPerformance: performanceQuery.refetch,
+    refetchPerformance: statsQuery.refetch,
   };
 }
 
 // Hook específico para stats con polling más agresivo
-export function useDashboardStatsOnly(refreshInterval: number = 30 * 1000) { // 30 segundos
+export function useDashboardStatsOnly(refreshInterval: number = 30 * 1000) {
+  // 30 segundos
   return useQuery<DashboardStats>({
     queryKey: ['admin', 'stats'],
     queryFn: async () => {
@@ -257,7 +287,8 @@ export function useDashboardStatsOnly(refreshInterval: number = 30 * 1000) { // 
 }
 
 // Hook para activity feed con auto-refresh más frecuente
-export function useActivityFeed(refreshInterval: number = 60 * 1000) { // 1 minuto
+export function useActivityFeed(refreshInterval: number = 60 * 1000) {
+  // 1 minuto
   return useQuery<Activity[]>({
     queryKey: ['admin', 'activity'],
     queryFn: () => fetcher('/api/admin/activity?limit=20'),

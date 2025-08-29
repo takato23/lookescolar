@@ -24,14 +24,17 @@ export async function GET() {
     const connectionCount = Math.floor(Math.random() * 20) + 5; // Simulated
 
     // Calculate cache hit ratio (simulated based on query performance)
-    const cacheHitRatio = queryTime < 50 ? 0.95 : queryTime < 100 ? 0.85 : 0.70;
+    const cacheHitRatio = queryTime < 50 ? 0.95 : queryTime < 100 ? 0.85 : 0.7;
 
     // Get slow queries count from performance metrics
     const { data: slowQueries } = await supabase
       .from('performance_metrics')
       .select('*')
       .eq('metric_name', 'slow-query')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      .gte(
+        'created_at',
+        new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      );
 
     const metrics = {
       queryTime: Math.round(queryTime),
@@ -41,14 +44,12 @@ export async function GET() {
     };
 
     // Store the metrics for historical tracking
-    await supabase
-      .from('performance_metrics')
-      .insert({
-        metric_name: 'database-metrics',
-        metric_value: JSON.stringify(metrics),
-        metric_unit: 'mixed',
-        created_at: new Date().toISOString(),
-      });
+    await supabase.from('performance_metrics').insert({
+      metric_name: 'database-metrics',
+      metric_value: JSON.stringify(metrics),
+      metric_unit: 'mixed',
+      created_at: new Date().toISOString(),
+    });
 
     logger.info('Database metrics collected', metrics);
 

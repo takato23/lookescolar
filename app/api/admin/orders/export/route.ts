@@ -1,28 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { orderExportService, type ExportOptions, type ExportFormat, type ExportTemplate } from '@/lib/services/order-export.service';
+import {
+  orderExportService,
+  type ExportOptions,
+  type ExportFormat,
+  type ExportTemplate,
+} from '@/lib/services/order-export.service';
 import type { OrderFilters } from '@/lib/services/enhanced-order.service';
 
 // Validation schema for export request
 const ExportRequestSchema = z.object({
   format: z.enum(['csv', 'excel', 'pdf', 'json']).default('csv'),
-  template: z.enum(['standard', 'detailed', 'summary', 'financial', 'labels']).default('standard'),
+  template: z
+    .enum(['standard', 'detailed', 'summary', 'financial', 'labels'])
+    .default('standard'),
   includeItems: z.boolean().default(false),
   includeAuditTrail: z.boolean().default(false),
   includePaymentInfo: z.boolean().default(false),
-  filters: z.object({
-    status: z.array(z.string()).optional(),
-    event_id: z.string().uuid().optional(),
-    priority_level: z.array(z.number()).optional(),
-    delivery_method: z.array(z.string()).optional(),
-    created_after: z.string().datetime().optional(),
-    created_before: z.string().datetime().optional(),
-    amount_min: z.number().optional(),
-    amount_max: z.number().optional(),
-    overdue_only: z.boolean().optional(),
-    has_payment: z.boolean().optional(),
-    search_query: z.string().optional(),
-  }).optional(),
+  filters: z
+    .object({
+      status: z.array(z.string()).optional(),
+      event_id: z.string().uuid().optional(),
+      priority_level: z.array(z.number()).optional(),
+      delivery_method: z.array(z.string()).optional(),
+      created_after: z.string().datetime().optional(),
+      created_before: z.string().datetime().optional(),
+      amount_min: z.number().optional(),
+      amount_max: z.number().optional(),
+      overdue_only: z.boolean().optional(),
+      has_payment: z.boolean().optional(),
+      search_query: z.string().optional(),
+    })
+    .optional(),
   customFields: z.array(z.string()).optional(),
 });
 
@@ -42,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Invalid export parameters',
-          details: validation.error.issues
+          details: validation.error.issues,
         },
         { status: 400 }
       );
@@ -55,7 +64,7 @@ export async function POST(request: NextRequest) {
       includeAuditTrail,
       includePaymentInfo,
       filters,
-      customFields
+      customFields,
     } = validation.data;
 
     // Prepare export options
@@ -72,7 +81,11 @@ export async function POST(request: NextRequest) {
     console.log(`[Order Export API] Starting export`, {
       format,
       template,
-      filters: filters ? Object.keys(filters).filter(key => filters[key as keyof typeof filters] !== undefined) : [],
+      filters: filters
+        ? Object.keys(filters).filter(
+            (key) => filters[key as keyof typeof filters] !== undefined
+          )
+        : [],
     });
 
     // Generate export
@@ -101,18 +114,17 @@ export async function POST(request: NextRequest) {
         generated_at: new Date().toISOString(),
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Order Export API] Export failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Export failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -132,7 +144,8 @@ export async function GET(request: NextRequest) {
 
     // Parse query parameters
     const format = (searchParams.get('format') as ExportFormat) || 'csv';
-    const template = (searchParams.get('template') as ExportTemplate) || 'standard';
+    const template =
+      (searchParams.get('template') as ExportTemplate) || 'standard';
     const eventId = searchParams.get('event_id') || undefined;
     const status = searchParams.get('status') || undefined;
     const createdAfter = searchParams.get('created_after') || undefined;
@@ -176,20 +189,20 @@ export async function GET(request: NextRequest) {
       success: true,
       downloadUrl: `/api/admin/orders/export/download/${result.filename}`,
       export: result,
-      message: 'Export generated successfully. Use the downloadUrl to get the file.',
+      message:
+        'Export generated successfully. Use the downloadUrl to get the file.',
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Order Export API] GET export failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Export failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

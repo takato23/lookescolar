@@ -28,10 +28,7 @@ export async function GET(
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Get all subjects for the event
@@ -68,10 +65,9 @@ export async function GET(
       subjects: subjects || [],
       count: subjects?.length || 0,
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    
+
     logger.error('Get event subjects failed', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

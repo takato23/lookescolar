@@ -33,7 +33,7 @@ export function applySecurityHeaders(
     enableXSSProtection = true,
     enableReferrerPolicy = true,
     enablePermissionsPolicy = true,
-    customCSP
+    customCSP,
   } = options;
 
   const isProduction = process.env.NODE_ENV === 'production';
@@ -85,19 +85,25 @@ export function applySecurityHeaders(
   response.headers.set('X-DNS-Prefetch-Control', 'off');
   response.headers.set('X-Download-Options', 'noopen');
   response.headers.set('X-Permitted-Cross-Domain-Policies', 'none');
-  
+
   // Enhanced security headers for QR system
   response.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-site');
-  
+
   // Additional protection headers
-  response.headers.set('X-Content-Security-Policy', 'default-src \'self\'');
+  response.headers.set('X-Content-Security-Policy', "default-src 'self'");
   response.headers.set('Expect-CT', 'enforce, max-age=86400');
-  
+
   // QR-specific security headers
-  if (request.nextUrl.pathname.includes('/qr') || request.nextUrl.pathname.includes('/api/qr')) {
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  if (
+    request.nextUrl.pathname.includes('/qr') ||
+    request.nextUrl.pathname.includes('/api/qr')
+  ) {
+    response.headers.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, max-age=0'
+    );
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('X-QR-Security', 'enhanced');
   }
@@ -124,12 +130,12 @@ function generateCSPHeader(request: NextRequest): string {
       ...(isProduction ? [] : ["'unsafe-eval'"]), // Allow unsafe-eval in development for Next.js
       `'nonce-${nonce}'`,
       'https://sdk.mercadopago.com',
-      'https://www.mercadopago.com'
+      'https://www.mercadopago.com',
     ],
     'style-src': [
       "'self'",
       "'unsafe-inline'", // Required for dynamic styles in React
-      'https://fonts.googleapis.com'
+      'https://fonts.googleapis.com',
     ],
     'img-src': [
       "'self'",
@@ -137,36 +143,24 @@ function generateCSPHeader(request: NextRequest): string {
       'blob:',
       'https://*.supabase.co',
       'https://www.mercadopago.com',
-      ...(isProduction ? [] : ['http://localhost:*'])
+      ...(isProduction ? [] : ['http://localhost:*']),
     ],
-    'font-src': [
-      "'self'",
-      'data:',
-      'https://fonts.gstatic.com'
-    ],
+    'font-src': ["'self'", 'data:', 'https://fonts.gstatic.com'],
     'connect-src': [
       "'self'",
       'https://*.supabase.co',
       'https://api.mercadopago.com',
-      ...(isProduction ? [] : [
-        'ws://localhost:*',
-        'http://localhost:*',
-        'https://localhost:*'
-      ])
+      ...(isProduction
+        ? []
+        : ['ws://localhost:*', 'http://localhost:*', 'https://localhost:*']),
     ],
-    'frame-src': [
-      'https://www.mercadopago.com',
-      'https://mpago.li'
-    ],
+    'frame-src': ['https://www.mercadopago.com', 'https://mpago.li'],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],
-    'form-action': [
-      "'self'",
-      'https://www.mercadopago.com'
-    ],
+    'form-action': ["'self'", 'https://www.mercadopago.com'],
     'frame-ancestors': ["'none'"],
     'block-all-mixed-content': [],
-    'upgrade-insecure-requests': isProduction ? [] : null
+    'upgrade-insecure-requests': isProduction ? [] : null,
   };
 
   // Build CSP string
@@ -205,10 +199,16 @@ function generateNonce(): string {
  * Middleware wrapper for automatic security headers
  */
 export function withSecurityHeaders(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse> | NextResponse,
+  handler: (
+    request: NextRequest,
+    ...args: any[]
+  ) => Promise<NextResponse> | NextResponse,
   options: SecurityHeadersOptions = {}
 ) {
-  return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
+  return async (
+    request: NextRequest,
+    ...args: any[]
+  ): Promise<NextResponse> => {
     let response: NextResponse;
 
     try {
@@ -234,7 +234,7 @@ export function applyCORSHeaders(
   allowedOrigins: string[] = SECURITY_CONFIG.cors.origins
 ): NextResponse {
   const origin = request.headers.get('origin');
-  
+
   if (origin && allowedOrigins.includes(origin)) {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Credentials', 'true');
@@ -259,12 +259,12 @@ export function validateRequestHeaders(request: NextRequest): {
   violations: string[];
 } {
   const violations: string[] = [];
-  
+
   // Check for suspicious headers
   const suspiciousHeaders = [
     'x-forwarded-host',
     'x-original-url',
-    'x-rewrite-url'
+    'x-rewrite-url',
   ];
 
   for (const header of suspiciousHeaders) {
@@ -290,7 +290,7 @@ export function validateRequestHeaders(request: NextRequest): {
 
   return {
     isValid: violations.length === 0,
-    violations
+    violations,
   };
 }
 
@@ -305,13 +305,13 @@ function isAllowedHeaderValue(header: string, value: string): boolean {
         'localhost',
         '127.0.0.1',
         process.env.NEXT_PUBLIC_SITE_URL,
-        process.env.VERCEL_URL
+        process.env.VERCEL_URL,
       ].filter(Boolean);
-      
-      return allowedHosts.some(host => 
+
+      return allowedHosts.some((host) =>
         value.includes(host!.replace(/https?:\/\//, ''))
       );
-      
+
     default:
       return true;
   }
@@ -325,10 +325,10 @@ function isAllowedContentType(contentType: string): boolean {
     'application/json',
     'application/x-www-form-urlencoded',
     'multipart/form-data',
-    'text/plain'
+    'text/plain',
   ];
 
-  return allowedTypes.some(type => contentType.toLowerCase().includes(type));
+  return allowedTypes.some((type) => contentType.toLowerCase().includes(type));
 }
 
 /**
@@ -346,20 +346,26 @@ function isSuspiciousUserAgent(userAgent: string): boolean {
     /scanner/i,
     /nikto/i,
     /sqlmap/i,
-    /nmap/i
+    /nmap/i,
   ];
 
-  return suspiciousPatterns.some(pattern => pattern.test(userAgent));
+  return suspiciousPatterns.some((pattern) => pattern.test(userAgent));
 }
 
 /**
  * Complete security middleware that combines all protections
  */
 export function securityMiddleware(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse> | NextResponse,
+  handler: (
+    request: NextRequest,
+    ...args: any[]
+  ) => Promise<NextResponse> | NextResponse,
   options: SecurityHeadersOptions & { enableCORS?: boolean } = {}
 ) {
-  return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
+  return async (
+    request: NextRequest,
+    ...args: any[]
+  ): Promise<NextResponse> => {
     // Validate request headers
     const headerValidation = validateRequestHeaders(request);
     if (!headerValidation.isValid) {

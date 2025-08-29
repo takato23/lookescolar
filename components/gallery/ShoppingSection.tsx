@@ -1,9 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircleIcon, ShoppingCartIcon, PlusIcon, MinusIcon, InfoIcon } from 'lucide-react';
+import {
+  CheckCircleIcon,
+  ShoppingCartIcon,
+  PlusIcon,
+  MinusIcon,
+  InfoIcon,
+} from 'lucide-react';
 import { useUnifiedCartStore } from '@/lib/stores/unified-cart-store';
-import { PACKAGE_OPTIONS, ADDITIONAL_COPIES, calculateUnifiedTotal, formatPrice, PackageOption, AdditionalCopy } from '@/lib/pricing';
+import {
+  PACKAGE_OPTIONS,
+  ADDITIONAL_COPIES,
+  calculateUnifiedTotal,
+  formatPrice,
+  PackageOption,
+  AdditionalCopy,
+} from '@/lib/pricing';
 import { cn } from '@/lib/utils';
 
 interface ShoppingSectionProps {
@@ -12,30 +25,39 @@ interface ShoppingSectionProps {
   className?: string;
 }
 
-export function ShoppingSection({ token, photos, className }: ShoppingSectionProps) {
-  const [selectedPackage, setSelectedPackage] = useState<PackageOption | null>(null);
-  const [additionalCopies, setAdditionalCopies] = useState<Record<string, number>>({});
+export function ShoppingSection({
+  token,
+  photos,
+  className,
+}: ShoppingSectionProps) {
+  const [selectedPackage, setSelectedPackage] = useState<PackageOption | null>(
+    null
+  );
+  const [additionalCopies, setAdditionalCopies] = useState<
+    Record<string, number>
+  >({});
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
-  
+
   const { items, getTotalItems } = useUnifiedCartStore();
 
   // Calculate totals
-  const { packagePrice, additionalPrice, total, breakdown } = calculateUnifiedTotal(selectedPackage, additionalCopies);
+  const { packagePrice, additionalPrice, total, breakdown } =
+    calculateUnifiedTotal(selectedPackage, additionalCopies);
 
   const handlePackageSelect = (pkg: PackageOption) => {
     setSelectedPackage(pkg);
   };
 
   const handleAdditionalCopyChange = (copyId: string, change: number) => {
-    setAdditionalCopies(prev => {
+    setAdditionalCopies((prev) => {
       const currentQuantity = prev[copyId] || 0;
       const newQuantity = Math.max(0, currentQuantity + change);
-      
+
       if (newQuantity === 0) {
         const { [copyId]: removed, ...rest } = prev;
         return rest;
       }
-      
+
       return { ...prev, [copyId]: newQuantity };
     });
   };
@@ -50,7 +72,7 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
 
   const getRequiredPhotosForPackage = () => {
     if (!selectedPackage) return 0;
-    
+
     // Calculate total photos needed for package
     return selectedPackage.includes.reduce((total, include) => {
       if (include.type === 'individual' || include.type === 'grupo') {
@@ -65,7 +87,7 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
 
   const handleCheckout = async () => {
     if (!canProceedToCheckout()) return;
-    
+
     setIsCheckoutLoading(true);
     try {
       // Here you would implement the actual checkout logic
@@ -73,13 +95,13 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
       console.log('Checkout data:', {
         package: selectedPackage,
         additionalCopies,
-        selectedPhotos: items.map(item => item.photoId),
-        total
+        selectedPhotos: items.map((item) => item.photoId),
+        total,
       });
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // In real implementation, redirect to payment processor
       alert(`Checkout iniciado por ${formatPrice(total)}`);
     } catch (error) {
@@ -91,20 +113,22 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
   };
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Shopping Header */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-purple-200 sticky top-6">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="sticky top-6 rounded-2xl border border-purple-200 bg-white/90 p-6 shadow-lg backdrop-blur-sm">
+        <div className="mb-4 flex items-center gap-3">
           <ShoppingCartIcon className="h-6 w-6 text-purple-600" />
-          <h2 className="text-2xl font-bold text-gray-900">Opciones de Compra</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Opciones de Compra
+          </h2>
         </div>
-        
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+
+        <div className="rounded-xl border border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 p-4">
           <div className="flex items-start gap-3">
-            <InfoIcon className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+            <InfoIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-purple-600" />
             <div className="text-sm text-gray-700">
-              <p className="font-semibold mb-1">Cómo funciona:</p>
-              <ol className="list-decimal list-inside space-y-1 text-xs">
+              <p className="mb-1 font-semibold">Cómo funciona:</p>
+              <ol className="list-inside list-decimal space-y-1 text-xs">
                 <li>Selecciona un paquete base (OPCIÓN A o B)</li>
                 <li>Elige las fotos que quieres incluir</li>
                 <li>Añade copias adicionales si lo deseas</li>
@@ -116,30 +140,36 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
       </div>
 
       {/* Package Selection */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">1. Selecciona tu Paquete</h3>
-        
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+        <h3 className="mb-4 text-xl font-bold text-gray-900">
+          1. Selecciona tu Paquete
+        </h3>
+
         <div className="space-y-4">
           {PACKAGE_OPTIONS.map((pkg) => (
             <div
               key={pkg.id}
               className={cn(
-                "border-2 rounded-xl p-4 cursor-pointer transition-all",
+                'cursor-pointer rounded-xl border-2 p-4 transition-all',
                 selectedPackage?.id === pkg.id
-                  ? "border-purple-500 bg-purple-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-200 hover:border-gray-300'
               )}
               onClick={() => handlePackageSelect(pkg)}
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="mb-3 flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h4 className="text-lg font-bold text-gray-900">{pkg.name}</h4>
+                    <h4 className="text-lg font-bold text-gray-900">
+                      {pkg.name}
+                    </h4>
                     {selectedPackage?.id === pkg.id && (
                       <CheckCircleIcon className="h-5 w-5 text-purple-600" />
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">{pkg.description}</p>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {pkg.description}
+                  </p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-purple-600">
@@ -147,16 +177,20 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
                   </div>
                 </div>
               </div>
-              
+
               {/* Package includes */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-700">Incluye:</p>
                 <div className="grid grid-cols-1 gap-2">
                   {pkg.includes.map((include, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 text-sm text-gray-600"
+                    >
+                      <div className="h-2 w-2 flex-shrink-0 rounded-full bg-purple-400"></div>
                       <span>
-                        {include.quantity} {include.description} ({include.size})
+                        {include.quantity} {include.description} ({include.size}
+                        )
                       </span>
                     </div>
                   ))}
@@ -169,22 +203,30 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
 
       {/* Photo Selection Status */}
       {selectedPackage && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">2. Selección de Fotos</h3>
-          
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+          <h3 className="mb-4 text-xl font-bold text-gray-900">
+            2. Selección de Fotos
+          </h3>
+
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4">
               <div>
-                <p className="font-medium text-gray-900">Fotos necesarias para tu paquete</p>
-                <p className="text-sm text-gray-600">Selecciona fotos en la galería de la izquierda</p>
+                <p className="font-medium text-gray-900">
+                  Fotos necesarias para tu paquete
+                </p>
+                <p className="text-sm text-gray-600">
+                  Selecciona fotos en la galería de la izquierda
+                </p>
               </div>
               <div className="text-right">
-                <div className={cn(
-                  "text-2xl font-bold",
-                  getSelectedPhotosCount() >= getRequiredPhotosForPackage() 
-                    ? "text-green-600" 
-                    : "text-orange-600"
-                )}>
+                <div
+                  className={cn(
+                    'text-2xl font-bold',
+                    getSelectedPhotosCount() >= getRequiredPhotosForPackage()
+                      ? 'text-green-600'
+                      : 'text-orange-600'
+                  )}
+                >
                   {getSelectedPhotosCount()} / {getRequiredPhotosForPackage()}
                 </div>
                 <p className="text-xs text-gray-500">seleccionadas</p>
@@ -192,14 +234,19 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
             </div>
 
             {getSelectedPhotosCount() > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="rounded-xl border border-green-200 bg-green-50 p-4">
+                <div className="mb-2 flex items-center gap-2">
                   <CheckCircleIcon className="h-5 w-5 text-green-600" />
-                  <p className="font-medium text-green-800">Fotos seleccionadas:</p>
+                  <p className="font-medium text-green-800">
+                    Fotos seleccionadas:
+                  </p>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {items.slice(0, 6).map((item) => (
-                    <div key={item.photoId} className="text-xs text-green-700 truncate">
+                    <div
+                      key={item.photoId}
+                      className="truncate text-xs text-green-700"
+                    >
                       {item.filename}
                     </div>
                   ))}
@@ -213,9 +260,11 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
             )}
 
             {getSelectedPhotosCount() < getRequiredPhotosForPackage() && (
-              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
                 <p className="text-sm text-orange-800">
-                  Necesitas seleccionar {getRequiredPhotosForPackage() - getSelectedPhotosCount()} fotos más para completar tu paquete.
+                  Necesitas seleccionar{' '}
+                  {getRequiredPhotosForPackage() - getSelectedPhotosCount()}{' '}
+                  fotos más para completar tu paquete.
                 </p>
               </div>
             )}
@@ -224,34 +273,43 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
       )}
 
       {/* Additional Copies */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">3. Copias Adicionales (Opcional)</h3>
-        
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+        <h3 className="mb-4 text-xl font-bold text-gray-900">
+          3. Copias Adicionales (Opcional)
+        </h3>
+
         <div className="space-y-3">
           {ADDITIONAL_COPIES.map((copy) => (
-            <div key={copy.id} className="flex items-center justify-between p-3 border rounded-xl hover:bg-gray-50 transition-colors">
+            <div
+              key={copy.id}
+              className="flex items-center justify-between rounded-xl border p-3 transition-colors hover:bg-gray-50"
+            >
               <div className="flex-1">
                 <h4 className="font-medium text-gray-900">{copy.name}</h4>
-                <p className="text-sm text-gray-600">{copy.description} • {copy.size}</p>
-                <p className="text-sm font-medium text-purple-600">{formatPrice(copy.price)} c/u</p>
+                <p className="text-sm text-gray-600">
+                  {copy.description} • {copy.size}
+                </p>
+                <p className="text-sm font-medium text-purple-600">
+                  {formatPrice(copy.price)} c/u
+                </p>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => handleAdditionalCopyChange(copy.id, -1)}
                   disabled={!additionalCopies[copy.id]}
-                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 transition-colors hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <MinusIcon className="h-4 w-4" />
                 </button>
-                
+
                 <span className="w-8 text-center font-medium">
                   {additionalCopies[copy.id] || 0}
                 </span>
-                
+
                 <button
                   onClick={() => handleAdditionalCopyChange(copy.id, 1)}
-                  className="w-8 h-8 rounded-full bg-purple-600 hover:bg-purple-700 text-white flex items-center justify-center transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white transition-colors hover:bg-purple-700"
                 >
                   <PlusIcon className="h-4 w-4" />
                 </button>
@@ -263,16 +321,23 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
 
       {/* Order Summary */}
       {selectedPackage && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Resumen del Pedido</h3>
-          
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+          <h3 className="mb-4 text-xl font-bold text-gray-900">
+            Resumen del Pedido
+          </h3>
+
           <div className="space-y-3">
             {breakdown.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+              <div
+                key={idx}
+                className="flex items-center justify-between border-b border-gray-100 py-2 last:border-b-0"
+              >
                 <div>
                   <span className="font-medium text-gray-900">{item.name}</span>
                   {item.quantity > 1 && (
-                    <span className="text-sm text-gray-600 ml-1">× {item.quantity}</span>
+                    <span className="ml-1 text-sm text-gray-600">
+                      × {item.quantity}
+                    </span>
                   )}
                 </div>
                 <span className="font-medium text-gray-900">
@@ -280,8 +345,8 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
                 </span>
               </div>
             ))}
-            
-            <div className="flex items-center justify-between py-3 border-t-2 border-purple-200">
+
+            <div className="flex items-center justify-between border-t-2 border-purple-200 py-3">
               <span className="text-xl font-bold text-gray-900">Total</span>
               <span className="text-2xl font-bold text-purple-600">
                 {formatPrice(total)}
@@ -292,46 +357,50 @@ export function ShoppingSection({ token, photos, className }: ShoppingSectionPro
       )}
 
       {/* Checkout Button */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
         <button
           onClick={handleCheckout}
           disabled={!canProceedToCheckout() || isCheckoutLoading}
           className={cn(
-            "w-full py-4 px-6 rounded-xl font-bold text-lg transition-all",
+            'w-full rounded-xl px-6 py-4 text-lg font-bold transition-all',
             canProceedToCheckout() && !isCheckoutLoading
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl transform hover:scale-105"
-              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              ? 'transform bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:scale-105 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
+              : 'cursor-not-allowed bg-gray-200 text-gray-400'
           )}
         >
           {isCheckoutLoading ? (
             <div className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
               Procesando...
             </div>
           ) : canProceedToCheckout() ? (
             `Comprar ahora - ${formatPrice(total)}`
           ) : (
-            "Selecciona un paquete y fotos para continuar"
+            'Selecciona un paquete y fotos para continuar'
           )}
         </button>
-        
+
         {!selectedPackage && (
-          <p className="text-sm text-gray-500 text-center mt-2">
+          <p className="mt-2 text-center text-sm text-gray-500">
             Primero selecciona un paquete arriba
           </p>
         )}
-        
+
         {selectedPackage && getSelectedPhotosCount() === 0 && (
-          <p className="text-sm text-gray-500 text-center mt-2">
+          <p className="mt-2 text-center text-sm text-gray-500">
             Selecciona fotos en la galería para continuar
           </p>
         )}
-        
-        {selectedPackage && getSelectedPhotosCount() > 0 && getSelectedPhotosCount() < getRequiredPhotosForPackage() && (
-          <p className="text-sm text-orange-600 text-center mt-2">
-            Selecciona {getRequiredPhotosForPackage() - getSelectedPhotosCount()} fotos más
-          </p>
-        )}
+
+        {selectedPackage &&
+          getSelectedPhotosCount() > 0 &&
+          getSelectedPhotosCount() < getRequiredPhotosForPackage() && (
+            <p className="mt-2 text-center text-sm text-orange-600">
+              Selecciona{' '}
+              {getRequiredPhotosForPackage() - getSelectedPhotosCount()} fotos
+              más
+            </p>
+          )}
       </div>
     </div>
   );

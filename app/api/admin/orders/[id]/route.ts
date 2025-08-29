@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getEnhancedOrderService, type UpdateOrderRequest } from '@/lib/services/enhanced-order.service';
+import {
+  getEnhancedOrderService,
+  type UpdateOrderRequest,
+} from '@/lib/services/enhanced-order.service';
 
 // Validation schema for order updates
 const UpdateOrderSchema = z.object({
-  status: z.enum(['pending', 'approved', 'delivered', 'failed', 'cancelled']).optional(),
+  status: z
+    .enum(['pending', 'approved', 'delivered', 'failed', 'cancelled'])
+    .optional(),
   admin_notes: z.string().max(1000).optional(),
   priority_level: z.number().min(1).max(5).optional(),
   estimated_delivery_date: z.string().datetime().optional(),
-  delivery_method: z.enum(['pickup', 'email', 'postal', 'hand_delivery']).optional(),
+  delivery_method: z
+    .enum(['pickup', 'email', 'postal', 'hand_delivery'])
+    .optional(),
   tracking_number: z.string().max(100).optional(),
 });
 
@@ -18,18 +25,15 @@ const UpdateOrderSchema = z.object({
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id || typeof id !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid order ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
     // Get order with full details and audit information
@@ -48,30 +52,26 @@ export async function GET(
       audit_trail: auditTrail,
       performance: {
         query_time_ms: duration,
-        optimized: true
+        optimized: true,
       },
       generated_at: new Date().toISOString(),
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Admin Order Detail] Error:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      order_id: params.id,
-      duration
+      order_id: id,
+      duration,
     });
 
     if (error instanceof Error && error.message === 'Order not found') {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json(
       {
         error: 'Failed to fetch order details',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -84,18 +84,15 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id || typeof id !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid order ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
     // Parse and validate request body
@@ -106,7 +103,7 @@ export async function PUT(
       return NextResponse.json(
         {
           error: 'Invalid update data',
-          details: validation.error.issues
+          details: validation.error.issues,
         },
         { status: 400 }
       );
@@ -116,9 +113,10 @@ export async function PUT(
 
     // Extract admin context for audit trail
     const adminId = request.headers.get('x-admin-id') || undefined;
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     request.ip;
+    const ipAddress =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      request.ip;
     const userAgent = request.headers.get('user-agent') || undefined;
 
     // Update the order
@@ -136,7 +134,7 @@ export async function PUT(
     console.log(`[Admin Order Update] Order ${id} updated in ${duration}ms`, {
       updates: Object.keys(updates),
       admin_id: adminId,
-      duration
+      duration,
     });
 
     return NextResponse.json({
@@ -145,30 +143,26 @@ export async function PUT(
       updated_fields: Object.keys(updates),
       performance: {
         update_time_ms: duration,
-        audit_logged: true
+        audit_logged: true,
       },
       updated_at: new Date().toISOString(),
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Admin Order Update] Error:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      order_id: params.id,
-      duration
+      order_id: id,
+      duration,
     });
 
     if (error instanceof Error && error.message === 'Order not found') {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json(
       {
         error: 'Failed to update order',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -181,37 +175,36 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     if (!id || typeof id !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid order ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
     // Get cancellation reason from query params
-    const reason = request.nextUrl.searchParams.get('reason') || 'Admin cancellation';
+    const reason =
+      request.nextUrl.searchParams.get('reason') || 'Admin cancellation';
 
     // Extract admin context
     const adminId = request.headers.get('x-admin-id') || undefined;
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     request.ip;
+    const ipAddress =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      request.ip;
     const userAgent = request.headers.get('user-agent') || undefined;
 
     // Cancel the order (update status to cancelled)
     const enhancedOrderService = getEnhancedOrderService();
     const cancelledOrder = await enhancedOrderService.updateOrder(
       id,
-      { 
-        status: 'cancelled', 
-        admin_notes: reason 
+      {
+        status: 'cancelled',
+        admin_notes: reason,
       },
       adminId,
       ipAddress,
@@ -223,7 +216,7 @@ export async function DELETE(
     console.log(`[Admin Order Cancel] Order ${id} cancelled in ${duration}ms`, {
       reason,
       admin_id: adminId,
-      duration
+      duration,
     });
 
     return NextResponse.json({
@@ -233,26 +226,22 @@ export async function DELETE(
       cancellation_reason: reason,
       cancelled_at: new Date().toISOString(),
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Admin Order Cancel] Error:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      order_id: params.id,
-      duration
+      order_id: id,
+      duration,
     });
 
     if (error instanceof Error && error.message === 'Order not found') {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json(
       {
         error: 'Failed to cancel order',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

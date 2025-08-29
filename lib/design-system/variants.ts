@@ -175,7 +175,8 @@ export const badgeVariants = cva(
         success: 'bg-green-100 text-green-900 hover:bg-green-200',
         warning: 'bg-yellow-100 text-yellow-900 hover:bg-yellow-200',
         error: 'bg-red-100 text-red-900 hover:bg-red-200',
-        outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100',
+        outline:
+          'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100',
       },
     },
     defaultVariants: {

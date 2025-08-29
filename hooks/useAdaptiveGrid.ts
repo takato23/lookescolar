@@ -85,22 +85,28 @@ export interface AdaptiveGridState {
  */
 export function useAdaptiveGrid(): AdaptiveGridState {
   const [screenWidth, setScreenWidth] = useState(0);
-  
+
   const getCurrentBreakpoint = useCallback((width: number): GridBreakpoint => {
-    return GRID_BREAKPOINTS.find(bp => 
-      width >= bp.minWidth && (bp.maxWidth === undefined || width <= bp.maxWidth)
-    ) || GRID_BREAKPOINTS[GRID_BREAKPOINTS.length - 1];
+    return (
+      GRID_BREAKPOINTS.find(
+        (bp) =>
+          width >= bp.minWidth &&
+          (bp.maxWidth === undefined || width <= bp.maxWidth)
+      ) || GRID_BREAKPOINTS[GRID_BREAKPOINTS.length - 1]
+    );
   }, []);
 
-  const [breakpoint, setBreakpoint] = useState<GridBreakpoint>(() => 
-    getCurrentBreakpoint(typeof window !== 'undefined' ? window.innerWidth : 1024)
+  const [breakpoint, setBreakpoint] = useState<GridBreakpoint>(() =>
+    getCurrentBreakpoint(
+      typeof window !== 'undefined' ? window.innerWidth : 1024
+    )
   );
 
   useEffect(() => {
     const updateScreenSize = () => {
       const width = window.innerWidth;
       setScreenWidth(width);
-      
+
       const newBreakpoint = getCurrentBreakpoint(width);
       if (newBreakpoint.name !== breakpoint.name) {
         setBreakpoint(newBreakpoint);
@@ -141,7 +147,7 @@ export function useAdaptiveGrid(): AdaptiveGridState {
  */
 export function useGridVariables() {
   const { breakpoint } = useAdaptiveGrid();
-  
+
   return {
     '--card-min-width': `${breakpoint.cardMinWidth}px`,
     '--grid-gap': `${breakpoint.gap}px`,
@@ -161,7 +167,7 @@ export interface CardDimensions {
 
 export function useCardDimensions(): CardDimensions {
   const { breakpoint, isLargeScreen, isUltraWide } = useAdaptiveGrid();
-  
+
   // Compact sizing for large screens to show more content
   if (isUltraWide) {
     return {
@@ -171,7 +177,7 @@ export function useCardDimensions(): CardDimensions {
       borderRadius: 16,
     };
   }
-  
+
   if (isLargeScreen) {
     return {
       minHeight: 260,
@@ -180,7 +186,7 @@ export function useCardDimensions(): CardDimensions {
       borderRadius: 18,
     };
   }
-  
+
   // Standard sizing for smaller screens
   return {
     minHeight: 280,
@@ -195,14 +201,14 @@ export function useCardDimensions(): CardDimensions {
  */
 export function useStaggeredAnimation(index: number, baseDelay = 100) {
   const { gridColumns } = useAdaptiveGrid();
-  
+
   // Calculate row and column position
   const row = Math.floor(index / gridColumns);
   const column = index % gridColumns;
-  
+
   // Stagger animation based on position
-  const delay = baseDelay + (row * 50) + (column * 25);
-  
+  const delay = baseDelay + row * 50 + column * 25;
+
   return {
     animationDelay: `${delay}ms`,
     style: {

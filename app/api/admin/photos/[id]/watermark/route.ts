@@ -10,7 +10,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
   withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
     const requestId = crypto.randomUUID();
     const photoId = params.id;
-    
+
     try {
       let body;
       try {
@@ -28,14 +28,21 @@ export const POST = RateLimitMiddleware.withRateLimit(
         maxWidth = 800,
         maxHeight = 600,
         quality = 70,
-        format = 'jpeg'
+        format = 'jpeg',
       } = body;
 
       logger.info('Processing watermark request', {
         requestId,
         photoId,
         forceRegenerate,
-        watermarkOptions: { position, opacity, maxWidth, maxHeight, quality, format },
+        watermarkOptions: {
+          position,
+          opacity,
+          maxWidth,
+          maxHeight,
+          quality,
+          format,
+        },
       });
 
       if (!photoId || typeof photoId !== 'string') {
@@ -46,30 +53,51 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       // Validate optional parameters
-      if (opacity && (typeof opacity !== 'number' || opacity < 0 || opacity > 1)) {
+      if (
+        opacity &&
+        (typeof opacity !== 'number' || opacity < 0 || opacity > 1)
+      ) {
         return NextResponse.json(
           { success: false, error: 'Opacity must be a number between 0 and 1' },
           { status: 400 }
         );
       }
 
-      if (quality && (typeof quality !== 'number' || quality < 1 || quality > 100)) {
+      if (
+        quality &&
+        (typeof quality !== 'number' || quality < 1 || quality > 100)
+      ) {
         return NextResponse.json(
-          { success: false, error: 'Quality must be a number between 1 and 100' },
+          {
+            success: false,
+            error: 'Quality must be a number between 1 and 100',
+          },
           { status: 400 }
         );
       }
 
-      if (maxWidth && (typeof maxWidth !== 'number' || maxWidth < 100 || maxWidth > 2000)) {
+      if (
+        maxWidth &&
+        (typeof maxWidth !== 'number' || maxWidth < 100 || maxWidth > 2000)
+      ) {
         return NextResponse.json(
-          { success: false, error: 'Max width must be between 100 and 2000 pixels' },
+          {
+            success: false,
+            error: 'Max width must be between 100 and 2000 pixels',
+          },
           { status: 400 }
         );
       }
 
-      if (maxHeight && (typeof maxHeight !== 'number' || maxHeight < 100 || maxHeight > 2000)) {
+      if (
+        maxHeight &&
+        (typeof maxHeight !== 'number' || maxHeight < 100 || maxHeight > 2000)
+      ) {
         return NextResponse.json(
-          { success: false, error: 'Max height must be between 100 and 2000 pixels' },
+          {
+            success: false,
+            error: 'Max height must be between 100 and 2000 pixels',
+          },
           { status: 400 }
         );
       }
@@ -77,15 +105,26 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const validFormats = ['jpeg', 'webp', 'png'];
       if (format && !validFormats.includes(format)) {
         return NextResponse.json(
-          { success: false, error: `Format must be one of: ${validFormats.join(', ')}` },
+          {
+            success: false,
+            error: `Format must be one of: ${validFormats.join(', ')}`,
+          },
           { status: 400 }
         );
       }
 
-      const validPositions = ['center', 'bottom-right', 'bottom-center', 'top-right'];
+      const validPositions = [
+        'center',
+        'bottom-right',
+        'bottom-center',
+        'top-right',
+      ];
       if (position && !validPositions.includes(position)) {
         return NextResponse.json(
-          { success: false, error: `Position must be one of: ${validPositions.join(', ')}` },
+          {
+            success: false,
+            error: `Position must be one of: ${validPositions.join(', ')}`,
+          },
           { status: 400 }
         );
       }
@@ -100,7 +139,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
         .single();
 
       if (photoError || !photo) {
-        logger.error('Photo not found', { requestId, photoId, error: photoError?.message });
+        logger.error('Photo not found', {
+          requestId,
+          photoId,
+          error: photoError?.message,
+        });
         return NextResponse.json(
           { success: false, error: 'Photo not found' },
           { status: 404 }
@@ -151,7 +194,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
         format: format as 'jpeg' | 'webp' | 'png',
         watermark: {
           text: watermarkText || 'MUESTRA - NO VÁLIDA PARA VENTA',
-          position: position as 'center' | 'bottom-right' | 'bottom-center' | 'top-right',
+          position: position as
+            | 'center'
+            | 'bottom-right'
+            | 'bottom-center'
+            | 'top-right',
           opacity,
           fontSize: 48,
           color: 'rgba(255, 255, 255, 0.8)',
@@ -182,7 +229,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
         });
 
         return NextResponse.json(
-          { success: false, error: result.error || 'Failed to process watermark' },
+          {
+            success: false,
+            error: result.error || 'Failed to process watermark',
+          },
           { status: 500 }
         );
       }
@@ -197,7 +247,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
         .eq('id', photoId);
 
       // Clean up old previews (async)
-      watermarkService.cleanupOldPreviews(photoId).catch(error => {
+      watermarkService.cleanupOldPreviews(photoId).catch((error) => {
         logger.warn('Failed to cleanup old previews', {
           photoId,
           error: error.message,
@@ -211,17 +261,19 @@ export const POST = RateLimitMiddleware.withRateLimit(
         forceRegenerate,
       });
 
-      return NextResponse.json({
-        success: true,
-        preview: {
-          url: result.data.previewUrl,
-          path: result.data.previewPath,
-          cached: false,
-          processingOptions,
+      return NextResponse.json(
+        {
+          success: true,
+          preview: {
+            url: result.data.previewUrl,
+            path: result.data.previewPath,
+            cached: false,
+            processingOptions,
+          },
+          message: 'Watermarked preview generated successfully',
         },
-        message: 'Watermarked preview generated successfully',
-      }, { status: 201 });
-
+        { status: 201 }
+      );
     } catch (error) {
       // Update processing status to failed if we have a photo ID
       try {
@@ -237,7 +289,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
         logger.error('Failed to update processing status after error', {
           requestId,
           photoId,
-          updateError: updateError instanceof Error ? updateError.message : 'Unknown error',
+          updateError:
+            updateError instanceof Error
+              ? updateError.message
+              : 'Unknown error',
         });
       }
 
@@ -256,82 +311,83 @@ export const POST = RateLimitMiddleware.withRateLimit(
 );
 
 // GET /admin/photos/[id]/watermark - Get existing watermark info
-export const GET = withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
-  const requestId = crypto.randomUUID();
-  const photoId = params.id;
-  
-  try {
-    if (!photoId || typeof photoId !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'Valid photo ID is required' },
-        { status: 400 }
-      );
-    }
+export const GET = withAuth(
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
+    const requestId = crypto.randomUUID();
+    const photoId = params.id;
 
-    const supabase = await createServerSupabaseServiceClient();
+    try {
+      if (!photoId || typeof photoId !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Valid photo ID is required' },
+          { status: 400 }
+        );
+      }
 
-    // Get photo details
-    const { data: photo, error: photoError } = await supabase
-      .from('photos')
-      .select('id, watermark_path, metadata, processing_status')
-      .eq('id', photoId)
-      .single();
+      const supabase = await createServerSupabaseServiceClient();
 
-    if (photoError || !photo) {
-      return NextResponse.json(
-        { success: false, error: 'Photo not found' },
-        { status: 404 }
-      );
-    }
+      // Get photo details
+      const { data: photo, error: photoError } = await supabase
+        .from('photos')
+        .select('id, watermark_path, metadata, processing_status')
+        .eq('id', photoId)
+        .single();
 
-    if (!photo.watermark_path) {
+      if (photoError || !photo) {
+        return NextResponse.json(
+          { success: false, error: 'Photo not found' },
+          { status: 404 }
+        );
+      }
+
+      if (!photo.watermark_path) {
+        return NextResponse.json({
+          success: true,
+          preview: null,
+          message: 'No watermarked preview exists for this photo',
+        });
+      }
+
+      // Generate signed URL
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('photos')
+        .createSignedUrl(photo.watermark_path, 3600);
+
+      if (urlError || !urlData?.signedUrl) {
+        logger.error('Failed to generate signed URL for watermark', {
+          requestId,
+          photoId,
+          watermarkPath: photo.watermark_path,
+          error: urlError?.message,
+        });
+
+        return NextResponse.json(
+          { success: false, error: 'Failed to access watermarked preview' },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json({
         success: true,
-        preview: null,
-        message: 'No watermarked preview exists for this photo',
+        preview: {
+          url: urlData.signedUrl,
+          path: photo.watermark_path,
+          metadata: photo.metadata?.preview || null,
+          processingStatus: photo.processing_status,
+        },
+        message: 'Watermarked preview information retrieved',
       });
-    }
-
-    // Generate signed URL
-    const { data: urlData, error: urlError } = await supabase.storage
-      .from('photos')
-      .createSignedUrl(photo.watermark_path, 3600);
-
-    if (urlError || !urlData?.signedUrl) {
-      logger.error('Failed to generate signed URL for watermark', {
+    } catch (error) {
+      logger.error('Unexpected error in watermark GET endpoint', {
         requestId,
         photoId,
-        watermarkPath: photo.watermark_path,
-        error: urlError?.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       return NextResponse.json(
-        { success: false, error: 'Failed to access watermarked preview' },
+        { success: false, error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({
-      success: true,
-      preview: {
-        url: urlData.signedUrl,
-        path: photo.watermark_path,
-        metadata: photo.metadata?.preview || null,
-        processingStatus: photo.processing_status,
-      },
-      message: 'Watermarked preview information retrieved',
-    });
-
-  } catch (error) {
-    logger.error('Unexpected error in watermark GET endpoint', {
-      requestId,
-      photoId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-});
+);

@@ -6,7 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { QrCode, Download, Printer, Info, Camera, CheckCircle } from 'lucide-react';
+import {
+  QrCode,
+  Download,
+  Printer,
+  Info,
+  Camera,
+  CheckCircle,
+} from 'lucide-react';
 
 interface StudentQRDisplayProps {
   studentId: string;
@@ -24,11 +31,11 @@ interface QRCodeInfo {
   isActive: boolean;
 }
 
-export default function StudentQRDisplay({ 
-  studentId, 
-  studentName, 
-  eventId, 
-  className 
+export default function StudentQRDisplay({
+  studentId,
+  studentName,
+  eventId,
+  className,
 }: StudentQRDisplayProps) {
   const [qrInfo, setQRInfo] = useState<QRCodeInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +52,7 @@ export default function StudentQRDisplay({
 
       const response = await fetch(`/api/family/qr/${studentId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('familyToken') || ''}`,
+          Authorization: `Bearer ${localStorage.getItem('familyToken') || ''}`,
         },
       });
 
@@ -54,7 +61,7 @@ export default function StudentQRDisplay({
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data) {
         setQRInfo(data.data);
       } else {
@@ -156,7 +163,7 @@ export default function StudentQRDisplay({
 
       printWindow.document.close();
       printWindow.focus();
-      
+
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
@@ -172,7 +179,7 @@ export default function StudentQRDisplay({
     return (
       <Card className={className}>
         <CardContent className="p-6 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground">Loading QR code...</p>
         </CardContent>
       </Card>
@@ -196,8 +203,10 @@ export default function StudentQRDisplay({
     return (
       <Card className={className}>
         <CardContent className="p-6 text-center">
-          <QrCode className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-muted-foreground">No QR code available for this student</p>
+          <QrCode className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+          <p className="text-muted-foreground">
+            No QR code available for this student
+          </p>
         </CardContent>
       </Card>
     );
@@ -207,28 +216,28 @@ export default function StudentQRDisplay({
     <Card className={className}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <QrCode className="w-5 h-5" />
+          <QrCode className="h-5 w-5" />
           Student QR Code
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* QR Code Display */}
         <div className="text-center">
-          <div className="inline-block p-4 bg-white border rounded-lg shadow-sm">
-            <img 
-              src={qrInfo.dataUrl} 
+          <div className="inline-block rounded-lg border bg-white p-4 shadow-sm">
+            <img
+              src={qrInfo.dataUrl}
               alt={`QR Code for ${studentName}`}
-              className="w-48 h-48 mx-auto"
+              className="mx-auto h-48 w-48"
             />
           </div>
         </div>
 
         {/* Student Info */}
-        <div className="text-center space-y-2">
+        <div className="space-y-2 text-center">
           <h3 className="text-lg font-semibold">{studentName}</h3>
           <div className="flex justify-center gap-2">
-            <Badge variant={qrInfo.isActive ? "default" : "secondary"}>
-              {qrInfo.isActive ? "Active" : "Inactive"}
+            <Badge variant={qrInfo.isActive ? 'default' : 'secondary'}>
+              {qrInfo.isActive ? 'Active' : 'Inactive'}
             </Badge>
             <Badge variant="outline">
               Created: {new Date(qrInfo.createdAt).toLocaleDateString()}
@@ -239,11 +248,11 @@ export default function StudentQRDisplay({
         {/* Action Buttons */}
         <div className="flex gap-2">
           <Button onClick={downloadQR} variant="outline" className="flex-1">
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
           <Button onClick={printQR} className="flex-1">
-            <Printer className="w-4 h-4 mr-2" />
+            <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
         </div>
@@ -264,12 +273,12 @@ export default function StudentQRDisplay({
         </Alert>
 
         {/* Benefits Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
           <div className="flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+            <CheckCircle className="mt-0.5 h-5 w-5 text-blue-600" />
             <div>
               <h4 className="font-semibold text-blue-900">QR Code Benefits</h4>
-              <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <ul className="mt-1 space-y-1 text-sm text-blue-700">
                 <li>• Faster photo identification and organization</li>
                 <li>• Reduces errors in photo classification</li>
                 <li>• More privacy-friendly than name tags</li>
@@ -281,7 +290,7 @@ export default function StudentQRDisplay({
 
         {/* Technical Info (for debugging) */}
         {process.env.NODE_ENV === 'development' && (
-          <details className="text-xs text-muted-foreground">
+          <details className="text-muted-foreground text-xs">
             <summary className="cursor-pointer">Technical Details</summary>
             <div className="mt-2 space-y-1 font-mono">
               <p>QR ID: {qrInfo.qrCodeId}</p>

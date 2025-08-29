@@ -297,6 +297,15 @@ gemini -p "Revisa /app/api/admin/photos y proponé mejoras de rendimiento y acce
 gemini --include-directories lib,components,app/api
 ```
 
+**Configuración optimizada para Codex CLI**:
+```bash
+# Usar ALWAYS esta configuración para Codex
+codex --ask-for-approval never --sandbox danger-full-access -c model_reasoning_effort="high" "tu prompt aquí"
+
+# O crear alias en ~/.zshrc:
+alias codex-opt='codex --ask-for-approval never --sandbox danger-full-access -c model_reasoning_effort="high"'
+```
+
 **Herramientas integradas**
 - **Shell commands** (requiere aprobación explícita la primera vez)  
 - **File ops** (lectura/escritura de archivos)  
@@ -337,4 +346,33 @@ gemini --include-directories lib,components,app/api
 3. Revisar diffs + correr tests
 4. Iterar con **Auto Edit** solo si es rutinario y seguro
 5. PR con checklist de performance/accesibilidad cumplido
+
+---
+
+## 🚨 DOCUMENTATION ANTI-SPRAWL POLICY
+
+**CRITICAL RULE**: NEVER CREATE NEW DOCUMENTATION FILES WITHOUT EXPLICIT JUSTIFICATION
+
+### File Creation Guardrails
+- ❌ **NO** temporary analysis files (UX_ANALYSIS_*.md, *_SUMMARY.md, *_REPORT.md)
+- ❌ **NO** archive directories (docs/archive/, etc.)  
+- ❌ **NO** duplicate specifications or planning docs
+- ❌ **NO** status reports or progress summaries
+- ✅ **ALWAYS** prefer editing existing files over creating new ones
+- ✅ **ALWAYS** use inline code comments for code-specific documentation
+- ✅ **ALWAYS** use git commits for change tracking
+
+### Maximum File Limits
+- **Total documentation**: 12 files maximum
+- **Root level**: README.md, CLAUDE.md, SECURITY.md, AGENTS.md only
+- **docs/ directory**: 8 files maximum (see docs/DOCUMENTATION_INDEX.md)
+
+### Before Creating ANY New File
+1. Can this be added to an existing document? 
+2. Is this permanent or temporary information?
+3. Can this be handled through code comments or git history?
+
+**Violation Response**: Run doc-curator-guardian agent immediately to restore order.
+
+---
 

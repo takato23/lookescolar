@@ -6,6 +6,3 @@ export async function absoluteUrl(path: string): Promise<string> {
   const proto = h.get('x-forwarded-proto') ?? 'http';
   return `${proto}://${host}${path}`;
 }
-
-
-

@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi, beforeAll } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST, DELETE } from '@/app/api/admin/tagging/route';
-import { POST as BatchPOST, DELETE as BatchDELETE, PUT as BulkPUT } from '@/app/api/admin/tagging/batch/route';
+import {
+  POST as BatchPOST,
+  DELETE as BatchDELETE,
+  PUT as BulkPUT,
+} from '@/app/api/admin/tagging/batch/route';
 import { createClient } from '@/lib/supabase/server';
 
 // Mock Supabase
@@ -9,7 +13,7 @@ vi.mock('@/lib/supabase/server');
 
 const mockSupabase = {
   from: vi.fn(),
-  rpc: vi.fn()
+  rpc: vi.fn(),
 };
 
 // Test data constants
@@ -19,8 +23,12 @@ const TEST_PHOTO_ID_1 = 'photo-123e4567-e89b-12d3-a456-426614174001';
 const TEST_PHOTO_ID_2 = 'photo-123e4567-e89b-12d3-a456-426614174002';
 
 // Mock request helpers
-const createMockRequest = (method: string, body?: any, params?: Record<string, string>): NextRequest => {
-  const url = params 
+const createMockRequest = (
+  method: string,
+  body?: any,
+  params?: Record<string, string>
+): NextRequest => {
+  const url = params
     ? `http://localhost:3000/api/admin/tagging?${new URLSearchParams(params).toString()}`
     : 'http://localhost:3000/api/admin/tagging';
 
@@ -28,7 +36,7 @@ const createMockRequest = (method: string, body?: any, params?: Record<string, s
     method,
     headers: {
       'Content-Type': 'application/json',
-    }
+    },
   };
 
   if (body) {
@@ -46,7 +54,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (createClient as any).mockReturnValue(mockSupabase);
-    
+
     // Setup default mocks
     mockSupabase.from.mockImplementation((_table: string) => {
       const mockQuery = {
@@ -79,13 +87,21 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 eq: vi.fn(() => ({
                   mockResolvedValue: vi.fn().mockResolvedValue({
                     data: [
-                      { id: TEST_PHOTO_ID_1, event_id: TEST_EVENT_ID, subject_id: null },
-                      { id: TEST_PHOTO_ID_2, event_id: TEST_EVENT_ID, subject_id: null }
+                      {
+                        id: TEST_PHOTO_ID_1,
+                        event_id: TEST_EVENT_ID,
+                        subject_id: null,
+                      },
+                      {
+                        id: TEST_PHOTO_ID_2,
+                        event_id: TEST_EVENT_ID,
+                        subject_id: null,
+                      },
                     ],
-                    error: null
-                  })
-                }))
-              }))
+                    error: null,
+                  }),
+                })),
+              })),
             })),
             update: vi.fn(() => ({
               in: vi.fn(() => ({
@@ -93,29 +109,29 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                   mockResolvedValue: vi.fn().mockResolvedValue({
                     data: [
                       { id: TEST_PHOTO_ID_1, subject_id: TEST_SUBJECT_ID },
-                      { id: TEST_PHOTO_ID_2, subject_id: TEST_SUBJECT_ID }
+                      { id: TEST_PHOTO_ID_2, subject_id: TEST_SUBJECT_ID },
                     ],
-                    error: null
-                  })
-                }))
-              }))
-            }))
+                    error: null,
+                  }),
+                })),
+              })),
+            })),
           };
         }
-        
+
         if (table === 'subjects') {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
                   data: { id: TEST_SUBJECT_ID, event_id: TEST_EVENT_ID },
-                  error: null
-                })
-              }))
-            }))
+                  error: null,
+                }),
+              })),
+            })),
           };
         }
-        
+
         return {
           select: vi.fn().mockReturnThis(),
           in: vi.fn().mockReturnThis(),
@@ -128,7 +144,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2],
         subjectId: TEST_SUBJECT_ID,
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -150,11 +166,11 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 eq: vi.fn(() => ({
                   mockResolvedValue: vi.fn().mockResolvedValue({
                     data: [{ id: TEST_PHOTO_ID_1, event_id: TEST_EVENT_ID }], // Solo 1 de 2
-                    error: null
-                  })
-                }))
-              }))
-            }))
+                    error: null,
+                  }),
+                })),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -163,7 +179,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2],
         subjectId: TEST_SUBJECT_ID,
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -171,7 +187,9 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toContain('Una o más fotos no existen o no pertenecen al evento');
+      expect(data.error).toContain(
+        'Una o más fotos no existen o no pertenecen al evento'
+      );
     });
 
     it('debería rechazar sujeto que no pertenece al evento', async () => {
@@ -184,34 +202,34 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 eq: vi.fn(() => ({
                   mockResolvedValue: vi.fn().mockResolvedValue({
                     data: [{ id: TEST_PHOTO_ID_1, event_id: TEST_EVENT_ID }],
-                    error: null
-                  })
-                }))
-              }))
-            }))
+                    error: null,
+                  }),
+                })),
+              })),
+            })),
           };
         }
-        
+
         if (table === 'subjects') {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
                   data: null,
-                  error: { message: 'Subject not found' }
-                })
-              }))
-            }))
+                  error: { message: 'Subject not found' },
+                }),
+              })),
+            })),
           };
         }
-        
+
         return { select: vi.fn().mockReturnThis() };
       });
 
       const requestBody = {
         photoIds: [TEST_PHOTO_ID_1],
         subjectId: TEST_SUBJECT_ID,
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -219,14 +237,16 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toContain('El alumno no existe o no pertenece al evento');
+      expect(data.error).toContain(
+        'El alumno no existe o no pertenece al evento'
+      );
     });
 
     it('debería validar formato UUID de los IDs', async () => {
       const requestBody = {
         photoIds: ['invalid-uuid'],
         subjectId: 'invalid-subject-uuid',
-        eventId: 'invalid-event-uuid'
+        eventId: 'invalid-event-uuid',
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -247,11 +267,11 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 eq: vi.fn(() => ({
                   mockResolvedValue: vi.fn().mockResolvedValue({
                     data: null,
-                    error: { message: 'Database connection failed' }
-                  })
-                }))
-              }))
-            }))
+                    error: { message: 'Database connection failed' },
+                  }),
+                })),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -260,7 +280,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         photoIds: [TEST_PHOTO_ID_1],
         subjectId: TEST_SUBJECT_ID,
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -281,22 +301,19 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
               in: vi.fn(() => ({
                 select: vi.fn(() => ({
                   mockResolvedValue: vi.fn().mockResolvedValue({
-                    data: [
-                      { id: TEST_PHOTO_ID_1 },
-                      { id: TEST_PHOTO_ID_2 }
-                    ],
-                    error: null
-                  })
-                }))
-              }))
-            }))
+                    data: [{ id: TEST_PHOTO_ID_1 }, { id: TEST_PHOTO_ID_2 }],
+                    error: null,
+                  }),
+                })),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
       });
 
       const requestBody = {
-        photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
+        photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2],
       };
 
       const request = createMockRequest('DELETE', requestBody);
@@ -310,7 +327,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
 
     it('debería validar formato UUID en DELETE', async () => {
       const requestBody = {
-        photoIds: ['invalid-uuid', 'another-invalid-uuid']
+        photoIds: ['invalid-uuid', 'another-invalid-uuid'],
       };
 
       const request = createMockRequest('DELETE', requestBody);
@@ -329,14 +346,14 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
   describe('POST /api/admin/tagging/batch - Asignación Batch', () => {
     it('debería procesar asignación batch exitosamente', async () => {
       mockSupabase.rpc.mockResolvedValue({ data: true, error: null });
-      
+
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'photo_subjects') {
           return {
-            insert: vi.fn().mockResolvedValue({ error: null })
+            insert: vi.fn().mockResolvedValue({ error: null }),
           };
         }
-        
+
         if (table === 'photos') {
           return {
             select: vi.fn(() => ({
@@ -344,15 +361,15 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 mockResolvedValue: vi.fn().mockResolvedValue({
                   data: [
                     { id: TEST_PHOTO_ID_1, subject_id: TEST_SUBJECT_ID },
-                    { id: TEST_PHOTO_ID_2, subject_id: TEST_SUBJECT_ID }
+                    { id: TEST_PHOTO_ID_2, subject_id: TEST_SUBJECT_ID },
                   ],
-                  error: null
-                })
-              }))
-            }))
+                  error: null,
+                }),
+              })),
+            })),
           };
         }
-        
+
         return { select: vi.fn().mockReturnThis() };
       });
 
@@ -360,8 +377,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         eventId: TEST_EVENT_ID,
         assignments: [
           { photoId: TEST_PHOTO_ID_1, subjectId: TEST_SUBJECT_ID },
-          { photoId: TEST_PHOTO_ID_2, subjectId: TEST_SUBJECT_ID }
-        ]
+          { photoId: TEST_PHOTO_ID_2, subjectId: TEST_SUBJECT_ID },
+        ],
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -376,14 +393,16 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     });
 
     it('debería limitar batch a 100 asignaciones máximo', async () => {
-      const assignments = Array(150).fill(0).map((_, i) => ({
-        photoId: `photo-${i}`,
-        subjectId: TEST_SUBJECT_ID
-      }));
+      const assignments = Array(150)
+        .fill(0)
+        .map((_, i) => ({
+          photoId: `photo-${i}`,
+          subjectId: TEST_SUBJECT_ID,
+        }));
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments
+        assignments,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -397,7 +416,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     it('debería requerir al menos 1 asignación', async () => {
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments: []
+        assignments: [],
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -409,14 +428,14 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     });
 
     it('debería manejar errores de función RPC', async () => {
-      mockSupabase.rpc.mockResolvedValue({ 
-        data: null, 
-        error: { message: 'RPC function failed' } 
+      mockSupabase.rpc.mockResolvedValue({
+        data: null,
+        error: { message: 'RPC function failed' },
       });
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments: [{ photoId: TEST_PHOTO_ID_1, subjectId: TEST_SUBJECT_ID }]
+        assignments: [{ photoId: TEST_PHOTO_ID_1, subjectId: TEST_SUBJECT_ID }],
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -436,11 +455,11 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 select: vi.fn(() => ({
                   single: vi.fn().mockResolvedValue({
                     data: { id: TEST_PHOTO_ID_1 },
-                    error: null
-                  })
-                }))
-              }))
-            }))
+                    error: null,
+                  }),
+                })),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -449,8 +468,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         items: [
           { photoId: TEST_PHOTO_ID_1, codeId: 'code-123' },
-          { photoId: TEST_PHOTO_ID_2, codeId: 'code-456' }
-        ]
+          { photoId: TEST_PHOTO_ID_2, codeId: 'code-456' },
+        ],
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -475,9 +494,9 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                     select: vi.fn(() => ({
                       single: vi.fn().mockResolvedValue({
                         data: null,
-                        error: { message: 'Database error' }
-                      })
-                    }))
+                        error: { message: 'Database error' },
+                      }),
+                    })),
                   };
                 }
                 // First call succeeds
@@ -485,12 +504,12 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                   select: vi.fn(() => ({
                     single: vi.fn().mockResolvedValue({
                       data: { id: TEST_PHOTO_ID_1 },
-                      error: null
-                    })
-                  }))
+                      error: null,
+                    }),
+                  })),
                 };
-              })
-            }))
+              }),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -499,8 +518,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         items: [
           { photoId: TEST_PHOTO_ID_1, codeId: 'code-123' },
-          { photoId: TEST_PHOTO_ID_2, codeId: 'code-456' }
-        ]
+          { photoId: TEST_PHOTO_ID_2, codeId: 'code-456' },
+        ],
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -522,45 +541,44 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 eq: vi.fn(() => ({
                   in: vi.fn(() => ({
                     mockResolvedValue: vi.fn().mockResolvedValue({
-                      data: [
-                        { id: TEST_PHOTO_ID_1 },
-                        { id: TEST_PHOTO_ID_2 }
-                      ],
-                      error: null
-                    })
-                  }))
-                }))
+                      data: [{ id: TEST_PHOTO_ID_1 }, { id: TEST_PHOTO_ID_2 }],
+                      error: null,
+                    }),
+                  })),
+                })),
               })),
               update: vi.fn(() => ({
                 in: vi.fn(() => ({
-                  mockResolvedValue: vi.fn().mockResolvedValue({ error: null })
-                }))
-              }))
+                  mockResolvedValue: vi.fn().mockResolvedValue({ error: null }),
+                })),
+              })),
             };
           }
         }
-        
+
         if (table === 'photo_subjects') {
           return {
             delete: vi.fn(() => ({
               in: vi.fn(() => ({
-                mockResolvedValue: vi.fn().mockResolvedValue({ error: null })
-              }))
-            }))
+                mockResolvedValue: vi.fn().mockResolvedValue({ error: null }),
+              })),
+            })),
           };
         }
-        
+
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           in: vi.fn().mockReturnThis(),
-          mockResolvedValue: vi.fn().mockResolvedValue({ data: [], error: null })
+          mockResolvedValue: vi
+            .fn()
+            .mockResolvedValue({ data: [], error: null }),
         };
       });
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
+        photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2],
       };
 
       const request = createMockRequest('DELETE', requestBody);
@@ -581,11 +599,11 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
                 in: vi.fn(() => ({
                   mockResolvedValue: vi.fn().mockResolvedValue({
                     data: [{ id: TEST_PHOTO_ID_1 }], // Solo 1 de 2 fotos
-                    error: null
-                  })
-                }))
-              }))
-            }))
+                    error: null,
+                  }),
+                })),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -593,7 +611,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2]
+        photoIds: [TEST_PHOTO_ID_1, TEST_PHOTO_ID_2],
       };
 
       const request = createMockRequest('DELETE', requestBody);
@@ -601,7 +619,9 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toContain('Some photos do not exist or do not belong to this event');
+      expect(data.error).toContain(
+        'Some photos do not exist or do not belong to this event'
+      );
     });
   });
 
@@ -615,13 +635,13 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
                   data: { id: TEST_SUBJECT_ID },
-                  error: null
-                })
-              }))
-            }))
+                  error: null,
+                }),
+              })),
+            })),
           };
         }
-        
+
         if (table === 'photos') {
           return {
             select: vi.fn().mockReturnThis(),
@@ -633,14 +653,22 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
             limit: vi.fn().mockReturnThis(),
             mockResolvedValue: vi.fn().mockResolvedValue({
               data: [
-                { id: TEST_PHOTO_ID_1, filename: 'IMG_001.jpg', created_at: '2024-01-01T00:00:00Z' },
-                { id: TEST_PHOTO_ID_2, filename: 'IMG_002.jpg', created_at: '2024-01-01T01:00:00Z' }
+                {
+                  id: TEST_PHOTO_ID_1,
+                  filename: 'IMG_001.jpg',
+                  created_at: '2024-01-01T00:00:00Z',
+                },
+                {
+                  id: TEST_PHOTO_ID_2,
+                  filename: 'IMG_002.jpg',
+                  created_at: '2024-01-01T01:00:00Z',
+                },
               ],
-              error: null
-            })
+              error: null,
+            }),
           };
         }
-        
+
         return { select: vi.fn().mockReturnThis() };
       });
 
@@ -654,11 +682,11 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
           unassignedOnly: true,
           dateRange: {
             start: '2024-01-01T00:00:00Z',
-            end: '2024-01-01T23:59:59Z'
+            end: '2024-01-01T23:59:59Z',
           },
           filenamePattern: 'IMG_',
-          limit: 10
-        }
+          limit: 10,
+        },
       };
 
       const request = createMockRequest('PUT', requestBody);
@@ -678,13 +706,13 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
                   data: { id: TEST_SUBJECT_ID },
-                  error: null
-                })
-              }))
-            }))
+                  error: null,
+                }),
+              })),
+            })),
           };
         }
-        
+
         if (table === 'photos') {
           return {
             select: vi.fn().mockReturnThis(),
@@ -692,11 +720,11 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
             is: vi.fn().mockReturnThis(),
             mockResolvedValue: vi.fn().mockResolvedValue({
               data: [],
-              error: null
-            })
+              error: null,
+            }),
           };
         }
-        
+
         return { select: vi.fn().mockReturnThis() };
       });
 
@@ -705,8 +733,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         subjectId: TEST_SUBJECT_ID,
         filterCriteria: {
           unassignedOnly: true,
-          filenamePattern: 'NONEXISTENT'
-        }
+          filenamePattern: 'NONEXISTENT',
+        },
       };
 
       const request = createMockRequest('PUT', requestBody);
@@ -727,10 +755,10 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
                   data: null,
-                  error: { message: 'Subject not found' }
-                })
-              }))
-            }))
+                  error: { message: 'Subject not found' },
+                }),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -740,8 +768,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         eventId: TEST_EVENT_ID,
         subjectId: TEST_SUBJECT_ID,
         filterCriteria: {
-          unassignedOnly: true
-        }
+          unassignedOnly: true,
+        },
       };
 
       const request = createMockRequest('PUT', requestBody);
@@ -749,7 +777,9 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(data.error).toContain('Subject not found or does not belong to this event');
+      expect(data.error).toContain(
+        'Subject not found or does not belong to this event'
+      );
     });
   });
 
@@ -758,7 +788,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         photoIds: [TEST_PHOTO_ID_1],
         // subjectId faltante
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -773,7 +803,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
       const requestBody = {
         photoIds: [], // Array vacío
         subjectId: TEST_SUBJECT_ID,
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -785,14 +815,16 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     });
 
     it('debería validar límites de batch operations', async () => {
-      const largeAssignments = Array(200).fill(0).map((_, i) => ({
-        photoId: `photo-${i}`,
-        subjectId: TEST_SUBJECT_ID
-      }));
+      const largeAssignments = Array(200)
+        .fill(0)
+        .map((_, i) => ({
+          photoId: `photo-${i}`,
+          subjectId: TEST_SUBJECT_ID,
+        }));
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments: largeAssignments
+        assignments: largeAssignments,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -807,7 +839,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
   describe('Manejo de Errores y Casos Edge', () => {
     it('debería manejar request sin body', async () => {
       const request = createMockRequest('POST');
-      
+
       let response;
       try {
         response = await POST(request);
@@ -816,17 +848,20 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         expect(true).toBe(true);
         return;
       }
-      
+
       await response.json();
       expect(response.status).toBeLessThan(500);
     });
 
     it('debería manejar body JSON malformado', async () => {
-      const request = new NextRequest('http://localhost:3000/api/admin/tagging', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: '{"invalid": json}'
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/tagging',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{"invalid": json}',
+        }
+      );
 
       let response;
       try {
@@ -835,7 +870,7 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         expect(true).toBe(true);
         return;
       }
-      
+
       await response.json();
       expect(response.status).toBeLessThan(500);
     });
@@ -846,24 +881,24 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
           in: vi.fn(() => ({
             eq: vi.fn(() => ({
               mockResolvedValue: vi.fn().mockImplementation(() => {
-                return new Promise((_, reject) => 
+                return new Promise((_, reject) =>
                   setTimeout(() => reject(new Error('Database timeout')), 100)
                 );
-              })
-            }))
-          }))
-        }))
+              }),
+            })),
+          })),
+        })),
       }));
 
       const requestBody = {
         photoIds: [TEST_PHOTO_ID_1],
         subjectId: TEST_SUBJECT_ID,
-        eventId: TEST_EVENT_ID
+        eventId: TEST_EVENT_ID,
       };
 
       const request = createMockRequest('POST', requestBody);
       const response = await POST(request);
-      
+
       expect(response.status).toBe(500);
     });
   });
@@ -871,26 +906,30 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
   describe('Performance y Límites', () => {
     it('debería completar operaciones batch dentro de tiempo razonable', async () => {
       const startTime = Date.now();
-      
+
       // Setup mocks for successful batch operation
       mockSupabase.rpc.mockResolvedValue({ data: true, error: null });
       mockSupabase.from.mockReturnValue({
         insert: vi.fn().mockResolvedValue({ error: null }),
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            mockResolvedValue: vi.fn().mockResolvedValue({ data: [], error: null })
-          })
-        })
+            mockResolvedValue: vi
+              .fn()
+              .mockResolvedValue({ data: [], error: null }),
+          }),
+        }),
       });
 
-      const assignments = Array(50).fill(0).map((_, i) => ({
-        photoId: `photo-${i}`,
-        subjectId: TEST_SUBJECT_ID
-      }));
+      const assignments = Array(50)
+        .fill(0)
+        .map((_, i) => ({
+          photoId: `photo-${i}`,
+          subjectId: TEST_SUBJECT_ID,
+        }));
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments
+        assignments,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -902,14 +941,16 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
     });
 
     it('debería aplicar límite de 100 asignaciones por batch', async () => {
-      const assignments = Array(101).fill(0).map((_, i) => ({
-        photoId: `photo-${i}`,
-        subjectId: TEST_SUBJECT_ID
-      }));
+      const assignments = Array(101)
+        .fill(0)
+        .map((_, i) => ({
+          photoId: `photo-${i}`,
+          subjectId: TEST_SUBJECT_ID,
+        }));
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments
+        assignments,
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -928,10 +969,10 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
               eq: vi.fn(() => ({
                 single: vi.fn().mockResolvedValue({
                   data: { id: TEST_SUBJECT_ID },
-                  error: null
-                })
-              }))
-            }))
+                  error: null,
+                }),
+              })),
+            })),
           };
         }
         return { select: vi.fn().mockReturnThis() };
@@ -941,8 +982,8 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         eventId: TEST_EVENT_ID,
         subjectId: TEST_SUBJECT_ID,
         filterCriteria: {
-          limit: 600 // Excede el límite máximo de 500
-        }
+          limit: 600, // Excede el límite máximo de 500
+        },
       };
 
       const request = createMockRequest('PUT', requestBody);
@@ -963,15 +1004,18 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
         if (callCount === 1) {
           return Promise.resolve({ data: true, error: null });
         }
-        return Promise.resolve({ data: null, error: { message: 'Transaction failed' } });
+        return Promise.resolve({
+          data: null,
+          error: { message: 'Transaction failed' },
+        });
       });
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
         assignments: [
           { photoId: TEST_PHOTO_ID_1, subjectId: TEST_SUBJECT_ID },
-          { photoId: TEST_PHOTO_ID_2, subjectId: TEST_SUBJECT_ID }
-        ]
+          { photoId: TEST_PHOTO_ID_2, subjectId: TEST_SUBJECT_ID },
+        ],
       };
 
       const request = createMockRequest('POST', requestBody);
@@ -984,32 +1028,34 @@ describe('/api/admin/tagging - Comprehensive Tests', () => {
 
     it('debería mantener consistencia entre tablas photos y photo_subjects', async () => {
       mockSupabase.rpc.mockResolvedValue({ data: true, error: null });
-      
+
       let photoSubjectsInsertCalled = false;
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === 'photo_subjects') {
           photoSubjectsInsertCalled = true;
           return {
-            insert: vi.fn().mockResolvedValue({ error: null })
+            insert: vi.fn().mockResolvedValue({ error: null }),
           };
         }
-        
+
         if (table === 'photos') {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
-                mockResolvedValue: vi.fn().mockResolvedValue({ data: [], error: null })
-              }))
-            }))
+                mockResolvedValue: vi
+                  .fn()
+                  .mockResolvedValue({ data: [], error: null }),
+              })),
+            })),
           };
         }
-        
+
         return { select: vi.fn().mockReturnThis() };
       });
 
       const requestBody = {
         eventId: TEST_EVENT_ID,
-        assignments: [{ photoId: TEST_PHOTO_ID_1, subjectId: TEST_SUBJECT_ID }]
+        assignments: [{ photoId: TEST_PHOTO_ID_1, subjectId: TEST_SUBJECT_ID }],
       };
 
       const request = createMockRequest('POST', requestBody);

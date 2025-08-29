@@ -3,14 +3,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
-import { 
+import {
   calculateProductCartTotal,
-  formatProductPrice 
+  formatProductPrice,
 } from '@/lib/services/product-pricing';
-import { 
+import {
   EnhancedCartItem,
   PricingContext,
-  PriceCalculationRequest 
+  PriceCalculationRequest,
 } from '@/lib/types/products';
 
 export async function POST(request: NextRequest) {
@@ -27,46 +27,47 @@ export async function POST(request: NextRequest) {
 
     // Fetch products and combos data
     const productIds = selections
-      .filter(s => s.product_id)
-      .map(s => s.product_id!);
-    
-    const comboIds = selections
-      .filter(s => s.combo_id)
-      .map(s => s.combo_id!);
+      .filter((s) => s.product_id)
+      .map((s) => s.product_id!);
 
-    const [productsResult, combosResult, photosResult, eventPricingResult] = await Promise.all([
-      // Fetch products
-      productIds.length > 0 
-        ? supabase
-            .from('photo_products')
-            .select('*')
-            .in('id', productIds)
-        : { data: [], error: null },
-      
-      // Fetch combos
-      comboIds.length > 0
-        ? supabase
-            .from('combo_packages')
-            .select('*')
-            .in('id', comboIds)
-        : { data: [], error: null },
-      
-      // Fetch photos for metadata
-      supabase
-        .from('photos')
-        .select('id, original_filename, watermark_path')
-        .in('id', selections.map(s => s.photo_id)),
-      
-      // Fetch event-specific pricing
-      supabase
-        .from('event_product_pricing')
-        .select('*')
-        .eq('event_id', event_id)
-        .eq('is_active', true)
-    ]);
+    const comboIds = selections
+      .filter((s) => s.combo_id)
+      .map((s) => s.combo_id!);
+
+    const [productsResult, combosResult, photosResult, eventPricingResult] =
+      await Promise.all([
+        // Fetch products
+        productIds.length > 0
+          ? supabase.from('photo_products').select('*').in('id', productIds)
+          : { data: [], error: null },
+
+        // Fetch combos
+        comboIds.length > 0
+          ? supabase.from('combo_packages').select('*').in('id', comboIds)
+          : { data: [], error: null },
+
+        // Fetch photos for metadata
+        supabase
+          .from('photos')
+          .select('id, original_filename, watermark_path')
+          .in(
+            'id',
+            selections.map((s) => s.photo_id)
+          ),
+
+        // Fetch event-specific pricing
+        supabase
+          .from('event_product_pricing')
+          .select('*')
+          .eq('event_id', event_id)
+          .eq('is_active', true),
+      ]);
 
     if (productsResult.error) {
-      console.error('[Pricing API] Error fetching products:', productsResult.error);
+      console.error(
+        '[Pricing API] Error fetching products:',
+        productsResult.error
+      );
       return NextResponse.json(
         { success: false, error: 'Error al cargar productos' },
         { status: 500 }
@@ -90,7 +91,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (eventPricingResult.error) {
-      console.error('[Pricing API] Error fetching event pricing:', eventPricingResult.error);
+      console.error(
+        '[Pricing API] Error fetching event pricing:',
+        eventPricingResult.error
+      );
       // Don't fail the request, just log the error
     }
 
@@ -100,8 +104,8 @@ export async function POST(request: NextRequest) {
     const eventPricing = eventPricingResult.data || [];
 
     // Build enhanced cart items
-    const enhanced_items: EnhancedCartItem[] = selections.map(selection => {
-      const photo = photos.find(p => p.id === selection.photo_id);
+    const enhanced_items: EnhancedCartItem[] = selections.map((selection) => {
+      const photo = photos.find((p) => p.id === selection.photo_id);
       let product = null;
       let combo = null;
       let unit_price = 0;
@@ -109,7 +113,7 @@ export async function POST(request: NextRequest) {
       let product_specs: any = { type: 'print' };
 
       if (selection.product_id) {
-        product = products.find(p => p.id === selection.product_id);
+        product = products.find((p) => p.id === selection.product_id);
         if (product) {
           product_name = product.name;
           product_specs = {
@@ -118,27 +122,27 @@ export async function POST(request: NextRequest) {
             height_cm: product.height_cm,
             finish: product.finish,
             paper_quality: product.paper_quality,
-            is_digital: product.type === 'digital'
+            is_digital: product.type === 'digital',
           };
-          
+
           // Check for event-specific pricing
-          const eventPrice = eventPricing.find(ep => 
-            ep.product_id === product.id && ep.is_active
+          const eventPrice = eventPricing.find(
+            (ep) => ep.product_id === product.id && ep.is_active
           );
           unit_price = eventPrice?.override_price || product.base_price;
         }
       } else if (selection.combo_id) {
-        combo = combos.find(c => c.id === selection.combo_id);
+        combo = combos.find((c) => c.id === selection.combo_id);
         if (combo) {
           product_name = combo.name;
           product_specs = {
             type: 'combo' as const,
-            is_digital: false
+            is_digital: false,
           };
-          
+
           // Check for event-specific pricing
-          const eventPrice = eventPricing.find(ep => 
-            ep.combo_id === combo.id && ep.is_active
+          const eventPrice = eventPricing.find(
+            (ep) => ep.combo_id === combo.id && ep.is_active
           );
           unit_price = eventPrice?.override_price || combo.base_price;
         }
@@ -157,8 +161,8 @@ export async function POST(request: NextRequest) {
         watermark_url: photo?.watermark_path,
         metadata: {
           event_id,
-          context: 'family'
-        }
+          context: 'family',
+        },
       };
     });
 
@@ -167,7 +171,7 @@ export async function POST(request: NextRequest) {
       event_id,
       bulk_discount_threshold: 5,
       bulk_discount_percentage: 10,
-      tax_rate: 0 // No tax for now
+      tax_rate: 0, // No tax for now
     };
 
     // Calculate pricing
@@ -179,9 +183,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: calculation
+      data: calculation,
     });
-
   } catch (error) {
     console.error('[Pricing API] Unexpected error:', error);
     return NextResponse.json(
@@ -203,7 +206,10 @@ export async function GET(request: NextRequest) {
 
     if (!event_id || (!product_id && !combo_id)) {
       return NextResponse.json(
-        { success: false, error: 'event_id y (product_id o combo_id) son requeridos' },
+        {
+          success: false,
+          error: 'event_id y (product_id o combo_id) son requeridos',
+        },
         { status: 400 }
       );
     }
@@ -222,7 +228,10 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (pricingError && pricingError.code !== 'PGRST116') {
-      console.error('[Pricing API] Error fetching event pricing:', pricingError);
+      console.error(
+        '[Pricing API] Error fetching event pricing:',
+        pricingError
+      );
     }
 
     if (eventPricing) {
@@ -263,10 +272,12 @@ export async function GET(request: NextRequest) {
 
         name = combo.name;
         base_price = combo.base_price;
-        
+
         // Calculate combo price based on quantity (if per_photo pricing)
         if (combo.pricing_type === 'per_photo' && combo.price_per_photo) {
-          final_price = combo.base_price + (combo.price_per_photo * Math.max(0, quantity - 1));
+          final_price =
+            combo.base_price +
+            combo.price_per_photo * Math.max(0, quantity - 1);
         } else {
           final_price = combo.base_price;
         }
@@ -282,10 +293,9 @@ export async function GET(request: NextRequest) {
         total_price: final_price * quantity,
         quantity,
         formatted_price: formatProductPrice(final_price),
-        formatted_total: formatProductPrice(final_price * quantity)
-      }
+        formatted_total: formatProductPrice(final_price * quantity),
+      },
     });
-
   } catch (error) {
     console.error('[Pricing API] Unexpected error:', error);
     return NextResponse.json(

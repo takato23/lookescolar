@@ -61,7 +61,10 @@ export class QRDetectionService {
       const finalOptions = { ...this.DEFAULT_OPTIONS, ...options };
 
       // Process image for QR detection
-      const processedImages = await this.preprocessImageForQR(imageBuffer, finalOptions);
+      const processedImages = await this.preprocessImageForQR(
+        imageBuffer,
+        finalOptions
+      );
 
       const detectionResults: QRDetectionResult[] = [];
 
@@ -216,11 +219,19 @@ export class QRDetectionService {
 
     try {
       // Method 1: Try with jsQR (faster, simpler)
-      const jsQRResults = await this.scanWithJsQR(processedImage, eventId, options);
+      const jsQRResults = await this.scanWithJsQR(
+        processedImage,
+        eventId,
+        options
+      );
       results.push(...jsQRResults);
 
       // Method 2: Try with zxing-wasm (more robust)
-      const zxingResults = await this.scanWithZXing(processedImage, eventId, options);
+      const zxingResults = await this.scanWithZXing(
+        processedImage,
+        eventId,
+        options
+      );
       results.push(...zxingResults);
 
       return results;
@@ -242,11 +253,11 @@ export class QRDetectionService {
   ): Promise<QRDetectionResult[]> {
     try {
       // Dynamic import to handle potential module loading issues
-      const jsQR = await import('jsqr').then(m => m.default);
-      
+      const jsQR = await import('jsqr').then((m) => m.default);
+
       // Convert image to ImageData format expected by jsQR
       const imageData = await this.convertToImageData(processedImage);
-      
+
       if (!imageData) {
         return [];
       }
@@ -254,7 +265,8 @@ export class QRDetectionService {
       const results: QRDetectionResult[] = [];
 
       // Scan different regions of the image
-      for (const region of options.scanRegions || this.DEFAULT_OPTIONS.scanRegions!) {
+      for (const region of options.scanRegions ||
+        this.DEFAULT_OPTIONS.scanRegions!) {
         try {
           const regionData = this.extractRegion(imageData, region);
           const qrCodeResult = jsQR(
@@ -275,12 +287,24 @@ export class QRDetectionService {
                 qrCode: qrCodeResult.data,
                 data: studentData,
                 confidence: this.calculateConfidence(qrCodeResult),
-                position: qrCodeResult.location ? {
-                  x: qrCodeResult.location.topLeftCorner.x + (region.x * processedImage.width),
-                  y: qrCodeResult.location.topLeftCorner.y + (region.y * processedImage.height),
-                  width: Math.abs(qrCodeResult.location.topRightCorner.x - qrCodeResult.location.topLeftCorner.x),
-                  height: Math.abs(qrCodeResult.location.bottomLeftCorner.y - qrCodeResult.location.topLeftCorner.y),
-                } : undefined,
+                position: qrCodeResult.location
+                  ? {
+                      x:
+                        qrCodeResult.location.topLeftCorner.x +
+                        region.x * processedImage.width,
+                      y:
+                        qrCodeResult.location.topLeftCorner.y +
+                        region.y * processedImage.height,
+                      width: Math.abs(
+                        qrCodeResult.location.topRightCorner.x -
+                          qrCodeResult.location.topLeftCorner.x
+                      ),
+                      height: Math.abs(
+                        qrCodeResult.location.bottomLeftCorner.y -
+                          qrCodeResult.location.topLeftCorner.y
+                      ),
+                    }
+                  : undefined,
               });
             }
           }
@@ -313,10 +337,10 @@ export class QRDetectionService {
     try {
       // Dynamic import for ZXing WASM
       const { readBarcodes } = await import('zxing-wasm');
-      
+
       // Convert processed image to format expected by ZXing
       const imageData = await this.convertToImageData(processedImage);
-      
+
       if (!imageData) {
         return [];
       }
@@ -327,7 +351,7 @@ export class QRDetectionService {
       for (const rotation of options.rotateDegrees || [0]) {
         try {
           let currentImageData = imageData;
-          
+
           // Rotate image if needed
           if (rotation !== 0) {
             currentImageData = await this.rotateImageData(imageData, rotation);
@@ -349,12 +373,18 @@ export class QRDetectionService {
                   qrCode: barcode.text,
                   data: studentData,
                   confidence: 0.9, // ZXing doesn't provide confidence scores
-                  position: barcode.position ? {
-                    x: barcode.position.topLeft.x,
-                    y: barcode.position.topLeft.y,
-                    width: barcode.position.topRight.x - barcode.position.topLeft.x,
-                    height: barcode.position.bottomLeft.y - barcode.position.topLeft.y,
-                  } : undefined,
+                  position: barcode.position
+                    ? {
+                        x: barcode.position.topLeft.x,
+                        y: barcode.position.topLeft.y,
+                        width:
+                          barcode.position.topRight.x -
+                          barcode.position.topLeft.x,
+                        height:
+                          barcode.position.bottomLeft.y -
+                          barcode.position.topLeft.y,
+                      }
+                    : undefined,
                 });
               }
             }
@@ -379,11 +409,13 @@ export class QRDetectionService {
   /**
    * Convert processed image to ImageData format
    */
-  private async convertToImageData(processedImage: ProcessedImage): Promise<ImageData | null> {
+  private async convertToImageData(
+    processedImage: ProcessedImage
+  ): Promise<ImageData | null> {
     try {
       // Ensure we have RGBA data
       let buffer = processedImage.buffer;
-      
+
       if (processedImage.channels !== 4) {
         // Convert to RGBA
         buffer = await sharp(processedImage.buffer)
@@ -392,9 +424,7 @@ export class QRDetectionService {
           .toBuffer();
       } else {
         // Extract raw pixel data
-        buffer = await sharp(processedImage.buffer)
-          .raw()
-          .toBuffer();
+        buffer = await sharp(processedImage.buffer).raw().toBuffer();
       }
 
       // Create ImageData compatible object
@@ -430,7 +460,7 @@ export class QRDetectionService {
         const srcIndex = ((startY + y) * imageData.width + (startX + x)) * 4;
         const destIndex = (y * regionWidth + x) * 4;
 
-        regionData[destIndex] = imageData.data[srcIndex];     // R
+        regionData[destIndex] = imageData.data[srcIndex]; // R
         regionData[destIndex + 1] = imageData.data[srcIndex + 1]; // G
         regionData[destIndex + 2] = imageData.data[srcIndex + 2]; // B
         regionData[destIndex + 3] = imageData.data[srcIndex + 3]; // A
@@ -447,7 +477,10 @@ export class QRDetectionService {
   /**
    * Rotate ImageData by specified degrees
    */
-  private async rotateImageData(imageData: ImageData, degrees: number): Promise<ImageData> {
+  private async rotateImageData(
+    imageData: ImageData,
+    degrees: number
+  ): Promise<ImageData> {
     // For now, return original - rotation implementation would be complex
     // In production, you might want to use canvas or image processing library
     return imageData;
@@ -476,7 +509,9 @@ export class QRDetectionService {
   /**
    * Remove duplicate QR detection results
    */
-  private deduplicateQRResults(results: QRDetectionResult[]): QRDetectionResult[] {
+  private deduplicateQRResults(
+    results: QRDetectionResult[]
+  ): QRDetectionResult[] {
     const seen = new Set<string>();
     const uniqueResults: QRDetectionResult[] = [];
 
@@ -497,7 +532,9 @@ export class QRDetectionService {
   async batchDetectQRCodes(
     images: Array<{ buffer: Buffer; filename: string; eventId?: string }>,
     options: QRDetectionOptions = {}
-  ): Promise<Array<{ filename: string; qrCodes: QRDetectionResult[]; error?: string }>> {
+  ): Promise<
+    Array<{ filename: string; qrCodes: QRDetectionResult[]; error?: string }>
+  > {
     const requestId = crypto.randomUUID();
     const startTime = Date.now();
 

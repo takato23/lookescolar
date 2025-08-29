@@ -37,9 +37,9 @@ const pdfOptionsSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const eventId = params.id;
+  const eventId = (await params).id;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
 
@@ -253,9 +253,9 @@ export async function GET(
 // Endpoint POST para generar PDF con configuración avanzada
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const eventId = params.id;
+  const eventId = (await params).id;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   try {

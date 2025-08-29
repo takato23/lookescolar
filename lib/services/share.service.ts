@@ -90,10 +90,12 @@ class ShareService {
   /**
    * Create a new share token
    */
-  async createShare(options: CreateShareOptions): Promise<ServiceResult<{
-    shareToken: ShareToken;
-    shareUrl: string;
-  }>> {
+  async createShare(options: CreateShareOptions): Promise<
+    ServiceResult<{
+      shareToken: ShareToken;
+      shareUrl: string;
+    }>
+  > {
     try {
       const {
         eventId,
@@ -126,13 +128,16 @@ class ShareService {
       // Validate folder if specified
       if (shareType === 'folder' && folderId) {
         const { data: folder, error: folderError } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('id, event_id')
           .eq('id', folderId)
           .single();
 
         if (folderError || !folder || folder.event_id !== eventId) {
-          return { success: false, error: 'Folder not found or does not belong to event' };
+          return {
+            success: false,
+            error: 'Folder not found or does not belong to event',
+          };
         }
       }
 
@@ -147,9 +152,14 @@ class ShareService {
           return { success: false, error: 'Some photos not found' };
         }
 
-        const invalidPhotos = photos.filter(photo => photo.event_id !== eventId);
+        const invalidPhotos = photos.filter(
+          (photo) => photo.event_id !== eventId
+        );
         if (invalidPhotos.length > 0) {
-          return { success: false, error: 'Some photos do not belong to this event' };
+          return {
+            success: false,
+            error: 'Some photos do not belong to this event',
+          };
         }
       }
 
@@ -159,7 +169,10 @@ class ShareService {
       // Hash password if provided
       let passwordHash: string | null = null;
       if (password) {
-        passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+        passwordHash = crypto
+          .createHash('sha256')
+          .update(password)
+          .digest('hex');
       }
 
       // Create share token record
@@ -191,12 +204,16 @@ class ShareService {
         .single();
 
       if (shareError) {
-        logger.error('Failed to create share token', { options, error: shareError.message });
+        logger.error('Failed to create share token', {
+          options,
+          error: shareError.message,
+        });
         return { success: false, error: 'Failed to create share token' };
       }
 
       // Generate public URL
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const shareUrl = `${baseUrl}/share/${token}`;
 
       logger.info('Successfully created share token', {
@@ -218,7 +235,8 @@ class ShareService {
       logger.error('Unexpected error in createShare', { options, error });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create share',
+        error:
+          error instanceof Error ? error.message : 'Failed to create share',
       };
     }
   }
@@ -226,7 +244,9 @@ class ShareService {
   /**
    * Validate access to a share and return content
    */
-  async validateAccess(options: ValidateAccessOptions): Promise<ServiceResult<ShareAccess>> {
+  async validateAccess(
+    options: ValidateAccessOptions
+  ): Promise<ServiceResult<ShareAccess>> {
     try {
       const { token, password, ipAddress, userAgent } = options;
 
@@ -245,13 +265,15 @@ class ShareService {
       }
 
       // Check expiration
-      const isExpired = shareToken.expires_at && new Date(shareToken.expires_at) < new Date();
+      const isExpired =
+        shareToken.expires_at && new Date(shareToken.expires_at) < new Date();
       if (isExpired) {
         return { success: false, error: 'Share has expired' };
       }
 
       // Check view limit
-      const isViewLimitReached = shareToken.max_views && shareToken.view_count >= shareToken.max_views;
+      const isViewLimitReached =
+        shareToken.max_views && shareToken.view_count >= shareToken.max_views;
       if (isViewLimitReached) {
         return { success: false, error: 'Share view limit reached' };
       }
@@ -274,7 +296,10 @@ class ShareService {
           };
         }
 
-        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+        const hashedPassword = crypto
+          .createHash('sha256')
+          .update(password)
+          .digest('hex');
         if (hashedPassword !== shareToken.password_hash) {
           return { success: false, error: 'Invalid password' };
         }
@@ -305,8 +330,8 @@ class ShareService {
       // Get folder details if applicable
       if (shareToken.share_type === 'folder' && shareToken.folder_id) {
         const { data: folder, error: folderError } = await supabase
-          .from('event_folders')
-          .select('id, name, folder_path')
+          .from('folders')
+          .select('id, name')
           .eq('id', shareToken.folder_id)
           .single();
 
@@ -323,7 +348,8 @@ class ShareService {
       if (shareToken.share_type === 'photos' && shareToken.photo_ids) {
         const { data: photos, error: photosError } = await supabase
           .from('photos')
-          .select(`
+          .select(
+            `
             id,
             original_filename,
             storage_path,
@@ -333,7 +359,8 @@ class ShareService {
             width,
             height,
             metadata
-          `)
+          `
+          )
           .in('id', shareToken.photo_ids)
           .eq('approved', true); // Only approved photos for sharing
 
@@ -344,7 +371,8 @@ class ShareService {
         // Get all approved photos in the folder
         const { data: photos, error: photosError } = await supabase
           .from('photos')
-          .select(`
+          .select(
+            `
             id,
             original_filename,
             storage_path,
@@ -354,7 +382,8 @@ class ShareService {
             width,
             height,
             metadata
-          `)
+          `
+          )
           .eq('folder_id', shareToken.folder_id)
           .eq('approved', true)
           .order('created_at', { ascending: false });
@@ -366,7 +395,8 @@ class ShareService {
         // Get all approved photos in the event
         const { data: photos, error: photosError } = await supabase
           .from('photos')
-          .select(`
+          .select(
+            `
             id,
             original_filename,
             storage_path,
@@ -376,7 +406,8 @@ class ShareService {
             width,
             height,
             metadata
-          `)
+          `
+          )
           .eq('event_id', shareToken.event_id)
           .eq('approved', true)
           .order('created_at', { ascending: false });
@@ -417,7 +448,8 @@ class ShareService {
       logger.error('Unexpected error in validateAccess', { options, error });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to validate access',
+        error:
+          error instanceof Error ? error.message : 'Failed to validate access',
       };
     }
   }
@@ -460,9 +492,10 @@ class ShareService {
               path = photo.preview_path;
             }
 
-            const { data: signedUrlData, error: urlError } = await supabase.storage
-              .from('photos')
-              .createSignedUrl(path, expirySeconds);
+            const { data: signedUrlData, error: urlError } =
+              await supabase.storage
+                .from('photos')
+                .createSignedUrl(path, expirySeconds);
 
             if (urlError) {
               logger.warn('Failed to generate signed URL for shared photo', {
@@ -485,10 +518,17 @@ class ShareService {
 
       return { success: true, data: urlMap };
     } catch (error) {
-      logger.error('Unexpected error in generateSharePhotoUrls', { shareToken, photoIds, error });
+      logger.error('Unexpected error in generateSharePhotoUrls', {
+        shareToken,
+        photoIds,
+        error,
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate signed URLs',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate signed URLs',
       };
     }
   }
@@ -511,7 +551,10 @@ class ShareService {
         .single();
 
       if (error) {
-        logger.error('Failed to deactivate share', { shareId, error: error.message });
+        logger.error('Failed to deactivate share', {
+          shareId,
+          error: error.message,
+        });
         return { success: false, error: error.message };
       }
 
@@ -520,7 +563,8 @@ class ShareService {
       logger.error('Unexpected error in deactivateShare', { shareId, error });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to deactivate share',
+        error:
+          error instanceof Error ? error.message : 'Failed to deactivate share',
       };
     }
   }
@@ -539,7 +583,10 @@ class ShareService {
         .order('created_at', { ascending: false });
 
       if (error) {
-        logger.error('Failed to fetch event shares', { eventId, error: error.message });
+        logger.error('Failed to fetch event shares', {
+          eventId,
+          error: error.message,
+        });
         return { success: false, error: error.message };
       }
 
@@ -548,7 +595,8 @@ class ShareService {
       logger.error('Unexpected error in getEventShares', { eventId, error });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch shares',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch shares',
       };
     }
   }

@@ -4,7 +4,12 @@ export interface WorkflowTrigger {
   id: string;
   name: string;
   description: string;
-  event_type: 'order_created' | 'status_changed' | 'payment_received' | 'overdue_order' | 'delivery_reminder';
+  event_type:
+    | 'order_created'
+    | 'status_changed'
+    | 'payment_received'
+    | 'overdue_order'
+    | 'delivery_reminder';
   conditions: WorkflowCondition[];
   actions: WorkflowAction[];
   enabled: boolean;
@@ -14,12 +19,24 @@ export interface WorkflowTrigger {
 
 export interface WorkflowCondition {
   field: string;
-  operator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' | 'in';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'greater_than'
+    | 'less_than'
+    | 'contains'
+    | 'in';
   value: any;
 }
 
 export interface WorkflowAction {
-  type: 'send_email' | 'send_sms' | 'update_status' | 'assign_priority' | 'create_reminder' | 'webhook';
+  type:
+    | 'send_email'
+    | 'send_sms'
+    | 'update_status'
+    | 'assign_priority'
+    | 'create_reminder'
+    | 'webhook';
   parameters: Record<string, any>;
 }
 
@@ -71,21 +88,33 @@ export class OrderWorkflowService {
     const startTime = Date.now();
 
     try {
-      console.log(`[Order Workflow] Executing workflows for order ${context.order.id}, event: ${context.trigger_event}`);
+      console.log(
+        `[Order Workflow] Executing workflows for order ${context.order.id}, event: ${context.trigger_event}`
+      );
 
       // Get active workflows for this event type
-      const workflows = await this.getActiveWorkflows(context.trigger_event as any);
+      const workflows = await this.getActiveWorkflows(
+        context.trigger_event as any
+      );
 
       const executionResults = [];
 
       for (const workflow of workflows) {
         try {
-          const shouldExecute = this.evaluateConditions(workflow.conditions, context);
-          
+          const shouldExecute = this.evaluateConditions(
+            workflow.conditions,
+            context
+          );
+
           if (shouldExecute) {
-            console.log(`[Order Workflow] Executing workflow: ${workflow.name}`);
-            
-            const result = await this.executeWorkflowActions(workflow.actions, context);
+            console.log(
+              `[Order Workflow] Executing workflow: ${workflow.name}`
+            );
+
+            const result = await this.executeWorkflowActions(
+              workflow.actions,
+              context
+            );
             executionResults.push({
               workflow_id: workflow.id,
               workflow_name: workflow.name,
@@ -95,11 +124,19 @@ export class OrderWorkflowService {
             });
 
             // Log workflow execution
-            await this.logWorkflowExecution(workflow.id, context.order.id, 'success', result);
+            await this.logWorkflowExecution(
+              workflow.id,
+              context.order.id,
+              'success',
+              result
+            );
           }
         } catch (error) {
-          console.error(`[Order Workflow] Failed to execute workflow ${workflow.name}:`, error);
-          
+          console.error(
+            `[Order Workflow] Failed to execute workflow ${workflow.name}:`,
+            error
+          );
+
           executionResults.push({
             workflow_id: workflow.id,
             workflow_name: workflow.name,
@@ -108,20 +145,30 @@ export class OrderWorkflowService {
           });
 
           // Log workflow failure
-          await this.logWorkflowExecution(workflow.id, context.order.id, 'failed', [
-            { action: 'error', error: error instanceof Error ? error.message : 'Unknown error' }
-          ]);
+          await this.logWorkflowExecution(
+            workflow.id,
+            context.order.id,
+            'failed',
+            [
+              {
+                action: 'error',
+                error: error instanceof Error ? error.message : 'Unknown error',
+              },
+            ]
+          );
         }
       }
 
       const duration = Date.now() - startTime;
-      console.log(`[Order Workflow] Completed workflow execution in ${duration}ms`, {
-        order_id: context.order.id,
-        workflows_executed: executionResults.filter(r => r.success).length,
-        total_workflows: workflows.length,
-        duration,
-      });
-
+      console.log(
+        `[Order Workflow] Completed workflow execution in ${duration}ms`,
+        {
+          order_id: context.order.id,
+          workflows_executed: executionResults.filter((r) => r.success).length,
+          total_workflows: workflows.length,
+          duration,
+        }
+      );
     } catch (error) {
       console.error('[Order Workflow] Failed to execute workflows:', error);
       throw error;
@@ -131,7 +178,9 @@ export class OrderWorkflowService {
   /**
    * Get active workflows for a specific event type
    */
-  private async getActiveWorkflows(eventType: WorkflowTrigger['event_type']): Promise<WorkflowTrigger[]> {
+  private async getActiveWorkflows(
+    eventType: WorkflowTrigger['event_type']
+  ): Promise<WorkflowTrigger[]> {
     // In a real implementation, this would fetch from database
     // For now, return predefined workflows
     const defaultWorkflows: WorkflowTrigger[] = [
@@ -156,7 +205,7 @@ export class OrderWorkflowService {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
-      
+
       // Payment received notification
       {
         id: 'wf_payment_received',
@@ -237,18 +286,27 @@ export class OrderWorkflowService {
       },
     ];
 
-    return defaultWorkflows.filter(wf => wf.event_type === eventType && wf.enabled);
+    return defaultWorkflows.filter(
+      (wf) => wf.event_type === eventType && wf.enabled
+    );
   }
 
   /**
    * Evaluate workflow conditions against context
    */
-  private evaluateConditions(conditions: WorkflowCondition[], context: OrderWorkflowContext): boolean {
+  private evaluateConditions(
+    conditions: WorkflowCondition[],
+    context: OrderWorkflowContext
+  ): boolean {
     if (conditions.length === 0) return true;
 
-    return conditions.every(condition => {
+    return conditions.every((condition) => {
       const fieldValue = this.getFieldValue(condition.field, context);
-      return this.evaluateCondition(fieldValue, condition.operator, condition.value);
+      return this.evaluateCondition(
+        fieldValue,
+        condition.operator,
+        condition.value
+      );
     });
   }
 
@@ -270,7 +328,11 @@ export class OrderWorkflowService {
   /**
    * Evaluate a single condition
    */
-  private evaluateCondition(fieldValue: any, operator: WorkflowCondition['operator'], expectedValue: any): boolean {
+  private evaluateCondition(
+    fieldValue: any,
+    operator: WorkflowCondition['operator'],
+    expectedValue: any
+  ): boolean {
     switch (operator) {
       case 'equals':
         return fieldValue === expectedValue;
@@ -281,9 +343,13 @@ export class OrderWorkflowService {
       case 'less_than':
         return Number(fieldValue) < Number(expectedValue);
       case 'contains':
-        return String(fieldValue).toLowerCase().includes(String(expectedValue).toLowerCase());
+        return String(fieldValue)
+          .toLowerCase()
+          .includes(String(expectedValue).toLowerCase());
       case 'in':
-        return Array.isArray(expectedValue) && expectedValue.includes(fieldValue);
+        return (
+          Array.isArray(expectedValue) && expectedValue.includes(fieldValue)
+        );
       default:
         return false;
     }
@@ -292,7 +358,10 @@ export class OrderWorkflowService {
   /**
    * Execute workflow actions
    */
-  private async executeWorkflowActions(actions: WorkflowAction[], context: OrderWorkflowContext): Promise<any[]> {
+  private async executeWorkflowActions(
+    actions: WorkflowAction[],
+    context: OrderWorkflowContext
+  ): Promise<any[]> {
     const results = [];
 
     for (const action of actions) {
@@ -304,7 +373,10 @@ export class OrderWorkflowService {
           result,
         });
       } catch (error) {
-        console.error(`[Order Workflow] Failed to execute action ${action.type}:`, error);
+        console.error(
+          `[Order Workflow] Failed to execute action ${action.type}:`,
+          error
+        );
         results.push({
           action: action.type,
           success: false,
@@ -319,26 +391,29 @@ export class OrderWorkflowService {
   /**
    * Execute a single action
    */
-  private async executeAction(action: WorkflowAction, context: OrderWorkflowContext): Promise<any> {
+  private async executeAction(
+    action: WorkflowAction,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     switch (action.type) {
       case 'send_email':
         return this.sendEmail(action.parameters, context);
-      
+
       case 'send_sms':
         return this.sendSMS(action.parameters, context);
-      
+
       case 'update_status':
         return this.updateOrderStatus(action.parameters, context);
-      
+
       case 'assign_priority':
         return this.assignPriority(action.parameters, context);
-      
+
       case 'create_reminder':
         return this.createReminder(action.parameters, context);
-      
+
       case 'webhook':
         return this.callWebhook(action.parameters, context);
-      
+
       default:
         throw new Error(`Unknown action type: ${action.type}`);
     }
@@ -347,19 +422,24 @@ export class OrderWorkflowService {
   /**
    * Send email notification
    */
-  private async sendEmail(parameters: any, context: OrderWorkflowContext): Promise<any> {
+  private async sendEmail(
+    parameters: any,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     const { template, to, subject } = parameters;
-    
+
     // Replace template variables
     const resolvedTo = this.replaceVariables(to, context);
     const resolvedSubject = this.replaceVariables(subject, context);
-    
-    console.log(`[Order Workflow] Sending email to ${resolvedTo} with subject: ${resolvedSubject}`);
-    
+
+    console.log(
+      `[Order Workflow] Sending email to ${resolvedTo} with subject: ${resolvedSubject}`
+    );
+
     // In a real implementation, integrate with email service (SendGrid, AWS SES, etc.)
     // For now, just log the email
     const emailContent = await this.renderEmailTemplate(template, context);
-    
+
     // Simulate email sending
     return {
       email_id: `email_${Date.now()}`,
@@ -373,14 +453,17 @@ export class OrderWorkflowService {
   /**
    * Send SMS notification
    */
-  private async sendSMS(parameters: any, context: OrderWorkflowContext): Promise<any> {
+  private async sendSMS(
+    parameters: any,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     const { template, to } = parameters;
-    
+
     const resolvedTo = this.replaceVariables(to, context);
     const smsContent = await this.renderSMSTemplate(template, context);
-    
+
     console.log(`[Order Workflow] Sending SMS to ${resolvedTo}: ${smsContent}`);
-    
+
     // In a real implementation, integrate with SMS service (Twilio, AWS SNS, etc.)
     return {
       sms_id: `sms_${Date.now()}`,
@@ -394,9 +477,12 @@ export class OrderWorkflowService {
   /**
    * Update order status
    */
-  private async updateOrderStatus(parameters: any, context: OrderWorkflowContext): Promise<any> {
+  private async updateOrderStatus(
+    parameters: any,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     const { status, notes } = parameters;
-    
+
     const { error } = await this.supabase
       .from('orders')
       .update({
@@ -414,9 +500,12 @@ export class OrderWorkflowService {
   /**
    * Assign priority to order
    */
-  private async assignPriority(parameters: any, context: OrderWorkflowContext): Promise<any> {
+  private async assignPriority(
+    parameters: any,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     const { priority_level } = parameters;
-    
+
     const { error } = await this.supabase
       .from('orders')
       .update({
@@ -433,15 +522,21 @@ export class OrderWorkflowService {
   /**
    * Create reminder
    */
-  private async createReminder(parameters: any, context: OrderWorkflowContext): Promise<any> {
+  private async createReminder(
+    parameters: any,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     const { reminder_type, remind_at, message } = parameters;
-    
+
     // In a real implementation, store in reminders table
-    console.log(`[Order Workflow] Creating reminder for order ${context.order.id}:`, {
-      type: reminder_type,
-      remind_at,
-      message: this.replaceVariables(message, context),
-    });
+    console.log(
+      `[Order Workflow] Creating reminder for order ${context.order.id}:`,
+      {
+        type: reminder_type,
+        remind_at,
+        message: this.replaceVariables(message, context),
+      }
+    );
 
     return {
       reminder_id: `reminder_${Date.now()}`,
@@ -455,13 +550,18 @@ export class OrderWorkflowService {
   /**
    * Call webhook
    */
-  private async callWebhook(parameters: any, context: OrderWorkflowContext): Promise<any> {
+  private async callWebhook(
+    parameters: any,
+    context: OrderWorkflowContext
+  ): Promise<any> {
     const { url, method = 'POST', headers = {}, payload } = parameters;
-    
-    const resolvedPayload = payload ? this.replaceVariables(JSON.stringify(payload), context) : null;
-    
+
+    const resolvedPayload = payload
+      ? this.replaceVariables(JSON.stringify(payload), context)
+      : null;
+
     console.log(`[Order Workflow] Calling webhook: ${method} ${url}`);
-    
+
     // In a real implementation, make HTTP request
     return {
       webhook_id: `webhook_${Date.now()}`,
@@ -475,41 +575,74 @@ export class OrderWorkflowService {
   /**
    * Replace template variables with actual values
    */
-  private replaceVariables(template: string, context: OrderWorkflowContext): string {
+  private replaceVariables(
+    template: string,
+    context: OrderWorkflowContext
+  ): string {
     let result = template;
-    
+
     // Replace order variables
     result = result.replace(/\{\{order\.id\}\}/g, context.order.id);
     result = result.replace(/\{\{order\.status\}\}/g, context.order.status);
-    result = result.replace(/\{\{order\.contact_name\}\}/g, context.order.contact_name);
-    result = result.replace(/\{\{order\.contact_email\}\}/g, context.order.contact_email);
-    result = result.replace(/\{\{order\.total_amount\}\}/g, (context.order.total_cents / 100).toFixed(2));
-    
+    result = result.replace(
+      /\{\{order\.contact_name\}\}/g,
+      context.order.contact_name
+    );
+    result = result.replace(
+      /\{\{order\.contact_email\}\}/g,
+      context.order.contact_email
+    );
+    result = result.replace(
+      /\{\{order\.total_amount\}\}/g,
+      (context.order.total_cents / 100).toFixed(2)
+    );
+
     // Replace event variables
     if (context.order.event) {
-      result = result.replace(/\{\{order\.event\.name\}\}/g, context.order.event.name);
-      result = result.replace(/\{\{order\.event\.school\}\}/g, context.order.event.school);
-      result = result.replace(/\{\{order\.event\.date\}\}/g, context.order.event.date);
+      result = result.replace(
+        /\{\{order\.event\.name\}\}/g,
+        context.order.event.name
+      );
+      result = result.replace(
+        /\{\{order\.event\.school\}\}/g,
+        context.order.event.school
+      );
+      result = result.replace(
+        /\{\{order\.event\.date\}\}/g,
+        context.order.event.date
+      );
     }
-    
+
     // Replace subject variables
     if (context.order.subject) {
-      result = result.replace(/\{\{order\.subject\.name\}\}/g, context.order.subject.name);
-      result = result.replace(/\{\{order\.subject\.type\}\}/g, context.order.subject.type);
+      result = result.replace(
+        /\{\{order\.subject\.name\}\}/g,
+        context.order.subject.name
+      );
+      result = result.replace(
+        /\{\{order\.subject\.type\}\}/g,
+        context.order.subject.type
+      );
     }
-    
+
     // Replace other variables
     if (context.previous_status) {
-      result = result.replace(/\{\{previous_status\}\}/g, context.previous_status);
+      result = result.replace(
+        /\{\{previous_status\}\}/g,
+        context.previous_status
+      );
     }
-    
+
     return result;
   }
 
   /**
    * Render email template
    */
-  private async renderEmailTemplate(templateName: string, context: OrderWorkflowContext): Promise<string> {
+  private async renderEmailTemplate(
+    templateName: string,
+    context: OrderWorkflowContext
+  ): Promise<string> {
     const templates = {
       order_confirmation: `
         <h2>Order Confirmation</h2>
@@ -556,12 +689,19 @@ export class OrderWorkflowService {
   /**
    * Render SMS template
    */
-  private async renderSMSTemplate(templateName: string, context: OrderWorkflowContext): Promise<string> {
+  private async renderSMSTemplate(
+    templateName: string,
+    context: OrderWorkflowContext
+  ): Promise<string> {
     const templates = {
-      order_confirmation: 'Order {{order.id}} confirmed for {{order.event.name}}. Amount: \${{order.total_amount}}. Thank you!',
-      payment_confirmation: 'Payment confirmed for order {{order.id}}. Photos are being processed. - LookEscolar',
-      delivery_confirmation: 'Your order {{order.id}} has been delivered! Thank you for choosing LookEscolar.',
-      payment_reminder: 'Reminder: Payment pending for order {{order.id}} - {{order.event.name}}. Amount: \${{order.total_amount}}}',
+      order_confirmation:
+        'Order {{order.id}} confirmed for {{order.event.name}}. Amount: \${{order.total_amount}}. Thank you!',
+      payment_confirmation:
+        'Payment confirmed for order {{order.id}}. Photos are being processed. - LookEscolar',
+      delivery_confirmation:
+        'Your order {{order.id}} has been delivered! Thank you for choosing LookEscolar.',
+      payment_reminder:
+        'Reminder: Payment pending for order {{order.id}} - {{order.event.name}}. Amount: \${{order.total_amount}}}',
     };
 
     const template = templates[templateName as keyof typeof templates] || '';
@@ -572,9 +712,9 @@ export class OrderWorkflowService {
    * Log workflow execution
    */
   private async logWorkflowExecution(
-    workflowId: string, 
-    orderId: string, 
-    status: 'success' | 'failed', 
+    workflowId: string,
+    orderId: string,
+    status: 'success' | 'failed',
     results: any[]
   ): Promise<void> {
     try {
@@ -599,21 +739,27 @@ export class OrderWorkflowService {
     try {
       console.log('[Order Workflow] Checking for overdue orders...');
 
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const twentyFourHoursAgo = new Date(
+        Date.now() - 24 * 60 * 60 * 1000
+      ).toISOString();
 
       const { data: overdueOrders, error } = await this.supabase
         .from('orders')
-        .select(`
+        .select(
+          `
           id, status, contact_name, contact_email, contact_phone, total_cents, created_at,
           events(name, school, date),
           subjects(name, type)
-        `)
+        `
+        )
         .eq('status', 'pending')
         .lt('created_at', twentyFourHoursAgo);
 
       if (error) throw error;
 
-      console.log(`[Order Workflow] Found ${overdueOrders?.length || 0} overdue orders`);
+      console.log(
+        `[Order Workflow] Found ${overdueOrders?.length || 0} overdue orders`
+      );
 
       for (const order of overdueOrders || []) {
         const context: OrderWorkflowContext = {
@@ -625,27 +771,36 @@ export class OrderWorkflowService {
             contact_phone: order.contact_phone,
             total_cents: order.total_cents,
             created_at: order.created_at,
-            event: (order as any).events ? {
-              name: (order as any).events.name,
-              school: (order as any).events.school,
-              date: (order as any).events.date,
-            } : undefined,
-            subject: (order as any).subjects ? {
-              name: (order as any).subjects.name,
-              type: (order as any).subjects.type,
-            } : undefined,
+            event: (order as any).events
+              ? {
+                  name: (order as any).events.name,
+                  school: (order as any).events.school,
+                  date: (order as any).events.date,
+                }
+              : undefined,
+            subject: (order as any).subjects
+              ? {
+                  name: (order as any).subjects.name,
+                  type: (order as any).subjects.type,
+                }
+              : undefined,
           },
           trigger_event: 'overdue_order',
           metadata: {
-            hours_overdue: Math.floor((Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60)),
+            hours_overdue: Math.floor(
+              (Date.now() - new Date(order.created_at).getTime()) /
+                (1000 * 60 * 60)
+            ),
           },
         };
 
         await this.executeWorkflows(context);
       }
-
     } catch (error) {
-      console.error('[Order Workflow] Failed to process overdue orders:', error);
+      console.error(
+        '[Order Workflow] Failed to process overdue orders:',
+        error
+      );
       throw error;
     }
   }
@@ -668,7 +823,11 @@ export class OrderWorkflowService {
   /**
    * Trigger workflow for status change
    */
-  async triggerStatusChanged(orderId: string, newStatus: string, previousStatus: string): Promise<void> {
+  async triggerStatusChanged(
+    orderId: string,
+    newStatus: string,
+    previousStatus: string
+  ): Promise<void> {
     const order = await this.getOrderForWorkflow(orderId);
     if (!order) return;
 
@@ -684,15 +843,19 @@ export class OrderWorkflowService {
   /**
    * Get order data for workflow context
    */
-  private async getOrderForWorkflow(orderId: string): Promise<OrderWorkflowContext['order'] | null> {
+  private async getOrderForWorkflow(
+    orderId: string
+  ): Promise<OrderWorkflowContext['order'] | null> {
     try {
       const { data: order, error } = await this.supabase
         .from('orders')
-        .select(`
+        .select(
+          `
           id, status, contact_name, contact_email, contact_phone, total_cents, created_at,
           events(name, school, date),
           subjects(name, type)
-        `)
+        `
+        )
         .eq('id', orderId)
         .single();
 
@@ -706,18 +869,25 @@ export class OrderWorkflowService {
         contact_phone: order.contact_phone,
         total_cents: order.total_cents,
         created_at: order.created_at,
-        event: (order as any).events ? {
-          name: (order as any).events.name,
-          school: (order as any).events.school,
-          date: (order as any).events.date,
-        } : undefined,
-        subject: (order as any).subjects ? {
-          name: (order as any).subjects.name,
-          type: (order as any).subjects.type,
-        } : undefined,
+        event: (order as any).events
+          ? {
+              name: (order as any).events.name,
+              school: (order as any).events.school,
+              date: (order as any).events.date,
+            }
+          : undefined,
+        subject: (order as any).subjects
+          ? {
+              name: (order as any).subjects.name,
+              type: (order as any).subjects.type,
+            }
+          : undefined,
       };
     } catch (error) {
-      console.error('[Order Workflow] Failed to get order for workflow:', error);
+      console.error(
+        '[Order Workflow] Failed to get order for workflow:',
+        error
+      );
       return null;
     }
   }

@@ -6,7 +6,8 @@ export function FeaturesSection() {
     {
       icon: Shield,
       title: '100% Seguro',
-      description: 'Las fotos originales nunca se suben. Solo previews con watermark.',
+      description:
+        'Las fotos originales nunca se suben. Solo previews con watermark.',
     },
     {
       icon: Camera,
@@ -34,7 +35,10 @@ export function FeaturesSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {features.map((feature, index) => (
-            <Card key={index} className="p-8 transition-all duration-500 hover:scale-105">
+            <Card
+              key={index}
+              className="p-8 transition-all duration-500 hover:scale-105"
+            >
               <div className="mb-6">
                 <feature.icon className="h-12 w-12 text-primary-500" />
               </div>

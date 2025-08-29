@@ -1,6 +1,6 @@
 /**
  * Apple-Grade Cache Management System for Vercel Deployments
- * 
+ *
  * Automatically cleans cache on deployment to prevent storage bloat
  * Monitors and optimizes cache usage for optimal performance
  */
@@ -32,9 +32,13 @@ class AppleGradeCacheManager {
   private constructor() {
     this.config = {
       autoCleanupOnDeploy: process.env.CACHE_AUTO_CLEANUP_ON_DEPLOY === 'true',
-      cleanupIntervalMinutes: parseInt(process.env.CACHE_CLEANUP_INTERVAL_MINUTES || '30', 10),
+      cleanupIntervalMinutes: parseInt(
+        process.env.CACHE_CLEANUP_INTERVAL_MINUTES || '30',
+        10
+      ),
       maxCacheAgeHours: parseInt(process.env.CACHE_MAX_AGE_HOURS || '24', 10),
-      enableVercelCleanup: process.env.VERCEL === '1' || process.env.NOW_REGION !== undefined,
+      enableVercelCleanup:
+        process.env.VERCEL === '1' || process.env.NOW_REGION !== undefined,
     };
 
     this.initialize();
@@ -54,14 +58,14 @@ class AppleGradeCacheManager {
         () => this.performSmartCleanup(),
         this.config.cleanupIntervalMinutes * 60 * 1000
       );
-      
+
       logger.info('cache_manager_initialized', {
         config: this.config,
         businessMetric: {
           type: 'cache_management',
           value: this.config.cleanupIntervalMinutes,
-          unit: 'minutes'
-        }
+          unit: 'minutes',
+        },
       });
     }
 
@@ -81,7 +85,7 @@ class AppleGradeCacheManager {
         entriesRemoved: 0,
         storageFreedMB: 0,
         executionTimeMs: 0,
-        cacheHitRate: apiCache.getStats().hitRate
+        cacheHitRate: apiCache.getStats().hitRate,
       };
     }
 
@@ -91,10 +95,10 @@ class AppleGradeCacheManager {
     try {
       // Clean API cache entries
       const apiEntriesRemoved = apiCache.cleanup();
-      
+
       // Clean storage service cache
-      const storageEntriesRemoved = storageService['cleanExpiredCache'] 
-        ? storageService['cleanExpiredCache']() 
+      const storageEntriesRemoved = storageService['cleanExpiredCache']
+        ? storageService['cleanExpiredCache']()
         : 0;
 
       // Clean old signed URLs
@@ -106,13 +110,14 @@ class AppleGradeCacheManager {
       }
 
       const executionTimeMs = Date.now() - startTime;
-      const totalEntriesRemoved = apiEntriesRemoved + storageEntriesRemoved + signedUrlEntriesRemoved;
-      
+      const totalEntriesRemoved =
+        apiEntriesRemoved + storageEntriesRemoved + signedUrlEntriesRemoved;
+
       const metrics: CleanupMetrics = {
         entriesRemoved: totalEntriesRemoved,
-        storageFreedMB: Math.round((totalEntriesRemoved * 0.1) * 100) / 100, // Estimate 0.1MB per entry
+        storageFreedMB: Math.round(totalEntriesRemoved * 0.1 * 100) / 100, // Estimate 0.1MB per entry
         executionTimeMs,
-        cacheHitRate: apiCache.getStats().hitRate
+        cacheHitRate: apiCache.getStats().hitRate,
       };
 
       logger.info('cache_cleanup_completed', {
@@ -120,17 +125,17 @@ class AppleGradeCacheManager {
         businessMetric: {
           type: 'cache_cleanup',
           value: totalEntriesRemoved,
-          unit: 'entries'
-        }
+          unit: 'entries',
+        },
       });
 
       return metrics;
     } catch (error) {
       logger.error('cache_cleanup_failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       throw error;
     } finally {
       this.isCleanupRunning = false;
@@ -143,22 +148,22 @@ class AppleGradeCacheManager {
   async performDeploymentCleanup(): Promise<CleanupMetrics> {
     logger.info('vercel_deployment_cache_cleanup_started', {
       environment: process.env.VERCEL_ENV || 'unknown',
-      region: process.env.NOW_REGION || 'unknown'
+      region: process.env.NOW_REGION || 'unknown',
     });
 
     // Force cleanup of all caches
     const metrics = await this.performSmartCleanup();
-    
+
     // Additional Vercel-specific cleanup
     await this.cleanupVercelSpecificCaches();
-    
+
     logger.info('vercel_deployment_cache_cleanup_completed', {
       metrics,
       businessMetric: {
         type: 'deployment_cleanup',
         value: metrics.entriesRemoved,
-        unit: 'entries'
-      }
+        unit: 'entries',
+      },
     });
 
     return metrics;
@@ -174,7 +179,7 @@ class AppleGradeCacheManager {
       return 0;
     } catch (error) {
       logger.warn('signed_url_cleanup_failed', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
       return 0;
     }
@@ -189,7 +194,10 @@ class AppleGradeCacheManager {
         const cacheNames = await caches.keys();
         for (const cacheName of cacheNames) {
           // Only clean old caches, keep current version
-          if (cacheName.includes('lookescolar') && !cacheName.includes(process.env.BUILD_VERSION || '')) {
+          if (
+            cacheName.includes('lookescolar') &&
+            !cacheName.includes(process.env.BUILD_VERSION || '')
+          ) {
             await caches.delete(cacheName);
             logger.debug('browser_cache_deleted', { cacheName });
           }
@@ -197,7 +205,7 @@ class AppleGradeCacheManager {
       }
     } catch (error) {
       logger.warn('browser_cache_cleanup_failed', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -209,16 +217,16 @@ class AppleGradeCacheManager {
     try {
       // Clean up any Vercel-specific cache directories or files
       // This is more of a conceptual implementation since we're in a Next.js app
-      
+
       // In a real implementation, you might want to:
       // 1. Clean up temporary files in /tmp directory
       // 2. Clear any build artifacts that might be cached
       // 3. Reset any Vercel-specific environment caches
-      
+
       logger.debug('vercel_specific_cache_cleanup_completed');
     } catch (error) {
       logger.warn('vercel_specific_cache_cleanup_failed', {
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -234,13 +242,15 @@ class AppleGradeCacheManager {
     config: CacheCleanupConfig;
   } {
     const apiStats = apiCache.getStats();
-    
+
     return {
       apiCacheEntries: apiStats.totalEntries,
-      storageCacheEntries: storageService['urlCache'] ? storageService['urlCache'].size : 0,
+      storageCacheEntries: storageService['urlCache']
+        ? storageService['urlCache'].size
+        : 0,
       hitRate: apiStats.hitRate,
       lastCleanup: null, // Would need to track this
-      config: this.config
+      config: this.config,
     };
   }
 
@@ -260,7 +270,7 @@ class AppleGradeCacheManager {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
-    
+
     logger.info('cache_manager_stopped');
   }
 }
@@ -282,6 +292,6 @@ export async function vercelDeploymentCacheCleanup() {
     entriesRemoved: 0,
     storageFreedMB: 0,
     executionTimeMs: 0,
-    cacheHitRate: 0
+    cacheHitRate: 0,
   };
 }

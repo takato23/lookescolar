@@ -49,7 +49,7 @@ const BulkAssignSchema = z.object({
 });
 
 // POST: Batch assign photos to subjects
-export const POST = withAuth(async function(request: NextRequest) {
+export const POST = withAuth(async function (request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -64,14 +64,15 @@ export const POST = withAuth(async function(request: NextRequest) {
 
     // Try QR tagging schema first (simplified workflow)
     let isQRTagging = false;
-    let eventId: string, assignments: Array<{photoId: string, subjectId: string}>;
+    let eventId: string,
+      assignments: Array<{ photoId: string; subjectId: string }>;
 
     try {
       const qrData = QRTaggingBatchSchema.parse(body);
       isQRTagging = true;
       eventId = qrData.eventId;
       // Convert to assignments format
-      assignments = qrData.photoIds.map(photoId => ({
+      assignments = qrData.photoIds.map((photoId) => ({
         photoId,
         subjectId: qrData.studentId,
       }));
@@ -96,7 +97,7 @@ export const POST = withAuth(async function(request: NextRequest) {
     }
 
     // Validate photos exist and belong to event
-    const photoIds = assignments.map(a => a.photoId);
+    const photoIds = assignments.map((a) => a.photoId);
     const { data: photos, error: photosError } = await supabase
       .from('photos')
       .select('id, approved, event_id')
@@ -110,7 +111,7 @@ export const POST = withAuth(async function(request: NextRequest) {
         eventId,
         photoCount: photoIds.length,
       });
-      
+
       return NextResponse.json(
         { error: 'Failed to validate photos', details: photosError.message },
         { status: 500 }
@@ -118,9 +119,9 @@ export const POST = withAuth(async function(request: NextRequest) {
     }
 
     if (!photos || photos.length !== photoIds.length) {
-      const foundIds = photos?.map(p => p.id) || [];
-      const missingIds = photoIds.filter(id => !foundIds.includes(id));
-      
+      const foundIds = photos?.map((p) => p.id) || [];
+      const missingIds = photoIds.filter((id) => !foundIds.includes(id));
+
       logger.warn('Some photos not found or not in event', {
         requestId,
         eventId,
@@ -130,26 +131,28 @@ export const POST = withAuth(async function(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { 
+        {
           error: 'Some photos not found or do not belong to this event',
           details: {
             expected: photoIds.length,
             found: photos?.length || 0,
             missing: missingIds.length,
-          }
+          },
         },
         { status: 400 }
       );
     }
 
     // Check for unapproved photos
-    const unapprovedPhotos = photos.filter(p => !p.approved);
+    const unapprovedPhotos = photos.filter((p) => !p.approved);
     if (unapprovedPhotos.length > 0) {
       logger.warn('Cannot tag unapproved photos', {
         requestId,
         eventId,
         unapprovedCount: unapprovedPhotos.length,
-        unapprovedIds: unapprovedPhotos.map(p => p.id.substring(0, 8) + '***'),
+        unapprovedIds: unapprovedPhotos.map(
+          (p) => p.id.substring(0, 8) + '***'
+        ),
       });
 
       return NextResponse.json(
@@ -158,7 +161,7 @@ export const POST = withAuth(async function(request: NextRequest) {
           details: {
             unapprovedCount: unapprovedPhotos.length,
             message: 'All photos must be approved before tagging',
-          }
+          },
         },
         { status: 400 }
       );
@@ -170,10 +173,11 @@ export const POST = withAuth(async function(request: NextRequest) {
       .select('photo_id, subject_id')
       .in('photo_id', photoIds);
 
-    const duplicates = assignments.filter(assignment => 
-      existingAssignments?.some(existing => 
-        existing.photo_id === assignment.photoId && 
-        existing.subject_id === assignment.subjectId
+    const duplicates = assignments.filter((assignment) =>
+      existingAssignments?.some(
+        (existing) =>
+          existing.photo_id === assignment.photoId &&
+          existing.subject_id === assignment.subjectId
       )
     );
 
@@ -186,11 +190,13 @@ export const POST = withAuth(async function(request: NextRequest) {
     }
 
     // Filter out duplicates for processing
-    const newAssignments = assignments.filter(assignment => 
-      !existingAssignments?.some(existing => 
-        existing.photo_id === assignment.photoId && 
-        existing.subject_id === assignment.subjectId
-      )
+    const newAssignments = assignments.filter(
+      (assignment) =>
+        !existingAssignments?.some(
+          (existing) =>
+            existing.photo_id === assignment.photoId &&
+            existing.subject_id === assignment.subjectId
+        )
     );
 
     if (newAssignments.length === 0) {
@@ -251,7 +257,7 @@ export const POST = withAuth(async function(request: NextRequest) {
         error: photoSubjectsError.message,
         insertCount: photoSubjectInserts.length,
       });
-      
+
       // This is a secondary operation, don't fail the entire operation
     }
 
@@ -279,13 +285,14 @@ export const POST = withAuth(async function(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: isQRTagging 
-        ? `Successfully assigned ${newAssignments.length} photos to student` 
+      message: isQRTagging
+        ? `Successfully assigned ${newAssignments.length} photos to student`
         : `Successfully assigned ${newAssignments.length} photos in batch`,
       data: {
         assignedCount: newAssignments.length,
         duplicateCount: duplicates.length,
-        skippedCount: assignments.length - newAssignments.length - duplicates.length,
+        skippedCount:
+          assignments.length - newAssignments.length - duplicates.length,
         workflowType: isQRTagging ? 'qr_tagging' : 'standard_batch',
         stats: {
           totalPhotos,
@@ -325,7 +332,7 @@ export const POST = withAuth(async function(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         message: 'Failed to process batch tagging request',
         requestId,
@@ -336,7 +343,7 @@ export const POST = withAuth(async function(request: NextRequest) {
 });
 
 // DELETE: Batch unassign photos
-export const DELETE = withAuth(async function(request: NextRequest) {
+export const DELETE = withAuth(async function (request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -375,8 +382,8 @@ export const DELETE = withAuth(async function(request: NextRequest) {
     }
 
     if (!photos || photos.length !== photoIds.length) {
-      const foundIds = photos?.map(p => p.id) || [];
-      const missingIds = photoIds.filter(id => !foundIds.includes(id));
+      const foundIds = photos?.map((p) => p.id) || [];
+      const missingIds = photoIds.filter((id) => !foundIds.includes(id));
 
       logger.warn('Some photos not found for unassign', {
         requestId,
@@ -387,13 +394,13 @@ export const DELETE = withAuth(async function(request: NextRequest) {
       });
 
       return NextResponse.json(
-        { 
+        {
           error: 'Some photos do not exist or do not belong to this event',
           details: {
             expected: photoIds.length,
             found: photos?.length || 0,
             missing: missingIds.length,
-          }
+          },
         },
         { status: 400 }
       );
@@ -497,7 +504,7 @@ export const DELETE = withAuth(async function(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         message: 'Failed to process batch unassign request',
         requestId,
@@ -508,7 +515,7 @@ export const DELETE = withAuth(async function(request: NextRequest) {
 });
 
 // PUT: Bulk assign photos based on criteria
-export const PUT = withAuth(async function(request: NextRequest) {
+export const PUT = withAuth(async function (request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -519,7 +526,9 @@ export const PUT = withAuth(async function(request: NextRequest) {
     logger.info('Bulk assign request received', {
       requestId,
       eventId: body.eventId,
-      subjectId: body.subjectId ? `sub_${body.subjectId.substring(0, 8)}***` : undefined,
+      subjectId: body.subjectId
+        ? `sub_${body.subjectId.substring(0, 8)}***`
+        : undefined,
       hasFilterCriteria: !!body.filterCriteria,
     });
 
@@ -628,7 +637,7 @@ export const PUT = withAuth(async function(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         message: 'Failed to process bulk assign request',
         requestId,

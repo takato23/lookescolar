@@ -103,53 +103,39 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       // Si se solicitan estadísticas, obtener estadísticas reales de la BD
       if (includeStats && events && events.length > 0) {
+        const { UnifiedPhotoService } = await import('@/lib/services/unified-photo.service');
+        const photoService = new UnifiedPhotoService(serviceClient as any);
+
         const eventsStatsPromises = events.map(async (event) => {
-          // Obtener estadísticas reales para cada evento
-          const [subjectsStats, photosStats, ordersStats] = await Promise.all([
-            // Contar sujetos
+          const [subjectsStats, photoCount, ordersStats] = await Promise.all([
             serviceClient
               .from('subjects')
               .select('*', { count: 'exact', head: true })
               .eq('event_id', event.id),
-
-            // Contar fotos con diferentes estados
-            serviceClient
-              .from('photos')
-              .select('id, approved, subject_id, created_at')
-              .eq('event_id', event.id),
-
-            // Contar órdenes con diferentes estados
+            photoService.getEventPhotoCount(event.id),
             serviceClient
               .from('orders')
               .select('id, status, total_amount, created_at')
               .eq('event_id', event.id),
           ]);
 
-          const photos = photosStats.data || [];
           const orders = ordersStats.data || [];
 
           const stats = {
             totalSubjects: subjectsStats.count || 0,
-            totalPhotos: photos.length,
-            approvedPhotos: photos.filter((p) => p.approved).length,
-            untaggedPhotos: photos.filter((p) => p.subject_id === null).length,
+            totalPhotos: photoCount || 0,
+            approvedPhotos: null,
+            untaggedPhotos: null,
             totalOrders: orders.length,
             pendingOrders: orders.filter((o) => o.status === 'pending').length,
-            approvedOrders: orders.filter((o) => o.status === 'approved')
-              .length,
-            deliveredOrders: orders.filter((o) => o.status === 'delivered')
-              .length,
-            revenue: Math.round(orders
-              .filter((o) => ['approved', 'delivered'].includes(o.status))
-              .reduce((sum, order) => sum + (order.total_amount || 0), 0) / 100), // Convert cents to pesos
-            lastPhotoUploaded:
-              photos.length > 0
-                ? photos.sort(
-                    (a, b) =>
-                      new Date(b.created_at).getTime() -
-                      new Date(a.created_at).getTime()
-                  )[0].created_at
-                : null,
+            approvedOrders: orders.filter((o) => o.status === 'approved').length,
+            deliveredOrders: orders.filter((o) => o.status === 'delivered').length,
+            revenue: Math.round(
+              orders
+                .filter((o) => ['approved', 'delivered'].includes(o.status))
+                .reduce((sum, order) => sum + (order.total_amount || 0), 0) / 100
+            ),
+            lastPhotoUploaded: null,
             lastOrderCreated:
               orders.length > 0
                 ? orders.sort(
@@ -158,11 +144,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
                       new Date(a.created_at).getTime()
                   )[0].created_at
                 : null,
-          };
+          } as any;
 
           return {
             ...event,
-            school: event.name || event.location, // Map name to school for compatibility
+            school: event.name || event.location,
             active: event.status === 'active',
             stats,
           };

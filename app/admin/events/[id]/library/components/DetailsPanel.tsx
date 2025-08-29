@@ -2,19 +2,19 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  X, 
-  Download, 
-  Share, 
-  Move, 
-  Trash2, 
-  CheckCircle2, 
+import {
+  X,
+  Download,
+  Share,
+  Move,
+  Trash2,
+  CheckCircle2,
   XCircle,
   Calendar,
   HardDrive,
   Camera,
   Eye,
-  EyeOff
+  EyeOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -83,9 +83,9 @@ export function DetailsPanel({
 
   if (!selectedPhoto) {
     return (
-      <div className="h-full flex flex-col">
+      <div className="flex h-full flex-col">
         {/* Panel header */}
-        <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-3">
           <h3 className="text-sm font-medium text-gray-700">Detalles</h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
@@ -93,17 +93,16 @@ export function DetailsPanel({
         </div>
 
         {/* Empty state */}
-        <div className="flex-1 flex items-center justify-center p-6">
+        <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
-            <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <div className="text-sm font-medium text-gray-900 mb-2">
+            <Camera className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <div className="mb-2 text-sm font-medium text-gray-900">
               Selecciona una foto
             </div>
             <div className="text-xs text-gray-500">
-              {selectedItemsCount > 0 
+              {selectedItemsCount > 0
                 ? `${selectedItemsCount} elemento${selectedItemsCount !== 1 ? 's' : ''} seleccionado${selectedItemsCount !== 1 ? 's' : ''}`
-                : 'Haz clic en una foto para ver sus detalles'
-              }
+                : 'Haz clic en una foto para ver sus detalles'}
             </div>
           </div>
         </div>
@@ -112,10 +111,12 @@ export function DetailsPanel({
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="flex h-full flex-col bg-white">
       {/* Panel header */}
-      <div className="p-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700">Detalles de la foto</h3>
+      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-3">
+        <h3 className="text-sm font-medium text-gray-700">
+          Detalles de la foto
+        </h3>
         <Button variant="ghost" size="sm" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -123,15 +124,15 @@ export function DetailsPanel({
 
       {/* Photo preview */}
       <div className="border-b border-gray-200">
-        <div className="aspect-square bg-gray-100 relative">
+        <div className="relative aspect-square bg-gray-100">
           {selectedPhoto.signed_url && !imageError ? (
             <Image
               src={selectedPhoto.signed_url}
               alt={selectedPhoto.original_filename}
               fill
               className={cn(
-                "object-cover transition-opacity duration-200",
-                imageLoaded ? "opacity-100" : "opacity-0"
+                'object-cover transition-opacity duration-200',
+                imageLoaded ? 'opacity-100' : 'opacity-0'
               )}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
@@ -144,23 +145,23 @@ export function DetailsPanel({
           )}
 
           {/* Status overlay */}
-          <div className="absolute top-2 left-2">
-            <Badge 
-              variant={selectedPhoto.approved ? "default" : "secondary"}
+          <div className="absolute left-2 top-2">
+            <Badge
+              variant={selectedPhoto.approved ? 'default' : 'secondary'}
               className={cn(
-                "text-xs",
-                selectedPhoto.approved 
-                  ? "bg-green-100 text-green-800" 
-                  : "bg-yellow-100 text-yellow-800"
+                'text-xs',
+                selectedPhoto.approved
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-yellow-100 text-yellow-800'
               )}
             >
-              {selectedPhoto.approved ? "Aprobada" : "Pendiente"}
+              {selectedPhoto.approved ? 'Aprobada' : 'Pendiente'}
             </Badge>
           </div>
 
           {selectedPhoto.processing_status !== 'completed' && (
-            <div className="absolute top-2 right-2">
-              <Badge variant="outline" className="text-xs bg-white">
+            <div className="absolute right-2 top-2">
+              <Badge variant="outline" className="bg-white text-xs">
                 Procesando
               </Badge>
             </div>
@@ -170,36 +171,44 @@ export function DetailsPanel({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-auto">
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 p-4">
           {/* File info */}
           <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Información del archivo</h4>
+            <h4 className="mb-2 text-sm font-medium text-gray-900">
+              Información del archivo
+            </h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Nombre:</span>
-                <span className="text-gray-900 font-mono text-xs truncate ml-2" title={selectedPhoto.original_filename}>
+                <span
+                  className="ml-2 truncate font-mono text-xs text-gray-900"
+                  title={selectedPhoto.original_filename}
+                >
                   {selectedPhoto.original_filename}
                 </span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-gray-600">Dimensiones:</span>
                 <span className="text-gray-900">
                   {selectedPhoto.width} × {selectedPhoto.height}
                 </span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-gray-600">Tamaño:</span>
                 <span className="text-gray-900">
                   {formatFileSize(selectedPhoto.file_size)}
                 </span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-gray-600">Formato:</span>
                 <span className="text-gray-900">
-                  {selectedPhoto.original_filename.split('.').pop()?.toUpperCase() || 'N/A'}
+                  {selectedPhoto.original_filename
+                    .split('.')
+                    .pop()
+                    ?.toUpperCase() || 'N/A'}
                 </span>
               </div>
             </div>
@@ -209,27 +218,33 @@ export function DetailsPanel({
 
           {/* Status info */}
           <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Estado</h4>
+            <h4 className="mb-2 text-sm font-medium text-gray-900">Estado</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Procesamiento:</span>
-                <Badge 
-                  variant={selectedPhoto.processing_status === 'completed' ? "default" : "secondary"}
+                <Badge
+                  variant={
+                    selectedPhoto.processing_status === 'completed'
+                      ? 'default'
+                      : 'secondary'
+                  }
                   className="text-xs"
                 >
-                  {selectedPhoto.processing_status === 'completed' ? 'Completado' : 'Pendiente'}
+                  {selectedPhoto.processing_status === 'completed'
+                    ? 'Completado'
+                    : 'Pendiente'}
                 </Badge>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-gray-600">Aprobación:</span>
-                <Badge 
-                  variant={selectedPhoto.approved ? "default" : "secondary"}
+                <Badge
+                  variant={selectedPhoto.approved ? 'default' : 'secondary'}
                   className={cn(
-                    "text-xs",
-                    selectedPhoto.approved 
-                      ? "bg-green-100 text-green-800" 
-                      : "bg-yellow-100 text-yellow-800"
+                    'text-xs',
+                    selectedPhoto.approved
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
                   )}
                 >
                   {selectedPhoto.approved ? 'Aprobada' : 'Pendiente'}
@@ -242,22 +257,22 @@ export function DetailsPanel({
 
           {/* Timestamps */}
           <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Fechas</h4>
+            <h4 className="mb-2 text-sm font-medium text-gray-900">Fechas</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-start justify-between">
-                <span className="text-gray-600 flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
+                <span className="flex items-center text-gray-600">
+                  <Calendar className="mr-1 h-3 w-3" />
                   Subida:
                 </span>
-                <span className="text-gray-900 text-xs text-right">
+                <span className="text-right text-xs text-gray-900">
                   {formatDate(selectedPhoto.created_at)}
                 </span>
               </div>
-              
+
               {selectedPhoto.updated_at !== selectedPhoto.created_at && (
                 <div className="flex items-start justify-between">
                   <span className="text-gray-600">Actualizada:</span>
-                  <span className="text-gray-900 text-xs text-right">
+                  <span className="text-right text-xs text-gray-900">
                     {formatDate(selectedPhoto.updated_at)}
                   </span>
                 </div>
@@ -266,47 +281,56 @@ export function DetailsPanel({
           </div>
 
           {/* Metadata */}
-          {selectedPhoto.metadata && Object.keys(selectedPhoto.metadata).length > 0 && (
-            <>
-              <Separator />
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Metadatos</h4>
-                <div className="space-y-1 text-xs">
-                  {Object.entries(selectedPhoto.metadata).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="text-gray-600 capitalize">
-                        {key.replace(/_/g, ' ')}:
-                      </span>
-                      <span className="text-gray-900 truncate ml-2">
-                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                      </span>
-                    </div>
-                  ))}
+          {selectedPhoto.metadata &&
+            Object.keys(selectedPhoto.metadata).length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h4 className="mb-2 text-sm font-medium text-gray-900">
+                    Metadatos
+                  </h4>
+                  <div className="space-y-1 text-xs">
+                    {Object.entries(selectedPhoto.metadata).map(
+                      ([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="capitalize text-gray-600">
+                            {key.replace(/_/g, ' ')}:
+                          </span>
+                          <span className="ml-2 truncate text-gray-900">
+                            {typeof value === 'object'
+                              ? JSON.stringify(value)
+                              : String(value)}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
         </div>
       </div>
 
       {/* Action buttons */}
-      <div className="p-4 border-t border-gray-200 space-y-2">
+      <div className="space-y-2 border-t border-gray-200 p-4">
         {/* Primary actions */}
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onApprove?.(selectedPhoto.id, !selectedPhoto.approved)}
+            onClick={() =>
+              onApprove?.(selectedPhoto.id, !selectedPhoto.approved)
+            }
             className="flex items-center justify-center"
           >
             {selectedPhoto.approved ? (
               <>
-                <EyeOff className="h-3 w-3 mr-1" />
+                <EyeOff className="mr-1 h-3 w-3" />
                 Ocultar
               </>
             ) : (
               <>
-                <Eye className="h-3 w-3 mr-1" />
+                <Eye className="mr-1 h-3 w-3" />
                 Aprobar
               </>
             )}
@@ -318,7 +342,7 @@ export function DetailsPanel({
             onClick={() => onShare?.(selectedPhoto.id)}
             className="flex items-center justify-center"
           >
-            <Share className="h-3 w-3 mr-1" />
+            <Share className="mr-1 h-3 w-3" />
             Compartir
           </Button>
         </div>
@@ -331,7 +355,7 @@ export function DetailsPanel({
             onClick={() => onMove?.(selectedPhoto.id)}
             className="flex items-center justify-center"
           >
-            <Move className="h-3 w-3 mr-1" />
+            <Move className="mr-1 h-3 w-3" />
             Mover
           </Button>
 
@@ -341,7 +365,7 @@ export function DetailsPanel({
             onClick={() => onDownload?.(selectedPhoto.id)}
             className="flex items-center justify-center"
           >
-            <Download className="h-3 w-3 mr-1" />
+            <Download className="mr-1 h-3 w-3" />
             Descargar
           </Button>
         </div>
@@ -351,9 +375,9 @@ export function DetailsPanel({
           variant="outline"
           size="sm"
           onClick={() => onDelete?.(selectedPhoto.id)}
-          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+          className="w-full border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50"
         >
-          <Trash2 className="h-3 w-3 mr-2" />
+          <Trash2 className="mr-2 h-3 w-3" />
           Eliminar foto
         </Button>
       </div>

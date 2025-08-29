@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Calendar, ArrowLeft, Home, Sparkles, TrendingUp, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  Calendar,
+  ArrowLeft,
+  Home,
+  Sparkles,
+  TrendingUp,
+  ChevronRight,
+} from 'lucide-react';
 import { EventCard } from '@/components/admin/EventCard';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -97,16 +105,22 @@ const mockEvents = [
 export default function EventsDemoPage() {
   // Calculate statistics for the dashboard
   const totalEvents = mockEvents.length;
-  const totalPhotos = mockEvents.reduce((sum, event) => sum + (event.stats?.totalPhotos || 0), 0);
-  const totalRevenue = mockEvents.reduce((sum, event) => sum + (event.stats?.revenue || 0), 0);
+  const totalPhotos = mockEvents.reduce(
+    (sum, event) => sum + (event.stats?.totalPhotos || 0),
+    0
+  );
+  const totalRevenue = mockEvents.reduce(
+    (sum, event) => sum + (event.stats?.revenue || 0),
+    0
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto space-y-6 lg:space-y-8 p-4 sm:p-6">
+      <div className="container mx-auto space-y-6 p-4 sm:p-6 lg:space-y-8">
         {/* Enhanced Header with Breadcrumbs and Stats */}
         <div className="relative animate-fade-in">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-xl" />
-          <div className="relative liquid-glass-card-ios26 p-6 sm:p-8 rounded-2xl border border-white/20 shadow-xl">
+          <div className="liquid-glass-card-ios26 relative rounded-2xl border border-white/20 p-6 shadow-xl sm:p-8">
             {/* Breadcrumbs */}
             <nav className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
               <Link
@@ -117,18 +131,20 @@ export default function EventsDemoPage() {
                 Dashboard
               </Link>
               <ChevronRight className="h-4 w-4 text-gray-400" />
-              <span className="font-medium text-gray-900 dark:text-white">Eventos</span>
+              <span className="font-medium text-gray-900 dark:text-white">
+                Eventos
+              </span>
             </nav>
 
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3 sm:gap-4">
                 <Link href="/admin">
-                  <button className="liquid-glass-button-ios26 rounded-full p-2 hover:bg-white/10 transition-colors">
+                  <button className="liquid-glass-button-ios26 rounded-full p-2 transition-colors hover:bg-white/10">
                     <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                   </button>
                 </Link>
                 <div>
-                  <h1 className="gradient-text-ios26 mb-2 text-2xl sm:text-3xl md:text-4xl font-bold">
+                  <h1 className="gradient-text-ios26 mb-2 text-2xl font-bold sm:text-3xl md:text-4xl">
                     Eventos
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-300 sm:text-base">
@@ -136,46 +152,60 @@ export default function EventsDemoPage() {
                   </p>
                 </div>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-3">
+
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Link href="/admin/events/new">
-                  <button className="liquid-glass-button-ios26 shadow-lg px-4 py-2 sm:px-6 sm:py-3 rounded-xl flex items-center gap-2 hover:bg-white/10 transition-all">
+                  <button className="liquid-glass-button-ios26 flex items-center gap-2 rounded-xl px-4 py-2 shadow-lg transition-all hover:bg-white/10 sm:px-6 sm:py-3">
                     <Plus className="h-5 w-5" />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Nuevo Evento</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">
+                      Nuevo Evento
+                    </span>
                   </button>
                 </Link>
               </div>
             </div>
-            
+
             {/* Stats Dashboard */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="glass-stat-card-ios26 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100/50 dark:bg-blue-900/30">
+                <div className="rounded-lg bg-blue-100/50 p-2 dark:bg-blue-900/30">
                   <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Total Eventos</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{totalEvents}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Total Eventos
+                  </p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {totalEvents}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="glass-stat-card-ios26 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-100/50 dark:bg-purple-900/30">
+                <div className="rounded-lg bg-purple-100/50 p-2 dark:bg-purple-900/30">
                   <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Fotos Totales</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{totalPhotos}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Fotos Totales
+                  </p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {totalPhotos}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="glass-stat-card-ios26 flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100/50 dark:bg-green-900/30">
+                <div className="rounded-lg bg-green-100/50 p-2 dark:bg-green-900/30">
                   <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Ingresos Totales</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Ingresos Totales
+                  </p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    ${totalRevenue.toLocaleString()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -184,17 +214,14 @@ export default function EventsDemoPage() {
 
         {/* Events Content */}
         <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {mockEvents.map((event, index) => (
               <div
                 key={event.id}
                 className="animate-slide-up"
                 style={{ animationDelay: `${0.1 + index * 0.05}s` }}
               >
-                <EventCard 
-                  event={event} 
-                  className="h-full flex flex-col"
-                />
+                <EventCard event={event} className="flex h-full flex-col" />
               </div>
             ))}
           </div>

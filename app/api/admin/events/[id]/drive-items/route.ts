@@ -38,10 +38,12 @@ export async function GET(
       // Get event levels
       const { data: levels } = await supabase
         .from('event_levels')
-        .select(`
+        .select(
+          `
           id, name, description, active, sort_order,
           courses:courses(count)
-        `)
+        `
+        )
         .eq('event_id', eventId)
         .eq('active', true)
         .order('sort_order');
@@ -57,23 +59,27 @@ export async function GET(
 
           const { data: levelStudents } = await supabase
             .from('students')
-            .select(`
+            .select(
+              `
               id,
               courses:courses!inner(level_id)
-            `)
+            `
+            )
             .eq('courses.level_id', level.id)
             .eq('active', true);
 
           const { data: levelPhotos } = await supabase
             .from('photos')
-            .select(`
+            .select(
+              `
               id,
               photo_students!inner(
                 students!inner(
                   courses!inner(level_id)
                 )
               )
-            `)
+            `
+            )
             .eq('photo_students.students.courses.level_id', level.id);
 
           items.push({
@@ -84,19 +90,21 @@ export async function GET(
             studentCount: levelStudents?.length || 0,
             isActive: level.active,
             metadata: {
-              level: level.name
-            }
+              level: level.name,
+            },
           });
         }
       } else {
         // No levels, show courses directly
         const { data: courses } = await supabase
           .from('courses')
-          .select(`
+          .select(
+            `
             id, name, grade, section, active, sort_order,
             students:students(count),
             level:event_levels(name)
-          `)
+          `
+          )
           .eq('event_id', eventId)
           .eq('active', true)
           .order('sort_order');
@@ -105,12 +113,14 @@ export async function GET(
           for (const course of courses) {
             const { data: coursePhotos } = await supabase
               .from('photos')
-              .select(`
+              .select(
+                `
                 id,
                 photo_students!inner(
                   students!inner(course_id)
                 )
-              `)
+              `
+              )
               .eq('photo_students.students.course_id', course.id);
 
             items.push({
@@ -123,8 +133,8 @@ export async function GET(
               metadata: {
                 course: course.name,
                 grade: course.grade,
-                section: course.section
-              }
+                section: course.section,
+              },
             });
           }
         }
@@ -133,13 +143,15 @@ export async function GET(
     // Level selected - show courses in that level
     else if (pathSegments.length === 1) {
       const levelId = pathSegments[0];
-      
+
       const { data: courses } = await supabase
         .from('courses')
-        .select(`
+        .select(
+          `
           id, name, grade, section, active, sort_order,
           students:students(count)
-        `)
+        `
+        )
         .eq('level_id', levelId)
         .eq('active', true)
         .order('sort_order');
@@ -148,12 +160,14 @@ export async function GET(
         for (const course of courses) {
           const { data: coursePhotos } = await supabase
             .from('photos')
-            .select(`
+            .select(
+              `
               id,
               photo_students!inner(
                 students!inner(course_id)
               )
-            `)
+            `
+            )
             .eq('photo_students.students.course_id', course.id);
 
           items.push({
@@ -166,8 +180,8 @@ export async function GET(
             metadata: {
               course: course.name,
               grade: course.grade,
-              section: course.section
-            }
+              section: course.section,
+            },
           });
         }
       }
@@ -175,13 +189,15 @@ export async function GET(
     // Course selected - show students in that course
     else if (pathSegments.length === 2) {
       const courseId = pathSegments[1];
-      
+
       const { data: students } = await supabase
         .from('students')
-        .select(`
+        .select(
+          `
           id, name, grade, section, active,
           courses:courses(name, grade, section)
-        `)
+        `
+        )
         .eq('course_id', courseId)
         .eq('active', true)
         .order('name');
@@ -190,10 +206,12 @@ export async function GET(
         for (const student of students) {
           const { data: studentPhotos } = await supabase
             .from('photos')
-            .select(`
+            .select(
+              `
               id, filename, storage_path, created_at,
               photo_students!inner(student_id)
-            `)
+            `
+            )
             .eq('photo_students.student_id', student.id)
             .order('created_at', { ascending: false });
 
@@ -214,8 +232,8 @@ export async function GET(
             metadata: {
               grade: student.grade,
               section: student.section,
-              course: student.courses?.name
-            }
+              course: student.courses?.name,
+            },
           });
         }
       }
@@ -223,13 +241,15 @@ export async function GET(
     // Student selected - show photos for that student
     else if (pathSegments.length === 3) {
       const studentId = pathSegments[2];
-      
+
       const { data: photos } = await supabase
         .from('photos')
-        .select(`
+        .select(
+          `
           id, filename, storage_path, created_at, file_size_bytes, approved,
           photo_students!inner(student_id)
-        `)
+        `
+        )
         .eq('photo_students.student_id', studentId)
         .order('created_at', { ascending: false });
 
@@ -243,8 +263,8 @@ export async function GET(
             thumbnailUrl: `/api/photos/${photo.id}/thumbnail`,
             metadata: {
               uploadDate: photo.created_at,
-              fileSize: photo.file_size_bytes
-            }
+              fileSize: photo.file_size_bytes,
+            },
           });
         }
       }
@@ -254,9 +274,8 @@ export async function GET(
       success: true,
       items,
       path: pathSegments,
-      total: items.length
+      total: items.length,
     });
-
   } catch (error: any) {
     console.error('Error in drive-items API:', error);
     return NextResponse.json(
@@ -280,7 +299,7 @@ export async function POST(
     switch (action) {
       case 'create_folder':
         const { name, parentPath, type = 'course' } = data;
-        
+
         if (type === 'level') {
           const { data: newLevel, error } = await supabase
             .from('event_levels')
@@ -288,25 +307,25 @@ export async function POST(
               event_id: eventId,
               name,
               active: true,
-              sort_order: 0
+              sort_order: 0,
             })
             .select()
             .single();
 
           if (error) throw error;
-          
+
           return NextResponse.json({
             success: true,
             item: {
               id: newLevel.id,
               name: newLevel.name,
-              type: 'folder'
-            }
+              type: 'folder',
+            },
           });
         } else {
           // Create course folder
           const levelId = parentPath.length > 0 ? parentPath[0] : null;
-          
+
           const { data: newCourse, error } = await supabase
             .from('courses')
             .insert({
@@ -314,20 +333,20 @@ export async function POST(
               level_id: levelId,
               name,
               active: true,
-              sort_order: 0
+              sort_order: 0,
             })
             .select()
             .single();
 
           if (error) throw error;
-          
+
           return NextResponse.json({
             success: true,
             item: {
               id: newCourse.id,
               name: newCourse.name,
-              type: 'folder'
-            }
+              type: 'folder',
+            },
           });
         }
 
@@ -336,10 +355,10 @@ export async function POST(
         const { itemIds, targetPath } = data;
         // This would require updating the parent relationships
         // Implementation depends on specific business logic
-        
+
         return NextResponse.json({
           success: true,
-          message: 'Items moved successfully'
+          message: 'Items moved successfully',
         });
 
       default:
@@ -348,7 +367,6 @@ export async function POST(
           { status: 400 }
         );
     }
-
   } catch (error: any) {
     console.error('Error in drive-items POST:', error);
     return NextResponse.json(

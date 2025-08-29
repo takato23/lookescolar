@@ -74,7 +74,7 @@ class FolderService {
     parentId?: string | null
   ): Promise<FoldersListResult> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Fetching folders', {
         requestId,
@@ -82,10 +82,19 @@ class FolderService {
         parentId: parentId || 'root',
       });
 
-      // Base query for folders
+      // Base query for folders - using folders table directly with cached photo_count
       let query = supabase
-        .from('folders_with_stats')
-        .select('*')
+        .from('folders')
+        .select(`
+          id,
+          name,
+          parent_id,
+          event_id,
+          depth,
+          sort_order,
+          photo_count,
+          created_at
+        `)
         .eq('event_id', eventId);
 
       // Filter by parent_id (null for root folders)
@@ -96,8 +105,9 @@ class FolderService {
       }
 
       // Order by sort_order, then by name
-      query = query.order('sort_order', { ascending: true })
-                   .order('name', { ascending: true });
+      query = query
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
 
       const { data, error } = await query;
 
@@ -120,7 +130,7 @@ class FolderService {
 
       return {
         success: true,
-        folders: data as FolderWithStats[] || [],
+        folders: (data as FolderWithStats[]) || [],
       };
     } catch (error) {
       logger.error('Unexpected error fetching folders', {
@@ -131,7 +141,8 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch folders',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch folders',
       };
     }
   }
@@ -141,7 +152,7 @@ class FolderService {
    */
   async getFolderById(folderId: string): Promise<FolderOperationResult> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Fetching folder by ID', {
         requestId,
@@ -149,8 +160,17 @@ class FolderService {
       });
 
       const { data, error } = await supabase
-        .from('folders_with_stats')
-        .select('*')
+        .from('folders')
+        .select(`
+          id,
+          name,
+          parent_id,
+          event_id,
+          depth,
+          sort_order,
+          photo_count,
+          created_at
+        `)
         .eq('id', folderId)
         .single();
 
@@ -179,7 +199,8 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch folder',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch folder',
       };
     }
   }
@@ -192,7 +213,7 @@ class FolderService {
     folderData: CreateFolderRequest
   ): Promise<FolderOperationResult> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Creating folder', {
         requestId,
@@ -207,7 +228,10 @@ class FolderService {
       }
 
       if (folderData.name.length > 255) {
-        return { success: false, error: 'Folder name is too long (max 255 characters)' };
+        return {
+          success: false,
+          error: 'Folder name is too long (max 255 characters)',
+        };
       }
 
       // Sanitize folder name (remove dangerous characters)
@@ -215,7 +239,7 @@ class FolderService {
 
       // Check if folder with same name exists in the same parent
       const { data: existingFolder } = await supabase
-        .from('event_folders')
+        .from('folders')
         .select('id')
         .eq('event_id', eventId)
         .eq('name', sanitizedName)
@@ -223,13 +247,16 @@ class FolderService {
         .single();
 
       if (existingFolder) {
-        return { success: false, error: 'A folder with this name already exists in this location' };
+        return {
+          success: false,
+          error: 'A folder with this name already exists in this location',
+        };
       }
 
       // If parent_id is provided, verify it exists and belongs to the same event
       if (folderData.parent_id) {
         const { data: parentFolder } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('id, event_id, depth')
           .eq('id', folderData.parent_id)
           .single();
@@ -239,7 +266,10 @@ class FolderService {
         }
 
         if (parentFolder.event_id !== eventId) {
-          return { success: false, error: 'Parent folder belongs to a different event' };
+          return {
+            success: false,
+            error: 'Parent folder belongs to a different event',
+          };
         }
 
         if (parentFolder.depth >= 10) {
@@ -249,14 +279,12 @@ class FolderService {
 
       // Create the folder
       const { data, error } = await supabase
-        .from('event_folders')
+        .from('folders')
         .insert({
           event_id: eventId,
           parent_id: folderData.parent_id || null,
           name: sanitizedName,
-          description: folderData.description || null,
           sort_order: folderData.sort_order || 0,
-          metadata: folderData.metadata || {},
         })
         .select()
         .single();
@@ -292,7 +320,8 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create folder',
+        error:
+          error instanceof Error ? error.message : 'Failed to create folder',
       };
     }
   }
@@ -305,7 +334,7 @@ class FolderService {
     updateData: UpdateFolderRequest
   ): Promise<FolderOperationResult> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Updating folder', {
         requestId,
@@ -315,7 +344,7 @@ class FolderService {
 
       // First, get the current folder to validate the operation
       const { data: currentFolder, error: fetchError } = await supabase
-        .from('event_folders')
+        .from('folders')
         .select('*')
         .eq('id', folderId)
         .single();
@@ -332,25 +361,36 @@ class FolderService {
         if (!updateData.name || updateData.name.trim().length === 0) {
           return { success: false, error: 'Folder name cannot be empty' };
         }
-        
+
         if (updateData.name.length > 255) {
-          return { success: false, error: 'Folder name is too long (max 255 characters)' };
+          return {
+            success: false,
+            error: 'Folder name is too long (max 255 characters)',
+          };
         }
 
         const sanitizedName = this.sanitizeFolderName(updateData.name);
-        
+
         // Check for name conflicts (except with itself)
         const { data: existingFolder } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('id')
           .eq('event_id', currentFolder.event_id)
           .eq('name', sanitizedName)
-          .eq('parent_id', updateData.parent_id !== undefined ? updateData.parent_id : currentFolder.parent_id)
+          .eq(
+            'parent_id',
+            updateData.parent_id !== undefined
+              ? updateData.parent_id
+              : currentFolder.parent_id
+          )
           .neq('id', folderId)
           .single();
 
         if (existingFolder) {
-          return { success: false, error: 'A folder with this name already exists in this location' };
+          return {
+            success: false,
+            error: 'A folder with this name already exists in this location',
+          };
         }
 
         updateFields.name = sanitizedName;
@@ -366,8 +406,8 @@ class FolderService {
         if (updateData.parent_id) {
           // Check if target parent exists and belongs to same event
           const { data: targetParent } = await supabase
-            .from('event_folders')
-            .select('id, event_id, depth, path')
+            .from('folders')
+            .select('id, event_id, depth')
             .eq('id', updateData.parent_id)
             .single();
 
@@ -376,17 +416,29 @@ class FolderService {
           }
 
           if (targetParent.event_id !== currentFolder.event_id) {
-            return { success: false, error: 'Cannot move folder to a different event' };
+            return {
+              success: false,
+              error: 'Cannot move folder to a different event',
+            };
           }
 
           if (targetParent.depth >= 9) {
-            return { success: false, error: 'Maximum folder depth would be exceeded' };
+            return {
+              success: false,
+              error: 'Maximum folder depth would be exceeded',
+            };
           }
 
           // Check for circular reference (target parent should not be a descendant)
-          const isDescendant = await this.isFolderDescendant(folderId, updateData.parent_id);
+          const isDescendant = await this.isFolderDescendant(
+            folderId,
+            updateData.parent_id
+          );
           if (isDescendant) {
-            return { success: false, error: 'Cannot move folder to its own descendant' };
+            return {
+              success: false,
+              error: 'Cannot move folder to its own descendant',
+            };
           }
         }
 
@@ -397,18 +449,18 @@ class FolderService {
       if (updateData.description !== undefined) {
         updateFields.description = updateData.description;
       }
-      
+
       if (updateData.sort_order !== undefined) {
         updateFields.sort_order = updateData.sort_order;
       }
-      
+
       if (updateData.metadata !== undefined) {
         updateFields.metadata = updateData.metadata;
       }
 
       // Perform the update
       const { data, error } = await supabase
-        .from('event_folders')
+        .from('folders')
         .update(updateFields)
         .eq('id', folderId)
         .select()
@@ -443,7 +495,8 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update folder',
+        error:
+          error instanceof Error ? error.message : 'Failed to update folder',
       };
     }
   }
@@ -456,7 +509,7 @@ class FolderService {
     moveContentsTo?: string | null
   ): Promise<FolderOperationResult> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Deleting folder', {
         requestId,
@@ -466,7 +519,7 @@ class FolderService {
 
       // Get the folder to validate it exists
       const { data: folder, error: fetchError } = await supabase
-        .from('event_folders')
+        .from('folders')
         .select('*')
         .eq('id', folderId)
         .single();
@@ -476,40 +529,45 @@ class FolderService {
       }
 
       // Check if folder has contents
-      const [{ data: childFolders }, { data: childPhotos }] = await Promise.all([
-        supabase
-          .from('event_folders')
-          .select('id')
-          .eq('parent_id', folderId),
-        supabase
-          .from('photos')
-          .select('id')
-          .eq('folder_id', folderId)
-      ]);
+      const [{ data: childFolders }, { data: childPhotos }] = await Promise.all(
+        [
+          supabase.from('folders').select('id').eq('parent_id', folderId),
+          supabase.from('photos').select('id').eq('folder_id', folderId),
+        ]
+      );
 
-      const hasContents = (childFolders && childFolders.length > 0) || (childPhotos && childPhotos.length > 0);
+      const hasContents =
+        (childFolders && childFolders.length > 0) ||
+        (childPhotos && childPhotos.length > 0);
 
       if (hasContents && moveContentsTo === undefined) {
-        return { 
-          success: false, 
-          error: 'Folder contains items. Specify where to move contents or use force delete.' 
+        return {
+          success: false,
+          error:
+            'Folder contains items. Specify where to move contents or use force delete.',
         };
       }
 
       // If moveContentsTo is specified, validate the target
       if (moveContentsTo && moveContentsTo !== null) {
         const { data: targetFolder } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('id, event_id')
           .eq('id', moveContentsTo)
           .single();
 
         if (!targetFolder) {
-          return { success: false, error: 'Target folder for contents not found' };
+          return {
+            success: false,
+            error: 'Target folder for contents not found',
+          };
         }
 
         if (targetFolder.event_id !== folder.event_id) {
-          return { success: false, error: 'Cannot move contents to a folder in a different event' };
+          return {
+            success: false,
+            error: 'Cannot move contents to a folder in a different event',
+          };
         }
       }
 
@@ -517,17 +575,25 @@ class FolderService {
       const operations: Promise<any>[] = [];
 
       // Move child folders if needed
-      if (childFolders && childFolders.length > 0 && moveContentsTo !== undefined) {
+      if (
+        childFolders &&
+        childFolders.length > 0 &&
+        moveContentsTo !== undefined
+      ) {
         operations.push(
           supabase
-            .from('event_folders')
+            .from('folders')
             .update({ parent_id: moveContentsTo })
             .eq('parent_id', folderId)
         );
       }
 
-      // Move child photos if needed  
-      if (childPhotos && childPhotos.length > 0 && moveContentsTo !== undefined) {
+      // Move child photos if needed
+      if (
+        childPhotos &&
+        childPhotos.length > 0 &&
+        moveContentsTo !== undefined
+      ) {
         operations.push(
           supabase
             .from('photos')
@@ -539,7 +605,7 @@ class FolderService {
       // Execute all move operations
       if (operations.length > 0) {
         const results = await Promise.all(operations);
-        const failed = results.find(result => result.error);
+        const failed = results.find((result) => result.error);
         if (failed) {
           logger.error('Failed to move folder contents', {
             requestId,
@@ -552,7 +618,7 @@ class FolderService {
 
       // Delete the folder
       const { error: deleteError } = await supabase
-        .from('event_folders')
+        .from('folders')
         .delete()
         .eq('id', folderId);
 
@@ -581,7 +647,8 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete folder',
+        error:
+          error instanceof Error ? error.message : 'Failed to delete folder',
       };
     }
   }
@@ -591,7 +658,7 @@ class FolderService {
    */
   async getFolderTree(eventId: string): Promise<FoldersListResult> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Fetching folder tree', {
         requestId,
@@ -599,8 +666,17 @@ class FolderService {
       });
 
       const { data, error } = await supabase
-        .from('folders_with_stats')
-        .select('*')
+        .from('folders')
+        .select(`
+          id,
+          name,
+          parent_id,
+          event_id,
+          depth,
+          sort_order,
+          photo_count,
+          created_at
+        `)
         .eq('event_id', eventId)
         .order('depth', { ascending: true })
         .order('sort_order', { ascending: true })
@@ -623,7 +699,7 @@ class FolderService {
 
       return {
         success: true,
-        folders: data as FolderWithStats[] || [],
+        folders: (data as FolderWithStats[]) || [],
       };
     } catch (error) {
       logger.error('Unexpected error fetching folder tree', {
@@ -633,7 +709,10 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch folder tree',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to fetch folder tree',
       };
     }
   }
@@ -641,9 +720,11 @@ class FolderService {
   /**
    * Get breadcrumb path for a folder
    */
-  async getBreadcrumb(folderId: string): Promise<{ success: boolean; breadcrumb?: EventFolder[]; error?: string }> {
+  async getBreadcrumb(
+    folderId: string
+  ): Promise<{ success: boolean; breadcrumb?: EventFolder[]; error?: string }> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       logger.info('Fetching breadcrumb', {
         requestId,
@@ -652,7 +733,7 @@ class FolderService {
 
       // Get the folder first
       const { data: folder, error: folderError } = await supabase
-        .from('event_folders')
+        .from('folders')
         .select('*')
         .eq('id', folderId)
         .single();
@@ -667,7 +748,7 @@ class FolderService {
 
       while (currentParentId) {
         const { data: parentFolder, error: parentError } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('*')
           .eq('id', currentParentId)
           .single();
@@ -698,7 +779,8 @@ class FolderService {
       });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch breadcrumb',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch breadcrumb',
       };
     }
   }
@@ -706,14 +788,18 @@ class FolderService {
   /**
    * Check if a folder is a descendant of another folder
    */
-  private async isFolderDescendant(ancestorId: string, descendantId: string): Promise<boolean> {
+  private async isFolderDescendant(
+    ancestorId: string,
+    descendantId: string
+  ): Promise<boolean> {
     try {
       let currentId = descendantId;
       let depth = 0;
-      
-      while (currentId && depth < 20) { // Prevent infinite loops
+
+      while (currentId && depth < 20) {
+        // Prevent infinite loops
         const { data: folder } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('parent_id')
           .eq('id', currentId)
           .single();

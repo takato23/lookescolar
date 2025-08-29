@@ -8,7 +8,7 @@ import { logger } from '@/lib/utils/logger';
 export const PATCH = RateLimitMiddleware.withRateLimit(
   withAuth(async (req: NextRequest) => {
     const requestId = crypto.randomUUID();
-    
+
     try {
       let body;
       try {
@@ -31,7 +31,10 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       // Validate input
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'Photo IDs array is required and must not be empty' },
+          {
+            success: false,
+            error: 'Photo IDs array is required and must not be empty',
+          },
           { status: 400 }
         );
       }
@@ -44,8 +47,11 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       }
 
       // Validate all photoIds are valid UUIDs
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!photoIds.every(id => typeof id === 'string' && uuidRegex.test(id))) {
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (
+        !photoIds.every((id) => typeof id === 'string' && uuidRegex.test(id))
+      ) {
         return NextResponse.json(
           { success: false, error: 'All photo IDs must be valid UUIDs' },
           { status: 400 }
@@ -85,7 +91,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
           photoIds,
           error: photosError.message,
         });
-        
+
         return NextResponse.json(
           { success: false, error: 'Failed to validate photos' },
           { status: 500 }
@@ -100,21 +106,21 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       }
 
       if (photos.length !== photoIds.length) {
-        const foundIds = photos.map(p => p.id);
-        const missingIds = photoIds.filter(id => !foundIds.includes(id));
-        
+        const foundIds = photos.map((p) => p.id);
+        const missingIds = photoIds.filter((id) => !foundIds.includes(id));
+
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: 'Some photos were not found',
-            details: { missing: missingIds }
+            details: { missing: missingIds },
           },
           { status: 404 }
         );
       }
 
       // Validate all photos belong to the same event
-      const eventIds = [...new Set(photos.map(p => p.event_id))];
+      const eventIds = [...new Set(photos.map((p) => p.event_id))];
       if (eventIds.length > 1) {
         return NextResponse.json(
           { success: false, error: 'All photos must belong to the same event' },
@@ -127,13 +133,16 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       // If target folder is specified, validate it belongs to the same event
       if (targetFolder && targetFolder.event_id !== eventId) {
         return NextResponse.json(
-          { success: false, error: 'Target folder must belong to the same event as the photos' },
+          {
+            success: false,
+            error: 'Target folder must belong to the same event as the photos',
+          },
           { status: 400 }
         );
       }
 
       // Check if any photos are already in the target folder
-      const alreadyInTarget = photos.filter(p => p.folder_id === folderId);
+      const alreadyInTarget = photos.filter((p) => p.folder_id === folderId);
       if (alreadyInTarget.length > 0) {
         logger.info('Some photos already in target folder', {
           requestId,
@@ -145,7 +154,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       // Perform the batch update
       const { data: updatedPhotos, error: updateError } = await supabase
         .from('photos')
-        .update({ 
+        .update({
           folder_id: folderId || null,
           updated_at: new Date().toISOString(),
         })
@@ -159,7 +168,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
           targetFolderId: folderId,
           error: updateError.message,
         });
-        
+
         return NextResponse.json(
           { success: false, error: 'Failed to move photos' },
           { status: 500 }
@@ -167,7 +176,9 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       }
 
       // Count successfully moved photos (excluding those already in target)
-      const actuallyMoved = photos.filter(p => p.folder_id !== folderId).length;
+      const actuallyMoved = photos.filter(
+        (p) => p.folder_id !== folderId
+      ).length;
 
       logger.info('Successfully moved photos', {
         requestId,
@@ -184,12 +195,13 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         moved: actuallyMoved,
         alreadyInTarget: alreadyInTarget.length,
         total: photoIds.length,
-        targetFolder: targetFolder ? {
-          id: targetFolder.id,
-          name: targetFolder.name,
-        } : null,
+        targetFolder: targetFolder
+          ? {
+              id: targetFolder.id,
+              name: targetFolder.name,
+            }
+          : null,
       });
-
     } catch (error) {
       logger.error('Unexpected error in batch move endpoint', {
         requestId,

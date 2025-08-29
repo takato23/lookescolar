@@ -263,16 +263,12 @@ export function BulkPhotoUploader({
 
       const formData = new FormData();
       formData.append('files', uploadFile.file);
-      formData.append('event_id', eventId);
+      formData.append('eventId', eventId);
       if (uploadFile.folderId) {
-        formData.append('folder_id', uploadFile.folderId);
+        formData.append('folderId', uploadFile.folderId);
       }
-      formData.append('photo_type', 'event');
-      formData.append('force_optimization', 'true');
-      formData.append('target_size_kb', '35');
-      formData.append('max_dimension', '500');
 
-      const response = await fetch('/api/admin/photos/simple-upload', {
+      const response = await fetch('/api/admin/photos/upload', {
         method: 'POST',
         body: formData,
       });
@@ -284,8 +280,8 @@ export function BulkPhotoUploader({
       const result = await response.json();
       const endTime = Date.now();
 
-      if (result.success && result.photos && result.photos.length > 0) {
-        const photo = result.photos[0];
+      if (result.success && result.results && result.results.length > 0) {
+        const photo = result.results[0];
         
         setFiles(prev => prev.map(f => 
           f.id === uploadFile.id 
@@ -295,10 +291,10 @@ export function BulkPhotoUploader({
                 progress: 100,
                 photoId: photo.id,
                 uploadEndTime: endTime,
-                optimizationInfo: photo.optimization || {
+                optimizationInfo: {
                   originalSizeKB: Math.round(uploadFile.file.size / 1024),
-                  optimizedSizeKB: photo.file_size ? Math.round(photo.file_size / 1024) : 35,
-                  compressionRatio: 70
+                  optimizedSizeKB: photo.size ? Math.round(photo.size / 1024) : 35,
+                  compressionRatio: photo.size ? Math.round(((uploadFile.file.size - photo.size) / uploadFile.file.size) * 100) : 70
                 }
               }
             : f

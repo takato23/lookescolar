@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { QrCode, ArrowRight, Camera } from 'lucide-react';
 
-interface TokenValidationResponse {
+interface CodeValidationResponse {
   valid: boolean;
   eventId?: string;
   student?: {
@@ -21,31 +21,31 @@ interface TokenValidationResponse {
   error?: string;
 }
 
-export function TokenAccessForm() {
-  const [token, setToken] = useState('');
+export function FamilyAccessForm() {
+  const [accessCode, setAccessCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const validateToken = async (tokenValue: string) => {
+  const validateAccessCode = async (codeValue: string) => {
     try {
-      const response = await fetch(`/api/family/validate-token/${tokenValue}`);
-      
+      const response = await fetch(`/api/family/validate-token/${codeValue}`);
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Token inválido');
+        throw new Error(errorData.error || 'Código no válido');
       }
 
-      const data: TokenValidationResponse = await response.json();
-      
+      const data: CodeValidationResponse = await response.json();
+
       if (!data.valid || !data.eventId) {
-        throw new Error('Token inválido o evento no encontrado');
+        throw new Error('Código no encontrado. Verifica que esté completo');
       }
 
       // Redirect to the unified gallery with token as query parameter
-      router.push(`/gallery/${data.eventId}?token=${tokenValue}`);
+      router.push(`/gallery/${data.eventId}?token=${codeValue}`);
     } catch (err) {
-      console.error('Error validating token:', err);
+      console.error('Error validating access code:', err);
       throw err;
     }
   };
@@ -53,18 +53,18 @@ export function TokenAccessForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
-    if (!token || token.length < 20) {
-      setError('Por favor ingresa un token válido');
+
+    if (!accessCode || accessCode.length < 20) {
+      setError('Por favor ingresa un código de acceso válido');
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      await validateToken(token);
+      await validateAccessCode(accessCode);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error validando token');
+      setError(err instanceof Error ? err.message : 'No pudimos encontrar este código. ¿Está correcto?');
     } finally {
       setLoading(false);
     }
@@ -72,41 +72,51 @@ export function TokenAccessForm() {
 
   const handleQRScan = () => {
     // For now, we'll just show an alert that this feature is coming soon
-    alert('Escaneo de QR estará disponible pronto. Por ahora, ingresa tu token manualmente.');
+    alert(
+      'Escaneo de QR estará disponible pronto. Por ahora, ingresa tu código manualmente.'
+    );
   };
 
   return (
-    <div className="w-full max-w-md animate-fade-in" style={{ animationDelay: '0.4s' }}>
+    <div
+      className="w-full max-w-md animate-fade-in"
+      style={{ animationDelay: '0.4s' }}
+    >
       <Card variant="glass-strong" className="noise p-8 backdrop-blur-xl">
         <div className="mb-6 text-center">
-          <h3 className="text-2xl font-bold text-foreground">Accede a tu galería</h3>
+          <h3 className="text-foreground text-2xl font-bold">
+            Encuentra tus fotos escolares
+          </h3>
           <p className="text-muted-foreground mt-2">
-            Ingresa tu token único o escanea el código QR
+            Ingresa el código que recibiste del fotógrafo
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="token" className="text-sm font-medium text-foreground">
-              Token de acceso
+            <label
+              htmlFor="accessCode"
+              className="text-foreground text-sm font-medium"
+            >
+              Código de acceso
             </label>
             <Input
-              id="token"
+              id="accessCode"
               type="text"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="Pega tu token aquí"
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              placeholder="Ej: LES-2024-ABC123XYZ"
               className="w-full"
-              aria-describedby="token-help"
+              aria-describedby="code-help"
               disabled={loading}
             />
-            <p id="token-help" className="text-muted-foreground text-xs">
-              Tu token se encuentra en el volante o correo que recibiste
+            <p id="code-help" className="text-muted-foreground text-xs">
+              Revisa el volante o email que recibiste del fotógrafo
             </p>
           </div>
 
           {error && (
-            <div className="rounded-lg bg-error/10 p-3 text-sm text-error">
+            <div className="bg-error/10 text-error rounded-lg p-3 text-sm">
               {error}
             </div>
           )}
@@ -123,12 +133,12 @@ export function TokenAccessForm() {
               <QrCode className="h-5 w-5" />
               <span className="ml-2">Escanear QR</span>
             </Button>
-            
+
             <Button
               type="submit"
               variant="primary"
               className="flex-1"
-              disabled={loading || !token}
+              disabled={loading || !accessCode}
               aria-label="Acceder a la galería"
             >
               {loading ? (
@@ -149,9 +159,11 @@ export function TokenAccessForm() {
               <Camera className="h-5 w-5 text-primary-600" />
             </div>
             <div>
-              <h4 className="font-medium text-foreground">¿No tienes un token?</h4>
+              <h4 className="text-foreground font-medium">
+                ¿No tienes un código?
+              </h4>
               <p className="text-muted-foreground text-sm">
-                Contacta con el fotógrafo de tu evento para obtener acceso.
+                Contacta con el fotógrafo de tu evento para obtener tu código de acceso.
               </p>
             </div>
           </div>

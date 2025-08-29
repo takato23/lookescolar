@@ -1,6 +1,6 @@
 /**
  * @fileoverview Component Tests for QRScanner
- * 
+ *
  * Tests:
  * - Camera access and fallback mechanisms
  * - QR format validation and token processing
@@ -75,22 +75,20 @@ describe('QRScanner Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockOnScan = vi.fn();
     mockOnSubjectFound = vi.fn();
 
     // Mock MediaStream
     mockStream = {
-      getTracks: vi.fn(() => [
-        { stop: vi.fn() }
-      ]),
+      getTracks: vi.fn(() => [{ stop: vi.fn() }]),
     };
 
     // Default successful camera access
     mockEnumerateDevices.mockResolvedValue([
-      { kind: 'videoinput', deviceId: 'camera1' }
+      { kind: 'videoinput', deviceId: 'camera1' },
     ]);
-    
+
     mockGetUserMedia.mockResolvedValue(mockStream);
 
     // Mock HTMLVideoElement methods
@@ -136,9 +134,12 @@ describe('QRScanner Component', () => {
 
   describe('Initial Render and Camera Detection', () => {
     it('should render loading state while checking camera availability', async () => {
-      mockEnumerateDevices.mockImplementation(() => new Promise(resolve => {
-        setTimeout(() => resolve([{ kind: 'videoinput' }]), 100);
-      }));
+      mockEnumerateDevices.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve([{ kind: 'videoinput' }]), 100);
+          })
+      );
 
       render(<QRScanner onScan={mockOnScan} />);
 
@@ -146,7 +147,9 @@ describe('QRScanner Component', () => {
       expect(screen.getByRole('status')).toBeInTheDocument();
 
       await waitFor(() => {
-        expect(screen.queryByText('Verificando cámara...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Verificando cámara...')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -157,8 +160,12 @@ describe('QRScanner Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Cámara no disponible')).toBeInTheDocument();
-        expect(screen.getByText(/No se pudo acceder a la cámara/)).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /ingresar token manualmente/i })).toBeInTheDocument();
+        expect(
+          screen.getByText(/No se pudo acceder a la cámara/)
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /ingresar token manualmente/i })
+        ).toBeInTheDocument();
       });
     });
 
@@ -167,8 +174,12 @@ describe('QRScanner Component', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Escáner QR Avanzado')).toBeInTheDocument();
-        expect(screen.getByText('Modo Continuo • Cámara Trasera')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /iniciar escáner/i })).toBeInTheDocument();
+        expect(
+          screen.getByText('Modo Continuo • Cámara Trasera')
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /iniciar escáner/i })
+        ).toBeInTheDocument();
         expect(screen.getByText('Inactivo')).toBeInTheDocument();
       });
     });
@@ -185,7 +196,9 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} disabled />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         expect(startButton).toBeDisabled();
       });
     });
@@ -196,7 +209,9 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -219,12 +234,16 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
       await waitFor(() => {
-        expect(screen.getByText(/Permiso de cámara denegado/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Permiso de cámara denegado/)
+        ).toBeInTheDocument();
       });
     });
 
@@ -249,10 +268,14 @@ describe('QRScanner Component', () => {
         error.name = testCase.name;
         mockGetUserMedia.mockRejectedValueOnce(error);
 
-        const { rerender } = render(<QRScanner onScan={mockOnScan} key={testCase.name} />);
+        const { rerender } = render(
+          <QRScanner onScan={mockOnScan} key={testCase.name} />
+        );
 
         await waitFor(() => {
-          const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+          const startButton = screen.getByRole('button', {
+            name: /iniciar escáner/i,
+          });
           fireEvent.click(startButton);
         });
 
@@ -260,7 +283,9 @@ describe('QRScanner Component', () => {
           expect(screen.getByText(testCase.message)).toBeInTheDocument();
         });
 
-        rerender(<QRScanner onScan={mockOnScan} key={testCase.name + '-rerender'} />);
+        rerender(
+          <QRScanner onScan={mockOnScan} key={testCase.name + '-rerender'} />
+        );
       }
     });
 
@@ -269,16 +294,22 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /detener escáner/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /detener escáner/i })
+        ).toBeInTheDocument();
       });
 
       // Stop scanner
-      const stopButton = screen.getByRole('button', { name: /detener escáner/i });
+      const stopButton = screen.getByRole('button', {
+        name: /detener escáner/i,
+      });
       fireEvent.click(stopButton);
 
       expect(mockStream.getTracks()[0].stop).toHaveBeenCalled();
@@ -289,7 +320,9 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -298,7 +331,9 @@ describe('QRScanner Component', () => {
       });
 
       // Switch camera
-      const switchButton = screen.getByRole('button', { name: /cambiar cámara/i });
+      const switchButton = screen.getByRole('button', {
+        name: /cambiar cámara/i,
+      });
       fireEvent.click(switchButton);
 
       // Should call getUserMedia again with 'user' facing mode
@@ -315,7 +350,8 @@ describe('QRScanner Component', () => {
   });
 
   describe('QR Code Detection and Validation', () => {
-    const validQRData = 'STUDENT:123e4567-e89b-12d3-a456-426614174000:Juan Pérez:987f6543-e21c-12d3-a456-426614174000';
+    const validQRData =
+      'STUDENT:123e4567-e89b-12d3-a456-426614174000:Juan Pérez:987f6543-e21c-12d3-a456-426614174000';
 
     beforeEach(() => {
       // Mock fetch for token validation
@@ -337,16 +373,21 @@ describe('QRScanner Component', () => {
       // Mock successful token validation
       (global.fetch as Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          subject: { id: '123', name: 'Juan Pérez' }
-        }),
+        json: () =>
+          Promise.resolve({
+            subject: { id: '123', name: 'Juan Pérez' },
+          }),
       });
 
-      render(<QRScanner onScan={mockOnScan} onSubjectFound={mockOnSubjectFound} />);
+      render(
+        <QRScanner onScan={mockOnScan} onSubjectFound={mockOnSubjectFound} />
+      );
 
       // Start scanner to trigger QR detection
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -355,7 +396,7 @@ describe('QRScanner Component', () => {
         expect(mockOnScan).toHaveBeenCalledWith(validQRData);
         expect(mockOnSubjectFound).toHaveBeenCalledWith({
           id: '123',
-          name: 'Juan Pérez'
+          name: 'Juan Pérez',
         });
       });
     });
@@ -365,20 +406,29 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: shortToken,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       render(<QRScanner onScan={mockOnScan} />);
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
       // Should show error result
       await waitFor(() => {
-        expect(screen.getByText(/Token inválido: muy corto/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Token inválido: muy corto/)
+        ).toBeInTheDocument();
         expect(mockOnScan).not.toHaveBeenCalled();
       });
     });
@@ -387,21 +437,29 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       (global.fetch as Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          subject: { id: '123', name: 'Juan Pérez' }
-        }),
+        json: () =>
+          Promise.resolve({
+            subject: { id: '123', name: 'Juan Pérez' },
+          }),
       });
 
       render(<QRScanner onScan={mockOnScan} />);
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -420,7 +478,12 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       // Mock failed validation
@@ -433,13 +496,17 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
       // Should show error
       await waitFor(() => {
-        expect(screen.getByText(/Token no válido o no encontrado/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Token no válido o no encontrado/)
+        ).toBeInTheDocument();
         expect(mockOnScan).not.toHaveBeenCalled();
       });
     });
@@ -448,28 +515,38 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       (global.fetch as Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          subject: { id: '123', name: 'Juan Pérez' }
-        }),
+        json: () =>
+          Promise.resolve({
+            subject: { id: '123', name: 'Juan Pérez' },
+          }),
       });
 
       render(<QRScanner onScan={mockOnScan} scanMode="single" />);
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
       // After successful scan, should stop automatically
       await waitFor(() => {
         expect(mockOnScan).toHaveBeenCalled();
-        expect(screen.getByRole('button', { name: /iniciar escáner/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /iniciar escáner/i })
+        ).toBeInTheDocument();
         expect(screen.getByText('Inactivo')).toBeInTheDocument();
       });
     });
@@ -481,16 +558,22 @@ describe('QRScanner Component', () => {
 
       // Start scanner to show fullscreen button
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
-      const fullscreenButton = screen.getByRole('button', { name: /pantalla completa/i });
+      const fullscreenButton = screen.getByRole('button', {
+        name: /pantalla completa/i,
+      });
       fireEvent.click(fullscreenButton);
 
       // Should show close fullscreen button
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /cerrar pantalla completa/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /cerrar pantalla completa/i })
+        ).toBeInTheDocument();
       });
     });
 
@@ -499,16 +582,22 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
-      const soundButton = screen.getByRole('button', { name: /desactivar sonido/i });
+      const soundButton = screen.getByRole('button', {
+        name: /desactivar sonido/i,
+      });
       fireEvent.click(soundButton);
 
       // Should change to activate sound
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /activar sonido/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /activar sonido/i })
+        ).toBeInTheDocument();
       });
     });
 
@@ -517,10 +606,14 @@ describe('QRScanner Component', () => {
 
       render(<QRScanner onScan={mockOnScan} />);
 
-      const manualButton = screen.getByRole('button', { name: /ingresar manualmente/i });
+      const manualButton = screen.getByRole('button', {
+        name: /ingresar manualmente/i,
+      });
       fireEvent.click(manualButton);
 
-      expect(global.prompt).toHaveBeenCalledWith('Ingresa el token manualmente:');
+      expect(global.prompt).toHaveBeenCalledWith(
+        'Ingresa el token manualmente:'
+      );
     });
 
     it('should clear scan results when requested', async () => {
@@ -528,9 +621,11 @@ describe('QRScanner Component', () => {
 
       // Simulate some scan results by manipulating the component state
       // (This would typically be done through actual QR scans, but we'll simulate it)
-      
+
       // Add scan results artificially for testing
-      const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+      const startButton = screen.getByRole('button', {
+        name: /iniciar escáner/i,
+      });
       fireEvent.click(startButton);
 
       // Wait for potential clear button (would appear if there are scan results)
@@ -555,13 +650,17 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         expect(startButton).toBeInTheDocument();
       });
 
       // Tab navigation
       await user.tab();
-      const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+      const startButton = screen.getByRole('button', {
+        name: /iniciar escáner/i,
+      });
       expect(startButton).toHaveFocus();
 
       // Enter key should work
@@ -575,8 +674,14 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /iniciar escáner qr/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /ingresar token manualmente como alternativa al escáner/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /iniciar escáner qr/i })
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', {
+            name: /ingresar token manualmente como alternativa al escáner/i,
+          })
+        ).toBeInTheDocument();
       });
     });
 
@@ -590,7 +695,9 @@ describe('QRScanner Component', () => {
       });
 
       // Start scanner
-      const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+      const startButton = screen.getByRole('button', {
+        name: /iniciar escáner/i,
+      });
       fireEvent.click(startButton);
 
       await waitFor(() => {
@@ -602,7 +709,9 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         startButton.focus();
         expect(startButton).toHaveFocus();
       });
@@ -616,7 +725,9 @@ describe('QRScanner Component', () => {
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -634,20 +745,28 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       (global.fetch as Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          subject: { id: '123', name: 'Juan Pérez' }
-        }),
+        json: () =>
+          Promise.resolve({
+            subject: { id: '123', name: 'Juan Pérez' },
+          }),
       });
 
       render(<QRScanner onScan={mockOnScan} enableSound={true} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -660,20 +779,28 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       (global.fetch as Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          subject: { id: '123', name: 'Juan Pérez' }
-        }),
+        json: () =>
+          Promise.resolve({
+            subject: { id: '123', name: 'Juan Pérez' },
+          }),
       });
 
       render(<QRScanner onScan={mockOnScan} enableSound={false} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -686,7 +813,7 @@ describe('QRScanner Component', () => {
       const mockBrokenAudioContext = vi.fn(() => {
         throw new Error('AudioContext not supported');
       });
-      
+
       Object.defineProperty(window, 'AudioContext', {
         writable: true,
         value: mockBrokenAudioContext,
@@ -695,20 +822,28 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       (global.fetch as Mock).mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({
-          subject: { id: '123', name: 'Juan Pérez' }
-        }),
+        json: () =>
+          Promise.resolve({
+            subject: { id: '123', name: 'Juan Pérez' },
+          }),
       });
 
       render(<QRScanner onScan={mockOnScan} enableSound={true} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -725,7 +860,9 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -746,12 +883,16 @@ describe('QRScanner Component', () => {
       // Rapid start/stop
       for (let i = 0; i < 3; i++) {
         await waitFor(() => {
-          const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+          const startButton = screen.getByRole('button', {
+            name: /iniciar escáner/i,
+          });
           fireEvent.click(startButton);
         });
 
         await waitFor(() => {
-          const stopButton = screen.getByRole('button', { name: /detener escáner/i });
+          const stopButton = screen.getByRole('button', {
+            name: /detener escáner/i,
+          });
           fireEvent.click(stopButton);
         });
       }
@@ -768,7 +909,9 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
@@ -781,22 +924,28 @@ describe('QRScanner Component', () => {
     it('should allow retry after camera error', async () => {
       // First attempt fails
       mockGetUserMedia.mockRejectedValueOnce(new Error('Camera busy'));
-      
+
       render(<QRScanner onScan={mockOnScan} />);
 
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 
       await waitFor(() => {
-        expect(screen.getByText(/Error al acceder a la cámara/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Error al acceder a la cámara/)
+        ).toBeInTheDocument();
       });
 
       // Second attempt succeeds
       mockGetUserMedia.mockResolvedValueOnce(mockStream);
 
-      const retryButton = screen.getByRole('button', { name: /iniciar escáner/i });
+      const retryButton = screen.getByRole('button', {
+        name: /iniciar escáner/i,
+      });
       fireEvent.click(retryButton);
 
       await waitFor(() => {
@@ -808,7 +957,12 @@ describe('QRScanner Component', () => {
       const jsQR = await import('jsqr');
       (jsQR.default as Mock).mockReturnValue({
         data: validQRData,
-        location: { topLeftCorner: { x: 0, y: 0 }, topRightCorner: { x: 100, y: 0 }, bottomRightCorner: { x: 100, y: 100 }, bottomLeftCorner: { x: 0, y: 100 } },
+        location: {
+          topLeftCorner: { x: 0, y: 0 },
+          topRightCorner: { x: 100, y: 0 },
+          bottomRightCorner: { x: 100, y: 100 },
+          bottomLeftCorner: { x: 0, y: 100 },
+        },
       });
 
       // Mock network error
@@ -818,7 +972,9 @@ describe('QRScanner Component', () => {
 
       // Start scanner
       await waitFor(() => {
-        const startButton = screen.getByRole('button', { name: /iniciar escáner/i });
+        const startButton = screen.getByRole('button', {
+          name: /iniciar escáner/i,
+        });
         fireEvent.click(startButton);
       });
 

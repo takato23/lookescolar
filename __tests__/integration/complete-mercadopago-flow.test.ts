@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { 
-  createPaymentPreference, 
+import {
+  createPaymentPreference,
   processWebhookNotification,
-  verifyWebhookSignature 
+  verifyWebhookSignature,
 } from '@/lib/mercadopago/mercadopago.service';
 import { PaymentSecurityUtils } from '@/lib/security/payment-validation';
 import crypto from 'crypto';
@@ -18,7 +18,7 @@ describe('Complete Mercado Pago Integration Flow', () => {
 
   beforeAll(async () => {
     supabase = createServerSupabaseServiceClient();
-    
+
     // Crear datos de prueba
     await setupTestData();
   });
@@ -41,7 +41,7 @@ describe('Complete Mercado Pago Integration Flow', () => {
         name: 'Test Event MP Integration',
         school: 'Test School',
         date: '2024-12-01',
-        active: true
+        active: true,
       })
       .select()
       .single();
@@ -56,7 +56,7 @@ describe('Complete Mercado Pago Integration Flow', () => {
         event_id: testEventId,
         first_name: 'Test',
         last_name: 'Subject',
-        type: 'student'
+        type: 'student',
       })
       .select()
       .single();
@@ -66,13 +66,11 @@ describe('Complete Mercado Pago Integration Flow', () => {
 
     // Crear token de prueba
     testToken = crypto.randomBytes(16).toString('hex') + 'test';
-    const { error: tokenError } = await supabase
-      .from('subject_tokens')
-      .insert({
-        subject_id: testSubjectId,
-        token: testToken,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h
-      });
+    const { error: tokenError } = await supabase.from('subject_tokens').insert({
+      subject_id: testSubjectId,
+      token: testToken,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
+    });
 
     if (tokenError) throw tokenError;
 
@@ -81,7 +79,7 @@ describe('Complete Mercado Pago Integration Flow', () => {
       .from('price_lists')
       .insert({
         event_id: testEventId,
-        name: 'Test Prices'
+        name: 'Test Prices',
       })
       .select()
       .single();
@@ -96,7 +94,7 @@ describe('Complete Mercado Pago Integration Flow', () => {
         price_list_id: testPriceListId,
         label: 'Foto Digital',
         type: 'base',
-        price_cents: 1500 // $15 ARS
+        price_cents: 1500, // $15 ARS
       });
 
     if (priceItemError) throw priceItemError;
@@ -112,7 +110,9 @@ describe('Complete Mercado Pago Integration Flow', () => {
   describe('Security Validation', () => {
     it('should validate token properly', () => {
       expect(() => PaymentSecurityUtils.maskToken('short')).not.toThrow();
-      expect(PaymentSecurityUtils.maskToken('averylongtoken12345')).toBe('tok_***345');
+      expect(PaymentSecurityUtils.maskToken('averylongtoken12345')).toBe(
+        'tok_***345'
+      );
     });
 
     it('should mask sensitive data correctly', () => {
@@ -120,11 +120,11 @@ describe('Complete Mercado Pago Integration Flow', () => {
         token: 'verysecrettoken123',
         email: 'user@example.com',
         paymentId: '123456789',
-        password: 'secret'
+        password: 'secret',
       };
 
       const masked = PaymentSecurityUtils.maskSensitiveData(sensitive);
-      
+
       expect(masked.token).toBe('tok_***123');
       expect(masked.email).toBe('us***@example.com');
       expect(masked.paymentId).toBe('pay_***6789');
@@ -134,23 +134,34 @@ describe('Complete Mercado Pago Integration Flow', () => {
     it('should validate webhook signatures correctly', () => {
       const payload = '{"test": "data"}';
       const secret = 'webhook_secret_123';
-      
-      const hash = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+
+      const hash = crypto
+        .createHmac('sha256', secret)
+        .update(payload)
+        .digest('hex');
       const validSignature = `v1=${hash}`;
-      
-      const result = PaymentSecurityUtils.validateWebhookSignature(payload, validSignature, secret);
+
+      const result = PaymentSecurityUtils.validateWebhookSignature(
+        payload,
+        validSignature,
+        secret
+      );
       expect(result.valid).toBe(true);
-      
-      const invalidResult = PaymentSecurityUtils.validateWebhookSignature(payload, 'invalid', secret);
+
+      const invalidResult = PaymentSecurityUtils.validateWebhookSignature(
+        payload,
+        'invalid',
+        secret
+      );
       expect(invalidResult.valid).toBe(false);
     });
 
     it('should calculate order totals securely', () => {
       const items = [
         { quantity: 2, unitPriceCents: 1500 },
-        { quantity: 1, unitPriceCents: 2000 }
+        { quantity: 1, unitPriceCents: 2000 },
       ];
-      
+
       const result = PaymentSecurityUtils.calculateOrderTotal(items);
       expect(result.valid).toBe(true);
       expect(result.totalCents).toBe(5000); // 2*1500 + 1*2000
@@ -158,9 +169,9 @@ describe('Complete Mercado Pago Integration Flow', () => {
 
     it('should reject invalid order calculations', () => {
       const invalidItems = [
-        { quantity: -1, unitPriceCents: 1500 } // Negative quantity
+        { quantity: -1, unitPriceCents: 1500 }, // Negative quantity
       ];
-      
+
       const result = PaymentSecurityUtils.calculateOrderTotal(invalidItems);
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Invalid quantity');
@@ -171,12 +182,14 @@ describe('Complete Mercado Pago Integration Flow', () => {
       const fastResult = PaymentSecurityUtils.validateWebhookTiming(now - 100);
       expect(fastResult.withinTimeout).toBe(true);
       expect(fastResult.warning).toBeUndefined();
-      
+
       const slowResult = PaymentSecurityUtils.validateWebhookTiming(now - 2800);
       expect(slowResult.withinTimeout).toBe(true);
       expect(slowResult.warning).toContain('approaching timeout');
-      
-      const timeoutResult = PaymentSecurityUtils.validateWebhookTiming(now - 5000);
+
+      const timeoutResult = PaymentSecurityUtils.validateWebhookTiming(
+        now - 5000
+      );
       expect(timeoutResult.withinTimeout).toBe(false);
     });
   });
@@ -186,37 +199,39 @@ describe('Complete Mercado Pago Integration Flow', () => {
       // Mock Mercado Pago response
       const mockPreference = {
         id: 'test-preference-123',
-        init_point: 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=test-preference-123',
-        sandbox_init_point: 'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=test-preference-123'
+        init_point:
+          'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=test-preference-123',
+        sandbox_init_point:
+          'https://sandbox.mercadopago.com/checkout/v1/redirect?pref_id=test-preference-123',
       };
 
       // Create order first
       testOrderId = crypto.randomUUID();
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          id: testOrderId,
-          subject_id: testSubjectId,
-          contact_name: 'Test User',
-          contact_email: 'test@example.com',
-          total_amount_cents: 3000,
-          status: 'pending'
-        });
+      const { error: orderError } = await supabase.from('orders').insert({
+        id: testOrderId,
+        subject_id: testSubjectId,
+        contact_name: 'Test User',
+        contact_email: 'test@example.com',
+        total_amount_cents: 3000,
+        status: 'pending',
+      });
 
       expect(orderError).toBeNull();
 
       const preferenceParams = {
         orderId: testOrderId,
-        items: [{
-          title: 'Foto Digital - Test',
-          quantity: 2,
-          unit_price: 15 // $15 ARS
-        }],
+        items: [
+          {
+            title: 'Foto Digital - Test',
+            quantity: 2,
+            unit_price: 15, // $15 ARS
+          },
+        ],
         payer: {
           name: 'Test User',
           email: 'test@example.com',
-          phone: '+54 11 1234-5678'
-        }
+          phone: '+54 11 1234-5678',
+        },
       };
 
       // Note: This would normally call MP API, but we're testing the structure
@@ -225,7 +240,9 @@ describe('Complete Mercado Pago Integration Flow', () => {
         expect(preferenceParams.orderId).toBeTruthy();
         expect(preferenceParams.items).toHaveLength(1);
         expect(preferenceParams.items[0].unit_price).toBeGreaterThan(0);
-        expect(preferenceParams.payer.email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+        expect(preferenceParams.payer.email).toMatch(
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        );
       }).not.toThrow();
     });
   });
@@ -241,80 +258,87 @@ describe('Complete Mercado Pago Integration Flow', () => {
           contact_name: 'Test User',
           contact_email: 'test@example.com',
           total_amount_cents: 1500,
-          status: 'pending'
+          status: 'pending',
         });
       }
 
       const mockPaymentId = '123456789';
-      
+
       // Mock the MP API call to return payment info
       const mockGetPaymentInfo = vi.fn().mockResolvedValue({
         id: mockPaymentId,
         status: 'approved',
         external_reference: testOrderId,
-        transaction_amount: 15.00,
+        transaction_amount: 15.0,
         payment_type_id: 'credit_card',
         payment_method_id: 'visa',
         collector_id: 123456,
         operation_type: 'regular_payment',
         status_detail: 'accredited',
-        installments: 1
+        installments: 1,
       });
 
       // Mock the mercadopago service functions
       vi.mock('@/lib/mercadopago/mercadopago.service', () => ({
         getPaymentInfo: mockGetPaymentInfo,
-        processWebhookNotification: vi.fn().mockImplementation(async (paymentId: string) => {
-          // Simulate the actual processing
-          const supabase = createServerSupabaseServiceClient();
-          
-          // Check for existing payment (idempotency)
-          const { data: existingPayment } = await supabase
-            .from('payments')
-            .select('id')
-            .eq('mp_payment_id', paymentId)
-            .single();
-            
-          if (existingPayment) {
-            return { success: true, message: 'Already processed (idempotency)' };
-          }
-          
-          // Create payment record
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .insert({
-              order_id: testOrderId,
-              mp_payment_id: paymentId,
-              mp_status: 'approved',
-              amount_cents: 1500,
-              processed_at: new Date().toISOString(),
-              webhook_data: { test: 'data' }
-            });
-            
-          if (paymentError) {
-            return { success: false, message: paymentError.message };
-          }
-          
-          // Update order status
-          const { error: orderError } = await supabase
-            .from('orders')
-            .update({
-              mp_payment_id: paymentId,
-              status: 'approved',
-              approved_at: new Date().toISOString()
-            })
-            .eq('id', testOrderId);
-            
-          if (orderError) {
-            return { success: false, message: orderError.message };
-          }
-          
-          return { success: true, message: 'Payment processed successfully' };
-        })
+        processWebhookNotification: vi
+          .fn()
+          .mockImplementation(async (paymentId: string) => {
+            // Simulate the actual processing
+            const supabase = createServerSupabaseServiceClient();
+
+            // Check for existing payment (idempotency)
+            const { data: existingPayment } = await supabase
+              .from('payments')
+              .select('id')
+              .eq('mp_payment_id', paymentId)
+              .single();
+
+            if (existingPayment) {
+              return {
+                success: true,
+                message: 'Already processed (idempotency)',
+              };
+            }
+
+            // Create payment record
+            const { error: paymentError } = await supabase
+              .from('payments')
+              .insert({
+                order_id: testOrderId,
+                mp_payment_id: paymentId,
+                mp_status: 'approved',
+                amount_cents: 1500,
+                processed_at: new Date().toISOString(),
+                webhook_data: { test: 'data' },
+              });
+
+            if (paymentError) {
+              return { success: false, message: paymentError.message };
+            }
+
+            // Update order status
+            const { error: orderError } = await supabase
+              .from('orders')
+              .update({
+                mp_payment_id: paymentId,
+                status: 'approved',
+                approved_at: new Date().toISOString(),
+              })
+              .eq('id', testOrderId);
+
+            if (orderError) {
+              return { success: false, message: orderError.message };
+            }
+
+            return { success: true, message: 'Payment processed successfully' };
+          }),
       }));
 
       // Test first webhook processing
-      const { processWebhookNotification: processWebhookMock } = await import('@/lib/mercadopago/mercadopago.service');
+      const { processWebhookNotification: processWebhookMock } = await import(
+        '@/lib/mercadopago/mercadopago.service'
+      );
       const result1 = await processWebhookMock(mockPaymentId);
       expect(result1.success).toBe(true);
       expect(result1.message).toContain('successfully');
@@ -336,11 +360,14 @@ describe('Complete Mercado Pago Integration Flow', () => {
         version: 1,
         api_version: 'v1',
         action: 'created',
-        data: { id: '789' }
+        data: { id: '789' },
       });
 
       const secret = process.env.MP_WEBHOOK_SECRET || 'test_secret';
-      const hash = crypto.createHmac('sha256', secret).update(webhookPayload).digest('hex');
+      const hash = crypto
+        .createHmac('sha256', secret)
+        .update(webhookPayload)
+        .digest('hex');
       const signature = `v1=${hash}`;
 
       const isValid = verifyWebhookSignature(webhookPayload, signature, secret);
@@ -348,7 +375,11 @@ describe('Complete Mercado Pago Integration Flow', () => {
 
       // Test invalid signature
       const invalidSignature = 'v1=invalid_hash';
-      const isInvalid = verifyWebhookSignature(webhookPayload, invalidSignature, secret);
+      const isInvalid = verifyWebhookSignature(
+        webhookPayload,
+        invalidSignature,
+        secret
+      );
       expect(isInvalid).toBe(false);
     });
   });
@@ -361,13 +392,14 @@ describe('Complete Mercado Pago Integration Flow', () => {
         mp_status: 'approved',
         amount_cents: 1500,
         processed_at: new Date().toISOString(),
-        webhook_data: { test: 'webhook_data' }
+        webhook_data: { test: 'webhook_data' },
       };
 
       const { data: payment, error } = await supabase
         .from('payments')
         .insert(paymentData)
-        .select(`
+        .select(
+          `
           id,
           order_id,
           mp_payment_id,
@@ -382,7 +414,8 @@ describe('Complete Mercado Pago Integration Flow', () => {
               last_name
             )
           )
-        `)
+        `
+        )
         .single();
 
       expect(error).toBeNull();
@@ -393,28 +426,24 @@ describe('Complete Mercado Pago Integration Flow', () => {
 
     it('should enforce payment ID uniqueness', async () => {
       const duplicatePaymentId = 'duplicate_payment_123';
-      
+
       // First payment should succeed
-      const { error: error1 } = await supabase
-        .from('payments')
-        .insert({
-          order_id: testOrderId || crypto.randomUUID(),
-          mp_payment_id: duplicatePaymentId,
-          mp_status: 'approved',
-          amount_cents: 1000
-        });
+      const { error: error1 } = await supabase.from('payments').insert({
+        order_id: testOrderId || crypto.randomUUID(),
+        mp_payment_id: duplicatePaymentId,
+        mp_status: 'approved',
+        amount_cents: 1000,
+      });
 
       expect(error1).toBeNull();
 
       // Second payment with same mp_payment_id should fail
-      const { error: error2 } = await supabase
-        .from('payments')
-        .insert({
-          order_id: crypto.randomUUID(),
-          mp_payment_id: duplicatePaymentId,
-          mp_status: 'pending',
-          amount_cents: 2000
-        });
+      const { error: error2 } = await supabase.from('payments').insert({
+        order_id: crypto.randomUUID(),
+        mp_payment_id: duplicatePaymentId,
+        mp_status: 'pending',
+        amount_cents: 2000,
+      });
 
       expect(error2).toBeTruthy();
       expect(error2.code).toBe('23505'); // Unique violation
@@ -425,14 +454,14 @@ describe('Complete Mercado Pago Integration Flow', () => {
     it('should retrieve order status with payment information', async () => {
       // Ensure we have an order with payment
       const orderId = crypto.randomUUID();
-      
+
       await supabase.from('orders').insert({
         id: orderId,
         subject_id: testSubjectId,
         contact_name: 'Test User Status',
         contact_email: 'status@example.com',
         total_amount_cents: 2000,
-        status: 'approved'
+        status: 'approved',
       });
 
       await supabase.from('payments').insert({
@@ -440,7 +469,7 @@ describe('Complete Mercado Pago Integration Flow', () => {
         mp_payment_id: 'status_test_payment',
         mp_status: 'approved',
         amount_cents: 2000,
-        processed_at: new Date().toISOString()
+        processed_at: new Date().toISOString(),
       });
 
       // Query using the view
@@ -464,35 +493,43 @@ describe('Complete Mercado Pago Integration Flow', () => {
         id: '999999999',
         status: 'approved',
         // Missing external_reference
-        transaction_amount: 15.00
+        transaction_amount: 15.0,
       });
 
       vi.mock('@/lib/mercadopago/mercadopago.service', () => ({
         getPaymentInfo: mockGetPaymentInfoError,
         processWebhookNotification: vi.fn().mockImplementation(async () => {
-          return { success: false, message: 'External reference faltante en pago MP' };
-        })
+          return {
+            success: false,
+            message: 'External reference faltante en pago MP',
+          };
+        }),
       }));
 
-      const { processWebhookNotification: processWebhookErrorMock } = await import('@/lib/mercadopago/mercadopago.service');
+      const { processWebhookNotification: processWebhookErrorMock } =
+        await import('@/lib/mercadopago/mercadopago.service');
       const result = await processWebhookErrorMock('999999999');
-      
+
       expect(result.success).toBe(false);
       expect(result.message).toContain('External reference faltante');
     });
 
     it('should handle non-existent orders gracefully', async () => {
       const nonExistentOrderId = crypto.randomUUID();
-      
+
       vi.mock('@/lib/mercadopago/mercadopago.service', () => ({
         processWebhookNotification: vi.fn().mockImplementation(async () => {
-          return { success: false, message: 'Orden no encontrada en base de datos' };
-        })
+          return {
+            success: false,
+            message: 'Orden no encontrada en base de datos',
+          };
+        }),
       }));
 
-      const { processWebhookNotification: processWebhookErrorMock } = await import('@/lib/mercadopago/mercadopago.service');
+      const { processWebhookNotification: processWebhookErrorMock } =
+        await import('@/lib/mercadopago/mercadopago.service');
       const result = await processWebhookErrorMock('999999999');
-      
+
       expect(result.success).toBe(false);
       expect(result.message).toContain('no encontrada');
     });
@@ -519,5 +556,5 @@ const vi = {
   },
   clearAllMocks: () => {
     console.log('Clearing all mocks');
-  }
+  },
 };

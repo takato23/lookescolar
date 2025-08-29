@@ -4,11 +4,35 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Calendar, MapPin, DollarSign, Home, Users, User, Share } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { GalleryThemeService } from '@/lib/services/gallery-theme.service';
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Home,
+  Users,
+  User,
+  Share,
+  Palette,
+} from 'lucide-react';
 
 export default function NewEventPage() {
   const router = useRouter();
@@ -19,6 +43,7 @@ export default function NewEventPage() {
     name: '',
     location: '',
     date: '',
+    theme: 'default', // Tema default por defecto
     photo_price: 0,
     active: true,
     sharing_mode: 'public', // 'public' o 'private'
@@ -128,11 +153,9 @@ export default function NewEventPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Nombre del Evento *
-                  </Label>
+                  <Label htmlFor="name">Nombre del Evento *</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Calendar className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       id="name"
                       type="text"
@@ -148,11 +171,9 @@ export default function NewEventPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="location">
-                    Ubicación
-                  </Label>
+                  <Label htmlFor="location">Ubicación</Label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <MapPin className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       id="location"
                       type="text"
@@ -167,9 +188,7 @@ export default function NewEventPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="date">
-                    Fecha del Evento *
-                  </Label>
+                  <Label htmlFor="date">Fecha del Evento *</Label>
                   <Input
                     id="date"
                     type="date"
@@ -182,11 +201,34 @@ export default function NewEventPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="photo_price">
-                    Precio por Foto
-                  </Label>
+                  <Label htmlFor="theme">Tema Visual</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Palette className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <Select 
+                      value={formData.theme} 
+                      onValueChange={(value) => setFormData({ ...formData, theme: value })}
+                    >
+                      <SelectTrigger className="pl-10">
+                        <SelectValue placeholder="Selecciona un tema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GalleryThemeService.getThemeOptions().map(option => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Define el estilo visual de la galería y tienda para este evento
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="photo_price">Precio por Foto</Label>
+                  <div className="relative">
+                    <DollarSign className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       id="photo_price"
                       type="number"
@@ -194,7 +236,10 @@ export default function NewEventPage() {
                       step="0.01"
                       value={formData.photo_price}
                       onChange={(e) =>
-                        setFormData({ ...formData, photo_price: parseFloat(e.target.value) || 0 })
+                        setFormData({
+                          ...formData,
+                          photo_price: parseFloat(e.target.value) || 0,
+                        })
                       }
                       className="pl-10"
                       placeholder="0.00"
@@ -219,7 +264,7 @@ export default function NewEventPage() {
               {/* Modo de Compartir */}
               <div className="space-y-3">
                 <Label className="text-base font-semibold">
-                  <Share className="mr-2 h-4 w-4 inline" />
+                  <Share className="mr-2 inline h-4 w-4" />
                   Modo de Compartir Fotos
                 </Label>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -229,14 +274,18 @@ export default function NewEventPage() {
                         ? 'border-blue-500 bg-blue-50/50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    onClick={() => setFormData({ ...formData, sharing_mode: 'public' })}
+                    onClick={() =>
+                      setFormData({ ...formData, sharing_mode: 'public' })
+                    }
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`rounded-full p-2 ${
-                        formData.sharing_mode === 'public' 
-                          ? 'bg-blue-500 text-white' 
-                          : 'bg-gray-200 text-gray-600'
-                      }`}>
+                      <div
+                        className={`rounded-full p-2 ${
+                          formData.sharing_mode === 'public'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}
+                      >
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
@@ -254,18 +303,24 @@ export default function NewEventPage() {
                         ? 'border-orange-500 bg-orange-50/50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    onClick={() => setFormData({ ...formData, sharing_mode: 'private' })}
+                    onClick={() =>
+                      setFormData({ ...formData, sharing_mode: 'private' })
+                    }
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`rounded-full p-2 ${
-                        formData.sharing_mode === 'private' 
-                          ? 'bg-orange-500 text-white' 
-                          : 'bg-gray-200 text-gray-600'
-                      }`}>
+                      <div
+                        className={`rounded-full p-2 ${
+                          formData.sharing_mode === 'private'
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                        }`}
+                      >
                         <User className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">Personalizado</h3>
+                        <h3 className="font-semibold text-gray-900">
+                          Personalizado
+                        </h3>
                         <p className="text-sm text-gray-600">
                           Cada familia ve solo sus fotos específicas
                         </p>
@@ -274,7 +329,8 @@ export default function NewEventPage() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">
-                  💡 Puedes cambiar esto después desde la configuración del evento
+                  💡 Puedes cambiar esto después desde la configuración del
+                  evento
                 </p>
               </div>
 

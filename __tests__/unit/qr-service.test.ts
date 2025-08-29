@@ -48,7 +48,9 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 vi.mock('qrcode', () => ({
-  toDataURL: vi.fn(() => Promise.resolve('data:image/png;base64,test-image-data')),
+  toDataURL: vi.fn(() =>
+    Promise.resolve('data:image/png;base64,test-image-data')
+  ),
   toBuffer: vi.fn(() => Promise.resolve(Buffer.from('test-buffer'))),
 }));
 
@@ -112,7 +114,7 @@ describe('QR Service', () => {
     it('should handle database errors gracefully', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       createClientMock.mockReturnValueOnce({
         from: () => ({
           insert: () => ({
@@ -164,7 +166,7 @@ describe('QR Service', () => {
     it('should handle partial failures in batch generation', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       let callCount = 0;
       createClientMock.mockImplementation(() => ({
         from: () => ({
@@ -217,7 +219,7 @@ describe('QR Service', () => {
     it('should validate a valid student QR code', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       createClientMock.mockReturnValueOnce({
         from: (table: string) => {
           if (table === 'codes') {
@@ -290,7 +292,7 @@ describe('QR Service', () => {
     it('should return null for non-existent QR code', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       createClientMock.mockReturnValueOnce({
         from: () => ({
           select: () => ({
@@ -317,7 +319,7 @@ describe('QR Service', () => {
     it('should retrieve all student QR codes for an event', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       let callCount = 0;
       createClientMock.mockImplementation(() => ({
         from: (table: string) => {
@@ -380,7 +382,7 @@ describe('QR Service', () => {
     it('should return empty array for event with no QR codes', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       createClientMock.mockReturnValueOnce({
         from: () => ({
           select: () => ({
@@ -406,12 +408,12 @@ describe('QR Service', () => {
     it('should calculate QR code statistics correctly', async () => {
       const mockSupabase = await import('@supabase/supabase-js');
       const createClientMock = mockSupabase.createClient as any;
-      
+
       let tableCallCount = 0;
       createClientMock.mockImplementation(() => ({
         from: (table: string) => {
           tableCallCount++;
-          
+
           if (table === 'codes') {
             return {
               select: () => ({
@@ -457,7 +459,7 @@ describe('QR Service', () => {
               }),
             };
           }
-          
+
           return {};
         },
       }));
@@ -483,7 +485,10 @@ describe('QR Service', () => {
         errorLevels: [
           { level: 'L', description: '~7% - Para uso digital' },
           { level: 'M', description: '~15% - Recomendado para impresión' },
-          { level: 'Q', description: '~25% - Para ambientes con interferencia' },
+          {
+            level: 'Q',
+            description: '~25% - Para ambientes con interferencia',
+          },
           { level: 'H', description: '~30% - Máxima corrección de errores' },
         ],
         printRecommendations: {

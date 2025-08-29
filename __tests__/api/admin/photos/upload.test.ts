@@ -1,7 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+} from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/admin/photos/upload/route';
-import { createServerSupabaseClient, createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import {
+  createServerSupabaseClient,
+  createServerSupabaseServiceClient,
+} from '@/lib/supabase/server';
 import { processImageBatch, validateImage } from '@/lib/services/watermark';
 import { uploadToStorage } from '@/lib/services/storage';
 import { SecurityValidator } from '@/lib/security/validation';
@@ -17,32 +28,37 @@ const mockSupabaseClient = {
   from: vi.fn(() => ({
     select: vi.fn(() => ({
       eq: vi.fn(() => ({
-        single: vi.fn()
-      }))
-    }))
-  }))
+        single: vi.fn(),
+      })),
+    })),
+  })),
 };
 
 const mockSupabaseServiceClient = {
   from: vi.fn(() => ({
     insert: vi.fn(() => ({
       select: vi.fn(() => ({
-        single: vi.fn()
-      }))
-    }))
-  }))
+        single: vi.fn(),
+      })),
+    })),
+  })),
 };
 
 // Función helper para crear archivos de prueba
-const createTestFile = async (name: string, type: string = 'image/jpeg'): Promise<File> => {
+const createTestFile = async (
+  name: string,
+  type: string = 'image/jpeg'
+): Promise<File> => {
   const imageBuffer = await sharp({
     create: {
       width: 100,
       height: 100,
       channels: 3,
-      background: { r: 255, g: 0, b: 0 }
-    }
-  }).jpeg().toBuffer();
+      background: { r: 255, g: 0, b: 0 },
+    },
+  })
+    .jpeg()
+    .toBuffer();
 
   // Convert Buffer to Uint8Array to fix type issue
   const uint8Array = new Uint8Array(imageBuffer);
@@ -54,27 +70,30 @@ const createTestFile = async (name: string, type: string = 'image/jpeg'): Promis
 const createFormData = (eventId: string, files: File[]): FormData => {
   const formData = new FormData();
   formData.append('eventId', eventId);
-  files.forEach(file => formData.append('files', file));
+  files.forEach((file) => formData.append('files', file));
   return formData;
 };
 
 // Mock request helper
-const createMockRequest = (formData: FormData, options: {
-  ip?: string;
-  userAgent?: string;
-  headers?: Record<string, string>;
-} = {}): NextRequest => {
+const createMockRequest = (
+  formData: FormData,
+  options: {
+    ip?: string;
+    userAgent?: string;
+    headers?: Record<string, string>;
+  } = {}
+): NextRequest => {
   const headers = new Headers({
     'user-agent': options.userAgent || 'Mozilla/5.0 (compatible; test)',
     'x-forwarded-for': options.ip || '192.168.1.1',
-    ...options.headers
+    ...options.headers,
   });
 
   const request = {
     ip: options.ip || '192.168.1.1',
     headers,
     formData: () => Promise.resolve(formData),
-    nextUrl: { searchParams: new URLSearchParams() }
+    nextUrl: { searchParams: new URLSearchParams() },
   } as unknown as NextRequest;
 
   return request;
@@ -83,63 +102,70 @@ const createMockRequest = (formData: FormData, options: {
 describe('/api/admin/photos/upload - Comprehensive Tests', () => {
   const TEST_EVENT_ID = '123e4567-e89b-12d3-a456-426614174000';
   const TEST_USER_ID = '987fcdeb-51a2-43d1-b789-123456789012';
-  
+
   beforeAll(() => {
     // Mock AuthMiddleware context
     vi.doMock('@/lib/middleware/auth.middleware', () => ({
       AuthMiddleware: {
-        withAuth: (handler: any, role: string) => async (request: NextRequest) => {
-          const authContext = {
-            isAdmin: role === 'admin',
-            user: { id: TEST_USER_ID, email: 'admin@test.com' }
-          };
-          return handler(request, authContext);
-        }
+        withAuth:
+          (handler: any, role: string) => async (request: NextRequest) => {
+            const authContext = {
+              isAdmin: role === 'admin',
+              user: { id: TEST_USER_ID, email: 'admin@test.com' },
+            };
+            return handler(request, authContext);
+          },
       },
       SecurityLogger: {
         logResourceAccess: vi.fn(),
-        logSecurityEvent: vi.fn()
-      }
+        logSecurityEvent: vi.fn(),
+      },
     }));
 
     // Mock RateLimitMiddleware
     vi.doMock('@/lib/middleware/rate-limit.middleware', () => ({
       RateLimitMiddleware: {
-        withRateLimit: (handler: any) => handler
-      }
+        withRateLimit: (handler: any) => handler,
+      },
     }));
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup mocks por defecto
     (createServerSupabaseClient as any).mockResolvedValue(mockSupabaseClient);
-    (createServerSupabaseServiceClient as any).mockResolvedValue(mockSupabaseServiceClient);
-    
+    (createServerSupabaseServiceClient as any).mockResolvedValue(
+      mockSupabaseServiceClient
+    );
+
     // Fix SecurityValidator mocks
     vi.mocked(SecurityValidator.isAllowedIP).mockReturnValue(true);
     vi.mocked(SecurityValidator.isSuspiciousUserAgent).mockReturnValue(false);
     vi.mocked(SecurityValidator.isAllowedContentType).mockReturnValue(true);
     vi.mocked(SecurityValidator.isSafeFilename).mockReturnValue(true);
-    vi.mocked(SecurityValidator.sanitizeFilename).mockImplementation((name: string) => name);
+    vi.mocked(SecurityValidator.sanitizeFilename).mockImplementation(
+      (name: string) => name
+    );
     vi.mocked(SecurityValidator.isValidImageDimensions).mockReturnValue(true);
-    
+
     (validateImage as any).mockResolvedValue(true);
     (processImageBatch as any).mockResolvedValue({
-      results: [{ 
-        buffer: Buffer.from('processed-image'), 
-        width: 800, 
-        height: 600, 
-        originalName: 'test.jpg' 
-      }],
+      results: [
+        {
+          buffer: Buffer.from('processed-image'),
+          width: 800,
+          height: 600,
+          originalName: 'test.jpg',
+        },
+      ],
       errors: [],
-      duplicates: []
+      duplicates: [],
     });
-    
+
     (uploadToStorage as any).mockResolvedValue({
       path: 'events/test-event/photos/test.jpg',
-      size: 1024
+      size: 1024,
     });
 
     // Mock event existe y pertenece al usuario
@@ -150,12 +176,12 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
             data: {
               id: TEST_EVENT_ID,
               name: 'Test Event',
-              created_by: TEST_USER_ID
+              created_by: TEST_USER_ID,
             },
-            error: null
-          })
-        }))
-      }))
+            error: null,
+          }),
+        })),
+      })),
     });
 
     // Mock insert de foto exitoso
@@ -168,12 +194,12 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
               event_id: TEST_EVENT_ID,
               storage_path: 'events/test-event/photos/test.jpg',
               width: 800,
-              height: 600
+              height: 600,
             },
-            error: null
-          })
-        }))
-      }))
+            error: null,
+          }),
+        })),
+      })),
     });
   });
 
@@ -189,12 +215,12 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
           withAuth: (handler: any) => async (request: NextRequest) => {
             const authContext = { isAdmin: false, user: null };
             return handler(request, authContext);
-          }
+          },
         },
         SecurityLogger: {
           logResourceAccess: vi.fn(),
-          logSecurityEvent: vi.fn()
-        }
+          logSecurityEvent: vi.fn(),
+        },
       }));
 
       const file = await createTestFile('test.jpg');
@@ -217,12 +243,12 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
               data: {
                 id: TEST_EVENT_ID,
                 name: 'Test Event',
-                created_by: 'other-user-id'
+                created_by: 'other-user-id',
               },
-              error: null
-            })
-          }))
-        }))
+              error: null,
+            }),
+          })),
+        })),
       });
 
       const file = await createTestFile('test.jpg');
@@ -242,10 +268,10 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
           eq: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
               data: null,
-              error: { message: 'Event not found' }
-            })
-          }))
-        }))
+              error: { message: 'Event not found' },
+            }),
+          })),
+        })),
       });
 
       const file = await createTestFile('test.jpg');
@@ -273,7 +299,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
   describe('Validación de Archivos', () => {
     it('debería rechazar tipos de archivo no permitidos', async () => {
       (SecurityValidator.isAllowedContentType as any).mockReturnValue(false);
-      
+
       const file = await createTestFile('test.pdf', 'application/pdf');
       const formData = createFormData(TEST_EVENT_ID, [file]);
       const request = createMockRequest(formData);
@@ -284,7 +310,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       expect(response.status).toBe(400);
       expect(data.errors).toContainEqual({
         filename: 'test.pdf',
-        error: 'File type not allowed'
+        error: 'File type not allowed',
       });
     });
 
@@ -292,8 +318,10 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       // Mock a large file by directly creating a file with large size
       const largeBuffer = Buffer.alloc(50 * 1024 * 1024); // 50MB buffer
       const largeBlob = new Blob([largeBuffer], { type: 'image/jpeg' });
-      const largeFile = new File([largeBlob], 'large.jpg', { type: 'image/jpeg' });
-      
+      const largeFile = new File([largeBlob], 'large.jpg', {
+        type: 'image/jpeg',
+      });
+
       const formData = createFormData(TEST_EVENT_ID, [largeFile]);
       const request = createMockRequest(formData);
 
@@ -302,13 +330,15 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       expect(data.errors).toContainEqual({
         filename: 'large.jpg',
-        error: 'File too large'
+        error: 'File too large',
       });
     });
 
     it('debería sanitizar nombres de archivo inseguros', async () => {
       vi.mocked(SecurityValidator.isSafeFilename).mockReturnValue(false);
-      vi.mocked(SecurityValidator.sanitizeFilename).mockReturnValue('safe_filename.jpg');
+      vi.mocked(SecurityValidator.sanitizeFilename).mockReturnValue(
+        'safe_filename.jpg'
+      );
 
       const file = await createTestFile('../../../evil.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
@@ -316,7 +346,9 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       await POST(request);
 
-      expect(SecurityValidator.sanitizeFilename).toHaveBeenCalledWith('../../../evil.jpg');
+      expect(SecurityValidator.sanitizeFilename).toHaveBeenCalledWith(
+        '../../../evil.jpg'
+      );
     });
 
     it('debería rechazar archivos que no son imágenes válidas', async () => {
@@ -331,13 +363,15 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       expect(data.errors).toContainEqual({
         filename: 'fake.jpg',
-        error: 'Invalid image file'
+        error: 'Invalid image file',
       });
     });
 
     it('debería limitar a máximo 20 archivos por request', async () => {
       const files = await Promise.all(
-        Array(25).fill(0).map((_, i) => createTestFile(`test${i}.jpg`))
+        Array(25)
+          .fill(0)
+          .map((_, i) => createTestFile(`test${i}.jpg`))
       );
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -367,7 +401,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       const files = await Promise.all([
         createTestFile('test1.jpg'),
         createTestFile('test2.jpg'),
-        createTestFile('test3.jpg')
+        createTestFile('test3.jpg'),
       ]);
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -378,11 +412,11 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
         expect.arrayContaining([
           expect.objectContaining({ originalName: 'test1.jpg' }),
           expect.objectContaining({ originalName: 'test2.jpg' }),
-          expect.objectContaining({ originalName: 'test3.jpg' })
+          expect.objectContaining({ originalName: 'test3.jpg' }),
         ]),
         expect.objectContaining({
           text: expect.stringContaining('© Test Event - PREVIEW'),
-          position: 'center'
+          position: 'center',
         }),
         3 // Límite de concurrencia
       );
@@ -390,14 +424,21 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
     it('debería manejar errores de procesamiento individualmente', async () => {
       (processImageBatch as any).mockResolvedValue({
-        results: [{ buffer: Buffer.from('processed'), width: 800, height: 600, originalName: 'success.jpg' }],
+        results: [
+          {
+            buffer: Buffer.from('processed'),
+            width: 800,
+            height: 600,
+            originalName: 'success.jpg',
+          },
+        ],
         errors: [{ originalName: 'error.jpg', error: 'Processing failed' }],
-        duplicates: []
+        duplicates: [],
       });
 
       const files = await Promise.all([
         createTestFile('success.jpg'),
-        createTestFile('error.jpg')
+        createTestFile('error.jpg'),
       ]);
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -408,24 +449,33 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       expect(data.uploaded).toHaveLength(1);
       expect(data.errors).toContainEqual({
         filename: 'error.jpg',
-        error: 'Processing failed'
+        error: 'Processing failed',
       });
     });
 
     it('debería detectar y reportar imágenes duplicadas', async () => {
       (processImageBatch as any).mockResolvedValue({
-        results: [{ buffer: Buffer.from('processed'), width: 800, height: 600, originalName: 'unique.jpg' }],
+        results: [
+          {
+            buffer: Buffer.from('processed'),
+            width: 800,
+            height: 600,
+            originalName: 'unique.jpg',
+          },
+        ],
         errors: [],
-        duplicates: [{
-          originalName: 'duplicate.jpg',
-          duplicateOf: 'unique.jpg',
-          hash: 'abcd1234567890'
-        }]
+        duplicates: [
+          {
+            originalName: 'duplicate.jpg',
+            duplicateOf: 'unique.jpg',
+            hash: 'abcd1234567890',
+          },
+        ],
       });
 
       const files = await Promise.all([
         createTestFile('unique.jpg'),
-        createTestFile('duplicate.jpg')
+        createTestFile('duplicate.jpg'),
       ]);
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -436,12 +486,14 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       expect(data.duplicates).toHaveLength(1);
       expect(data.errors).toContainEqual({
         filename: 'duplicate.jpg',
-        error: expect.stringContaining('Imagen duplicada de unique.jpg')
+        error: expect.stringContaining('Imagen duplicada de unique.jpg'),
       });
     });
 
     it('debería validar dimensiones de imagen procesada', async () => {
-      vi.mocked(SecurityValidator.isValidImageDimensions).mockReturnValue(false);
+      vi.mocked(SecurityValidator.isValidImageDimensions).mockReturnValue(
+        false
+      );
 
       const file = await createTestFile('test.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
@@ -452,7 +504,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       expect(data.errors).toContainEqual({
         filename: 'test.jpg',
-        error: expect.stringContaining('Upload failed')
+        error: expect.stringContaining('Upload failed'),
       });
     });
   });
@@ -464,10 +516,10 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
           select: vi.fn(() => ({
             single: vi.fn().mockResolvedValue({
               data: null,
-              error: { message: 'Database connection failed' }
-            })
-          }))
-        }))
+              error: { message: 'Database connection failed' },
+            }),
+          })),
+        })),
       });
 
       const file = await createTestFile('test.jpg');
@@ -479,7 +531,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       expect(data.errors).toContainEqual({
         filename: 'test.jpg',
-        error: expect.stringContaining('Database error')
+        error: expect.stringContaining('Database error'),
       });
     });
 
@@ -497,7 +549,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       const files = await Promise.all([
         createTestFile('success.jpg'),
         createTestFile('fail.jpg'),
-        createTestFile('success2.jpg')
+        createTestFile('success2.jpg'),
       ]);
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -508,7 +560,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       expect(data.uploaded).toHaveLength(2); // success.jpg y success2.jpg
       expect(data.errors).toContainEqual({
         filename: 'fail.jpg',
-        error: expect.stringContaining('Upload failed')
+        error: expect.stringContaining('Upload failed'),
       });
     });
   });
@@ -516,9 +568,11 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
   describe('Performance y Timeouts', () => {
     it('debería completarse dentro del timeout de 60 segundos', async () => {
       const startTime = Date.now();
-      
+
       const files = await Promise.all(
-        Array(10).fill(0).map((_, i) => createTestFile(`perf_test_${i}.jpg`))
+        Array(10)
+          .fill(0)
+          .map((_, i) => createTestFile(`perf_test_${i}.jpg`))
       );
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -532,7 +586,9 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
     it('debería manejar concurrencia limitada correctamente', async () => {
       const files = await Promise.all(
-        Array(15).fill(0).map((_, i) => createTestFile(`concurrent_${i}.jpg`))
+        Array(15)
+          .fill(0)
+          .map((_, i) => createTestFile(`concurrent_${i}.jpg`))
       );
       const formData = createFormData(TEST_EVENT_ID, files);
       const request = createMockRequest(formData);
@@ -568,8 +624,8 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       const file = await createTestFile('test.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
-      const request = createMockRequest(formData, { 
-        userAgent: 'malicious-bot-v1.0' 
+      const request = createMockRequest(formData, {
+        userAgent: 'malicious-bot-v1.0',
       });
 
       const response = await POST(request);
@@ -584,13 +640,15 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
 
       const file = await createTestFile('test.jpg');
       const formData = createFormData(TEST_EVENT_ID, [file]);
-      const request = createMockRequest(formData, { 
-        userAgent: 'wget/1.0 (bot)' 
+      const request = createMockRequest(formData, {
+        userAgent: 'wget/1.0 (bot)',
       });
 
       await POST(request);
 
-      expect(SecurityValidator.isSuspiciousUserAgent).toHaveBeenCalledWith('wget/1.0 (bot)');
+      expect(SecurityValidator.isSuspiciousUserAgent).toHaveBeenCalledWith(
+        'wget/1.0 (bot)'
+      );
     });
   });
 
@@ -662,7 +720,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       const request = createMockRequest(formData);
 
       const response = await POST(request);
-      
+
       // La respuesta no incluye duration, pero se loggea internamente
       expect(response.status).toBeLessThan(500);
     });
@@ -681,7 +739,7 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
       expect(data).toHaveProperty('uploaded');
       expect(data).toHaveProperty('stats');
       expect(data).toHaveProperty('message');
-      
+
       expect(data.stats).toHaveProperty('processed');
       expect(data.stats).toHaveProperty('errors');
       expect(data.stats).toHaveProperty('duplicates');

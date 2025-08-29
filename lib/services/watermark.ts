@@ -1,6 +1,21 @@
-import sharp from 'sharp';
 import { customAlphabet } from 'nanoid';
 import crypto from 'crypto';
+import { getAppSettings } from '@/lib/settings';
+
+// Dynamic import for Sharp to prevent bundling issues
+let sharp: any;
+
+async function getSharp() {
+  if (!sharp) {
+    try {
+      sharp = (await import('sharp')).default;
+    } catch (error) {
+      console.error('Failed to load Sharp:', error);
+      throw new Error('Image processing unavailable');
+    }
+  }
+  return sharp;
+}
 
 // Generador de IDs únicos para archivos
 const generateFileId = customAlphabet('1234567890abcdef', 16);
@@ -33,6 +48,48 @@ const DEFAULT_WATERMARK_OPTIONS: WatermarkOptions = {
   position: 'center',
 };
 
+export type WatermarkConfig = {
+  text: string;
+  position: 'bottom-right'|'bottom-left'|'top-right'|'top-left'|'center';
+  opacity: number;
+  size: 'small'|'medium'|'large';
+};
+
+/**
+ * Gets watermark configuration from app settings
+ */
+export async function getWatermarkConfig(): Promise<WatermarkConfig> {
+  try {
+    const settings = await getAppSettings();
+    return {
+      text: settings.watermarkText,
+      position: settings.watermarkPosition,
+      opacity: settings.watermarkOpacity,
+      size: settings.watermarkSize,
+    };
+  } catch (error) {
+    console.error('Failed to get watermark settings from DB, using defaults:', error);
+    return {
+      text: '© LookEscolar',
+      position: 'bottom-right',
+      opacity: 70,
+      size: 'medium',
+    };
+  }
+}
+
+/**
+ * Converts size setting to font size in pixels
+ */
+function sizeToFontSize(size: 'small' | 'medium' | 'large'): number {
+  switch (size) {
+    case 'small': return 32;
+    case 'medium': return 48;
+    case 'large': return 64;
+    default: return 48;
+  }
+}
+
 /**
  * Procesa una imagen aplicando watermark y optimización
  * Cumple con requisitos de CLAUDE.md:
@@ -42,11 +99,26 @@ const DEFAULT_WATERMARK_OPTIONS: WatermarkOptions = {
  * - Limpieza de metadatos EXIF
  * - Validación de seguridad
  */
+/**
+ * Processes image with watermark using app settings
+ */
 export async function processImageWithWatermark(
   inputBuffer: Buffer,
   options: WatermarkOptions = {}
 ): Promise<ProcessedImage> {
-  const config = { ...DEFAULT_WATERMARK_OPTIONS, ...options };
+  // Get watermark config from settings if not provided in options
+  const watermarkConfig = options.text ? null : await getWatermarkConfig();
+  
+  const config = {
+    ...DEFAULT_WATERMARK_OPTIONS,
+    ...(watermarkConfig && {
+      text: watermarkConfig.text,
+      opacity: watermarkConfig.opacity / 100, // Convert percentage to decimal
+      fontSize: sizeToFontSize(watermarkConfig.size),
+      position: watermarkConfig.position,
+    }),
+    ...options,
+  };
 
   // Validar seguridad de la imagen primero
   const validation = await validateImageSecurity(inputBuffer);
@@ -59,10 +131,13 @@ export async function processImageWithWatermark(
   // Limpiar metadatos EXIF por seguridad
   const cleanBuffer = await stripImageMetadata(inputBuffer);
 
-  // Calcular nuevas dimensiones (max 1600px en lado largo)
+  // Get upload settings for max resolution
+  const uploadSettings = await getAppSettings();
+  const maxDimension = uploadSettings.uploadMaxResolution;
+  
+  // Calcular nuevas dimensiones
   let newWidth = metadata.width;
   let newHeight = metadata.height;
-  const maxDimension = 1600;
 
   if (metadata.width > maxDimension || metadata.height > maxDimension) {
     if (metadata.width > metadata.height) {
@@ -85,7 +160,8 @@ export async function processImageWithWatermark(
   );
 
   // Procesar la imagen (usar buffer limpio sin EXIF)
-  const processedBuffer = await sharp(cleanBuffer)
+  const sharpInstance = await getSharp();
+  const processedBuffer = await sharpInstance(cleanBuffer)
     .resize(newWidth, newHeight, {
       fit: 'inside',
       withoutEnlargement: true,
@@ -96,7 +172,7 @@ export async function processImageWithWatermark(
         gravity: 'center',
       },
     ])
-    .webp({ quality: 72 })
+    .webp({ quality: uploadSettings.uploadQuality })
     .toBuffer();
 
   const filename = `${generateFileId()}.webp`;
@@ -132,7 +208,11 @@ export async function processImagePreview(
   const cleanBuffer = await stripImageMetadata(inputBuffer);
 
   // Función para procesar con dimensiones y calidad específicas
-  const processWithSettings = async (width: number, height: number, quality: number) => {
+  const processWithSettings = async (
+    width: number,
+    height: number,
+    quality: number
+  ) => {
     const watermarkSvg = createWatermarkSvg(
       width,
       height,
@@ -142,7 +222,8 @@ export async function processImagePreview(
       config.position!
     );
 
-    return await sharp(cleanBuffer)
+    const sharpInstance = await getSharp();
+    return await sharpInstance(cleanBuffer)
       .resize(width, height, {
         fit: 'inside',
         withoutEnlargement: true,
@@ -179,14 +260,20 @@ export async function processImagePreview(
     if (metadata.width > step.maxDim || metadata.height > step.maxDim) {
       if (metadata.width > metadata.height) {
         newWidth = step.maxDim;
-        newHeight = Math.round((metadata.height / metadata.width) * step.maxDim);
+        newHeight = Math.round(
+          (metadata.height / metadata.width) * step.maxDim
+        );
       } else {
         newHeight = step.maxDim;
         newWidth = Math.round((metadata.width / metadata.height) * step.maxDim);
       }
     }
 
-    processedBuffer = await processWithSettings(newWidth, newHeight, step.quality);
+    processedBuffer = await processWithSettings(
+      newWidth,
+      newHeight,
+      step.quality
+    );
     finalWidth = newWidth;
     finalHeight = newHeight;
 
@@ -198,11 +285,13 @@ export async function processImagePreview(
 
   // Si aún es muy grande, aplicar compresión extrema
   if (processedBuffer!.length > MAX_SIZE_BYTES) {
-    console.warn('Imagen muy grande, aplicando compresión extrema para cumplir límite de 300KB');
-    
+    console.warn(
+      'Imagen muy grande, aplicando compresión extrema para cumplir límite de 300KB'
+    );
+
     finalWidth = Math.min(300, metadata.width);
     finalHeight = Math.round((metadata.height / metadata.width) * finalWidth);
-    
+
     processedBuffer = await processWithSettings(finalWidth, finalHeight, 40);
   }
 
@@ -382,7 +471,8 @@ export async function processImageBatch(
  */
 export async function validateImage(buffer: Buffer): Promise<boolean> {
   try {
-    const metadata = await sharp(buffer).metadata();
+    const sharpInstance = await getSharp();
+    const metadata = await sharpInstance(buffer).metadata();
     const validFormats = ['jpeg', 'jpg', 'png', 'webp', 'gif', 'tiff'];
     return !!(metadata.format && validFormats.includes(metadata.format));
   } catch {
@@ -409,7 +499,8 @@ export function calculateImageHash(buffer: Buffer): string {
  */
 export async function stripImageMetadata(buffer: Buffer): Promise<Buffer> {
   try {
-    return await sharp(buffer)
+    const sharpInstance = await getSharp();
+    return await sharpInstance(buffer)
       .rotate() // Auto-rotate basado en EXIF orientation
       .withMetadata(false) // Remover metadatos EXIF
       .toBuffer();
@@ -424,10 +515,11 @@ export async function stripImageMetadata(buffer: Buffer): Promise<Buffer> {
 export async function validateImageSecurity(buffer: Buffer): Promise<{
   isValid: boolean;
   error?: string;
-  metadata?: sharp.Metadata;
+  metadata?: any;
 }> {
   try {
-    const metadata = await sharp(buffer).metadata();
+    const sharpInstance = await getSharp();
+    const metadata = await sharpInstance(buffer).metadata();
 
     // Validar que tenga dimensiones
     if (!metadata.width || !metadata.height) {

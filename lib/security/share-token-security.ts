@@ -22,7 +22,12 @@ export interface ShareTokenValidation {
     created_at: string;
   };
   error?: string;
-  errorCode?: 'INVALID_TOKEN' | 'EXPIRED' | 'MAX_VIEWS_EXCEEDED' | 'PASSWORD_REQUIRED' | 'ACCESS_DENIED';
+  errorCode?:
+    | 'INVALID_TOKEN'
+    | 'EXPIRED'
+    | 'MAX_VIEWS_EXCEEDED'
+    | 'PASSWORD_REQUIRED'
+    | 'ACCESS_DENIED';
 }
 
 export interface AccessAttempt {
@@ -47,7 +52,7 @@ class ShareTokenSecurity {
    * Validate share token with comprehensive security checks
    */
   async validateToken(
-    token: string, 
+    token: string,
     password?: string,
     requestContext?: {
       ip?: string;
@@ -55,19 +60,22 @@ class ShareTokenSecurity {
     }
   ): Promise<ShareTokenValidation> {
     const requestId = crypto.randomUUID();
-    
+
     try {
       // Basic token format validation
       if (!token || typeof token !== 'string' || token.length !== 64) {
         return {
           isValid: false,
           error: 'Invalid token format',
-          errorCode: 'INVALID_TOKEN'
+          errorCode: 'INVALID_TOKEN',
         };
       }
 
       // Check rate limiting before database query
-      const rateLimitCheck = await this.checkRateLimit(token, requestContext?.ip);
+      const rateLimitCheck = await this.checkRateLimit(
+        token,
+        requestContext?.ip
+      );
       if (!rateLimitCheck.allowed) {
         logger.warn('Rate limit exceeded for share token access', {
           requestId,
@@ -79,7 +87,7 @@ class ShareTokenSecurity {
         return {
           isValid: false,
           error: 'Too many access attempts. Please try again later.',
-          errorCode: 'ACCESS_DENIED'
+          errorCode: 'ACCESS_DENIED',
         };
       }
 
@@ -105,12 +113,15 @@ class ShareTokenSecurity {
         return {
           isValid: false,
           error: 'Invalid or expired share link',
-          errorCode: 'INVALID_TOKEN'
+          errorCode: 'INVALID_TOKEN',
         };
       }
 
       // Check expiration
-      if (shareToken.expires_at && new Date(shareToken.expires_at) < new Date()) {
+      if (
+        shareToken.expires_at &&
+        new Date(shareToken.expires_at) < new Date()
+      ) {
         await this.logAccessAttempt({
           token,
           ip_address: requestContext?.ip || 'unknown',
@@ -123,12 +134,15 @@ class ShareTokenSecurity {
         return {
           isValid: false,
           error: 'This share link has expired',
-          errorCode: 'EXPIRED'
+          errorCode: 'EXPIRED',
         };
       }
 
       // Check max views
-      if (shareToken.max_views && shareToken.view_count >= shareToken.max_views) {
+      if (
+        shareToken.max_views &&
+        shareToken.view_count >= shareToken.max_views
+      ) {
         await this.logAccessAttempt({
           token,
           ip_address: requestContext?.ip || 'unknown',
@@ -141,7 +155,7 @@ class ShareTokenSecurity {
         return {
           isValid: false,
           error: 'This share link has reached its view limit',
-          errorCode: 'MAX_VIEWS_EXCEEDED'
+          errorCode: 'MAX_VIEWS_EXCEEDED',
         };
       }
 
@@ -151,11 +165,14 @@ class ShareTokenSecurity {
           return {
             isValid: false,
             error: 'Password required to access this content',
-            errorCode: 'PASSWORD_REQUIRED'
+            errorCode: 'PASSWORD_REQUIRED',
           };
         }
 
-        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+        const hashedPassword = crypto
+          .createHash('sha256')
+          .update(password)
+          .digest('hex');
         if (hashedPassword !== shareToken.password_hash) {
           await this.logAccessAttempt({
             token,
@@ -169,7 +186,7 @@ class ShareTokenSecurity {
           return {
             isValid: false,
             error: 'Incorrect password',
-            errorCode: 'PASSWORD_REQUIRED'
+            errorCode: 'PASSWORD_REQUIRED',
           };
         }
       }
@@ -186,13 +203,13 @@ class ShareTokenSecurity {
       // Increment view count
       await supabase
         .from('share_tokens')
-        .update({ 
+        .update({
           view_count: shareToken.view_count + 1,
           metadata: {
             ...shareToken.metadata,
             last_accessed: new Date().toISOString(),
             last_ip: requestContext?.ip,
-          }
+          },
         })
         .eq('id', shareToken.id);
 
@@ -206,9 +223,8 @@ class ShareTokenSecurity {
 
       return {
         isValid: true,
-        token: shareToken
+        token: shareToken,
       };
-
     } catch (error) {
       logger.error('Error validating share token', {
         requestId,
@@ -219,7 +235,7 @@ class ShareTokenSecurity {
       return {
         isValid: false,
         error: 'Failed to validate share link',
-        errorCode: 'ACCESS_DENIED'
+        errorCode: 'ACCESS_DENIED',
       };
     }
   }
@@ -228,7 +244,7 @@ class ShareTokenSecurity {
    * Check rate limiting for share token access
    */
   private async checkRateLimit(
-    token: string, 
+    token: string,
     ip?: string
   ): Promise<{ allowed: boolean; reason?: string }> {
     try {
@@ -255,7 +271,10 @@ class ShareTokenSecurity {
           .eq('success', false)
           .gte('timestamp', oneHourAgo);
 
-        if (failedAttempts && failedAttempts > this.SUSPICIOUS_ACTIVITY_THRESHOLD) {
+        if (
+          failedAttempts &&
+          failedAttempts > this.SUSPICIOUS_ACTIVITY_THRESHOLD
+        ) {
           return { allowed: false, reason: 'Suspicious activity detected' };
         }
       }
@@ -272,7 +291,6 @@ class ShareTokenSecurity {
       }
 
       return { allowed: true };
-
     } catch (error) {
       logger.error('Error checking rate limit for share token', {
         token: token.substring(0, 8) + '...',
@@ -292,17 +310,14 @@ class ShareTokenSecurity {
     try {
       const supabase = await this.getSupabase();
 
-      await supabase
-        .from('share_access_log')
-        .insert({
-          token: attempt.token,
-          ip_address: attempt.ip_address,
-          user_agent: attempt.user_agent,
-          success: attempt.success,
-          error_reason: attempt.error_reason,
-          timestamp: attempt.timestamp,
-        });
-
+      await supabase.from('share_access_log').insert({
+        token: attempt.token,
+        ip_address: attempt.ip_address,
+        user_agent: attempt.user_agent,
+        success: attempt.success,
+        error_reason: attempt.error_reason,
+        timestamp: attempt.timestamp,
+      });
     } catch (error) {
       logger.error('Failed to log share token access attempt', {
         token: attempt.token.substring(0, 8) + '...',
@@ -347,9 +362,10 @@ class ShareTokenSecurity {
 
       // Calculate analytics
       const totalAccesses = logs.length;
-      const uniqueIPs = new Set(logs.map(log => log.ip_address)).size;
-      const successfulAccesses = logs.filter(log => log.success).length;
-      const successRate = totalAccesses > 0 ? (successfulAccesses / totalAccesses) * 100 : 0;
+      const uniqueIPs = new Set(logs.map((log) => log.ip_address)).size;
+      const successfulAccesses = logs.filter((log) => log.success).length;
+      const successRate =
+        totalAccesses > 0 ? (successfulAccesses / totalAccesses) * 100 : 0;
 
       return {
         totalAccesses,
@@ -357,7 +373,6 @@ class ShareTokenSecurity {
         recentAccesses: logs.slice(0, 20), // Last 20 accesses
         successRate,
       };
-
     } catch (error) {
       logger.error('Error getting token analytics', {
         tokenId,
@@ -376,7 +391,10 @@ class ShareTokenSecurity {
   /**
    * Revoke a share token (security measure)
    */
-  async revokeToken(tokenId: string, reason: string): Promise<{ success: boolean; error?: string }> {
+  async revokeToken(
+    tokenId: string,
+    reason: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const supabase = await this.getSupabase();
 
@@ -402,7 +420,6 @@ class ShareTokenSecurity {
       });
 
       return { success: true };
-
     } catch (error) {
       logger.error('Error revoking share token', {
         tokenId,
@@ -412,7 +429,8 @@ class ShareTokenSecurity {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to revoke token',
+        error:
+          error instanceof Error ? error.message : 'Failed to revoke token',
       };
     }
   }
@@ -420,7 +438,10 @@ class ShareTokenSecurity {
   /**
    * Clean up expired tokens and old access logs
    */
-  async cleanupExpiredData(): Promise<{ deletedTokens: number; deletedLogs: number }> {
+  async cleanupExpiredData(): Promise<{
+    deletedTokens: number;
+    deletedLogs: number;
+  }> {
     try {
       const supabase = await this.getSupabase();
 
@@ -431,7 +452,9 @@ class ShareTokenSecurity {
         .lt('expires_at', new Date().toISOString());
 
       // Delete access logs older than 30 days
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const thirtyDaysAgo = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
       const { count: deletedLogs } = await supabase
         .from('share_access_log')
         .delete()
@@ -446,7 +469,6 @@ class ShareTokenSecurity {
         deletedTokens: deletedTokens || 0,
         deletedLogs: deletedLogs || 0,
       };
-
     } catch (error) {
       logger.error('Error cleaning up expired share data', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -462,10 +484,11 @@ class ShareTokenSecurity {
   static extractRequestContext(): { ip?: string; userAgent?: string } {
     try {
       const headersList = headers();
-      const ip = headersList.get('x-forwarded-for') || 
-                 headersList.get('x-real-ip') || 
-                 headersList.get('cf-connecting-ip') ||
-                 'unknown';
+      const ip =
+        headersList.get('x-forwarded-for') ||
+        headersList.get('x-real-ip') ||
+        headersList.get('cf-connecting-ip') ||
+        'unknown';
       const userAgent = headersList.get('user-agent') || 'unknown';
 
       return { ip, userAgent };

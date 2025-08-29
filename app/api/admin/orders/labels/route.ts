@@ -27,20 +27,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Invalid labels request',
-          details: validation.error.issues
+          details: validation.error.issues,
         },
         { status: 400 }
       );
     }
 
-    const { order_ids, format, label_size, include_qr, include_logo } = validation.data;
+    const { order_ids, format, label_size, include_qr, include_logo } =
+      validation.data;
 
-    console.log(`[Order Labels API] Generating labels for ${order_ids.length} orders`, {
-      format,
-      label_size,
-      include_qr,
-      include_logo,
-    });
+    console.log(
+      `[Order Labels API] Generating labels for ${order_ids.length} orders`,
+      {
+        format,
+        label_size,
+        include_qr,
+        include_logo,
+      }
+    );
 
     // Generate labels using the export service
     const result = await orderExportService.generateShippingLabels(order_ids);
@@ -71,18 +75,17 @@ export async function POST(request: NextRequest) {
         labels_per_second: Math.round(order_ids.length / (duration / 1000)),
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Order Labels API] Label generation failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Label generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -118,7 +121,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate UUIDs
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     for (const id of orderIds) {
       if (!uuidRegex.test(id)) {
         return NextResponse.json(
@@ -129,16 +133,21 @@ export async function GET(request: NextRequest) {
     }
 
     const format = (searchParams.get('format') as 'pdf' | 'html') || 'pdf';
-    const labelSize = (searchParams.get('label_size') as 'standard' | 'small' | 'large') || 'standard';
+    const labelSize =
+      (searchParams.get('label_size') as 'standard' | 'small' | 'large') ||
+      'standard';
     const includeQr = searchParams.get('include_qr') !== 'false';
     const includeLogo = searchParams.get('include_logo') !== 'false';
 
-    console.log(`[Order Labels API] GET request for ${orderIds.length} labels`, {
-      format,
-      labelSize,
-      includeQr,
-      includeLogo,
-    });
+    console.log(
+      `[Order Labels API] GET request for ${orderIds.length} labels`,
+      {
+        format,
+        labelSize,
+        includeQr,
+        includeLogo,
+      }
+    );
 
     // Generate labels
     const result = await orderExportService.generateShippingLabels(orderIds);
@@ -152,25 +161,25 @@ export async function GET(request: NextRequest) {
       success: true,
       downloadUrl: `/api/admin/orders/labels/download/${result.filename}`,
       labels: result,
-      message: 'Labels generated successfully. Use the downloadUrl to get the file.',
+      message:
+        'Labels generated successfully. Use the downloadUrl to get the file.',
       metadata: {
         order_count: orderIds.length,
         format,
         options: { includeQr, includeLogo, labelSize },
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Order Labels API] GET labels failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Label generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

@@ -4,10 +4,10 @@ import { withAuth } from '@/lib/middleware/auth.middleware';
 import { logger } from '@/lib/utils/logger';
 
 // GET: Generate email template for school distribution
-export const GET = withAuth(async function(request: NextRequest, context) {
+export const GET = withAuth(async function (request: NextRequest, context) {
   const eventId = context.params?.id as string;
   const requestId = crypto.randomUUID();
-  
+
   try {
     const supabase = await createServerSupabaseServiceClient();
 
@@ -19,10 +19,7 @@ export const GET = withAuth(async function(request: NextRequest, context) {
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Get sample subject for example
@@ -33,11 +30,14 @@ export const GET = withAuth(async function(request: NextRequest, context) {
       .limit(1)
       .single();
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com';
     const schoolName = event.school_name || 'la escuela';
     const eventName = event.name || 'la sesión fotográfica';
-    const eventDate = event.date ? new Date(event.date).toLocaleDateString('es-ES') : '[FECHA]';
-    
+    const eventDate = event.date
+      ? new Date(event.date).toLocaleDateString('es-ES')
+      : '[FECHA]';
+
     // Generate example link
     const exampleToken = sampleSubject?.token || '[TOKEN_DEL_ALUMNO]';
     const exampleLink = `${baseUrl}/f/${exampleToken}`;
@@ -107,7 +107,6 @@ INSTRUCCIONES PARA LA ESCUELA:
         generatedAt: new Date().toISOString(),
       },
     });
-
   } catch (error) {
     logger.error('Error generating email template', {
       requestId,
@@ -116,7 +115,7 @@ INSTRUCCIONES PARA LA ESCUELA:
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         message: 'Failed to generate email template',
         requestId,
@@ -125,4 +124,3 @@ INSTRUCCIONES PARA LA ESCUELA:
     );
   }
 });
-

@@ -9,26 +9,35 @@ const generateQRSchema = z.object({
   studentId: z.string().uuid('Invalid student ID'),
   studentName: z.string().min(1, 'Student name is required'),
   courseId: z.string().uuid().optional(),
-  options: z.object({
-    size: z.number().min(100).max(800).optional(),
-    errorCorrectionLevel: z.enum(['L', 'M', 'Q', 'H']).optional(),
-    margin: z.number().min(0).max(10).optional(),
-  }).optional(),
+  options: z
+    .object({
+      size: z.number().min(100).max(800).optional(),
+      errorCorrectionLevel: z.enum(['L', 'M', 'Q', 'H']).optional(),
+      margin: z.number().min(0).max(10).optional(),
+    })
+    .optional(),
 });
 
 const batchGenerateQRSchema = z.object({
   eventId: z.string().uuid('Invalid event ID'),
-  students: z.array(z.object({
-    id: z.string().uuid('Invalid student ID'),
-    name: z.string().min(1, 'Student name is required'),
-    courseId: z.string().uuid().optional(),
-    metadata: z.record(z.any()).optional(),
-  })).min(1, 'At least one student is required').max(100, 'Maximum 100 students per batch'),
-  options: z.object({
-    size: z.number().min(100).max(800).optional(),
-    errorCorrectionLevel: z.enum(['L', 'M', 'Q', 'H']).optional(),
-    margin: z.number().min(0).max(10).optional(),
-  }).optional(),
+  students: z
+    .array(
+      z.object({
+        id: z.string().uuid('Invalid student ID'),
+        name: z.string().min(1, 'Student name is required'),
+        courseId: z.string().uuid().optional(),
+        metadata: z.record(z.any()).optional(),
+      })
+    )
+    .min(1, 'At least one student is required')
+    .max(100, 'Maximum 100 students per batch'),
+  options: z
+    .object({
+      size: z.number().min(100).max(800).optional(),
+      errorCorrectionLevel: z.enum(['L', 'M', 'Q', 'H']).optional(),
+      margin: z.number().min(0).max(10).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -61,7 +70,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { eventId, studentId, studentName, courseId, options } = validation.data;
+    const { eventId, studentId, studentName, courseId, options } =
+      validation.data;
 
     // Generate QR code for student identification
     const result = await qrService.generateStudentIdentificationQR(
@@ -89,7 +99,6 @@ export async function POST(request: NextRequest) {
         studentName,
       },
     });
-
   } catch (error) {
     logger.error('QR generation API error', {
       requestId,
@@ -147,7 +156,7 @@ export async function PUT(request: NextRequest) {
       options,
     });
 
-    const successCount = results.filter(r => !r.error).length;
+    const successCount = results.filter((r) => !r.error).length;
     const failureCount = results.length - successCount;
 
     logger.info('Batch QR codes generated via API', {
@@ -170,7 +179,6 @@ export async function PUT(request: NextRequest) {
         },
       },
     });
-
   } catch (error) {
     logger.error('Batch QR generation API error', {
       requestId,

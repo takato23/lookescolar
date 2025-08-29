@@ -1,7 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, X, Clock, Calendar, DollarSign, Users, Image, Tag, Zap, TrendingUp, Filter, Command } from 'lucide-react';
+import {
+  Search,
+  X,
+  Clock,
+  Calendar,
+  DollarSign,
+  Users,
+  Image,
+  Tag,
+  Zap,
+  TrendingUp,
+  Filter,
+  Command,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,13 +38,13 @@ interface AdvancedSearchProps {
   events?: any[];
 }
 
-export function AdvancedSearch({ 
-  onSearch, 
-  onFilterApply, 
-  placeholder = "Buscar eventos, escuelas, fechas...", 
+export function AdvancedSearch({
+  onSearch,
+  onFilterApply,
+  placeholder = 'Buscar eventos, escuelas, fechas...',
   suggestions = [],
   className,
-  events = []
+  events = [],
 }: AdvancedSearchProps) {
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -44,10 +57,10 @@ export function AdvancedSearch({
   // Generate smart suggestions based on available data
   const generateSmartSuggestions = (): SearchSuggestion[] => {
     const smartSuggestions: SearchSuggestion[] = [];
-    
+
     // School suggestions
-    const schools = [...new Set(events.map(e => e.school))];
-    schools.forEach(school => {
+    const schools = [...new Set(events.map((e) => e.school))];
+    schools.forEach((school) => {
       if (school.toLowerCase().includes(query.toLowerCase())) {
         smartSuggestions.push({
           id: `school-${school}`,
@@ -56,36 +69,45 @@ export function AdvancedSearch({
           label: school,
           description: `Buscar eventos de ${school}`,
           icon: Users,
-          count: events.filter(e => e.school === school).length
+          count: events.filter((e) => e.school === school).length,
         });
       }
     });
 
     // Date-based suggestions
-    if (query.toLowerCase().includes('hoy') || query.toLowerCase().includes('today')) {
+    if (
+      query.toLowerCase().includes('hoy') ||
+      query.toLowerCase().includes('today')
+    ) {
       smartSuggestions.push({
         id: 'date-today',
         type: 'date',
         value: 'today',
         label: 'Eventos de hoy',
         description: 'Ver eventos programados para hoy',
-        icon: Calendar
+        icon: Calendar,
       });
     }
 
-    if (query.toLowerCase().includes('semana') || query.toLowerCase().includes('week')) {
+    if (
+      query.toLowerCase().includes('semana') ||
+      query.toLowerCase().includes('week')
+    ) {
       smartSuggestions.push({
         id: 'date-week',
         type: 'date',
         value: 'this-week',
         label: 'Esta semana',
         description: 'Eventos de los próximos 7 días',
-        icon: Calendar
+        icon: Calendar,
       });
     }
 
     // Status-based suggestions
-    if (query.toLowerCase().includes('activ') || query.toLowerCase().includes('active')) {
+    if (
+      query.toLowerCase().includes('activ') ||
+      query.toLowerCase().includes('active')
+    ) {
       smartSuggestions.push({
         id: 'status-active',
         type: 'status',
@@ -93,11 +115,14 @@ export function AdvancedSearch({
         label: 'Eventos activos',
         description: 'Ver solo eventos activos',
         icon: Zap,
-        count: events.filter(e => e.active).length
+        count: events.filter((e) => e.active).length,
       });
     }
 
-    if (query.toLowerCase().includes('borrador') || query.toLowerCase().includes('draft')) {
+    if (
+      query.toLowerCase().includes('borrador') ||
+      query.toLowerCase().includes('draft')
+    ) {
       smartSuggestions.push({
         id: 'status-draft',
         type: 'status',
@@ -105,31 +130,37 @@ export function AdvancedSearch({
         label: 'Borradores',
         description: 'Ver eventos en borrador',
         icon: Clock,
-        count: events.filter(e => !e.active).length
+        count: events.filter((e) => !e.active).length,
       });
     }
 
     // Revenue-based suggestions
-    if (query.toLowerCase().includes('ingreso') || query.toLowerCase().includes('revenue')) {
+    if (
+      query.toLowerCase().includes('ingreso') ||
+      query.toLowerCase().includes('revenue')
+    ) {
       smartSuggestions.push({
         id: 'filter-high-revenue',
         type: 'filter',
         value: 'high-revenue',
         label: 'Altos ingresos',
         description: 'Eventos con más de $50,000',
-        icon: TrendingUp
+        icon: TrendingUp,
       });
     }
 
     // Photo-based suggestions
-    if (query.toLowerCase().includes('foto') || query.toLowerCase().includes('photo')) {
+    if (
+      query.toLowerCase().includes('foto') ||
+      query.toLowerCase().includes('photo')
+    ) {
       smartSuggestions.push({
         id: 'filter-many-photos',
         type: 'filter',
         value: 'many-photos',
         label: 'Muchas fotos',
         description: 'Eventos con más de 100 fotos',
-        icon: Image
+        icon: Image,
       });
     }
 
@@ -143,12 +174,12 @@ export function AdvancedSearch({
     setQuery(value);
     setSelectedIndex(-1);
     setShowSuggestions(true);
-    
+
     // Trigger search with debounce
     const timeoutId = setTimeout(() => {
       onSearch(value);
     }, 300);
-    
+
     return () => clearTimeout(timeoutId);
   };
 
@@ -156,21 +187,31 @@ export function AdvancedSearch({
     if (suggestion.type === 'school') {
       setQuery(suggestion.value);
       onSearch(suggestion.value);
-    } else if (suggestion.type === 'date' || suggestion.type === 'status' || suggestion.type === 'filter') {
+    } else if (
+      suggestion.type === 'date' ||
+      suggestion.type === 'status' ||
+      suggestion.type === 'filter'
+    ) {
       applyQuickFilter(suggestion);
     }
-    
+
     // Add to recent searches
-    const newRecentSearches = [suggestion.label, ...recentSearches.filter(s => s !== suggestion.label)].slice(0, 5);
+    const newRecentSearches = [
+      suggestion.label,
+      ...recentSearches.filter((s) => s !== suggestion.label),
+    ].slice(0, 5);
     setRecentSearches(newRecentSearches);
-    localStorage.setItem('recentEventSearches', JSON.stringify(newRecentSearches));
-    
+    localStorage.setItem(
+      'recentEventSearches',
+      JSON.stringify(newRecentSearches)
+    );
+
     setShowSuggestions(false);
   };
 
   const applyQuickFilter = (suggestion: SearchSuggestion) => {
     const filters: any = {};
-    
+
     switch (suggestion.value) {
       case 'today':
         const today = new Date().toISOString().split('T')[0];
@@ -182,7 +223,7 @@ export function AdvancedSearch({
         endOfWeek.setDate(startOfWeek.getDate() + 7);
         filters.dateRange = {
           start: startOfWeek.toISOString().split('T')[0],
-          end: endOfWeek.toISOString().split('T')[0]
+          end: endOfWeek.toISOString().split('T')[0],
         };
         break;
       case 'active':
@@ -198,7 +239,7 @@ export function AdvancedSearch({
         filters.minPhotos = 100;
         break;
     }
-    
+
     onFilterApply(filters);
   };
 
@@ -208,11 +249,13 @@ export function AdvancedSearch({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex(prev => Math.min(prev + 1, allSuggestions.length - 1));
+        setSelectedIndex((prev) =>
+          Math.min(prev + 1, allSuggestions.length - 1)
+        );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => Math.max(prev - 1, -1));
+        setSelectedIndex((prev) => Math.max(prev - 1, -1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -250,19 +293,19 @@ export function AdvancedSearch({
     if (selectedIndex >= 0 && suggestionRefs.current[selectedIndex]) {
       suggestionRefs.current[selectedIndex]?.scrollIntoView({
         behavior: 'smooth',
-        block: 'nearest'
+        block: 'nearest',
       });
     }
   }, [selectedIndex]);
 
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn('relative w-full', className)}>
       {/* Search Input */}
       <div className="relative">
-        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10">
+        <div className="absolute left-3 top-1/2 z-10 -translate-y-1/2 transform">
           <Search className="h-4 w-4 text-gray-400" />
         </div>
-        
+
         <Input
           ref={inputRef}
           value={query}
@@ -274,10 +317,10 @@ export function AdvancedSearch({
             setTimeout(() => setShowSuggestions(false), 150);
           }}
           placeholder={placeholder}
-          className="neural-glass-card pl-10 pr-20 w-full border-white/20 bg-white/50 backdrop-blur-md focus:bg-white/70 transition-all duration-300"
+          className="neural-glass-card w-full border-white/20 bg-white/50 pl-10 pr-20 backdrop-blur-md transition-all duration-300 focus:bg-white/70"
         />
-        
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+
+        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 transform items-center gap-1">
           {query && (
             <Button
               size="sm"
@@ -288,7 +331,7 @@ export function AdvancedSearch({
               <X className="h-3 w-3" />
             </Button>
           )}
-          
+
           <Button
             size="sm"
             variant="ghost"
@@ -298,9 +341,9 @@ export function AdvancedSearch({
             <Filter className="h-3 w-3" />
           </Button>
         </div>
-        
+
         {/* Keyboard shortcut hint */}
-        <div className="absolute right-12 top-1/2 transform -translate-y-1/2 hidden lg:flex items-center gap-1 text-xs text-gray-400">
+        <div className="absolute right-12 top-1/2 hidden -translate-y-1/2 transform items-center gap-1 text-xs text-gray-400 lg:flex">
           <Command className="h-3 w-3" />
           <span>K</span>
         </div>
@@ -308,13 +351,15 @@ export function AdvancedSearch({
 
       {/* Suggestions Dropdown */}
       {showSuggestions && (query || recentSearches.length > 0) && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-2 neural-glass-card border border-white/20 bg-white/95 backdrop-blur-md rounded-xl shadow-lg max-h-80 overflow-y-auto">
+        <div className="neural-glass-card absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-white/20 bg-white/95 shadow-lg backdrop-blur-md">
           {/* Recent Searches */}
           {!query && recentSearches.length > 0 && (
-            <div className="p-3 border-b border-gray-100">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="border-b border-gray-100 p-3">
+              <div className="mb-2 flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600">Búsquedas recientes</span>
+                <span className="text-sm font-medium text-gray-600">
+                  Búsquedas recientes
+                </span>
               </div>
               <div className="space-y-1">
                 {recentSearches.slice(0, 3).map((search, index) => (
@@ -325,7 +370,7 @@ export function AdvancedSearch({
                       onSearch(search);
                       setShowSuggestions(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100/70 rounded-lg transition-colors"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100/70"
                   >
                     {search}
                   </button>
@@ -338,7 +383,7 @@ export function AdvancedSearch({
           {allSuggestions.length > 0 && (
             <div className="p-2">
               {!query && (
-                <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="px-3 py-2 text-xs font-medium uppercase tracking-wider text-gray-500">
                   Sugerencias rápidas
                 </div>
               )}
@@ -348,37 +393,41 @@ export function AdvancedSearch({
                   return (
                     <div
                       key={suggestion.id}
-                      ref={el => { suggestionRefs.current[index] = el; }}
+                      ref={(el) => {
+                        suggestionRefs.current[index] = el;
+                      }}
                       onClick={() => handleSuggestionClick(suggestion)}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all duration-200",
+                        'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200',
                         selectedIndex === index
-                          ? "bg-blue-100/70 text-blue-800"
-                          : "text-gray-700 hover:bg-gray-100/70"
+                          ? 'bg-blue-100/70 text-blue-800'
+                          : 'text-gray-700 hover:bg-gray-100/70'
                       )}
                     >
-                      <div className={cn(
-                        "p-1.5 rounded-lg",
-                        selectedIndex === index
-                          ? "bg-blue-200/70"
-                          : "bg-gray-100/70"
-                      )}>
+                      <div
+                        className={cn(
+                          'rounded-lg p-1.5',
+                          selectedIndex === index
+                            ? 'bg-blue-200/70'
+                            : 'bg-gray-100/70'
+                        )}
+                      >
                         <Icon className="h-4 w-4" />
                       </div>
-                      
-                      <div className="flex-1 min-w-0">
+
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium truncate">
+                          <span className="truncate text-sm font-medium">
                             {suggestion.label}
                           </span>
                           {suggestion.count !== undefined && (
-                            <span className="text-xs text-gray-500 bg-gray-200/70 px-2 py-0.5 rounded-full ml-2">
+                            <span className="ml-2 rounded-full bg-gray-200/70 px-2 py-0.5 text-xs text-gray-500">
                               {suggestion.count}
                             </span>
                           )}
                         </div>
                         {suggestion.description && (
-                          <div className="text-xs text-gray-500 truncate mt-0.5">
+                          <div className="mt-0.5 truncate text-xs text-gray-500">
                             {suggestion.description}
                           </div>
                         )}
@@ -393,9 +442,13 @@ export function AdvancedSearch({
           {/* No Results */}
           {query && allSuggestions.length === 0 && (
             <div className="p-6 text-center text-gray-500">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <div className="text-sm font-medium">No se encontraron sugerencias</div>
-              <div className="text-xs">Intenta con diferentes términos de búsqueda</div>
+              <Search className="mx-auto mb-2 h-8 w-8 opacity-50" />
+              <div className="text-sm font-medium">
+                No se encontraron sugerencias
+              </div>
+              <div className="text-xs">
+                Intenta con diferentes términos de búsqueda
+              </div>
             </div>
           )}
         </div>
@@ -403,9 +456,11 @@ export function AdvancedSearch({
 
       {/* Advanced Filters Panel */}
       {showAdvanced && (
-        <div className="absolute top-full left-0 right-0 z-40 mt-2 neural-glass-card border border-white/20 bg-white/95 backdrop-blur-md rounded-xl shadow-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-800">Filtros avanzados</h3>
+        <div className="neural-glass-card absolute left-0 right-0 top-full z-40 mt-2 rounded-xl border border-white/20 bg-white/95 p-4 shadow-lg backdrop-blur-md">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-800">
+              Filtros avanzados
+            </h3>
             <Button
               size="sm"
               variant="ghost"
@@ -415,45 +470,73 @@ export function AdvancedSearch({
               <X className="h-3 w-3" />
             </Button>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Button
               size="sm"
               variant="outline"
-              onClick={() => applyQuickFilter({ id: 'today', value: 'today', label: 'Hoy', type: 'date' })}
+              onClick={() =>
+                applyQuickFilter({
+                  id: 'today',
+                  value: 'today',
+                  label: 'Hoy',
+                  type: 'date',
+                })
+              }
               className="justify-start"
             >
-              <Calendar className="h-3 w-3 mr-2" />
+              <Calendar className="mr-2 h-3 w-3" />
               Hoy
             </Button>
-            
+
             <Button
               size="sm"
               variant="outline"
-              onClick={() => applyQuickFilter({ id: 'active', value: 'active', label: 'Activos', type: 'status' })}
+              onClick={() =>
+                applyQuickFilter({
+                  id: 'active',
+                  value: 'active',
+                  label: 'Activos',
+                  type: 'status',
+                })
+              }
               className="justify-start"
             >
-              <Zap className="h-3 w-3 mr-2" />
+              <Zap className="mr-2 h-3 w-3" />
               Activos
             </Button>
-            
+
             <Button
               size="sm"
               variant="outline"
-              onClick={() => applyQuickFilter({ id: 'high-revenue', value: 'high-revenue', label: 'Alto ingreso', type: 'filter' })}
+              onClick={() =>
+                applyQuickFilter({
+                  id: 'high-revenue',
+                  value: 'high-revenue',
+                  label: 'Alto ingreso',
+                  type: 'filter',
+                })
+              }
               className="justify-start"
             >
-              <TrendingUp className="h-3 w-3 mr-2" />
+              <TrendingUp className="mr-2 h-3 w-3" />
               Alto ingreso
             </Button>
-            
+
             <Button
               size="sm"
               variant="outline"
-              onClick={() => applyQuickFilter({ id: 'many-photos', value: 'many-photos', label: 'Muchas fotos', type: 'filter' })}
+              onClick={() =>
+                applyQuickFilter({
+                  id: 'many-photos',
+                  value: 'many-photos',
+                  label: 'Muchas fotos',
+                  type: 'filter',
+                })
+              }
               className="justify-start"
             >
-              <Image className="h-3 w-3 mr-2" />
+              <Image className="mr-2 h-3 w-3" />
               Muchas fotos
             </Button>
           </div>

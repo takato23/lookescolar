@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Download,
   Loader2,
   CheckCircle,
@@ -49,28 +49,37 @@ export default function BulkDownload({
   studentId,
   photoCount = 0,
   selectedPhotos = [],
-  onDownloadComplete
+  onDownloadComplete,
 }: BulkDownloadProps) {
   // State
   const [isOpen, setIsOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadComplete, setDownloadComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [downloadUrls, setDownloadUrls] = useState<Array<{filename: string, download_url: string}>>([]);
+  const [downloadUrls, setDownloadUrls] = useState<
+    Array<{ filename: string; download_url: string }>
+  >([]);
   const [zipJobId, setZipJobId] = useState<string | null>(null);
-  
+
   // Form state
-  const [photoTypes, setPhotoTypes] = useState<string[]>(['individual', 'group', 'activity', 'event']);
+  const [photoTypes, setPhotoTypes] = useState<string[]>([
+    'individual',
+    'group',
+    'activity',
+    'event',
+  ]);
   const [approvedOnly, setApprovedOnly] = useState(true);
-  const [zipFilename, setZipFilename] = useState(`photos-${new Date().toISOString().split('T')[0]}.zip`);
-  const [downloadType, setDownloadType] = useState<'individual' | 'zip'>('individual');
+  const [zipFilename, setZipFilename] = useState(
+    `photos-${new Date().toISOString().split('T')[0]}.zip`
+  );
+  const [downloadType, setDownloadType] = useState<'individual' | 'zip'>(
+    'individual'
+  );
 
   // Handle photo type selection
   const togglePhotoType = (type: string) => {
-    setPhotoTypes(prev => 
-      prev.includes(type) 
-        ? prev.filter(t => t !== type) 
-        : [...prev, type]
+    setPhotoTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
@@ -80,7 +89,7 @@ export default function BulkDownload({
     setError(null);
     setDownloadComplete(false);
     setZipJobId(null);
-    
+
     try {
       if (downloadType === 'zip') {
         // Handle ZIP download
@@ -91,7 +100,9 @@ export default function BulkDownload({
       }
     } catch (err) {
       console.error('Error during bulk download:', err);
-      setError(err instanceof Error ? err.message : 'Failed to download photos');
+      setError(
+        err instanceof Error ? err.message : 'Failed to download photos'
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -137,16 +148,16 @@ export default function BulkDownload({
     }
 
     const data = await response.json();
-    
+
     if (data.success && data.download_urls) {
       setDownloadUrls(data.download_urls);
       setDownloadComplete(true);
-      
+
       // Automatically open download URLs in new tabs
       data.download_urls.forEach((urlObj: { download_url: string }) => {
         window.open(urlObj.download_url, '_blank');
       });
-      
+
       // Call completion callback if provided
       if (onDownloadComplete) {
         onDownloadComplete();
@@ -181,13 +192,16 @@ export default function BulkDownload({
     }
 
     // Call the ZIP download API
-    const response = await fetch(`/api/admin/events/${eventId}/bulk-download/zip`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const response = await fetch(
+      `/api/admin/events/${eventId}/bulk-download/zip`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -195,11 +209,11 @@ export default function BulkDownload({
     }
 
     const data = await response.json();
-    
+
     if (data.success && data.job_id) {
       setZipJobId(data.job_id);
       setDownloadComplete(true);
-      
+
       // In a full implementation, we would poll for job status
       // For now, we'll just show the completion message
     } else {
@@ -226,7 +240,7 @@ export default function BulkDownload({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <Download className="h-4 w-4 mr-2" />
+          <Download className="mr-2 h-4 w-4" />
           Descarga Masiva
         </Button>
       </DialogTrigger>
@@ -234,61 +248,61 @@ export default function BulkDownload({
         <DialogHeader>
           <DialogTitle>Descarga Masiva de Fotos</DialogTitle>
           <DialogDescription>
-            {selectedPhotos.length > 0 
+            {selectedPhotos.length > 0
               ? `Descargar ${selectedPhotos.length} fotos seleccionadas`
-              : `Descargar fotos del ${level === 'event' ? 'evento' : level === 'level' ? 'nivel' : level === 'course' ? 'curso' : 'estudiante'}`
-            }
+              : `Descargar fotos del ${level === 'event' ? 'evento' : level === 'level' ? 'nivel' : level === 'course' ? 'curso' : 'estudiante'}`}
           </DialogDescription>
         </DialogHeader>
-        
+
         {isDownloading ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <Loader2 className="text-primary mb-4 h-8 w-8 animate-spin" />
             <p className="text-center">
-              {downloadType === 'zip' 
-                ? 'Generando archivo ZIP...' 
+              {downloadType === 'zip'
+                ? 'Generando archivo ZIP...'
                 : 'Generando enlaces de descarga...'}
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               Esto puede tardar unos momentos
             </p>
           </div>
         ) : downloadComplete ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-lg font-medium mb-2">¡Descarga iniciada!</h3>
+            <CheckCircle className="mb-4 h-12 w-12 text-green-500" />
+            <h3 className="mb-2 text-lg font-medium">¡Descarga iniciada!</h3>
             {downloadType === 'zip' ? (
               <div className="text-center">
                 <p className="text-muted-foreground mb-4">
                   La generación del archivo ZIP ha comenzado.
                 </p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  En una implementación completa, recibirías un enlace de descarga cuando el archivo esté listo.
+                <p className="text-muted-foreground mb-4 text-sm">
+                  En una implementación completa, recibirías un enlace de
+                  descarga cuando el archivo esté listo.
                 </p>
                 {zipJobId && (
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-muted-foreground mt-2 text-xs">
                     ID del trabajo: {zipJobId}
                   </p>
                 )}
               </div>
             ) : (
               <>
-                <p className="text-center text-muted-foreground mb-4">
-                  Se han abierto {downloadUrls.length} pestañas para descargar las fotos.
+                <p className="text-muted-foreground mb-4 text-center">
+                  Se han abierto {downloadUrls.length} pestañas para descargar
+                  las fotos.
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Si las descargas no comienzan automáticamente, haz clic en los enlaces.
+                <p className="text-muted-foreground text-sm">
+                  Si las descargas no comienzan automáticamente, haz clic en los
+                  enlaces.
                 </p>
               </>
             )}
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-            <h3 className="text-lg font-medium mb-2">Error en la descarga</h3>
-            <p className="text-center text-muted-foreground mb-4">
-              {error}
-            </p>
+            <AlertCircle className="text-destructive mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-medium">Error en la descarga</h3>
+            <p className="text-muted-foreground mb-4 text-center">{error}</p>
             <Button variant="outline" onClick={() => setError(null)}>
               Reintentar
             </Button>
@@ -299,23 +313,26 @@ export default function BulkDownload({
             <div className="bg-muted rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
-                  {selectedPhotos.length > 0 
-                    ? 'Fotos seleccionadas' 
-                    : `Fotos en ${level === 'event' ? 'este evento' : level === 'level' ? 'este nivel' : level === 'course' ? 'este curso' : 'este estudiante'}`
-                  }
+                  {selectedPhotos.length > 0
+                    ? 'Fotos seleccionadas'
+                    : `Fotos en ${level === 'event' ? 'este evento' : level === 'level' ? 'este nivel' : level === 'course' ? 'este curso' : 'este estudiante'}`}
                 </span>
                 <Badge variant="secondary">
-                  {selectedPhotos.length > 0 ? selectedPhotos.length : photoCount}
+                  {selectedPhotos.length > 0
+                    ? selectedPhotos.length
+                    : photoCount}
                 </Badge>
               </div>
             </div>
-            
+
             {/* Download type */}
             <div className="space-y-2">
               <Label>Tipo de descarga</Label>
               <div className="grid grid-cols-2 gap-2">
                 <Button
-                  variant={downloadType === 'individual' ? 'default' : 'outline'}
+                  variant={
+                    downloadType === 'individual' ? 'default' : 'outline'
+                  }
                   onClick={() => setDownloadType('individual')}
                   className="flex items-center justify-center gap-2"
                 >
@@ -332,14 +349,14 @@ export default function BulkDownload({
                 </Button>
               </div>
             </div>
-            
+
             {/* Photo type filters */}
             <div className="space-y-3">
               <Label>Tipo de fotos</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="individual" 
+                  <Checkbox
+                    id="individual"
                     checked={photoTypes.includes('individual')}
                     onCheckedChange={() => togglePhotoType('individual')}
                   />
@@ -351,8 +368,8 @@ export default function BulkDownload({
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="group" 
+                  <Checkbox
+                    id="group"
                     checked={photoTypes.includes('group')}
                     onCheckedChange={() => togglePhotoType('group')}
                   />
@@ -364,8 +381,8 @@ export default function BulkDownload({
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="activity" 
+                  <Checkbox
+                    id="activity"
                     checked={photoTypes.includes('activity')}
                     onCheckedChange={() => togglePhotoType('activity')}
                   />
@@ -377,8 +394,8 @@ export default function BulkDownload({
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="event" 
+                  <Checkbox
+                    id="event"
                     checked={photoTypes.includes('event')}
                     onCheckedChange={() => togglePhotoType('event')}
                   />
@@ -391,11 +408,11 @@ export default function BulkDownload({
                 </div>
               </div>
             </div>
-            
+
             {/* Approval filter */}
             <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="approved-only" 
+              <Checkbox
+                id="approved-only"
                 checked={approvedOnly}
                 onCheckedChange={(checked) => setApprovedOnly(checked === true)}
               />
@@ -406,7 +423,7 @@ export default function BulkDownload({
                 Solo fotos aprobadas
               </label>
             </div>
-            
+
             {/* ZIP filename */}
             <div className="space-y-2">
               <Label htmlFor="zip-filename">Nombre del archivo ZIP</Label>
@@ -420,24 +437,22 @@ export default function BulkDownload({
             </div>
           </div>
         )}
-        
+
         {!isDownloading && !downloadComplete && !error && (
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleDownload} disabled={photoTypes.length === 0}>
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="mr-2 h-4 w-4" />
               Descargar
             </Button>
           </DialogFooter>
         )}
-        
+
         {(downloadComplete || error) && (
           <DialogFooter>
-            <Button onClick={() => setIsOpen(false)}>
-              Cerrar
-            </Button>
+            <Button onClick={() => setIsOpen(false)}>Cerrar</Button>
           </DialogFooter>
         )}
       </DialogContent>

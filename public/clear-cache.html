@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Cache - LookEscolar</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+        .button { 
+            background: #dc2626; 
+            color: white; 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            cursor: pointer;
+            margin: 10px;
+        }
+        .button:hover { background: #b91c1c; }
+        .success { color: #16a34a; font-weight: bold; margin-top: 20px; }
+        .info { color: #666; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧹 Limpiar Cache de LookEscolar</h1>
+    
+    <div class="info">
+        Esta página limpia completamente el localStorage y cache del navegador para resolver problemas con IDs de eventos inválidos.
+    </div>
+    
+    <button class="button" onclick="clearAll()">🗑️ Limpiar Todo el Cache</button>
+    <button class="button" onclick="clearEventCache()">📅 Limpiar Solo Cache de Eventos</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        function clearEventCache() {
+            // Clear event-specific localStorage items
+            localStorage.removeItem('le:lastEventId');
+            localStorage.removeItem('photoAdminSettings');
+            
+            // Clear any React Query cache keys related to events
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.includes('event') || key.includes('Event') || key.includes('83070ba2-738e-4038-ab5e-0c42fe4a2880')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            document.getElementById('result').innerHTML = '<div class="success">✅ Cache de eventos limpiado correctamente!</div>';
+            
+            setTimeout(() => {
+                window.location.href = '/admin/photos?event_id=e2653db2-9d3b-4b39-9e33-627d9ed56b64';
+            }, 1500);
+        }
+        
+        function clearAll() {
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear service worker cache if exists
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+            
+            document.getElementById('result').innerHTML = '<div class="success">✅ Todo el cache limpiado correctamente!</div>';
+            
+            setTimeout(() => {
+                window.location.href = '/admin/photos?event_id=e2653db2-9d3b-4b39-9e33-627d9ed56b64';
+            }, 1500);
+        }
+        
+        // Auto-detect and show current problematic data
+        window.onload = function() {
+            const badEventId = localStorage.getItem('le:lastEventId');
+            if (badEventId === '83070ba2-738e-4038-ab5e-0c42fe4a2880') {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: #dc2626; margin-top: 20px;">⚠️ Detectado evento ID inválido: ' + badEventId + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

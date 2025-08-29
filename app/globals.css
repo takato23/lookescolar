@@ -135,6 +135,20 @@
 @import url('../styles/liquid-glass/liquid-glass-improved.css');
 @import url('../styles/liquid-glass/liquid-glass-ios26.css');
 
+/* Utility tokens (soft surfaces and shadows) */
+.surface {
+  @apply bg-white border border-gray-200 rounded-xl;
+}
+.soft {
+  @apply bg-indigo-50 text-indigo-700 border border-indigo-100;
+}
+.muted {
+  @apply text-gray-600;
+}
+.shadow-soft {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+}
+
 @layer base {
   :root {
     /* Premium Color System with WCAG AAA Compliance */

@@ -1,15 +1,21 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  Command, 
-  Search, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Eye, 
-  Archive, 
+import {
+  Command,
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  Eye,
+  Archive,
   RefreshCw,
   Download,
   Upload,
@@ -19,7 +25,7 @@ import {
   Keyboard,
   MousePointer,
   Navigation,
-  Zap
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
@@ -58,7 +64,9 @@ const KeyboardContext = createContext<KeyboardContextValue | null>(null);
 export function useKeyboardShortcuts() {
   const context = useContext(KeyboardContext);
   if (!context) {
-    throw new Error('useKeyboardShortcuts must be used within a KeyboardProvider');
+    throw new Error(
+      'useKeyboardShortcuts must be used within a KeyboardProvider'
+    );
   }
   return context;
 }
@@ -76,72 +84,100 @@ export function KeyboardProvider({ children }: KeyboardProviderProps) {
     reducedMotion: false,
     focusVisible: true,
     screenReaderMode: false,
-    fontSize: 'medium'
+    fontSize: 'medium',
   });
 
   const registerShortcut = useCallback((shortcut: KeyboardShortcut) => {
-    setShortcuts(prev => {
-      const existing = prev.find(s => s.key === shortcut.key);
+    setShortcuts((prev) => {
+      const existing = prev.find((s) => s.key === shortcut.key);
       if (existing) {
-        return prev.map(s => s.key === shortcut.key ? shortcut : s);
+        return prev.map((s) => (s.key === shortcut.key ? shortcut : s));
       }
       return [...prev, shortcut];
     });
   }, []);
 
   const unregisterShortcut = useCallback((key: string) => {
-    setShortcuts(prev => prev.filter(s => s.key !== key));
+    setShortcuts((prev) => prev.filter((s) => s.key !== key));
   }, []);
 
   const toggleHelp = useCallback(() => {
-    setShowHelp(prev => !prev);
+    setShowHelp((prev) => !prev);
   }, []);
 
-  const updateAccessibility = useCallback((features: Partial<AccessibilityFeatures>) => {
-    setAccessibility(prev => ({ ...prev, ...features }));
-    
-    // Apply accessibility features to document
-    if (features.highContrast !== undefined) {
-      document.documentElement.classList.toggle('high-contrast', features.highContrast);
-    }
-    if (features.reducedMotion !== undefined) {
-      document.documentElement.classList.toggle('reduced-motion', features.reducedMotion);
-    }
-    if (features.focusVisible !== undefined) {
-      document.documentElement.classList.toggle('focus-visible', features.focusVisible);
-    }
-    if (features.fontSize) {
-      document.documentElement.setAttribute('data-font-size', features.fontSize);
-    }
-  }, []);
+  const updateAccessibility = useCallback(
+    (features: Partial<AccessibilityFeatures>) => {
+      setAccessibility((prev) => ({ ...prev, ...features }));
+
+      // Apply accessibility features to document
+      if (features.highContrast !== undefined) {
+        document.documentElement.classList.toggle(
+          'high-contrast',
+          features.highContrast
+        );
+      }
+      if (features.reducedMotion !== undefined) {
+        document.documentElement.classList.toggle(
+          'reduced-motion',
+          features.reducedMotion
+        );
+      }
+      if (features.focusVisible !== undefined) {
+        document.documentElement.classList.toggle(
+          'focus-visible',
+          features.focusVisible
+        );
+      }
+      if (features.fontSize) {
+        document.documentElement.setAttribute(
+          'data-font-size',
+          features.fontSize
+        );
+      }
+    },
+    []
+  );
 
   // Global keyboard event handler
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Don't trigger shortcuts when typing in inputs
       const target = event.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
         // Exception for global shortcuts like Help (?)
         if (event.key === '?' && !event.ctrlKey && !event.metaKey) {
           event.preventDefault();
-          setShowHelp(prev => !prev);
+          setShowHelp((prev) => !prev);
           return;
         }
         return;
       }
 
-      const matchingShortcut = shortcuts.find(shortcut => {
-        const modifiersMatch = shortcut.modifiers?.every(modifier => {
-          switch (modifier) {
-            case 'ctrl': return event.ctrlKey;
-            case 'meta': return event.metaKey;
-            case 'shift': return event.shiftKey;
-            case 'alt': return event.altKey;
-            default: return false;
-          }
-        }) ?? true;
+      const matchingShortcut = shortcuts.find((shortcut) => {
+        const modifiersMatch =
+          shortcut.modifiers?.every((modifier) => {
+            switch (modifier) {
+              case 'ctrl':
+                return event.ctrlKey;
+              case 'meta':
+                return event.metaKey;
+              case 'shift':
+                return event.shiftKey;
+              case 'alt':
+                return event.altKey;
+              default:
+                return false;
+            }
+          }) ?? true;
 
-        return shortcut.key.toLowerCase() === event.key.toLowerCase() && modifiersMatch;
+        return (
+          shortcut.key.toLowerCase() === event.key.toLowerCase() &&
+          modifiersMatch
+        );
       });
 
       if (matchingShortcut) {
@@ -171,7 +207,10 @@ export function KeyboardProvider({ children }: KeyboardProviderProps) {
 
   // Save accessibility preferences to localStorage
   useEffect(() => {
-    localStorage.setItem('accessibility-preferences', JSON.stringify(accessibility));
+    localStorage.setItem(
+      'accessibility-preferences',
+      JSON.stringify(accessibility)
+    );
   }, [accessibility]);
 
   const value: KeyboardContextValue = {
@@ -181,7 +220,7 @@ export function KeyboardProvider({ children }: KeyboardProviderProps) {
     showHelp,
     toggleHelp,
     accessibility,
-    updateAccessibility
+    updateAccessibility,
   };
 
   return (
@@ -204,14 +243,17 @@ function KeyboardHelpModal() {
 
   if (!mounted || !showHelp) return null;
 
-  const groupedShortcuts = shortcuts.reduce((groups, shortcut) => {
-    const category = shortcut.category;
-    if (!groups[category]) {
-      groups[category] = [];
-    }
-    groups[category].push(shortcut);
-    return groups;
-  }, {} as Record<string, KeyboardShortcut[]>);
+  const groupedShortcuts = shortcuts.reduce(
+    (groups, shortcut) => {
+      const category = shortcut.category;
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(shortcut);
+      return groups;
+    },
+    {} as Record<string, KeyboardShortcut[]>
+  );
 
   const formatShortcut = (shortcut: KeyboardShortcut) => {
     const parts = [];
@@ -228,7 +270,7 @@ function KeyboardHelpModal() {
     actions: Zap,
     editing: Edit3,
     selection: MousePointer,
-    global: Settings
+    global: Settings,
   };
 
   const categoryNames = {
@@ -236,17 +278,19 @@ function KeyboardHelpModal() {
     actions: 'Acciones',
     editing: 'Edición',
     selection: 'Selección',
-    global: 'Global'
+    global: 'Global',
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="neural-glass-card bg-white/95 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="neural-glass-card max-h-[80vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
+        <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
           <div className="flex items-center gap-3">
             <Keyboard className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">Atajos de Teclado</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              Atajos de Teclado
+            </h2>
           </div>
           <Button
             size="sm"
@@ -259,57 +303,77 @@ function KeyboardHelpModal() {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="max-h-[60vh] overflow-y-auto p-6">
           <div className="grid gap-6">
-            {Object.entries(groupedShortcuts).map(([category, categoryShortcuts]) => {
-              const Icon = categoryIcons[category as keyof typeof categoryIcons] || Settings;
-              const categoryName = categoryNames[category as keyof typeof categoryNames] || category;
-              
-              return (
-                <div key={category} className="space-y-3">
-                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                    <Icon className="h-5 w-5 text-blue-600" />
-                    {categoryName}
-                  </h3>
-                  <div className="grid gap-2">
-                    {categoryShortcuts.map((shortcut, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 neural-glass-card rounded-lg">
-                        <div>
-                          <div className="font-medium text-gray-900">{shortcut.description}</div>
-                          {shortcut.context && (
-                            <div className="text-sm text-gray-500">{shortcut.context}</div>
-                          )}
+            {Object.entries(groupedShortcuts).map(
+              ([category, categoryShortcuts]) => {
+                const Icon =
+                  categoryIcons[category as keyof typeof categoryIcons] ||
+                  Settings;
+                const categoryName =
+                  categoryNames[category as keyof typeof categoryNames] ||
+                  category;
+
+                return (
+                  <div key={category} className="space-y-3">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                      <Icon className="h-5 w-5 text-blue-600" />
+                      {categoryName}
+                    </h3>
+                    <div className="grid gap-2">
+                      {categoryShortcuts.map((shortcut, index) => (
+                        <div
+                          key={index}
+                          className="neural-glass-card flex items-center justify-between rounded-lg p-3"
+                        >
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {shortcut.description}
+                            </div>
+                            {shortcut.context && (
+                              <div className="text-sm text-gray-500">
+                                {shortcut.context}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {formatShortcut(shortcut)
+                              .split(' + ')
+                              .map((key, keyIndex) => (
+                                <React.Fragment key={keyIndex}>
+                                  {keyIndex > 0 && (
+                                    <span className="text-gray-400">+</span>
+                                  )}
+                                  <kbd className="rounded bg-gray-200/70 px-2 py-1 font-mono text-xs">
+                                    {key}
+                                  </kbd>
+                                </React.Fragment>
+                              ))}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {formatShortcut(shortcut).split(' + ').map((key, keyIndex) => (
-                            <React.Fragment key={keyIndex}>
-                              {keyIndex > 0 && <span className="text-gray-400">+</span>}
-                              <kbd className="px-2 py-1 bg-gray-200/70 rounded text-xs font-mono">
-                                {key}
-                              </kbd>
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              }
+            )}
           </div>
 
           {shortcuts.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Keyboard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <div className="py-8 text-center text-gray-500">
+              <Keyboard className="mx-auto mb-4 h-12 w-12 opacity-50" />
               <p>No hay atajos de teclado registrados</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200/50 bg-gray-50/50">
+        <div className="border-t border-gray-200/50 bg-gray-50/50 px-6 py-4">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <div>Presiona <kbd className="px-2 py-1 bg-gray-200 rounded">?</kbd> para mostrar/ocultar esta ayuda</div>
+            <div>
+              Presiona <kbd className="rounded bg-gray-200 px-2 py-1">?</kbd>{' '}
+              para mostrar/ocultar esta ayuda
+            </div>
             <div>{shortcuts.length} atajos disponibles</div>
           </div>
         </div>
@@ -330,7 +394,7 @@ function AccessibilityPanel() {
       <div className="fixed bottom-6 left-6 z-40">
         <Button
           onClick={() => setShowPanel(!showPanel)}
-          className="neural-fab w-12 h-12 rounded-full p-0 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+          className="neural-fab h-12 w-12 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 p-0 shadow-lg transition-all duration-300 hover:scale-110 hover:from-purple-600 hover:to-indigo-700 hover:shadow-xl"
           title="Opciones de accesibilidad"
         >
           <Settings className="h-5 w-5" />
@@ -339,8 +403,8 @@ function AccessibilityPanel() {
 
       {/* Accessibility panel */}
       {showPanel && (
-        <div className="fixed bottom-20 left-6 z-50 neural-glass-card border border-white/20 bg-white/95 backdrop-blur-md rounded-xl shadow-lg w-80">
-          <div className="p-4 border-b border-gray-200/50">
+        <div className="neural-glass-card fixed bottom-20 left-6 z-50 w-80 rounded-xl border border-white/20 bg-white/95 shadow-lg backdrop-blur-md">
+          <div className="border-b border-gray-200/50 p-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Accesibilidad</h3>
               <Button
@@ -353,48 +417,64 @@ function AccessibilityPanel() {
               </Button>
             </div>
           </div>
-          
-          <div className="p-4 space-y-4">
+
+          <div className="space-y-4 p-4">
             {/* High Contrast */}
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">Alto contraste</label>
+              <label className="text-sm font-medium text-gray-700">
+                Alto contraste
+              </label>
               <input
                 type="checkbox"
                 checked={accessibility.highContrast}
-                onChange={(e) => updateAccessibility({ highContrast: e.target.checked })}
+                onChange={(e) =>
+                  updateAccessibility({ highContrast: e.target.checked })
+                }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* Reduced Motion */}
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">Reducir animaciones</label>
+              <label className="text-sm font-medium text-gray-700">
+                Reducir animaciones
+              </label>
               <input
                 type="checkbox"
                 checked={accessibility.reducedMotion}
-                onChange={(e) => updateAccessibility({ reducedMotion: e.target.checked })}
+                onChange={(e) =>
+                  updateAccessibility({ reducedMotion: e.target.checked })
+                }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* Focus Visible */}
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">Resaltar foco</label>
+              <label className="text-sm font-medium text-gray-700">
+                Resaltar foco
+              </label>
               <input
                 type="checkbox"
                 checked={accessibility.focusVisible}
-                onChange={(e) => updateAccessibility({ focusVisible: e.target.checked })}
+                onChange={(e) =>
+                  updateAccessibility({ focusVisible: e.target.checked })
+                }
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* Font Size */}
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-2">Tamaño de fuente</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Tamaño de fuente
+              </label>
               <select
                 value={accessibility.fontSize}
-                onChange={(e) => updateAccessibility({ fontSize: e.target.value as any })}
-                className="w-full p-2 border border-gray-300 rounded-lg text-sm"
+                onChange={(e) =>
+                  updateAccessibility({ fontSize: e.target.value as any })
+                }
+                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
               >
                 <option value="small">Pequeño</option>
                 <option value="medium">Mediano</option>
@@ -409,24 +489,27 @@ function AccessibilityPanel() {
 }
 
 // Hook for registering shortcuts in components
-export function useShortcuts(shortcuts: Omit<KeyboardShortcut, 'action'>[], actions: (() => void)[]) {
+export function useShortcuts(
+  shortcuts: Omit<KeyboardShortcut, 'action'>[],
+  actions: (() => void)[]
+) {
   const { registerShortcut, unregisterShortcut } = useKeyboardShortcuts();
 
   useEffect(() => {
     const shortcutWithActions = shortcuts.map((shortcut, index) => ({
       ...shortcut,
       modifiers: shortcut.modifiers ? [...shortcut.modifiers] : undefined,
-      action: actions[index]
+      action: actions[index],
     }));
 
-    shortcutWithActions.forEach(shortcut => {
+    shortcutWithActions.forEach((shortcut) => {
       if (shortcut.action) {
         registerShortcut(shortcut as KeyboardShortcut);
       }
     });
 
     return () => {
-      shortcuts.forEach(shortcut => unregisterShortcut(shortcut.key));
+      shortcuts.forEach((shortcut) => unregisterShortcut(shortcut.key));
     };
   }, [shortcuts, actions, registerShortcut, unregisterShortcut]);
 }
@@ -437,54 +520,50 @@ export const commonShortcuts = {
     key: 'k',
     modifiers: ['ctrl'] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Buscar eventos',
-    category: 'navigation' as const
+    category: 'navigation' as const,
   },
   newEvent: {
     key: 'n',
     modifiers: ['ctrl'] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Crear nuevo evento',
-    category: 'actions' as const
+    category: 'actions' as const,
   },
   selectAll: {
     key: 'a',
     modifiers: ['ctrl'] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Seleccionar todos',
-    category: 'selection' as const
+    category: 'selection' as const,
   },
   refresh: {
     key: 'r',
     modifiers: ['ctrl'] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Actualizar página',
-    category: 'navigation' as const
+    category: 'navigation' as const,
   },
   help: {
     key: '?',
     modifiers: [] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Mostrar ayuda',
-    category: 'global' as const
+    category: 'global' as const,
   },
   toggleDragMode: {
     key: 'd',
     modifiers: ['ctrl'] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Activar/desactivar modo arrastrar',
-    category: 'actions' as const
+    category: 'actions' as const,
   },
   export: {
     key: 'e',
     modifiers: ['ctrl', 'shift'] as ('ctrl' | 'meta' | 'shift' | 'alt')[],
     description: 'Exportar datos',
-    category: 'actions' as const
-  }
+    category: 'actions' as const,
+  },
 };
 
 // ARIA live region for screen readers
 export function AriaLiveRegion({ children }: { children: React.ReactNode }) {
   return (
-    <div 
-      aria-live="polite" 
-      aria-atomic="true" 
-      className="sr-only"
-    >
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
       {children}
     </div>
   );
@@ -495,7 +574,7 @@ export function SkipToContent() {
   return (
     <a
       href="#main-content"
-      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 z-50 neural-glass-card bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
+      className="neural-glass-card sr-only z-50 rounded-lg bg-blue-600 px-4 py-2 font-medium text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4"
     >
       Saltar al contenido principal
     </a>

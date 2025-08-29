@@ -10,16 +10,22 @@ const supabase = createClient(
 
 async function checkDatabaseInfo() {
   console.log('🔍 Checking database schema and row counts...\n');
-  
-  const tables = ['subjects', 'photos', 'photo_subjects', 'events', 'subject_tokens'];
-  
+
+  const tables = [
+    'subjects',
+    'photos',
+    'photo_subjects',
+    'events',
+    'subject_tokens',
+  ];
+
   for (const table of tables) {
     try {
       // Check if table exists by trying to count rows
       const { count, error } = await supabase
         .from(table)
         .select('*', { count: 'exact', head: true });
-        
+
       if (error) {
         console.log(`❌ ${table}: ${error.message}`);
       } else {
@@ -29,7 +35,7 @@ async function checkDatabaseInfo() {
       console.log(`❌ ${table}: ${err}`);
     }
   }
-  
+
   console.log('\n✅ Database check completed');
 }
 

@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Camera, 
-  Image, 
-  WifiOff, 
-  Wifi, 
-  Save, 
-  Upload, 
-  Download, 
+import {
+  Camera,
+  Image,
+  WifiOff,
+  Wifi,
+  Save,
+  Upload,
+  Download,
   AlertCircle,
   CheckCircle,
   Clock,
-  Database
+  Database,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,8 +54,10 @@ export function OfflineQRScanner({
   const [syncedScans, setSyncedScans] = useState<OfflineQRScan[]>([]);
   const [failedScans, setFailedScans] = useState<OfflineQRScan[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'scan' | 'pending' | 'synced' | 'failed'>('scan');
-  
+  const [activeTab, setActiveTab] = useState<
+    'scan' | 'pending' | 'synced' | 'failed'
+  >('scan');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Storage key for offline scans
@@ -66,19 +68,19 @@ export function OfflineQRScanner({
    */
   useEffect(() => {
     loadScansFromStorage();
-    
+
     // Check online status
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
-    
+
     // Attempt to sync pending scans periodically
     const syncInterval = setInterval(() => {
       if (navigator.onLine) {
         syncPendingScans();
       }
     }, 30000); // Every 30 seconds
-    
+
     return () => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
@@ -98,12 +100,12 @@ export function OfflineQRScanner({
           ...scan,
           timestamp: new Date(scan.timestamp),
         }));
-        
+
         // Categorize scans
-        const pending = scans.filter(s => s.syncStatus === 'pending');
-        const synced = scans.filter(s => s.syncStatus === 'synced');
-        const failed = scans.filter(s => s.syncStatus === 'failed');
-        
+        const pending = scans.filter((s) => s.syncStatus === 'pending');
+        const synced = scans.filter((s) => s.syncStatus === 'synced');
+        const failed = scans.filter((s) => s.syncStatus === 'failed');
+
         setPendingScans(pending);
         setSyncedScans(synced);
         setFailedScans(failed);
@@ -117,23 +119,26 @@ export function OfflineQRScanner({
   /**
    * Save scans to localStorage
    */
-  const saveScansToStorage = useCallback((scans: OfflineQRScan[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(scans));
-    } catch (error) {
-      console.error('Failed to save scans to storage:', error);
-      toast.error('Failed to save scan data');
-    }
-  }, [STORAGE_KEY]);
+  const saveScansToStorage = useCallback(
+    (scans: OfflineQRScan[]) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(scans));
+      } catch (error) {
+        console.error('Failed to save scans to storage:', error);
+        toast.error('Failed to save scan data');
+      }
+    },
+    [STORAGE_KEY]
+  );
 
   /**
    * Handle manual QR code input
    */
   const handleManualInput = async (qrCode: string) => {
     if (!qrCode.trim()) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       // Create offline scan record
       const newScan: OfflineQRScan = {
@@ -144,7 +149,7 @@ export function OfflineQRScanner({
         syncStatus: 'pending',
         retryCount: 0,
       };
-      
+
       // Try to validate immediately if online
       if (navigator.onLine) {
         try {
@@ -156,7 +161,7 @@ export function OfflineQRScanner({
               eventId,
             }),
           });
-          
+
           if (response.ok) {
             const validationResult = await response.json();
             if (validationResult.success && validationResult.valid) {
@@ -174,18 +179,23 @@ export function OfflineQRScanner({
           newScan.syncStatus = 'pending'; // Will retry later
         }
       }
-      
+
       // Add to pending scans
       const updatedPending = [...pendingScans, newScan];
       setPendingScans(updatedPending);
-      
+
       // Save to storage
-      const allScans = [...updatedPending, ...syncedScans, ...failedScans, newScan];
+      const allScans = [
+        ...updatedPending,
+        ...syncedScans,
+        ...failedScans,
+        newScan,
+      ];
       saveScansToStorage(allScans);
-      
+
       // Callback
       onScan?.(newScan);
-      
+
       toast.success('QR code saved for offline processing');
     } catch (error) {
       console.error('Failed to process QR code:', error);
@@ -198,19 +208,21 @@ export function OfflineQRScanner({
   /**
    * Handle image upload for QR detection
    */
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     setIsProcessing(true);
-    
+
     try {
       // Read image file
       const reader = new FileReader();
       reader.onload = async (e) => {
         const imageData = e.target?.result as string;
         if (!imageData) return;
-        
+
         // In a real implementation, you would process the image here
         // For this example, we'll simulate finding a QR code
         setTimeout(() => {
@@ -219,7 +231,7 @@ export function OfflineQRScanner({
           handleManualInput(simulatedQR);
         }, 1000);
       };
-      
+
       reader.readAsDataURL(file);
     } catch (error) {
       console.error('Failed to process image:', error);
@@ -233,12 +245,12 @@ export function OfflineQRScanner({
    */
   const syncPendingScans = async () => {
     if (pendingScans.length === 0) return;
-    
+
     const scansToSync = [...pendingScans];
     const updatedPending: OfflineQRScan[] = [];
     const updatedSynced: OfflineQRScan[] = [...syncedScans];
     const updatedFailed: OfflineQRScan[] = [...failedScans];
-    
+
     for (const scan of scansToSync) {
       try {
         // Skip scans that have been retried too many times
@@ -246,7 +258,7 @@ export function OfflineQRScanner({
           updatedFailed.push({ ...scan, syncStatus: 'failed' });
           continue;
         }
-        
+
         const response = await fetch('/api/qr/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -255,7 +267,7 @@ export function OfflineQRScanner({
             eventId: scan.eventId,
           }),
         });
-        
+
         if (response.ok) {
           const validationResult = await response.json();
           if (validationResult.success && validationResult.valid) {
@@ -293,24 +305,24 @@ export function OfflineQRScanner({
         updatedPending.push(updatedScan);
       }
     }
-    
+
     // Update state
     setPendingScans(updatedPending);
     setSyncedScans(updatedSynced);
     setFailedScans(updatedFailed);
-    
+
     // Save to storage
     const allScans = [...updatedPending, ...updatedSynced, ...updatedFailed];
     saveScansToStorage(allScans);
-    
+
     // Show sync summary
     const syncedCount = updatedSynced.length - syncedScans.length;
     const failedCount = updatedFailed.length - failedScans.length;
-    
+
     if (syncedCount > 0) {
       toast.success(`Synced ${syncedCount} scans`);
     }
-    
+
     if (failedCount > 0) {
       toast.warning(`${failedCount} scans failed to sync`);
     }
@@ -320,20 +332,20 @@ export function OfflineQRScanner({
    * Retry failed scans
    */
   const retryFailedScans = () => {
-    const updatedFailed = failedScans.map(scan => ({
+    const updatedFailed = failedScans.map((scan) => ({
       ...scan,
       syncStatus: 'pending' as const,
       retryCount: 0,
     }));
-    
+
     const updatedPending = [...pendingScans, ...updatedFailed];
     setPendingScans(updatedPending);
     setFailedScans([]);
-    
+
     // Save to storage
     const allScans = [...updatedPending, ...syncedScans];
     saveScansToStorage(allScans);
-    
+
     toast.success(`Retrying ${updatedFailed.length} failed scans`);
   };
 
@@ -348,8 +360,10 @@ export function OfflineQRScanner({
         failed: failedScans,
         exportedAt: new Date().toISOString(),
       };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -358,7 +372,7 @@ export function OfflineQRScanner({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
+
       toast.success('Scans exported successfully');
     } catch (error) {
       console.error('Failed to export scans:', error);
@@ -372,36 +386,40 @@ export function OfflineQRScanner({
   const importScans = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        
+
         // Merge imported scans
         const importedPending = data.pending || [];
         const importedSynced = data.synced || [];
         const importedFailed = data.failed || [];
-        
+
         const updatedPending = [...pendingScans, ...importedPending];
         const updatedSynced = [...syncedScans, ...importedSynced];
         const updatedFailed = [...failedScans, ...importedFailed];
-        
+
         setPendingScans(updatedPending);
         setSyncedScans(updatedSynced);
         setFailedScans(updatedFailed);
-        
+
         // Save to storage
-        const allScans = [...updatedPending, ...updatedSynced, ...updatedFailed];
+        const allScans = [
+          ...updatedPending,
+          ...updatedSynced,
+          ...updatedFailed,
+        ];
         saveScansToStorage(allScans);
-        
+
         toast.success('Scans imported successfully');
       } catch (error) {
         console.error('Failed to import scans:', error);
         toast.error('Failed to import scans');
       }
     };
-    
+
     reader.readAsText(file);
   };
 
@@ -425,23 +443,23 @@ export function OfflineQRScanner({
                 Offline
               </Badge>
             )}
-            
+
             <Badge variant="outline">
-              <Database className="h-3 w-3 mr-1" />
+              <Database className="mr-1 h-3 w-3" />
               {pendingScans.length + syncedScans.length + failedScans.length}
             </Badge>
           </div>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* Tab Navigation */}
         <div className="flex border-b">
           <button
             className={cn(
               'px-4 py-2 text-sm font-medium',
-              activeTab === 'scan' 
-                ? 'border-b-2 border-purple-600 text-purple-600' 
+              activeTab === 'scan'
+                ? 'border-b-2 border-purple-600 text-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
             )}
             onClick={() => setActiveTab('scan')}
@@ -450,9 +468,9 @@ export function OfflineQRScanner({
           </button>
           <button
             className={cn(
-              'px-4 py-2 text-sm font-medium flex items-center gap-1',
-              activeTab === 'pending' 
-                ? 'border-b-2 border-purple-600 text-purple-600' 
+              'flex items-center gap-1 px-4 py-2 text-sm font-medium',
+              activeTab === 'pending'
+                ? 'border-b-2 border-purple-600 text-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
             )}
             onClick={() => setActiveTab('pending')}
@@ -466,9 +484,9 @@ export function OfflineQRScanner({
           </button>
           <button
             className={cn(
-              'px-4 py-2 text-sm font-medium flex items-center gap-1',
-              activeTab === 'synced' 
-                ? 'border-b-2 border-purple-600 text-purple-600' 
+              'flex items-center gap-1 px-4 py-2 text-sm font-medium',
+              activeTab === 'synced'
+                ? 'border-b-2 border-purple-600 text-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
             )}
             onClick={() => setActiveTab('synced')}
@@ -482,9 +500,9 @@ export function OfflineQRScanner({
           </button>
           <button
             className={cn(
-              'px-4 py-2 text-sm font-medium flex items-center gap-1',
-              activeTab === 'failed' 
-                ? 'border-b-2 border-purple-600 text-purple-600' 
+              'flex items-center gap-1 px-4 py-2 text-sm font-medium',
+              activeTab === 'failed'
+                ? 'border-b-2 border-purple-600 text-purple-600'
                 : 'text-gray-500 hover:text-gray-700'
             )}
             onClick={() => setActiveTab('failed')}
@@ -501,11 +519,11 @@ export function OfflineQRScanner({
         {/* Scan Tab */}
         {activeTab === 'scan' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Manual Input */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <AlertCircle className="h-4 w-4" />
                     Manual Input
                   </CardTitle>
@@ -518,7 +536,7 @@ export function OfflineQRScanner({
                     <input
                       type="text"
                       placeholder="Enter QR code"
-                      className="flex-1 px-3 py-2 border rounded-md"
+                      className="flex-1 rounded-md border px-3 py-2"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           const target = e.target as HTMLInputElement;
@@ -527,9 +545,10 @@ export function OfflineQRScanner({
                         }
                       }}
                     />
-                    <Button 
+                    <Button
                       onClick={(e) => {
-                        const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement;
+                        const input = (e.target as HTMLElement)
+                          .previousElementSibling as HTMLInputElement;
                         handleManualInput(input.value);
                         input.value = '';
                       }}
@@ -544,7 +563,7 @@ export function OfflineQRScanner({
               {/* Image Upload */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-lg">
                     <Image className="h-4 w-4" />
                     Image Upload
                   </CardTitle>
@@ -567,7 +586,7 @@ export function OfflineQRScanner({
                       disabled={isProcessing}
                       variant="outline"
                     >
-                      <Upload className="h-4 w-4 mr-2" />
+                      <Upload className="mr-2 h-4 w-4" />
                       Select Images
                     </Button>
                   </div>
@@ -579,31 +598,33 @@ export function OfflineQRScanner({
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={syncPendingScans}
-                disabled={!isOnline || pendingScans.length === 0 || isProcessing}
+                disabled={
+                  !isOnline || pendingScans.length === 0 || isProcessing
+                }
                 variant="outline"
               >
-                <Wifi className="h-4 w-4 mr-2" />
+                <Wifi className="mr-2 h-4 w-4" />
                 Sync Now
               </Button>
-              
+
               <Button
                 onClick={retryFailedScans}
                 disabled={failedScans.length === 0 || isProcessing}
                 variant="outline"
               >
-                <Clock className="h-4 w-4 mr-2" />
+                <Clock className="mr-2 h-4 w-4" />
                 Retry Failed
               </Button>
-              
+
               <Button
                 onClick={exportScans}
                 disabled={isProcessing}
                 variant="outline"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
-              
+
               <input
                 type="file"
                 className="hidden"
@@ -612,11 +633,8 @@ export function OfflineQRScanner({
                 id="import-scans"
               />
               <label htmlFor="import-scans">
-                <Button
-                  as="span"
-                  variant="outline"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
+                <Button as="span" variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
                   Import
                 </Button>
               </label>
@@ -628,23 +646,23 @@ export function OfflineQRScanner({
         {activeTab === 'pending' && (
           <div className="space-y-2">
             {pendingScans.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Clock className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <div className="py-8 text-center text-gray-500">
+                <Clock className="mx-auto mb-2 h-12 w-12 text-gray-300" />
                 <p>No pending scans</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="max-h-96 space-y-2 overflow-y-auto">
                 {pendingScans.map((scan) => (
-                  <div 
-                    key={scan.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                  <div
+                    key={scan.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="bg-yellow-100 p-2 rounded-full">
+                      <div className="rounded-full bg-yellow-100 p-2">
                         <Clock className="h-4 w-4 text-yellow-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">
+                        <p className="text-sm font-medium">
                           {scan.studentData?.name || 'Unknown Student'}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -666,23 +684,23 @@ export function OfflineQRScanner({
         {activeTab === 'synced' && (
           <div className="space-y-2">
             {syncedScans.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <CheckCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <div className="py-8 text-center text-gray-500">
+                <CheckCircle className="mx-auto mb-2 h-12 w-12 text-gray-300" />
                 <p>No synced scans</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="max-h-96 space-y-2 overflow-y-auto">
                 {syncedScans.map((scan) => (
-                  <div 
-                    key={scan.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200"
+                  <div
+                    key={scan.id}
+                    className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="bg-green-100 p-2 rounded-full">
+                      <div className="rounded-full bg-green-100 p-2">
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">
+                        <p className="text-sm font-medium">
                           {scan.studentData?.name || 'Unknown Student'}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -704,23 +722,23 @@ export function OfflineQRScanner({
         {activeTab === 'failed' && (
           <div className="space-y-2">
             {failedScans.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <AlertCircle className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <div className="py-8 text-center text-gray-500">
+                <AlertCircle className="mx-auto mb-2 h-12 w-12 text-gray-300" />
                 <p>No failed scans</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="max-h-96 space-y-2 overflow-y-auto">
                 {failedScans.map((scan) => (
-                  <div 
-                    key={scan.id} 
-                    className="flex items-center justify-between p-3 border rounded-lg bg-red-50 border-red-200"
+                  <div
+                    key={scan.id}
+                    className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="bg-red-100 p-2 rounded-full">
+                      <div className="rounded-full bg-red-100 p-2">
                         <AlertCircle className="h-4 w-4 text-red-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-sm">
+                        <p className="text-sm font-medium">
                           {scan.studentData?.name || 'Unknown Student'}
                         </p>
                         <p className="text-xs text-gray-500">

@@ -49,6 +49,7 @@ export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) 
       className="group relative cursor-pointer transition-all duration-300 hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      data-testid="photo-card"
     >
       <div className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-gray-100 shadow-sm transition-all duration-300 hover:shadow-lg ${isSelected ? 'ring-2 ring-indigo-500' : ''}`}>
         {/* Imagen de fondo con overlay gradient */}

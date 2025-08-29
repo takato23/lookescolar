@@ -49,12 +49,30 @@ import {
   Menu,
   TrendingUp,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
-import { 
-  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, AreaChart, Area 
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
 } from 'recharts';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 
 interface EventLevel {
   id: string;
@@ -115,7 +133,7 @@ interface HierarchicalNavigationProps {
 export default function HierarchicalNavigation({
   eventId,
   eventName,
-  initialView = 'overview'
+  initialView = 'overview',
 }: HierarchicalNavigationProps) {
   // State
   const router = useRouter();
@@ -146,9 +164,9 @@ export default function HierarchicalNavigation({
   // Mobile navigation items
   const mobileNavItems = useMemo(() => {
     const items: any[] = [];
-    
+
     // Add levels
-    levels.forEach(level => {
+    levels.forEach((level) => {
       items.push({
         id: level.id,
         name: level.name,
@@ -157,9 +175,9 @@ export default function HierarchicalNavigation({
         active: level.active,
       });
     });
-    
+
     // Add courses
-    courses.forEach(course => {
+    courses.forEach((course) => {
       items.push({
         id: course.id,
         name: course.name,
@@ -172,12 +190,12 @@ export default function HierarchicalNavigation({
           grade: course.grade,
           section: course.section,
           is_folder: course.is_folder,
-        }
+        },
       });
     });
-    
+
     // Add students
-    students.forEach(student => {
+    students.forEach((student) => {
       items.push({
         id: student.id,
         name: student.name,
@@ -189,10 +207,10 @@ export default function HierarchicalNavigation({
           grade: student.grade,
           section: student.section,
           parent_name: student.parent_name,
-        }
+        },
       });
     });
-    
+
     return items;
   }, [levels, courses, students]);
 
@@ -228,7 +246,7 @@ export default function HierarchicalNavigation({
     const course = searchParams?.get('course');
     const folder = searchParams?.get('folder');
     const view = searchParams?.get('view') as typeof activeView;
-    
+
     if (level) setSelectedLevel(level);
     if (course) setSelectedCourse(course);
     if (folder) setSelectedFolder(folder);
@@ -277,10 +295,14 @@ export default function HierarchicalNavigation({
 
   const loadCourses = async () => {
     try {
-      const url = new URL(`/api/admin/events/${eventId}/courses`, window.location.origin);
+      const url = new URL(
+        `/api/admin/events/${eventId}/courses`,
+        window.location.origin
+      );
       if (selectedLevel) url.searchParams.set('level_id', selectedLevel);
-      if (selectedFolder) url.searchParams.set('parent_course_id', selectedFolder);
-      
+      if (selectedFolder)
+        url.searchParams.set('parent_course_id', selectedFolder);
+
       const res = await fetch(url.toString());
       if (res.ok) {
         const data = await res.json();
@@ -293,19 +315,24 @@ export default function HierarchicalNavigation({
 
   const loadStudents = async (page = 0, append = false) => {
     try {
-      const url = new URL(`/api/admin/events/${eventId}/students`, window.location.origin);
+      const url = new URL(
+        `/api/admin/events/${eventId}/students`,
+        window.location.origin
+      );
       if (selectedCourse) url.searchParams.set('course_id', selectedCourse);
       if (searchTerm) url.searchParams.set('search', searchTerm);
-      
+
       // Add pagination for large datasets
       url.searchParams.set('page', page.toString());
       url.searchParams.set('limit', '100'); // Reasonable chunk size
-      
+
       const res = await fetch(url.toString());
       if (res.ok) {
         const data = await res.json();
         const newStudents = data.students || [];
-        setStudents(prevStudents => append ? [...prevStudents, ...newStudents] : newStudents);
+        setStudents((prevStudents) =>
+          append ? [...prevStudents, ...newStudents] : newStudents
+        );
       }
     } catch (err) {
       console.error('Error loading students:', err);
@@ -334,7 +361,7 @@ export default function HierarchicalNavigation({
     setSelectedLevel(levelId);
     setSelectedCourse(null);
     updateURL({ level: levelId, course: null });
-    
+
     // Switch to courses view when a level is selected
     if (levelId) {
       setActiveView('courses');
@@ -343,8 +370,8 @@ export default function HierarchicalNavigation({
   };
 
   const handleCourseClick = (courseId: string) => {
-    const course = courses.find(c => c.id === courseId);
-    
+    const course = courses.find((c) => c.id === courseId);
+
     if (course?.is_folder) {
       // Handle folder click - navigate into the folder
       setSelectedFolder(courseId);
@@ -360,8 +387,8 @@ export default function HierarchicalNavigation({
 
   // Add the missing handleCourseSelect function
   const handleCourseSelect = (courseId: string) => {
-    const course = courses.find(c => c.id === courseId);
-    
+    const course = courses.find((c) => c.id === courseId);
+
     if (course?.is_folder) {
       // Handle folder selection - navigate into the folder
       setSelectedFolder(courseId);
@@ -378,7 +405,7 @@ export default function HierarchicalNavigation({
   const handleFolderSelect = (folderId: string | null) => {
     setSelectedFolder(folderId);
     updateURL({ folder: folderId });
-    
+
     // Switch to courses view when a folder is selected
     if (folderId) {
       setActiveView('courses');
@@ -389,58 +416,60 @@ export default function HierarchicalNavigation({
   // Filtered data
   const filteredCourses = useMemo(() => {
     let filtered = courses;
-    
+
     if (selectedLevel) {
-      filtered = filtered.filter(c => c.level_id === selectedLevel);
+      filtered = filtered.filter((c) => c.level_id === selectedLevel);
     }
-    
+
     if (selectedFolder) {
-      filtered = filtered.filter(c => c.parent_course_id === selectedFolder);
+      filtered = filtered.filter((c) => c.parent_course_id === selectedFolder);
     } else if (!selectedFolder) {
       // Only show root courses/folders (no parent)
-      filtered = filtered.filter(c => !c.parent_course_id);
+      filtered = filtered.filter((c) => !c.parent_course_id);
     }
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(c => 
-        c.name.toLowerCase().includes(term) ||
-        (c.grade && c.grade.toLowerCase().includes(term)) ||
-        (c.section && c.section.toLowerCase().includes(term))
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(term) ||
+          (c.grade && c.grade.toLowerCase().includes(term)) ||
+          (c.section && c.section.toLowerCase().includes(term))
       );
     }
-    
+
     return filtered.sort((a, b) => a.sort_order - b.sort_order);
   }, [courses, selectedLevel, selectedFolder, searchTerm]);
 
   const filteredStudents = useMemo(() => {
     let filtered = students;
-    
+
     if (selectedCourse) {
-      filtered = filtered.filter(s => s.course_id === selectedCourse);
+      filtered = filtered.filter((s) => s.course_id === selectedCourse);
     }
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(s => 
-        s.name.toLowerCase().includes(term) ||
-        (s.parent_name && s.parent_name.toLowerCase().includes(term))
+      filtered = filtered.filter(
+        (s) =>
+          s.name.toLowerCase().includes(term) ||
+          (s.parent_name && s.parent_name.toLowerCase().includes(term))
       );
     }
-    
+
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
   }, [students, selectedCourse, searchTerm]);
 
   // Breadcrumb navigation
   const breadcrumbs = useMemo(() => {
     const crumbs = [
-      { 
-        label: 'Eventos', 
+      {
+        label: 'Eventos',
         onClick: () => router.push('/admin/events'),
-        icon: Home
+        icon: Home,
       },
-      { 
-        label: eventName, 
+      {
+        label: eventName,
         onClick: () => {
           handleViewChange('overview');
           setSelectedLevel(null);
@@ -448,59 +477,69 @@ export default function HierarchicalNavigation({
           setSelectedFolder(null);
           updateURL({ level: null, course: null, folder: null });
         },
-        icon: School
-      }
+        icon: School,
+      },
     ];
-    
+
     if (selectedLevel) {
-      const level = levels.find(l => l.id === selectedLevel);
+      const level = levels.find((l) => l.id === selectedLevel);
       if (level) {
-        crumbs.push({ 
-          label: level.name, 
+        crumbs.push({
+          label: level.name,
           onClick: () => {
             handleLevelSelect(selectedLevel);
             handleViewChange('courses');
           },
-          icon: Layers
+          icon: Layers,
         });
       }
     }
-    
+
     if (selectedFolder) {
-      const folder = courses.find(c => c.id === selectedFolder && c.is_folder);
+      const folder = courses.find(
+        (c) => c.id === selectedFolder && c.is_folder
+      );
       if (folder) {
-        crumbs.push({ 
-          label: folder.name, 
+        crumbs.push({
+          label: folder.name,
           onClick: () => {
             handleFolderSelect(selectedFolder);
             handleViewChange('courses');
           },
-          icon: Folder
+          icon: Folder,
         });
       }
     }
-    
+
     if (selectedCourse) {
-      const course = courses.find(c => c.id === selectedCourse);
+      const course = courses.find((c) => c.id === selectedCourse);
       if (course) {
-        crumbs.push({ 
-          label: course.name, 
+        crumbs.push({
+          label: course.name,
           onClick: () => {
             handleCourseSelect(selectedCourse);
             handleViewChange('students');
           },
-          icon: BookOpen
+          icon: BookOpen,
         });
       }
     }
-    
+
     return crumbs;
-  }, [eventName, selectedLevel, selectedFolder, selectedCourse, levels, courses, router]);
+  }, [
+    eventName,
+    selectedLevel,
+    selectedFolder,
+    selectedCourse,
+    levels,
+    courses,
+    router,
+  ]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <RefreshCw className="text-primary h-8 w-8 animate-spin" />
         <span className="ml-2 text-lg">Cargando...</span>
       </div>
     );
@@ -522,19 +561,23 @@ export default function HierarchicalNavigation({
       ) : (
         <>
           {/* Enhanced Breadcrumb Navigation - Mobile Optimized */}
-          <nav className="flex items-center text-sm text-muted-foreground p-3 rounded-lg bg-white/5 border border-white/10 overflow-x-auto touch-pan-x">
+          <nav className="text-muted-foreground flex touch-pan-x items-center overflow-x-auto rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
             {breadcrumbs.map((crumb, index) => {
               const Icon = crumb.icon;
               return (
-                <div key={index} className="flex items-center flex-shrink-0">
-                  {index > 0 && <ChevronRight className="h-4 w-4 mx-2 text-muted-foreground/50 flex-shrink-0" />}
+                <div key={index} className="flex flex-shrink-0 items-center">
+                  {index > 0 && (
+                    <ChevronRight className="text-muted-foreground/50 mx-2 h-4 w-4 flex-shrink-0" />
+                  )}
                   <button
                     onClick={crumb.onClick}
-                    className="flex items-center gap-1 hover:text-primary transition-colors font-medium flex-shrink-0 touch-pan-y"
+                    className="hover:text-primary flex flex-shrink-0 touch-pan-y items-center gap-1 font-medium transition-colors"
                     style={{ minHeight: '44px', minWidth: '44px' }} // Minimum touch target size
                   >
                     {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
-                    <span className={`${index === breadcrumbs.length - 1 ? "text-foreground" : ""} truncate max-w-[120px] sm:max-w-[200px]`}>
+                    <span
+                      className={`${index === breadcrumbs.length - 1 ? 'text-foreground' : ''} max-w-[120px] truncate sm:max-w-[200px]`}
+                    >
                       {crumb.label}
                     </span>
                   </button>
@@ -544,12 +587,12 @@ export default function HierarchicalNavigation({
           </nav>
 
           {/* Stats Overview - Mobile Optimized */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <Card className="glass-card border border-white/20">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Niveles</p>
+                    <p className="text-muted-foreground text-sm">Niveles</p>
                     <p className="text-2xl font-bold">{stats.total_levels}</p>
                   </div>
                   <GraduationCap className="h-8 w-8 text-blue-500 opacity-50" />
@@ -561,7 +604,7 @@ export default function HierarchicalNavigation({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Cursos</p>
+                    <p className="text-muted-foreground text-sm">Cursos</p>
                     <p className="text-2xl font-bold">{stats.total_courses}</p>
                   </div>
                   <BookOpen className="h-8 w-8 text-purple-500 opacity-50" />
@@ -573,7 +616,7 @@ export default function HierarchicalNavigation({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Estudiantes</p>
+                    <p className="text-muted-foreground text-sm">Estudiantes</p>
                     <p className="text-2xl font-bold">{stats.total_students}</p>
                   </div>
                   <Users className="h-8 w-8 text-green-500 opacity-50" />
@@ -585,7 +628,7 @@ export default function HierarchicalNavigation({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground">Fotos</p>
+                    <p className="text-muted-foreground text-sm">Fotos</p>
                     <p className="text-2xl font-bold">{stats.total_photos}</p>
                     {stats.untagged_photos > 0 && (
                       <p className="text-xs text-amber-600">
@@ -600,14 +643,16 @@ export default function HierarchicalNavigation({
 
             <Card className="glass-card border border-white/20">
               <CardContent className="p-4">
-                <div className="flex items-center justify-center h-full">
+                <div className="flex h-full items-center justify-center">
                   <Button
-                    onClick={() => router.push(`/admin/events/${eventId}/manage`)}
-                    className="w-full glass-button"
+                    onClick={() =>
+                      router.push(`/admin/events/${eventId}/manage`)
+                    }
+                    className="glass-button w-full"
                     variant="outline"
                     style={{ minHeight: '44px' }} // Minimum touch target size
                   >
-                    <Settings className="h-4 w-4 mr-2" />
+                    <Settings className="mr-2 h-4 w-4" />
                     <span className="hidden sm:inline">Gestionar</span>
                     <span className="sm:hidden">Gestión</span>
                   </Button>
@@ -618,8 +663,8 @@ export default function HierarchicalNavigation({
 
           {/* Main Navigation Tabs - Mobile Optimized */}
           <Tabs value={activeView} onValueChange={handleViewChange}>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <TabsList className="grid grid-cols-4 w-full sm:w-auto glass-card border border-white/20">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <TabsList className="glass-card grid w-full grid-cols-4 border border-white/20 sm:w-auto">
                 <TabsTrigger value="overview" style={{ minHeight: '44px' }}>
                   <span className="hidden sm:inline">Resumen</span>
                   <span className="sm:hidden">Res</span>
@@ -628,7 +673,10 @@ export default function HierarchicalNavigation({
                   <span className="hidden sm:inline">Niveles</span>
                   <span className="sm:hidden">Niv</span>
                   {levels.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-xs hidden sm:inline">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 hidden text-xs sm:inline"
+                    >
                       {levels.length}
                     </Badge>
                   )}
@@ -637,7 +685,10 @@ export default function HierarchicalNavigation({
                   <span className="hidden sm:inline">Cursos</span>
                   <span className="sm:hidden">Cur</span>
                   {filteredCourses.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-xs hidden sm:inline">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 hidden text-xs sm:inline"
+                    >
                       {filteredCourses.length}
                     </Badge>
                   )}
@@ -646,7 +697,10 @@ export default function HierarchicalNavigation({
                   <span className="hidden sm:inline">Estudiantes</span>
                   <span className="sm:hidden">Est</span>
                   {filteredStudents.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 text-xs hidden sm:inline">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 hidden text-xs sm:inline"
+                    >
                       {filteredStudents.length}
                     </Badge>
                   )}
@@ -654,18 +708,18 @@ export default function HierarchicalNavigation({
               </TabsList>
 
               {/* Search and Filters - Mobile Optimized */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex w-full items-center gap-2 sm:w-auto">
                 <div className="relative flex-1 sm:flex-none">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
                   <Input
                     placeholder="Buscar..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 w-full sm:w-64 glass-input"
+                    className="glass-input w-full pl-9 sm:w-64"
                     style={{ minHeight: '44px' }} // Minimum touch target size
                   />
                 </div>
-                
+
                 {(activeView === 'courses' || activeView === 'students') && (
                   <div className="flex items-center gap-1">
                     <Button
@@ -676,7 +730,9 @@ export default function HierarchicalNavigation({
                       style={{ minHeight: '44px', minWidth: '44px' }} // Minimum touch target size
                     >
                       <Grid3X3 className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">Grid</span>
+                      <span className="sr-only sm:not-sr-only sm:ml-1">
+                        Grid
+                      </span>
                     </Button>
                     <Button
                       variant={viewMode === 'list' ? 'default' : 'outline'}
@@ -686,7 +742,9 @@ export default function HierarchicalNavigation({
                       style={{ minHeight: '44px', minWidth: '44px' }} // Minimum touch target size
                     >
                       <List className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">Lista</span>
+                      <span className="sr-only sm:not-sr-only sm:ml-1">
+                        Lista
+                      </span>
                     </Button>
                   </div>
                 )}
@@ -695,7 +753,7 @@ export default function HierarchicalNavigation({
 
             {/* Tab Contents */}
             <TabsContent value="overview">
-              <OverviewContent 
+              <OverviewContent
                 eventId={eventId}
                 levels={levels}
                 onLevelClick={handleLevelSelect}
@@ -706,7 +764,7 @@ export default function HierarchicalNavigation({
             </TabsContent>
 
             <TabsContent value="levels">
-              <LevelsContent 
+              <LevelsContent
                 eventId={eventId}
                 levels={levels}
                 onLevelClick={handleLevelSelect}
@@ -715,7 +773,7 @@ export default function HierarchicalNavigation({
             </TabsContent>
 
             <TabsContent value="courses">
-              <CoursesContent 
+              <CoursesContent
                 eventId={eventId}
                 courses={filteredCourses}
                 viewMode={viewMode}
@@ -737,7 +795,7 @@ export default function HierarchicalNavigation({
             </TabsContent>
 
             <TabsContent value="students">
-              <StudentsContent 
+              <StudentsContent
                 eventId={eventId}
                 students={filteredStudents}
                 viewMode={viewMode}
@@ -759,13 +817,13 @@ export default function HierarchicalNavigation({
 }
 
 // Overview Content Component
-function OverviewContent({ 
-  eventId, 
-  levels, 
+function OverviewContent({
+  eventId,
+  levels,
   onLevelClick,
   onQuickJumpToCourse,
   onQuickJumpToStudent,
-  onQuickJumpToPhoto
+  onQuickJumpToPhoto,
 }: {
   eventId: string;
   levels: EventLevel[];
@@ -776,7 +834,9 @@ function OverviewContent({
 }) {
   // State for quick jump functionality
   const [quickJumpValue, setQuickJumpValue] = useState('');
-  const [quickJumpResults, setQuickJumpResults] = useState<Array<{id: string, name: string, type: 'course' | 'student' | 'photo'}>>([]);
+  const [quickJumpResults, setQuickJumpResults] = useState<
+    Array<{ id: string; name: string; type: 'course' | 'student' | 'photo' }>
+  >([]);
   const [showQuickJump, setShowQuickJump] = useState(false);
 
   // Function to search for courses, students, or photos by name
@@ -788,29 +848,33 @@ function OverviewContent({
 
     try {
       const results = [];
-      
+
       // Search courses
-      const coursesResponse = await fetch(`/api/admin/events/${eventId}/courses?search=${encodeURIComponent(searchTerm)}&limit=5`);
+      const coursesResponse = await fetch(
+        `/api/admin/events/${eventId}/courses?search=${encodeURIComponent(searchTerm)}&limit=5`
+      );
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
         coursesData.courses.forEach((course: any) => {
           results.push({
             id: course.id,
             name: course.name,
-            type: 'course'
+            type: 'course',
           });
         });
       }
 
       // Search students
-      const studentsResponse = await fetch(`/api/admin/events/${eventId}/students?search=${encodeURIComponent(searchTerm)}&limit=5`);
+      const studentsResponse = await fetch(
+        `/api/admin/events/${eventId}/students?search=${encodeURIComponent(searchTerm)}&limit=5`
+      );
       if (studentsResponse.ok) {
         const studentsData = await studentsResponse.json();
         studentsData.students.forEach((student: any) => {
           results.push({
             id: student.id,
             name: student.name,
-            type: 'student'
+            type: 'student',
           });
         });
       }
@@ -835,7 +899,10 @@ function OverviewContent({
   }, [quickJumpValue, eventId]);
 
   // Handle quick jump selection
-  const handleQuickJumpSelect = (id: string, type: 'course' | 'student' | 'photo') => {
+  const handleQuickJumpSelect = (
+    id: string,
+    type: 'course' | 'student' | 'photo'
+  ) => {
     switch (type) {
       case 'course':
         onQuickJumpToCourse(id);
@@ -854,7 +921,7 @@ function OverviewContent({
 
   // Prepare data for charts
   const levelChartData = useMemo(() => {
-    return levels.map(level => ({
+    return levels.map((level) => ({
       name: level.name,
       courses: level.course_count || 0,
       students: level.student_count || 0,
@@ -863,12 +930,12 @@ function OverviewContent({
 
   const courseDistributionData = useMemo(() => {
     const distribution: Record<string, number> = {};
-    
-    levels.forEach(level => {
+
+    levels.forEach((level) => {
       const key = level.name || 'Sin nivel';
       distribution[key] = (distribution[key] || 0) + (level.course_count || 0);
     });
-    
+
     return Object.entries(distribution).map(([name, count]) => ({
       name,
       value: count,
@@ -877,12 +944,12 @@ function OverviewContent({
 
   const studentDistributionData = useMemo(() => {
     const distribution: Record<string, number> = {};
-    
-    levels.forEach(level => {
+
+    levels.forEach((level) => {
       const key = level.name || 'Sin nivel';
       distribution[key] = (distribution[key] || 0) + (level.student_count || 0);
     });
-    
+
     return Object.entries(distribution).map(([name, count]) => ({
       name,
       value: count,
@@ -890,37 +957,55 @@ function OverviewContent({
   }, [levels]);
 
   // Colors for charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
+  const COLORS = [
+    '#0088FE',
+    '#00C49F',
+    '#FFBB28',
+    '#FF8042',
+    '#8884D8',
+    '#82CA9D',
+  ];
 
   // Calculate progress percentages for visual indicators
-  const maxCourses = Math.max(...levels.map(l => l.course_count || 0), 1);
-  const maxStudents = Math.max(...levels.map(l => l.student_count || 0), 1);
-  
+  const maxCourses = Math.max(...levels.map((l) => l.course_count || 0), 1);
+  const maxStudents = Math.max(...levels.map((l) => l.student_count || 0), 1);
+
   // Calculate additional metrics
-  const totalCourses = levels.reduce((sum, level) => sum + (level.course_count || 0), 0);
-  const totalStudents = levels.reduce((sum, level) => sum + (level.student_count || 0), 0);
-  const activeLevels = levels.filter(level => level.active).length;
-  const levelCompletionRate = levels.length > 0 ? Math.round((activeLevels / levels.length) * 100) : 0;
+  const totalCourses = levels.reduce(
+    (sum, level) => sum + (level.course_count || 0),
+    0
+  );
+  const totalStudents = levels.reduce(
+    (sum, level) => sum + (level.student_count || 0),
+    0
+  );
+  const activeLevels = levels.filter((level) => level.active).length;
+  const levelCompletionRate =
+    levels.length > 0 ? Math.round((activeLevels / levels.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
       {/* Enhanced Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="glass-card border border-white/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Niveles Activos</p>
+                <p className="text-muted-foreground text-sm">Niveles Activos</p>
                 <p className="text-2xl font-bold">{activeLevels}</p>
               </div>
               <GraduationCap className="h-8 w-8 text-blue-500 opacity-50" />
             </div>
             <div className="mt-2">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">{levelCompletionRate}% completado</span>
-                <span className="text-muted-foreground">{levels.length} total</span>
+                <span className="text-muted-foreground">
+                  {levelCompletionRate}% completado
+                </span>
+                <span className="text-muted-foreground">
+                  {levels.length} total
+                </span>
               </div>
-              <Progress value={levelCompletionRate} className="h-2 mt-1" />
+              <Progress value={levelCompletionRate} className="mt-1 h-2" />
             </div>
           </CardContent>
         </Card>
@@ -929,14 +1014,16 @@ function OverviewContent({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Cursos</p>
+                <p className="text-muted-foreground text-sm">Total Cursos</p>
                 <p className="text-2xl font-bold">{totalCourses}</p>
               </div>
               <BookOpen className="h-8 w-8 text-purple-500 opacity-50" />
             </div>
             <div className="mt-2">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Distribución por nivel</span>
+                <span className="text-muted-foreground">
+                  Distribución por nivel
+                </span>
               </div>
             </div>
           </CardContent>
@@ -946,15 +1033,23 @@ function OverviewContent({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Estudiantes</p>
+                <p className="text-muted-foreground text-sm">
+                  Total Estudiantes
+                </p>
                 <p className="text-2xl font-bold">{totalStudents}</p>
               </div>
               <Users className="h-8 w-8 text-green-500 opacity-50" />
             </div>
             <div className="mt-2">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Promedio por curso</span>
-                <span className="text-muted-foreground">{totalCourses > 0 ? Math.round(totalStudents / totalCourses) : 0}</span>
+                <span className="text-muted-foreground">
+                  Promedio por curso
+                </span>
+                <span className="text-muted-foreground">
+                  {totalCourses > 0
+                    ? Math.round(totalStudents / totalCourses)
+                    : 0}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -964,14 +1059,16 @@ function OverviewContent({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Eficiencia</p>
+                <p className="text-muted-foreground text-sm">Eficiencia</p>
                 <p className="text-2xl font-bold">92%</p>
               </div>
               <TrendingUp className="h-8 w-8 text-orange-500 opacity-50" />
             </div>
             <div className="mt-2">
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Tasa de crecimiento</span>
+                <span className="text-muted-foreground">
+                  Tasa de crecimiento
+                </span>
                 <span className="text-green-500">+5.2%</span>
               </div>
             </div>
@@ -980,34 +1077,46 @@ function OverviewContent({
       </div>
 
       {/* Quick Actions and Quick Jump */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="glass-card border border-white/20">
           <CardHeader>
             <CardTitle>Acciones Rápidas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-auto flex-col py-4 glass-button">
-                <Plus className="h-5 w-5 mb-2" />
+              <Button
+                variant="outline"
+                className="glass-button h-auto flex-col py-4"
+              >
+                <Plus className="mb-2 h-5 w-5" />
                 Nuevo Curso
               </Button>
-              <Button variant="outline" className="h-auto flex-col py-4 glass-button">
-                <Users className="h-5 w-5 mb-2" />
+              <Button
+                variant="outline"
+                className="glass-button h-auto flex-col py-4"
+              >
+                <Users className="mb-2 h-5 w-5" />
                 Agregar Estudiantes
               </Button>
-              <Button variant="outline" className="h-auto flex-col py-4 glass-button">
-                <Upload className="h-5 w-5 mb-2" />
+              <Button
+                variant="outline"
+                className="glass-button h-auto flex-col py-4"
+              >
+                <Upload className="mb-2 h-5 w-5" />
                 Importar CSV
               </Button>
-              <Button variant="outline" className="h-auto flex-col py-4 glass-button">
-                <Download className="h-5 w-5 mb-2" />
+              <Button
+                variant="outline"
+                className="glass-button h-auto flex-col py-4"
+              >
+                <Download className="mb-2 h-5 w-5" />
                 Exportar Datos
               </Button>
             </div>
-            
+
             {/* Quick Jump Navigation */}
             <div className="mt-6">
-              <h4 className="text-sm font-medium mb-2">Navegación Rápida</h4>
+              <h4 className="mb-2 text-sm font-medium">Navegación Rápida</h4>
               <div className="relative">
                 <Input
                   placeholder="Buscar curso, estudiante o foto..."
@@ -1018,18 +1127,26 @@ function OverviewContent({
                   className="glass-input"
                 />
                 {showQuickJump && quickJumpResults.length > 0 && (
-                  <Card className="absolute top-full left-0 right-0 mt-1 z-50 glass-card border border-white/20 shadow-lg">
+                  <Card className="glass-card absolute left-0 right-0 top-full z-50 mt-1 border border-white/20 shadow-lg">
                     <CardContent className="p-2">
                       {quickJumpResults.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
-                          className="px-3 py-2 hover:bg-white/10 cursor-pointer rounded-md text-sm"
-                          onClick={() => handleQuickJumpSelect(result.id, result.type)}
+                          className="cursor-pointer rounded-md px-3 py-2 text-sm hover:bg-white/10"
+                          onClick={() =>
+                            handleQuickJumpSelect(result.id, result.type)
+                          }
                         >
                           <div className="flex items-center">
-                            {result.type === 'course' && <BookOpen className="h-4 w-4 mr-2 text-blue-500" />}
-                            {result.type === 'student' && <UserCircle className="h-4 w-4 mr-2 text-green-500" />}
-                            {result.type === 'photo' && <ImageIcon className="h-4 w-4 mr-2 text-purple-500" />}
+                            {result.type === 'course' && (
+                              <BookOpen className="mr-2 h-4 w-4 text-blue-500" />
+                            )}
+                            {result.type === 'student' && (
+                              <UserCircle className="mr-2 h-4 w-4 text-green-500" />
+                            )}
+                            {result.type === 'photo' && (
+                              <ImageIcon className="mr-2 h-4 w-4 text-purple-500" />
+                            )}
                             <span>{result.name}</span>
                           </div>
                         </div>
@@ -1051,48 +1168,60 @@ function OverviewContent({
             {levels.length > 0 ? (
               <div className="space-y-4">
                 {levels.map((level) => {
-                  const courseProgress = ((level.course_count || 0) / maxCourses) * 100;
-                  const studentProgress = ((level.student_count || 0) / maxStudents) * 100;
-                  
+                  const courseProgress =
+                    ((level.course_count || 0) / maxCourses) * 100;
+                  const studentProgress =
+                    ((level.student_count || 0) / maxStudents) * 100;
+
                   return (
                     <div
                       key={level.id}
-                      className="p-4 border rounded-lg hover:bg-white/10 cursor-pointer transition-colors glass-card border-white/20"
+                      className="glass-card cursor-pointer rounded-lg border border-white/20 p-4 transition-colors hover:bg-white/10"
                       onClick={() => onLevelClick(level.id)}
                     >
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="mb-2 flex items-start justify-between">
                         <h3 className="font-medium">{level.name}</h3>
                         <Badge variant={level.active ? 'default' : 'secondary'}>
                           {level.active ? 'Activo' : 'Inactivo'}
                         </Badge>
                       </div>
-                      
+
                       {level.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{level.description}</p>
+                        <p className="text-muted-foreground mb-3 text-sm">
+                          {level.description}
+                        </p>
                       )}
-                      
+
                       <div className="space-y-2">
                         <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Cursos</span>
-                            <span className="font-medium">{level.course_count || 0}</span>
+                          <div className="mb-1 flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Cursos
+                            </span>
+                            <span className="font-medium">
+                              {level.course_count || 0}
+                            </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full" 
+                          <div className="h-2 w-full rounded-full bg-gray-200">
+                            <div
+                              className="h-2 rounded-full bg-blue-600"
                               style={{ width: `${courseProgress}%` }}
                             ></div>
                           </div>
                         </div>
-                        
+
                         <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Estudiantes</span>
-                            <span className="font-medium">{level.student_count || 0}</span>
+                          <div className="mb-1 flex justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Estudiantes
+                            </span>
+                            <span className="font-medium">
+                              {level.student_count || 0}
+                            </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-600 h-2 rounded-full" 
+                          <div className="h-2 w-full rounded-full bg-gray-200">
+                            <div
+                              className="h-2 rounded-full bg-green-600"
                               style={{ width: `${studentProgress}%` }}
                             ></div>
                           </div>
@@ -1103,7 +1232,7 @@ function OverviewContent({
                 })}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
+              <p className="text-muted-foreground py-8 text-center">
                 No hay niveles configurados
               </p>
             )}
@@ -1112,7 +1241,7 @@ function OverviewContent({
       </div>
 
       {/* Data Visualization Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Courses by Level */}
         <Card className="glass-card border border-white/20">
           <CardHeader>
@@ -1125,15 +1254,20 @@ function OverviewContent({
                 margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
               >
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px'
-                  }} 
+                    borderRadius: '8px',
+                  }}
                 />
                 <Legend />
                 <Bar dataKey="courses" name="Cursos" fill="#8884d8" />
@@ -1154,15 +1288,20 @@ function OverviewContent({
                 margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
               >
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px'
-                  }} 
+                    borderRadius: '8px',
+                  }}
                 />
                 <Legend />
                 <Bar dataKey="students" name="Estudiantes" fill="#82ca9d" />
@@ -1188,19 +1327,24 @@ function OverviewContent({
                   fill="#8884d8"
                   dataKey="value"
                   nameKey="name"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {courseDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px'
-                  }} 
+                    borderRadius: '8px',
+                  }}
                 />
                 <Legend />
               </PieChart>
@@ -1225,19 +1369,24 @@ function OverviewContent({
                   fill="#82ca9d"
                   dataKey="value"
                   nameKey="name"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
                 >
                   {studentDistributionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     backdropFilter: 'blur(10px)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px'
-                  }} 
+                    borderRadius: '8px',
+                  }}
                 />
                 <Legend />
               </PieChart>
@@ -1250,11 +1399,11 @@ function OverviewContent({
 }
 
 // Levels Content Component
-function LevelsContent({ 
+function LevelsContent({
   eventId,
-  levels, 
+  levels,
   onLevelClick,
-  onRefresh 
+  onRefresh,
 }: {
   eventId: string;
   levels: EventLevel[];
@@ -1263,30 +1412,35 @@ function LevelsContent({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Niveles Educativos</h3>
         <div className="flex gap-2">
-          <Button onClick={onRefresh} variant="outline" size="sm" className="glass-button">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button
+            onClick={onRefresh}
+            variant="outline"
+            size="sm"
+            className="glass-button"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
             Actualizar
           </Button>
           <Button size="sm" className="glass-button">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Nuevo Nivel
           </Button>
         </div>
       </div>
 
       {levels.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {levels.map((level) => (
-            <Card 
+            <Card
               key={level.id}
-              className="glass-card hover:shadow-md transition-shadow border border-white/20"
+              className="glass-card border border-white/20 transition-shadow hover:shadow-md"
             >
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span 
+                  <span
                     className="cursor-pointer hover:underline"
                     onClick={() => onLevelClick(level.id)}
                   >
@@ -1300,29 +1454,43 @@ function LevelsContent({
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Cursos:</span>
-                    <span className="font-medium">{level.course_count || 0}</span>
+                    <span className="text-muted-foreground text-sm">
+                      Cursos:
+                    </span>
+                    <span className="font-medium">
+                      {level.course_count || 0}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Estudiantes:</span>
-                    <span className="font-medium">{level.student_count || 0}</span>
+                    <span className="text-muted-foreground text-sm">
+                      Estudiantes:
+                    </span>
+                    <span className="font-medium">
+                      {level.student_count || 0}
+                    </span>
                   </div>
                   {level.description && (
-                    <p className="text-sm text-muted-foreground mt-2">{level.description}</p>
+                    <p className="text-muted-foreground mt-2 text-sm">
+                      {level.description}
+                    </p>
                   )}
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 glass-button"
-                    onClick={() => router.push(`/admin/events/${eventId}/levels/${level.id}/gallery`)}
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="glass-button flex-1"
+                    onClick={() =>
+                      router.push(
+                        `/admin/events/${eventId}/levels/${level.id}/gallery`
+                      )
+                    }
                   >
-                    <ImageIcon className="h-4 w-4 mr-1" />
+                    <ImageIcon className="mr-1 h-4 w-4" />
                     Galería
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="glass-button"
                     onClick={() => onLevelClick(level.id)}
@@ -1336,30 +1504,69 @@ function LevelsContent({
         </div>
       ) : (
         <Card className="glass-card border border-white/20">
-          <CardContent className="text-center py-8">
-            <GraduationCap className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">No hay niveles configurados</p>
+          <CardContent className="py-8 text-center">
+            <GraduationCap className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <p className="text-muted-foreground mb-4">
+              No hay niveles configurados
+            </p>
             <Button className="glass-button">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Crear Primer Nivel
             </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* Folders Sheet (mobile) */}
+      <Sheet open={showFoldersSheet} onOpenChange={setShowFoldersSheet}>
+        <SheetContent side="left" className="sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>Carpetas</SheetTitle>
+            <SheetDescription>Explorá y abrí carpetas rápidamente</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 space-y-2">
+            {courses.filter((c) => c.is_folder).length === 0 ? (
+              <div className="text-muted-foreground text-sm">No hay carpetas</div>
+            ) : (
+              courses
+                .filter((c) => c.is_folder)
+                .map((folder) => (
+                  <Button
+                    key={folder.id}
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      onCourseClick(folder.id);
+                      setShowFoldersSheet(false);
+                    }}
+                  >
+                    <Folder className="mr-2 h-4 w-4 text-yellow-600" />
+                    <span className="break-words text-left">
+                      {folder.name}
+                    </span>
+                    <Badge className="ml-auto" variant="secondary">
+                      {folder.photo_count || 0}
+                    </Badge>
+                  </Button>
+                ))
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
 
 // Courses Content Component
-function CoursesContent({ 
+function CoursesContent({
   eventId,
-  courses, 
-  viewMode, 
+  courses,
+  viewMode,
   selectedLevel,
   selectedFolder,
   onCourseClick,
   onRefresh,
-  onBack
+  onBack,
 }: {
   eventId: string;
   courses: Course[];
@@ -1371,6 +1578,7 @@ function CoursesContent({
   onBack: () => void;
 }) {
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
+  const [showFoldersSheet, setShowFoldersSheet] = useState(false);
   const [folderForm, setFolderForm] = useState({
     name: '',
     description: '',
@@ -1380,7 +1588,7 @@ function CoursesContent({
 
   const handleCreateFolder = async () => {
     if (!folderForm.name.trim()) return;
-    
+
     setCreatingFolder(true);
     try {
       const response = await fetch(`/api/admin/events/${eventId}/courses`, {
@@ -1398,7 +1606,11 @@ function CoursesContent({
 
       if (response.ok) {
         setShowCreateFolderDialog(false);
-        setFolderForm({ name: '', description: '', level_id: selectedLevel || '' });
+        setFolderForm({
+          name: '',
+          description: '',
+          level_id: selectedLevel || '',
+        });
         onRefresh();
       } else {
         const error = await response.json();
@@ -1413,77 +1625,110 @@ function CoursesContent({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onBack} className="glass-button flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="glass-button flex items-center gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Volver</span>
           </Button>
+          {/* Mobile-only: open folders drawer */}
+          <div className="sm:hidden">
+            <Button
+              variant="outline"
+              className="glass-button"
+              onClick={() => setShowFoldersSheet(true)}
+              aria-haspopup="dialog"
+              aria-expanded={showFoldersSheet}
+            >
+              <Folder className="mr-2 h-4 w-4" /> Carpetas
+            </Button>
+          </div>
           <h3 className="text-lg font-medium">
-            {selectedFolder ? 'Contenido de la Carpeta' : 'Cursos'} {selectedLevel && '(Filtrado por nivel)'}
+            {selectedFolder ? 'Contenido de la Carpeta' : 'Cursos'}{' '}
+            {selectedLevel && '(Filtrado por nivel)'}
           </h3>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onRefresh} variant="outline" size="sm" className="glass-button">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button
+            onClick={onRefresh}
+            variant="outline"
+            size="sm"
+            className="glass-button"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
             Actualizar
           </Button>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             className="glass-button"
             onClick={() => setShowCreateFolderDialog(true)}
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Nueva Carpeta
           </Button>
           <Button size="sm" className="glass-button">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Nuevo Curso
           </Button>
         </div>
       </div>
 
       {/* Create Folder Dialog */}
-      <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
+      <Dialog
+        open={showCreateFolderDialog}
+        onOpenChange={setShowCreateFolderDialog}
+      >
         <DialogContent className="glass-card border border-white/20">
           <DialogHeader>
             <DialogTitle>Crear Nueva Carpeta</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Nombre de la Carpeta</label>
+              <label className="mb-1 block text-sm font-medium">
+                Nombre de la Carpeta
+              </label>
               <Input
                 value={folderForm.name}
-                onChange={(e) => setFolderForm({...folderForm, name: e.target.value})}
+                onChange={(e) =>
+                  setFolderForm({ ...folderForm, name: e.target.value })
+                }
                 placeholder="Nombre de la carpeta"
                 className="glass-input"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Descripción (Opcional)</label>
+              <label className="mb-1 block text-sm font-medium">
+                Descripción (Opcional)
+              </label>
               <Input
                 value={folderForm.description}
-                onChange={(e) => setFolderForm({...folderForm, description: e.target.value})}
+                onChange={(e) =>
+                  setFolderForm({ ...folderForm, description: e.target.value })
+                }
                 placeholder="Descripción de la carpeta"
                 className="glass-input"
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setShowCreateFolderDialog(false)}
                 className="glass-button"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={handleCreateFolder}
                 disabled={creatingFolder || !folderForm.name.trim()}
                 className="glass-button"
               >
                 {creatingFolder ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                     Creando...
                   </>
                 ) : (
@@ -1497,19 +1742,19 @@ function CoursesContent({
 
       {courses.length > 0 ? (
         viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {courses.map((course) => (
-              <Card 
+              <Card
                 key={course.id}
-                className={`glass-card hover:shadow-md transition-shadow cursor-pointer border border-white/20 ${
+                className={`glass-card cursor-pointer border border-white/20 transition-shadow hover:shadow-md ${
                   course.is_folder ? 'border-yellow-500/50' : ''
                 }`}
                 onClick={() => onCourseClick(course.id)}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <span 
-                      className="truncate cursor-pointer hover:underline"
+                    <span
+                      className="cursor-pointer break-words line-clamp-2 hover:underline md:line-clamp-1 md:truncate"
                       onClick={() => onCourseClick(course.id)}
                     >
                       {course.name}
@@ -1519,13 +1764,13 @@ function CoursesContent({
                     </Badge>
                   </CardTitle>
                   {course.is_folder && (
-                    <p className="text-sm text-yellow-500 flex items-center">
-                      <Folder className="h-4 w-4 mr-1" />
+                    <p className="flex items-center text-sm text-yellow-500">
+                      <Folder className="mr-1 h-4 w-4" />
                       Carpeta
                     </p>
                   )}
                   {course.grade && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {course.grade} {course.section && `- ${course.section}`}
                     </p>
                   )}
@@ -1533,50 +1778,72 @@ function CoursesContent({
                 <CardContent>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        {course.is_folder ? 'Subcarpetas/Cursos:' : 'Estudiantes:'}
+                      <span className="text-muted-foreground text-sm">
+                        {course.is_folder
+                          ? 'Subcarpetas/Cursos:'
+                          : 'Estudiantes:'}
                       </span>
                       <span className="font-medium">
-                        {course.is_folder ? course.student_count || 0 : course.student_count || 0}
+                        {course.is_folder
+                          ? course.student_count || 0
+                          : course.student_count || 0}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Fotos:</span>
-                      <span className="font-medium">{course.photo_count || 0}</span>
+                      <span className="text-muted-foreground text-sm">
+                        Fotos:
+                      </span>
+                      <span className="font-medium">
+                        {course.photo_count || 0}
+                      </span>
                     </div>
-                    {course.group_photo_count && course.group_photo_count > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Grupales:</span>
-                        <span className="font-medium">{course.group_photo_count}</span>
-                      </div>
-                    )}
-                    
+                    {course.group_photo_count &&
+                      course.group_photo_count > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground text-sm">
+                            Grupales:
+                          </span>
+                          <span className="font-medium">
+                            {course.group_photo_count}
+                          </span>
+                        </div>
+                      )}
+
                     {/* Completion Progress Bar */}
                     {course.completion_rate !== undefined && (
                       <div className="pt-2">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">Progreso</span>
-                          <span className="font-medium">{course.completion_rate}%</span>
+                        <div className="mb-1 flex justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            Progreso
+                          </span>
+                          <span className="font-medium">
+                            {course.completion_rate}%
+                          </span>
                         </div>
-                        <Progress value={course.completion_rate} className="h-2" />
+                        <Progress
+                          value={course.completion_rate}
+                          className="h-2"
+                        />
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-1 mt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 glass-button"
+                  <div className="mt-4 flex flex-wrap gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="glass-button flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        router.push(`/admin/events/${eventId}/courses/${course.id}/gallery`);
+                        router.push(
+                          `/admin/events/${eventId}/courses/${course.id}/gallery`
+                        );
                       }}
                     >
-                      <ImageIcon className="h-4 w-4 mr-1" />
+                      <ImageIcon className="mr-1 h-4 w-4" />
                       <span className="hidden xs:inline">Galería</span>
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="glass-button"
                       onClick={(e) => {
@@ -1585,11 +1852,13 @@ function CoursesContent({
                       }}
                     >
                       <Eye className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">Ver</span>
+                      <span className="sr-only sm:not-sr-only sm:ml-1">
+                        Ver
+                      </span>
                     </Button>
                     {/* Quick Navigation Button */}
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="glass-button"
                       onClick={(e) => {
@@ -1599,7 +1868,9 @@ function CoursesContent({
                       }}
                     >
                       <Navigation className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">Nav</span>
+                      <span className="sr-only sm:not-sr-only sm:ml-1">
+                        Nav
+                      </span>
                     </Button>
                   </div>
                 </CardContent>
@@ -1611,9 +1882,9 @@ function CoursesContent({
             <CardContent className="p-0">
               <div className="divide-y divide-white/20">
                 {courses.map((course) => (
-                  <div 
+                  <div
                     key={course.id}
-                    className={`p-4 hover:bg-white/10 cursor-pointer transition-colors ${
+                    className={`cursor-pointer p-4 transition-colors hover:bg-white/10 ${
                       course.is_folder ? 'border-l-4 border-yellow-500/50' : ''
                     }`}
                     onClick={() => onCourseClick(course.id)}
@@ -1621,53 +1892,73 @@ function CoursesContent({
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
-                          <h4 
-                            className="font-medium cursor-pointer hover:underline"
+                          <h4
+                            className="cursor-pointer font-medium hover:underline"
                             onClick={() => onCourseClick(course.id)}
                           >
                             {course.name}
                           </h4>
                           {course.is_folder && (
-                            <Badge variant="outline" className="text-yellow-500 border-yellow-500/50">
+                            <Badge
+                              variant="outline"
+                              className="border-yellow-500/50 text-yellow-500"
+                            >
                               Carpeta
                             </Badge>
                           )}
-                          <Badge variant={course.active ? 'default' : 'secondary'} size="sm">
+                          <Badge
+                            variant={course.active ? 'default' : 'secondary'}
+                            size="sm"
+                          >
                             {course.active ? 'Activo' : 'Inactivo'}
                           </Badge>
                           {course.grade && (
-                            <span className="text-sm text-muted-foreground">
-                              {course.grade} {course.section && `- ${course.section}`}
+                            <span className="text-muted-foreground text-sm">
+                              {course.grade}{' '}
+                              {course.section && `- ${course.section}`}
                             </span>
                           )}
                         </div>
                         {course.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{course.description}</p>
+                          <p className="text-muted-foreground mt-1 text-sm">
+                            {course.description}
+                          </p>
                         )}
                       </div>
                       <div className="flex items-center gap-6 text-sm">
                         <div className="text-center">
-                          <p className="font-medium">{course.student_count || 0}</p>
+                          <p className="font-medium">
+                            {course.student_count || 0}
+                          </p>
                           <p className="text-muted-foreground">
                             {course.is_folder ? 'Elementos' : 'Estudiantes'}
                           </p>
                         </div>
                         <div className="text-center">
-                          <p className="font-medium">{course.photo_count || 0}</p>
+                          <p className="font-medium">
+                            {course.photo_count || 0}
+                          </p>
                           <p className="text-muted-foreground">Fotos</p>
                         </div>
-                        {course.group_photo_count && course.group_photo_count > 0 && (
-                          <div className="text-center">
-                            <p className="font-medium">{course.group_photo_count}</p>
-                            <p className="text-muted-foreground">Grupales</p>
-                          </div>
-                        )}
-                        <Button variant="ghost" size="sm" className="glass-button">
+                        {course.group_photo_count &&
+                          course.group_photo_count > 0 && (
+                            <div className="text-center">
+                              <p className="font-medium">
+                                {course.group_photo_count}
+                              </p>
+                              <p className="text-muted-foreground">Grupales</p>
+                            </div>
+                          )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="glass-button"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                         {/* Quick Navigation Button */}
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           className="glass-button"
                           onClick={(e) => {
@@ -1688,21 +1979,23 @@ function CoursesContent({
         )
       ) : (
         <Card className="glass-card border border-white/20">
-          <CardContent className="text-center py-8">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <CardContent className="py-8 text-center">
+            <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
             <p className="text-muted-foreground mb-4">
-              {selectedFolder ? 'Esta carpeta está vacía' : 'No hay cursos disponibles'}
+              {selectedFolder
+                ? 'Esta carpeta está vacía'
+                : 'No hay cursos disponibles'}
             </p>
             <div className="flex justify-center gap-2">
-              <Button 
+              <Button
                 className="glass-button"
                 onClick={() => setShowCreateFolderDialog(true)}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Crear Carpeta
               </Button>
               <Button className="glass-button">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Crear Primer Curso
               </Button>
             </div>
@@ -1713,15 +2006,15 @@ function CoursesContent({
   );
 }
 
-// Students Content Component  
-function StudentsContent({ 
+// Students Content Component
+function StudentsContent({
   eventId,
-  students, 
-  viewMode, 
+  students,
+  viewMode,
   selectedCourse,
   searchTerm,
   onRefresh,
-  onBack
+  onBack,
 }: {
   eventId: string;
   students: Student[];
@@ -1736,9 +2029,13 @@ function StudentsContent({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onBack} className="glass-button flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="glass-button flex items-center gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Volver</span>
           </Button>
@@ -1747,16 +2044,21 @@ function StudentsContent({
           </h3>
         </div>
         <div className="flex gap-2">
-          <Button onClick={onRefresh} variant="outline" size="sm" className="glass-button">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button
+            onClick={onRefresh}
+            variant="outline"
+            size="sm"
+            className="glass-button"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
             Actualizar
           </Button>
           <Button variant="outline" size="sm" className="glass-button">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             Importar
           </Button>
           <Button size="sm" className="glass-button">
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Nuevo Estudiante
           </Button>
         </div>
@@ -1781,64 +2083,87 @@ function StudentsContent({
         <>
           {students.length > 0 ? (
             viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {students.map((student) => (
-                  <Card 
+                  <Card
                     key={student.id}
-                    className="glass-card hover:shadow-md transition-shadow border border-white/20"
+                    className="glass-card border border-white/20 transition-shadow hover:shadow-md"
                   >
                     <CardHeader>
                       <CardTitle className="flex items-center justify-between">
                         <span className="truncate">{student.name}</span>
-                        <Badge variant={student.active ? 'default' : 'secondary'}>
+                        <Badge
+                          variant={student.active ? 'default' : 'secondary'}
+                        >
                           {student.active ? 'Activo' : 'Inactivo'}
                         </Badge>
                       </CardTitle>
                       {(student.grade || student.section) && (
-                        <p className="text-sm text-muted-foreground">
-                          {student.grade} {student.section && `- ${student.section}`}
+                        <p className="text-muted-foreground text-sm">
+                          {student.grade}{' '}
+                          {student.section && `- ${student.section}`}
                         </p>
                       )}
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Fotos:</span>
-                          <span className="font-medium">{student.photo_count || 0}</span>
+                          <span className="text-muted-foreground text-sm">
+                            Fotos:
+                          </span>
+                          <span className="font-medium">
+                            {student.photo_count || 0}
+                          </span>
                         </div>
                         {student.parent_name && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {student.parent_name}
                           </p>
                         )}
                       </div>
-                      <div className="flex gap-2 mt-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1 glass-button"
-                          onClick={() => router.push(`/admin/events/${eventId}/students/${student.id}/gallery`)}
+                      <div className="mt-4 flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="glass-button flex-1"
+                          onClick={() =>
+                            router.push(
+                              `/admin/events/${eventId}/students/${student.id}/gallery`
+                            )
+                          }
                         >
-                          <ImageIcon className="h-4 w-4 mr-1" />
+                          <ImageIcon className="mr-1 h-4 w-4" />
                           <span className="hidden xs:inline">Galería</span>
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           className="glass-button"
-                          onClick={() => router.push(`/admin/events/${eventId}/students/${student.id}/edit`)}
+                          onClick={() =>
+                            router.push(
+                              `/admin/events/${eventId}/students/${student.id}/edit`
+                            )
+                          }
                         >
                           <Edit className="h-4 w-4" />
-                          <span className="sr-only sm:not-sr-only sm:ml-1">Editar</span>
+                          <span className="sr-only sm:not-sr-only sm:ml-1">
+                            Editar
+                          </span>
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           className="glass-button"
-                          onClick={() => router.push(`/admin/events/${eventId}/students/${student.id}/delete`)}
+                          onClick={() =>
+                            router.push(
+                              `/admin/events/${eventId}/students/${student.id}/delete`
+                            )
+                          }
                         >
                           <Trash2 className="h-4 w-4" />
-                          <span className="sr-only sm:not-sr-only sm:ml-1">Eliminar</span>
+                          <span className="sr-only sm:not-sr-only sm:ml-1">
+                            Eliminar
+                          </span>
                         </Button>
                       </div>
                     </CardContent>
@@ -1850,41 +2175,61 @@ function StudentsContent({
                 <CardContent className="p-0">
                   <div className="divide-y divide-white/20">
                     {students.map((student) => (
-                      <div 
+                      <div
                         key={student.id}
-                        className="p-4 hover:bg-white/10 cursor-pointer transition-colors"
-                        onClick={() => router.push(`/admin/events/${eventId}/students/${student.id}/gallery`)}
+                        className="cursor-pointer p-4 transition-colors hover:bg-white/10"
+                        onClick={() =>
+                          router.push(
+                            `/admin/events/${eventId}/students/${student.id}/gallery`
+                          )
+                        }
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
-                              <h4 
-                                className="font-medium cursor-pointer hover:underline"
-                                onClick={() => router.push(`/admin/events/${eventId}/students/${student.id}/gallery`)}
+                              <h4
+                                className="cursor-pointer font-medium hover:underline"
+                                onClick={() =>
+                                  router.push(
+                                    `/admin/events/${eventId}/students/${student.id}/gallery`
+                                  )
+                                }
                               >
                                 {student.name}
                               </h4>
-                              <Badge variant={student.active ? 'default' : 'secondary'} size="sm">
+                              <Badge
+                                variant={
+                                  student.active ? 'default' : 'secondary'
+                                }
+                                size="sm"
+                              >
                                 {student.active ? 'Activo' : 'Inactivo'}
                               </Badge>
                               {(student.grade || student.section) && (
-                                <span className="text-sm text-muted-foreground">
-                                  {student.grade} {student.section && `- ${student.section}`}
+                                <span className="text-muted-foreground text-sm">
+                                  {student.grade}{' '}
+                                  {student.section && `- ${student.section}`}
                                 </span>
                               )}
                             </div>
                             {student.parent_name && (
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-muted-foreground text-sm">
                                 {student.parent_name}
                               </p>
                             )}
                           </div>
                           <div className="flex items-center gap-6 text-sm">
                             <div className="text-center">
-                              <p className="font-medium">{student.photo_count || 0}</p>
+                              <p className="font-medium">
+                                {student.photo_count || 0}
+                              </p>
                               <p className="text-muted-foreground">Fotos</p>
                             </div>
-                            <Button variant="ghost" size="sm" className="glass-button">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="glass-button"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1897,11 +2242,13 @@ function StudentsContent({
             )
           ) : (
             <Card className="glass-card border border-white/20">
-              <CardContent className="text-center py-8">
-                <UserCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">No hay estudiantes disponibles</p>
+              <CardContent className="py-8 text-center">
+                <UserCircle className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <p className="text-muted-foreground mb-4">
+                  No hay estudiantes disponibles
+                </p>
                 <Button className="glass-button">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Crear Primer Estudiante
                 </Button>
               </CardContent>
@@ -1913,51 +2260,54 @@ function StudentsContent({
   );
 }
 
-  // Quick jump navigation functions
-  const quickJumpToCourse = (courseId: string) => {
-    const course = courses.find(c => c.id === courseId);
-    if (course) {
-      if (course.is_folder) {
-        handleFolderSelect(courseId);
-      } else {
-        handleCourseSelect(courseId);
+// Quick jump navigation functions
+const quickJumpToCourse = (courseId: string) => {
+  const course = courses.find((c) => c.id === courseId);
+  if (course) {
+    if (course.is_folder) {
+      handleFolderSelect(courseId);
+    } else {
+      handleCourseSelect(courseId);
+    }
+    // Show a toast notification for quick navigation
+    // toast.info(`Navegando a ${course.name}`);
+  }
+};
+
+const quickJumpToStudent = (studentId: string) => {
+  // Find which course the student belongs to
+  const student = students.find((s) => s.id === studentId);
+  if (student?.course_id) {
+    handleCourseSelect(student.course_id);
+    // Show a toast notification for quick navigation
+    // toast.info(`Navegando a estudiante ${student.name}`);
+  }
+};
+
+const quickJumpToPhoto = async (photoId: string) => {
+  try {
+    // Fetch photo details to determine which course/student it belongs to
+    const response = await fetch(`/api/admin/photos/${photoId}`);
+    if (response.ok) {
+      const photo = await response.json();
+      // If photo has a course, navigate to that course
+      if (photo.course_id) {
+        handleCourseSelect(photo.course_id);
+      }
+      // If photo has students, navigate to the first student's course
+      else if (
+        photo.students &&
+        photo.students.length > 0 &&
+        photo.students[0].course_id
+      ) {
+        handleCourseSelect(photo.students[0].course_id);
       }
       // Show a toast notification for quick navigation
-      // toast.info(`Navegando a ${course.name}`);
+      // toast.info('Navegando a la foto');
     }
-  };
-
-  const quickJumpToStudent = (studentId: string) => {
-    // Find which course the student belongs to
-    const student = students.find(s => s.id === studentId);
-    if (student?.course_id) {
-      handleCourseSelect(student.course_id);
-      // Show a toast notification for quick navigation
-      // toast.info(`Navegando a estudiante ${student.name}`);
-    }
-  };
-
-  const quickJumpToPhoto = async (photoId: string) => {
-    try {
-      // Fetch photo details to determine which course/student it belongs to
-      const response = await fetch(`/api/admin/photos/${photoId}`);
-      if (response.ok) {
-        const photo = await response.json();
-        // If photo has a course, navigate to that course
-        if (photo.course_id) {
-          handleCourseSelect(photo.course_id);
-        }
-        // If photo has students, navigate to the first student's course
-        else if (photo.students && photo.students.length > 0 && photo.students[0].course_id) {
-          handleCourseSelect(photo.students[0].course_id);
-        }
-        // Show a toast notification for quick navigation
-        // toast.info('Navegando a la foto');
-      }
-    } catch (error) {
-      console.error('Error fetching photo details for quick jump:', error);
-    }
-  };
+  } catch (error) {
+    console.error('Error fetching photo details for quick jump:', error);
+  }
+};
 
 export default HierarchicalNavigation;
-

@@ -42,7 +42,9 @@ const mockSupabase = {
 };
 
 const { createServiceClient } = await import('@/lib/supabase/server');
-const { createPaymentPreference, validateSinglePendingOrder } = await import('@/lib/mercadopago/mercadopago.service');
+const { createPaymentPreference, validateSinglePendingOrder } = await import(
+  '@/lib/mercadopago/mercadopago.service'
+);
 
 describe('Family Checkout API', () => {
   beforeEach(() => {

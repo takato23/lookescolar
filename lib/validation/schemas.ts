@@ -23,7 +23,7 @@ export const nameSchema = z
   .min(1, 'Name is required')
   .max(100, 'Name too long')
   .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-'\.]+$/, 'Invalid characters in name')
-  .transform(s => s.trim())
+  .transform((s) => s.trim())
   .describe('Person name');
 
 export const phoneSchema = z
@@ -31,7 +31,7 @@ export const phoneSchema = z
   .regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone format')
   .min(8, 'Phone too short')
   .max(20, 'Phone too long')
-  .transform(s => s.replace(/\s/g, ''))
+  .transform((s) => s.replace(/\s/g, ''))
   .optional()
   .describe('Phone number');
 
@@ -52,7 +52,8 @@ export const tokenSchema = z
 export const fileTypeSchema = z
   .string()
   .refine(
-    (type) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(type),
+    (type) =>
+      ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(type),
     'Invalid file type. Only JPEG, PNG, and WebP images are allowed'
   )
   .describe('File MIME type');
@@ -104,30 +105,30 @@ export const eventCreateSchema = z.object({
     .string()
     .min(1, 'Event name is required')
     .max(200, 'Event name too long')
-    .transform(s => s.trim()),
+    .transform((s) => s.trim()),
   description: z
     .string()
     .max(1000, 'Description too long')
     .optional()
-    .transform(s => s?.trim()),
+    .transform((s) => s?.trim()),
   school_name: z
     .string()
     .min(1, 'School name is required')
     .max(200, 'School name too long')
-    .transform(s => s.trim()),
+    .transform((s) => s.trim()),
   start_date: z
     .string()
     .datetime('Invalid start date format')
-    .transform(s => new Date(s)),
+    .transform((s) => new Date(s)),
   end_date: z
     .string()
     .datetime('Invalid end date format')
-    .transform(s => new Date(s)),
+    .transform((s) => new Date(s)),
   location: z
     .string()
     .max(300, 'Location too long')
     .optional()
-    .transform(s => s?.trim()),
+    .transform((s) => s?.trim()),
 });
 
 export const eventUpdateSchema = eventCreateSchema.partial();
@@ -140,20 +141,22 @@ export const subjectCreateSchema = z.object({
     .string()
     .max(50, 'Grade too long')
     .optional()
-    .transform(s => s?.trim()),
+    .transform((s) => s?.trim()),
   section: z
     .string()
     .max(50, 'Section too long')
     .optional()
-    .transform(s => s?.trim()),
+    .transform((s) => s?.trim()),
   student_number: z
     .string()
     .max(50, 'Student number too long')
     .optional()
-    .transform(s => s?.trim()),
+    .transform((s) => s?.trim()),
 });
 
-export const subjectUpdateSchema = subjectCreateSchema.partial().omit({ event_id: true });
+export const subjectUpdateSchema = subjectCreateSchema
+  .partial()
+  .omit({ event_id: true });
 
 // Order schemas
 export const orderCreateSchema = z.object({
@@ -172,7 +175,7 @@ export const orderCreateSchema = z.object({
     .string()
     .max(500, 'Notes too long')
     .optional()
-    .transform(s => s?.trim()),
+    .transform((s) => s?.trim()),
 });
 
 // Token management schemas
@@ -244,7 +247,7 @@ export const searchSchema = z.object({
     .string()
     .min(1, 'Search query is required')
     .max(100, 'Search query too long')
-    .transform(s => s.trim()),
+    .transform((s) => s.trim()),
   filters: z
     .record(z.string().max(100))
     .optional()
@@ -301,10 +304,7 @@ export const adminCreateSchema = z.object({
 
 // Settings schemas
 export const settingsUpdateSchema = z.object({
-  watermark_text: z
-    .string()
-    .max(100, 'Watermark text too long')
-    .optional(),
+  watermark_text: z.string().max(100, 'Watermark text too long').optional(),
   watermark_opacity: z
     .number()
     .min(0, 'Opacity cannot be negative')
@@ -339,7 +339,10 @@ export function sanitizeFilename(filename: string): string {
     .substring(0, 255);
 }
 
-export function sanitizeString(input: string, maxLength: number = 1000): string {
+export function sanitizeString(
+  input: string,
+  maxLength: number = 1000
+): string {
   return input
     .trim()
     .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
@@ -348,7 +351,11 @@ export function sanitizeString(input: string, maxLength: number = 1000): string 
 
 // Validation middleware helper
 export function createValidationMiddleware<T>(schema: z.ZodSchema<T>) {
-  return async (data: unknown): Promise<{ success: true; data: T } | { success: false; errors: string[] }> => {
+  return async (
+    data: unknown
+  ): Promise<
+    { success: true; data: T } | { success: false; errors: string[] }
+  > => {
     try {
       const validatedData = await schema.parseAsync(data);
       return { success: true, data: validatedData };
@@ -365,13 +372,19 @@ export function createValidationMiddleware<T>(schema: z.ZodSchema<T>) {
 }
 
 // Export commonly used validation functions
-export const validatePhotoUpload = createValidationMiddleware(photoUploadSchema);
-export const validateEventCreate = createValidationMiddleware(eventCreateSchema);
-export const validateSubjectCreate = createValidationMiddleware(subjectCreateSchema);
-export const validateOrderCreate = createValidationMiddleware(orderCreateSchema);
-export const validateTokenGenerate = createValidationMiddleware(tokenGenerateSchema);
+export const validatePhotoUpload =
+  createValidationMiddleware(photoUploadSchema);
+export const validateEventCreate =
+  createValidationMiddleware(eventCreateSchema);
+export const validateSubjectCreate =
+  createValidationMiddleware(subjectCreateSchema);
+export const validateOrderCreate =
+  createValidationMiddleware(orderCreateSchema);
+export const validateTokenGenerate =
+  createValidationMiddleware(tokenGenerateSchema);
 export const validateQRCode = createValidationMiddleware(qrCodeSchema);
 export const validatePagination = createValidationMiddleware(paginationSchema);
 export const validateSearch = createValidationMiddleware(searchSchema);
-export const validatePaymentWebhook = createValidationMiddleware(paymentWebhookSchema);
+export const validatePaymentWebhook =
+  createValidationMiddleware(paymentWebhookSchema);
 export const validateAdminLogin = createValidationMiddleware(adminLoginSchema);

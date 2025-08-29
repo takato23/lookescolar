@@ -2,21 +2,20 @@
 // Handles product catalog operations and data fetching
 
 import { supabase } from '@/lib/supabase/client';
-import { 
-  ProductCategory, 
-  PhotoProduct, 
-  ComboPackage, 
+import {
+  ProductCategory,
+  PhotoProduct,
+  ComboPackage,
   ProductCatalog,
   EventProductPricing,
   ProductFilters,
   CreateProductRequest,
   CreateComboRequest,
   ProductWithCategory,
-  ComboWithItems
+  ComboWithItems,
 } from '@/lib/types/products';
 
 class ProductCatalogService {
-  
   /**
    * Get complete product catalog for an event
    */
@@ -27,19 +26,19 @@ class ProductCatalogService {
         categoriesResult,
         productsResult,
         combosResult,
-        eventPricingResult
+        eventPricingResult,
       ] = await Promise.all([
         this.getProductCategories(),
         this.getPhotoProducts(),
         this.getComboPackages(),
-        event_id ? this.getEventPricing(event_id) : Promise.resolve([])
+        event_id ? this.getEventPricing(event_id) : Promise.resolve([]),
       ]);
 
       return {
         categories: categoriesResult,
         products: productsResult,
         combos: combosResult,
-        event_pricing: eventPricingResult
+        event_pricing: eventPricingResult,
       };
     } catch (error) {
       console.error('[ProductCatalog] Error fetching catalog:', error);
@@ -50,7 +49,9 @@ class ProductCatalogService {
   /**
    * Get product categories
    */
-  async getProductCategories(include_inactive = false): Promise<ProductCategory[]> {
+  async getProductCategories(
+    include_inactive = false
+  ): Promise<ProductCategory[]> {
     let query = supabase
       .from('product_categories')
       .select('*')
@@ -76,10 +77,12 @@ class ProductCatalogService {
   async getPhotoProducts(filters?: ProductFilters): Promise<PhotoProduct[]> {
     let query = supabase
       .from('photo_products')
-      .select(`
+      .select(
+        `
         *,
         category:product_categories(*)
-      `)
+      `
+      )
       .order('sort_order', { ascending: true });
 
     // Apply filters
@@ -87,19 +90,19 @@ class ProductCatalogService {
       if (filters.category_ids?.length) {
         query = query.in('category_id', filters.category_ids);
       }
-      
+
       if (filters.types?.length) {
         query = query.in('type', filters.types);
       }
-      
+
       if (filters.finishes?.length) {
         query = query.in('finish', filters.finishes);
       }
-      
+
       if (filters.paper_qualities?.length) {
         query = query.in('paper_quality', filters.paper_qualities);
       }
-      
+
       if (filters.price_range) {
         if (filters.price_range.min !== undefined) {
           query = query.gte('base_price', filters.price_range.min);
@@ -108,7 +111,7 @@ class ProductCatalogService {
           query = query.lte('base_price', filters.price_range.max);
         }
       }
-      
+
       if (filters.size_range) {
         if (filters.size_range.min_width !== undefined) {
           query = query.gte('width_cm', filters.size_range.min_width);
@@ -123,11 +126,11 @@ class ProductCatalogService {
           query = query.lte('height_cm', filters.size_range.max_height);
         }
       }
-      
+
       if (filters.is_featured !== undefined) {
         query = query.eq('is_featured', filters.is_featured);
       }
-      
+
       if (filters.is_active !== undefined) {
         query = query.eq('is_active', filters.is_active);
       }
@@ -154,13 +157,15 @@ class ProductCatalogService {
   async getComboPackages(include_inactive = false): Promise<ComboPackage[]> {
     let query = supabase
       .from('combo_packages')
-      .select(`
+      .select(
+        `
         *,
         items:combo_package_items(
           *,
           product:photo_products(*)
         )
-      `)
+      `
+      )
       .order('sort_order', { ascending: true });
 
     if (!include_inactive) {
@@ -183,11 +188,13 @@ class ProductCatalogService {
   async getEventPricing(event_id: string): Promise<EventProductPricing[]> {
     const { data, error } = await supabase
       .from('event_product_pricing')
-      .select(`
+      .select(
+        `
         *,
         product:photo_products(*),
         combo:combo_packages(*)
-      `)
+      `
+      )
       .eq('event_id', event_id)
       .eq('is_active', true);
 
@@ -202,19 +209,24 @@ class ProductCatalogService {
   /**
    * Get product by ID
    */
-  async getProductById(product_id: string): Promise<ProductWithCategory | null> {
+  async getProductById(
+    product_id: string
+  ): Promise<ProductWithCategory | null> {
     const { data, error } = await supabase
       .from('photo_products')
-      .select(`
+      .select(
+        `
         *,
         category:product_categories(*)
-      `)
+      `
+      )
       .eq('id', product_id)
       .eq('is_active', true)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') { // No rows returned
+      if (error.code === 'PGRST116') {
+        // No rows returned
         return null;
       }
       console.error('[ProductCatalog] Error fetching product:', error);
@@ -230,19 +242,22 @@ class ProductCatalogService {
   async getComboById(combo_id: string): Promise<ComboWithItems | null> {
     const { data, error } = await supabase
       .from('combo_packages')
-      .select(`
+      .select(
+        `
         *,
         items:combo_package_items(
           *,
           product:photo_products(*)
         )
-      `)
+      `
+      )
       .eq('id', combo_id)
       .eq('is_active', true)
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') { // No rows returned
+      if (error.code === 'PGRST116') {
+        // No rows returned
         return null;
       }
       console.error('[ProductCatalog] Error fetching combo:', error);
@@ -261,12 +276,12 @@ class ProductCatalogService {
   }> {
     const [products, combos] = await Promise.all([
       this.getPhotoProducts({ is_featured: true, is_active: true }),
-      this.getComboPackages(false)
+      this.getComboPackages(false),
     ]);
 
     return {
       products,
-      combos: combos.filter(combo => combo.is_featured)
+      combos: combos.filter((combo) => combo.is_featured),
     };
   }
 
@@ -282,41 +297,51 @@ class ProductCatalogService {
     const [productsResult, combosResult] = await Promise.all([
       supabase
         .from('photo_products')
-        .select(`
+        .select(
+          `
           *,
           category:product_categories(*)
-        `)
+        `
+        )
         .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
         .eq('is_active', true)
         .order('is_featured', { ascending: false })
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('combo_packages')
-        .select(`
+        .select(
+          `
           *,
           items:combo_package_items(
             *,
             product:photo_products(*)
           )
-        `)
+        `
+        )
         .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
         .eq('is_active', true)
         .order('is_featured', { ascending: false })
-        .order('sort_order', { ascending: true })
+        .order('sort_order', { ascending: true }),
     ]);
 
     if (productsResult.error) {
-      console.error('[ProductCatalog] Error searching products:', productsResult.error);
+      console.error(
+        '[ProductCatalog] Error searching products:',
+        productsResult.error
+      );
     }
 
     if (combosResult.error) {
-      console.error('[ProductCatalog] Error searching combos:', combosResult.error);
+      console.error(
+        '[ProductCatalog] Error searching combos:',
+        combosResult.error
+      );
     }
 
     return {
       products: productsResult.data || [],
-      combos: combosResult.data || []
+      combos: combosResult.data || [],
     };
   }
 
@@ -328,12 +353,17 @@ class ProductCatalogService {
       .from('photo_products')
       .insert({
         ...product,
-        sort_order: await this.getNextSortOrder('photo_products', product.category_id)
+        sort_order: await this.getNextSortOrder(
+          'photo_products',
+          product.category_id
+        ),
       })
-      .select(`
+      .select(
+        `
         *,
         category:product_categories(*)
-      `)
+      `
+      )
       .single();
 
     if (error) {
@@ -363,7 +393,7 @@ class ProductCatalogService {
         badge_text: combo.badge_text,
         badge_color: combo.badge_color,
         is_featured: combo.is_featured || false,
-        sort_order: await this.getNextSortOrder('combo_packages')
+        sort_order: await this.getNextSortOrder('combo_packages'),
       })
       .select()
       .single();
@@ -378,17 +408,20 @@ class ProductCatalogService {
       const { error: itemsError } = await supabase
         .from('combo_package_items')
         .insert(
-          combo.items.map(item => ({
+          combo.items.map((item) => ({
             combo_id: comboData.id,
             product_id: item.product_id,
             quantity: item.quantity,
             is_required: item.is_required ?? true,
-            additional_price: item.additional_price || 0
+            additional_price: item.additional_price || 0,
           }))
         );
 
       if (itemsError) {
-        console.error('[ProductCatalog] Error creating combo items:', itemsError);
+        console.error(
+          '[ProductCatalog] Error creating combo items:',
+          itemsError
+        );
         // Rollback combo creation
         await supabase.from('combo_packages').delete().eq('id', comboData.id);
         throw new Error('Error al crear items del paquete combo');
@@ -407,15 +440,20 @@ class ProductCatalogService {
   /**
    * Update product (admin only)
    */
-  async updateProduct(product_id: string, updates: Partial<CreateProductRequest>): Promise<PhotoProduct> {
+  async updateProduct(
+    product_id: string,
+    updates: Partial<CreateProductRequest>
+  ): Promise<PhotoProduct> {
     const { data, error } = await supabase
       .from('photo_products')
       .update(updates)
       .eq('id', product_id)
-      .select(`
+      .select(
+        `
         *,
         category:product_categories(*)
-      `)
+      `
+      )
       .single();
 
     if (error) {
@@ -430,9 +468,9 @@ class ProductCatalogService {
    * Set event-specific pricing
    */
   async setEventPricing(
-    event_id: string, 
-    product_id: string | null, 
-    combo_id: string | null, 
+    event_id: string,
+    product_id: string | null,
+    combo_id: string | null,
     override_price: number
   ): Promise<EventProductPricing> {
     const { data, error } = await supabase
@@ -442,7 +480,7 @@ class ProductCatalogService {
         product_id,
         combo_id,
         override_price,
-        is_active: true
+        is_active: true,
       })
       .select()
       .single();
@@ -458,7 +496,10 @@ class ProductCatalogService {
   /**
    * Get next sort order for a table
    */
-  private async getNextSortOrder(table: string, category_id?: string): Promise<number> {
+  private async getNextSortOrder(
+    table: string,
+    category_id?: string
+  ): Promise<number> {
     let query = supabase
       .from(table)
       .select('sort_order')
@@ -492,18 +533,18 @@ class ProductCatalogService {
   }> {
     // This could be enhanced with actual sales data and ML recommendations
     const [products, combos] = await Promise.all([
-      this.getPhotoProducts({ 
-        is_featured: true, 
-        is_active: true 
+      this.getPhotoProducts({
+        is_featured: true,
+        is_active: true,
       }),
-      this.getComboPackages(false)
+      this.getComboPackages(false),
     ]);
 
     return {
       popular_products: products.slice(0, Math.ceil(limit / 2)),
       featured_combos: combos
-        .filter(combo => combo.is_featured)
-        .slice(0, Math.floor(limit / 2))
+        .filter((combo) => combo.is_featured)
+        .slice(0, Math.floor(limit / 2)),
     };
   }
 }
@@ -512,7 +553,9 @@ class ProductCatalogService {
 export const productCatalogService = new ProductCatalogService();
 
 // Export convenience functions
-export async function getProductCatalog(event_id?: string): Promise<ProductCatalog> {
+export async function getProductCatalog(
+  event_id?: string
+): Promise<ProductCatalog> {
   return productCatalogService.getProductCatalog(event_id);
 }
 

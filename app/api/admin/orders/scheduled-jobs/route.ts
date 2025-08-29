@@ -13,12 +13,9 @@ export async function POST(request: NextRequest) {
     // Verify request is from authorized source (in production, use proper auth)
     const authHeader = request.headers.get('authorization');
     const expectedToken = process.env.CRON_SECRET || 'dev-secret';
-    
+
     if (authHeader !== `Bearer ${expectedToken}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('[Scheduled Jobs] Starting automated order processing...');
@@ -36,8 +33,13 @@ export async function POST(request: NextRequest) {
       await orderWorkflowService.processOverdueOrders();
       results.overdue_orders_processed = 1; // In real implementation, return actual count
     } catch (error) {
-      console.error('[Scheduled Jobs] Failed to process overdue orders:', error);
-      results.errors.push(`Overdue processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        '[Scheduled Jobs] Failed to process overdue orders:',
+        error
+      );
+      results.errors.push(
+        `Overdue processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     try {
@@ -46,8 +48,13 @@ export async function POST(request: NextRequest) {
       await processDeliveryReminders();
       results.delivery_reminders_sent = 1; // In real implementation, return actual count
     } catch (error) {
-      console.error('[Scheduled Jobs] Failed to process delivery reminders:', error);
-      results.errors.push(`Delivery reminders failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        '[Scheduled Jobs] Failed to process delivery reminders:',
+        error
+      );
+      results.errors.push(
+        `Delivery reminders failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     try {
@@ -57,7 +64,9 @@ export async function POST(request: NextRequest) {
       results.cleanup_operations = 1;
     } catch (error) {
       console.error('[Scheduled Jobs] Failed cleanup operations:', error);
-      results.errors.push(`Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.errors.push(
+        `Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     const duration = Date.now() - startTime;
@@ -78,18 +87,17 @@ export async function POST(request: NextRequest) {
         next_run: getNextRunTime(),
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Scheduled Jobs] Execution failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Scheduled jobs execution failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -145,13 +153,12 @@ export async function GET(request: NextRequest) {
       message: 'Scheduled jobs service is active',
       available_actions: ['status'],
     });
-
   } catch (error) {
     console.error('[Scheduled Jobs] GET request failed:', error);
     return NextResponse.json(
       {
         error: 'Failed to retrieve scheduled jobs status',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -165,15 +172,15 @@ async function processDeliveryReminders(): Promise<void> {
   // This would check for orders that are approved but not delivered
   // and past their expected delivery date
   console.log('[Scheduled Jobs] Processing delivery reminders...');
-  
+
   // In real implementation:
   // 1. Query orders with status 'approved' and past estimated delivery date
   // 2. Trigger delivery reminder workflows
   // 3. Update order priority if significantly overdue
-  
+
   // Placeholder implementation
   const mockOverdueDeliveries = []; // Would be actual database query
-  
+
   for (const order of mockOverdueDeliveries) {
     // Trigger delivery reminder workflow
   }
@@ -184,14 +191,16 @@ async function processDeliveryReminders(): Promise<void> {
  */
 async function cleanupOldLogs(): Promise<void> {
   console.log('[Scheduled Jobs] Cleaning up old logs...');
-  
+
   // In real implementation:
   // 1. Delete workflow execution logs older than 30 days
   // 2. Archive important logs
   // 3. Clean up temporary files
-  
+
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  console.log(`[Scheduled Jobs] Would clean logs older than ${thirtyDaysAgo.toISOString()}`);
+  console.log(
+    `[Scheduled Jobs] Would clean logs older than ${thirtyDaysAgo.toISOString()}`
+  );
 }
 
 /**

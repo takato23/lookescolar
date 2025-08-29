@@ -1,6 +1,6 @@
 /**
  * Security Management API
- * 
+ *
  * Provides endpoints for monitoring security features, viewing audit logs,
  * and managing security configurations.
  */
@@ -20,16 +20,16 @@ async function GET(request: NextRequest) {
     switch (action) {
       case 'overview':
         return getSecurityOverview();
-      
+
       case 'audit-logs':
         return getAuditLogs(request);
-      
+
       case 'alerts':
         return getSecurityAlerts(request);
-      
+
       case 'stats':
         return getSecurityStats();
-      
+
       default:
         return getSecurityOverview();
     }
@@ -51,18 +51,15 @@ async function POST(request: NextRequest) {
     switch (action) {
       case 'cleanup-logs':
         return cleanupAuditLogs();
-      
+
       case 'reset-rate-limits':
         return resetRateLimits(params);
-      
+
       case 'test-signature':
         return testQRSignature(params);
-      
+
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
     console.error('[Security API] Error:', error);
@@ -77,12 +74,13 @@ async function POST(request: NextRequest) {
  * Get security overview
  */
 async function getSecurityOverview() {
-  const [auditStats, securityAlerts, signatureStatus, rateLimitStats] = await Promise.all([
-    securityAuditService.getAuditStats(7), // Last 7 days
-    securityAuditService.getSecurityAlerts(24), // Last 24 hours
-    qrSignatureService.getStatus(),
-    enhancedRateLimitService.getStats()
-  ]);
+  const [auditStats, securityAlerts, signatureStatus, rateLimitStats] =
+    await Promise.all([
+      securityAuditService.getAuditStats(7), // Last 7 days
+      securityAuditService.getSecurityAlerts(24), // Last 24 hours
+      qrSignatureService.getStatus(),
+      enhancedRateLimitService.getStats(),
+    ]);
 
   const overview = {
     timestamp: new Date().toISOString(),
@@ -91,38 +89,38 @@ async function getSecurityOverview() {
       qrSignatures: {
         enabled: signatureStatus.configured,
         version: signatureStatus.version,
-        algorithm: signatureStatus.algorithm
+        algorithm: signatureStatus.algorithm,
       },
       auditLogging: {
         enabled: true,
         totalEvents: auditStats.totalEvents,
-        recentAlerts: securityAlerts.length
+        recentAlerts: securityAlerts.length,
       },
       rateLimiting: {
         enabled: true,
         redisEnabled: rateLimitStats.redisEnabled,
         memoryEntries: rateLimitStats.memoryEntries,
-        suspiciousIPs: rateLimitStats.suspiciousIPs
-      }
+        suspiciousIPs: rateLimitStats.suspiciousIPs,
+      },
     },
     metrics: {
       auditEvents: auditStats.eventsByType,
       severityDistribution: auditStats.eventsBySeverity,
-      topUsers: auditStats.topUsers.slice(0, 5)
+      topUsers: auditStats.topUsers.slice(0, 5),
     },
     alerts: {
-      critical: securityAlerts.filter(a => a.severity === 'critical').length,
-      high: securityAlerts.filter(a => a.severity === 'high').length,
-      medium: securityAlerts.filter(a => a.severity === 'medium').length,
-      recent: securityAlerts.slice(0, 5).map(alert => ({
+      critical: securityAlerts.filter((a) => a.severity === 'critical').length,
+      high: securityAlerts.filter((a) => a.severity === 'high').length,
+      medium: securityAlerts.filter((a) => a.severity === 'medium').length,
+      recent: securityAlerts.slice(0, 5).map((alert) => ({
         id: alert.id,
         type: alert.type,
         severity: alert.severity,
         action: alert.action,
         timestamp: alert.timestamp,
-        details: alert.details
-      }))
-    }
+        details: alert.details,
+      })),
+    },
   };
 
   return NextResponse.json(overview);
@@ -133,17 +131,21 @@ async function getSecurityOverview() {
  */
 async function getAuditLogs(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  
+
   const query = {
-    startDate: searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined,
-    endDate: searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined,
+    startDate: searchParams.get('startDate')
+      ? new Date(searchParams.get('startDate')!)
+      : undefined,
+    endDate: searchParams.get('endDate')
+      ? new Date(searchParams.get('endDate')!)
+      : undefined,
     type: searchParams.get('type') as any,
     category: searchParams.get('category') as any,
     severity: searchParams.get('severity') as any,
     userId: searchParams.get('userId') || undefined,
     result: searchParams.get('result') || undefined,
     limit: parseInt(searchParams.get('limit') || '50'),
-    offset: parseInt(searchParams.get('offset') || '0')
+    offset: parseInt(searchParams.get('offset') || '0'),
   };
 
   const logs = await securityAuditService.queryLogs(query);
@@ -152,7 +154,7 @@ async function getAuditLogs(request: NextRequest) {
     logs,
     query,
     totalCount: logs.length,
-    hasMore: logs.length === query.limit
+    hasMore: logs.length === query.limit,
   });
 }
 
@@ -170,14 +172,14 @@ async function getSecurityAlerts(request: NextRequest) {
     timeRange: {
       hours,
       from: new Date(Date.now() - hours * 60 * 60 * 1000).toISOString(),
-      to: new Date().toISOString()
+      to: new Date().toISOString(),
     },
     summary: {
       total: alerts.length,
-      critical: alerts.filter(a => a.severity === 'critical').length,
-      high: alerts.filter(a => a.severity === 'high').length,
-      blocked: alerts.filter(a => a.result === 'blocked').length
-    }
+      critical: alerts.filter((a) => a.severity === 'critical').length,
+      high: alerts.filter((a) => a.severity === 'high').length,
+      blocked: alerts.filter((a) => a.result === 'blocked').length,
+    },
   });
 }
 
@@ -187,14 +189,14 @@ async function getSecurityAlerts(request: NextRequest) {
 async function getSecurityStats() {
   const [auditStats, rateLimitStats] = await Promise.all([
     securityAuditService.getAuditStats(30), // Last 30 days
-    enhancedRateLimitService.getStats()
+    enhancedRateLimitService.getStats(),
   ]);
 
   return NextResponse.json({
     audit: auditStats,
     rateLimiting: rateLimitStats,
     qrSecurity: qrSignatureService.getStatus(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -208,7 +210,7 @@ async function cleanupAuditLogs() {
     success: true,
     message: `Cleaned up ${cleaned} old audit logs`,
     cleanedCount: cleaned,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -221,7 +223,7 @@ async function resetRateLimits(params: { identifier?: string; all?: boolean }) {
     return NextResponse.json({
       success: true,
       message: 'All rate limits reset',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -230,7 +232,7 @@ async function resetRateLimits(params: { identifier?: string; all?: boolean }) {
     return NextResponse.json({
       success: true,
       message: `Rate limit reset for identifier: ${params.identifier}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -244,12 +246,13 @@ async function resetRateLimits(params: { identifier?: string; all?: boolean }) {
  * Test QR signature functionality
  */
 async function testQRSignature(params: { data?: string }) {
-  const testData = params.data || JSON.stringify({ test: true, timestamp: Date.now() });
+  const testData =
+    params.data || JSON.stringify({ test: true, timestamp: Date.now() });
 
   try {
     // Test signing
     const signed = await qrSignatureService.signQRData(testData);
-    
+
     // Test verification
     const verified = await qrSignatureService.verifyQRSignature(signed);
 
@@ -259,22 +262,22 @@ async function testQRSignature(params: { data?: string }) {
         data: testData,
         signed: {
           signature: signed.signature.substring(0, 50) + '...',
-          hash: signed.hash
+          hash: signed.hash,
         },
         verification: {
           valid: verified.valid,
-          error: verified.error
-        }
+          error: verified.error,
+        },
       },
       status: qrSignatureService.getStatus(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
       status: qrSignatureService.getStatus(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 }

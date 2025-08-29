@@ -150,7 +150,11 @@ Saludos.`;
               onClick={() => setShowForm(!showForm)}
               variant="outline"
               className="inline-flex items-center justify-center rounded-lg border-indigo-300 px-6 py-3 font-semibold text-indigo-700 transition-colors hover:bg-indigo-50"
-              aria-label={showForm ? 'Ocultar formulario de contacto' : 'Mostrar formulario de contacto'}
+              aria-label={
+                showForm
+                  ? 'Ocultar formulario de contacto'
+                  : 'Mostrar formulario de contacto'
+              }
             >
               <span className="mr-2">📧</span>
               {showForm ? 'Ocultar formulario' : 'Enviar Email detallado'}

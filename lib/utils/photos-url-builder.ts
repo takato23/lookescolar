@@ -25,10 +25,10 @@ export function buildPhotosUrl({
   }
 
   const params = new URLSearchParams();
-  
+
   // Always add event_id
   params.append('event_id', eventId);
-  
+
   // Add code_id if provided
   // 'null' string means "Sin carpeta" (unassigned photos)
   if (codeId === 'null' || codeId === null) {
@@ -36,13 +36,13 @@ export function buildPhotosUrl({
   } else if (codeId) {
     params.append('code_id', codeId);
   }
-  
+
   // Add pagination
   params.append('limit', limit.toString());
   if (offset > 0) {
     params.append('offset', offset.toString());
   }
-  
+
   // Add optional filters
   if (approved !== undefined) {
     params.append('approved', approved.toString());
@@ -53,13 +53,13 @@ export function buildPhotosUrl({
   if (search) {
     params.append('search', search);
   }
-  
+
   const url = `/api/admin/photos?${params.toString()}`;
-  
+
   // Debug in development
   if (process.env.NODE_ENV === 'development') {
     console.debug('[photos] URL built:', url);
   }
-  
+
   return url;
 }

@@ -75,7 +75,7 @@ describe('GroupPhotoManager Component', () => {
 
   it('should render course selection', () => {
     render(<GroupPhotoManager eventId="event-1" courses={mockCourses} />);
-    
+
     expect(screen.getByText('Group Photo Management')).toBeInTheDocument();
     expect(screen.getByText('Select Course')).toBeInTheDocument();
     expect(screen.getByText('Course 1A')).toBeInTheDocument();
@@ -89,12 +89,14 @@ describe('GroupPhotoManager Component', () => {
     });
 
     render(<GroupPhotoManager eventId="event-1" courses={mockCourses} />);
-    
+
     // Click on first course
     fireEvent.click(screen.getByText('Course 1A'));
-    
+
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/admin/events/event-1/courses/course-1/photos');
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/admin/events/event-1/courses/course-1/photos'
+      );
     });
   });
 
@@ -110,17 +112,19 @@ describe('GroupPhotoManager Component', () => {
       });
 
     render(<GroupPhotoManager eventId="event-1" courses={mockCourses} />);
-    
+
     // Select course
     fireEvent.click(screen.getByText('Course 1A'));
-    
+
     await waitFor(() => {
-      expect(screen.getByText('Group Photos for Course 1A')).toBeInTheDocument();
+      expect(
+        screen.getByText('Group Photos for Course 1A')
+      ).toBeInTheDocument();
     });
 
     // Click assign photos button
     fireEvent.click(screen.getByText('Assign Photos'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('Assign Photos to Course')).toBeInTheDocument();
     });
@@ -138,17 +142,18 @@ describe('GroupPhotoManager Component', () => {
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ 
-          success: true, 
-          message: 'Successfully assigned 1 photo(s)',
-        }),
+        json: () =>
+          Promise.resolve({
+            success: true,
+            message: 'Successfully assigned 1 photo(s)',
+          }),
       });
 
     render(<GroupPhotoManager eventId="event-1" courses={mockCourses} />);
-    
+
     // Select course and open dialog
     fireEvent.click(screen.getByText('Course 1A'));
-    
+
     await waitFor(() => {
       fireEvent.click(screen.getByText('Assign Photos'));
     });
@@ -175,7 +180,9 @@ describe('GroupPhotoManager Component', () => {
       );
     });
 
-    expect(toast.success).toHaveBeenCalledWith('Successfully assigned 1 photo(s)');
+    expect(toast.success).toHaveBeenCalledWith(
+      'Successfully assigned 1 photo(s)'
+    );
   });
 
   it('should handle assignment errors', async () => {
@@ -194,10 +201,10 @@ describe('GroupPhotoManager Component', () => {
       });
 
     render(<GroupPhotoManager eventId="event-1" courses={mockCourses} />);
-    
+
     // Go through assignment flow
     fireEvent.click(screen.getByText('Course 1A'));
-    
+
     await waitFor(() => {
       fireEvent.click(screen.getByText('Assign Photos'));
     });
@@ -224,9 +231,9 @@ describe('GroupPhotoManager Component', () => {
     });
 
     render(<GroupPhotoManager eventId="event-1" courses={mockCourses} />);
-    
+
     fireEvent.click(screen.getByText('Course 1A'));
-    
+
     await waitFor(() => {
       expect(screen.getByText('2 photo(s)')).toBeInTheDocument();
     });
@@ -283,8 +290,10 @@ describe('GroupPhotosSection Component', () => {
 
   it('should render without course info', () => {
     render(<GroupPhotosSection token="test-token" />);
-    
-    expect(screen.getByText('No course information available for group photos')).toBeInTheDocument();
+
+    expect(
+      screen.getByText('No course information available for group photos')
+    ).toBeInTheDocument();
   });
 
   it('should render with course info and load group photos', async () => {
@@ -294,11 +303,13 @@ describe('GroupPhotosSection Component', () => {
     });
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     expect(screen.getByText('Group Photos - Course 1A')).toBeInTheDocument();
-    
+
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/family/gallery/test-token/group-photos');
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/family/gallery/test-token/group-photos'
+      );
     });
   });
 
@@ -309,7 +320,7 @@ describe('GroupPhotosSection Component', () => {
     });
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('group-photo-1.jpg')).toBeInTheDocument();
       expect(screen.getByText('activity-photo-1.jpg')).toBeInTheDocument();
@@ -330,7 +341,7 @@ describe('GroupPhotosSection Component', () => {
       });
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('2 photo(s)')).toBeInTheDocument();
     });
@@ -341,7 +352,9 @@ describe('GroupPhotosSection Component', () => {
     fireEvent.click(screen.getByText('Group Photos'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/family/gallery/test-token/group-photos?photo_type=group');
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/family/gallery/test-token/group-photos?photo_type=group'
+      );
     });
   });
 
@@ -357,7 +370,7 @@ describe('GroupPhotosSection Component', () => {
       });
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('group-photo-1.jpg')).toBeInTheDocument();
     });
@@ -386,7 +399,7 @@ describe('GroupPhotosSection Component', () => {
     });
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('group-photo-1.jpg')).toBeInTheDocument();
     });
@@ -396,7 +409,9 @@ describe('GroupPhotosSection Component', () => {
     fireEvent.click(photo);
 
     await waitFor(() => {
-      expect(screen.getByText('Group Photos • Course 1A • 1 A')).toBeInTheDocument();
+      expect(
+        screen.getByText('Group Photos • Course 1A • 1 A')
+      ).toBeInTheDocument();
     });
   });
 
@@ -404,7 +419,7 @@ describe('GroupPhotosSection Component', () => {
     (fetch as any).mockImplementation(() => new Promise(() => {})); // Never resolves
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     expect(screen.getByText('Loading group photos...')).toBeInTheDocument();
   });
 
@@ -415,9 +430,11 @@ describe('GroupPhotosSection Component', () => {
     });
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     await waitFor(() => {
-      expect(screen.getByText('No group photos available yet')).toBeInTheDocument();
+      expect(
+        screen.getByText('No group photos available yet')
+      ).toBeInTheDocument();
     });
   });
 
@@ -427,9 +444,12 @@ describe('GroupPhotosSection Component', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(<GroupPhotosSection token="test-token" course={mockCourse} />);
-    
+
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith('Error loading group photos:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Error loading group photos:',
+        expect.any(Error)
+      );
     });
 
     consoleSpy.mockRestore();
@@ -445,23 +465,28 @@ describe('Integration between GroupPhotoManager and API', () => {
     // Mock successful assignment
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({
-        success: true,
-        message: 'Successfully assigned 2 photo(s) to course Test Course as group photos',
-        course: { id: courseId, name: 'Test Course' },
-        photo_type: 'group',
-        photos_count: 2,
-      }),
+      json: () =>
+        Promise.resolve({
+          success: true,
+          message:
+            'Successfully assigned 2 photo(s) to course Test Course as group photos',
+          course: { id: courseId, name: 'Test Course' },
+          photo_type: 'group',
+          photos_count: 2,
+        }),
     });
 
-    const response = await fetch(`/api/admin/events/${eventId}/courses/${courseId}/photos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        photo_ids: photoIds,
-        photo_type: 'group',
-      }),
-    });
+    const response = await fetch(
+      `/api/admin/events/${eventId}/courses/${courseId}/photos`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photo_ids: photoIds,
+          photo_type: 'group',
+        }),
+      }
+    );
 
     const data = await response.json();
 
@@ -479,21 +504,25 @@ describe('Integration between GroupPhotoManager and API', () => {
     // Mock successful bulk operation
     (fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({
-        success: true,
-        message: 'Successfully approved 2 photo(s)',
-        affected_photos: 2,
-      }),
+      json: () =>
+        Promise.resolve({
+          success: true,
+          message: 'Successfully approved 2 photo(s)',
+          affected_photos: 2,
+        }),
     });
 
-    const response = await fetch(`/api/admin/events/${eventId}/courses/${courseId}/photos/bulk`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'approve',
-        photo_ids: photoIds,
-      }),
-    });
+    const response = await fetch(
+      `/api/admin/events/${eventId}/courses/${courseId}/photos/bulk`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'approve',
+          photo_ids: photoIds,
+        }),
+      }
+    );
 
     const data = await response.json();
 

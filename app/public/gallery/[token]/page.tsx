@@ -1,5 +1,3 @@
-'use client';
-
 import SharedGallery from '@/components/public/shared-gallery';
 import { notFound } from 'next/navigation';
 
@@ -9,8 +7,8 @@ interface SharedGalleryPageProps {
   };
 }
 
-export default function SharedGalleryPage({ params }: SharedGalleryPageProps) {
-  const { token } = params;
+export default async function SharedGalleryPage({ params }: SharedGalleryPageProps) {
+  const { token } = await params;
   
   // Validate token format
   if (!token || token.length !== 32) {

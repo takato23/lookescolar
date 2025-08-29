@@ -10,33 +10,42 @@ import { SecurityLogger } from '@/lib/middleware/auth.middleware';
 const ALLOWED_TABLES = [
   'photos',
   'events',
-  'subjects', 
+  'subjects',
   'orders',
   'order_items',
   'family_tokens',
   'subject_tokens',
   'photo_subjects',
   'payments',
-  'admins'
+  'admins',
 ] as const;
 
-type AllowedTable = typeof ALLOWED_TABLES[number];
+type AllowedTable = (typeof ALLOWED_TABLES)[number];
 
 // Whitelist of allowed column names for ordering/filtering
 const ALLOWED_COLUMNS = {
-  photos: ['id', 'created_at', 'updated_at', 'storage_path', 'event_id', 'approved', 'photo_type'],
+  photos: [
+    'id',
+    'created_at',
+    'updated_at',
+    'storage_path',
+    'event_id',
+    'approved',
+    'photo_type',
+  ],
   events: ['id', 'name', 'created_at', 'start_date', 'end_date', 'school_name'],
   subjects: ['id', 'name', 'created_at', 'event_id', 'qr_code'],
   orders: ['id', 'created_at', 'status', 'total_amount_cents', 'family_email'],
   order_items: ['id', 'order_id', 'photo_id', 'price_cents'],
   family_tokens: ['id', 'token', 'subject_id', 'expires_at', 'created_at'],
-  subject_tokens: ['id', 'token', 'subject_id', 'expires_at', 'created_at'], 
+  subject_tokens: ['id', 'token', 'subject_id', 'expires_at', 'created_at'],
   photo_subjects: ['id', 'photo_id', 'subject_id', 'tagged_at'],
   payments: ['id', 'order_id', 'mp_payment_id', 'status', 'created_at'],
-  admins: ['id', 'user_id', 'created_at']
+  admins: ['id', 'user_id', 'created_at'],
 } as const;
 
-type AllowedColumn<T extends AllowedTable> = typeof ALLOWED_COLUMNS[T][number];
+type AllowedColumn<T extends AllowedTable> =
+  (typeof ALLOWED_COLUMNS)[T][number];
 
 // Allowed sort orders
 type SortOrder = 'asc' | 'desc';
@@ -59,7 +68,7 @@ export function validateTableName(table: string): table is AllowedTable {
  * Validates column name for a specific table
  */
 export function validateColumnName<T extends AllowedTable>(
-  table: T, 
+  table: T,
   column: string
 ): column is AllowedColumn<T> {
   const allowedColumns = ALLOWED_COLUMNS[table] as readonly string[];
@@ -70,7 +79,8 @@ export function validateColumnName<T extends AllowedTable>(
  * Validates UUID format to prevent injection
  */
 export function validateUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
@@ -83,7 +93,8 @@ export class SecureDatabase {
 
   constructor(requestId?: string) {
     this.supabase = createServerSupabaseClient();
-    this.requestId = requestId || `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    this.requestId =
+      requestId || `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
   }
 
   /**
@@ -149,7 +160,8 @@ export class SecureDatabase {
         throw new Error(`Invalid order by column: ${options.orderBy}`);
       }
 
-      const ascending = !options.orderDirection || options.orderDirection === 'asc';
+      const ascending =
+        !options.orderDirection || options.orderDirection === 'asc';
       query = query.order(options.orderBy, { ascending });
     }
 
@@ -159,7 +171,10 @@ export class SecureDatabase {
     }
 
     if (options.offset && options.offset > 0) {
-      query = query.range(options.offset, (options.offset + (options.limit || 100)) - 1);
+      query = query.range(
+        options.offset,
+        options.offset + (options.limit || 100) - 1
+      );
     }
 
     return query;
@@ -225,7 +240,9 @@ export class SecureDatabase {
               },
               'error'
             );
-            throw new Error(`Invalid UUID format in array for column ${column}`);
+            throw new Error(
+              `Invalid UUID format in array for column ${column}`
+            );
           }
         }
       }
@@ -288,7 +305,11 @@ export class SecureDatabase {
       }
 
       // Validate UUID fields
-      if (column.includes('id') && data[column] && typeof data[column] === 'string') {
+      if (
+        column.includes('id') &&
+        data[column] &&
+        typeof data[column] === 'string'
+      ) {
         if (!validateUUID(data[column])) {
           SecurityLogger.logSecurityEvent(
             'sql_injection_attempt',
@@ -357,7 +378,11 @@ export class SecureDatabase {
         throw new Error(`Invalid column name: ${column} for table ${table}`);
       }
 
-      if (column.includes('id') && data[column] && typeof data[column] === 'string') {
+      if (
+        column.includes('id') &&
+        data[column] &&
+        typeof data[column] === 'string'
+      ) {
         if (!validateUUID(data[column])) {
           throw new Error(`Invalid UUID format for column ${column}`);
         }
@@ -425,7 +450,7 @@ export async function secureRPC(
     'rotate_subject_token',
     'get_event_photos_count',
     'get_family_gallery_data',
-    'cleanup_expired_tokens'
+    'cleanup_expired_tokens',
   ];
 
   if (!ALLOWED_FUNCTIONS.includes(functionName)) {

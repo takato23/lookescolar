@@ -63,6 +63,9 @@ describe('Course Folders', () => {
 
     expect(courses).toEqual(mockCourses);
     expect(mockSupabase.from).toHaveBeenCalledWith('courses');
-    expect(mockSupabase.eq).toHaveBeenCalledWith('parent_course_id', 'folder-1');
+    expect(mockSupabase.eq).toHaveBeenCalledWith(
+      'parent_course_id',
+      'folder-1'
+    );
   });
 });

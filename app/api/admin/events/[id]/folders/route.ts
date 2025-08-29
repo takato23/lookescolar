@@ -2,166 +2,180 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { folderService } from '@/lib/services/folder.service';
+import crypto from 'crypto';
 import { logger } from '@/lib/utils/logger';
 
 // GET /admin/events/{eventId}/folders?parentId={parentId}
 export const GET = RateLimitMiddleware.withRateLimit(
-  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const requestId = crypto.randomUUID();
-    
-    try {
-      const eventId = params.id;
-      const url = new URL(req.url);
-      const parentId = url.searchParams.get('parentId');
-      
-      logger.info('Fetching folders for event', {
-        requestId,
-        eventId,
-        parentId: parentId || 'root',
-      });
+  withAuth(
+    async (
+      req: NextRequest,
+      { params }: { params: Promise<{ id: string }> }
+    ) => {
+      const requestId = crypto.randomUUID();
 
-      if (!eventId) {
-        return NextResponse.json(
-          { success: false, error: 'Event ID is required' },
-          { status: 400 }
-        );
-      }
+      try {
+        const { id: eventId } = await params;
+        const url = new URL(req.url);
+        const parentId = url.searchParams.get('parentId');
 
-      // Convert empty string to null for root folders
-      const normalizedParentId = parentId === '' || parentId === 'null' ? null : parentId;
+        logger.info('Fetching folders for event', {
+          requestId,
+          eventId,
+          parentId: parentId || 'root',
+        });
 
-      const result = await folderService.getFolders(eventId, normalizedParentId);
+        if (!eventId) {
+          return NextResponse.json(
+            { success: false, error: 'Event ID is required' },
+            { status: 400 }
+          );
+        }
 
-      if (!result.success) {
-        logger.error('Failed to fetch folders', {
+        // Convert empty string to null for root folders
+        const normalizedParentId =
+          parentId === '' || parentId === 'null' ? null : parentId;
+
+        // Fetch folders directly via service to avoid delegation issues
+        const result = await folderService.getFolders(eventId, normalizedParentId);
+
+        if (!result.success) {
+          logger.error('Failed to fetch folders', {
+            requestId,
+            eventId,
+            parentId: normalizedParentId,
+            error: result.error,
+          });
+
+          return NextResponse.json(
+            { success: false, error: result.error || 'Failed to fetch folders' },
+            { status: 500 }
+          );
+        }
+
+        logger.info('Successfully fetched folders', {
           requestId,
           eventId,
           parentId: normalizedParentId,
-          error: result.error,
+          count: result.folders?.length || 0,
         });
-        
+
+        return NextResponse.json({
+          success: true,
+          folders: result.folders || [],
+          count: result.folders?.length || 0,
+        });
+      } catch (error) {
+        logger.error('Unexpected error in folders GET endpoint', {
+          requestId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
         return NextResponse.json(
-          { success: false, error: result.error },
+          { success: false, error: 'Internal server error' },
           { status: 500 }
         );
       }
-
-      logger.info('Successfully fetched folders', {
-        requestId,
-        eventId,
-        parentId: normalizedParentId,
-        count: result.folders?.length || 0,
-      });
-
-      return NextResponse.json({
-        success: true,
-        folders: result.folders,
-        count: result.folders?.length || 0,
-      });
-
-    } catch (error) {
-      logger.error('Unexpected error in folders GET endpoint', {
-        requestId,
-        eventId: params.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-
-      return NextResponse.json(
-        { success: false, error: 'Internal server error' },
-        { status: 500 }
-      );
     }
-  })
+  )
 );
 
 // POST /admin/events/{eventId}/folders
 export const POST = RateLimitMiddleware.withRateLimit(
-  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const requestId = crypto.randomUUID();
-    
-    try {
-      const eventId = params.id;
-      
-      if (!eventId) {
-        return NextResponse.json(
-          { success: false, error: 'Event ID is required' },
-          { status: 400 }
-        );
-      }
+  withAuth(
+    async (
+      req: NextRequest,
+      { params }: { params: Promise<{ id: string }> }
+    ) => {
+      const requestId = crypto.randomUUID();
 
-      let body;
       try {
-        body = await req.json();
-      } catch {
-        return NextResponse.json(
-          { success: false, error: 'Invalid JSON in request body' },
-          { status: 400 }
-        );
-      }
+        const { id: eventId } = await params;
 
-      const { name, parent_id, description, sort_order, metadata } = body;
+        if (!eventId) {
+          return NextResponse.json(
+            { success: false, error: 'Event ID is required' },
+            { status: 400 }
+          );
+        }
 
-      logger.info('Creating folder', {
-        requestId,
-        eventId,
-        name,
-        parentId: parent_id || 'root',
-      });
+        let body;
+        try {
+          body = await req.json();
+        } catch {
+          return NextResponse.json(
+            { success: false, error: 'Invalid JSON in request body' },
+            { status: 400 }
+          );
+        }
 
-      if (!name || typeof name !== 'string' || name.trim().length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Folder name is required' },
-          { status: 400 }
-        );
-      }
+        const { name, parent_id, description, sort_order, metadata } = body;
 
-      const result = await folderService.createFolder(eventId, {
-        name,
-        parent_id,
-        description,
-        sort_order,
-        metadata,
-      });
-
-      if (!result.success) {
-        logger.error('Failed to create folder', {
+        logger.info('Creating folder', {
           requestId,
           eventId,
           name,
-          error: result.error,
+          parentId: parent_id || 'root',
         });
 
-        const statusCode = result.error?.includes('already exists') ? 409 : 500;
-        
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+          return NextResponse.json(
+            { success: false, error: 'Folder name is required' },
+            { status: 400 }
+          );
+        }
+
+        const result = await folderService.createFolder(eventId, {
+          name,
+          parent_id,
+          description,
+          sort_order,
+          metadata,
+        });
+
+        if (!result.success) {
+          logger.error('Failed to create folder', {
+            requestId,
+            eventId,
+            name,
+            error: result.error,
+          });
+
+          const statusCode = result.error?.includes('already exists')
+            ? 409
+            : 500;
+
+          return NextResponse.json(
+            { success: false, error: result.error },
+            { status: statusCode }
+          );
+        }
+
+        logger.info('Successfully created folder', {
+          requestId,
+          eventId,
+          folderId: result.folder?.id,
+          name,
+        });
+
         return NextResponse.json(
-          { success: false, error: result.error },
-          { status: statusCode }
+          {
+            success: true,
+            folder: result.folder,
+          },
+          { status: 201 }
+        );
+      } catch (error) {
+        logger.error('Unexpected error in folders POST endpoint', {
+          requestId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        return NextResponse.json(
+          { success: false, error: 'Internal server error' },
+          { status: 500 }
         );
       }
-
-      logger.info('Successfully created folder', {
-        requestId,
-        eventId,
-        folderId: result.folder?.id,
-        name,
-      });
-
-      return NextResponse.json({
-        success: true,
-        folder: result.folder,
-      }, { status: 201 });
-
-    } catch (error) {
-      logger.error('Unexpected error in folders POST endpoint', {
-        requestId,
-        eventId: params.id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-
-      return NextResponse.json(
-        { success: false, error: 'Internal server error' },
-        { status: 500 }
-      );
     }
-  })
+  )
 );

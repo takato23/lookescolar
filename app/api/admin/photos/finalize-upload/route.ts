@@ -8,7 +8,7 @@ import { logger } from '@/lib/utils/logger';
 export const POST = RateLimitMiddleware.withRateLimit(
   withAuth(async (req: NextRequest) => {
     const requestId = crypto.randomUUID();
-    
+
     try {
       let body;
       try {
@@ -20,14 +20,14 @@ export const POST = RateLimitMiddleware.withRateLimit(
         );
       }
 
-      const { 
-        uploadId, 
-        storagePath, 
-        filename, 
-        originalFilename, 
-        eventId, 
-        folderId, 
-        metadata = {} 
+      const {
+        uploadId,
+        storagePath,
+        filename,
+        originalFilename,
+        eventId,
+        folderId,
+        metadata = {},
       } = body;
 
       logger.info('Finalizing photo upload', {
@@ -118,7 +118,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const { data: fileList, error: listError } = await supabase.storage
         .from('photos')
         .list(storagePath.split('/').slice(0, -1).join('/'), {
-          search: filename
+          search: filename,
         });
 
       if (listError) {
@@ -128,17 +128,20 @@ export const POST = RateLimitMiddleware.withRateLimit(
           filename,
           error: listError.message,
         });
-        
+
         return NextResponse.json(
           { success: false, error: 'Failed to verify uploaded file' },
           { status: 500 }
         );
       }
 
-      const uploadedFile = fileList?.find(file => file.name === filename);
+      const uploadedFile = fileList?.find((file) => file.name === filename);
       if (!uploadedFile) {
         return NextResponse.json(
-          { success: false, error: 'Uploaded file not found. Upload may have failed.' },
+          {
+            success: false,
+            error: 'Uploaded file not found. Upload may have failed.',
+          },
           { status: 404 }
         );
       }
@@ -146,7 +149,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Extract image dimensions and other metadata if available
       let width = metadata.width || null;
       let height = metadata.height || null;
-      let fileSize = uploadedFile.metadata?.size || metadata.fileSize || null;
+      const fileSize = uploadedFile.metadata?.size || metadata.fileSize || null;
 
       // If we don't have dimensions, try to get them from the file
       if (!width || !height) {
@@ -195,20 +198,21 @@ export const POST = RateLimitMiddleware.withRateLimit(
           photoData,
           error: photoError.message,
         });
-        
+
         // If database insertion fails, we should clean up the uploaded file
         try {
-          await supabase.storage
-            .from('photos')
-            .remove([storagePath]);
+          await supabase.storage.from('photos').remove([storagePath]);
         } catch (cleanupError) {
           logger.error('Failed to cleanup uploaded file after database error', {
             requestId,
             storagePath,
-            error: cleanupError instanceof Error ? cleanupError.message : 'Unknown error',
+            error:
+              cleanupError instanceof Error
+                ? cleanupError.message
+                : 'Unknown error',
           });
         }
-        
+
         return NextResponse.json(
           { success: false, error: 'Failed to create photo record' },
           { status: 500 }
@@ -242,7 +246,6 @@ export const POST = RateLimitMiddleware.withRateLimit(
         },
         message: 'Photo uploaded successfully',
       });
-
     } catch (error) {
       logger.error('Unexpected error in finalize upload endpoint', {
         requestId,

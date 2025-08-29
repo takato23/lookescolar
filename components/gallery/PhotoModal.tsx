@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+} from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { ProtectedImage } from '@/components/ui/protected-image';
@@ -36,7 +41,7 @@ interface PhotoModalProps {
   onNext?: () => void;
   currentIndex?: number;
   totalPhotos?: number;
-  
+
   // Public PhotoModal compatibility interface
   photos?: Array<{
     id: string;
@@ -44,7 +49,7 @@ interface PhotoModalProps {
     preview_url?: string;
   }>;
   price?: number;
-  
+
   // Additional props for enhanced functionality
   isSelected?: boolean;
   isFavorite?: boolean;
@@ -80,11 +85,11 @@ export function PhotoModal({
   // Handle backward compatibility with public PhotoModal interface
   const [internalCurrentIndex, setInternalCurrentIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  
+
   // Determine which interface pattern is being used
   const isPublicInterface = photos && photos.length > 0;
   const isAppleInterface = !isPublicInterface;
-  
+
   // Unified photo object
   const currentPhoto = useMemo((): Photo | null => {
     if (isPublicInterface && photos) {
@@ -99,11 +104,13 @@ export function PhotoModal({
     }
     return photo || null;
   }, [photo, photos, internalCurrentIndex, isPublicInterface]);
-  
+
   // Unified navigation handlers
   const handlePrevious = useCallback(() => {
     if (isPublicInterface && photos) {
-      setInternalCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+      setInternalCurrentIndex((prev) =>
+        prev > 0 ? prev - 1 : photos.length - 1
+      );
       hapticFeedback('light');
     } else if (onPrevious) {
       onPrevious();
@@ -111,10 +118,12 @@ export function PhotoModal({
       onPrev();
     }
   }, [isPublicInterface, photos, onPrevious, onPrev]);
-  
+
   const handleNext = useCallback(() => {
     if (isPublicInterface && photos) {
-      setInternalCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+      setInternalCurrentIndex((prev) =>
+        prev < photos.length - 1 ? prev + 1 : 0
+      );
       hapticFeedback('light');
     } else if (onNext) {
       onNext();
@@ -122,10 +131,14 @@ export function PhotoModal({
       onNextAlternate();
     }
   }, [isPublicInterface, photos, onNext, onNextAlternate]);
-  
+
   // Unified current index and total
-  const displayCurrentIndex = isPublicInterface ? internalCurrentIndex + 1 : (currentIndex || 1);
-  const displayTotalPhotos = isPublicInterface ? (photos?.length || 1) : (totalPhotos || 1);
+  const displayCurrentIndex = isPublicInterface
+    ? internalCurrentIndex + 1
+    : currentIndex || 1;
+  const displayTotalPhotos = isPublicInterface
+    ? photos?.length || 1
+    : totalPhotos || 1;
   // State management
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -134,23 +147,35 @@ export function PhotoModal({
   const [isInteracting, setIsInteracting] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [lastTap, setLastTap] = useState(0);
-  
+
   // Refs
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  
+
   // Motion values for Apple-grade animations
   const scale = useMotionValue(1);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const opacity = useMotionValue(1);
   const modalY = useMotionValue(0);
-  
+
   // Spring animations with Apple physics
-  const springScale = useSpring(scale, { ...springConfig, damping: 30, stiffness: 300 });
-  const springX = useSpring(x, { ...springConfig, damping: 25, stiffness: 250 });
-  const springY = useSpring(y, { ...springConfig, damping: 25, stiffness: 250 });
+  const springScale = useSpring(scale, {
+    ...springConfig,
+    damping: 30,
+    stiffness: 300,
+  });
+  const springX = useSpring(x, {
+    ...springConfig,
+    damping: 25,
+    stiffness: 250,
+  });
+  const springY = useSpring(y, {
+    ...springConfig,
+    damping: 25,
+    stiffness: 250,
+  });
   const springOpacity = useSpring(opacity, springConfig);
   const springModalY = useSpring(modalY, springConfig);
 
@@ -158,14 +183,18 @@ export function PhotoModal({
   const photoId = currentPhoto?.id || '';
   const storagePath = currentPhoto?.storage_path || '';
   const directUrl = currentPhoto?.signed_url || currentPhoto?.preview_url || '';
-  
+
   // Use direct URL if available (public interface), otherwise get signed URL (Apple interface)
   const shouldUseSignedUrl = !directUrl && storagePath;
-  const { url: signedUrl, loading: urlLoading, error: urlError } = useSignedUrl(
+  const {
+    url: signedUrl,
+    loading: urlLoading,
+    error: urlError,
+  } = useSignedUrl(
     shouldUseSignedUrl ? photoId : '',
     shouldUseSignedUrl ? storagePath : ''
   );
-  
+
   // Final URL to use
   const finalImageUrl = directUrl || signedUrl || '';
 
@@ -207,7 +236,7 @@ export function PhotoModal({
   const handleImageTap = useCallback(() => {
     const now = Date.now();
     const DOUBLE_TAP_DELAY = 300;
-    
+
     if (now - lastTap < DOUBLE_TAP_DELAY) {
       if (zoomLevel === 1) {
         setZoomLevel(2);
@@ -217,17 +246,18 @@ export function PhotoModal({
         handleZoomReset();
       }
     }
-    
+
     setLastTap(now);
   }, [lastTap, zoomLevel, scale, handleZoomReset]);
 
   const getPanConstraints = useCallback(() => {
-    if (!imageRef.current || zoomLevel <= 1) return { left: 0, right: 0, top: 0, bottom: 0 };
-    
+    if (!imageRef.current || zoomLevel <= 1)
+      return { left: 0, right: 0, top: 0, bottom: 0 };
+
     const rect = imageRef.current.getBoundingClientRect();
     const maxPanX = (rect.width * (zoomLevel - 1)) / 2;
     const maxPanY = (rect.height * (zoomLevel - 1)) / 2;
-    
+
     return {
       left: -maxPanX,
       right: maxPanX,
@@ -239,11 +269,11 @@ export function PhotoModal({
   const showControlsTemporary = useCallback(() => {
     setShowControls(true);
     setIsInteracting(true);
-    
+
     if (hideControlsTimeoutRef.current) {
       clearTimeout(hideControlsTimeoutRef.current);
     }
-    
+
     hideControlsTimeoutRef.current = setTimeout(() => {
       if (!isInteracting) {
         setShowControls(false);
@@ -272,31 +302,34 @@ export function PhotoModal({
 
   // Apple-grade skeleton loader
   const SkeletonLoader = () => {
-    const aspectRatio = currentPhoto && currentPhoto.width && currentPhoto.height ? currentPhoto.width / currentPhoto.height : 16/9;
-    
+    const aspectRatio =
+      currentPhoto && currentPhoto.width && currentPhoto.height
+        ? currentPhoto.width / currentPhoto.height
+        : 16 / 9;
+
     return (
       <motion.div
-        className="flex flex-col items-center gap-6 w-full max-w-4xl"
+        className="flex w-full max-w-4xl flex-col items-center gap-6"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={springConfig}
       >
-        <div 
-          className="w-full max-w-3xl bg-white/10 rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-2xl"
+        <div
+          className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white/10 shadow-2xl ring-1 ring-white/20"
           style={{ aspectRatio }}
         >
-          <div className="w-full h-full bg-gradient-to-r from-white/5 via-white/20 to-white/5 animate-pulse">
-            <div className="w-full h-full apple-image-loading" />
+          <div className="h-full w-full animate-pulse bg-gradient-to-r from-white/5 via-white/20 to-white/5">
+            <div className="apple-image-loading h-full w-full" />
           </div>
         </div>
-        
+
         <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-4">
-            <div className="w-24 h-6 bg-white/20 rounded-xl animate-pulse" />
-            <div className="w-32 h-6 bg-white/15 rounded-xl animate-pulse" />
+            <div className="h-6 w-24 animate-pulse rounded-xl bg-white/20" />
+            <div className="h-6 w-32 animate-pulse rounded-xl bg-white/15" />
           </div>
           <motion.div
-            className="text-white/60 text-sm font-medium"
+            className="text-sm font-medium text-white/60"
             animate={{ opacity: [0.4, 0.8, 0.4] }}
             transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           >
@@ -319,15 +352,15 @@ export function PhotoModal({
       document.body.style.overflow = 'hidden';
       document.body.classList.add('modal-open');
       setShowControls(true);
-      
+
       // Update internal index if using public interface
       if (isPublicInterface && photos) {
-        const index = photos.findIndex(p => p.id === currentPhoto.id);
+        const index = photos.findIndex((p) => p.id === currentPhoto.id);
         if (index !== -1) {
           setInternalCurrentIndex(index);
         }
       }
-      
+
       setTimeout(() => {
         closeButtonRef.current?.focus();
         hapticFeedback('light');
@@ -335,7 +368,7 @@ export function PhotoModal({
     } else {
       document.body.style.overflow = 'unset';
       document.body.classList.remove('modal-open');
-      
+
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
       }
@@ -402,7 +435,15 @@ export function PhotoModal({
           break;
       }
     },
-    [isOpen, handleClose, handlePrevious, handleNext, handleZoomIn, handleZoomOut, handleZoomReset]
+    [
+      isOpen,
+      handleClose,
+      handlePrevious,
+      handleNext,
+      handleZoomIn,
+      handleZoomOut,
+      handleZoomReset,
+    ]
   );
 
   useEffect(() => {
@@ -436,7 +477,7 @@ export function PhotoModal({
             animate={{ backdropFilter: 'blur(24px)' }}
             transition={{ duration: 0.3 }}
           />
-          
+
           {/* Modal container */}
           <motion.div
             className="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8"
@@ -475,7 +516,7 @@ export function PhotoModal({
               <AnimatePresence>
                 {showControls && (
                   <motion.div
-                    className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between"
+                    className="absolute left-4 right-4 top-4 z-20 flex items-center justify-between"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
@@ -483,21 +524,32 @@ export function PhotoModal({
                   >
                     <div className="flex items-center gap-3">
                       <motion.div
-                        className="rounded-2xl bg-black/30 backdrop-blur-xl px-4 py-2 text-white shadow-2xl ring-1 ring-white/10"
-                        whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,0,0,0.4)' }}
+                        className="rounded-2xl bg-black/30 px-4 py-2 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl"
+                        whileHover={{
+                          scale: 1.02,
+                          backgroundColor: 'rgba(0,0,0,0.4)',
+                        }}
                       >
-                        <h3 id="photo-modal-title" className="text-sm font-medium">
+                        <h3
+                          id="photo-modal-title"
+                          className="text-sm font-medium"
+                        >
                           {displayCurrentIndex} de {displayTotalPhotos}
                         </h3>
                       </motion.div>
-                      
+
                       {currentPhoto?.created_at && (
                         <motion.div
-                          className="rounded-2xl bg-black/30 backdrop-blur-xl px-4 py-2 text-white shadow-2xl ring-1 ring-white/10"
-                          whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,0,0,0.4)' }}
+                          className="rounded-2xl bg-black/30 px-4 py-2 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl"
+                          whileHover={{
+                            scale: 1.02,
+                            backgroundColor: 'rgba(0,0,0,0.4)',
+                          }}
                         >
                           <div className="text-xs opacity-75">
-                            {new Date(currentPhoto.created_at).toLocaleDateString('es-AR')}
+                            {new Date(
+                              currentPhoto.created_at
+                            ).toLocaleDateString('es-AR')}
                           </div>
                         </motion.div>
                       )}
@@ -508,52 +560,80 @@ export function PhotoModal({
                       {/* Shopping cart controls for public interface */}
                       {isPublicInterface && (
                         <motion.div
-                          className="flex items-center rounded-2xl bg-black/30 backdrop-blur-xl p-1 text-white shadow-2xl ring-1 ring-white/10"
-                          whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,0,0,0.4)' }}
+                          className="flex items-center rounded-2xl bg-black/30 p-1 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl"
+                          whileHover={{
+                            scale: 1.02,
+                            backgroundColor: 'rgba(0,0,0,0.4)',
+                          }}
                         >
                           <motion.button
                             onClick={() => setIsLiked(!isLiked)}
-                            className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-white hover:bg-white/20 transition-all duration-200"
+                            className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-white transition-all duration-200 hover:bg-white/20"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                           >
-                            <svg className={`h-4 w-4 ${isLiked ? 'text-red-500 fill-current' : 'text-white'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            <svg
+                              className={`h-4 w-4 ${isLiked ? 'fill-current text-red-500' : 'text-white'}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                              />
                             </svg>
                           </motion.button>
-                          
+
                           {onToggleSelection && (
                             <motion.button
                               onClick={onToggleSelection}
                               className={`h-8 w-8 rounded-xl border-none bg-transparent p-0 transition-all duration-200 ${
-                                propIsSelected ? 'text-green-400' : 'text-white hover:bg-white/20'
+                                propIsSelected
+                                  ? 'text-green-400'
+                                  : 'text-white hover:bg-white/20'
                               }`}
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                             >
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 3M7 13l-1.5 3m9.5-3h.01M16 21a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 3M7 13l-1.5 3m9.5-3h.01M16 21a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z"
+                                />
                               </svg>
                             </motion.button>
                           )}
                         </motion.div>
                       )}
-                      
+
                       {/* Zoom controls */}
                       <motion.div
-                        className="flex items-center rounded-2xl bg-black/30 backdrop-blur-xl p-1 text-white shadow-2xl ring-1 ring-white/10"
-                        whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,0,0,0.4)' }}
+                        className="flex items-center rounded-2xl bg-black/30 p-1 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl"
+                        whileHover={{
+                          scale: 1.02,
+                          backgroundColor: 'rgba(0,0,0,0.4)',
+                        }}
                       >
                         <motion.button
                           onClick={handleZoomOut}
                           disabled={zoomLevel <= 0.5}
-                          className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-white hover:bg-white/20 disabled:opacity-30 transition-all duration-200"
+                          className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-white transition-all duration-200 hover:bg-white/20 disabled:opacity-30"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                         >
                           -
                         </motion.button>
-                        
+
                         <motion.span
                           className="min-w-[3rem] px-2 text-center text-xs font-medium"
                           animate={{ scale: [1, 1.1, 1] }}
@@ -562,20 +642,20 @@ export function PhotoModal({
                         >
                           {Math.round(zoomLevel * 100)}%
                         </motion.span>
-                        
+
                         <motion.button
                           onClick={handleZoomIn}
                           disabled={zoomLevel >= 4}
-                          className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-white hover:bg-white/20 disabled:opacity-30 transition-all duration-200"
+                          className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-white transition-all duration-200 hover:bg-white/20 disabled:opacity-30"
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
                         >
                           +
                         </motion.button>
-                        
+
                         <motion.button
                           onClick={handleZoomReset}
-                          className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-xs text-white hover:bg-white/20 transition-all duration-200"
+                          className="h-8 w-8 rounded-xl border-none bg-transparent p-0 text-xs text-white transition-all duration-200 hover:bg-white/20"
                           whileHover={{ scale: 1.1, rotate: 360 }}
                           whileTap={{ scale: 0.9 }}
                           transition={{ duration: 0.3 }}
@@ -587,13 +667,26 @@ export function PhotoModal({
                       {/* Close button */}
                       <motion.button
                         onClick={handleClose}
-                        className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black/30 backdrop-blur-xl text-white shadow-2xl ring-1 ring-white/10 transition-all duration-200 hover:bg-red-500/30"
+                        className="flex h-10 w-10 items-center justify-center rounded-2xl bg-black/30 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl transition-all duration-200 hover:bg-red-500/30"
                         ref={closeButtonRef}
-                        whileHover={{ scale: 1.1, backgroundColor: 'rgba(239, 68, 68, 0.3)' }}
+                        whileHover={{
+                          scale: 1.1,
+                          backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                        }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
                         </svg>
                       </motion.button>
                     </div>
@@ -607,31 +700,59 @@ export function PhotoModal({
                   <>
                     <motion.button
                       onClick={handlePrevious}
-                      className="absolute left-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-2xl bg-black/30 backdrop-blur-xl text-white shadow-2xl ring-1 ring-white/10 transition-all duration-200 hover:bg-black/50"
-                      whileHover={{ scale: 1.1, x: -4, backgroundColor: 'rgba(0,0,0,0.5)' }}
+                      className="absolute left-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-2xl bg-black/30 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl transition-all duration-200 hover:bg-black/50"
+                      whileHover={{
+                        scale: 1.1,
+                        x: -4,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                      }}
                       whileTap={{ scale: 0.9 }}
                       initial={{ opacity: 0, x: -30 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: -30 }}
                       transition={{ delay: 0.2, ...springConfig }}
                     >
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                      <svg
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M15 19l-7-7 7-7"
+                        />
                       </svg>
                     </motion.button>
-                    
+
                     <motion.button
                       onClick={handleNext}
-                      className="absolute right-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-2xl bg-black/30 backdrop-blur-xl text-white shadow-2xl ring-1 ring-white/10 transition-all duration-200 hover:bg-black/50"
-                      whileHover={{ scale: 1.1, x: 4, backgroundColor: 'rgba(0,0,0,0.5)' }}
+                      className="absolute right-4 top-1/2 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-2xl bg-black/30 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl transition-all duration-200 hover:bg-black/50"
+                      whileHover={{
+                        scale: 1.1,
+                        x: 4,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                      }}
                       whileTap={{ scale: 0.9 }}
                       initial={{ opacity: 0, x: 30 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 30 }}
                       transition={{ delay: 0.2, ...springConfig }}
                     >
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                      <svg
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M9 5l7 7-7 7"
+                        />
                       </svg>
                     </motion.button>
                   </>
@@ -644,7 +765,7 @@ export function PhotoModal({
                   <SkeletonLoader />
                 ) : null}
 
-                {(imageError || urlError) ? (
+                {imageError || urlError ? (
                   <motion.div
                     className="flex flex-col items-center gap-6 text-white"
                     initial={{ opacity: 0, y: 20 }}
@@ -652,19 +773,31 @@ export function PhotoModal({
                     transition={springConfig}
                   >
                     <motion.div
-                      className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-500/20 backdrop-blur-sm ring-1 ring-red-500/30"
+                      className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-500/20 ring-1 ring-red-500/30 backdrop-blur-sm"
                       animate={{ scale: [1, 1.05, 1] }}
                       transition={{ duration: 2, repeat: Infinity }}
                     >
-                      <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                      <svg
+                        className="h-8 w-8 text-red-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"
+                        />
                       </svg>
                     </motion.div>
                     <div className="text-center">
-                      <p className="text-lg font-medium mb-2">
-                        {urlError ? 'Error al obtener la foto' : 'Error al cargar la imagen'}
+                      <p className="mb-2 text-lg font-medium">
+                        {urlError
+                          ? 'Error al obtener la foto'
+                          : 'Error al cargar la imagen'}
                       </p>
-                      <p className="text-white/60 text-sm">
+                      <p className="text-sm text-white/60">
                         Verifica tu conexión e intenta nuevamente
                       </p>
                     </div>
@@ -674,8 +807,11 @@ export function PhotoModal({
                         setImageLoaded(false);
                         hapticFeedback('light');
                       }}
-                      className="rounded-2xl bg-white/10 backdrop-blur-sm px-6 py-3 text-white ring-1 ring-white/20 transition-all duration-200 hover:bg-white/20"
-                      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.2)' }}
+                      className="rounded-2xl bg-white/10 px-6 py-3 text-white ring-1 ring-white/20 backdrop-blur-sm transition-all duration-200 hover:bg-white/20"
+                      whileHover={{
+                        scale: 1.05,
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                      }}
                       whileTap={{ scale: 0.95 }}
                     >
                       Intentar de nuevo
@@ -703,9 +839,9 @@ export function PhotoModal({
                     onTouchStart={handleInteractionStart}
                     onTouchEnd={handleInteractionEnd}
                     initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ 
-                      opacity: imageLoaded ? 1 : 0, 
-                      scale: imageLoaded ? 1 : 0.9 
+                    animate={{
+                      opacity: imageLoaded ? 1 : 0,
+                      scale: imageLoaded ? 1 : 0.9,
                     }}
                     transition={springConfig}
                   >
@@ -715,7 +851,7 @@ export function PhotoModal({
                       alt={`Foto del evento - ${displayCurrentIndex} de ${displayTotalPhotos}`}
                       width={currentPhoto.width || 800}
                       height={currentPhoto.height || 600}
-                      className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl ring-1 ring-white/10 select-none"
+                      className="max-h-[85vh] max-w-[90vw] select-none rounded-2xl object-contain shadow-2xl ring-1 ring-white/10"
                       onLoad={() => {
                         setImageLoaded(true);
                         hapticFeedback('light');
@@ -734,11 +870,11 @@ export function PhotoModal({
                       enableTouchBlock={true}
                       watermarkText="MUESTRA - NO VÁLIDA PARA VENTA"
                     />
-                    
+
                     {/* Zoom indicator */}
                     {zoomLevel > 1 && (
                       <motion.div
-                        className="absolute top-4 right-4 rounded-xl bg-black/50 backdrop-blur-sm px-3 py-1 text-white text-sm font-medium ring-1 ring-white/20"
+                        className="absolute right-4 top-4 rounded-xl bg-black/50 px-3 py-1 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur-sm"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
@@ -761,12 +897,24 @@ export function PhotoModal({
                     transition={{ delay: 0.3, ...springConfig }}
                   >
                     <motion.div
-                      className="rounded-2xl bg-black/30 backdrop-blur-xl px-6 py-3 text-white shadow-2xl ring-1 ring-white/10"
-                      whileHover={{ scale: 1.02, backgroundColor: 'rgba(0,0,0,0.4)' }}
+                      className="rounded-2xl bg-black/30 px-6 py-3 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl"
+                      whileHover={{
+                        scale: 1.02,
+                        backgroundColor: 'rgba(0,0,0,0.4)',
+                      }}
                     >
-                      <p id="photo-modal-help" className="text-xs font-medium opacity-75 text-center">
-                        <span className="hidden sm:inline">Flechas para navegar • ESC para cerrar • Doble clic para zoom</span>
-                        <span className="sm:hidden">Desliza para navegar • Pellizca para zoom • Doble toque para ampliar</span>
+                      <p
+                        id="photo-modal-help"
+                        className="text-center text-xs font-medium opacity-75"
+                      >
+                        <span className="hidden sm:inline">
+                          Flechas para navegar • ESC para cerrar • Doble clic
+                          para zoom
+                        </span>
+                        <span className="sm:hidden">
+                          Desliza para navegar • Pellizca para zoom • Doble
+                          toque para ampliar
+                        </span>
                       </p>
                     </motion.div>
                   </motion.div>

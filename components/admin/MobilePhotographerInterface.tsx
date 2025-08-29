@@ -126,17 +126,18 @@ export default function MobilePhotographerInterface({
         const diffX = startX - endX;
         const diffY = startY - endY;
 
-      // Horizontal swipe
-      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-        if (diffX > 0) {
-          navigatePhoto('next');
-        } else {
-          navigatePhoto('prev');
+        // Horizontal swipe
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+          if (diffX > 0) {
+            navigatePhoto('next');
+          } else {
+            navigatePhoto('prev');
+          }
         }
-      }
-      // Vertical swipe down to close
-      else if (diffY < -100) {
-        setIsFullscreen(false);
+        // Vertical swipe down to close
+        else if (diffY < -100) {
+          setIsFullscreen(false);
+        }
       }
     };
 

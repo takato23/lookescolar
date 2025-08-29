@@ -19,18 +19,16 @@ export async function GET(req: NextRequest) {
     // Verify admin authentication
     const user = await verifyAuthAdmin();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Get recent photos with optimization data
     const { data: photos, error } = await supabase
       .from('photos')
-      .select(`
+      .select(
+        `
         id,
         original_filename,
         file_size,
@@ -38,21 +36,24 @@ export async function GET(req: NextRequest) {
         event_id,
         events (name),
         metadata
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
       .limit(20);
-      
+
     if (error) {
       throw new Error(`Failed to fetch recent photos: ${error.message}`);
     }
-    
+
     // Transform data for frontend
-    const photoDetails: PhotoDetail[] = photos.map(photo => {
-      const originalSize = photo.metadata?.original_size || (photo.file_size * 4); // Estimate if not available
+    const photoDetails: PhotoDetail[] = photos.map((photo) => {
+      const originalSize = photo.metadata?.original_size || photo.file_size * 4; // Estimate if not available
       const optimizedSize = photo.file_size;
-      const optimizationRatio = Math.round(((originalSize - optimizedSize) / originalSize) * 100);
+      const optimizationRatio = Math.round(
+        ((originalSize - optimizedSize) / originalSize) * 100
+      );
       const compressionLevel = photo.metadata?.compression_level || 3;
-      
+
       return {
         id: photo.id,
         filename: photo.original_filename || `photo-${photo.id}.jpg`,
@@ -62,10 +63,10 @@ export async function GET(req: NextRequest) {
         optimizationRatio,
         createdAt: photo.created_at,
         eventId: photo.event_id,
-        eventName: (photo.events as any)?.name || 'Unknown Event'
+        eventName: (photo.events as any)?.name || 'Unknown Event',
       };
     });
-    
+
     return NextResponse.json(photoDetails);
   } catch (error) {
     console.error('Error fetching recent photos:', error);

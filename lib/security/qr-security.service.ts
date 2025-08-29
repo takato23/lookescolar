@@ -47,7 +47,7 @@ export class QRSecurityService {
     const secretKey = this.getSigningKey(keyId);
     const timestamp = new Date();
     const expirationHours = 24; // QR codes expire in 24 hours
-    
+
     const dataToSign = `${qrData}:${timestamp.toISOString()}`;
     const signature = crypto
       .createHmac(this.SIGNATURE_ALGORITHM, secretKey)
@@ -59,14 +59,19 @@ export class QRSecurityService {
       algorithm: this.SIGNATURE_ALGORITHM,
       keyId: keyId || 'default',
       timestamp,
-      expiresAt: new Date(timestamp.getTime() + expirationHours * 60 * 60 * 1000),
+      expiresAt: new Date(
+        timestamp.getTime() + expirationHours * 60 * 60 * 1000
+      ),
     };
   }
 
   /**
    * Verify QR code signature
    */
-  verifySignature(qrData: string, signature: QRSignature): {
+  verifySignature(
+    qrData: string,
+    signature: QRSignature
+  ): {
     valid: boolean;
     reason?: string;
     securityLevel: 'low' | 'medium' | 'high' | 'critical';
@@ -126,20 +131,18 @@ export class QRSecurityService {
   async recordAuditEvent(event: QRAuditEvent): Promise<void> {
     try {
       // Store in database
-      const { error } = await supabase
-        .from('qr_audit_log')
-        .insert({
-          event_type: event.eventType,
-          qr_code_id: event.qrCodeId,
-          user_id: event.userId,
-          ip_address: event.ipAddress,
-          user_agent: event.userAgent,
-          timestamp: event.timestamp.toISOString(),
-          metadata: event.metadata,
-          security_level: event.securityLevel,
-          success: event.success,
-          error_details: event.errorDetails,
-        });
+      const { error } = await supabase.from('qr_audit_log').insert({
+        event_type: event.eventType,
+        qr_code_id: event.qrCodeId,
+        user_id: event.userId,
+        ip_address: event.ipAddress,
+        user_agent: event.userAgent,
+        timestamp: event.timestamp.toISOString(),
+        metadata: event.metadata,
+        security_level: event.securityLevel,
+        success: event.success,
+        error_details: event.errorDetails,
+      });
 
       if (error) {
         logger.error('Failed to record audit event', { error: error.message });
@@ -196,7 +199,7 @@ export class QRSecurityService {
         throw new Error(`Failed to get audit trail: ${error.message}`);
       }
 
-      return (data || []).map(event => ({
+      return (data || []).map((event) => ({
         eventType: event.event_type,
         qrCodeId: event.qr_code_id,
         userId: event.user_id,
@@ -224,18 +227,15 @@ export class QRSecurityService {
     recommendations: string[];
   }> {
     try {
-      const recentEvents = await this.getAuditTrail(
-        undefined,
-        {
-          start: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-          end: new Date(),
-        }
-      );
+      const recentEvents = await this.getAuditTrail(undefined, {
+        start: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+        end: new Date(),
+      });
 
       const ipFailures: Record<string, number> = {};
       const qrFailures: Record<string, number> = {};
-      
-      recentEvents.forEach(event => {
+
+      recentEvents.forEach((event) => {
         if (!event.success) {
           ipFailures[event.ipAddress] = (ipFailures[event.ipAddress] || 0) + 1;
           qrFailures[event.qrCodeId] = (qrFailures[event.qrCodeId] || 0) + 1;
@@ -251,16 +251,21 @@ export class QRSecurityService {
         .map(([qrCodeId, failures]) => ({ qrCodeId, failures }))
         .sort((a, b) => b.failures - a.failures);
 
-      const possibleBruteForce = suspiciousIPs.length > 0 || 
-        Object.values(ipFailures).some(failures => failures > 20);
+      const possibleBruteForce =
+        suspiciousIPs.length > 0 ||
+        Object.values(ipFailures).some((failures) => failures > 20);
 
       const recommendations = [];
       if (possibleBruteForce) {
         recommendations.push('Consider implementing stricter rate limiting');
-        recommendations.push('Review and potentially block suspicious IP addresses');
+        recommendations.push(
+          'Review and potentially block suspicious IP addresses'
+        );
       }
       if (frequentFailures.length > 0) {
-        recommendations.push('Check QR codes with frequent validation failures');
+        recommendations.push(
+          'Check QR codes with frequent validation failures'
+        );
         recommendations.push('Consider regenerating problematic QR codes');
       }
 
@@ -284,7 +289,9 @@ export class QRSecurityService {
   /**
    * Handle critical security events
    */
-  private async handleCriticalSecurityEvent(event: QRAuditEvent): Promise<void> {
+  private async handleCriticalSecurityEvent(
+    event: QRAuditEvent
+  ): Promise<void> {
     // Log critical event
     logger.error('CRITICAL QR SECURITY EVENT', {
       eventType: event.eventType,
@@ -302,7 +309,8 @@ export class QRSecurityService {
    */
   private getSigningKey(keyId?: string): string {
     // In production, retrieve from secure key store
-    const baseKey = process.env.QR_SIGNING_KEY || 'default-dev-key-not-for-production';
+    const baseKey =
+      process.env.QR_SIGNING_KEY || 'default-dev-key-not-for-production';
     return `${baseKey}-${keyId || 'default'}`;
   }
 
@@ -311,7 +319,11 @@ export class QRSecurityService {
    */
   generateDeviceFingerprint(userAgent: string, ipAddress: string): string {
     const data = `${userAgent}:${ipAddress}:${Date.now()}`;
-    return crypto.createHash('sha256').update(data).digest('hex').substring(0, 16);
+    return crypto
+      .createHash('sha256')
+      .update(data)
+      .digest('hex')
+      .substring(0, 16);
   }
 
   /**
@@ -324,7 +336,9 @@ export class QRSecurityService {
   ): boolean {
     // Simple validation - in production, use more sophisticated fingerprinting
     const expectedLength = 16;
-    return fingerprint.length === expectedLength && /^[a-f0-9]+$/i.test(fingerprint);
+    return (
+      fingerprint.length === expectedLength && /^[a-f0-9]+$/i.test(fingerprint)
+    );
   }
 }
 

@@ -89,7 +89,7 @@ export class SecurityValidator {
     ];
 
     // Check if IP is in whitelist
-    return allowedIPs.some(allowedIP => {
+    return allowedIPs.some((allowedIP) => {
       if (allowedIP.includes('/')) {
         // Handle CIDR notation
         return this.isIPInRange(ip, allowedIP);
@@ -167,12 +167,12 @@ export class SecurityValidator {
     ];
 
     // If it's a known good user agent, allow it
-    if (allowedUserAgents.some(pattern => pattern.test(userAgent))) {
+    if (allowedUserAgents.some((pattern) => pattern.test(userAgent))) {
       return false;
     }
 
     // Check for suspicious patterns
-    return suspiciousPatterns.some(pattern => pattern.test(userAgent));
+    return suspiciousPatterns.some((pattern) => pattern.test(userAgent));
   }
 
   /**
@@ -190,7 +190,7 @@ export class SecurityValidator {
       /~$/, // Backup files
     ];
 
-    return !dangerousPatterns.some(pattern => pattern.test(filename));
+    return !dangerousPatterns.some((pattern) => pattern.test(filename));
   }
 
   /**
@@ -199,19 +199,19 @@ export class SecurityValidator {
   static isValidImageDimensions(width: number, height: number): boolean {
     // Check if dimensions are within reasonable limits
     if (width <= 0 || height <= 0) return false;
-    
+
     // Maximum dimensions (adjust as needed)
     const maxWidth = 10000;
     const maxHeight = 10000;
-    
+
     if (width > maxWidth || height > maxHeight) return false;
-    
+
     // Minimum dimensions
     const minWidth = 10;
     const minHeight = 10;
-    
+
     if (width < minWidth || height < minHeight) return false;
-    
+
     return true;
   }
 

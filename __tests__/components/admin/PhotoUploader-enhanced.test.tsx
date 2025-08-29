@@ -19,29 +19,29 @@ const mockXHR = {
   setRequestHeader: vi.fn(),
   addEventListener: vi.fn(),
   upload: {
-    addEventListener: vi.fn()
+    addEventListener: vi.fn(),
   },
   status: 200,
-  responseText: ''
+  responseText: '',
 };
 
 Object.defineProperty(global, 'XMLHttpRequest', {
-  value: vi.fn(() => mockXHR)
+  value: vi.fn(() => mockXHR),
 });
 
 // Helper para crear archivos de prueba
 const createTestFile = (
-  name: string, 
+  name: string,
   type: string = 'image/jpeg',
   size: number = 1024 * 1024 // 1MB
 ): File => {
   const buffer = new ArrayBuffer(size);
   const blob = new Blob([buffer], { type });
   const file = new File([blob], name, { type });
-  
+
   // Mock del FileReader
   Object.defineProperty(file, 'size', { value: size });
-  
+
   return file;
 };
 
@@ -49,28 +49,28 @@ describe('PhotoUploader Enhanced', () => {
   const defaultProps = {
     eventId: 'test-event-id',
     onUploadComplete: vi.fn(),
-    onUploadError: vi.fn()
+    onUploadError: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock FileReader para previews
     Object.defineProperty(global, 'FileReader', {
       value: vi.fn().mockImplementation(() => ({
-        readAsDataURL: vi.fn(function(this: FileReader) {
+        readAsDataURL: vi.fn(function (this: FileReader) {
           this.onload({ target: { result: 'data:image/jpeg;base64,mock' } });
         }),
         addEventListener: vi.fn(),
-        removeEventListener: vi.fn()
-      }))
+        removeEventListener: vi.fn(),
+      })),
     });
   });
 
   describe('Interfaz y interacciones básicas', () => {
     it('debe renderizar la zona de drop correctamente', () => {
       render(<PhotoUploader {...defaultProps} />);
-      
+
       expect(screen.getByText(/Arrastra las fotos aquí/)).toBeInTheDocument();
       expect(screen.getByText(/selecciona archivos/)).toBeInTheDocument();
       expect(screen.getByText(/Máximo 20 archivos/)).toBeInTheDocument();
@@ -79,26 +79,30 @@ describe('PhotoUploader Enhanced', () => {
     it('debe permitir seleccionar archivos con input', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       const input = screen.getByRole('button', { name: /selecciona archivos/ });
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+
       const testFiles = [
         createTestFile('test1.jpg'),
-        createTestFile('test2.jpg')
+        createTestFile('test2.jpg'),
       ];
 
       // Simular selección de archivos
       Object.defineProperty(fileInput, 'files', {
         value: testFiles,
-        configurable: true
+        configurable: true,
       });
 
       await user.click(input);
       fireEvent.change(fileInput);
 
       await waitFor(() => {
-        expect(screen.getByText('Archivos seleccionados (2)')).toBeInTheDocument();
+        expect(
+          screen.getByText('Archivos seleccionados (2)')
+        ).toBeInTheDocument();
         expect(screen.getByText('test1.jpg')).toBeInTheDocument();
         expect(screen.getByText('test2.jpg')).toBeInTheDocument();
       });
@@ -106,15 +110,17 @@ describe('PhotoUploader Enhanced', () => {
 
     it('debe manejar drag and drop', async () => {
       render(<PhotoUploader {...defaultProps} />);
-      
-      const dropZone = screen.getByText(/Arrastra las fotos aquí/).closest('.border-dashed');
+
+      const dropZone = screen
+        .getByText(/Arrastra las fotos aquí/)
+        .closest('.border-dashed');
       const testFiles = [createTestFile('dropped.jpg')];
 
       // Simular drag over
       fireEvent.dragOver(dropZone!, {
         dataTransfer: {
-          files: testFiles
-        }
+          files: testFiles,
+        },
       });
 
       expect(dropZone).toHaveClass('border-blue-400', 'bg-blue-50');
@@ -122,8 +128,8 @@ describe('PhotoUploader Enhanced', () => {
       // Simular drop
       fireEvent.drop(dropZone!, {
         dataTransfer: {
-          files: testFiles
-        }
+          files: testFiles,
+        },
       });
 
       await waitFor(() => {
@@ -134,13 +140,21 @@ describe('PhotoUploader Enhanced', () => {
 
   describe('Validaciones de archivos', () => {
     it('debe rechazar archivos muy grandes', async () => {
-      render(<PhotoUploader {...defaultProps} maxSizeBytes={5 * 1024 * 1024} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const largeFile = createTestFile('large.jpg', 'image/jpeg', 10 * 1024 * 1024); // 10MB
-      
+      render(
+        <PhotoUploader {...defaultProps} maxSizeBytes={5 * 1024 * 1024} />
+      );
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      const largeFile = createTestFile(
+        'large.jpg',
+        'image/jpeg',
+        10 * 1024 * 1024
+      ); // 10MB
+
       Object.defineProperty(fileInput, 'files', {
-        value: [largeFile]
+        value: [largeFile],
       });
 
       fireEvent.change(fileInput);
@@ -152,32 +166,40 @@ describe('PhotoUploader Enhanced', () => {
 
     it('debe rechazar tipos de archivo no válidos', async () => {
       render(<PhotoUploader {...defaultProps} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const textFile = createTestFile('document.txt', 'text/plain');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [textFile]
+        value: [textFile],
       });
 
       fireEvent.change(fileInput);
 
       await waitFor(() => {
-        expect(screen.getByText(/Tipo de archivo no válido/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Tipo de archivo no válido/)
+        ).toBeInTheDocument();
       });
     });
 
     it('debe limitar el número máximo de archivos', async () => {
       render(<PhotoUploader {...defaultProps} maxFiles={3} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const files = Array.from({ length: 5 }, (_, i) => createTestFile(`test${i}.jpg`));
-      
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      const files = Array.from({ length: 5 }, (_, i) =>
+        createTestFile(`test${i}.jpg`)
+      );
+
       // Mock alert
       const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: files
+        value: files,
       });
 
       fireEvent.change(fileInput);
@@ -192,13 +214,15 @@ describe('PhotoUploader Enhanced', () => {
     it('debe mostrar progress bar durante el upload', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivo
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
@@ -210,20 +234,22 @@ describe('PhotoUploader Enhanced', () => {
       // Mock respuesta exitosa
       const mockResponse = {
         success: true,
-        uploaded: [{
-          id: 'test-id',
-          filename: 'test.jpg',
-          size: 1024,
-          width: 800,
-          height: 600,
-          path: 'photos/test.webp'
-        }],
+        uploaded: [
+          {
+            id: 'test-id',
+            filename: 'test.jpg',
+            size: 1024,
+            width: 800,
+            height: 600,
+            path: 'photos/test.webp',
+          },
+        ],
         stats: {
           processed: 1,
           errors: 0,
           duplicates: 0,
-          total: 1
-        }
+          total: 1,
+        },
       };
 
       mockXHR.responseText = JSON.stringify(mockResponse);
@@ -236,14 +262,15 @@ describe('PhotoUploader Enhanced', () => {
       expect(screen.getByText(/Subiendo.../)).toBeInTheDocument();
 
       // Simular progreso
-      const progressHandler = mockXHR.upload.addEventListener.mock.calls
-        .find(call => call[0] === 'progress')?.[1];
-      
+      const progressHandler = mockXHR.upload.addEventListener.mock.calls.find(
+        (call) => call[0] === 'progress'
+      )?.[1];
+
       if (progressHandler) {
         progressHandler({
           lengthComputable: true,
           loaded: 50,
-          total: 100
+          total: 100,
         });
       }
 
@@ -252,9 +279,10 @@ describe('PhotoUploader Enhanced', () => {
       });
 
       // Simular finalización
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }
@@ -263,16 +291,18 @@ describe('PhotoUploader Enhanced', () => {
     it('debe manejar respuesta con duplicados', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivos
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const files = [
         createTestFile('original.jpg'),
-        createTestFile('duplicate.jpg')
+        createTestFile('duplicate.jpg'),
       ];
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: files
+        value: files,
       });
 
       fireEvent.change(fileInput);
@@ -280,25 +310,29 @@ describe('PhotoUploader Enhanced', () => {
       // Mock respuesta con duplicados
       const mockResponse = {
         success: true,
-        uploaded: [{
-          id: 'test-id',
-          filename: 'original.jpg',
-          size: 1024,
-          width: 800,
-          height: 600,
-          path: 'photos/original.webp'
-        }],
-        duplicates: [{
-          originalName: 'duplicate.jpg',
-          duplicateOf: 'original.jpg',
-          hash: 'abcd1234567890ef'
-        }],
+        uploaded: [
+          {
+            id: 'test-id',
+            filename: 'original.jpg',
+            size: 1024,
+            width: 800,
+            height: 600,
+            path: 'photos/original.webp',
+          },
+        ],
+        duplicates: [
+          {
+            originalName: 'duplicate.jpg',
+            duplicateOf: 'original.jpg',
+            hash: 'abcd1234567890ef',
+          },
+        ],
         stats: {
           processed: 1,
           errors: 0,
           duplicates: 1,
-          total: 2
-        }
+          total: 2,
+        },
       };
 
       mockXHR.responseText = JSON.stringify(mockResponse);
@@ -307,9 +341,10 @@ describe('PhotoUploader Enhanced', () => {
       await user.click(uploadButton);
 
       // Simular finalización
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }
@@ -317,7 +352,9 @@ describe('PhotoUploader Enhanced', () => {
       await waitFor(() => {
         expect(screen.getByText('1 exitosos')).toBeInTheDocument();
         expect(screen.getByText('1 duplicados')).toBeInTheDocument();
-        expect(screen.getByText(/Duplicado de original.jpg/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Duplicado de original.jpg/)
+        ).toBeInTheDocument();
         expect(screen.getByText(/hash: abcd1234/)).toBeInTheDocument();
       });
     });
@@ -325,13 +362,15 @@ describe('PhotoUploader Enhanced', () => {
     it('debe manejar errores de upload', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivo
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
@@ -340,16 +379,18 @@ describe('PhotoUploader Enhanced', () => {
       const mockResponse = {
         success: false,
         uploaded: [],
-        errors: [{
-          filename: 'test.jpg',
-          error: 'Upload server error'
-        }],
+        errors: [
+          {
+            filename: 'test.jpg',
+            error: 'Upload server error',
+          },
+        ],
         stats: {
           processed: 0,
           errors: 1,
           duplicates: 0,
-          total: 1
-        }
+          total: 1,
+        },
       };
 
       mockXHR.responseText = JSON.stringify(mockResponse);
@@ -358,9 +399,10 @@ describe('PhotoUploader Enhanced', () => {
       await user.click(uploadButton);
 
       // Simular finalización con error
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }
@@ -374,13 +416,15 @@ describe('PhotoUploader Enhanced', () => {
     it('debe manejar errores de red', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivo
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
@@ -392,9 +436,10 @@ describe('PhotoUploader Enhanced', () => {
       await user.click(uploadButton);
 
       // Simular error de red
-      const errorHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'error')?.[1];
-      
+      const errorHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'error'
+      )?.[1];
+
       if (errorHandler) {
         errorHandler();
       }
@@ -409,77 +454,85 @@ describe('PhotoUploader Enhanced', () => {
     it('debe permitir eliminar archivos individuales', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivos
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const files = [
-        createTestFile('file1.jpg'),
-        createTestFile('file2.jpg')
-      ];
-      
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      const files = [createTestFile('file1.jpg'), createTestFile('file2.jpg')];
+
       Object.defineProperty(fileInput, 'files', {
-        value: files
+        value: files,
       });
 
       fireEvent.change(fileInput);
 
       await waitFor(() => {
-        expect(screen.getByText('Archivos seleccionados (2)')).toBeInTheDocument();
+        expect(
+          screen.getByText('Archivos seleccionados (2)')
+        ).toBeInTheDocument();
       });
 
       // Eliminar primer archivo
       const deleteButtons = screen.getAllByRole('button', { name: '' });
-      const firstDeleteButton = deleteButtons.find(btn => 
-        btn.querySelector('svg') && btn.closest('.p-1')
+      const firstDeleteButton = deleteButtons.find(
+        (btn) => btn.querySelector('svg') && btn.closest('.p-1')
       );
-      
+
       if (firstDeleteButton) {
         await user.click(firstDeleteButton);
       }
 
       await waitFor(() => {
-        expect(screen.getByText('Archivos seleccionados (1)')).toBeInTheDocument();
+        expect(
+          screen.getByText('Archivos seleccionados (1)')
+        ).toBeInTheDocument();
       });
     });
 
     it('debe permitir limpiar todos los archivos', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivos
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const files = [
-        createTestFile('file1.jpg'),
-        createTestFile('file2.jpg')
-      ];
-      
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      const files = [createTestFile('file1.jpg'), createTestFile('file2.jpg')];
+
       Object.defineProperty(fileInput, 'files', {
-        value: files
+        value: files,
       });
 
       fireEvent.change(fileInput);
 
       await waitFor(() => {
-        expect(screen.getByText('Archivos seleccionados (2)')).toBeInTheDocument();
+        expect(
+          screen.getByText('Archivos seleccionados (2)')
+        ).toBeInTheDocument();
       });
 
       // Click en limpiar todo
       const clearButton = screen.getByText('Limpiar todo');
       await user.click(clearButton);
 
-      expect(screen.queryByText('Archivos seleccionados')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Archivos seleccionados')
+      ).not.toBeInTheDocument();
     });
   });
 
   describe('Estados y feedback visual', () => {
     it('debe mostrar preview de imágenes', async () => {
       render(<PhotoUploader {...defaultProps} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('image.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
@@ -494,12 +547,14 @@ describe('PhotoUploader Enhanced', () => {
     it('debe mostrar iconos de estado correctos', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
@@ -512,8 +567,16 @@ describe('PhotoUploader Enhanced', () => {
       // Mock respuesta exitosa
       mockXHR.responseText = JSON.stringify({
         success: true,
-        uploaded: [{ id: 'test', filename: 'test.jpg', size: 1024, width: 800, height: 600 }],
-        stats: { processed: 1, errors: 0, duplicates: 0, total: 1 }
+        uploaded: [
+          {
+            id: 'test',
+            filename: 'test.jpg',
+            size: 1024,
+            width: 800,
+            height: 600,
+          },
+        ],
+        stats: { processed: 1, errors: 0, duplicates: 0, total: 1 },
       });
 
       const uploadButton = screen.getByText(/Subir 1 archivos/);
@@ -523,9 +586,10 @@ describe('PhotoUploader Enhanced', () => {
       expect(document.querySelector('.animate-spin')).toBeInTheDocument();
 
       // Simular finalización exitosa
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }
@@ -539,13 +603,15 @@ describe('PhotoUploader Enhanced', () => {
     it('debe mostrar estadísticas detalladas post-upload', async () => {
       const user = userEvent.setup();
       render(<PhotoUploader {...defaultProps} />);
-      
+
       // Agregar archivo
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
@@ -553,19 +619,21 @@ describe('PhotoUploader Enhanced', () => {
       // Mock respuesta con estadísticas
       const mockResponse = {
         success: true,
-        uploaded: [{
-          id: 'test-id',
-          filename: 'test.jpg',
-          size: 1024,
-          width: 800,
-          height: 600
-        }],
+        uploaded: [
+          {
+            id: 'test-id',
+            filename: 'test.jpg',
+            size: 1024,
+            width: 800,
+            height: 600,
+          },
+        ],
         stats: {
           processed: 3,
           errors: 1,
           duplicates: 1,
-          total: 5
-        }
+          total: 5,
+        },
       };
 
       mockXHR.responseText = JSON.stringify(mockResponse);
@@ -574,15 +642,18 @@ describe('PhotoUploader Enhanced', () => {
       await user.click(uploadButton);
 
       // Simular finalización
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }
 
       await waitFor(() => {
-        expect(screen.getByText('Estadísticas del upload:')).toBeInTheDocument();
+        expect(
+          screen.getByText('Estadísticas del upload:')
+        ).toBeInTheDocument();
         expect(screen.getByText('Procesados: 3')).toBeInTheDocument();
         expect(screen.getByText('Errores: 1')).toBeInTheDocument();
         expect(screen.getByText('Duplicados: 1')).toBeInTheDocument();
@@ -595,38 +666,45 @@ describe('PhotoUploader Enhanced', () => {
     it('debe llamar onUploadComplete con resultados', async () => {
       const user = userEvent.setup();
       const onUploadComplete = vi.fn();
-      
-      render(<PhotoUploader {...defaultProps} onUploadComplete={onUploadComplete} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+      render(
+        <PhotoUploader {...defaultProps} onUploadComplete={onUploadComplete} />
+      );
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
 
-      const mockUploaded = [{
-        id: 'test-id',
-        filename: 'test.jpg',
-        size: 1024,
-        width: 800,
-        height: 600
-      }];
+      const mockUploaded = [
+        {
+          id: 'test-id',
+          filename: 'test.jpg',
+          size: 1024,
+          width: 800,
+          height: 600,
+        },
+      ];
 
       mockXHR.responseText = JSON.stringify({
         success: true,
         uploaded: mockUploaded,
-        stats: { processed: 1, errors: 0, duplicates: 0, total: 1 }
+        stats: { processed: 1, errors: 0, duplicates: 0, total: 1 },
       });
 
       const uploadButton = screen.getByText(/Subir 1 archivos/);
       await user.click(uploadButton);
 
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }
@@ -639,36 +717,41 @@ describe('PhotoUploader Enhanced', () => {
     it('debe llamar onUploadError con errores', async () => {
       const user = userEvent.setup();
       const onUploadError = vi.fn();
-      
+
       render(<PhotoUploader {...defaultProps} onUploadError={onUploadError} />);
-      
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+
+      const fileInput = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
       const testFile = createTestFile('test.jpg');
-      
+
       Object.defineProperty(fileInput, 'files', {
-        value: [testFile]
+        value: [testFile],
       });
 
       fireEvent.change(fileInput);
 
-      const mockErrors = [{
-        filename: 'test.jpg',
-        error: 'Upload failed'
-      }];
+      const mockErrors = [
+        {
+          filename: 'test.jpg',
+          error: 'Upload failed',
+        },
+      ];
 
       mockXHR.responseText = JSON.stringify({
         success: false,
         uploaded: [],
         errors: mockErrors,
-        stats: { processed: 0, errors: 1, duplicates: 0, total: 1 }
+        stats: { processed: 0, errors: 1, duplicates: 0, total: 1 },
       });
 
       const uploadButton = screen.getByText(/Subir 1 archivos/);
       await user.click(uploadButton);
 
-      const loadHandler = mockXHR.addEventListener.mock.calls
-        .find(call => call[0] === 'load')?.[1];
-      
+      const loadHandler = mockXHR.addEventListener.mock.calls.find(
+        (call) => call[0] === 'load'
+      )?.[1];
+
       if (loadHandler) {
         loadHandler();
       }

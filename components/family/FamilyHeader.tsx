@@ -40,8 +40,12 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
                 <span className="text-xl text-white">📸</span>
               </div>
               <div>
-                <h1 className="text-gradient text-2xl font-bold">LookEscolar</h1>
-                <p className="text-muted-foreground text-sm">Galería por código</p>
+                <h1 className="text-gradient text-2xl font-bold">
+                  LookEscolar
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  Galería por código
+                </p>
               </div>
             </div>
 
@@ -49,7 +53,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
               <HeaderThemeToggle />
               <div className="text-right">
                 <div className="text-foreground text-sm font-semibold">
-                  {eventInfo.name ?? 'Evento' }
+                  {eventInfo.name ?? 'Evento'}
                 </div>
                 <div className="text-muted-foreground text-xs">
                   {eventInfo.school_name ?? 'Escuela'}

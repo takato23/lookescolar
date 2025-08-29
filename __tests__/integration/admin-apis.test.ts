@@ -32,8 +32,8 @@ describe('Admin APIs Integration Tests', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: 'invalid@test.com',
-          password: 'wrongpassword'
-        })
+          password: 'wrongpassword',
+        }),
       });
 
       expect(response.status).toBe(401);
@@ -51,16 +51,16 @@ describe('Admin APIs Integration Tests', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: 'test@test.com',
-              password: 'wrongpassword'
-            })
+              password: 'wrongpassword',
+            }),
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Algunos deberían ser rate limited (429)
-      const rateLimited = responses.filter(r => r.status === 429);
+      const rateLimited = responses.filter((r) => r.status === 429);
       expect(rateLimited.length).toBeGreaterThan(0);
     });
   });
@@ -71,7 +71,7 @@ describe('Admin APIs Integration Tests', () => {
         name: 'Test Event',
         school: 'Test School',
         date: '2024-01-20',
-        active: true
+        active: true,
       };
 
       // Crear event directamente en DB para testing
@@ -84,7 +84,7 @@ describe('Admin APIs Integration Tests', () => {
       expect(error).toBeNull();
       expect(event).toBeDefined();
       expect(event.name).toBe(eventData.name);
-      
+
       testEventId = event.id;
     });
 
@@ -92,12 +92,10 @@ describe('Admin APIs Integration Tests', () => {
       const invalidData = {
         name: '', // Campo requerido vacío
         school: 'Test School',
-        date: '2024-01-20'
+        date: '2024-01-20',
       };
 
-      const { error } = await supabase
-        .from('events')
-        .insert(invalidData);
+      const { error } = await supabase.from('events').insert(invalidData);
 
       expect(error).toBeDefined();
     });
@@ -106,12 +104,10 @@ describe('Admin APIs Integration Tests', () => {
       const invalidData = {
         name: 'Test Event',
         school: 'Test School',
-        date: 'invalid-date' // Formato incorrecto
+        date: 'invalid-date', // Formato incorrecto
       };
 
-      const { error } = await supabase
-        .from('events')
-        .insert(invalidData);
+      const { error } = await supabase.from('events').insert(invalidData);
 
       expect(error).toBeDefined();
     });
@@ -129,7 +125,9 @@ describe('Admin APIs Integration Tests', () => {
         first_name: 'Test',
         last_name: 'Student',
         token: generateTestToken(),
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
       };
 
       const { data: subject, error } = await supabase
@@ -142,7 +140,7 @@ describe('Admin APIs Integration Tests', () => {
       expect(subject).toBeDefined();
       expect(subject.token.length).toBeGreaterThanOrEqual(20);
       expect(subject.expires_at).toBeDefined();
-      
+
       testSubjectId = subject.id;
     });
 
@@ -152,30 +150,30 @@ describe('Admin APIs Integration Tests', () => {
       }
 
       const duplicateToken = 'duplicate_token_123456789012345';
-      
+
       // Crear primer subject
-      await supabase
-        .from('subjects')
-        .insert({
-          event_id: testEventId,
-          type: 'student',
-          first_name: 'First',
-          last_name: 'Student',
-          token: duplicateToken,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
+      await supabase.from('subjects').insert({
+        event_id: testEventId,
+        type: 'student',
+        first_name: 'First',
+        last_name: 'Student',
+        token: duplicateToken,
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      });
 
       // Intentar crear segundo con mismo token
-      const { error } = await supabase
-        .from('subjects')
-        .insert({
-          event_id: testEventId,
-          type: 'student',
-          first_name: 'Second',
-          last_name: 'Student',
-          token: duplicateToken,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
+      const { error } = await supabase.from('subjects').insert({
+        event_id: testEventId,
+        type: 'student',
+        first_name: 'Second',
+        last_name: 'Student',
+        token: duplicateToken,
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      });
 
       expect(error).toBeDefined();
       expect(error.code).toBe('23505'); // Unique constraint violation
@@ -188,15 +186,15 @@ describe('Admin APIs Integration Tests', () => {
 
       const shortToken = 'short'; // <20 caracteres
 
-      const { error } = await supabase
-        .from('subjects')
-        .insert({
-          event_id: testEventId,
-          type: 'student',
-          first_name: 'Test',
-          token: shortToken,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
+      const { error } = await supabase.from('subjects').insert({
+        event_id: testEventId,
+        type: 'student',
+        first_name: 'Test',
+        token: shortToken,
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      });
 
       // Debería fallar por constraint en DB o validación
       expect(error).toBeDefined();
@@ -217,7 +215,7 @@ describe('Admin APIs Integration Tests', () => {
           event_id: testEventId,
           filename: 'unassigned-test.jpg',
           storage_path: 'eventos/test/unassigned-test.jpg',
-          status: 'processed'
+          status: 'processed',
         })
         .select()
         .single();
@@ -229,8 +227,8 @@ describe('Admin APIs Integration Tests', () => {
         body: JSON.stringify({
           token: 'test_token_1234567890123456789',
           photo_id: photo.id,
-          type: 'preview'
-        })
+          type: 'preview',
+        }),
       });
 
       expect(response.status).toBe(403);
@@ -244,14 +242,12 @@ describe('Admin APIs Integration Tests', () => {
       const today = new Date().toISOString().split('T')[0];
 
       // Simular request que trackea egress
-      await supabase
-        .from('egress_metrics')
-        .upsert({
-          event_id: testEventId,
-          date: today,
-          bytes_served: 100000,
-          requests_count: 1
-        });
+      await supabase.from('egress_metrics').upsert({
+        event_id: testEventId,
+        date: today,
+        bytes_served: 100000,
+        requests_count: 1,
+      });
 
       const { data: metrics } = await supabase
         .from('egress_metrics')
@@ -279,7 +275,7 @@ describe('Admin APIs Integration Tests', () => {
         status: 'pending' as const,
         contact_name: 'Test Parent',
         contact_email: 'parent@test.com',
-        contact_phone: '+541234567890'
+        contact_phone: '+541234567890',
       };
 
       const { data: order, error } = await supabase
@@ -306,18 +302,14 @@ describe('Admin APIs Integration Tests', () => {
         status: 'pending' as const,
         contact_name: 'Test Parent',
         contact_email: 'parent@test.com',
-        contact_phone: '+541234567890'
+        contact_phone: '+541234567890',
       };
 
       // Crear primera orden
-      await supabase
-        .from('orders')
-        .insert(orderData);
+      await supabase.from('orders').insert(orderData);
 
       // Intentar crear segunda orden pendiente
-      const { error } = await supabase
-        .from('orders')
-        .insert(orderData);
+      const { error } = await supabase.from('orders').insert(orderData);
 
       // Debería fallar por constraint
       expect(error).toBeDefined();
@@ -335,12 +327,10 @@ describe('Admin APIs Integration Tests', () => {
         status: 'pending' as const,
         contact_name: 'Test Parent',
         contact_email: 'invalid-email', // Email inválido
-        contact_phone: '+541234567890'
+        contact_phone: '+541234567890',
       };
 
-      const { error } = await supabase
-        .from('orders')
-        .insert(orderData);
+      const { error } = await supabase.from('orders').insert(orderData);
 
       expect(error).toBeDefined();
     });
@@ -355,10 +345,7 @@ describe('Admin APIs Integration Tests', () => {
       );
 
       // Intentar acceder sin autenticación
-      const { data, error } = await anonClient
-        .from('events')
-        .select()
-        .limit(1);
+      const { data, error } = await anonClient.from('events').select().limit(1);
 
       // RLS debería bloquear acceso anónimo
       expect(data).toEqual([]);
@@ -385,10 +372,7 @@ describe('Admin APIs Integration Tests', () => {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
 
-      const { data, error } = await anonClient
-        .from('photos')
-        .select()
-        .limit(1);
+      const { data, error } = await anonClient.from('photos').select().limit(1);
 
       expect(data).toEqual([]);
     });
@@ -403,11 +387,11 @@ async function createTestEvent(): Promise<string> {
       name: 'Test Event',
       school: 'Test School',
       date: '2024-01-20',
-      active: true
+      active: true,
     })
     .select()
     .single();
-  
+
   return event.id;
 }
 
@@ -420,18 +404,21 @@ async function createTestSubject(eventId: string): Promise<string> {
       first_name: 'Test',
       last_name: 'Student',
       token: generateTestToken(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     })
     .select()
     .single();
-  
+
   return subject.id;
 }
 
 function generateTestToken(): string {
-  return 'test_token_' + Math.random().toString(36).substring(2) + 
-         Math.random().toString(36).substring(2) + 
-         Math.random().toString(36).substring(2);
+  return (
+    'test_token_' +
+    Math.random().toString(36).substring(2) +
+    Math.random().toString(36).substring(2) +
+    Math.random().toString(36).substring(2)
+  );
 }
 
 async function cleanupTestData() {

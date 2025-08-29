@@ -11,10 +11,10 @@ import { StorageMonitor } from '@/lib/services/free-tier-optimizer';
 async function handler(request: NextRequest): Promise<NextResponse> {
   try {
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Get storage usage metrics
     const metrics = await StorageMonitor.getUsageMetrics(supabase);
-    
+
     return NextResponse.json(metrics, {
       headers: {
         'Cache-Control': 'public, max-age=300', // 5 minute cache

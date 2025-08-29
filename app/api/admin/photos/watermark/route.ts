@@ -51,10 +51,14 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
   try {
     const { eventId } = await request.json();
-    if (!eventId) return NextResponse.json({ error: 'eventId required' }, { status: 400 });
+    if (!eventId)
+      return NextResponse.json({ error: 'eventId required' }, { status: 400 });
 
     const supabase = await createServerSupabaseServiceClient();
-    const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+    const ORIGINAL_BUCKET =
+      process.env['STORAGE_BUCKET_ORIGINAL'] ||
+      process.env['STORAGE_BUCKET'] ||
+      'photo-private';
     const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
     // Selección de fotos
@@ -78,7 +82,9 @@ export async function POST(request: NextRequest) {
       try {
         // descargar original
         const path = p.storage_path as string;
-        const { data: file, error: dlErr } = await supabase.storage.from(ORIGINAL_BUCKET).download(path);
+        const { data: file, error: dlErr } = await supabase.storage
+          .from(ORIGINAL_BUCKET)
+          .download(path);
         if (dlErr) throw dlErr;
         const buf = Buffer.from(await file.arrayBuffer());
 
@@ -118,16 +124,26 @@ export async function POST(request: NextRequest) {
           .webp({ quality: 72 })
           .toBuffer();
 
-        const up1 = await supabase.storage.from(PREVIEW_BUCKET).upload(previewKey, previewBuf, { contentType: 'image/webp', upsert: true });
+        const up1 = await supabase.storage
+          .from(PREVIEW_BUCKET)
+          .upload(previewKey, previewBuf, {
+            contentType: 'image/webp',
+            upsert: true,
+          });
         if (up1.error) throw up1.error;
-        const up2 = await supabase.storage.from(PREVIEW_BUCKET).upload(watermarkKey, watermarkBuf, { contentType: 'image/webp', upsert: true });
+        const up2 = await supabase.storage
+          .from(PREVIEW_BUCKET)
+          .upload(watermarkKey, watermarkBuf, {
+            contentType: 'image/webp',
+            upsert: true,
+          });
         if (up2.error) throw up2.error;
 
         await supabase
           .from('photos')
-          .update({ 
-            preview_path: previewKey, 
-            watermark_path: watermarkKey 
+          .update({
+            preview_path: previewKey,
+            watermark_path: watermarkKey,
           })
           .eq('id', p.id);
 
@@ -145,5 +161,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

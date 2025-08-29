@@ -11,18 +11,27 @@ import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
 // Input validation schema
 const BulkUploadSchema = z.object({
   eventId: z.string().uuid('Invalid event ID'),
-  photos: z.array(z.object({
-    filename: z.string().min(1, 'Filename required'),
-    size: z.number().positive('Invalid file size'),
-    type: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/i, 'Invalid file type'),
-    base64Data: z.string().min(1, 'Photo data required')
-  })).min(1, 'At least one photo required').max(100, 'Maximum 100 photos per batch'),
-  processingOptions: z.object({
-    generatePreviews: z.boolean().default(true),
-    detectQrCodes: z.boolean().default(true),
-    processWatermarks: z.boolean().default(true),
-    autoClassify: z.boolean().default(false)
-  }).optional()
+  photos: z
+    .array(
+      z.object({
+        filename: z.string().min(1, 'Filename required'),
+        size: z.number().positive('Invalid file size'),
+        type: z
+          .string()
+          .regex(/^image\/(jpeg|jpg|png|webp)$/i, 'Invalid file type'),
+        base64Data: z.string().min(1, 'Photo data required'),
+      })
+    )
+    .min(1, 'At least one photo required')
+    .max(100, 'Maximum 100 photos per batch'),
+  processingOptions: z
+    .object({
+      generatePreviews: z.boolean().default(true),
+      detectQrCodes: z.boolean().default(true),
+      processWatermarks: z.boolean().default(true),
+      autoClassify: z.boolean().default(false),
+    })
+    .optional(),
 });
 
 type UploadResult = {
@@ -41,10 +50,10 @@ async function detectQrCodes(imageBuffer: Buffer): Promise<string[]> {
     // This is a placeholder - in production you'd use a proper QR detection library
     // such as jsQR or a server-side QR detection service
     const qrCodes: string[] = [];
-    
+
     // For now, we'll check for QR-like patterns in the filename or metadata
     // Real implementation would scan the actual image for QR codes
-    
+
     return qrCodes;
   } catch (error) {
     console.error('QR detection error:', error);
@@ -56,11 +65,18 @@ async function detectQrCodes(imageBuffer: Buffer): Promise<string[]> {
 async function processSinglePhoto(
   photo: { filename: string; size: number; type: string; base64Data: string },
   eventId: string,
-  options: { generatePreviews: boolean; detectQrCodes: boolean; processWatermarks: boolean }
+  options: {
+    generatePreviews: boolean;
+    detectQrCodes: boolean;
+    processWatermarks: boolean;
+  }
 ): Promise<UploadResult> {
   try {
     // Convert base64 to buffer
-    const base64Data = photo.base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+    const base64Data = photo.base64Data.replace(
+      /^data:image\/[a-z]+;base64,/,
+      ''
+    );
     const imageBuffer = Buffer.from(base64Data, 'base64');
 
     // Validate image
@@ -89,7 +105,9 @@ async function processSinglePhoto(
         .eq('id', eventId)
         .single();
       if (evInfo?.name || evInfo?.school_name) {
-        wmLabel = `${evInfo.school_name || ''}${evInfo.school_name && evInfo.name ? ' · ' : ''}${evInfo.name || ''}`.trim() || wmLabel;
+        wmLabel =
+          `${evInfo.school_name || ''}${evInfo.school_name && evInfo.name ? ' · ' : ''}${evInfo.name || ''}`.trim() ||
+          wmLabel;
       }
     } catch {}
 
@@ -100,7 +118,7 @@ async function processSinglePhoto(
         targetSizeKB: 35, // Aggressive compression for free tier
         maxDimension: 500, // Reduced dimensions for better compression
         watermarkText: wmLabel,
-        enableOriginalStorage: false // NEVER store originals
+        enableOriginalStorage: false, // NEVER store originals
       }
     );
 
@@ -113,7 +131,7 @@ async function processSinglePhoto(
       .upload(previewPath, previewBuffer, {
         contentType: 'image/webp',
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
       });
 
     if (uploadError) {
@@ -146,17 +164,18 @@ async function processSinglePhoto(
           freetier_optimized: true,
           compression_level: optimizedResult.compressionLevel,
           original_size: photo.size,
-          optimization_ratio: Math.round((photo.size - optimizedResult.actualSizeKB * 1024) / photo.size * 100)
-        }
+          optimization_ratio: Math.round(
+            ((photo.size - optimizedResult.actualSizeKB * 1024) / photo.size) *
+              100
+          ),
+        },
       })
       .select('id, filename, processing_status')
       .single();
 
     if (dbError) {
       // Clean up uploaded preview on database error
-      await supabaseAdmin.storage
-        .from(PREVIEW_BUCKET)
-        .remove([previewPath]);
+      await supabaseAdmin.storage.from(PREVIEW_BUCKET).remove([previewPath]);
       throw new Error(`Database error: ${dbError.message}`);
     }
 
@@ -165,9 +184,8 @@ async function processSinglePhoto(
       filename: photoData.filename,
       status: 'success',
       processing_status: photoData.processing_status,
-      detected_qr_codes: detectedQrCodes
+      detected_qr_codes: detectedQrCodes,
     };
-
   } catch (error) {
     console.error('Photo processing error:', error);
     return {
@@ -175,7 +193,7 @@ async function processSinglePhoto(
       filename: photo.filename,
       status: 'error',
       error: error instanceof Error ? error.message : 'Unknown error',
-      processing_status: 'failed'
+      processing_status: 'failed',
     };
   }
 }
@@ -194,10 +212,7 @@ export async function POST(req: NextRequest) {
     // Verify admin authentication
     const user = await verifyAuthAdmin();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Parse and validate request body
@@ -212,10 +227,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     if (event.status !== 'active') {
@@ -227,23 +239,21 @@ export async function POST(req: NextRequest) {
 
     // Process all photos
     const results: UploadResult[] = [];
-    
+
     for (const photo of validatedData.photos) {
-      const result = await processSinglePhoto(
-        photo,
-        validatedData.eventId,
-        {
-          generatePreviews: validatedData.processingOptions?.generatePreviews ?? true,
-          detectQrCodes: validatedData.processingOptions?.detectQrCodes ?? true,
-          processWatermarks: validatedData.processingOptions?.processWatermarks ?? true
-        }
-      );
+      const result = await processSinglePhoto(photo, validatedData.eventId, {
+        generatePreviews:
+          validatedData.processingOptions?.generatePreviews ?? true,
+        detectQrCodes: validatedData.processingOptions?.detectQrCodes ?? true,
+        processWatermarks:
+          validatedData.processingOptions?.processWatermarks ?? true,
+      });
       results.push(result);
     }
 
     // Calculate success/failure statistics
-    const successCount = results.filter(r => r.status === 'success').length;
-    const errorCount = results.filter(r => r.status === 'error').length;
+    const successCount = results.filter((r) => r.status === 'success').length;
+    const errorCount = results.filter((r) => r.status === 'error').length;
 
     return NextResponse.json({
       success: successCount > 0,
@@ -252,10 +262,9 @@ export async function POST(req: NextRequest) {
       statistics: {
         total: results.length,
         successful: successCount,
-        failed: errorCount
-      }
+        failed: errorCount,
+      },
     });
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

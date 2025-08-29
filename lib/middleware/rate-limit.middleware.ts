@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 // Configuración de límites por endpoint según CLAUDE.md
 const RATE_LIMITS = {
@@ -31,6 +33,46 @@ interface RateLimitEntry {
 // Store separado por IP y por token
 const ipStore = new Map<string, RateLimitEntry>();
 const tokenStore = new Map<string, RateLimitEntry>();
+
+// Upstash Redis (opcional)
+const RL_STORE_TYPE = process.env['RATE_LIMIT_STORE_TYPE'] || 'memory';
+const REDIS_URL = process.env['UPSTASH_REDIS_REST_URL'];
+const REDIS_TOKEN = process.env['UPSTASH_REDIS_REST_TOKEN'];
+const USE_REDIS =
+  RL_STORE_TYPE === 'redis' && !!REDIS_URL && !!REDIS_TOKEN ? true : false;
+
+let redis: Redis | null = null;
+const limiterCache = new Map<string, Ratelimit>();
+
+if (USE_REDIS) {
+  try {
+    redis = new Redis({ url: REDIS_URL as string, token: REDIS_TOKEN as string });
+    logger.info('[RateLimit] Using Upstash Redis backend');
+  } catch (e) {
+    logger.warn('[RateLimit] Failed to init Redis. Falling back to memory.', {
+      error: (e as any)?.message || 'unknown',
+    });
+    redis = null;
+  }
+}
+
+function getRedisLimiter(requests: number, windowMs: number): Ratelimit | null {
+  if (!redis) return null;
+  const seconds = Math.max(1, Math.ceil(windowMs / 1000));
+  const key = `${requests}:${seconds}`;
+  if (!limiterCache.has(key)) {
+    limiterCache.set(
+      key,
+      new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(requests, `${seconds} s`),
+        analytics: false,
+        prefix: 'rl',
+      })
+    );
+  }
+  return limiterCache.get(key)!;
+}
 
 // Métricas globales
 interface RateLimitMetrics {
@@ -150,7 +192,30 @@ async function checkRateLimit(
   const now = Date.now();
   const windowStart = now - config.windowMs;
 
-  // Obtener o crear entrada
+  // Redis path (si está configurado)
+  if (USE_REDIS && redis) {
+    try {
+      const limiter = getRedisLimiter(config.requests, config.windowMs);
+      const id = `${type}:${key}`;
+      const result = await limiter!.limit(id);
+      const nowMs = Date.now();
+      const resetTime = nowMs + (result.reset - Math.floor(nowMs / 1000)) * 1000;
+      return {
+        allowed: result.success,
+        limit: config.requests,
+        remaining: result.remaining,
+        resetTime,
+        retryAfter: result.success ? 0 : Math.ceil((resetTime - nowMs) / 1000),
+      };
+    } catch (e) {
+      logger.warn('[RateLimit] Redis check failed. Falling back to memory.', {
+        error: (e as any)?.message || 'unknown',
+      });
+      // continue to memory fallback
+    }
+  }
+
+  // MEMORIA: Obtener o crear entrada
   let entry = store.get(key);
 
   if (!entry) {
@@ -413,9 +478,9 @@ export const RateLimitMiddleware = {
       ...args: Args
     ): Promise<NextResponse> => {
       const requestId =
-        (globalThis.crypto && 'randomUUID' in globalThis.crypto
+        globalThis.crypto && 'randomUUID' in globalThis.crypto
           ? (globalThis.crypto as Crypto).randomUUID()
-          : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+          : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       const result = await rateLimitMiddleware(request, requestId);
 
       if (!result.allowed) {

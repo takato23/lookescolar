@@ -6,7 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -14,11 +20,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Upload, 
-  Download, 
-  Users, 
-  GraduationCap, 
+import {
+  Upload,
+  Download,
+  Users,
+  GraduationCap,
   Plus,
   FileText,
   QrCode,
@@ -29,7 +35,7 @@ import {
   X,
   AlertCircle,
   CheckCircle,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -65,7 +71,13 @@ interface Student {
 interface BatchOperation {
   id: string;
   type: 'courses' | 'students';
-  operation: 'create' | 'update' | 'delete' | 'import' | 'assign_course' | 'generate_tokens';
+  operation:
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'import'
+    | 'assign_course'
+    | 'generate_tokens';
   status: 'pending' | 'processing' | 'completed' | 'error';
   progress?: number;
   result?: any;
@@ -79,11 +91,11 @@ interface BatchStudentManagementProps {
   onDataChange?: () => void;
 }
 
-export default function BatchStudentManagement({ 
-  eventId, 
-  eventName, 
+export default function BatchStudentManagement({
+  eventId,
+  eventName,
   courses,
-  onDataChange 
+  onDataChange,
 }: BatchStudentManagementProps) {
   const [activeTab, setActiveTab] = useState('courses');
   const [operations, setOperations] = useState<BatchOperation[]>([]);
@@ -95,39 +107,45 @@ export default function BatchStudentManagement({
     delimiter: ',',
     skipEmptyRows: true,
     generateTokens: true,
-    generateQrCodes: true
+    generateQrCodes: true,
   });
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Add new course row
   const addCourseRow = () => {
-    setNewCourses(prev => [...prev, {
-      name: '',
-      grade: '',
-      section: '',
-      description: '',
-      sortOrder: prev.length,
-      active: true
-    }]);
+    setNewCourses((prev) => [
+      ...prev,
+      {
+        name: '',
+        grade: '',
+        section: '',
+        description: '',
+        sortOrder: prev.length,
+        active: true,
+      },
+    ]);
   };
 
   // Add new student row
   const addStudentRow = () => {
-    setNewStudents(prev => [...prev, {
-      name: '',
-      grade: '',
-      section: '',
-      generateQrCode: true,
-      generateToken: true,
-      active: true
-    }]);
+    setNewStudents((prev) => [
+      ...prev,
+      {
+        name: '',
+        grade: '',
+        section: '',
+        generateQrCode: true,
+        generateToken: true,
+        active: true,
+      },
+    ]);
   };
 
   // Update course
   const updateCourse = (index: number, field: keyof Course, value: any) => {
-    setNewCourses(prev => 
-      prev.map((course, i) => 
+    setNewCourses((prev) =>
+      prev.map((course, i) =>
         i === index ? { ...course, [field]: value } : course
       )
     );
@@ -135,8 +153,8 @@ export default function BatchStudentManagement({
 
   // Update student
   const updateStudent = (index: number, field: keyof Student, value: any) => {
-    setNewStudents(prev => 
-      prev.map((student, i) => 
+    setNewStudents((prev) =>
+      prev.map((student, i) =>
         i === index ? { ...student, [field]: value } : student
       )
     );
@@ -144,12 +162,12 @@ export default function BatchStudentManagement({
 
   // Remove course
   const removeCourse = (index: number) => {
-    setNewCourses(prev => prev.filter((_, i) => i !== index));
+    setNewCourses((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Remove student
   const removeStudent = (index: number) => {
-    setNewStudents(prev => prev.filter((_, i) => i !== index));
+    setNewStudents((prev) => prev.filter((_, i) => i !== index));
   };
 
   // Execute batch operation
@@ -159,23 +177,23 @@ export default function BatchStudentManagement({
     data?: any
   ) => {
     const operationId = Date.now().toString();
-    
+
     const newOperation: BatchOperation = {
       id: operationId,
       type,
       operation,
       status: 'pending',
-      progress: 0
+      progress: 0,
     };
 
-    setOperations(prev => [...prev, newOperation]);
+    setOperations((prev) => [...prev, newOperation]);
     setProcessing(true);
 
     try {
       // Update status to processing
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
+      setOperations((prev) =>
+        prev.map((op) =>
+          op.id === operationId
             ? { ...op, status: 'processing', progress: 10 }
             : op
         )
@@ -185,7 +203,7 @@ export default function BatchStudentManagement({
       let payload: any = {
         eventId,
         operation,
-        [type]: data || (type === 'courses' ? newCourses : newStudents)
+        [type]: data || (type === 'courses' ? newCourses : newStudents),
       };
 
       if (operation === 'import') {
@@ -194,17 +212,13 @@ export default function BatchStudentManagement({
           eventId,
           type,
           csvData,
-          options: importOptions
+          options: importOptions,
         };
       }
 
       // Update progress
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { ...op, progress: 50 }
-            : op
-        )
+      setOperations((prev) =>
+        prev.map((op) => (op.id === operationId ? { ...op, progress: 50 } : op))
       );
 
       const response = await fetch(endpoint, {
@@ -222,20 +236,22 @@ export default function BatchStudentManagement({
       }
 
       // Update to completed
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { 
-                ...op, 
-                status: 'completed', 
+      setOperations((prev) =>
+        prev.map((op) =>
+          op.id === operationId
+            ? {
+                ...op,
+                status: 'completed',
                 progress: 100,
-                result 
+                result,
               }
             : op
         )
       );
 
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} ${operation} completed successfully`);
+      toast.success(
+        `${type.charAt(0).toUpperCase() + type.slice(1)} ${operation} completed successfully`
+      );
 
       // Clear form data on success
       if (operation === 'create' || operation === 'import') {
@@ -251,23 +267,24 @@ export default function BatchStudentManagement({
       if (onDataChange) {
         onDataChange();
       }
-
     } catch (error) {
       console.error(`${type} ${operation} error:`, error);
-      
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { 
-                ...op, 
+
+      setOperations((prev) =>
+        prev.map((op) =>
+          op.id === operationId
+            ? {
+                ...op,
                 status: 'error',
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
               }
             : op
         )
       );
 
-      toast.error(`${type.charAt(0).toUpperCase() + type.slice(1)} ${operation} failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `${type.charAt(0).toUpperCase() + type.slice(1)} ${operation} failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     } finally {
       setProcessing(false);
     }
@@ -289,13 +306,15 @@ export default function BatchStudentManagement({
   // Download CSV template
   const downloadTemplate = async (type: 'courses' | 'students') => {
     try {
-      const response = await fetch(`/api/admin/courses/batch?action=csv-template&type=${type}`);
+      const response = await fetch(
+        `/api/admin/courses/batch?action=csv-template&type=${type}`
+      );
       const data = await response.json();
 
       if (data.success) {
         const csvContent = [
           data.template.headers.join(','),
-          data.template.example
+          data.template.example,
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -323,15 +342,19 @@ export default function BatchStudentManagement({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold">Batch Student & Course Management</h3>
-        <p className="text-sm text-muted-foreground">Manage courses and students for {eventName}</p>
+        <h3 className="text-lg font-semibold">
+          Batch Student & Course Management
+        </h3>
+        <p className="text-muted-foreground text-sm">
+          Manage courses and students for {eventName}
+        </p>
       </div>
 
       {/* Operations Status */}
       {operations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <RefreshCw className="h-4 w-4" />
               Recent Operations
             </CardTitle>
@@ -340,10 +363,13 @@ export default function BatchStudentManagement({
             <ScrollArea className="h-32">
               <div className="space-y-2">
                 {operations.slice(-5).map((operation) => (
-                  <div key={operation.id} className="flex items-center gap-3 text-sm">
+                  <div
+                    key={operation.id}
+                    className="flex items-center gap-3 text-sm"
+                  >
                     <div className="flex-shrink-0">
                       {operation.status === 'processing' && (
-                        <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
                       )}
                       {operation.status === 'completed' && (
                         <CheckCircle className="h-4 w-4 text-green-500" />
@@ -352,27 +378,37 @@ export default function BatchStudentManagement({
                         <AlertCircle className="h-4 w-4 text-red-500" />
                       )}
                       {operation.status === 'pending' && (
-                        <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
-                      )}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <span className="capitalize">{operation.operation} {operation.type}</span>
-                      {operation.result && (
-                        <span className="text-muted-foreground ml-2">
-                          ({operation.result.summary?.successful || 0} successful, {operation.result.summary?.failed || 0} failed)
-                        </span>
-                      )}
-                      {operation.error && (
-                        <span className="text-red-600 ml-2">- {operation.error}</span>
+                        <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
                       )}
                     </div>
 
-                    {operation.progress !== undefined && operation.status === 'processing' && (
-                      <div className="w-16">
-                        <Progress value={operation.progress} className="h-2" />
-                      </div>
-                    )}
+                    <div className="flex-1">
+                      <span className="capitalize">
+                        {operation.operation} {operation.type}
+                      </span>
+                      {operation.result && (
+                        <span className="text-muted-foreground ml-2">
+                          ({operation.result.summary?.successful || 0}{' '}
+                          successful, {operation.result.summary?.failed || 0}{' '}
+                          failed)
+                        </span>
+                      )}
+                      {operation.error && (
+                        <span className="ml-2 text-red-600">
+                          - {operation.error}
+                        </span>
+                      )}
+                    </div>
+
+                    {operation.progress !== undefined &&
+                      operation.status === 'processing' && (
+                        <div className="w-16">
+                          <Progress
+                            value={operation.progress}
+                            className="h-2"
+                          />
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>
@@ -385,11 +421,11 @@ export default function BatchStudentManagement({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="courses">
-            <GraduationCap className="h-4 w-4 mr-2" />
+            <GraduationCap className="mr-2 h-4 w-4" />
             Courses
           </TabsTrigger>
           <TabsTrigger value="students">
-            <Users className="h-4 w-4 mr-2" />
+            <Users className="mr-2 h-4 w-4" />
             Students
           </TabsTrigger>
         </TabsList>
@@ -408,48 +444,60 @@ export default function BatchStudentManagement({
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Add Courses</CardTitle>
                     <Button onClick={addCourseRow} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Add Course
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {newCourses.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <div className="text-muted-foreground py-8 text-center">
+                      <GraduationCap className="mx-auto mb-4 h-12 w-12 opacity-50" />
                       <p>No courses added yet. Click "Add Course" to start.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {newCourses.map((course, index) => (
                         <Card key={index} className="p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
-                              <Label htmlFor={`course-name-${index}`}>Course Name *</Label>
+                              <Label htmlFor={`course-name-${index}`}>
+                                Course Name *
+                              </Label>
                               <Input
                                 id={`course-name-${index}`}
                                 value={course.name}
-                                onChange={(e) => updateCourse(index, 'name', e.target.value)}
+                                onChange={(e) =>
+                                  updateCourse(index, 'name', e.target.value)
+                                }
                                 placeholder="e.g., Primer Grado A"
                               />
                             </div>
-                            
+
                             <div>
-                              <Label htmlFor={`course-grade-${index}`}>Grade</Label>
+                              <Label htmlFor={`course-grade-${index}`}>
+                                Grade
+                              </Label>
                               <Input
                                 id={`course-grade-${index}`}
                                 value={course.grade || ''}
-                                onChange={(e) => updateCourse(index, 'grade', e.target.value)}
+                                onChange={(e) =>
+                                  updateCourse(index, 'grade', e.target.value)
+                                }
                                 placeholder="e.g., 1º"
                               />
                             </div>
-                            
+
                             <div>
-                              <Label htmlFor={`course-section-${index}`}>Section</Label>
+                              <Label htmlFor={`course-section-${index}`}>
+                                Section
+                              </Label>
                               <Input
                                 id={`course-section-${index}`}
                                 value={course.section || ''}
-                                onChange={(e) => updateCourse(index, 'section', e.target.value)}
+                                onChange={(e) =>
+                                  updateCourse(index, 'section', e.target.value)
+                                }
                                 placeholder="e.g., A"
                               />
                             </div>
@@ -466,11 +514,19 @@ export default function BatchStudentManagement({
                           </div>
 
                           <div className="mt-4">
-                            <Label htmlFor={`course-description-${index}`}>Description</Label>
+                            <Label htmlFor={`course-description-${index}`}>
+                              Description
+                            </Label>
                             <Textarea
                               id={`course-description-${index}`}
                               value={course.description || ''}
-                              onChange={(e) => updateCourse(index, 'description', e.target.value)}
+                              onChange={(e) =>
+                                updateCourse(
+                                  index,
+                                  'description',
+                                  e.target.value
+                                )
+                              }
                               placeholder="Optional description"
                               rows={2}
                             />
@@ -481,13 +537,16 @@ export default function BatchStudentManagement({
                   )}
 
                   {newCourses.length > 0 && (
-                    <div className="flex justify-end mt-4">
-                      <Button 
-                        onClick={() => executeBatchOperation('create', 'courses')}
-                        disabled={processing || newCourses.some(c => !c.name)}
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={() =>
+                          executeBatchOperation('create', 'courses')
+                        }
+                        disabled={processing || newCourses.some((c) => !c.name)}
                       >
-                        <Save className="h-4 w-4 mr-2" />
-                        Create {newCourses.length} Course{newCourses.length !== 1 ? 's' : ''}
+                        <Save className="mr-2 h-4 w-4" />
+                        Create {newCourses.length} Course
+                        {newCourses.length !== 1 ? 's' : ''}
                       </Button>
                     </div>
                   )}
@@ -499,13 +558,15 @@ export default function BatchStudentManagement({
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Import Courses from CSV</CardTitle>
-                    <Button 
-                      variant="outline" 
+                    <CardTitle className="text-base">
+                      Import Courses from CSV
+                    </CardTitle>
+                    <Button
+                      variant="outline"
                       onClick={() => downloadTemplate('courses')}
                       size="sm"
                     >
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="mr-2 h-4 w-4" />
                       Download Template
                     </Button>
                   </div>
@@ -513,7 +574,7 @@ export default function BatchStudentManagement({
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="csv-upload">Upload CSV File</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       <Input
                         id="csv-upload"
                         type="file"
@@ -541,10 +602,15 @@ export default function BatchStudentManagement({
                         id="has-header"
                         checked={importOptions.hasHeader}
                         onCheckedChange={(checked) =>
-                          setImportOptions(prev => ({ ...prev, hasHeader: !!checked }))
+                          setImportOptions((prev) => ({
+                            ...prev,
+                            hasHeader: !!checked,
+                          }))
                         }
                       />
-                      <Label htmlFor="has-header">First row contains headers</Label>
+                      <Label htmlFor="has-header">
+                        First row contains headers
+                      </Label>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -552,7 +618,10 @@ export default function BatchStudentManagement({
                         id="skip-empty"
                         checked={importOptions.skipEmptyRows}
                         onCheckedChange={(checked) =>
-                          setImportOptions(prev => ({ ...prev, skipEmptyRows: !!checked }))
+                          setImportOptions((prev) => ({
+                            ...prev,
+                            skipEmptyRows: !!checked,
+                          }))
                         }
                       />
                       <Label htmlFor="skip-empty">Skip empty rows</Label>
@@ -560,11 +629,11 @@ export default function BatchStudentManagement({
                   </div>
 
                   {csvData && (
-                    <Button 
+                    <Button
                       onClick={() => executeBatchOperation('import', 'courses')}
                       disabled={processing}
                     >
-                      <Upload className="h-4 w-4 mr-2" />
+                      <Upload className="mr-2 h-4 w-4" />
                       Import Courses
                     </Button>
                   )}
@@ -589,59 +658,81 @@ export default function BatchStudentManagement({
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Add Students</CardTitle>
                     <Button onClick={addStudentRow} size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Add Student
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {newStudents.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No students added yet. Click "Add Student" to start.</p>
+                    <div className="text-muted-foreground py-8 text-center">
+                      <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                      <p>
+                        No students added yet. Click "Add Student" to start.
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {newStudents.map((student, index) => (
                         <Card key={index} className="p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div>
-                              <Label htmlFor={`student-name-${index}`}>Student Name *</Label>
+                              <Label htmlFor={`student-name-${index}`}>
+                                Student Name *
+                              </Label>
                               <Input
                                 id={`student-name-${index}`}
                                 value={student.name}
-                                onChange={(e) => updateStudent(index, 'name', e.target.value)}
+                                onChange={(e) =>
+                                  updateStudent(index, 'name', e.target.value)
+                                }
                                 placeholder="e.g., Juan Pérez"
                               />
                             </div>
-                            
+
                             <div>
-                              <Label htmlFor={`student-grade-${index}`}>Grade</Label>
+                              <Label htmlFor={`student-grade-${index}`}>
+                                Grade
+                              </Label>
                               <Input
                                 id={`student-grade-${index}`}
                                 value={student.grade || ''}
-                                onChange={(e) => updateStudent(index, 'grade', e.target.value)}
+                                onChange={(e) =>
+                                  updateStudent(index, 'grade', e.target.value)
+                                }
                                 placeholder="e.g., 1º"
                               />
                             </div>
-                            
+
                             <div>
-                              <Label htmlFor={`student-section-${index}`}>Section</Label>
+                              <Label htmlFor={`student-section-${index}`}>
+                                Section
+                              </Label>
                               <Input
                                 id={`student-section-${index}`}
                                 value={student.section || ''}
-                                onChange={(e) => updateStudent(index, 'section', e.target.value)}
+                                onChange={(e) =>
+                                  updateStudent(
+                                    index,
+                                    'section',
+                                    e.target.value
+                                  )
+                                }
                                 placeholder="e.g., A"
                               />
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
-                              <Label htmlFor={`student-course-${index}`}>Course</Label>
+                              <Label htmlFor={`student-course-${index}`}>
+                                Course
+                              </Label>
                               <Select
                                 value={student.courseId || ''}
-                                onValueChange={(value) => updateStudent(index, 'courseId', value)}
+                                onValueChange={(value) =>
+                                  updateStudent(index, 'courseId', value)
+                                }
                               >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select course (optional)" />
@@ -649,43 +740,70 @@ export default function BatchStudentManagement({
                                 <SelectContent>
                                   <SelectItem value="">No course</SelectItem>
                                   {courses.map((course) => (
-                                    <SelectItem key={course.id} value={course.id!}>
+                                    <SelectItem
+                                      key={course.id}
+                                      value={course.id!}
+                                    >
                                       {course.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
-                            
+
                             <div>
-                              <Label htmlFor={`student-number-${index}`}>Student Number</Label>
+                              <Label htmlFor={`student-number-${index}`}>
+                                Student Number
+                              </Label>
                               <Input
                                 id={`student-number-${index}`}
                                 value={student.studentNumber || ''}
-                                onChange={(e) => updateStudent(index, 'studentNumber', e.target.value)}
+                                onChange={(e) =>
+                                  updateStudent(
+                                    index,
+                                    'studentNumber',
+                                    e.target.value
+                                  )
+                                }
                                 placeholder="e.g., 12345"
                               />
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div>
-                              <Label htmlFor={`parent-name-${index}`}>Parent Name</Label>
+                              <Label htmlFor={`parent-name-${index}`}>
+                                Parent Name
+                              </Label>
                               <Input
                                 id={`parent-name-${index}`}
                                 value={student.parentName || ''}
-                                onChange={(e) => updateStudent(index, 'parentName', e.target.value)}
+                                onChange={(e) =>
+                                  updateStudent(
+                                    index,
+                                    'parentName',
+                                    e.target.value
+                                  )
+                                }
                                 placeholder="e.g., María Pérez"
                               />
                             </div>
-                            
+
                             <div>
-                              <Label htmlFor={`parent-email-${index}`}>Parent Email</Label>
+                              <Label htmlFor={`parent-email-${index}`}>
+                                Parent Email
+                              </Label>
                               <Input
                                 id={`parent-email-${index}`}
                                 type="email"
                                 value={student.parentEmail || ''}
-                                onChange={(e) => updateStudent(index, 'parentEmail', e.target.value)}
+                                onChange={(e) =>
+                                  updateStudent(
+                                    index,
+                                    'parentEmail',
+                                    e.target.value
+                                  )
+                                }
                                 placeholder="e.g., maria@example.com"
                               />
                             </div>
@@ -698,11 +816,18 @@ export default function BatchStudentManagement({
                                   id={`generate-qr-${index}`}
                                   checked={student.generateQrCode}
                                   onCheckedChange={(checked) =>
-                                    updateStudent(index, 'generateQrCode', !!checked)
+                                    updateStudent(
+                                      index,
+                                      'generateQrCode',
+                                      !!checked
+                                    )
                                   }
                                 />
-                                <Label htmlFor={`generate-qr-${index}`} className="text-sm">
-                                  <QrCode className="h-4 w-4 inline mr-1" />
+                                <Label
+                                  htmlFor={`generate-qr-${index}`}
+                                  className="text-sm"
+                                >
+                                  <QrCode className="mr-1 inline h-4 w-4" />
                                   Generate QR Code
                                 </Label>
                               </div>
@@ -712,11 +837,18 @@ export default function BatchStudentManagement({
                                   id={`generate-token-${index}`}
                                   checked={student.generateToken}
                                   onCheckedChange={(checked) =>
-                                    updateStudent(index, 'generateToken', !!checked)
+                                    updateStudent(
+                                      index,
+                                      'generateToken',
+                                      !!checked
+                                    )
                                   }
                                 />
-                                <Label htmlFor={`generate-token-${index}`} className="text-sm">
-                                  <Key className="h-4 w-4 inline mr-1" />
+                                <Label
+                                  htmlFor={`generate-token-${index}`}
+                                  className="text-sm"
+                                >
+                                  <Key className="mr-1 inline h-4 w-4" />
                                   Generate Access Token
                                 </Label>
                               </div>
@@ -736,13 +868,18 @@ export default function BatchStudentManagement({
                   )}
 
                   {newStudents.length > 0 && (
-                    <div className="flex justify-end mt-4">
-                      <Button 
-                        onClick={() => executeBatchOperation('create', 'students')}
-                        disabled={processing || newStudents.some(s => !s.name)}
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        onClick={() =>
+                          executeBatchOperation('create', 'students')
+                        }
+                        disabled={
+                          processing || newStudents.some((s) => !s.name)
+                        }
                       >
-                        <Save className="h-4 w-4 mr-2" />
-                        Create {newStudents.length} Student{newStudents.length !== 1 ? 's' : ''}
+                        <Save className="mr-2 h-4 w-4" />
+                        Create {newStudents.length} Student
+                        {newStudents.length !== 1 ? 's' : ''}
                       </Button>
                     </div>
                   )}
@@ -754,13 +891,15 @@ export default function BatchStudentManagement({
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">Import Students from CSV</CardTitle>
-                    <Button 
-                      variant="outline" 
+                    <CardTitle className="text-base">
+                      Import Students from CSV
+                    </CardTitle>
+                    <Button
+                      variant="outline"
                       onClick={() => downloadTemplate('students')}
                       size="sm"
                     >
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="mr-2 h-4 w-4" />
                       Download Template
                     </Button>
                   </div>
@@ -768,7 +907,7 @@ export default function BatchStudentManagement({
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="student-csv-upload">Upload CSV File</Label>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="mt-1 flex items-center gap-2">
                       <Input
                         id="student-csv-upload"
                         type="file"
@@ -795,10 +934,15 @@ export default function BatchStudentManagement({
                         id="student-has-header"
                         checked={importOptions.hasHeader}
                         onCheckedChange={(checked) =>
-                          setImportOptions(prev => ({ ...prev, hasHeader: !!checked }))
+                          setImportOptions((prev) => ({
+                            ...prev,
+                            hasHeader: !!checked,
+                          }))
                         }
                       />
-                      <Label htmlFor="student-has-header">First row contains headers</Label>
+                      <Label htmlFor="student-has-header">
+                        First row contains headers
+                      </Label>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -806,10 +950,15 @@ export default function BatchStudentManagement({
                         id="student-generate-tokens"
                         checked={importOptions.generateTokens}
                         onCheckedChange={(checked) =>
-                          setImportOptions(prev => ({ ...prev, generateTokens: !!checked }))
+                          setImportOptions((prev) => ({
+                            ...prev,
+                            generateTokens: !!checked,
+                          }))
                         }
                       />
-                      <Label htmlFor="student-generate-tokens">Generate access tokens</Label>
+                      <Label htmlFor="student-generate-tokens">
+                        Generate access tokens
+                      </Label>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -817,10 +966,15 @@ export default function BatchStudentManagement({
                         id="student-skip-empty"
                         checked={importOptions.skipEmptyRows}
                         onCheckedChange={(checked) =>
-                          setImportOptions(prev => ({ ...prev, skipEmptyRows: !!checked }))
+                          setImportOptions((prev) => ({
+                            ...prev,
+                            skipEmptyRows: !!checked,
+                          }))
                         }
                       />
-                      <Label htmlFor="student-skip-empty">Skip empty rows</Label>
+                      <Label htmlFor="student-skip-empty">
+                        Skip empty rows
+                      </Label>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -828,19 +982,26 @@ export default function BatchStudentManagement({
                         id="student-generate-qr"
                         checked={importOptions.generateQrCodes}
                         onCheckedChange={(checked) =>
-                          setImportOptions(prev => ({ ...prev, generateQrCodes: !!checked }))
+                          setImportOptions((prev) => ({
+                            ...prev,
+                            generateQrCodes: !!checked,
+                          }))
                         }
                       />
-                      <Label htmlFor="student-generate-qr">Generate QR codes</Label>
+                      <Label htmlFor="student-generate-qr">
+                        Generate QR codes
+                      </Label>
                     </div>
                   </div>
 
                   {csvData && (
-                    <Button 
-                      onClick={() => executeBatchOperation('import', 'students')}
+                    <Button
+                      onClick={() =>
+                        executeBatchOperation('import', 'students')
+                      }
                       disabled={processing}
                     >
-                      <Upload className="h-4 w-4 mr-2" />
+                      <Upload className="mr-2 h-4 w-4" />
                       Import Students
                     </Button>
                   )}
@@ -857,17 +1018,18 @@ export default function BatchStudentManagement({
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      These actions will affect all students in the event. Use with caution.
+                      These actions will affect all students in the event. Use
+                      with caution.
                     </AlertDescription>
                   </Alert>
 
                   <div className="space-y-3">
-                    <Button 
+                    <Button
                       onClick={generateTokensForStudents}
                       disabled={processing}
                       className="w-full justify-start"
                     >
-                      <Key className="h-4 w-4 mr-2" />
+                      <Key className="mr-2 h-4 w-4" />
                       Generate Access Tokens for All Students
                     </Button>
                   </div>

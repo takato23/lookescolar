@@ -6,8 +6,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // En desarrollo, siempre devolver datos mock
-    if (process.env.NODE_ENV === 'development' || true) {
+    // En desarrollo, devolver datos mock
+    if (process.env.NODE_ENV === 'development') {
       return NextResponse.json([
         {
           id: '1',

@@ -38,10 +38,11 @@ interface LazyImageProps {
   className?: string;
   onLoad?: () => void;
   onError?: () => void;
+  fetchPriority?: 'high' | 'low' | 'auto';
 }
 
 // Lazy image component with intersection observer
-function LazyImage({ src, alt, className, onLoad, onError }: LazyImageProps) {
+function LazyImage({ src, alt, className, onLoad, onError, fetchPriority = 'auto' }: LazyImageProps) {
   const [isInView, setIsInView] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -97,6 +98,7 @@ function LazyImage({ src, alt, className, onLoad, onError }: LazyImageProps) {
         onError={handleError}
         loading="lazy"
         decoding="async"
+        fetchPriority={fetchPriority}
       />
 
       {/* Loading placeholder */}
@@ -166,7 +168,7 @@ function OptimizedPhotoCard({
   }, [photo.filename]);
 
   return (
-    <div className="group relative h-full overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 active:scale-95">
+    <div className="group relative h-full overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-95">
       <div className="relative aspect-square">
         <LazyImage
           src={imageUrl}
@@ -174,17 +176,18 @@ function OptimizedPhotoCard({
           className="h-full w-full"
           onLoad={handleImageLoad}
           onError={handleImageError}
+          fetchPriority={priority ? 'high' : 'low'}
         />
 
         {/* Apple-grade hover overlay with spring animation */}
         <div className="absolute inset-0 bg-black bg-opacity-0 transition-all duration-300 ease-out group-hover:bg-opacity-20">
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:scale-100 scale-90">
+          <div className="absolute inset-0 flex scale-90 items-center justify-center opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100">
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onView();
               }}
-              className="transform rounded-full bg-white bg-opacity-90 p-3 transition-all duration-200 ease-out hover:scale-110 hover:bg-opacity-100 hover:shadow-lg active:scale-95 apple-focus"
+              className="apple-focus transform rounded-full bg-white bg-opacity-90 p-3 transition-all duration-200 ease-out hover:scale-110 hover:bg-opacity-100 hover:shadow-lg active:scale-95"
               title="Ver foto completa"
               aria-label={`Ver foto ${photo.filename}`}
             >
@@ -308,6 +311,7 @@ export function OptimizedPhotoGrid({
   overscan = 2,
 }: OptimizedPhotoGridProps) {
   const gridRef = useRef<Grid>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
 
@@ -354,18 +358,32 @@ export function OptimizedPhotoGrid({
     return () => observer.disconnect();
   }, [loadMore, hasMore, loading]);
 
-  // Container width detection
+  // Container width detection using ResizeObserver for accuracy
   useEffect(() => {
-    const updateWidth = () => {
-      const container = gridRef.current?.props?.width || 800;
-      setContainerWidth(typeof container === 'number' ? container : 800);
+    const measure = () => {
+      const w = containerRef.current?.clientWidth;
+      if (w && Math.abs(w - containerWidth) > 1) setContainerWidth(w);
     };
 
-    window.addEventListener('resize', updateWidth);
-    updateWidth();
+    // Initial measure
+    measure();
 
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
+    // Listen to window resize
+    const onResize = () => measure();
+    window.addEventListener('resize', onResize);
+
+    // Observe element resize
+    let ro: ResizeObserver | undefined;
+    if ('ResizeObserver' in window && containerRef.current) {
+      ro = new ResizeObserver(() => measure());
+      ro.observe(containerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      ro?.disconnect();
+    };
+  }, [containerWidth]);
 
   // Performance tracking
   useEffect(() => {
@@ -409,7 +427,7 @@ export function OptimizedPhotoGrid({
   const gridHeight = Math.min(600, rows * itemHeight);
 
   return (
-    <div className={`w-full ${className}`}>
+    <div ref={containerRef} className={`w-full ${className}`}>
       {/* Stats bar */}
       <div className="mb-6 flex items-center justify-between text-sm">
         <div className="text-gray-600">

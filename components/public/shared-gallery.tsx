@@ -18,6 +18,8 @@ import {
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { CheckoutModal } from '@/components/family/CheckoutModal';
+import { useCartStore } from '@/lib/stores/cart-store';
 
 interface SharedGalleryProps {
   token: string;
@@ -99,6 +101,8 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const { addItem, clearCart } = useCartStore();
 
   useEffect(() => {
     loadGallery();
@@ -109,7 +113,8 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
     setError(null);
     
     try {
-      const response = await fetch(`/api/public/gallery/${token}`);
+      // Use the simplified family gallery API that supports folder/code/subject tokens
+      const response = await fetch(`/api/family/gallery-simple/${token}`);
       
       if (!response.ok) {
         throw new Error('Failed to load shared gallery');
@@ -117,8 +122,38 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       
       const data = await response.json();
       
-      if (data.success) {
-        setGalleryData(data.gallery);
+      if (data.success || data.photos) {
+        setGalleryData({
+          // Map minimal fields to our expected structure
+          share: {
+            id: data.subject?.id || 'share',
+            allow_download: false,
+            allow_share: true,
+            custom_message: undefined,
+            expires_at: new Date().toISOString(),
+            view_count: 0,
+            max_views: undefined,
+            views_remaining: undefined,
+          },
+          event: {
+            id: data.subject?.event?.id || 'event',
+            name: data.subject?.event?.name || 'Evento',
+            school: data.subject?.event?.school_name || 'Escuela',
+            date: new Date().toISOString(),
+          },
+          photos: (data.photos || []).map((p: any) => ({
+            id: p.id,
+            filename: p.filename,
+            preview_url: p.preview_url,
+            file_size: p.size || 0,
+            width: p.width || 0,
+            height: p.height || 0,
+            taken_at: p.created_at,
+            created_at: p.created_at,
+            approved: true,
+            photo_type: 'event',
+          })),
+        } as any);
       } else {
         throw new Error(data.error || 'Failed to load shared gallery');
       }
@@ -162,6 +197,27 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       console.error('Error downloading photos:', err);
       toast.error('Error al descargar fotos');
     }
+  };
+
+  const handleBuy = () => {
+    if (selectedPhotos.length === 0) {
+      toast.error('Selecciona al menos una foto');
+      return;
+    }
+    // Cargar selección al carrito con precio base
+    try {
+      clearCart();
+      const price = 1500; // Precio base por foto (ARS). Ajustar según estrategia.
+      selectedPhotos.forEach((id) => {
+        const photo = galleryData?.photos.find((p) => p.id === id);
+        if (photo) {
+          addItem({ photoId: id, filename: photo.filename, price });
+        }
+      });
+    } catch (e) {
+      console.error('Error preparando carrito:', e);
+    }
+    setIsCheckoutOpen(true);
   };
 
   const togglePhotoSelection = (photoId: string) => {
@@ -430,6 +486,16 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
                   </span>
                 </Button>
               )}
+
+              {selectedPhotos.length > 0 && (
+                <Button 
+                  onClick={handleBuy}
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                >
+                  Comprar ({selectedPhotos.length})
+                </Button>
+              )}
               
               <Button
                 variant={viewMode === 'grid' ? 'default' : 'outline'}
@@ -523,6 +589,15 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           </div>
         )}
       </main>
+      {/* Checkout */}
+      {galleryData && (
+        <CheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          subjectId={galleryData.student?.id || galleryData.course?.id || galleryData.level?.id || galleryData.event.id}
+          token={token}
+        />
+      )}
       
       {/* Footer */}
       <footer className="border-t mt-8">

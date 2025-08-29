@@ -10,19 +10,16 @@ const supabase = createClient(
 
 async function checkPhotosTable() {
   console.log('Checking photos table structure...');
-  
+
   // Get column names
-  const { data, error } = await supabase
-    .from('photos')
-    .select('*')
-    .limit(1);
-    
+  const { data, error } = await supabase.from('photos').select('*').limit(1);
+
   if (error) {
     console.log('Error:', error.message);
   } else {
     if (data && data.length > 0) {
       console.log('Photos table columns:');
-      Object.keys(data[0]).forEach(col => console.log('  -', col));
+      Object.keys(data[0]).forEach((col) => console.log('  -', col));
     } else {
       console.log('No data found in photos table');
     }

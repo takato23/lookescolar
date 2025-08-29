@@ -2,6 +2,7 @@ import { ReactNode, Suspense } from 'react';
 import { FamilyHeader } from '@/components/family/FamilyHeader';
 import { FamilyNavigation } from '@/components/family/FamilyNavigation';
 import { MobileNavigation } from '@/components/ui/mobile-navigation';
+import { familyNavigationItems } from '@/components/ui/navigation-items';
 import { MobileOptimizations } from '@/components/family/MobileOptimizations';
 
 interface FamilyLayoutProps {
@@ -9,10 +10,17 @@ interface FamilyLayoutProps {
   params: Promise<{ token: string }>;
 }
 
-export default async function FamilyLayout({ children, params }: FamilyLayoutProps) {
+export default async function FamilyLayout({
+  children,
+  params,
+}: FamilyLayoutProps) {
   const { token } = await params;
-  // Navegación móvil desactivada si la fuente de ítems no está disponible en el server
-  const navigationItems: any[] = [];
+  // Navegación móvil con items parametrizados por token
+  const baseItems = Array.isArray(familyNavigationItems) ? familyNavigationItems : [];
+  const navigationItems = baseItems.map((item) => ({
+    ...item,
+    href: item.href.replace('/f', `/f/${token}`),
+  }));
 
   return (
     <MobileOptimizations>
@@ -23,10 +31,7 @@ export default async function FamilyLayout({ children, params }: FamilyLayoutPro
         </div>
 
         {/* Mobile Navigation */}
-        <MobileNavigation
-          items={navigationItems}
-          className="lg:hidden"
-        />
+        <MobileNavigation items={navigationItems} className="lg:hidden" />
 
         {/* Desktop Header with subject info */}
         <div className="hidden lg:block">
@@ -43,44 +48,45 @@ export default async function FamilyLayout({ children, params }: FamilyLayoutPro
         </div>
 
         {/* Main content - Adjusted for mobile navigation */}
-        <main className="relative z-10 mx-auto max-w-6xl px-4 py-6 pb-24 pt-20 sm:px-6 lg:px-8 lg:pt-6 lg:pb-6">
+        <main className="relative z-10 mx-auto max-w-6xl px-4 py-6 pb-24 pt-20 sm:px-6 lg:px-8 lg:pb-6 lg:pt-6">
           {children}
         </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 mt-16 border-t border-purple-200 bg-white/50 py-8 backdrop-blur-sm">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="space-y-4 text-center">
-            <div className="flex items-center justify-center space-x-6 text-sm text-gray-600">
-              <a
-                href="mailto:contacto@lookescolar.com"
-                className="transition-colors hover:text-purple-600"
-              >
-                📧 Contacto
-              </a>
-              <a
-                href="tel:+541234567890"
-                className="transition-colors hover:text-purple-600"
-              >
-                📞 Soporte
-              </a>
-              <a
-                href="/ayuda"
-                className="transition-colors hover:text-purple-600"
-              >
-                ❓ Ayuda
-              </a>
+        {/* Footer */}
+        <footer className="relative z-10 mt-16 border-t border-purple-200 bg-white/50 py-8 backdrop-blur-sm">
+          <div className="mx-auto max-w-4xl px-6">
+            <div className="space-y-4 text-center">
+              <div className="flex items-center justify-center space-x-6 text-sm text-gray-600">
+                <a
+                  href="mailto:contacto@lookescolar.com"
+                  className="transition-colors hover:text-purple-600"
+                >
+                  📧 Contacto
+                </a>
+                <a
+                  href="tel:+541234567890"
+                  className="transition-colors hover:text-purple-600"
+                >
+                  📞 Soporte
+                </a>
+                <a
+                  href="/ayuda"
+                  className="transition-colors hover:text-purple-600"
+                >
+                  ❓ Ayuda
+                </a>
+              </div>
+              <p className="text-sm text-gray-600">
+                © 2024 LookEscolar - Fotografía Escolar Digital
+              </p>
+              <p className="text-xs text-gray-500">
+                Tus fotos están protegidas con acceso seguro mediante token
+                único
+              </p>
             </div>
-            <p className="text-sm text-gray-600">
-              © 2024 LookEscolar - Fotografía Escolar Digital
-            </p>
-            <p className="text-xs text-gray-500">
-              Tus fotos están protegidas con acceso seguro mediante token único
-            </p>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
     </MobileOptimizations>
   );
 }

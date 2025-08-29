@@ -5,10 +5,12 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Get URL params for limit
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 100;
+    const limit = searchParams.get('limit')
+      ? parseInt(searchParams.get('limit')!)
+      : 100;
 
     // Get events with minimal fields to avoid schema drift issues
     const { data: events, error } = await supabase
@@ -21,10 +23,10 @@ export async function GET(request: NextRequest) {
       console.error('[events-simple] Database error:', error);
       // If there's a DB error, return empty events array instead of 500
       return NextResponse.json(
-        { 
+        {
           success: true,
           events: [],
-          error: 'Could not fetch events'
+          error: 'Could not fetch events',
         },
         { status: 200 }
       );
@@ -42,11 +44,14 @@ export async function GET(request: NextRequest) {
         active: true,
         photo_price: 0, // Default value
         created_at: event.created_at,
-        photo_count: 0 // We'll load this separately if needed
+        photo_count: 0, // We'll load this separately if needed
       };
     });
 
-    console.log('[events-simple] Found events with stats:', eventsWithStats.length);
+    console.log(
+      '[events-simple] Found events with stats:',
+      eventsWithStats.length
+    );
 
     return NextResponse.json(
       {
@@ -62,10 +67,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[events-simple] Unexpected error:', error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

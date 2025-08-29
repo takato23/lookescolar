@@ -8,7 +8,9 @@ import crypto from 'crypto';
 const AssignFolderPhotosSchema = z.object({
   folderId: z.string().uuid().optional(), // If null/undefined, assigns all unassigned photos in event
   subjectIds: z.array(z.string().uuid()).min(1).max(100, 'Too many subjects'),
-  assignmentMode: z.enum(['all_to_all', 'sequential', 'qr_detection']).default('all_to_all'),
+  assignmentMode: z
+    .enum(['all_to_all', 'sequential', 'qr_detection'])
+    .default('all_to_all'),
   forceReassign: z.boolean().default(false), // Whether to override existing assignments
 });
 
@@ -40,7 +42,8 @@ export async function POST(
     });
 
     // Validate schema
-    const { folderId, subjectIds, assignmentMode, forceReassign } = AssignFolderPhotosSchema.parse(body);
+    const { folderId, subjectIds, assignmentMode, forceReassign } =
+      AssignFolderPhotosSchema.parse(body);
 
     // Verify event exists
     const { data: event, error: eventError } = await supabase
@@ -50,10 +53,7 @@ export async function POST(
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Verify all subjects exist and belong to the event
@@ -99,21 +99,23 @@ export async function POST(
       const { data: assignedPhotoIds } = await supabase
         .from('photo_subjects')
         .select('photo_id')
-        .in('photo_id', 
-          (await supabase
-            .from('photos')
-            .select('id')
-            .eq('event_id', eventId)
-          ).data?.map(p => p.id) || []
+        .in(
+          'photo_id',
+          (
+            await supabase.from('photos').select('id').eq('event_id', eventId)
+          ).data?.map((p) => p.id) || []
         );
-      
-      const assignedIds = assignedPhotoIds?.map(p => p.photo_id) || [];
+
+      const assignedIds = assignedPhotoIds?.map((p) => p.photo_id) || [];
       if (assignedIds.length > 0 && !forceReassign) {
         photosQuery = photosQuery.not('id', 'in', `(${assignedIds.join(',')})`);
       }
     }
 
-    const { data: photos, error: photosError } = await photosQuery.order('created_at', { ascending: true });
+    const { data: photos, error: photosError } = await photosQuery.order(
+      'created_at',
+      { ascending: true }
+    );
 
     if (photosError) {
       logger.error('Error fetching photos for assignment', {
@@ -139,7 +141,7 @@ export async function POST(
           totalSubjects: subjectIds.length,
           assignedCount: 0,
           errorCount: 0,
-        }
+        },
       });
     }
 
@@ -160,7 +162,10 @@ export async function POST(
         // Distribute photos sequentially across subjects
         photos.forEach((photo, index) => {
           const subjectIndex = index % subjectIds.length;
-          assignments.push({ photoId: photo.id, subjectId: subjectIds[subjectIndex] });
+          assignments.push({
+            photoId: photo.id,
+            subjectId: subjectIds[subjectIndex],
+          });
         });
         break;
 
@@ -183,37 +188,46 @@ export async function POST(
 
     for (let i = 0; i < assignments.length; i += batchSize) {
       const batch = assignments.slice(i, i + batchSize);
-      
+
       // Check for existing assignments if not force reassigning
       let existingAssignments: any[] = [];
       if (!forceReassign) {
         const { data: existing } = await supabase
           .from('photo_subjects')
           .select('photo_id, subject_id')
-          .in('photo_id', batch.map(a => a.photoId))
-          .in('subject_id', batch.map(a => a.subjectId));
-        
+          .in(
+            'photo_id',
+            batch.map((a) => a.photoId)
+          )
+          .in(
+            'subject_id',
+            batch.map((a) => a.subjectId)
+          );
+
         existingAssignments = existing || [];
       }
 
       // Filter out existing assignments
-      const newAssignments = forceReassign ? batch : batch.filter(assignment => {
-        return !existingAssignments.some(existing => 
-          existing.photo_id === assignment.photoId && 
-          existing.subject_id === assignment.subjectId
-        );
-      });
+      const newAssignments = forceReassign
+        ? batch
+        : batch.filter((assignment) => {
+            return !existingAssignments.some(
+              (existing) =>
+                existing.photo_id === assignment.photoId &&
+                existing.subject_id === assignment.subjectId
+            );
+          });
 
       if (newAssignments.length > 0) {
         // Insert new assignments
         const { error: insertError } = await supabase
           .from('photo_subjects')
           .insert(
-            newAssignments.map(assignment => ({
+            newAssignments.map((assignment) => ({
               photo_id: assignment.photoId,
               subject_id: assignment.subjectId,
               tagged_at: new Date().toISOString(),
-              tagged_by: null // Automatic assignment
+              tagged_by: null, // Automatic assignment
             }))
           );
 
@@ -226,7 +240,7 @@ export async function POST(
           });
 
           // Add errors to results
-          newAssignments.forEach(assignment => {
+          newAssignments.forEach((assignment) => {
             results.push({
               photoId: assignment.photoId,
               subjectId: assignment.subjectId,
@@ -237,7 +251,7 @@ export async function POST(
           });
         } else {
           // Add successes to results
-          newAssignments.forEach(assignment => {
+          newAssignments.forEach((assignment) => {
             results.push({
               photoId: assignment.photoId,
               subjectId: assignment.subjectId,
@@ -249,19 +263,22 @@ export async function POST(
       }
 
       // Add skipped assignments (already existed)
-      batch.filter(assignment => 
-        existingAssignments.some(existing => 
-          existing.photo_id === assignment.photoId && 
-          existing.subject_id === assignment.subjectId
+      batch
+        .filter((assignment) =>
+          existingAssignments.some(
+            (existing) =>
+              existing.photo_id === assignment.photoId &&
+              existing.subject_id === assignment.subjectId
+          )
         )
-      ).forEach(assignment => {
-        results.push({
-          photoId: assignment.photoId,
-          subjectId: assignment.subjectId,
-          success: true,
-          previouslyAssigned: true,
+        .forEach((assignment) => {
+          results.push({
+            photoId: assignment.photoId,
+            subjectId: assignment.subjectId,
+            success: true,
+            previouslyAssigned: true,
+          });
         });
-      });
     }
 
     const duration = Date.now() - startTime;
@@ -288,14 +305,13 @@ export async function POST(
         totalAssignments: assignments.length,
         assignedCount,
         errorCount,
-        skippedCount: results.filter(r => r.previouslyAssigned).length,
+        skippedCount: results.filter((r) => r.previouslyAssigned).length,
         duration,
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    
+
     logger.error('Folder photos assignment failed', {
       requestId,
       error: error instanceof Error ? error.message : 'Unknown error',

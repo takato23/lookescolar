@@ -1,6 +1,6 @@
 /**
  * QR Code Digital Signatures Security Service
- * 
+ *
  * Implements digital signatures for QR codes to prevent tampering
  * and ensure authenticity of QR code data.
  */
@@ -35,8 +35,11 @@ export class QRSignatureService {
   private readonly maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
 
   constructor() {
-    this.secret = process.env.QR_SIGNATURE_SECRET || process.env.SESSION_SECRET || 'fallback-dev-secret';
-    
+    this.secret =
+      process.env.QR_SIGNATURE_SECRET ||
+      process.env.SESSION_SECRET ||
+      'fallback-dev-secret';
+
     if (!this.secret || this.secret === 'fallback-dev-secret') {
       console.warn('[Security] QR_SIGNATURE_SECRET not properly configured');
     }
@@ -49,12 +52,12 @@ export class QRSignatureService {
     try {
       const timestamp = Date.now();
       const nonce = randomBytes(16).toString('hex');
-      
+
       const payload: QRSignaturePayload = {
         data,
         timestamp,
         nonce,
-        version: this.version
+        version: this.version,
       };
 
       // Create JWT signature
@@ -73,7 +76,7 @@ export class QRSignatureService {
       return {
         payload,
         signature: jwt,
-        hash
+        hash,
       };
     } catch (error) {
       console.error('[Security] Failed to sign QR data:', error);
@@ -84,7 +87,9 @@ export class QRSignatureService {
   /**
    * Verify QR code digital signature
    */
-  async verifyQRSignature(signedData: SignedQRData): Promise<QRVerificationResult> {
+  async verifyQRSignature(
+    signedData: SignedQRData
+  ): Promise<QRVerificationResult> {
     try {
       const { payload, signature, hash } = signedData;
 
@@ -96,7 +101,7 @@ export class QRSignatureService {
       if (hash !== expectedHash) {
         return {
           valid: false,
-          error: 'Hash verification failed - data integrity compromised'
+          error: 'Hash verification failed - data integrity compromised',
         };
       }
 
@@ -108,7 +113,7 @@ export class QRSignatureService {
       if (JSON.stringify(jwtPayload) !== JSON.stringify(payload)) {
         return {
           valid: false,
-          error: 'Payload mismatch between signature and data'
+          error: 'Payload mismatch between signature and data',
         };
       }
 
@@ -119,14 +124,15 @@ export class QRSignatureService {
       if (age > this.maxAge) {
         return {
           valid: false,
-          error: 'QR code signature has expired'
+          error: 'QR code signature has expired',
         };
       }
 
-      if (payload.timestamp > now + 60000) { // Allow 1 minute clock skew
+      if (payload.timestamp > now + 60000) {
+        // Allow 1 minute clock skew
         return {
           valid: false,
-          error: 'QR code timestamp is in the future'
+          error: 'QR code timestamp is in the future',
         };
       }
 
@@ -134,20 +140,20 @@ export class QRSignatureService {
       if (payload.version !== this.version) {
         return {
           valid: false,
-          error: `Unsupported QR signature version: ${payload.version}`
+          error: `Unsupported QR signature version: ${payload.version}`,
         };
       }
 
       return {
         valid: true,
         payload,
-        timestamp: now
+        timestamp: now,
       };
     } catch (error) {
       console.error('[Security] QR signature verification failed:', error);
       return {
         valid: false,
-        error: `Signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Signature verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }
@@ -169,7 +175,7 @@ export class QRSignatureService {
     const expectedHmac = createHmac('sha256', this.secret)
       .update(data + salt)
       .digest('hex');
-    
+
     return hmac === expectedHmac;
   }
 
@@ -179,7 +185,7 @@ export class QRSignatureService {
   async generateSecureToken(payload: Record<string, any>): Promise<string> {
     const tokenData = JSON.stringify(payload);
     const signed = await this.signQRData(tokenData);
-    
+
     // Encode the signed data as base64 for URL safety
     return Buffer.from(JSON.stringify(signed)).toString('base64url');
   }
@@ -192,12 +198,12 @@ export class QRSignatureService {
       // Decode from base64
       const decoded = Buffer.from(token, 'base64url').toString('utf8');
       const signedData: SignedQRData = JSON.parse(decoded);
-      
+
       return await this.verifyQRSignature(signedData);
     } catch (error) {
       return {
         valid: false,
-        error: `Token decoding failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Token decoding failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }
@@ -217,7 +223,7 @@ export class QRSignatureService {
       configured: this.isConfigured(),
       version: this.version,
       algorithm: this.algorithm,
-      maxAge: this.maxAge
+      maxAge: this.maxAge,
     };
   }
 }

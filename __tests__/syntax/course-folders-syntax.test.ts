@@ -5,10 +5,10 @@ describe('Course Folders Syntax', () => {
   it('should be able to import the folders utility functions', async () => {
     // We're not actually testing the functions here, just that they can be imported
     // This helps catch syntax errors in our implementation
-    
+
     // This would normally work, but we'll skip it since we're in a test environment
     // const { createCourseFolder, getCoursesInFolder } = await import('../../lib/courses/folders');
-    
+
     // Instead, we'll just verify the file exists
     expect(true).toBe(true);
   });
@@ -22,7 +22,7 @@ describe('Course Folders Syntax', () => {
       CREATE OR REPLACE FUNCTION is_course_folder(course_id UUID)
       CREATE OR REPLACE VIEW courses_with_folder_info
     `;
-    
+
     expect(migrationContent).toContain('parent_course_id');
     expect(migrationContent).toContain('is_folder');
     expect(migrationContent).toContain('get_child_courses');
@@ -47,7 +47,7 @@ describe('Course Folders Syntax', () => {
       parent_course_id: validatedData.parent_course_id,
       is_folder: validatedData.is_folder ?? false,
     `;
-    
+
     expect(apiChanges).toContain('parent_course_id');
     expect(apiChanges).toContain('is_folder');
   });
@@ -74,7 +74,7 @@ describe('Course Folders Syntax', () => {
         </p>
       )}
     `;
-    
+
     expect(uiChanges).toContain('is_folder');
     expect(uiChanges).toContain('parent_course_id');
     expect(uiChanges).toContain('selectedFolder');

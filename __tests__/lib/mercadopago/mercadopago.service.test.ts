@@ -22,7 +22,9 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 const { MercadoPagoConfig, Preference, Payment } = await import('mercadopago');
-const { createServerSupabaseServiceClient } = await import('@/lib/supabase/server');
+const { createServerSupabaseServiceClient } = await import(
+  '@/lib/supabase/server'
+);
 
 const mockSupabase = {
   from: vi.fn().mockReturnThis(),
@@ -39,8 +41,10 @@ describe('MercadoPago Service', () => {
     vi.clearAllMocks();
     process.env.MP_ACCESS_TOKEN = 'test-access-token';
     process.env.NEXT_PUBLIC_BASE_URL = 'https://test.example.com';
-    
-    vi.mocked(createServerSupabaseServiceClient).mockReturnValue(mockSupabase as any);
+
+    vi.mocked(createServerSupabaseServiceClient).mockReturnValue(
+      mockSupabase as any
+    );
   });
 
   afterEach(() => {
@@ -126,7 +130,8 @@ describe('MercadoPago Service', () => {
       };
 
       const mockPreferenceInstance = {
-        create: vi.fn()
+        create: vi
+          .fn()
           .mockRejectedValueOnce(new Error('Network error'))
           .mockResolvedValueOnce({
             id: 'preference-id-123',
@@ -169,7 +174,7 @@ describe('MercadoPago Service', () => {
     it('should throw error when MP_ACCESS_TOKEN is missing', async () => {
       // Arrange
       delete process.env.MP_ACCESS_TOKEN;
-      
+
       const params = {
         orderId: crypto.randomUUID(),
         items: [{ title: 'Test Item', quantity: 1, unit_price: 10 }],

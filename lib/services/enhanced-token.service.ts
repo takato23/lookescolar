@@ -7,11 +7,11 @@ import {
 import type { Database } from '@/types/database';
 
 // Enhanced token types for different access patterns
-export type TokenType = 
-  | 'student_access'    // Individual student access
-  | 'family_access'     // Multi-child family access
-  | 'group_access'      // Class/group access
-  | 'event_access'      // Full event access
+export type TokenType =
+  | 'student_access' // Individual student access
+  | 'family_access' // Multi-child family access
+  | 'group_access' // Class/group access
+  | 'event_access' // Full event access
   | 'temporary_access'; // Short-term access
 
 export interface TokenMetadata {
@@ -88,14 +88,14 @@ export class EnhancedTokenService {
    * Generate a token for student access
    */
   async generateStudentToken(
-    studentId: string, 
+    studentId: string,
     options: TokenGenerationOptions = {}
   ): Promise<EnhancedTokenData> {
-    const { 
-      expiryDays = 30, 
+    const {
+      expiryDays = 30,
       distributionMethod = 'direct',
       metadata = {},
-      rotateExisting = false 
+      rotateExisting = false,
     } = options;
 
     const supabase = await this.supabase;
@@ -132,13 +132,13 @@ export class EnhancedTokenService {
       metadata: {
         generatedAt: new Date().toISOString(),
         distributionMethod: distributionMethod as any,
-        ...metadata
+        ...metadata,
       },
       accessRules: {
         maxDevices: options.maxDevices || 3,
       },
       studentIds: [studentId],
-      eventId: student.event_id
+      eventId: student.event_id,
     };
 
     // Store in enhanced_tokens table
@@ -152,7 +152,7 @@ export class EnhancedTokenService {
       studentId: maskToken(studentId),
       token: maskToken(token),
       type: 'student_access',
-      expiresAt: expiresAt.toISOString()
+      expiresAt: expiresAt.toISOString(),
     });
 
     return tokenData;
@@ -162,12 +162,12 @@ export class EnhancedTokenService {
    * Generate a family token for multiple children access
    */
   async generateFamilyToken(
-    studentIds: string[], 
+    studentIds: string[],
     familyEmail: string,
     options: TokenGenerationOptions = {}
   ): Promise<EnhancedTokenData> {
-    const { 
-      expiryDays = 30, 
+    const {
+      expiryDays = 30,
       distributionMethod = 'email',
       metadata = {},
     } = options;
@@ -189,13 +189,18 @@ export class EnhancedTokenService {
     }
 
     // Verify all students belong to same event
-    const eventIds = [...new Set(students.map(s => s.event_id))];
+    const eventIds = [...new Set(students.map((s) => s.event_id))];
     if (eventIds.length > 1) {
-      throw new Error('Students must belong to the same event for family access');
+      throw new Error(
+        'Students must belong to the same event for family access'
+      );
     }
 
     // Check for existing family token
-    const existingToken = await this.getActiveFamilyToken(familyEmail, eventIds[0]);
+    const existingToken = await this.getActiveFamilyToken(
+      familyEmail,
+      eventIds[0]
+    );
     if (existingToken && !options.rotateExisting) {
       return existingToken;
     }
@@ -213,14 +218,14 @@ export class EnhancedTokenService {
       metadata: {
         generatedAt: new Date().toISOString(),
         distributionMethod: distributionMethod as any,
-        ...metadata
+        ...metadata,
       },
       accessRules: {
         maxDevices: options.maxDevices || 5,
       },
       studentIds,
       familyEmail,
-      eventId: eventIds[0]
+      eventId: eventIds[0],
     };
 
     // Store enhanced token
@@ -237,7 +242,7 @@ export class EnhancedTokenService {
       token: maskToken(token),
       type: 'family_access',
       studentCount: studentIds.length,
-      expiresAt: expiresAt.toISOString()
+      expiresAt: expiresAt.toISOString(),
     });
 
     return tokenData;
@@ -252,7 +257,7 @@ export class EnhancedTokenService {
     options: TokenGenerationOptions = {}
   ): Promise<BulkTokenGenerationResult> {
     const supabase = await this.supabase;
-    
+
     // Get all students in the event
     const { data: students, error: studentsError } = await supabase
       .from('students')
@@ -272,16 +277,16 @@ export class EnhancedTokenService {
     if (type === 'family_access') {
       // Group students by family email
       const familyGroups = new Map<string, string[]>();
-      
+
       for (const student of students) {
         if (!student.parent_email) {
           failed.push({
             identifier: `${student.first_name} ${student.last_name}`,
-            error: 'No parent email provided'
+            error: 'No parent email provided',
           });
           continue;
         }
-        
+
         const email = student.parent_email.toLowerCase();
         const studentIds = familyGroups.get(email) || [];
         studentIds.push(student.id);
@@ -291,18 +296,21 @@ export class EnhancedTokenService {
       // Generate family tokens
       for (const [familyEmail, studentIds] of familyGroups) {
         try {
-          const existingToken = await this.getActiveFamilyToken(familyEmail, eventId);
-          
+          const existingToken = await this.getActiveFamilyToken(
+            familyEmail,
+            eventId
+          );
+
           if (existingToken && !options.rotateExisting) {
             successful.set(familyEmail, existingToken);
           } else {
             const tokenData = await this.generateFamilyToken(
-              studentIds, 
-              familyEmail, 
+              studentIds,
+              familyEmail,
               options
             );
             successful.set(familyEmail, tokenData);
-            
+
             if (existingToken) {
               tokensRotated++;
             } else {
@@ -312,7 +320,7 @@ export class EnhancedTokenService {
         } catch (error: any) {
           failed.push({
             identifier: familyEmail,
-            error: error.message
+            error: error.message,
           });
         }
       }
@@ -321,13 +329,16 @@ export class EnhancedTokenService {
       for (const student of students) {
         try {
           const existingToken = await this.getActiveStudentToken(student.id);
-          
+
           if (existingToken && !options.rotateExisting) {
             successful.set(student.id, existingToken);
           } else {
-            const tokenData = await this.generateStudentToken(student.id, options);
+            const tokenData = await this.generateStudentToken(
+              student.id,
+              options
+            );
             successful.set(student.id, tokenData);
-            
+
             if (existingToken) {
               tokensRotated++;
             } else {
@@ -337,7 +348,7 @@ export class EnhancedTokenService {
         } catch (error: any) {
           failed.push({
             identifier: `${student.first_name} ${student.last_name}`,
-            error: error.message
+            error: error.message,
           });
         }
       }
@@ -351,8 +362,8 @@ export class EnhancedTokenService {
         successful: successful.size,
         failed: failed.length,
         tokensGenerated,
-        tokensRotated
-      }
+        tokensRotated,
+      },
     };
   }
 
@@ -366,7 +377,7 @@ export class EnhancedTokenService {
 
     try {
       const supabase = await this.supabase;
-      
+
       // Get enhanced token data
       const { data: enhancedToken } = await supabase
         .from('enhanced_tokens')
@@ -383,20 +394,22 @@ export class EnhancedTokenService {
       // Check expiration
       const now = new Date();
       const expiresAt = new Date(enhancedToken.expires_at);
-      
+
       if (expiresAt <= now) {
         console.log({
           event: 'token_expired',
           token: maskToken(token),
-          expiresAt: enhancedToken.expires_at
+          expiresAt: enhancedToken.expires_at,
         });
         return { isValid: false, accessLevel: 'none' };
       }
 
       // Calculate expiration warning
-      const expiresInDays = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const expiresInDays = Math.ceil(
+        (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
       const warnings: string[] = [];
-      
+
       if (expiresInDays <= 7) {
         warnings.push(`Token expires in ${expiresInDays} days`);
       }
@@ -429,13 +442,13 @@ export class EnhancedTokenService {
           accessRules: enhancedToken.access_rules || {},
           studentIds: enhancedToken.student_ids,
           familyEmail: enhancedToken.family_email,
-          eventId: enhancedToken.event_id
+          eventId: enhancedToken.event_id,
         },
         students: students || [],
         event: event || undefined,
         accessLevel: this.determineAccessLevel(enhancedToken.type as TokenType),
         warnings,
-        expiresInDays
+        expiresInDays,
       };
 
       // For single student access, also include the individual student
@@ -448,7 +461,7 @@ export class EnhancedTokenService {
       console.error({
         event: 'token_validation_error',
         token: maskToken(token),
-        error: error.message
+        error: error.message,
       });
       return { isValid: false, accessLevel: 'none' };
     }
@@ -474,19 +487,26 @@ export class EnhancedTokenService {
 
     if (error) {
       console.error('Error fetching expiring tokens:', error);
-      return { tokens: [], byType: {} as Record<TokenType, number>, totalCount: 0 };
+      return {
+        tokens: [],
+        byType: {} as Record<TokenType, number>,
+        totalCount: 0,
+      };
     }
 
     const tokens = (expiringTokens || []).map(this.mapDbTokenToEnhanced);
-    const byType = tokens.reduce((acc, token) => {
-      acc[token.type] = (acc[token.type] || 0) + 1;
-      return acc;
-    }, {} as Record<TokenType, number>);
+    const byType = tokens.reduce(
+      (acc, token) => {
+        acc[token.type] = (acc[token.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<TokenType, number>
+    );
 
     return {
       tokens,
       byType,
-      totalCount: tokens.length
+      totalCount: tokens.length,
     };
   }
 
@@ -504,23 +524,29 @@ export class EnhancedTokenService {
 
     for (const tokenData of tokens) {
       try {
-        if (tokenData.type === 'family_access' && tokenData.studentIds && tokenData.familyEmail) {
+        if (
+          tokenData.type === 'family_access' &&
+          tokenData.studentIds &&
+          tokenData.familyEmail
+        ) {
           await this.generateFamilyToken(
             tokenData.studentIds,
             tokenData.familyEmail,
             { rotateExisting: true }
           );
-        } else if (tokenData.type === 'student_access' && tokenData.studentIds?.[0]) {
-          await this.generateStudentToken(
-            tokenData.studentIds[0],
-            { rotateExisting: true }
-          );
+        } else if (
+          tokenData.type === 'student_access' &&
+          tokenData.studentIds?.[0]
+        ) {
+          await this.generateStudentToken(tokenData.studentIds[0], {
+            rotateExisting: true,
+          });
         }
         rotated++;
       } catch (error: any) {
         errors.push({
           tokenId: tokenData.id,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -529,13 +555,13 @@ export class EnhancedTokenService {
       event: 'bulk_token_rotation_completed',
       totalExpiring: tokens.length,
       rotated,
-      failed: errors.length
+      failed: errors.length,
     });
 
     return {
       rotated,
       failed: errors.length,
-      errors
+      errors,
     };
   }
 
@@ -543,7 +569,8 @@ export class EnhancedTokenService {
    * Generate portal URLs for tokens
    */
   static generatePortalUrl(token: string, baseUrl?: string): string {
-    const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const base =
+      baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     return `${base}/f/${token}`;
   }
 
@@ -562,11 +589,19 @@ export class EnhancedTokenService {
 
     while (attempts < maxAttempts) {
       const token = generateSecureToken();
-      
+
       // Check uniqueness in both enhanced_tokens and subject_tokens
       const [{ data: enhancedDupe }, { data: legacyDupe }] = await Promise.all([
-        supabase.from('enhanced_tokens').select('id').eq('token', token).single(),
-        supabase.from('subject_tokens').select('id').eq('token', token).single()
+        supabase
+          .from('enhanced_tokens')
+          .select('id')
+          .eq('token', token)
+          .single(),
+        supabase
+          .from('subject_tokens')
+          .select('id')
+          .eq('token', token)
+          .single(),
       ]);
 
       if (!enhancedDupe && !legacyDupe) {
@@ -579,44 +614,48 @@ export class EnhancedTokenService {
     throw new Error('Failed to generate unique token after multiple attempts');
   }
 
-  private async storeEnhancedToken(tokenData: EnhancedTokenData): Promise<void> {
+  private async storeEnhancedToken(
+    tokenData: EnhancedTokenData
+  ): Promise<void> {
     const supabase = await this.supabase;
-    
-    const { error } = await supabase
-      .from('enhanced_tokens')
-      .upsert({
-        id: tokenData.id,
-        token: tokenData.token,
-        type: tokenData.type,
-        expires_at: tokenData.expiresAt.toISOString(),
-        is_active: tokenData.isActive,
-        metadata: tokenData.metadata,
-        access_rules: tokenData.accessRules,
-        student_ids: tokenData.studentIds,
-        family_email: tokenData.familyEmail,
-        event_id: tokenData.eventId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+
+    const { error } = await supabase.from('enhanced_tokens').upsert({
+      id: tokenData.id,
+      token: tokenData.token,
+      type: tokenData.type,
+      expires_at: tokenData.expiresAt.toISOString(),
+      is_active: tokenData.isActive,
+      metadata: tokenData.metadata,
+      access_rules: tokenData.accessRules,
+      student_ids: tokenData.studentIds,
+      family_email: tokenData.familyEmail,
+      event_id: tokenData.eventId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     if (error) {
       throw new Error(`Failed to store enhanced token: ${error.message}`);
     }
   }
 
-  private async createSubjectToken(studentId: string, token: string, expiresAt: Date): Promise<void> {
+  private async createSubjectToken(
+    studentId: string,
+    token: string,
+    expiresAt: Date
+  ): Promise<void> {
     const supabase = await this.supabase;
-    
-    await supabase
-      .from('subject_tokens')
-      .upsert({
-        subject_id: studentId,
-        token,
-        expires_at: expiresAt.toISOString()
-      });
+
+    await supabase.from('subject_tokens').upsert({
+      subject_id: studentId,
+      token,
+      expires_at: expiresAt.toISOString(),
+    });
   }
 
-  private async getActiveStudentToken(studentId: string): Promise<EnhancedTokenData | null> {
+  private async getActiveStudentToken(
+    studentId: string
+  ): Promise<EnhancedTokenData | null> {
     const supabase = await this.supabase;
     const now = new Date().toISOString();
 
@@ -632,7 +671,10 @@ export class EnhancedTokenService {
     return data ? this.mapDbTokenToEnhanced(data) : null;
   }
 
-  private async getActiveFamilyToken(familyEmail: string, eventId: string): Promise<EnhancedTokenData | null> {
+  private async getActiveFamilyToken(
+    familyEmail: string,
+    eventId: string
+  ): Promise<EnhancedTokenData | null> {
     const supabase = await this.supabase;
     const now = new Date().toISOString();
 
@@ -649,18 +691,22 @@ export class EnhancedTokenService {
     return data ? this.mapDbTokenToEnhanced(data) : null;
   }
 
-  private async validateLegacyToken(token: string): Promise<TokenValidationResult> {
+  private async validateLegacyToken(
+    token: string
+  ): Promise<TokenValidationResult> {
     const supabase = await this.supabase;
 
     const { data: tokenInfo } = await supabase
       .from('subject_tokens')
-      .select(`
+      .select(
+        `
         *,
         subjects (
           *,
           events (*)
         )
-      `)
+      `
+      )
       .eq('token', token)
       .single();
 
@@ -676,29 +722,38 @@ export class EnhancedTokenService {
     return {
       isValid: true,
       student: tokenInfo.subjects as any,
-      accessLevel: 'student'
+      accessLevel: 'student',
     };
   }
 
   private async updateTokenUsage(token: string): Promise<void> {
     const supabase = await this.supabase;
-    
+
     await supabase
       .from('enhanced_tokens')
       .update({
         last_used_at: new Date().toISOString(),
-        usage_count: supabase.rpc('increment_usage_count', { token_value: token })
+        usage_count: supabase.rpc('increment_usage_count', {
+          token_value: token,
+        }),
       })
       .eq('token', token);
   }
 
-  private determineAccessLevel(type: TokenType): TokenValidationResult['accessLevel'] {
+  private determineAccessLevel(
+    type: TokenType
+  ): TokenValidationResult['accessLevel'] {
     switch (type) {
-      case 'student_access': return 'student';
-      case 'family_access': return 'family';
-      case 'group_access': return 'group';
-      case 'event_access': return 'event';
-      default: return 'none';
+      case 'student_access':
+        return 'student';
+      case 'family_access':
+        return 'family';
+      case 'group_access':
+        return 'group';
+      case 'event_access':
+        return 'event';
+      default:
+        return 'none';
     }
   }
 
@@ -713,7 +768,7 @@ export class EnhancedTokenService {
       accessRules: dbToken.access_rules || {},
       studentIds: dbToken.student_ids,
       familyEmail: dbToken.family_email,
-      eventId: dbToken.event_id
+      eventId: dbToken.event_id,
     };
   }
 }

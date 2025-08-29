@@ -1,25 +1,36 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
-  LineChart, Line, Legend
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
 } from 'recharts';
-import { 
-  Camera, 
-  BarChart3, 
-  Settings, 
-  Download, 
-  Upload, 
-  WifiOff, 
-  Wifi, 
+import {
+  Camera,
+  BarChart3,
+  Settings,
+  Download,
+  Upload,
+  WifiOff,
+  Wifi,
   Database,
   Clock,
   CheckCircle,
   AlertCircle,
   TrendingUp,
   Users,
-  Zap
+  Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -71,13 +82,13 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
-    
+
     // Load initial data
     loadDashboardData();
-    
+
     // Set up auto-refresh
     const interval = setInterval(loadDashboardData, 60000); // Refresh every minute
-    
+
     return () => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
@@ -88,7 +99,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // In a real implementation, you would fetch actual data from APIs
       // For now, we'll simulate the data
       setTimeout(() => {
@@ -129,38 +140,44 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
             '2023-06-05': 267,
           },
         });
-        
+
         setSystemStatus({
           qrGeneration: 'healthy',
           qrDetection: 'healthy',
           cache: 'healthy',
           database: 'healthy',
         });
-        
+
         setLoading(false);
       }, 500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load dashboard data'
+      );
       setLoading(false);
     }
   };
 
   // Prepare data for charts
-  const hourlyData = metrics ? Object.entries(metrics.scansByHour).map(([hour, count]) => ({
-    hour: `${hour}:00`,
-    scans: count,
-  })) : [];
+  const hourlyData = metrics
+    ? Object.entries(metrics.scansByHour).map(([hour, count]) => ({
+        hour: `${hour}:00`,
+        scans: count,
+      }))
+    : [];
 
-  const dailyData = metrics ? Object.entries(metrics.scansByDay).map(([date, count]) => ({
-    date: date.split('-')[2], // Just the day
-    scans: count,
-  })) : [];
+  const dailyData = metrics
+    ? Object.entries(metrics.scansByDay).map(([date, count]) => ({
+        date: date.split('-')[2], // Just the day
+        scans: count,
+      }))
+    : [];
 
   const deviceData = metrics ? metrics.topDevices : [];
 
   if (loading && !metrics) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-lg">Loading QR dashboard...</div>
       </div>
     );
@@ -168,10 +185,12 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+      <div className="rounded border border-red-400 bg-red-100 p-4 text-red-700">
         <h3 className="font-bold">Error</h3>
         <p>{error}</p>
-        <Button onClick={loadDashboardData} className="mt-2">Retry</Button>
+        <Button onClick={loadDashboardData} className="mt-2">
+          Retry
+        </Button>
       </div>
     );
   }
@@ -179,7 +198,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">QR Management Dashboard</h1>
         <div className="flex items-center gap-2">
           {isOnline ? (
@@ -211,52 +230,74 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics?.totalScans.toLocaleString() || '0'}</div>
-                <p className="text-xs text-muted-foreground">+12% from last week</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">
+                  Total Scans
+                </CardTitle>
+                <BarChart3 className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics ? `${(metrics.successRate * 100).toFixed(1)}%` : '0%'}
+                  {metrics?.totalScans.toLocaleString() || '0'}
                 </div>
-                <p className="text-xs text-muted-foreground">+2.3% from last week</p>
+                <p className="text-muted-foreground text-xs">
+                  +12% from last week
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Scan Time</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">
+                  Success Rate
+                </CardTitle>
+                <CheckCircle className="text-muted-foreground h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {metrics
+                    ? `${(metrics.successRate * 100).toFixed(1)}%`
+                    : '0%'}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  +2.3% from last week
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Avg Scan Time
+                </CardTitle>
+                <Clock className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {metrics ? `${metrics.avgScanTime}ms` : '0ms'}
                 </div>
-                <p className="text-xs text-muted-foreground">-120ms from last week</p>
+                <p className="text-muted-foreground text-xs">
+                  -120ms from last week
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Unique Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">
+                  Unique Users
+                </CardTitle>
+                <Users className="text-muted-foreground h-4 w-4" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{metrics?.uniqueScans.toLocaleString() || '0'}</div>
-                <p className="text-xs text-muted-foreground">+8% from last week</p>
+                <div className="text-2xl font-bold">
+                  {metrics?.uniqueScans.toLocaleString() || '0'}
+                </div>
+                <p className="text-muted-foreground text-xs">
+                  +8% from last week
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -270,28 +311,52 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="flex items-center justify-between p-3 border rounded">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="flex items-center justify-between rounded border p-3">
                   <span className="font-medium">QR Generation</span>
-                  <Badge variant={systemStatus?.qrGeneration === 'healthy' ? 'secondary' : 'destructive'}>
+                  <Badge
+                    variant={
+                      systemStatus?.qrGeneration === 'healthy'
+                        ? 'secondary'
+                        : 'destructive'
+                    }
+                  >
                     {systemStatus?.qrGeneration || 'unknown'}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 border rounded">
+                <div className="flex items-center justify-between rounded border p-3">
                   <span className="font-medium">QR Detection</span>
-                  <Badge variant={systemStatus?.qrDetection === 'healthy' ? 'secondary' : 'destructive'}>
+                  <Badge
+                    variant={
+                      systemStatus?.qrDetection === 'healthy'
+                        ? 'secondary'
+                        : 'destructive'
+                    }
+                  >
                     {systemStatus?.qrDetection || 'unknown'}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 border rounded">
+                <div className="flex items-center justify-between rounded border p-3">
                   <span className="font-medium">Cache</span>
-                  <Badge variant={systemStatus?.cache === 'healthy' ? 'secondary' : 'destructive'}>
+                  <Badge
+                    variant={
+                      systemStatus?.cache === 'healthy'
+                        ? 'secondary'
+                        : 'destructive'
+                    }
+                  >
                     {systemStatus?.cache || 'unknown'}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between p-3 border rounded">
+                <div className="flex items-center justify-between rounded border p-3">
                   <span className="font-medium">Database</span>
-                  <Badge variant={systemStatus?.database === 'healthy' ? 'secondary' : 'destructive'}>
+                  <Badge
+                    variant={
+                      systemStatus?.database === 'healthy'
+                        ? 'secondary'
+                        : 'destructive'
+                    }
+                  >
                     {systemStatus?.database || 'unknown'}
                   </Badge>
                 </div>
@@ -300,7 +365,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
           </Card>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Scans by Hour */}
             <Card>
               <CardHeader>
@@ -335,11 +400,11 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="scans" 
-                        stroke="#8884d8" 
-                        activeDot={{ r: 8 }} 
+                      <Line
+                        type="monotone"
+                        dataKey="scans"
+                        stroke="#8884d8"
+                        activeDot={{ r: 8 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -364,10 +429,15 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="count"
-                        label={({ device, percent }) => `${device}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ device, percent }) =>
+                          `${device}: ${(percent * 100).toFixed(0)}%`
+                        }
                       >
                         {deviceData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -381,7 +451,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
 
         {/* Scanner Tab */}
         <TabsContent value="scanner">
-          <EnhancedQRScanner 
+          <EnhancedQRScanner
             eventId={eventId}
             enableAnalytics={true}
             showAdvancedControls={true}
@@ -391,9 +461,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
 
         {/* Offline Tab */}
         <TabsContent value="offline">
-          <OfflineQRScanner 
-            eventId={eventId}
-          />
+          <OfflineQRScanner eventId={eventId} />
         </TabsContent>
 
         {/* Performance Tab */}

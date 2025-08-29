@@ -30,24 +30,24 @@ interface UnifiedCartStore {
   isOpen: boolean;
   contactInfo: ContactInfo | null;
   context: GalleryContextData | null;
-  
+
   // Acciones del carrito
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (photoId: string) => void;
   updateQuantity: (photoId: string, quantity: number) => void;
   clearCart: () => void;
-  
+
   // Control del drawer
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
-  
+
   // Información de contacto
   setContactInfo: (info: ContactInfo) => void;
-  
+
   // Contexto
   setContext: (context: GalleryContextData) => void;
-  
+
   // Cálculos
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -68,14 +68,16 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
       // Acciones del carrito
       addItem: (item) =>
         set((state) => {
-          debugMigration('Adding item to unified cart', { 
-            photoId: item.photoId, 
+          debugMigration('Adding item to unified cart', {
+            photoId: item.photoId,
             context: state.context?.context,
-            currentItemCount: state.items.length
+            currentItemCount: state.items.length,
           });
 
-          const existingItem = state.items.find((i) => i.photoId === item.photoId);
-          
+          const existingItem = state.items.find(
+            (i) => i.photoId === item.photoId
+          );
+
           if (existingItem) {
             // Incrementar cantidad si el item ya existe
             return {
@@ -86,7 +88,7 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
               ),
             };
           }
-          
+
           // Agregar nuevo item con cantidad 1 y contexto
           const newItem: CartItem = {
             ...item,
@@ -96,24 +98,26 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
               ...item.metadata,
               eventId: state.context?.eventId,
               context: state.context?.context,
-              ...(state.context?.context === 'family' && { token: state.context.token }),
+              ...(state.context?.context === 'family' && {
+                token: state.context.token,
+              }),
             },
           };
-          
+
           return {
             items: [...state.items, newItem],
           };
         }),
-      
+
       removeItem: (photoId) =>
         set((state) => {
           debugMigration('Removing item from unified cart', { photoId });
-          
+
           return {
             items: state.items.filter((item) => item.photoId !== photoId),
           };
         }),
-      
+
       updateQuantity: (photoId, quantity) =>
         set((state) => {
           if (quantity <= 0) {
@@ -122,76 +126,76 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
               items: state.items.filter((item) => item.photoId !== photoId),
             };
           }
-          
+
           return {
             items: state.items.map((item) =>
               item.photoId === photoId ? { ...item, quantity } : item
             ),
           };
         }),
-      
+
       clearCart: () => {
         debugMigration('Clearing unified cart');
         set({ items: [], contactInfo: null });
       },
-      
+
       // Control del drawer
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
-      
+
       openCart: () => {
         debugMigration('Opening unified cart');
         set({ isOpen: true });
       },
-      
+
       closeCart: () => {
         debugMigration('Closing unified cart');
         set({ isOpen: false });
       },
-      
+
       // Información de contacto
       setContactInfo: (info) => {
         debugMigration('Setting contact info in unified cart');
         set({ contactInfo: info });
       },
-      
+
       // Contexto
       setContext: (context) => {
-        debugMigration('Setting context in unified cart', { 
+        debugMigration('Setting context in unified cart', {
           context: context.context,
-          eventId: context.eventId
+          eventId: context.eventId,
         });
-        
+
         set({ context });
       },
-      
+
       // Cálculos
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
       },
-      
+
       getTotalPrice: () => {
         return get().items.reduce(
           (total, item) => total + item.price * item.quantity,
           0
         );
       },
-      
+
       getItemsCount: () => {
         return get().items.length;
       },
-      
+
       isItemInCart: (photoId: string) => {
-        return get().items.some(item => item.photoId === photoId);
+        return get().items.some((item) => item.photoId === photoId);
       },
-      
+
       getItemQuantity: (photoId: string) => {
-        const item = get().items.find(item => item.photoId === photoId);
+        const item = get().items.find((item) => item.photoId === photoId);
         return item?.quantity || 0;
       },
     }),
     {
       name: 'unified-lookescolar-cart',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         items: state.items,
         contactInfo: state.contactInfo,
         // No persistir isOpen ni context - se recalculan en cada sesión
@@ -206,23 +210,23 @@ export const useCartStore = useUnifiedCartStore; // Alias principal
 // Hook específico para contexto familiar (compatibilidad con componentes existentes)
 export const useFamilyCartStore = () => {
   const store = useUnifiedCartStore();
-  
+
   // Verificar que estamos en contexto familiar
   if (store.context?.context !== 'family') {
     debugMigration('Warning: useFamilyCartStore used outside family context');
   }
-  
+
   return store;
 };
 
 // Hook específico para contexto público (compatibilidad con componentes existentes)
 export const usePublicCartStore = () => {
   const store = useUnifiedCartStore();
-  
+
   // Verificar que estamos en contexto público
   if (store.context?.context !== 'public') {
     debugMigration('Warning: usePublicCartStore used outside public context');
   }
-  
+
   return store;
 };

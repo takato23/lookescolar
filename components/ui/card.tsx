@@ -258,7 +258,17 @@ interface StatsCardProps extends CardProps {
 
 const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
   (
-    { title, value, description, trend, trendValue, icon, className, variant = 'glass', ...props },
+    {
+      title,
+      value,
+      description,
+      trend,
+      trendValue,
+      icon,
+      className,
+      variant = 'glass',
+      ...props
+    },
     ref
   ) => {
     const trendColors = {
@@ -269,7 +279,7 @@ const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
 
     // Special handling for glass-ios26 variant
     const isGlassIOS26 = variant === 'glass-ios26';
-    
+
     return (
       <Card
         ref={ref}
@@ -279,35 +289,43 @@ const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <p className={clsx(
-              'text-sm font-medium',
-              isGlassIOS26 ? 'text-foreground/80' : 'text-muted-foreground'
-            )}>
+            <p
+              className={clsx(
+                'text-sm font-medium',
+                isGlassIOS26 ? 'text-foreground/80' : 'text-muted-foreground'
+              )}
+            >
               {title}
             </p>
-            <p className={clsx(
-              'mt-1 text-3xl font-bold',
-              isGlassIOS26 ? 'text-foreground' : 'text-foreground'
-            )}>
+            <p
+              className={clsx(
+                'mt-1 text-3xl font-bold',
+                isGlassIOS26 ? 'text-foreground' : 'text-foreground'
+              )}
+            >
               {value}
             </p>
             {description && (
-              <p className={clsx(
-                'mt-1 text-sm',
-                isGlassIOS26 ? 'text-foreground/70' : 'text-muted-foreground'
-              )}>
+              <p
+                className={clsx(
+                  'mt-1 text-sm',
+                  isGlassIOS26 ? 'text-foreground/70' : 'text-muted-foreground'
+                )}
+              >
                 {description}
               </p>
             )}
           </div>
 
           {icon && (
-            <div className={clsx(
-              'ml-4 rounded-lg p-2',
-              isGlassIOS26 
-                ? 'bg-white/10 text-foreground' 
-                : 'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400'
-            )}>
+            <div
+              className={clsx(
+                'ml-4 rounded-lg p-2',
+                isGlassIOS26
+                  ? 'text-foreground bg-white/10'
+                  : 'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400'
+              )}
+            >
               {icon}
             </div>
           )}

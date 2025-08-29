@@ -1,31 +1,51 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Search, X, Loader2, Users, Camera, Folder, 
-  GraduationCap, BookOpen, User, FileImage,
-  Clock, ArrowRight, Filter, SortAsc, Zap
+import {
+  Search,
+  X,
+  Loader2,
+  Users,
+  Camera,
+  Folder,
+  GraduationCap,
+  BookOpen,
+  User,
+  FileImage,
+  Clock,
+  ArrowRight,
+  Filter,
+  SortAsc,
+  Zap,
 } from 'lucide-react';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+// TEMP: Commented out missing command component
+// import {
+//   Command,
+//   CommandEmpty,
+//   CommandGroup,
+//   CommandInput,
+//   CommandItem,
+//   CommandList,
+//   CommandSeparator,
+// } from '@/components/ui/command';
+// TEMP: Commented out missing popover component
+// import {
+//   Popover,
+//   PopoverContent,
+//   PopoverTrigger,
+// } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { useDebounce } from '@/hooks/use-debounce';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Search result types
 interface SearchResult {
@@ -74,10 +94,10 @@ interface UniversalSearchProps {
 export default function UniversalSearch({
   eventId,
   onResultSelect,
-  placeholder = "Buscar en todo el evento...",
+  placeholder = 'Buscar en todo el evento...',
   className,
   showFilters = true,
-  maxResults = 50
+  maxResults = 50,
 }: UniversalSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -86,66 +106,75 @@ export default function UniversalSearch({
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [filters, setFilters] = useState<SearchFilters>({
     types: [],
-    tags: []
+    tags: [],
   });
   const [quickFilters, setQuickFilters] = useState({
     withPhotos: false,
     approved: false,
-    recent: false
+    recent: false,
   });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debouncedQuery = useDebounce(query, 300);
 
   // Search function
-  const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const url = new URL(`/api/admin/events/${eventId}/search`, window.location.origin);
-      url.searchParams.set('q', searchQuery);
-      url.searchParams.set('limit', maxResults.toString());
-      
-      // Add filters
-      if (filters.types.length > 0) {
-        url.searchParams.set('types', filters.types.join(','));
-      }
-      if (filters.tags.length > 0) {
-        url.searchParams.set('tags', filters.tags.join(','));
-      }
-      if (quickFilters.withPhotos) {
-        url.searchParams.set('has_photos', 'true');
-      }
-      if (quickFilters.approved) {
-        url.searchParams.set('approved', 'true');
-      }
-      if (quickFilters.recent) {
-        url.searchParams.set('recent', 'true');
+  const performSearch = useCallback(
+    async (searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        setResults([]);
+        return;
       }
 
-      const response = await fetch(url.toString());
-      const data = await response.json();
-      
-      setResults(data.results || []);
-      
-      // Save to recent searches
-      if (searchQuery.length > 2) {
-        setRecentSearches(prev => {
-          const updated = [searchQuery, ...prev.filter(s => s !== searchQuery)];
-          return updated.slice(0, 5); // Keep only 5 recent searches
-        });
+      setLoading(true);
+      try {
+        const url = new URL(
+          `/api/admin/events/${eventId}/search`,
+          window.location.origin
+        );
+        url.searchParams.set('q', searchQuery);
+        url.searchParams.set('limit', maxResults.toString());
+
+        // Add filters
+        if (filters.types.length > 0) {
+          url.searchParams.set('types', filters.types.join(','));
+        }
+        if (filters.tags.length > 0) {
+          url.searchParams.set('tags', filters.tags.join(','));
+        }
+        if (quickFilters.withPhotos) {
+          url.searchParams.set('has_photos', 'true');
+        }
+        if (quickFilters.approved) {
+          url.searchParams.set('approved', 'true');
+        }
+        if (quickFilters.recent) {
+          url.searchParams.set('recent', 'true');
+        }
+
+        const response = await fetch(url.toString());
+        const data = await response.json();
+
+        setResults(data.results || []);
+
+        // Save to recent searches
+        if (searchQuery.length > 2) {
+          setRecentSearches((prev) => {
+            const updated = [
+              searchQuery,
+              ...prev.filter((s) => s !== searchQuery),
+            ];
+            return updated.slice(0, 5); // Keep only 5 recent searches
+          });
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setResults([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Search error:', error);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [eventId, maxResults, filters, quickFilters]);
+    },
+    [eventId, maxResults, filters, quickFilters]
+  );
 
   // Effect for debounced search
   useEffect(() => {
@@ -157,11 +186,14 @@ export default function UniversalSearch({
   }, [debouncedQuery, performSearch]);
 
   // Handle result selection
-  const handleResultSelect = useCallback((result: SearchResult) => {
-    onResultSelect(result);
-    setIsOpen(false);
-    setQuery('');
-  }, [onResultSelect]);
+  const handleResultSelect = useCallback(
+    (result: SearchResult) => {
+      onResultSelect(result);
+      setIsOpen(false);
+      setQuery('');
+    },
+    [onResultSelect]
+  );
 
   // Handle recent search selection
   const handleRecentSearchSelect = useCallback((searchQuery: string) => {
@@ -177,124 +209,130 @@ export default function UniversalSearch({
   }, []);
 
   // Result item component
-  const ResultItem = useCallback(({ result }: { result: SearchResult }) => {
-    const getTypeIcon = () => {
-      switch (result.type) {
-        case 'level':
-          return <GraduationCap className="h-4 w-4" />;
-        case 'course':
-          return <BookOpen className="h-4 w-4" />;
-        case 'student':
-          return <User className="h-4 w-4" />;
-        case 'photo':
-          return <Camera className="h-4 w-4" />;
-        default:
-          return <Folder className="h-4 w-4" />;
-      }
-    };
+  const ResultItem = useCallback(
+    ({ result }: { result: SearchResult }) => {
+      const getTypeIcon = () => {
+        switch (result.type) {
+          case 'level':
+            return <GraduationCap className="h-4 w-4" />;
+          case 'course':
+            return <BookOpen className="h-4 w-4" />;
+          case 'student':
+            return <User className="h-4 w-4" />;
+          case 'photo':
+            return <Camera className="h-4 w-4" />;
+          default:
+            return <Folder className="h-4 w-4" />;
+        }
+      };
 
-    const getTypeColor = () => {
-      switch (result.type) {
-        case 'level':
-          return 'bg-blue-100 text-blue-700';
-        case 'course':
-          return 'bg-purple-100 text-purple-700';
-        case 'student':
-          return 'bg-green-100 text-green-700';
-        case 'photo':
-          return 'bg-orange-100 text-orange-700';
-        default:
-          return 'bg-gray-100 text-gray-700';
-      }
-    };
+      const getTypeColor = () => {
+        switch (result.type) {
+          case 'level':
+            return 'bg-blue-100 text-blue-700';
+          case 'course':
+            return 'bg-purple-100 text-purple-700';
+          case 'student':
+            return 'bg-green-100 text-green-700';
+          case 'photo':
+            return 'bg-orange-100 text-orange-700';
+          default:
+            return 'bg-gray-100 text-gray-700';
+        }
+      };
 
-    return (
-      <CommandItem
-        value={result.id}
-        onSelect={() => handleResultSelect(result)}
-        className="flex items-start gap-3 p-3 cursor-pointer"
-      >
-        <div className={cn("p-1.5 rounded-lg", getTypeColor())}>
-          {getTypeIcon()}
-        </div>
-        
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-sm truncate">
-              {result.highlighted?.title || result.title}
-            </h4>
-            <Badge variant="outline" className="text-xs capitalize">
-              {result.type}
-            </Badge>
+      return (
+        <div
+          onClick={() => handleResultSelect(result)}
+          className="flex cursor-pointer items-start gap-3 p-3 hover:bg-gray-50"
+        >
+          <div className={cn('rounded-lg p-1.5', getTypeColor())}>
+            {getTypeIcon()}
           </div>
-          
-          {result.subtitle && (
-            <p className="text-xs text-muted-foreground truncate">
-              {result.highlighted?.subtitle || result.subtitle}
-            </p>
-          )}
-          
-          {result.description && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {result.highlighted?.description || result.description}
-            </p>
-          )}
-          
-          {/* Path breadcrumb */}
-          {result.path.length > 0 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {result.path.slice(0, 3).map((pathItem, index) => (
-                <React.Fragment key={index}>
-                  {index > 0 && <ArrowRight className="h-3 w-3" />}
-                  <span className="truncate max-w-20">{pathItem}</span>
-                </React.Fragment>
-              ))}
-              {result.path.length > 3 && (
-                <>
-                  <ArrowRight className="h-3 w-3" />
-                  <span>...</span>
-                </>
-              )}
+
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-2">
+              <h4 className="truncate text-sm font-medium">
+                {result.highlighted?.title || result.title}
+              </h4>
+              <Badge variant="outline" className="text-xs capitalize">
+                {result.type}
+              </Badge>
             </div>
-          )}
-          
-          {/* Metadata */}
-          {result.metadata && (
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {result.metadata.photoCount !== undefined && (
-                <div className="flex items-center gap-1">
-                  <Camera className="h-3 w-3" />
-                  <span>{result.metadata.photoCount}</span>
-                </div>
-              )}
-              {result.metadata.studentCount !== undefined && (
-                <div className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  <span>{result.metadata.studentCount}</span>
-                </div>
-              )}
-              {result.metadata.uploadDate && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>{new Date(result.metadata.uploadDate).toLocaleDateString('es-AR')}</span>
-                </div>
-              )}
-            </div>
-          )}
+
+            {result.subtitle && (
+              <p className="text-muted-foreground truncate text-xs">
+                {result.highlighted?.subtitle || result.subtitle}
+              </p>
+            )}
+
+            {result.description && (
+              <p className="text-muted-foreground line-clamp-2 text-xs">
+                {result.highlighted?.description || result.description}
+              </p>
+            )}
+
+            {/* Path breadcrumb */}
+            {result.path.length > 0 && (
+              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                {result.path.slice(0, 3).map((pathItem, index) => (
+                  <React.Fragment key={index}>
+                    {index > 0 && <ArrowRight className="h-3 w-3" />}
+                    <span className="max-w-20 truncate">{pathItem}</span>
+                  </React.Fragment>
+                ))}
+                {result.path.length > 3 && (
+                  <>
+                    <ArrowRight className="h-3 w-3" />
+                    <span>...</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Metadata */}
+            {result.metadata && (
+              <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                {result.metadata.photoCount !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <Camera className="h-3 w-3" />
+                    <span>{result.metadata.photoCount}</span>
+                  </div>
+                )}
+                {result.metadata.studentCount !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    <span>{result.metadata.studentCount}</span>
+                  </div>
+                )}
+                {result.metadata.uploadDate && (
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      {new Date(result.metadata.uploadDate).toLocaleDateString(
+                        'es-AR'
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="text-muted-foreground text-xs">
+            {Math.round(result.score * 100)}%
+          </div>
         </div>
-        
-        <div className="text-xs text-muted-foreground">
-          {Math.round(result.score * 100)}%
-        </div>
-      </CommandItem>
-    );
-  }, [handleResultSelect]);
+      );
+    },
+    [handleResultSelect]
+  );
 
   // Group results by type
   const groupedResults = useMemo(() => {
     const groups: Record<string, SearchResult[]> = {};
-    
-    results.forEach(result => {
+
+    results.forEach((result) => {
       if (!groups[result.type]) {
         groups[result.type] = [];
       }
@@ -302,106 +340,127 @@ export default function UniversalSearch({
         groups[result.type].push(result);
       }
     });
-    
+
     // Sort groups by priority and results by score
     const sortedGroups: [string, SearchResult[]][] = [];
     const typeOrder = ['photo', 'student', 'course', 'level', 'event'];
-    
-    typeOrder.forEach(type => {
+
+    typeOrder.forEach((type) => {
       if (groups[type]) {
         sortedGroups.push([
           type,
-          groups[type].sort((a, b) => b.score - a.score)
+          groups[type].sort((a, b) => b.score - a.score),
         ]);
       }
     });
-    
+
     return sortedGroups;
   }, [results]);
 
   // Type labels
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'level': return 'Niveles';
-      case 'course': return 'Cursos';
-      case 'student': return 'Estudiantes';
-      case 'photo': return 'Fotos';
-      case 'event': return 'Eventos';
-      default: return type;
+      case 'level':
+        return 'Niveles';
+      case 'course':
+        return 'Cursos';
+      case 'student':
+        return 'Estudiantes';
+      case 'photo':
+        return 'Fotos';
+      case 'event':
+        return 'Eventos';
+      default:
+        return type;
     }
   };
 
   return (
-    <div className={cn("relative", className)}>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              ref={searchInputRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setIsOpen(true)}
-              placeholder={placeholder}
-              className="pl-9 pr-10"
-            />
-            {query && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                onClick={clearSearch}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
-            {loading && (
-              <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-          </div>
-        </PopoverTrigger>
-        
-        <PopoverContent 
-          className="w-[600px] p-0" 
-          align="start"
-          onOpenAutoFocus={(e: Event) => e.preventDefault()}
-        >
-          <Command shouldFilter={false}>
-            <CommandList className="max-h-96">
+    <div className={cn('relative', className)}>
+      {/* TEMP: Simplified without popover until component is available */}
+      <div className="relative">
+        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+        <Input
+          ref={searchInputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="pl-9 pr-10"
+        />
+        {query && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 transform p-0"
+            onClick={clearSearch}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+        {loading && (
+          <Loader2 className="text-muted-foreground absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform animate-spin" />
+        )}
+      </div>
+      
+      {/* TEMP: Results displayed inline without popover */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-50 mt-1 p-0">
+          {/* TEMP: Simplified command interface */}
+          <div className="max-h-96 overflow-y-auto">
               {/* Quick filters */}
               {showFilters && (
                 <>
-                  <div className="p-3 border-b">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-muted-foreground">Filtros:</span>
-                      
+                  <div className="border-b p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-muted-foreground text-xs font-medium">
+                        Filtros:
+                      </span>
+
                       <Button
-                        variant={quickFilters.withPhotos ? "default" : "outline"}
+                        variant={
+                          quickFilters.withPhotos ? 'default' : 'outline'
+                        }
                         size="sm"
                         className="h-6 text-xs"
-                        onClick={() => setQuickFilters(prev => ({ ...prev, withPhotos: !prev.withPhotos }))}
+                        onClick={() =>
+                          setQuickFilters((prev) => ({
+                            ...prev,
+                            withPhotos: !prev.withPhotos,
+                          }))
+                        }
                       >
-                        <Camera className="h-3 w-3 mr-1" />
+                        <Camera className="mr-1 h-3 w-3" />
                         Con fotos
                       </Button>
-                      
+
                       <Button
-                        variant={quickFilters.approved ? "default" : "outline"}
+                        variant={quickFilters.approved ? 'default' : 'outline'}
                         size="sm"
                         className="h-6 text-xs"
-                        onClick={() => setQuickFilters(prev => ({ ...prev, approved: !prev.approved }))}
+                        onClick={() =>
+                          setQuickFilters((prev) => ({
+                            ...prev,
+                            approved: !prev.approved,
+                          }))
+                        }
                       >
-                        <Zap className="h-3 w-3 mr-1" />
+                        <Zap className="mr-1 h-3 w-3" />
                         Aprobadas
                       </Button>
-                      
+
                       <Button
-                        variant={quickFilters.recent ? "default" : "outline"}
+                        variant={quickFilters.recent ? 'default' : 'outline'}
                         size="sm"
                         className="h-6 text-xs"
-                        onClick={() => setQuickFilters(prev => ({ ...prev, recent: !prev.recent }))}
+                        onClick={() =>
+                          setQuickFilters((prev) => ({
+                            ...prev,
+                            recent: !prev.recent,
+                          }))
+                        }
                       >
-                        <Clock className="h-3 w-3 mr-1" />
+                        <Clock className="mr-1 h-3 w-3" />
                         Recientes
                       </Button>
                     </div>
@@ -409,78 +468,56 @@ export default function UniversalSearch({
                 </>
               )}
 
-              {/* Recent searches */}
+              {/* TEMP: Simplified search interface without Command components */}
               {!query && recentSearches.length > 0 && (
-                <CommandGroup heading="Búsquedas recientes">
+                <div className="p-3">
+                  <h4 className="text-sm font-medium mb-2">Búsquedas recientes</h4>
                   {recentSearches.map((search, index) => (
-                    <CommandItem
+                    <div
                       key={index}
-                      value={search}
-                      onSelect={() => handleRecentSearchSelect(search)}
-                      className="flex items-center gap-2"
+                      onClick={() => handleRecentSearchSelect(search)}
+                      className="flex items-center gap-2 p-2 hover:bg-gray-50 cursor-pointer rounded"
                     >
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <Clock className="text-muted-foreground h-4 w-4" />
                       <span>{search}</span>
-                    </CommandItem>
+                    </div>
                   ))}
-                </CommandGroup>
+                </div>
               )}
 
-              {/* Search results */}
+              {/* Search results - TEMP: Simplified */}
               {query && (
-                <>
+                <div className="p-3">
                   {loading ? (
-                    <div className="p-6 text-center">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Buscando...</p>
+                    <div className="text-center">
+                      <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
+                      <p className="text-muted-foreground text-sm">Buscando...</p>
                     </div>
                   ) : results.length === 0 ? (
-                    <CommandEmpty>
-                      <div className="text-center py-6">
-                        <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          No se encontraron resultados para "{query}"
-                        </p>
-                      </div>
-                    </CommandEmpty>
+                    <div className="text-center py-6">
+                      <Search className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                      <p className="text-muted-foreground text-sm">
+                        No se encontraron resultados para "{query}"
+                      </p>
+                    </div>
                   ) : (
-                    <>
-                      {groupedResults.map(([type, typeResults], groupIndex) => (
-                        <React.Fragment key={type}>
-                          {groupIndex > 0 && <CommandSeparator />}
-                          <CommandGroup heading={`${getTypeLabel(type)} (${typeResults.length})`}>
-                            {typeResults.slice(0, 10).map(result => (
-                              <ResultItem key={result.id} result={result} />
-                            ))}
-                            {typeResults.length > 10 && (
-                              <div className="px-3 py-2 text-xs text-muted-foreground">
-                                Y {typeResults.length - 10} resultados más...
-                              </div>
-                            )}
-                          </CommandGroup>
-                        </React.Fragment>
+                    <div className="space-y-2">
+                      {results.slice(0, 5).map((result) => (
+                        <ResultItem key={result.id} result={result} />
                       ))}
-                      
-                      {/* Results summary */}
-                      <div className="border-t p-3">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>
-                            {results.length} resultados encontrados
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <SortAsc className="h-3 w-3" />
-                            <span>Ordenado por relevancia</span>
-                          </div>
+                      {results.length > 5 && (
+                        <div className="text-muted-foreground text-xs text-center py-2">
+                          Y {results.length - 5} resultados más...
                         </div>
-                      </div>
-                    </>
+                      )}
+                    </div>
                   )}
-                </>
+                </div>
               )}
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+            {/* End of results */}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

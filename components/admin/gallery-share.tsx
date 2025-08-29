@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Share,
   Loader2,
   CheckCircle,
@@ -49,7 +49,7 @@ export default function GalleryShare({
   levelId,
   courseId,
   studentId,
-  onShareCreated
+  onShareCreated,
 }: GalleryShareProps) {
   // State
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +57,7 @@ export default function GalleryShare({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
-  
+
   // Form state
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [maxViews, setMaxViews] = useState<number | ''>(100);
@@ -71,7 +71,7 @@ export default function GalleryShare({
     setError(null);
     setSuccess(false);
     setShareUrl('');
-    
+
     try {
       const requestBody: any = {
         expires_in_days: expiresInDays,
@@ -89,13 +89,16 @@ export default function GalleryShare({
         requestBody.student_id = studentId;
       }
 
-      const response = await fetch(`/api/admin/events/${eventId}/gallery/shares`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/gallery/shares`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -103,16 +106,16 @@ export default function GalleryShare({
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.share) {
         setSuccess(true);
         setShareUrl(data.share.share_url);
-        
+
         // Call completion callback if provided
         if (onShareCreated) {
           onShareCreated(data.share);
         }
-        
+
         // Show success toast
         toast.success('¡Enlace de compartir creado exitosamente!');
       } else {
@@ -120,7 +123,9 @@ export default function GalleryShare({
       }
     } catch (err) {
       console.error('Error creating gallery share:', err);
-      setError(err instanceof Error ? err.message : 'Failed to create gallery share');
+      setError(
+        err instanceof Error ? err.message : 'Failed to create gallery share'
+      );
       toast.error('Error al crear el enlace de compartir');
     } finally {
       setIsCreating(false);
@@ -171,30 +176,32 @@ export default function GalleryShare({
             Crea un enlace para compartir esta galería con familiares y amigos.
           </DialogDescription>
         </DialogHeader>
-        
+
         {success ? (
           <div className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
-                <h3 className="font-medium text-green-800">¡Enlace creado exitosamente!</h3>
+                <h3 className="font-medium text-green-800">
+                  ¡Enlace creado exitosamente!
+                </h3>
               </div>
               <p className="mt-2 text-sm text-green-700">
                 Copia el enlace a continuación y compártelo con quien desees.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="share-url">Enlace para compartir</Label>
               <div className="flex gap-2">
-                <Input 
+                <Input
                   id="share-url"
                   value={shareUrl}
                   readOnly
                   className="flex-1"
                 />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="icon"
                   onClick={copyToClipboard}
                   title="Copiar al portapapeles"
@@ -202,11 +209,12 @@ export default function GalleryShare({
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Este enlace es único y seguro. Solo las personas con el enlace pueden acceder.
+              <p className="text-muted-foreground text-xs">
+                Este enlace es único y seguro. Solo las personas con el enlace
+                pueden acceder.
               </p>
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => handleOpenChange(false)}>
                 Cerrar
@@ -216,20 +224,20 @@ export default function GalleryShare({
         ) : (
           <div className="space-y-4">
             {error && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+              <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-3">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-destructive" />
-                  <span className="text-sm text-destructive">{error}</span>
+                  <AlertCircle className="text-destructive h-4 w-4" />
+                  <span className="text-destructive text-sm">{error}</span>
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="expires-in">Expira en</Label>
-                  <Select 
-                    value={expiresInDays.toString()} 
+                  <Select
+                    value={expiresInDays.toString()}
                     onValueChange={(value) => setExpiresInDays(parseInt(value))}
                   >
                     <SelectTrigger id="expires-in">
@@ -245,7 +253,7 @@ export default function GalleryShare({
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="max-views">Vistas máximas</Label>
                   <Input
@@ -254,17 +262,21 @@ export default function GalleryShare({
                     min="1"
                     max="10000"
                     value={maxViews}
-                    onChange={(e) => setMaxViews(e.target.value ? parseInt(e.target.value) : '')}
+                    onChange={(e) =>
+                      setMaxViews(
+                        e.target.value ? parseInt(e.target.value) : ''
+                      )
+                    }
                     placeholder="Sin límite"
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="allow-download">Permitir descargas</Label>
                   <Button
-                    variant={allowDownload ? "default" : "outline"}
+                    variant={allowDownload ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setAllowDownload(!allowDownload)}
                     className="flex items-center gap-2"
@@ -273,11 +285,11 @@ export default function GalleryShare({
                     {allowDownload ? 'Sí' : 'No'}
                   </Button>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="allow-share">Permitir compartir</Label>
                   <Button
-                    variant={allowShare ? "default" : "outline"}
+                    variant={allowShare ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setAllowShare(!allowShare)}
                     className="flex items-center gap-2"
@@ -287,7 +299,7 @@ export default function GalleryShare({
                   </Button>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="custom-message">Mensaje personalizado</Label>
                 <Textarea
@@ -299,13 +311,13 @@ export default function GalleryShare({
                 />
               </div>
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleCreateShare} 
+              <Button
+                onClick={handleCreateShare}
                 disabled={isCreating}
                 className="flex items-center gap-2"
               >

@@ -16,7 +16,7 @@ const QR_PATTERN = /^STUDENT:([a-f0-9-]{36}):([^:]+):([a-f0-9-]{36})$/i;
  * POST /api/admin/qr/decode
  * Decodes and validates QR code, returns student information
  */
-export const POST = withAuth(async function(request: NextRequest) {
+export const POST = withAuth(async function (request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 

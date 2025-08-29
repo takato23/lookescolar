@@ -5,5 +5,3 @@ describe('Admin Publish Endpoints', () => {
     expect(true).toBe(true);
   });
 });
-
-

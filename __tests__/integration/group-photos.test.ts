@@ -73,7 +73,9 @@ describe('Group Photo System Integration Tests', () => {
       .insert({
         student_id: testStudentId,
         token: 'test_group_photo_token_123456789',
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(), // 30 days
       })
       .select()
       .single();
@@ -122,9 +124,15 @@ describe('Group Photo System Integration Tests', () => {
   afterAll(async () => {
     // Clean up test data
     await supabase.from('photo_courses').delete().eq('course_id', testCourseId);
-    await supabase.from('student_tokens').delete().eq('student_id', testStudentId);
+    await supabase
+      .from('student_tokens')
+      .delete()
+      .eq('student_id', testStudentId);
     await supabase.from('students').delete().eq('id', testStudentId);
-    await supabase.from('photos').delete().in('id', [testPhoto1Id, testPhoto2Id]);
+    await supabase
+      .from('photos')
+      .delete()
+      .in('id', [testPhoto1Id, testPhoto2Id]);
     await supabase.from('courses').delete().eq('id', testCourseId);
     await supabase.from('events').delete().eq('id', testEventId);
   });
@@ -132,7 +140,10 @@ describe('Group Photo System Integration Tests', () => {
   describe('Photo-Course Association', () => {
     beforeEach(async () => {
       // Clean up any existing associations
-      await supabase.from('photo_courses').delete().eq('course_id', testCourseId);
+      await supabase
+        .from('photo_courses')
+        .delete()
+        .eq('course_id', testCourseId);
     });
 
     it('should create photo-course association', async () => {
@@ -155,22 +166,18 @@ describe('Group Photo System Integration Tests', () => {
 
     it('should prevent duplicate photo-course associations', async () => {
       // First association
-      await supabase
-        .from('photo_courses')
-        .insert({
-          photo_id: testPhoto1Id,
-          course_id: testCourseId,
-          photo_type: 'group',
-        });
+      await supabase.from('photo_courses').insert({
+        photo_id: testPhoto1Id,
+        course_id: testCourseId,
+        photo_type: 'group',
+      });
 
       // Attempt duplicate
-      const { error } = await supabase
-        .from('photo_courses')
-        .insert({
-          photo_id: testPhoto1Id,
-          course_id: testCourseId,
-          photo_type: 'group',
-        });
+      const { error } = await supabase.from('photo_courses').insert({
+        photo_id: testPhoto1Id,
+        course_id: testCourseId,
+        photo_type: 'group',
+      });
 
       expect(error).toBeTruthy();
       expect(error?.code).toBe('23505'); // Unique constraint violation
@@ -178,13 +185,11 @@ describe('Group Photo System Integration Tests', () => {
 
     it('should allow same photo with different types', async () => {
       // First association as group
-      await supabase
-        .from('photo_courses')
-        .insert({
-          photo_id: testPhoto1Id,
-          course_id: testCourseId,
-          photo_type: 'group',
-        });
+      await supabase.from('photo_courses').insert({
+        photo_id: testPhoto1Id,
+        course_id: testCourseId,
+        photo_type: 'group',
+      });
 
       // Second association as activity
       const { data, error } = await supabase
@@ -204,23 +209,24 @@ describe('Group Photo System Integration Tests', () => {
   describe('Family Service Group Photo Support', () => {
     beforeEach(async () => {
       // Set up photo-course associations
-      await supabase.from('photo_courses').delete().eq('course_id', testCourseId);
       await supabase
         .from('photo_courses')
-        .insert([
-          {
-            photo_id: testPhoto1Id,
-            course_id: testCourseId,
-            photo_type: 'group',
-            tagged_at: new Date().toISOString(),
-          },
-          {
-            photo_id: testPhoto2Id,
-            course_id: testCourseId,
-            photo_type: 'activity',
-            tagged_at: new Date().toISOString(),
-          },
-        ]);
+        .delete()
+        .eq('course_id', testCourseId);
+      await supabase.from('photo_courses').insert([
+        {
+          photo_id: testPhoto1Id,
+          course_id: testCourseId,
+          photo_type: 'group',
+          tagged_at: new Date().toISOString(),
+        },
+        {
+          photo_id: testPhoto2Id,
+          course_id: testCourseId,
+          photo_type: 'activity',
+          tagged_at: new Date().toISOString(),
+        },
+      ]);
     });
 
     it('should validate student token and include course info', async () => {
@@ -234,14 +240,20 @@ describe('Group Photo System Integration Tests', () => {
     });
 
     it('should get group photos for student', async () => {
-      const result = await familyService.getStudentGroupPhotos(testStudentId, 1, 10);
+      const result = await familyService.getStudentGroupPhotos(
+        testStudentId,
+        1,
+        10
+      );
 
       expect(result.photos).toHaveLength(2);
       expect(result.total).toBe(2);
       expect(result.has_more).toBe(false);
 
-      const groupPhoto = result.photos.find(p => p.photo_type === 'group');
-      const activityPhoto = result.photos.find(p => p.photo_type === 'activity');
+      const groupPhoto = result.photos.find((p) => p.photo_type === 'group');
+      const activityPhoto = result.photos.find(
+        (p) => p.photo_type === 'activity'
+      );
 
       expect(groupPhoto).toBeTruthy();
       expect(groupPhoto?.photo_id).toBe(testPhoto1Id);
@@ -253,8 +265,14 @@ describe('Group Photo System Integration Tests', () => {
     });
 
     it('should validate photo ownership for group photos', async () => {
-      const isValid1 = await familyService.validatePhotoOwnership(testPhoto1Id, testStudentId);
-      const isValid2 = await familyService.validatePhotoOwnership(testPhoto2Id, testStudentId);
+      const isValid1 = await familyService.validatePhotoOwnership(
+        testPhoto1Id,
+        testStudentId
+      );
+      const isValid2 = await familyService.validatePhotoOwnership(
+        testPhoto2Id,
+        testStudentId
+      );
 
       expect(isValid1).toBe(true);
       expect(isValid2).toBe(true);
@@ -275,7 +293,10 @@ describe('Group Photo System Integration Tests', () => {
         .select()
         .single();
 
-      const isValid = await familyService.validatePhotoOwnership(otherPhoto.id, testStudentId);
+      const isValid = await familyService.validatePhotoOwnership(
+        otherPhoto.id,
+        testStudentId
+      );
       expect(isValid).toBe(false);
 
       // Clean up
@@ -287,13 +308,14 @@ describe('Group Photo System Integration Tests', () => {
 
       // Should include group photos since student has a course
       expect(result.photos.length).toBeGreaterThan(0);
-      
-      const groupPhotoExists = result.photos.some(p => 
-        (p as any).course_id === testCourseId && 
-        'photo_type' in p && 
-        (p as any).photo_type === 'group'
+
+      const groupPhotoExists = result.photos.some(
+        (p) =>
+          (p as any).course_id === testCourseId &&
+          'photo_type' in p &&
+          (p as any).photo_type === 'group'
       );
-      
+
       expect(groupPhotoExists).toBe(true);
     });
   });
@@ -301,23 +323,29 @@ describe('Group Photo System Integration Tests', () => {
   describe('API Endpoint Integration', () => {
     beforeEach(async () => {
       // Clean up associations
-      await supabase.from('photo_courses').delete().eq('course_id', testCourseId);
+      await supabase
+        .from('photo_courses')
+        .delete()
+        .eq('course_id', testCourseId);
     });
 
     it('should handle course photo assignment via API', async () => {
-      const response = await fetch(`/api/admin/events/${testEventId}/courses/${testCourseId}/photos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photo_ids: [testPhoto1Id, testPhoto2Id],
-          photo_type: 'group',
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/events/${testEventId}/courses/${testCourseId}/photos`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photo_ids: [testPhoto1Id, testPhoto2Id],
+            photo_type: 'group',
+          }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (response.ok) {
         expect(data.success).toBe(true);
         expect(data.photos_count).toBe(2);
@@ -338,18 +366,18 @@ describe('Group Photo System Integration Tests', () => {
 
     it('should handle family group photos API', async () => {
       // Set up associations first
-      await supabase
-        .from('photo_courses')
-        .insert([
-          {
-            photo_id: testPhoto1Id,
-            course_id: testCourseId,
-            photo_type: 'group',
-          },
-        ]);
+      await supabase.from('photo_courses').insert([
+        {
+          photo_id: testPhoto1Id,
+          course_id: testCourseId,
+          photo_type: 'group',
+        },
+      ]);
 
-      const response = await fetch(`/api/family/gallery/${testStudentToken}/group-photos`);
-      
+      const response = await fetch(
+        `/api/family/gallery/${testStudentToken}/group-photos`
+      );
+
       if (response.ok) {
         const data = await response.json();
         expect(data.photos).toBeDefined();
@@ -374,7 +402,8 @@ describe('Group Photo System Integration Tests', () => {
           photo_type: 'group',
           tagged_at: new Date().toISOString(),
         })
-        .select(`
+        .select(
+          `
           *,
           photo:photos (
             id,
@@ -383,7 +412,8 @@ describe('Group Photo System Integration Tests', () => {
             approved,
             created_at
           )
-        `)
+        `
+        )
         .single();
 
       expect(association).toBeTruthy();
@@ -395,20 +425,18 @@ describe('Group Photo System Integration Tests', () => {
 
     it('should handle multiple photo types for same photo', async () => {
       // Associate same photo as both group and activity
-      await supabase
-        .from('photo_courses')
-        .insert([
-          {
-            photo_id: testPhoto1Id,
-            course_id: testCourseId,
-            photo_type: 'group',
-          },
-          {
-            photo_id: testPhoto1Id,
-            course_id: testCourseId,
-            photo_type: 'activity',
-          },
-        ]);
+      await supabase.from('photo_courses').insert([
+        {
+          photo_id: testPhoto1Id,
+          course_id: testCourseId,
+          photo_type: 'group',
+        },
+        {
+          photo_id: testPhoto1Id,
+          course_id: testCourseId,
+          photo_type: 'activity',
+        },
+      ]);
 
       const { data: associations } = await supabase
         .from('photo_courses')
@@ -417,13 +445,17 @@ describe('Group Photo System Integration Tests', () => {
         .eq('course_id', testCourseId);
 
       expect(associations).toHaveLength(2);
-      expect(associations.map(a => a.photo_type).sort()).toEqual(['activity', 'group']);
+      expect(associations.map((a) => a.photo_type).sort()).toEqual([
+        'activity',
+        'group',
+      ]);
     });
   });
 
   describe('Error Handling', () => {
     it('should handle missing course gracefully', async () => {
-      const result = await familyService.getStudentGroupPhotos('invalid-student-id');
+      const result =
+        await familyService.getStudentGroupPhotos('invalid-student-id');
       expect(result.photos).toHaveLength(0);
       expect(result.total).toBe(0);
       expect(result.has_more).toBe(false);
@@ -441,7 +473,9 @@ describe('Group Photo System Integration Tests', () => {
         .select()
         .single();
 
-      const result = await familyService.getStudentGroupPhotos(studentNoCourse.id);
+      const result = await familyService.getStudentGroupPhotos(
+        studentNoCourse.id
+      );
       expect(result.photos).toHaveLength(0);
       expect(result.total).toBe(0);
 
@@ -471,7 +505,10 @@ describe('Group Photo System Integration Tests', () => {
       expect(student).toBeNull();
 
       // Clean up
-      await supabase.from('student_tokens').delete().eq('id', expiredTokenData.id);
+      await supabase
+        .from('student_tokens')
+        .delete()
+        .eq('id', expiredTokenData.id);
     });
   });
 
@@ -498,14 +535,14 @@ describe('Group Photo System Integration Tests', () => {
       }
 
       const photoResults = await Promise.all(insertPromises);
-      photoResults.forEach(result => {
+      photoResults.forEach((result) => {
         if (result.data) {
           photoIds.push(result.data.id);
         }
       });
 
       // Associate all photos with course
-      const associations = photoIds.map(photoId => ({
+      const associations = photoIds.map((photoId) => ({
         photo_id: photoId,
         course_id: testCourseId,
         photo_type: 'group',
@@ -515,7 +552,11 @@ describe('Group Photo System Integration Tests', () => {
 
       // Test performance
       const startTime = Date.now();
-      const result = await familyService.getStudentGroupPhotos(testStudentId, 1, 50);
+      const result = await familyService.getStudentGroupPhotos(
+        testStudentId,
+        1,
+        50
+      );
       const duration = Date.now() - startTime;
 
       expect(result.photos.length).toBeGreaterThanOrEqual(20);

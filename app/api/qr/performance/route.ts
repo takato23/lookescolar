@@ -1,6 +1,6 @@
 /**
  * QR Performance Monitoring API
- * 
+ *
  * Provides endpoints for monitoring QR code performance, cache statistics,
  * and system health metrics.
  */
@@ -19,22 +19,22 @@ async function GET(request: NextRequest) {
     switch (action) {
       case 'stats':
         return getPerformanceStats();
-      
+
       case 'cache':
         return getCacheStats();
-      
+
       case 'health':
         return getHealthStatus();
-      
+
       default:
         return getPerformanceOverview();
     }
   } catch (error) {
     logger.error('qr_performance_api_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -51,25 +51,22 @@ async function POST(request: NextRequest) {
     switch (action) {
       case 'invalidate-cache':
         return invalidateCache(params);
-      
+
       case 'preload':
         return preloadQRCodes(params);
-      
+
       case 'reset-stats':
         return resetStats();
-      
+
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
     logger.error('qr_performance_api_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -82,7 +79,7 @@ async function POST(request: NextRequest) {
  */
 async function getPerformanceOverview() {
   const cacheStats = qrCacheService.getStats();
-  
+
   const overview = {
     timestamp: new Date().toISOString(),
     status: 'operational',
@@ -90,15 +87,16 @@ async function getPerformanceOverview() {
       enabled: true,
       entries: cacheStats.totalEntries,
       hitRate: cacheStats.hitRate,
-      memoryUsageMB: Math.round(cacheStats.memoryUsage / (1024 * 1024) * 100) / 100,
+      memoryUsageMB:
+        Math.round((cacheStats.memoryUsage / (1024 * 1024)) * 100) / 100,
       avgGenerationTimeMs: cacheStats.avgGenerationTime,
-      efficiency: cacheStats.cacheEfficiency
+      efficiency: cacheStats.cacheEfficiency,
     },
     metrics: {
       totalHits: cacheStats.totalHits,
       totalMisses: cacheStats.totalMisses,
-      totalRequests: cacheStats.totalHits + cacheStats.totalMisses
-    }
+      totalRequests: cacheStats.totalHits + cacheStats.totalMisses,
+    },
   };
 
   return NextResponse.json(overview);
@@ -109,15 +107,15 @@ async function getPerformanceOverview() {
  */
 async function getPerformanceStats() {
   const cacheStats = qrCacheService.getStats();
-  
+
   const stats = {
     cache: cacheStats,
     system: {
       memoryUsage: process.memoryUsage(),
       uptime: process.uptime(),
-      nodeVersion: process.version
+      nodeVersion: process.version,
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   return NextResponse.json(stats);
@@ -128,10 +126,10 @@ async function getPerformanceStats() {
  */
 async function getCacheStats() {
   const cacheStats = qrCacheService.getStats();
-  
+
   return NextResponse.json({
     cache: cacheStats,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -140,36 +138,40 @@ async function getCacheStats() {
  */
 async function getHealthStatus() {
   const cacheStats = qrCacheService.getStats();
-  
+
   // Determine health status based on metrics
   let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-  let issues: string[] = [];
-  
+  const issues: string[] = [];
+
   if (cacheStats.hitRate < 50) {
     status = 'degraded';
     issues.push('Low cache hit rate');
   }
-  
+
   if (cacheStats.avgGenerationTime > 5000) {
     status = 'degraded';
     issues.push('High QR generation time');
   }
-  
+
   const health = {
     status,
     timestamp: new Date().toISOString(),
     components: {
       cache: 'operational',
-      qrGeneration: cacheStats.avgGenerationTime < 5000 ? 'healthy' : 'degraded',
-      memory: process.memoryUsage().heapUsed < 500 * 1024 * 1024 ? 'healthy' : 'degraded' // 500MB threshold
+      qrGeneration:
+        cacheStats.avgGenerationTime < 5000 ? 'healthy' : 'degraded',
+      memory:
+        process.memoryUsage().heapUsed < 500 * 1024 * 1024
+          ? 'healthy'
+          : 'degraded', // 500MB threshold
     },
     metrics: {
       cacheHitRate: cacheStats.hitRate,
       avgGenerationTimeMs: cacheStats.avgGenerationTime,
       memoryUsageMB: Math.round(process.memoryUsage().heapUsed / (1024 * 1024)),
-      uptimeSeconds: Math.round(process.uptime())
+      uptimeSeconds: Math.round(process.uptime()),
     },
-    issues: issues.length > 0 ? issues : undefined
+    issues: issues.length > 0 ? issues : undefined,
   };
 
   return NextResponse.json(health);
@@ -178,26 +180,29 @@ async function getHealthStatus() {
 /**
  * Invalidate cache entries
  */
-async function invalidateCache(params: { pattern?: string; subjectId?: string }) {
+async function invalidateCache(params: {
+  pattern?: string;
+  subjectId?: string;
+}) {
   if (params.pattern) {
     const removed = await qrCacheService.invalidateByPattern(params.pattern);
     return NextResponse.json({
       success: true,
       message: `Invalidated ${removed} cache entries matching pattern: ${params.pattern}`,
       removedEntries: removed,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
-  
+
   if (params.subjectId) {
     await qrCacheService.invalidateQR(params.subjectId);
     return NextResponse.json({
       success: true,
       message: `Invalidated cache for subject: ${params.subjectId}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
-  
+
   return NextResponse.json(
     { error: 'Must specify either pattern or subjectId' },
     { status: 400 }
@@ -214,22 +219,22 @@ async function preloadQRCodes(params: { subjectIds: string[] }) {
       { status: 400 }
     );
   }
-  
+
   try {
     await qrCacheService.preloadQRCodes(params.subjectIds);
-    
+
     return NextResponse.json({
       success: true,
       message: `Preloaded QR codes for ${params.subjectIds.length} subjects`,
       subjectCount: params.subjectIds.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('qr_preload_failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      subjectIds: params.subjectIds
+      subjectIds: params.subjectIds,
     });
-    
+
     return NextResponse.json(
       { error: 'Failed to preload QR codes' },
       { status: 500 }
@@ -243,13 +248,13 @@ async function preloadQRCodes(params: { subjectIds: string[] }) {
 async function resetStats() {
   // Note: In a real implementation, you would reset the statistics
   // For now, we'll just return a success message
-  
+
   logger.info('qr_performance_stats_reset');
-  
+
   return NextResponse.json({
     success: true,
     message: 'Performance statistics reset',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 

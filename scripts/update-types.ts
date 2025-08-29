@@ -14,18 +14,18 @@ const CUSTOM_TYPES_PATH = join(process.cwd(), 'types', 'custom.ts');
 
 async function updateDatabaseTypes() {
   console.log('🔄 Actualizando tipos de base de datos...');
-  
+
   try {
     // Generate base types from Supabase
     execSync('supabase gen types typescript --local > types/database.ts', {
       stdio: 'inherit',
     });
-    
+
     console.log('✅ Tipos base generados correctamente');
-    
+
     // Read the generated types
     const generatedTypes = readFileSync(TYPES_PATH, 'utf-8');
-    
+
     // Add our custom extensions
     const customExtensions = `
 // Custom type extensions for the application
@@ -236,12 +236,11 @@ export type RateLimitInfo = {
 
     // Append custom extensions to generated types
     const enhancedTypes = generatedTypes + customExtensions;
-    
+
     // Write enhanced types
     writeFileSync(TYPES_PATH, enhancedTypes);
-    
+
     console.log('✅ Tipos personalizados agregados correctamente');
-    
   } catch (error) {
     console.error('❌ Error actualizando tipos:', error);
     process.exit(1);
@@ -250,7 +249,7 @@ export type RateLimitInfo = {
 
 async function createCustomTypes() {
   console.log('🔄 Creando tipos personalizados adicionales...');
-  
+
   const customTypes = `// Custom types that don't belong in the database schema
 
 // Component prop types
@@ -386,15 +385,17 @@ export interface FamilyStore {
 
 async function main() {
   console.log('🚀 Iniciando actualización de tipos...\n');
-  
+
   await updateDatabaseTypes();
   await createCustomTypes();
-  
+
   console.log('\n✨ Actualización de tipos completada');
   console.log('📁 Archivos actualizados:');
   console.log('  - types/database.ts');
   console.log('  - types/custom.ts');
-  console.log('\n💡 Tip: Ejecuta "npm run typecheck" para verificar que todo esté correcto');
+  console.log(
+    '\n💡 Tip: Ejecuta "npm run typecheck" para verificar que todo esté correcto'
+  );
 }
 
 if (require.main === module) {

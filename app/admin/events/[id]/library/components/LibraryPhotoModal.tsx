@@ -7,7 +7,7 @@ import { Photo } from '@/lib/services/photo.service';
 interface LibraryItem {
   type: 'photo' | 'folder';
   id: string;
-  data: Photo | { id: string; name: string; };
+  data: Photo | { id: string; name: string };
 }
 
 interface LibraryPhotoModalProps {
@@ -27,19 +27,19 @@ export function LibraryPhotoModal({
   allItems,
   onSelectionChange,
   selectedPhotoIds = [],
-  className
+  className,
 }: LibraryPhotoModalProps) {
   // Filter to get only photos from the items
   const photos = useMemo(() => {
     return allItems
-      .filter(item => item.type === 'photo')
-      .map(item => item.data as Photo);
+      .filter((item) => item.type === 'photo')
+      .map((item) => item.data as Photo);
   }, [allItems]);
 
   // Find current photo and its index
   const currentPhotoIndex = useMemo(() => {
     if (!selectedPhotoId) return -1;
-    return photos.findIndex(photo => photo.id === selectedPhotoId);
+    return photos.findIndex((photo) => photo.id === selectedPhotoId);
   }, [photos, selectedPhotoId]);
 
   const currentPhoto = useMemo(() => {
@@ -69,10 +69,12 @@ export function LibraryPhotoModal({
 
   const handleToggleSelection = useCallback(() => {
     if (!selectedPhotoId || !onSelectionChange) return;
-    
+
     if (selectedPhotoIds.includes(selectedPhotoId)) {
       // Remove from selection
-      onSelectionChange(selectedPhotoIds.filter(id => id !== selectedPhotoId));
+      onSelectionChange(
+        selectedPhotoIds.filter((id) => id !== selectedPhotoId)
+      );
     } else {
       // Add to selection
       onSelectionChange([...selectedPhotoIds, selectedPhotoId]);
@@ -93,7 +95,7 @@ export function LibraryPhotoModal({
           if (event.ctrlKey || event.metaKey) {
             event.preventDefault();
             if (onSelectionChange) {
-              onSelectionChange(photos.map(photo => photo.id));
+              onSelectionChange(photos.map((photo) => photo.id));
             }
           }
           break;

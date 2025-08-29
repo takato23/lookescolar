@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json.schemastore.org/swcrc",
+  "jsc": {
+    "parser": {
+      "syntax": "typescript",
+      "tsx": true,
+      "decorators": true,
+      "dynamicImport": true
+    },
+    "transform": {
+      "react": {
+        "runtime": "automatic",
+        "importSource": "react",
+        "refresh": true,
+        "development": true
+      },
+      "optimizer": {
+        "globals": {
+          "vars": {
+            "__DEV__": "true"
+          }
+        }
+      }
+    },
+    "target": "es2022",
+    "loose": true,
+    "externalHelpers": false,
+    "keepClassNames": true,
+    "preserveAllComments": false
+  },
+  "module": {
+    "type": "es6",
+    "strict": false,
+    "strictMode": true,
+    "lazy": true,
+    "noInterop": false
+  },
+  "minify": false,
+  "sourceMaps": true,
+  "exclude": [
+    "node_modules",
+    ".next",
+    "out",
+    "__tests__",
+    "*.test.*",
+    "*.spec.*"
+  ],
+  "env": {
+    "targets": {
+      "chrome": 58,
+      "firefox": 57,
+      "safari": 11,
+      "edge": 16
+    },
+    "mode": "usage",
+    "coreJs": "3.22"
+  }
+}

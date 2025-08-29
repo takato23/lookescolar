@@ -10,10 +10,10 @@ import type { Database } from '@/types/database';
 const BASE_URL = 'http://localhost:3000';
 
 let supabase: ReturnType<typeof createClient<Database>>;
-let testData = {
+const testData = {
   eventId: '',
   subjectToken: '',
-  adminToken: ''
+  adminToken: '',
 };
 
 beforeAll(async () => {
@@ -21,7 +21,7 @@ beforeAll(async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-  
+
   await setupSecurityTestData();
 });
 
@@ -30,7 +30,6 @@ afterAll(async () => {
 });
 
 describe('Security Test Suite', () => {
-  
   describe('Authentication & Authorization', () => {
     it('should require authentication for admin endpoints', async () => {
       const adminEndpoints = [
@@ -38,7 +37,7 @@ describe('Security Test Suite', () => {
         '/api/admin/subjects',
         '/api/admin/photos/upload',
         '/api/admin/orders',
-        '/api/admin/tagging'
+        '/api/admin/tagging',
       ];
 
       for (const endpoint of adminEndpoints) {
@@ -50,8 +49,8 @@ describe('Security Test Suite', () => {
     it('should reject invalid JWT tokens', async () => {
       const response = await fetch(`${BASE_URL}/api/admin/events`, {
         headers: {
-          'Authorization': 'Bearer invalid-jwt-token-12345'
-        }
+          Authorization: 'Bearer invalid-jwt-token-12345',
+        },
       });
 
       expect([401, 403]).toContain(response.status);
@@ -59,12 +58,13 @@ describe('Security Test Suite', () => {
 
     it('should reject expired tokens', async () => {
       // Create a token that's already expired
-      const expiredToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.invalid';
-      
+      const expiredToken =
+        'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.invalid';
+
       const response = await fetch(`${BASE_URL}/api/admin/events`, {
         headers: {
-          'Authorization': `Bearer ${expiredToken}`
-        }
+          Authorization: `Bearer ${expiredToken}`,
+        },
       });
 
       expect([401, 403]).toContain(response.status);
@@ -72,14 +72,18 @@ describe('Security Test Suite', () => {
 
     it('should validate subject token access', async () => {
       // Test with invalid token
-      const response = await fetch(`${BASE_URL}/api/family/gallery/invalid-token-123`);
+      const response = await fetch(
+        `${BASE_URL}/api/family/gallery/invalid-token-123`
+      );
       expect([401, 404]).toContain(response.status);
     });
 
     it('should reject tokens with insufficient length', async () => {
       const shortToken = 'short';
-      
-      const response = await fetch(`${BASE_URL}/api/family/gallery/${shortToken}`);
+
+      const response = await fetch(
+        `${BASE_URL}/api/family/gallery/${shortToken}`
+      );
       expect([401, 400, 404]).toContain(response.status);
     });
   });
@@ -87,7 +91,7 @@ describe('Security Test Suite', () => {
   describe('Rate Limiting Tests', () => {
     it('should rate limit admin login attempts', async () => {
       const promises = [];
-      
+
       // Make 10 consecutive failed login attempts
       for (let i = 0; i < 10; i++) {
         promises.push(
@@ -96,16 +100,16 @@ describe('Security Test Suite', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: 'attacker@test.com',
-              password: 'wrong-password'
-            })
+              password: 'wrong-password',
+            }),
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Should have some 429 (rate limited) responses
-      const rateLimitedResponses = responses.filter(r => r.status === 429);
+      const rateLimitedResponses = responses.filter((r) => r.status === 429);
       expect(rateLimitedResponses.length).toBeGreaterThan(0);
     });
 
@@ -117,33 +121,33 @@ describe('Security Test Suite', () => {
 
       const promises = [];
       const testImage = new Blob([new Uint8Array(100)], { type: 'image/png' });
-      
+
       // Make 15 upload requests quickly
       for (let i = 0; i < 15; i++) {
         const formData = new FormData();
         formData.append('file', testImage, `test-${i}.png`);
         formData.append('event_id', testData.eventId || 'dummy');
-        
+
         promises.push(
           fetch(`${BASE_URL}/api/admin/photos/upload`, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${testData.adminToken}`
+              Authorization: `Bearer ${testData.adminToken}`,
             },
-            body: formData
+            body: formData,
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Should have some 429 responses for rate limiting
-      expect(responses.some(r => r.status === 429)).toBe(true);
+      expect(responses.some((r) => r.status === 429)).toBe(true);
     });
 
     it('should rate limit signed URL requests', async () => {
       const promises = [];
-      
+
       // Make 70 signed URL requests (above 60/min limit)
       for (let i = 0; i < 70; i++) {
         promises.push(
@@ -152,16 +156,16 @@ describe('Security Test Suite', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               token: testData.subjectToken || 'test-token',
-              storage_path: `photos/test-${i}.jpg`
-            })
+              storage_path: `photos/test-${i}.jpg`,
+            }),
           })
         );
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Should have rate limited responses
-      expect(responses.some(r => r.status === 429)).toBe(true);
+      expect(responses.some((r) => r.status === 429)).toBe(true);
     });
 
     it('should rate limit family gallery access', async () => {
@@ -171,7 +175,7 @@ describe('Security Test Suite', () => {
       }
 
       const promises = [];
-      
+
       // Make 35 gallery requests (above 30/min limit)
       for (let i = 0; i < 35; i++) {
         promises.push(
@@ -180,9 +184,9 @@ describe('Security Test Suite', () => {
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Should have some rate limited responses
-      expect(responses.some(r => r.status === 429)).toBe(true);
+      expect(responses.some((r) => r.status === 429)).toBe(true);
     });
   });
 
@@ -192,15 +196,17 @@ describe('Security Test Suite', () => {
         "'; DROP TABLE events; --",
         "' UNION SELECT * FROM subjects --",
         "'; UPDATE orders SET status='delivered'; --",
-        "' OR 1=1 --"
+        "' OR 1=1 --",
       ];
 
       for (const payload of sqlInjectionPayloads) {
         // Test in different endpoints
         const eventResponse = await fetch(`${BASE_URL}/api/gallery/${payload}`);
         expect([400, 401, 404]).toContain(eventResponse.status);
-        
-        const tokenResponse = await fetch(`${BASE_URL}/api/family/gallery/${payload}`);
+
+        const tokenResponse = await fetch(
+          `${BASE_URL}/api/family/gallery/${payload}`
+        );
         expect([400, 401, 404]).toContain(tokenResponse.status);
       }
     });
@@ -210,7 +216,7 @@ describe('Security Test Suite', () => {
         "<script>alert('xss')</script>",
         "javascript:alert('xss')",
         "<img src=x onerror=alert('xss')>",
-        "';eval(String.fromCharCode(97,108,101,114,116,40,49,41));//'"
+        "';eval(String.fromCharCode(97,108,101,114,116,40,49,41));//'",
       ];
 
       for (const payload of xssPayloads) {
@@ -218,13 +224,13 @@ describe('Security Test Suite', () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${testData.adminToken || 'dummy'}`
+            Authorization: `Bearer ${testData.adminToken || 'dummy'}`,
           },
           body: JSON.stringify({
             name: payload,
             school: 'Test School',
-            date: '2024-01-15'
-          })
+            date: '2024-01-15',
+          }),
         });
 
         // Should either reject or sanitize
@@ -238,9 +244,21 @@ describe('Security Test Suite', () => {
 
     it('should validate file upload types', async () => {
       const maliciousFiles = [
-        { content: '<?php echo "hack"; ?>', name: 'hack.php', type: 'application/x-php' },
-        { content: '<script>alert("xss")</script>', name: 'hack.html', type: 'text/html' },
-        { content: 'malicious content', name: 'virus.exe', type: 'application/x-executable' }
+        {
+          content: '<?php echo "hack"; ?>',
+          name: 'hack.php',
+          type: 'application/x-php',
+        },
+        {
+          content: '<script>alert("xss")</script>',
+          name: 'hack.html',
+          type: 'text/html',
+        },
+        {
+          content: 'malicious content',
+          name: 'virus.exe',
+          type: 'application/x-executable',
+        },
       ];
 
       for (const file of maliciousFiles) {
@@ -252,9 +270,9 @@ describe('Security Test Suite', () => {
         const response = await fetch(`${BASE_URL}/api/admin/photos/upload`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${testData.adminToken || 'dummy'}`
+            Authorization: `Bearer ${testData.adminToken || 'dummy'}`,
           },
-          body: formData
+          body: formData,
         });
 
         expect([400, 415, 422]).toContain(response.status);
@@ -272,9 +290,9 @@ describe('Security Test Suite', () => {
       const response = await fetch(`${BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${testData.adminToken || 'dummy'}`
+          Authorization: `Bearer ${testData.adminToken || 'dummy'}`,
         },
-        body: formData
+        body: formData,
       });
 
       expect([400, 413, 422]).toContain(response.status);
@@ -286,28 +304,31 @@ describe('Security Test Suite', () => {
       const webhookPayload = {
         id: 'test-webhook-123',
         type: 'payment',
-        data: { payment_id: 'test-payment-123' }
+        data: { payment_id: 'test-payment-123' },
       };
 
       // Test without signature
       const noSigResponse = await fetch(`${BASE_URL}/api/payments/webhook`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(webhookPayload),
       });
 
       expect([400, 401]).toContain(noSigResponse.status);
 
       // Test with invalid signature
-      const invalidSigResponse = await fetch(`${BASE_URL}/api/payments/webhook`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-signature': 'invalid-signature',
-          'x-request-id': 'test-request'
-        },
-        body: JSON.stringify(webhookPayload)
-      });
+      const invalidSigResponse = await fetch(
+        `${BASE_URL}/api/payments/webhook`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-signature': 'invalid-signature',
+            'x-request-id': 'test-request',
+          },
+          body: JSON.stringify(webhookPayload),
+        }
+      );
 
       expect([400, 401, 422]).toContain(invalidSigResponse.status);
     });
@@ -316,7 +337,7 @@ describe('Security Test Suite', () => {
       const webhookPayload = {
         id: 'duplicate-test-123',
         type: 'payment',
-        data: { payment_id: 'duplicate-payment-123' }
+        data: { payment_id: 'duplicate-payment-123' },
       };
 
       // Send same webhook twice
@@ -325,9 +346,9 @@ describe('Security Test Suite', () => {
         headers: {
           'Content-Type': 'application/json',
           'x-signature': 'test-signature',
-          'x-request-id': 'duplicate-test-123'
+          'x-request-id': 'duplicate-test-123',
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(webhookPayload),
       });
 
       const response2 = await fetch(`${BASE_URL}/api/payments/webhook`, {
@@ -335,9 +356,9 @@ describe('Security Test Suite', () => {
         headers: {
           'Content-Type': 'application/json',
           'x-signature': 'test-signature',
-          'x-request-id': 'duplicate-test-123'
+          'x-request-id': 'duplicate-test-123',
         },
-        body: JSON.stringify(webhookPayload)
+        body: JSON.stringify(webhookPayload),
       });
 
       // Both should return same status (idempotent)
@@ -349,7 +370,7 @@ describe('Security Test Suite', () => {
         id: 'old-webhook-123',
         date_created: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 24 hours old
         type: 'payment',
-        data: { payment_id: 'old-payment-123' }
+        data: { payment_id: 'old-payment-123' },
       };
 
       const response = await fetch(`${BASE_URL}/api/payments/webhook`, {
@@ -357,9 +378,9 @@ describe('Security Test Suite', () => {
         headers: {
           'Content-Type': 'application/json',
           'x-signature': 'test-signature',
-          'x-request-id': 'old-webhook-123'
+          'x-request-id': 'old-webhook-123',
         },
-        body: JSON.stringify(oldWebhook)
+        body: JSON.stringify(oldWebhook),
       });
 
       // Should reject old webhooks
@@ -372,15 +393,15 @@ describe('Security Test Suite', () => {
       // Test admin subjects endpoint
       const response = await fetch(`${BASE_URL}/api/admin/subjects`, {
         headers: {
-          'Authorization': `Bearer ${testData.adminToken || 'dummy'}`
-        }
+          Authorization: `Bearer ${testData.adminToken || 'dummy'}`,
+        },
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.subjects && result.subjects.length > 0) {
           const subject = result.subjects[0];
-          
+
           // Should not expose full token in listings
           if (subject.token) {
             expect(subject.token.length).toBeLessThan(50); // Should be masked
@@ -394,22 +415,26 @@ describe('Security Test Suite', () => {
 
       // Try to access gallery with different token
       const otherToken = 'other-subject-token-123456789';
-      
-      const response = await fetch(`${BASE_URL}/api/family/gallery/${otherToken}`);
+
+      const response = await fetch(
+        `${BASE_URL}/api/family/gallery/${otherToken}`
+      );
       expect([401, 404]).toContain(response.status);
     });
 
     it('should validate RLS (Row Level Security) policies', async () => {
       // This test would require direct database testing
       // For now, we test through API behavior
-      
+
       if (!testData.subjectToken) return;
 
-      const response = await fetch(`${BASE_URL}/api/family/gallery/${testData.subjectToken}`);
-      
+      const response = await fetch(
+        `${BASE_URL}/api/family/gallery/${testData.subjectToken}`
+      );
+
       if (response.ok) {
         const result = await response.json();
-        
+
         // Should only return photos assigned to this subject
         if (result.photos && result.photos.length > 0) {
           // Each photo should be accessible to this subject
@@ -425,22 +450,22 @@ describe('Security Test Suite', () => {
       const errorEndpoints = [
         { url: '/api/admin/events/nonexistent-id', method: 'GET' },
         { url: '/api/family/gallery/invalid-token', method: 'GET' },
-        { url: '/api/admin/photos/upload', method: 'POST' }
+        { url: '/api/admin/photos/upload', method: 'POST' },
       ];
 
       for (const endpoint of errorEndpoints) {
         const response = await fetch(`${BASE_URL}${endpoint.url}`, {
           method: endpoint.method,
           headers: {
-            'Authorization': 'Bearer invalid-token',
-            'Content-Type': 'application/json'
+            Authorization: 'Bearer invalid-token',
+            'Content-Type': 'application/json',
           },
-          body: endpoint.method === 'POST' ? '{}' : undefined
+          body: endpoint.method === 'POST' ? '{}' : undefined,
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          
+
           // Should not expose:
           expect(errorText).not.toMatch(/database/i);
           expect(errorText).not.toMatch(/sql/i);
@@ -459,9 +484,9 @@ describe('Security Test Suite', () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testData.adminToken || 'dummy'}`
+          Authorization: `Bearer ${testData.adminToken || 'dummy'}`,
         },
-        body: '{ invalid json }'
+        body: '{ invalid json }',
       });
 
       expect([400, 422]).toContain(response.status);
@@ -474,10 +499,10 @@ describe('Security Test Suite', () => {
       const response = await fetch(`${BASE_URL}/api/admin/events`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${testData.adminToken || 'dummy'}`
+          Authorization: `Bearer ${testData.adminToken || 'dummy'}`,
           // No Content-Type header
         },
-        body: 'name=test&school=test'
+        body: 'name=test&school=test',
       });
 
       expect([400, 415, 422]).toContain(response.status);
@@ -487,10 +512,10 @@ describe('Security Test Suite', () => {
   describe('Content Security Policy', () => {
     it('should include security headers', async () => {
       const response = await fetch(`${BASE_URL}/`);
-      
+
       // Should have security headers
       const headers = response.headers;
-      
+
       // Check for common security headers
       expect(headers.get('x-frame-options')).toBeTruthy();
       expect(headers.get('x-content-type-options')).toBeTruthy();
@@ -508,7 +533,7 @@ async function setupSecurityTestData() {
         name: 'Security Test Event',
         school: 'Security Test School',
         date: '2024-01-15',
-        location: 'Security Test Location'
+        location: 'Security Test Location',
       })
       .select()
       .single();
@@ -523,7 +548,9 @@ async function setupSecurityTestData() {
           name: 'Security Test Subject',
           email: 'security@test.com',
           token: 'security_test_token_1234567890',
-          token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          token_expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
         })
         .select()
         .single();

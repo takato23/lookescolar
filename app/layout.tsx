@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
 import './globals.css';
+import { SkipToContent } from '@/components/ui/accessible';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -41,15 +42,19 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen antialiased`}>
         <QueryProvider>
           <ThemeProvider defaultTheme="system" storageKey="lookescolar-theme">
+            {/* Skip link for keyboard/reader users */}
+            <SkipToContent targetId="main-content" />
             {/* Enhanced gradient background with iOS 26 liquid glass effect */}
             <div className="fixed inset-0 bg-gradient-to-br from-purple-50/50 via-pink-50/50 to-blue-50/50 transition-colors duration-300 dark:from-purple-950/20 dark:via-purple-900/10 dark:to-blue-950/20" />
             <div className="gradient-mesh fixed inset-0 opacity-30 transition-opacity duration-300 dark:opacity-20" />
-            
+
             {/* iOS 26 Liquid Glass Background */}
             <div className="liquid-glass-container fixed inset-0 -z-10 opacity-70 dark:opacity-50" />
 
             {/* Content wrapper with enhanced liquid glass background */}
             <div className="liquid-glass-card relative z-10 min-h-screen backdrop-blur-sm">
+              {/* Anchor for skip link */}
+              <div id="main-content" tabIndex={-1} />
               {children}
             </div>
             <Toaster richColors position="top-right" />

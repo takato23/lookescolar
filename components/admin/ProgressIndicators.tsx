@@ -5,11 +5,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  CheckCircle, Clock, AlertTriangle, Camera, Users, 
-  TrendingUp, Target, Award, BarChart3, Zap,
-  Calendar, Download, RefreshCw, ArrowUp, ArrowDown,
-  Folder, GraduationCap, BookOpen, User
+import {
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Camera,
+  Users,
+  TrendingUp,
+  Target,
+  Award,
+  BarChart3,
+  Zap,
+  Calendar,
+  Download,
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  Folder,
+  GraduationCap,
+  BookOpen,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +61,7 @@ export default function ProgressIndicators({
   eventId,
   refreshInterval = 30000, // 30 seconds
   showDetails = true,
-  onProgressUpdate
+  onProgressUpdate,
 }: ProgressIndicatorsProps) {
   const [progressData, setProgressData] = useState<LevelProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +73,7 @@ export default function ProgressIndicators({
     try {
       const response = await fetch(`/api/admin/events/${eventId}/progress`);
       const data = await response.json();
-      
+
       if (data.success) {
         setProgressData(data.progress || []);
         setLastUpdate(new Date());
@@ -74,7 +89,7 @@ export default function ProgressIndicators({
   // Auto-refresh effect
   useEffect(() => {
     fetchProgressData();
-    
+
     if (autoRefresh && refreshInterval > 0) {
       const interval = setInterval(fetchProgressData, refreshInterval);
       return () => clearInterval(interval);
@@ -89,44 +104,59 @@ export default function ProgressIndicators({
       (acc, level) => ({
         photos: {
           total: acc.photos.total + level.photos.total,
-          completed: acc.photos.completed + level.photos.completed
+          completed: acc.photos.completed + level.photos.completed,
         },
         tagging: {
           total: acc.tagging.total + level.tagging.total,
-          completed: acc.tagging.completed + level.tagging.completed
+          completed: acc.tagging.completed + level.tagging.completed,
         },
         approval: {
           total: acc.approval.total + level.approval.total,
-          completed: acc.approval.completed + level.approval.completed
-        }
+          completed: acc.approval.completed + level.approval.completed,
+        },
       }),
       {
         photos: { total: 0, completed: 0 },
         tagging: { total: 0, completed: 0 },
-        approval: { total: 0, completed: 0 }
+        approval: { total: 0, completed: 0 },
       }
     );
 
     return {
       photos: {
         ...totals.photos,
-        percentage: totals.photos.total > 0 ? (totals.photos.completed / totals.photos.total) * 100 : 0
+        percentage:
+          totals.photos.total > 0
+            ? (totals.photos.completed / totals.photos.total) * 100
+            : 0,
       },
       tagging: {
         ...totals.tagging,
-        percentage: totals.tagging.total > 0 ? (totals.tagging.completed / totals.tagging.total) * 100 : 0
+        percentage:
+          totals.tagging.total > 0
+            ? (totals.tagging.completed / totals.tagging.total) * 100
+            : 0,
       },
       approval: {
         ...totals.approval,
-        percentage: totals.approval.total > 0 ? (totals.approval.completed / totals.approval.total) * 100 : 0
-      }
+        percentage:
+          totals.approval.total > 0
+            ? (totals.approval.completed / totals.approval.total) * 100
+            : 0,
+      },
     };
   }, [progressData]);
 
   // Progress card component
-  const ProgressCard = ({ level, isNested = false }: { level: LevelProgress; isNested?: boolean }) => {
+  const ProgressCard = ({
+    level,
+    isNested = false,
+  }: {
+    level: LevelProgress;
+    isNested?: boolean;
+  }) => {
     const Icon = level.icon;
-    
+
     const getStatusColor = (percentage: number) => {
       if (percentage >= 90) return 'text-green-600';
       if (percentage >= 70) return 'text-blue-600';
@@ -142,28 +172,30 @@ export default function ProgressIndicators({
     };
 
     return (
-      <Card className={cn(
-        "transition-all hover:shadow-md",
-        isNested && "ml-6 border-l-4 border-l-gray-200"
-      )}>
+      <Card
+        className={cn(
+          'transition-all hover:shadow-md',
+          isNested && 'ml-6 border-l-4 border-l-gray-200'
+        )}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-lg", level.color)}>
+              <div className={cn('rounded-lg p-2', level.color)}>
                 <Icon className="h-5 w-5" />
               </div>
               <div>
                 <CardTitle className="text-lg">{level.name}</CardTitle>
-                <p className="text-sm text-muted-foreground capitalize">
+                <p className="text-muted-foreground text-sm capitalize">
                   {level.type}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {level.estimatedCompletion && (
                 <Badge variant="outline" className="text-xs">
-                  <Calendar className="h-3 w-3 mr-1" />
+                  <Calendar className="mr-1 h-3 w-3" />
                   {level.estimatedCompletion}
                 </Badge>
               )}
@@ -183,7 +215,12 @@ export default function ProgressIndicators({
                 <span className="text-muted-foreground">
                   {level.photos.completed} / {level.photos.total}
                 </span>
-                <span className={cn("font-medium", getStatusColor(level.photos.percentage))}>
+                <span
+                  className={cn(
+                    'font-medium',
+                    getStatusColor(level.photos.percentage)
+                  )}
+                >
                   {Math.round(level.photos.percentage)}%
                 </span>
               </div>
@@ -202,7 +239,12 @@ export default function ProgressIndicators({
                 <span className="text-muted-foreground">
                   {level.tagging.completed} / {level.tagging.total}
                 </span>
-                <span className={cn("font-medium", getStatusColor(level.tagging.percentage))}>
+                <span
+                  className={cn(
+                    'font-medium',
+                    getStatusColor(level.tagging.percentage)
+                  )}
+                >
                   {Math.round(level.tagging.percentage)}%
                 </span>
               </div>
@@ -221,7 +263,12 @@ export default function ProgressIndicators({
                 <span className="text-muted-foreground">
                   {level.approval.completed} / {level.approval.total}
                 </span>
-                <span className={cn("font-medium", getStatusColor(level.approval.percentage))}>
+                <span
+                  className={cn(
+                    'font-medium',
+                    getStatusColor(level.approval.percentage)
+                  )}
+                >
                   {Math.round(level.approval.percentage)}%
                 </span>
               </div>
@@ -241,7 +288,12 @@ export default function ProgressIndicators({
                   <span className="text-muted-foreground">
                     {level.students.completed} / {level.students.total}
                   </span>
-                  <span className={cn("font-medium", getStatusColor(level.students.percentage))}>
+                  <span
+                    className={cn(
+                      'font-medium',
+                      getStatusColor(level.students.percentage)
+                    )}
+                  >
                     {Math.round(level.students.percentage)}%
                   </span>
                 </div>
@@ -251,8 +303,8 @@ export default function ProgressIndicators({
           )}
 
           {/* Status summary */}
-          <div className="flex items-center justify-between pt-2 border-t">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between border-t pt-2">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
               {level.lastActivity && (
                 <>
                   <Clock className="h-3 w-3" />
@@ -260,17 +312,19 @@ export default function ProgressIndicators({
                 </>
               )}
             </div>
-            
+
             <div className="flex items-center gap-1">
-              {[level.photos, level.tagging, level.approval].map((stat, index) => {
-                const StatusIcon = getStatusIcon(stat.percentage);
-                return (
-                  <StatusIcon 
-                    key={index}
-                    className={cn("h-4 w-4", getStatusColor(stat.percentage))} 
-                  />
-                );
-              })}
+              {[level.photos, level.tagging, level.approval].map(
+                (stat, index) => {
+                  const StatusIcon = getStatusIcon(stat.percentage);
+                  return (
+                    <StatusIcon
+                      key={index}
+                      className={cn('h-4 w-4', getStatusColor(stat.percentage))}
+                    />
+                  );
+                }
+              )}
             </div>
           </div>
         </CardContent>
@@ -283,7 +337,7 @@ export default function ProgressIndicators({
     if (!overallProgress) return null;
 
     return (
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5 text-blue-600" />
@@ -291,11 +345,11 @@ export default function ProgressIndicators({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Photos */}
             <div className="text-center">
-              <div className="relative w-20 h-20 mx-auto mb-3">
-                <svg className="w-20 h-20 transform -rotate-90">
+              <div className="relative mx-auto mb-3 h-20 w-20">
+                <svg className="h-20 w-20 -rotate-90 transform">
                   <circle
                     cx="40"
                     cy="40"
@@ -325,14 +379,15 @@ export default function ProgressIndicators({
               </div>
               <h3 className="font-medium text-blue-900">Fotos Subidas</h3>
               <p className="text-sm text-blue-700">
-                {overallProgress.photos.completed} / {overallProgress.photos.total}
+                {overallProgress.photos.completed} /{' '}
+                {overallProgress.photos.total}
               </p>
             </div>
 
             {/* Tagging */}
             <div className="text-center">
-              <div className="relative w-20 h-20 mx-auto mb-3">
-                <svg className="w-20 h-20 transform -rotate-90">
+              <div className="relative mx-auto mb-3 h-20 w-20">
+                <svg className="h-20 w-20 -rotate-90 transform">
                   <circle
                     cx="40"
                     cy="40"
@@ -362,14 +417,15 @@ export default function ProgressIndicators({
               </div>
               <h3 className="font-medium text-purple-900">Etiquetado</h3>
               <p className="text-sm text-purple-700">
-                {overallProgress.tagging.completed} / {overallProgress.tagging.total}
+                {overallProgress.tagging.completed} /{' '}
+                {overallProgress.tagging.total}
               </p>
             </div>
 
             {/* Approval */}
             <div className="text-center">
-              <div className="relative w-20 h-20 mx-auto mb-3">
-                <svg className="w-20 h-20 transform -rotate-90">
+              <div className="relative mx-auto mb-3 h-20 w-20">
+                <svg className="h-20 w-20 -rotate-90 transform">
                   <circle
                     cx="40"
                     cy="40"
@@ -399,7 +455,8 @@ export default function ProgressIndicators({
               </div>
               <h3 className="font-medium text-green-900">Aprobación</h3>
               <p className="text-sm text-green-700">
-                {overallProgress.approval.completed} / {overallProgress.approval.total}
+                {overallProgress.approval.completed} /{' '}
+                {overallProgress.approval.total}
               </p>
             </div>
           </div>
@@ -411,13 +468,13 @@ export default function ProgressIndicators({
   if (loading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map(i => (
+        {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="mb-4 h-4 w-3/4 rounded bg-gray-200"></div>
               <div className="space-y-2">
-                <div className="h-2 bg-gray-200 rounded"></div>
-                <div className="h-2 bg-gray-200 rounded w-5/6"></div>
+                <div className="h-2 rounded bg-gray-200"></div>
+                <div className="h-2 w-5/6 rounded bg-gray-200"></div>
               </div>
             </CardContent>
           </Card>
@@ -436,25 +493,27 @@ export default function ProgressIndicators({
             Última actualización: {lastUpdate.toLocaleTimeString('es-AR')}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={cn(autoRefresh && "bg-green-50 border-green-200")}
+            className={cn(autoRefresh && 'border-green-200 bg-green-50')}
           >
-            <Zap className="h-4 w-4 mr-1" />
+            <Zap className="mr-1 h-4 w-4" />
             Auto-refresh
           </Button>
-          
+
           <Button
             variant="outline"
             size="sm"
             onClick={fetchProgressData}
             disabled={loading}
           >
-            <RefreshCw className={cn("h-4 w-4 mr-1", loading && "animate-spin")} />
+            <RefreshCw
+              className={cn('mr-1 h-4 w-4', loading && 'animate-spin')}
+            />
             Actualizar
           </Button>
         </div>
@@ -467,12 +526,13 @@ export default function ProgressIndicators({
       {showDetails && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Progreso por Nivel</h3>
-          {progressData.map(level => (
+          {progressData.map((level) => (
             <div key={level.id}>
               <ProgressCard level={level} />
-              {level.children && level.children.map(child => (
-                <ProgressCard key={child.id} level={child} isNested />
-              ))}
+              {level.children &&
+                level.children.map((child) => (
+                  <ProgressCard key={child.id} level={child} isNested />
+                ))}
             </div>
           ))}
         </div>

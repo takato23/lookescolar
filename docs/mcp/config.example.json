@@ -1,0 +1,150 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/ABSOLUTE/PATH/TO/Documents"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=4096"
+      },
+      "disabled": false,
+      "alwaysAllow": [
+        "read_file",
+        "write_file",
+        "list_directory",
+        "make_directory",
+        "delete_file"
+      ],
+      "timeout": 300
+    },
+    "filesystem_lookescolar": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/santiagobalosky/LookEscolar"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--max-old-space-size=4096"
+      },
+      "disabled": false,
+      "alwaysAllow": [
+        "read_file",
+        "write_file",
+        "list_directory",
+        "make_directory",
+        "delete_file"
+      ],
+      "timeout": 300
+    },
+    "@21st-dev-magic-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@21st-dev/magic-mcp",
+        "--config",
+        "{\"TWENTY_FIRST_API_KEY\":\"<REPLACE_WITH_21ST_API_KEY>\"}"
+      ],
+      "disabled": false,
+      "alwaysAllow": [
+        "21st_magic_component_builder",
+        "logo_search",
+        "21st_magic_component_inspiration"
+      ],
+      "timeout": 300
+    },
+    "ragdocs": {
+      "command": "npx",
+      "args": [
+        "--silent",
+        "-y",
+        "@hannesrudolph/mcp-ragdocs"
+      ],
+      "env": {
+        "QDRANT_URL": "<REPLACE_WITH_QDRANT_URL>",
+        "QDRANT_API_KEY": "<REPLACE_WITH_QDRANT_API_KEY>"
+      },
+      "alwaysAllow": [
+        "search_documentation"
+      ],
+      "disabled": false
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "--silent",
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "disabled": false,
+      "alwaysAllow": [
+        "puppeteer_navigate",
+        "puppeteer_fill",
+        "puppeteer_click",
+        "puppeteer_screenshot",
+        "puppeteer_evaluate"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "--silent",
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "disabled": false,
+      "alwaysAllow": [
+        "sequentialthinking"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "--silent",
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "disabled": false,
+      "alwaysAllow": [
+        "playwright_get",
+        "playwright_navigate",
+        "playwright_screenshot",
+        "playwright_click",
+        "playwright_iframe_click"
+      ]
+    },
+    "gemini-flash-mcp": {
+      "command": "npx",
+      "args": ["-y", "gemini-flash-mcp@latest"],
+      "env": {
+        "GEMINI_API_KEY": "<REPLACE_WITH_GEMINI_API_KEY>"
+      },
+      "alwaysAllow": [],
+      "disabled": false
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "<REPLACE_WITH_SUPABASE_ACCESS_TOKEN>"
+      ],
+      "disabled": false
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "disabled": false
+    },
+    "streamable-mcp-server": {
+      "type": "http",
+      "url": "http://127.0.0.1:12306/mcp"
+    }
+  }
+}

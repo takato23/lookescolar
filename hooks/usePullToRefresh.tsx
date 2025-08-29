@@ -8,39 +8,45 @@ interface UsePullToRefreshOptions {
   disabled?: boolean;
 }
 
-export function usePullToRefresh({ 
-  onRefresh, 
-  threshold = 70, 
-  disabled = false 
+export function usePullToRefresh({
+  onRefresh,
+  threshold = 70,
+  disabled = false,
 }: UsePullToRefreshOptions) {
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   const startY = useRef<number>(0);
   const isDragging = useRef<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleTouchStart = useCallback((e: TouchEvent) => {
-    if (disabled || window.scrollY > 0) return;
-    
-    startY.current = e.touches[0].clientY;
-    isDragging.current = true;
-  }, [disabled]);
+  const handleTouchStart = useCallback(
+    (e: TouchEvent) => {
+      if (disabled || window.scrollY > 0) return;
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDragging.current || disabled) return;
+      startY.current = e.touches[0].clientY;
+      isDragging.current = true;
+    },
+    [disabled]
+  );
 
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - startY.current;
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isDragging.current || disabled) return;
 
-    if (diff > 0 && window.scrollY === 0) {
-      e.preventDefault();
-      const distance = Math.min(diff * 0.5, threshold + 30); // Resistance effect
-      setPullDistance(distance);
-      setIsPulling(distance > threshold);
-    }
-  }, [threshold, disabled]);
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY.current;
+
+      if (diff > 0 && window.scrollY === 0) {
+        e.preventDefault();
+        const distance = Math.min(diff * 0.5, threshold + 30); // Resistance effect
+        setPullDistance(distance);
+        setIsPulling(distance > threshold);
+      }
+    },
+    [threshold, disabled]
+  );
 
   const handleTouchEnd = useCallback(async () => {
     if (!isDragging.current || disabled) return;
@@ -66,8 +72,12 @@ export function usePullToRefresh({
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('touchstart', handleTouchStart, { passive: false });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, {
+      passive: false,
+    });
+    container.addEventListener('touchmove', handleTouchMove, {
+      passive: false,
+    });
     container.addEventListener('touchend', handleTouchEnd);
 
     return () => {
@@ -86,16 +96,16 @@ export function usePullToRefresh({
     pullStyle: {
       transform: `translateY(${Math.min(pullDistance, threshold)}px)`,
       transition: isDragging.current ? 'none' : 'transform 0.3s ease',
-    }
+    },
   };
 }
 
 // Componente visual para el indicador de pull-to-refresh
-export function PullToRefreshIndicator({ 
-  isPulling, 
-  isRefreshing, 
-  pullDistance, 
-  threshold = 70 
+export function PullToRefreshIndicator({
+  isPulling,
+  isRefreshing,
+  pullDistance,
+  threshold = 70,
 }: {
   isPulling: boolean;
   isRefreshing: boolean;
@@ -106,20 +116,20 @@ export function PullToRefreshIndicator({
   const rotation = progress * 180;
 
   return (
-    <div 
-      className={`absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full transition-transform duration-300 ${
+    <div
+      className={`absolute left-1/2 top-0 -translate-x-1/2 -translate-y-full transform transition-transform duration-300 ${
         pullDistance > 10 ? 'translate-y-0' : ''
       }`}
       style={{
         transform: `translateX(-50%) translateY(${Math.min(pullDistance - threshold, 0)}px)`,
       }}
     >
-      <div className="flex items-center justify-center w-10 h-10 bg-primary-500 rounded-full shadow-lg">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-500 shadow-lg">
         {isRefreshing ? (
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
         ) : (
           <svg
-            className="w-5 h-5 text-white transition-transform duration-200"
+            className="h-5 w-5 text-white transition-transform duration-200"
             style={{ transform: `rotate(${rotation}deg)` }}
             fill="none"
             viewBox="0 0 24 24"

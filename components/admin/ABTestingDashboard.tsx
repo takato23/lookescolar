@@ -7,20 +7,26 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  TrendingDown, 
-  Clock, 
-  Users, 
-  Target, 
+import {
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Users,
+  Target,
   CheckCircle,
   AlertTriangle,
   Eye,
-  Camera
+  Camera,
 } from 'lucide-react';
 
 interface ABTestMetrics {
@@ -65,11 +71,16 @@ interface ABTestingDashboardProps {
   className?: string;
 }
 
-export default function ABTestingDashboard({ eventId, className }: ABTestingDashboardProps) {
+export default function ABTestingDashboard({
+  eventId,
+  className,
+}: ABTestingDashboardProps) {
   const [testData, setTestData] = useState<EventTestData | null>(null);
   const [allTests, setAllTests] = useState<EventTestData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
+  const [selectedPeriod, setSelectedPeriod] = useState<
+    '24h' | '7d' | '30d' | 'all'
+  >('7d');
   const [testConfig, setTestConfig] = useState({
     qrParticipation: 70, // percentage of students using QR method
     traditionalParticipation: 30,
@@ -82,7 +93,7 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
   const loadTestData = async () => {
     try {
       setLoading(true);
-      
+
       // Mock data for now - in production this would come from analytics
       const mockTestData: EventTestData = {
         eventId: eventId || 'test-event',
@@ -150,7 +161,7 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
   if (loading) {
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
       </div>
     );
   }
@@ -159,7 +170,7 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
     return (
       <Card className={className}>
         <CardContent className="p-6 text-center">
-          <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <Target className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <p className="text-muted-foreground">No A/B testing data available</p>
           <Button onClick={startNewTest} className="mt-4">
             Start New A/B Test
@@ -181,7 +192,10 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedPeriod} onValueChange={(value: any) => setSelectedPeriod(value)}>
+          <Select
+            value={selectedPeriod}
+            onValueChange={(value: any) => setSelectedPeriod(value)}
+          >
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -205,59 +219,73 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5" />
+            <Target className="h-5 w-5" />
             Test Overview: {testData.eventName}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="text-center">
-              <Badge 
-                variant={testData.status === 'active' ? 'default' : testData.status === 'completed' ? 'secondary' : 'outline'}
+              <Badge
+                variant={
+                  testData.status === 'active'
+                    ? 'default'
+                    : testData.status === 'completed'
+                      ? 'secondary'
+                      : 'outline'
+                }
                 className="mb-2"
               >
                 {testData.status.toUpperCase()}
               </Badge>
-              <p className="text-sm text-muted-foreground">Test Status</p>
+              <p className="text-muted-foreground text-sm">Test Status</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">{testData.participantCount}</p>
-              <p className="text-sm text-muted-foreground">Total Students</p>
+              <p className="text-muted-foreground text-sm">Total Students</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold">{testConfig.qrParticipation}%</p>
-              <p className="text-sm text-muted-foreground">Using QR Method</p>
+              <p className="text-2xl font-bold">
+                {testConfig.qrParticipation}%
+              </p>
+              <p className="text-muted-foreground text-sm">Using QR Method</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">
                 {Math.round(metrics.comparison.confidenceInterval)}%
               </p>
-              <p className="text-sm text-muted-foreground">Confidence Interval</p>
+              <p className="text-muted-foreground text-sm">
+                Confidence Interval
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Key Metrics Comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Card className="border-green-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-green-700 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-lg text-green-700">
+              <TrendingUp className="h-5 w-5" />
               Time Efficiency
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">QR Method:</span>
-                <Badge variant="secondary">{metrics.qrMethod.avgTimePerPhoto}s</Badge>
+                <Badge variant="secondary">
+                  {metrics.qrMethod.avgTimePerPhoto}s
+                </Badge>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">Traditional:</span>
-                <Badge variant="outline">{metrics.traditionalMethod.avgTimePerPhoto}s</Badge>
+                <Badge variant="outline">
+                  {metrics.traditionalMethod.avgTimePerPhoto}s
+                </Badge>
               </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="rounded-lg bg-green-50 p-3 text-center">
                 <p className="text-2xl font-bold text-green-700">
                   {Math.round(metrics.comparison.timeImprovement)}%
                 </p>
@@ -269,22 +297,26 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
 
         <Card className="border-blue-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-blue-700 flex items-center gap-2">
-              <CheckCircle className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-lg text-blue-700">
+              <CheckCircle className="h-5 w-5" />
               Accuracy Rate
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">QR Method:</span>
-                <Badge variant="secondary">{metrics.qrMethod.successRate}%</Badge>
+                <Badge variant="secondary">
+                  {metrics.qrMethod.successRate}%
+                </Badge>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">Traditional:</span>
-                <Badge variant="outline">{metrics.traditionalMethod.successRate}%</Badge>
+                <Badge variant="outline">
+                  {metrics.traditionalMethod.successRate}%
+                </Badge>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="rounded-lg bg-blue-50 p-3 text-center">
                 <p className="text-2xl font-bold text-blue-700">
                   {Math.round(metrics.comparison.errorReduction)}%
                 </p>
@@ -296,26 +328,26 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
 
         <Card className="border-purple-200">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-purple-700 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-lg text-purple-700">
+              <BarChart3 className="h-5 w-5" />
               Overall Efficiency
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">QR Photos/Hour:</span>
                 <Badge variant="secondary">
                   {Math.round(3600 / metrics.qrMethod.avgTimePerPhoto)}
                 </Badge>
               </div>
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">Traditional Photos/Hour:</span>
                 <Badge variant="outline">
                   {Math.round(3600 / metrics.traditionalMethod.avgTimePerPhoto)}
                 </Badge>
               </div>
-              <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <div className="rounded-lg bg-purple-50 p-3 text-center">
                 <p className="text-2xl font-bold text-purple-700">
                   {Math.round(metrics.comparison.efficiencyGain / 100)}x
                 </p>
@@ -335,7 +367,7 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
         </TabsList>
 
         <TabsContent value="detailed" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* QR Method Details */}
             <Card>
               <CardHeader>
@@ -344,32 +376,57 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Students</p>
-                    <p className="text-2xl font-bold">{metrics.qrMethod.totalStudents}</p>
+                    <p className="text-muted-foreground text-sm">
+                      Total Students
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.qrMethod.totalStudents}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Photos with QR</p>
-                    <p className="text-2xl font-bold">{metrics.qrMethod.photosWithQR}</p>
+                    <p className="text-muted-foreground text-sm">
+                      Photos with QR
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.qrMethod.photosWithQR}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Auto-classified</p>
-                    <p className="text-2xl font-bold">{metrics.qrMethod.autoClassified}</p>
+                    <p className="text-muted-foreground text-sm">
+                      Auto-classified
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.qrMethod.autoClassified}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Success Rate</p>
-                    <p className="text-2xl font-bold">{metrics.qrMethod.successRate}%</p>
+                    <p className="text-muted-foreground text-sm">
+                      Success Rate
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.qrMethod.successRate}%
+                    </p>
                   </div>
                 </div>
-                
+
                 <div>
-                  <div className="flex justify-between mb-2">
+                  <div className="mb-2 flex justify-between">
                     <span className="text-sm">Classification Rate</span>
                     <span className="text-sm font-medium">
-                      {Math.round((metrics.qrMethod.autoClassified / metrics.qrMethod.photosWithQR) * 100)}%
+                      {Math.round(
+                        (metrics.qrMethod.autoClassified /
+                          metrics.qrMethod.photosWithQR) *
+                          100
+                      )}
+                      %
                     </span>
                   </div>
-                  <Progress 
-                    value={(metrics.qrMethod.autoClassified / metrics.qrMethod.photosWithQR) * 100} 
+                  <Progress
+                    value={
+                      (metrics.qrMethod.autoClassified /
+                        metrics.qrMethod.photosWithQR) *
+                      100
+                    }
                     className="h-2"
                   />
                 </div>
@@ -379,37 +436,55 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
             {/* Traditional Method Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-orange-700">Traditional Method</CardTitle>
+                <CardTitle className="text-orange-700">
+                  Traditional Method
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Students</p>
-                    <p className="text-2xl font-bold">{metrics.traditionalMethod.totalStudents}</p>
+                    <p className="text-muted-foreground text-sm">
+                      Total Students
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.traditionalMethod.totalStudents}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Photos Tagged</p>
-                    <p className="text-2xl font-bold">{metrics.traditionalMethod.manuallyTagged}</p>
+                    <p className="text-muted-foreground text-sm">
+                      Photos Tagged
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.traditionalMethod.manuallyTagged}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Avg Time/Photo</p>
-                    <p className="text-2xl font-bold">{metrics.traditionalMethod.avgTimePerPhoto}s</p>
+                    <p className="text-muted-foreground text-sm">
+                      Avg Time/Photo
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.traditionalMethod.avgTimePerPhoto}s
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Success Rate</p>
-                    <p className="text-2xl font-bold">{metrics.traditionalMethod.successRate}%</p>
+                    <p className="text-muted-foreground text-sm">
+                      Success Rate
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {metrics.traditionalMethod.successRate}%
+                    </p>
                   </div>
                 </div>
-                
+
                 <div>
-                  <div className="flex justify-between mb-2">
+                  <div className="mb-2 flex justify-between">
                     <span className="text-sm">Manual Accuracy</span>
                     <span className="text-sm font-medium">
                       {metrics.traditionalMethod.successRate}%
                     </span>
                   </div>
-                  <Progress 
-                    value={metrics.traditionalMethod.successRate} 
+                  <Progress
+                    value={metrics.traditionalMethod.successRate}
                     className="h-2"
                   />
                 </div>
@@ -425,10 +500,13 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="font-semibold text-blue-900">Timeline visualization coming soon</p>
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <p className="font-semibold text-blue-900">
+                    Timeline visualization coming soon
+                  </p>
                   <p className="text-sm text-blue-700">
-                    This will show metrics over time, adoption rates, and key milestones.
+                    This will show metrics over time, adoption rates, and key
+                    milestones.
                   </p>
                 </div>
               </div>
@@ -437,36 +515,40 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="text-green-700">Key Findings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-semibold">Significant Time Savings</p>
-                    <p className="text-sm text-muted-foreground">
-                      QR method is {Math.round(metrics.comparison.timeImprovement)}% faster per photo
+                    <p className="text-muted-foreground text-sm">
+                      QR method is{' '}
+                      {Math.round(metrics.comparison.timeImprovement)}% faster
+                      per photo
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-semibold">Improved Accuracy</p>
-                    <p className="text-sm text-muted-foreground">
-                      {Math.round(metrics.comparison.errorReduction)}% reduction in classification errors
+                    <p className="text-muted-foreground text-sm">
+                      {Math.round(metrics.comparison.errorReduction)}% reduction
+                      in classification errors
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                  <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-semibold">High Adoption</p>
-                    <p className="text-sm text-muted-foreground">
-                      {testConfig.qrParticipation}% of students successfully using QR codes
+                    <p className="text-muted-foreground text-sm">
+                      {testConfig.qrParticipation}% of students successfully
+                      using QR codes
                     </p>
                   </div>
                 </div>
@@ -475,32 +557,34 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-orange-700">Recommendations</CardTitle>
+                <CardTitle className="text-orange-700">
+                  Recommendations
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Target className="w-5 h-5 text-orange-600 mt-0.5" />
+                  <Target className="mt-0.5 h-5 w-5 text-orange-600" />
                   <div>
                     <p className="font-semibold">Scale QR Implementation</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Results justify full QR rollout for secondary schools
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Eye className="w-5 h-5 text-orange-600 mt-0.5" />
+                  <Eye className="mt-0.5 h-5 w-5 text-orange-600" />
                   <div>
                     <p className="font-semibold">Improve QR Visibility</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Enhance QR code positioning guidelines for photographers
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Users className="w-5 h-5 text-orange-600 mt-0.5" />
+                  <Users className="mt-0.5 h-5 w-5 text-orange-600" />
                   <div>
                     <p className="font-semibold">Train Staff</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Provide QR-focused training for photo session staff
                     </p>
                   </div>
@@ -513,9 +597,11 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
             <Alert>
               <CheckCircle className="h-4 w-4" />
               <AlertDescription>
-                <strong>Statistically Significant Results:</strong> The improvement shown by the QR method 
-                is statistically significant with {metrics.comparison.confidenceInterval}% confidence. 
-                These results provide strong evidence for adopting the QR code approach.
+                <strong>Statistically Significant Results:</strong> The
+                improvement shown by the QR method is statistically significant
+                with {metrics.comparison.confidenceInterval}% confidence. These
+                results provide strong evidence for adopting the QR code
+                approach.
               </AlertDescription>
             </Alert>
           )}
@@ -527,26 +613,38 @@ export default function ABTestingDashboard({ eventId, className }: ABTestingDash
               <CardTitle>Test Configuration</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label>QR Method Participation</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm w-8">{testConfig.qrParticipation}%</span>
-                    <Progress value={testConfig.qrParticipation} className="flex-1" />
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="w-8 text-sm">
+                      {testConfig.qrParticipation}%
+                    </span>
+                    <Progress
+                      value={testConfig.qrParticipation}
+                      className="flex-1"
+                    />
                   </div>
                 </div>
                 <div>
                   <Label>Traditional Method Participation</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-sm w-8">{testConfig.traditionalParticipation}%</span>
-                    <Progress value={testConfig.traditionalParticipation} className="flex-1" />
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="w-8 text-sm">
+                      {testConfig.traditionalParticipation}%
+                    </span>
+                    <Progress
+                      value={testConfig.traditionalParticipation}
+                      className="flex-1"
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="font-semibold text-yellow-900">Configuration Options</p>
-                <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                <p className="font-semibold text-yellow-900">
+                  Configuration Options
+                </p>
+                <ul className="mt-1 space-y-1 text-sm text-yellow-700">
                   <li>• Adjust participant split between methods</li>
                   <li>• Set test duration and monitoring periods</li>
                   <li>• Configure success metrics and thresholds</li>

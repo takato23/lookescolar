@@ -6,9 +6,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 // ============================================================
 
 export interface RateLimitConfig {
-  windowMs: number;           // Time window in milliseconds
-  maxAttempts: number;        // Maximum attempts per window
-  blockDurationMs: number;    // Block duration after exceeding limit
+  windowMs: number; // Time window in milliseconds
+  maxAttempts: number; // Maximum attempts per window
+  blockDurationMs: number; // Block duration after exceeding limit
   skipSuccessfulRequests?: boolean; // Don't count successful requests
   keyGenerator?: (request: NextRequest) => string; // Custom key generation
   onLimitReached?: (key: string, request: NextRequest) => void; // Callback
@@ -39,9 +39,12 @@ class RateLimitStore {
 
   constructor() {
     // Cleanup expired entries every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup();
+      },
+      5 * 60 * 1000
+    );
   }
 
   get(key: string): RateLimitEntry | undefined {
@@ -64,17 +67,19 @@ class RateLimitStore {
       // Remove entries that haven't been accessed in the last hour
       // and are not currently blocked
       if (
-        now - entry.lastAttempt > 60 * 60 * 1000 && 
+        now - entry.lastAttempt > 60 * 60 * 1000 &&
         (!entry.blockedUntil || now > entry.blockedUntil)
       ) {
         expiredKeys.push(key);
       }
     }
 
-    expiredKeys.forEach(key => this.store.delete(key));
-    
+    expiredKeys.forEach((key) => this.store.delete(key));
+
     if (expiredKeys.length > 0) {
-      console.log(`[RateLimit] Cleaned up ${expiredKeys.length} expired entries`);
+      console.log(
+        `[RateLimit] Cleaned up ${expiredKeys.length} expired entries`
+      );
     }
   }
 
@@ -90,7 +95,7 @@ class RateLimitStore {
 
     return {
       totalEntries: this.store.size,
-      blockedEntries: blockedCount
+      blockedEntries: blockedCount,
     };
   }
 }
@@ -105,51 +110,51 @@ const rateLimitStore = new RateLimitStore();
 export const RATE_LIMIT_CONFIGS = {
   // Token validation - strict limits
   TOKEN_VALIDATION: {
-    windowMs: 15 * 60 * 1000,     // 15 minutes
-    maxAttempts: 50,              // 50 attempts per 15 minutes
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxAttempts: 50, // 50 attempts per 15 minutes
     blockDurationMs: 60 * 60 * 1000, // 1 hour block
-    skipSuccessfulRequests: false
+    skipSuccessfulRequests: false,
   } as RateLimitConfig,
 
   // Gallery access - moderate limits
   GALLERY_ACCESS: {
-    windowMs: 10 * 60 * 1000,     // 10 minutes
-    maxAttempts: 100,             // 100 requests per 10 minutes
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    maxAttempts: 100, // 100 requests per 10 minutes
     blockDurationMs: 30 * 60 * 1000, // 30 minutes block
-    skipSuccessfulRequests: true
+    skipSuccessfulRequests: true,
   } as RateLimitConfig,
 
   // Admin API - permissive but monitored
   ADMIN_API: {
-    windowMs: 5 * 60 * 1000,      // 5 minutes
-    maxAttempts: 200,             // 200 requests per 5 minutes
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxAttempts: 200, // 200 requests per 5 minutes
     blockDurationMs: 15 * 60 * 1000, // 15 minutes block
-    skipSuccessfulRequests: true
+    skipSuccessfulRequests: true,
   } as RateLimitConfig,
 
   // Distribution endpoints - very strict
   DISTRIBUTION: {
-    windowMs: 60 * 60 * 1000,     // 1 hour
-    maxAttempts: 10,              // 10 distribution requests per hour
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxAttempts: 10, // 10 distribution requests per hour
     blockDurationMs: 4 * 60 * 60 * 1000, // 4 hours block
-    skipSuccessfulRequests: false
+    skipSuccessfulRequests: false,
   } as RateLimitConfig,
 
   // Public endpoints - balanced
   PUBLIC_API: {
-    windowMs: 5 * 60 * 1000,      // 5 minutes
-    maxAttempts: 60,              // 60 requests per 5 minutes
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    maxAttempts: 60, // 60 requests per 5 minutes
     blockDurationMs: 10 * 60 * 1000, // 10 minutes block
-    skipSuccessfulRequests: true
+    skipSuccessfulRequests: true,
   } as RateLimitConfig,
 
   // Device fingerprint - moderate
   DEVICE_REGISTRATION: {
-    windowMs: 30 * 60 * 1000,     // 30 minutes
-    maxAttempts: 20,              // 20 device registrations per 30 minutes
+    windowMs: 30 * 60 * 1000, // 30 minutes
+    maxAttempts: 20, // 20 device registrations per 30 minutes
     blockDurationMs: 2 * 60 * 60 * 1000, // 2 hours block
-    skipSuccessfulRequests: true
-  } as RateLimitConfig
+    skipSuccessfulRequests: true,
+  } as RateLimitConfig,
 };
 
 // ============================================================
@@ -171,12 +176,12 @@ export class EnhancedRateLimiter {
   async checkLimit(request: NextRequest): Promise<RateLimitResult> {
     const key = this.generateKey(request);
     const now = Date.now();
-    
+
     // Get current entry
     const entry = rateLimitStore.get(key) || {
       count: 0,
       windowStart: now,
-      lastAttempt: now
+      lastAttempt: now,
     };
 
     // Check if currently blocked
@@ -184,7 +189,7 @@ export class EnhancedRateLimiter {
       // Log blocked attempt
       await this.logRateLimitEvent(key, request, 'blocked', {
         remainingBlockTime: entry.blockedUntil - now,
-        totalAttempts: entry.count
+        totalAttempts: entry.count,
       });
 
       return {
@@ -192,7 +197,7 @@ export class EnhancedRateLimiter {
         remaining: 0,
         resetTime: entry.blockedUntil,
         blocked: true,
-        blockUntil: entry.blockedUntil
+        blockUntil: entry.blockedUntil,
       };
     }
 
@@ -212,7 +217,7 @@ export class EnhancedRateLimiter {
     if (entry.count > this.config.maxAttempts) {
       // Apply block
       entry.blockedUntil = now + this.config.blockDurationMs;
-      
+
       // Store updated entry
       rateLimitStore.set(key, entry);
 
@@ -220,7 +225,7 @@ export class EnhancedRateLimiter {
       await this.logRateLimitEvent(key, request, 'limit_exceeded', {
         maxAttempts: this.config.maxAttempts,
         windowMs: this.config.windowMs,
-        blockDurationMs: this.config.blockDurationMs
+        blockDurationMs: this.config.blockDurationMs,
       });
 
       // Call callback if configured
@@ -233,7 +238,7 @@ export class EnhancedRateLimiter {
         remaining: 0,
         resetTime: entry.blockedUntil,
         blocked: true,
-        blockUntil: entry.blockedUntil
+        blockUntil: entry.blockedUntil,
       };
     }
 
@@ -248,7 +253,7 @@ export class EnhancedRateLimiter {
       success: true,
       remaining,
       resetTime,
-      blocked: false
+      blocked: false,
     };
   }
 
@@ -279,12 +284,13 @@ export class EnhancedRateLimiter {
 
     // Default key generation based on IP and User-Agent
     const clientIP = this.getClientIP(request);
-    const userAgent = request.headers.get('user-agent')?.slice(0, 50) || 'unknown';
+    const userAgent =
+      request.headers.get('user-agent')?.slice(0, 50) || 'unknown';
     const path = new URL(request.url).pathname;
-    
+
     // Create a simple hash for the user agent to reduce key size
     const uaHash = this.simpleHash(userAgent);
-    
+
     return `${this.keyPrefix}:${clientIP}:${uaHash}:${path}`;
   }
 
@@ -318,7 +324,7 @@ export class EnhancedRateLimiter {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(16);
@@ -335,23 +341,21 @@ export class EnhancedRateLimiter {
   ): Promise<void> {
     try {
       const supabase = await createServerSupabaseClient();
-      
-      await supabase
-        .from('security_logs')
-        .insert({
-          event_type: 'rate_limit',
-          event_subtype: event,
-          ip_address: this.getClientIP(request),
-          user_agent: request.headers.get('user-agent'),
-          request_path: new URL(request.url).pathname,
-          metadata: {
-            rate_limit_key: key,
-            window_ms: this.config.windowMs,
-            max_attempts: this.config.maxAttempts,
-            ...metadata
-          },
-          created_at: new Date().toISOString()
-        });
+
+      await supabase.from('security_logs').insert({
+        event_type: 'rate_limit',
+        event_subtype: event,
+        ip_address: this.getClientIP(request),
+        user_agent: request.headers.get('user-agent'),
+        request_path: new URL(request.url).pathname,
+        metadata: {
+          rate_limit_key: key,
+          window_ms: this.config.windowMs,
+          max_attempts: this.config.maxAttempts,
+          ...metadata,
+        },
+        created_at: new Date().toISOString(),
+      });
     } catch (error) {
       // Don't fail the request if logging fails
       console.error('Failed to log rate limit event:', error);
@@ -379,17 +383,19 @@ export function createRateLimitMiddleware(
 
     if (!result.success) {
       const resetDate = new Date(result.resetTime).toISOString();
-      
+
       return NextResponse.json(
         {
           error: 'Demasiadas solicitudes',
           error_code: 'RATE_LIMITED',
-          message: result.blocked 
+          message: result.blocked
             ? 'Has excedido el límite de solicitudes y has sido bloqueado temporalmente'
             : 'Has excedido el límite de solicitudes para este periodo',
           retry_after: Math.ceil((result.resetTime - Date.now()) / 1000),
           reset_time: resetDate,
-          blocked_until: result.blockUntil ? new Date(result.blockUntil).toISOString() : undefined
+          blocked_until: result.blockUntil
+            ? new Date(result.blockUntil).toISOString()
+            : undefined,
         },
         {
           status: 429,
@@ -397,8 +403,10 @@ export function createRateLimitMiddleware(
             'X-RateLimit-Limit': config.maxAttempts.toString(),
             'X-RateLimit-Remaining': result.remaining.toString(),
             'X-RateLimit-Reset': resetDate,
-            'Retry-After': Math.ceil((result.resetTime - Date.now()) / 1000).toString()
-          }
+            'Retry-After': Math.ceil(
+              (result.resetTime - Date.now()) / 1000
+            ).toString(),
+          },
         }
       );
     }
@@ -407,7 +415,10 @@ export function createRateLimitMiddleware(
     const response = NextResponse.next();
     response.headers.set('X-RateLimit-Limit', config.maxAttempts.toString());
     response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
-    response.headers.set('X-RateLimit-Reset', new Date(result.resetTime).toISOString());
+    response.headers.set(
+      'X-RateLimit-Reset',
+      new Date(result.resetTime).toISOString()
+    );
 
     return null; // Continue to next middleware/handler
   };
@@ -474,10 +485,10 @@ export function getRateLimitStats(): {
   memoryUsage: string;
 } {
   const stats = rateLimitStore.getStats();
-  
+
   return {
     ...stats,
-    memoryUsage: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`
+    memoryUsage: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
   };
 }
 
@@ -529,7 +540,9 @@ export interface DeviceFingerprint {
 /**
  * Generate device fingerprint from request headers
  */
-export function generateDeviceFingerprint(request: NextRequest): DeviceFingerprint {
+export function generateDeviceFingerprint(
+  request: NextRequest
+): DeviceFingerprint {
   const userAgent = request.headers.get('user-agent') || '';
   const acceptLanguage = request.headers.get('accept-language') || '';
   const acceptEncoding = request.headers.get('accept-encoding') || '';
@@ -540,7 +553,7 @@ export function generateDeviceFingerprint(request: NextRequest): DeviceFingerpri
     userAgent,
     acceptLanguage,
     acceptEncoding,
-    dnt || 'unknown'
+    dnt || 'unknown',
   ].join('|');
 
   // Generate hash
@@ -551,7 +564,7 @@ export function generateDeviceFingerprint(request: NextRequest): DeviceFingerpri
     acceptLanguage,
     acceptEncoding,
     dnt,
-    hash
+    hash,
   };
 }
 
@@ -562,7 +575,7 @@ function hashString(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash).toString(16);
@@ -591,12 +604,12 @@ export function enhanceDeviceFingerprint(
     baseFingerprint.dnt || 'unknown',
     clientData.screenResolution || 'unknown',
     clientData.timezone || 'unknown',
-    clientData.platform || 'unknown'
+    clientData.platform || 'unknown',
   ].join('|');
 
   return {
     ...baseFingerprint,
     ...clientData,
-    hash: hashString(enhancedData)
+    hash: hashString(enhancedData),
   };
 }

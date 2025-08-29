@@ -34,7 +34,15 @@ import {
 
 interface BulkOperation {
   id: string;
-  type: 'export' | 'import' | 'email' | 'qr' | 'archive' | 'delete' | 'tokens' | 'assign';
+  type:
+    | 'export'
+    | 'import'
+    | 'email'
+    | 'qr'
+    | 'archive'
+    | 'delete'
+    | 'tokens'
+    | 'assign';
   title: string;
   description: string;
   icon: React.ReactNode;
@@ -193,11 +201,12 @@ export default function BulkOperations({
   onClearSelection,
 }: BulkOperationsProps) {
   const [showDialog, setShowDialog] = useState(false);
-  const [selectedOperation, setSelectedOperation] = useState<BulkOperation | null>(null);
+  const [selectedOperation, setSelectedOperation] =
+    useState<BulkOperation | null>(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [operationResult, setOperationResult] = useState<any>(null);
-  
+
   // Email sending options
   const [emailOptions, setEmailOptions] = useState({
     sendEmails: true,
@@ -212,7 +221,7 @@ export default function BulkOperations({
     setSelectedOperation(operation);
     setOperationResult(null);
     setProgress(0);
-    
+
     if (operation.requiresConfirmation) {
       setShowDialog(true);
     } else {
@@ -228,11 +237,11 @@ export default function BulkOperations({
 
     setLoading(true);
     setProgress(0);
-    
+
     try {
       let endpoint = '';
-      let method = 'POST';
-      let body: any = {
+      const method = 'POST';
+      const body: any = {
         action: operation.type,
         item_ids: selectedItems,
         eventId,
@@ -262,7 +271,7 @@ export default function BulkOperations({
 
       // Simulate progress for user feedback
       const progressInterval = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return 90;
@@ -282,7 +291,9 @@ export default function BulkOperations({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || `Failed to execute ${operation.title}`);
+        throw new Error(
+          error.message || `Failed to execute ${operation.title}`
+        );
       }
 
       const result = await response.json();
@@ -290,14 +301,17 @@ export default function BulkOperations({
 
       // Show success message
       toast.success(`${operation.title} completado exitosamente`);
-      
+
       // Clear selection and refresh data
       onClearSelection?.();
       onOperationComplete?.();
-
     } catch (error) {
       console.error(`Error executing ${operation.title}:`, error);
-      toast.error(error instanceof Error ? error.message : `Error ejecutando ${operation.title}`);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Error ejecutando ${operation.title}`
+      );
       setOperationResult({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -322,7 +336,9 @@ export default function BulkOperations({
           break;
       }
 
-      const response = await fetch(`${endpoint}?ids=${selectedItems.join(',')}`);
+      const response = await fetch(
+        `${endpoint}?ids=${selectedItems.join(',')}`
+      );
       if (!response.ok) {
         throw new Error('Export failed');
       }
@@ -357,8 +373,8 @@ export default function BulkOperations({
     <>
       {/* Bulk Operations Bar - Mobile responsive */}
       <div className="sticky bottom-4 z-40 mx-4">
-        <div className="bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-background/95 rounded-lg border p-4 shadow-lg backdrop-blur-sm">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             {/* Selection Info */}
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="text-sm">
@@ -370,13 +386,13 @@ export default function BulkOperations({
                 onClick={onClearSelection}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <XCircle className="h-4 w-4 mr-1" />
+                <XCircle className="mr-1 h-4 w-4" />
                 Deseleccionar
               </Button>
             </div>
 
             {/* Action Buttons - Scrollable on mobile */}
-            <div className="flex gap-2 overflow-x-auto pb-1 w-full sm:w-auto">
+            <div className="flex w-full gap-2 overflow-x-auto pb-1 sm:w-auto">
               {operations.map((operation) => (
                 <Button
                   key={operation.id}
@@ -387,11 +403,13 @@ export default function BulkOperations({
                   className="shrink-0"
                 >
                   {loading && selectedOperation?.id === operation.id ? (
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     operation.icon
                   )}
-                  <span className="hidden sm:inline ml-2">{operation.title}</span>
+                  <span className="ml-2 hidden sm:inline">
+                    {operation.title}
+                  </span>
                 </Button>
               ))}
             </div>
@@ -400,7 +418,7 @@ export default function BulkOperations({
           {/* Progress Bar */}
           {loading && (
             <div className="mt-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="mb-2 flex items-center gap-2">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span className="text-sm">
                   Ejecutando {selectedOperation?.title}...
@@ -412,7 +430,7 @@ export default function BulkOperations({
 
           {/* Results */}
           {operationResult && (
-            <div className="mt-4 p-3 rounded-lg border">
+            <div className="mt-4 rounded-lg border p-3">
               {operationResult.success !== false ? (
                 <div className="flex items-center gap-2 text-green-700">
                   <CheckCircle className="h-4 w-4" />
@@ -437,7 +455,7 @@ export default function BulkOperations({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedOperation?.dangerous && (
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <AlertTriangle className="text-destructive h-5 w-5" />
               )}
               Confirmar {selectedOperation?.title}
             </DialogTitle>
@@ -447,20 +465,23 @@ export default function BulkOperations({
           </DialogHeader>
 
           <div className="py-4">
-            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-4">
-              <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="bg-muted mb-4 flex items-center gap-2 rounded-lg p-3">
+              <Users className="text-muted-foreground h-4 w-4" />
               <span className="text-sm">
                 Esta acción afectará <strong>{selectedCount}</strong> {itemType}
               </span>
             </div>
 
             {selectedOperation?.dangerous && (
-              <div className="flex items-start gap-3 p-3 border-l-4 border-destructive bg-destructive/10 rounded">
-                <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div className="border-destructive bg-destructive/10 flex items-start gap-3 rounded border-l-4 p-3">
+                <AlertTriangle className="text-destructive mt-0.5 h-5 w-5 shrink-0" />
                 <div>
-                  <p className="font-medium text-destructive">Acción peligrosa</p>
-                  <p className="text-sm text-muted-foreground">
-                    Esta operación no se puede deshacer. Asegúrate de que quieres continuar.
+                  <p className="text-destructive font-medium">
+                    Acción peligrosa
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    Esta operación no se puede deshacer. Asegúrate de que
+                    quieres continuar.
                   </p>
                 </div>
               </div>
@@ -468,26 +489,36 @@ export default function BulkOperations({
 
             {/* Email Options */}
             {selectedOperation?.type === 'email' && (
-              <div className="space-y-4 mt-4">
+              <div className="mt-4 space-y-4">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="includeQR"
                     checked={emailOptions.includeQR}
                     onCheckedChange={(checked) =>
-                      setEmailOptions(prev => ({ ...prev, includeQR: checked }))
+                      setEmailOptions((prev) => ({
+                        ...prev,
+                        includeQR: checked,
+                      }))
                     }
                   />
-                  <Label htmlFor="includeQR">Incluir código QR en el email</Label>
+                  <Label htmlFor="includeQR">
+                    Incluir código QR en el email
+                  </Label>
                 </div>
-                
+
                 <div>
-                  <Label htmlFor="customMessage">Mensaje personalizado (opcional)</Label>
+                  <Label htmlFor="customMessage">
+                    Mensaje personalizado (opcional)
+                  </Label>
                   <Textarea
                     id="customMessage"
                     placeholder="Mensaje adicional para incluir en el email..."
                     value={emailOptions.customMessage}
                     onChange={(e) =>
-                      setEmailOptions(prev => ({ ...prev, customMessage: e.target.value }))
+                      setEmailOptions((prev) => ({
+                        ...prev,
+                        customMessage: e.target.value,
+                      }))
                     }
                     rows={3}
                   />
@@ -505,8 +536,10 @@ export default function BulkOperations({
               onClick={confirmOperation}
               disabled={loading}
             >
-              {loading && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
-              {selectedOperation?.dangerous ? 'Confirmar eliminación' : 'Confirmar'}
+              {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+              {selectedOperation?.dangerous
+                ? 'Confirmar eliminación'
+                : 'Confirmar'}
             </Button>
           </DialogFooter>
         </DialogContent>

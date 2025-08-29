@@ -8,10 +8,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Folder, FolderOpen, Image, Move, CheckCircle, 
-  AlertCircle, Loader2, Upload, ArrowRight,
-  X, Users, Camera
+import {
+  Folder,
+  FolderOpen,
+  Image,
+  Move,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Upload,
+  ArrowRight,
+  X,
+  Users,
+  Camera,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -60,19 +69,20 @@ interface DraggablePhotoProps {
   selectedCount: number;
 }
 
-function DraggablePhoto({ 
-  photoId, 
-  photoUrl, 
-  filename, 
-  isSelected, 
-  selectedCount 
+function DraggablePhoto({
+  photoId,
+  photoUrl,
+  filename,
+  isSelected,
+  selectedCount,
 }: DraggablePhotoProps) {
   const [{ isDragging }, drag] = useDrag({
     type: 'photo',
-    item: () => ({
-      type: isSelected && selectedCount > 1 ? 'photos' : 'photo',
-      photoIds: isSelected && selectedCount > 1 ? [] : [photoId], // Will be filled by parent
-    } as DragItem),
+    item: () =>
+      ({
+        type: isSelected && selectedCount > 1 ? 'photos' : 'photo',
+        photoIds: isSelected && selectedCount > 1 ? [] : [photoId], // Will be filled by parent
+      }) as DragItem,
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -82,29 +92,29 @@ function DraggablePhoto({
     <div
       ref={drag}
       className={cn(
-        "relative cursor-move transition-all",
-        isDragging && "opacity-50 scale-95"
+        'relative cursor-move transition-all',
+        isDragging && 'scale-95 opacity-50'
       )}
     >
-      <Card className="h-full hover:shadow-lg transition-shadow">
+      <Card className="h-full transition-shadow hover:shadow-lg">
         <CardContent className="p-2">
-          <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-2">
+          <div className="mb-2 aspect-square overflow-hidden rounded bg-gray-100">
             <img
               src={photoUrl}
               alt={filename}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
-          <p className="text-xs truncate">{filename}</p>
-          
+          <p className="truncate text-xs">{filename}</p>
+
           {isSelected && selectedCount > 1 && (
-            <Badge className="absolute -top-2 -right-2 bg-blue-500">
+            <Badge className="absolute -right-2 -top-2 bg-blue-500">
               {selectedCount}
             </Badge>
           )}
-          
+
           {isDragging && (
-            <div className="absolute inset-0 bg-blue-500/20 border-2 border-blue-500 border-dashed rounded flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center rounded border-2 border-dashed border-blue-500 bg-blue-500/20">
               <Move className="h-6 w-6 text-blue-600" />
             </div>
           )}
@@ -122,7 +132,12 @@ interface DroppableFolderProps {
   canDrop: boolean;
 }
 
-function DroppableFolder({ folder, onDrop, isOver, canDrop }: DroppableFolderProps) {
+function DroppableFolder({
+  folder,
+  onDrop,
+  isOver,
+  canDrop,
+}: DroppableFolderProps) {
   const [{ isOverCurrent }, drop] = useDrop({
     accept: ['photo', 'photos'],
     drop: (item: DragItem) => {
@@ -139,9 +154,17 @@ function DroppableFolder({ folder, onDrop, isOver, canDrop }: DroppableFolderPro
   const getFolderIcon = () => {
     switch (folder.type) {
       case 'level':
-        return isOverCurrent ? <FolderOpen className="h-6 w-6" /> : <Folder className="h-6 w-6" />;
+        return isOverCurrent ? (
+          <FolderOpen className="h-6 w-6" />
+        ) : (
+          <Folder className="h-6 w-6" />
+        );
       case 'course':
-        return isOverCurrent ? <FolderOpen className="h-6 w-6" /> : <Folder className="h-6 w-6" />;
+        return isOverCurrent ? (
+          <FolderOpen className="h-6 w-6" />
+        ) : (
+          <Folder className="h-6 w-6" />
+        );
       case 'student':
         return <Users className="h-5 w-5" />;
       default:
@@ -153,37 +176,46 @@ function DroppableFolder({ folder, onDrop, isOver, canDrop }: DroppableFolderPro
     <div
       ref={drop}
       className={cn(
-        "p-4 border-2 border-dashed rounded-lg transition-all",
-        folder.canAcceptPhotos && isOverCurrent && canDrop && "border-green-500 bg-green-50",
-        folder.canAcceptPhotos && !isOverCurrent && "border-gray-300 hover:border-blue-400",
-        !folder.canAcceptPhotos && "border-gray-200 bg-gray-50 opacity-50"
+        'rounded-lg border-2 border-dashed p-4 transition-all',
+        folder.canAcceptPhotos &&
+          isOverCurrent &&
+          canDrop &&
+          'border-green-500 bg-green-50',
+        folder.canAcceptPhotos &&
+          !isOverCurrent &&
+          'border-gray-300 hover:border-blue-400',
+        !folder.canAcceptPhotos && 'border-gray-200 bg-gray-50 opacity-50'
       )}
     >
-      <Card className={cn(
-        "transition-all",
-        isOverCurrent && canDrop && "shadow-lg ring-2 ring-green-200"
-      )}>
+      <Card
+        className={cn(
+          'transition-all',
+          isOverCurrent && canDrop && 'shadow-lg ring-2 ring-green-200'
+        )}
+      >
         <CardContent className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={cn(
-              "p-2 rounded-lg",
-              folder.type === 'level' && "bg-blue-100 text-blue-600",
-              folder.type === 'course' && "bg-purple-100 text-purple-600",
-              folder.type === 'student' && "bg-green-100 text-green-600"
-            )}>
+          <div className="mb-2 flex items-center gap-3">
+            <div
+              className={cn(
+                'rounded-lg p-2',
+                folder.type === 'level' && 'bg-blue-100 text-blue-600',
+                folder.type === 'course' && 'bg-purple-100 text-purple-600',
+                folder.type === 'student' && 'bg-green-100 text-green-600'
+              )}
+            >
               {getFolderIcon()}
             </div>
             <div className="flex-1">
-              <h4 className="font-medium text-sm">{folder.name}</h4>
-              <p className="text-xs text-muted-foreground capitalize">
+              <h4 className="text-sm font-medium">{folder.name}</h4>
+              <p className="text-muted-foreground text-xs capitalize">
                 {folder.type === 'level' && 'Nivel escolar'}
                 {folder.type === 'course' && 'Curso/Salón'}
                 {folder.type === 'student' && 'Estudiante'}
               </p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+
+          <div className="text-muted-foreground flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
               <Camera className="h-3 w-3" />
               <span>{folder.photoCount} fotos</span>
@@ -195,14 +227,14 @@ function DroppableFolder({ folder, onDrop, isOver, canDrop }: DroppableFolderPro
               </div>
             )}
           </div>
-          
+
           {isOverCurrent && canDrop && (
-            <div className="mt-3 flex items-center gap-2 text-green-600 text-sm">
+            <div className="mt-3 flex items-center gap-2 text-sm text-green-600">
               <ArrowRight className="h-4 w-4" />
               <span>Soltar aquí para mover</span>
             </div>
           )}
-          
+
           {!folder.canAcceptPhotos && (
             <div className="mt-3 text-xs text-gray-500">
               No disponible para fotos
@@ -215,51 +247,55 @@ function DroppableFolder({ folder, onDrop, isOver, canDrop }: DroppableFolderPro
 }
 
 // Operation status component
-function OperationStatus({ 
-  operation, 
-  onCancel 
-}: { 
-  operation: DragDropOperation; 
-  onCancel: () => void; 
+function OperationStatus({
+  operation,
+  onCancel,
+}: {
+  operation: DragDropOperation;
+  onCancel: () => void;
 }) {
   return (
     <Card className="border-l-4 border-l-blue-500">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {operation.status === 'processing' && <Loader2 className="h-4 w-4 animate-spin" />}
-            {operation.status === 'completed' && <CheckCircle className="h-4 w-4 text-green-500" />}
-            {operation.status === 'failed' && <AlertCircle className="h-4 w-4 text-red-500" />}
-            
+            {operation.status === 'processing' && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
+            {operation.status === 'completed' && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+            {operation.status === 'failed' && (
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            )}
+
             <span className="text-sm font-medium">
               Moviendo {operation.photoIds.length} fotos
             </span>
           </div>
-          
+
           {operation.status === 'pending' && (
             <Button variant="ghost" size="sm" onClick={onCancel}>
               <X className="h-4 w-4" />
             </Button>
           )}
         </div>
-        
+
         {operation.status === 'processing' && (
           <div className="space-y-2">
             <Progress value={operation.progress} className="h-2" />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {operation.progress}% completado
             </p>
           </div>
         )}
-        
+
         {operation.status === 'failed' && operation.error && (
           <p className="text-xs text-red-600">{operation.error}</p>
         )}
-        
+
         {operation.status === 'completed' && (
-          <p className="text-xs text-green-600">
-            Fotos movidas exitosamente
-          </p>
+          <p className="text-xs text-green-600">Fotos movidas exitosamente</p>
         )}
       </CardContent>
     </Card>
@@ -271,87 +307,92 @@ export default function DragDropPhotoManager({
   eventId,
   folders,
   onPhotoMove,
-  onOperationComplete
+  onOperationComplete,
 }: DragDropPhotoManagerProps) {
   const [operations, setOperations] = useState<DragDropOperation[]>([]);
   const operationIdRef = useRef(0);
 
-  const handleDrop = useCallback(async (photoIds: string[], targetFolderId: string) => {
-    const operationId = `op-${++operationIdRef.current}`;
-    
-    const newOperation: DragDropOperation = {
-      id: operationId,
-      photoIds,
-      sourceFolder: '', // Will be determined
-      targetFolder: targetFolderId,
-      status: 'pending',
-      progress: 0
-    };
+  const handleDrop = useCallback(
+    async (photoIds: string[], targetFolderId: string) => {
+      const operationId = `op-${++operationIdRef.current}`;
 
-    setOperations(prev => [...prev, newOperation]);
+      const newOperation: DragDropOperation = {
+        id: operationId,
+        photoIds,
+        sourceFolder: '', // Will be determined
+        targetFolder: targetFolderId,
+        status: 'pending',
+        progress: 0,
+      };
 
-    try {
-      // Update status to processing
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { ...op, status: 'processing' as const }
-            : op
-        )
-      );
+      setOperations((prev) => [...prev, newOperation]);
 
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setOperations(prev => 
-          prev.map(op => 
-            op.id === operationId 
-              ? { ...op, progress: Math.min(op.progress + 10, 90) }
+      try {
+        // Update status to processing
+        setOperations((prev) =>
+          prev.map((op) =>
+            op.id === operationId
+              ? { ...op, status: 'processing' as const }
               : op
           )
         );
-      }, 200);
 
-      // Perform the actual move
-      await onPhotoMove(photoIds, targetFolderId);
+        // Simulate progress updates
+        const progressInterval = setInterval(() => {
+          setOperations((prev) =>
+            prev.map((op) =>
+              op.id === operationId
+                ? { ...op, progress: Math.min(op.progress + 10, 90) }
+                : op
+            )
+          );
+        }, 200);
 
-      clearInterval(progressInterval);
+        // Perform the actual move
+        await onPhotoMove(photoIds, targetFolderId);
 
-      // Mark as completed
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { ...op, status: 'completed' as const, progress: 100 }
-            : op
-        )
-      );
+        clearInterval(progressInterval);
 
-      // Auto-remove after 3 seconds
-      setTimeout(() => {
-        setOperations(prev => prev.filter(op => op.id !== operationId));
-        onOperationComplete();
-      }, 3000);
+        // Mark as completed
+        setOperations((prev) =>
+          prev.map((op) =>
+            op.id === operationId
+              ? { ...op, status: 'completed' as const, progress: 100 }
+              : op
+          )
+        );
 
-      toast.success(`${photoIds.length} fotos movidas exitosamente`);
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+          setOperations((prev) => prev.filter((op) => op.id !== operationId));
+          onOperationComplete();
+        }, 3000);
 
-    } catch (error) {
-      setOperations(prev => 
-        prev.map(op => 
-          op.id === operationId 
-            ? { 
-                ...op, 
-                status: 'failed' as const, 
-                error: error instanceof Error ? error.message : 'Error desconocido'
-              }
-            : op
-        )
-      );
+        toast.success(`${photoIds.length} fotos movidas exitosamente`);
+      } catch (error) {
+        setOperations((prev) =>
+          prev.map((op) =>
+            op.id === operationId
+              ? {
+                  ...op,
+                  status: 'failed' as const,
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : 'Error desconocido',
+                }
+              : op
+          )
+        );
 
-      toast.error('Error al mover las fotos');
-    }
-  }, [onPhotoMove, onOperationComplete]);
+        toast.error('Error al mover las fotos');
+      }
+    },
+    [onPhotoMove, onOperationComplete]
+  );
 
   const cancelOperation = useCallback((operationId: string) => {
-    setOperations(prev => prev.filter(op => op.id !== operationId));
+    setOperations((prev) => prev.filter((op) => op.id !== operationId));
   }, []);
 
   return (
@@ -362,7 +403,7 @@ export default function DragDropPhotoManager({
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">Operaciones en curso</h3>
             <div className="space-y-2">
-              {operations.map(operation => (
+              {operations.map((operation) => (
                 <OperationStatus
                   key={operation.id}
                   operation={operation}
@@ -376,8 +417,8 @@ export default function DragDropPhotoManager({
         {/* Drop Zones */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Carpetas de destino</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {folders.map(folder => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {folders.map((folder) => (
               <DroppableFolder
                 key={folder.id}
                 folder={folder}
@@ -390,17 +431,24 @@ export default function DragDropPhotoManager({
         </div>
 
         {/* Instructions */}
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Upload className="h-5 w-5 text-blue-600 mt-0.5" />
+              <Upload className="mt-0.5 h-5 w-5 text-blue-600" />
               <div className="space-y-1">
                 <h4 className="font-medium text-blue-900">Cómo usar</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Arrastra fotos individuales o selecciona múltiples fotos</li>
+                <ul className="space-y-1 text-sm text-blue-700">
+                  <li>
+                    • Arrastra fotos individuales o selecciona múltiples fotos
+                  </li>
                   <li>• Suéltalas en la carpeta de destino deseada</li>
-                  <li>• Las fotos se moverán automáticamente y se actualizará la organización</li>
-                  <li>• Puedes cancelar operaciones pendientes si es necesario</li>
+                  <li>
+                    • Las fotos se moverán automáticamente y se actualizará la
+                    organización
+                  </li>
+                  <li>
+                    • Puedes cancelar operaciones pendientes si es necesario
+                  </li>
                 </ul>
               </div>
             </div>

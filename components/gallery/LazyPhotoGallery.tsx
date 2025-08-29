@@ -5,7 +5,14 @@
 
 'use client';
 
-import { Suspense, lazy, useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Suspense,
+  lazy,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import { performanceMonitor } from '@/lib/utils/performance-monitor';
 import { useSignedUrl, preloadPhotoUrls } from '@/lib/utils/signed-url-cache';
 
@@ -51,8 +58,8 @@ function PhotoGridSkeleton() {
   return (
     <div className="space-y-6">
       <div className="mb-6 flex items-center justify-between">
-        <div className="h-4 w-32 animate-pulse rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]"></div>
-        <div className="h-4 w-24 animate-pulse rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]"></div>
+        <div className="h-4 w-32 animate-[shimmer_1.5s_infinite] animate-pulse rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]"></div>
+        <div className="h-4 w-24 animate-[shimmer_1.5s_infinite] animate-pulse rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]"></div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -62,7 +69,7 @@ function PhotoGridSkeleton() {
             className="aspect-square rounded-lg bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]"
             style={{
               animationDelay: `${i * 50}ms`,
-              animation: 'shimmer 1.5s infinite ease-in-out'
+              animation: 'shimmer 1.5s infinite ease-in-out',
             }}
           >
             <div className="h-full w-full rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 opacity-50"></div>
@@ -127,25 +134,34 @@ export function LazyPhotoGallery({
   }, [photos, page]);
 
   // Enhanced performance tracking with Apple-grade metrics
-  const trackPerformanceMetrics = useCallback((metrics: {
-    photosLoaded: number;
-    loadTime: number;
-    cacheHitRate: number;
-  }) => {
-    performanceMonitor.trackGalleryPerformance({
-      ...metrics,
-      virtualScrollEnabled: true,
-      // Apple-grade performance thresholds
-      isOptimal: metrics.loadTime < 150 && metrics.cacheHitRate > 75,
-      userExperience: metrics.loadTime < 150 ? 'excellent' : 
-                     metrics.loadTime < 300 ? 'good' : 'needs_improvement'
-    });
-    
-    // Log performance insights for Apple-grade optimization
-    if (metrics.loadTime > 200) {
-      console.warn(`Gallery load time: ${metrics.loadTime.toFixed(2)}ms - consider optimizing`);
-    }
-  }, []);
+  const trackPerformanceMetrics = useCallback(
+    (metrics: {
+      photosLoaded: number;
+      loadTime: number;
+      cacheHitRate: number;
+    }) => {
+      performanceMonitor.trackGalleryPerformance({
+        ...metrics,
+        virtualScrollEnabled: true,
+        // Apple-grade performance thresholds
+        isOptimal: metrics.loadTime < 150 && metrics.cacheHitRate > 75,
+        userExperience:
+          metrics.loadTime < 150
+            ? 'excellent'
+            : metrics.loadTime < 300
+              ? 'good'
+              : 'needs_improvement',
+      });
+
+      // Log performance insights for Apple-grade optimization
+      if (metrics.loadTime > 200) {
+        console.warn(
+          `Gallery load time: ${metrics.loadTime.toFixed(2)}ms - consider optimizing`
+        );
+      }
+    },
+    []
+  );
   useEffect(() => {
     let isMounted = true;
 

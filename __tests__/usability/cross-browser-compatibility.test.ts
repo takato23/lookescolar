@@ -33,7 +33,7 @@ test.describe('Cross-Browser Compatibility', () => {
       test.beforeAll(async () => {
         browser = await engine.launch({
           headless: true,
-          args: name === 'Chrome' ? ['--disable-web-security'] : []
+          args: name === 'Chrome' ? ['--disable-web-security'] : [],
         });
       });
 
@@ -44,9 +44,10 @@ test.describe('Cross-Browser Compatibility', () => {
       test.beforeEach(async () => {
         const context = await browser.newContext({
           viewport: { width: 1280, height: 720 },
-          userAgent: name === 'Safari' ? 
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15' :
-            undefined
+          userAgent:
+            name === 'Safari'
+              ? 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15'
+              : undefined,
         });
         page = await context.newPage();
       });
@@ -59,8 +60,10 @@ test.describe('Cross-Browser Compatibility', () => {
         await page.goto('/');
 
         // Check basic layout
-        await expect(page.locator('[data-testid="main-content"]')).toBeVisible();
-        
+        await expect(
+          page.locator('[data-testid="main-content"]')
+        ).toBeVisible();
+
         // Check CSS Grid support and fallback
         const gridSupported = await page.evaluate(() => {
           return CSS.supports('display: grid');
@@ -70,23 +73,25 @@ test.describe('Cross-Browser Compatibility', () => {
           // Modern browsers - check grid layout
           const gridElement = page.locator('[data-testid="feature-grid"]');
           if (await gridElement.isVisible()) {
-            const gridStyles = await gridElement.evaluate(el => 
-              getComputedStyle(el).display
+            const gridStyles = await gridElement.evaluate(
+              (el) => getComputedStyle(el).display
             );
             expect(gridStyles).toContain('grid');
           }
         } else {
           // Fallback for older browsers
           console.log(`${name}: Grid not supported, checking fallback`);
-          await expect(page.locator('[data-testid="main-content"]')).toBeVisible();
+          await expect(
+            page.locator('[data-testid="main-content"]')
+          ).toBeVisible();
         }
 
         // Check responsive images
         const images = page.locator('img[srcset]');
-        if (await images.count() > 0) {
+        if ((await images.count()) > 0) {
           const firstImage = images.first();
           await expect(firstImage).toBeVisible();
-          
+
           // Check that appropriate source is selected
           const currentSrc = await firstImage.getAttribute('currentSrc');
           expect(currentSrc).toBeTruthy();
@@ -113,9 +118,11 @@ test.describe('Cross-Browser Compatibility', () => {
         // Test keyboard navigation (should work in all browsers)
         await page.keyboard.press('ArrowRight');
         await page.waitForTimeout(100);
-        
+
         await page.keyboard.press('Escape');
-        await expect(page.locator('[data-testid="photo-modal"]')).not.toBeVisible();
+        await expect(
+          page.locator('[data-testid="photo-modal"]')
+        ).not.toBeVisible();
       });
 
       test(`${name} - Form functionality`, async () => {
@@ -133,7 +140,7 @@ test.describe('Cross-Browser Compatibility', () => {
         // Fix email and test success path
         await page.fill('[data-testid="contact-email"]', 'test@example.com');
         await page.fill('[data-testid="contact-phone"]', '+1234567890');
-        
+
         await page.click('[data-testid="proceed-payment"]');
 
         // Should proceed (or show appropriate next step)
@@ -147,16 +154,18 @@ test.describe('Cross-Browser Compatibility', () => {
         // Check WebP support
         const webpSupported = await page.evaluate(() => {
           const canvas = document.createElement('canvas');
-          return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+          return (
+            canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0
+          );
         });
 
         console.log(`${name} WebP support:`, webpSupported);
 
         // Check that appropriate format is served
         const images = page.locator('[data-testid="photo-card"] img');
-        if (await images.count() > 0) {
+        if ((await images.count()) > 0) {
           const firstImageSrc = await images.first().getAttribute('src');
-          
+
           if (webpSupported && name !== 'Safari') {
             // Should prefer WebP in supporting browsers
             expect(firstImageSrc).toMatch(/\.(webp|jpg|jpeg)/);
@@ -175,15 +184,18 @@ test.describe('Cross-Browser Compatibility', () => {
           return CSS.supports('--custom: property');
         });
 
-        console.log(`${name} CSS Custom Properties:`, customPropertiesSupported);
+        console.log(
+          `${name} CSS Custom Properties:`,
+          customPropertiesSupported
+        );
 
         // Check flexbox layout
         const flexElement = page.locator('[data-testid="nav-menu"]');
         if (await flexElement.isVisible()) {
-          const display = await flexElement.evaluate(el => 
-            getComputedStyle(el).display
+          const display = await flexElement.evaluate(
+            (el) => getComputedStyle(el).display
           );
-          
+
           if (display.includes('flex')) {
             expect(display).toBe('flex');
           } else {
@@ -203,15 +215,16 @@ test.describe('Cross-Browser Compatibility', () => {
           // Check modal backdrop
           await page.goto('/gallery/test-event-123');
           await page.locator('[data-testid="photo-card"]').first().click();
-          
+
           const modal = page.locator('[data-testid="photo-modal"]');
           await expect(modal).toBeVisible();
-          
-          const backdropFilter = await modal.evaluate(el => 
-            getComputedStyle(el).backdropFilter
+
+          const backdropFilter = await modal.evaluate(
+            (el) => getComputedStyle(el).backdropFilter
           );
-          
-          if (name !== 'Firefox') { // Firefox has limited support
+
+          if (name !== 'Firefox') {
+            // Firefox has limited support
             expect(backdropFilter).not.toBe('none');
           }
         }
@@ -225,18 +238,23 @@ test.describe('Cross-Browser Compatibility', () => {
           return typeof IntersectionObserver !== 'undefined';
         });
 
-        console.log(`${name} IntersectionObserver:`, intersectionObserverSupported);
+        console.log(
+          `${name} IntersectionObserver:`,
+          intersectionObserverSupported
+        );
 
         if (intersectionObserverSupported) {
           // Lazy loading should work
           const photos = page.locator('[data-testid="family-photo"]');
-          if (await photos.count() > 10) {
+          if ((await photos.count()) > 10) {
             // Scroll to load more images
             await page.mouse.wheel(0, 1000);
             await page.waitForTimeout(500);
-            
+
             // Check that lazy loading triggered
-            const loadedImages = await page.locator('[data-testid="family-photo"] img[src]').count();
+            const loadedImages = await page
+              .locator('[data-testid="family-photo"] img[src]')
+              .count();
             expect(loadedImages).toBeGreaterThan(5);
           }
         } else {
@@ -279,26 +297,32 @@ test.describe('Cross-Browser Compatibility', () => {
         await touchPage.goto('/f/test-token');
 
         // Test touch interactions
-        const photoCard = touchPage.locator('[data-testid="family-photo"]').first();
+        const photoCard = touchPage
+          .locator('[data-testid="family-photo"]')
+          .first();
         await photoCard.tap();
 
-        await expect(touchPage.locator('[data-testid="photo-modal"]')).toBeVisible();
+        await expect(
+          touchPage.locator('[data-testid="photo-modal"]')
+        ).toBeVisible();
 
         // Test swipe gestures (if supported)
         try {
           const modalImage = touchPage.locator('[data-testid="modal-image"]');
-          
+
           // Simulate swipe left
           await modalImage.hover();
           await touchPage.mouse.down();
           await touchPage.mouse.move(100, 300); // Start position
-          await touchPage.mouse.move(50, 300);  // End position (swipe left)
+          await touchPage.mouse.move(50, 300); // End position (swipe left)
           await touchPage.mouse.up();
 
           await touchPage.waitForTimeout(300);
-          
+
           // Should advance to next photo or at least not crash
-          const isModalStillVisible = await touchPage.locator('[data-testid="photo-modal"]').isVisible();
+          const isModalStillVisible = await touchPage
+            .locator('[data-testid="photo-modal"]')
+            .isVisible();
           expect(isModalStillVisible).toBe(true);
         } catch (error) {
           console.log(`${name}: Touch gestures not fully supported`);
@@ -313,16 +337,18 @@ test.describe('Cross-Browser Compatibility', () => {
 
         // Test memory usage (if supported)
         const memoryInfo = await page.evaluate(() => {
-          return (performance as any).memory ? {
-            used: (performance as any).memory.usedJSHeapSize,
-            total: (performance as any).memory.totalJSHeapSize,
-            limit: (performance as any).memory.jsHeapSizeLimit
-          } : null;
+          return (performance as any).memory
+            ? {
+                used: (performance as any).memory.usedJSHeapSize,
+                total: (performance as any).memory.totalJSHeapSize,
+                limit: (performance as any).memory.jsHeapSizeLimit,
+              }
+            : null;
         });
 
         if (memoryInfo && name === 'Chrome') {
           console.log(`${name} Memory Usage:`, memoryInfo);
-          
+
           // Memory should be reasonable
           expect(memoryInfo.used).toBeLessThan(100 * 1024 * 1024); // Less than 100MB
         }
@@ -332,15 +358,15 @@ test.describe('Cross-Browser Compatibility', () => {
         const photoCount = Math.min(await photos.count(), 5);
 
         const startTime = Date.now();
-        
+
         // Hover over photos to trigger animations
         for (let i = 0; i < photoCount; i++) {
           await photos.nth(i).hover({ timeout: 100 });
         }
-        
+
         const animationTime = Date.now() - startTime;
         const timePerAnimation = animationTime / photoCount;
-        
+
         // Animations should be smooth
         expect(timePerAnimation).toBeLessThan(200); // Less than 200ms per animation
       });
@@ -352,17 +378,21 @@ test.describe('Cross-Browser Compatibility', () => {
 
         // Test invalid token
         await page.goto('/f/invalid-token-123');
-        await expect(page.locator('[data-testid="invalid-token"]')).toBeVisible();
+        await expect(
+          page.locator('[data-testid="invalid-token"]')
+        ).toBeVisible();
 
         // Test network error handling
-        await page.route('**/api/family/gallery/**', route => {
+        await page.route('**/api/family/gallery/**', (route) => {
           route.abort('failed');
         });
 
         await page.goto('/f/valid-token-123');
-        
+
         // Should show error state or retry option
-        const errorElement = page.locator('[data-testid="error-message"], [data-testid="retry-button"]');
+        const errorElement = page.locator(
+          '[data-testid="error-message"], [data-testid="retry-button"]'
+        );
         await expect(errorElement).toBeVisible();
       });
     });
@@ -374,7 +404,7 @@ test.describe('Cross-Browser Compatibility', () => {
     // Collect feature support across browsers
     const features = await page.evaluate((featureTests) => {
       const results = {};
-      
+
       for (const [feature, test] of Object.entries(featureTests)) {
         try {
           if (feature.includes('Support')) {
@@ -382,13 +412,14 @@ test.describe('Cross-Browser Compatibility', () => {
           } else {
             // Image format tests
             const canvas = document.createElement('canvas');
-            results[feature] = canvas.toDataURL(test).indexOf(`data:${test}`) === 0;
+            results[feature] =
+              canvas.toDataURL(test).indexOf(`data:${test}`) === 0;
           }
         } catch (e) {
           results[feature] = false;
         }
       }
-      
+
       return results;
     }, MODERN_FEATURES);
 
@@ -397,7 +428,9 @@ test.describe('Cross-Browser Compatibility', () => {
     // Verify graceful degradation
     Object.entries(features).forEach(([feature, supported]) => {
       if (!supported) {
-        console.log(`Feature not supported: ${feature} - ensuring fallback works`);
+        console.log(
+          `Feature not supported: ${feature} - ensuring fallback works`
+        );
         // Each unsupported feature should have appropriate fallbacks tested above
       }
     });

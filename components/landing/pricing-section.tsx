@@ -11,7 +11,7 @@ export function PricingSection() {
       description: 'Perfecto para empezar',
       features: [
         'Hasta 100 fotos por evento',
-        'Códigos QR ilimitados', 
+        'Códigos QR ilimitados',
         'Soporte básico',
       ],
     },
@@ -56,16 +56,16 @@ export function PricingSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {plans.map((plan, index) => (
-            <Card 
-              key={index} 
-              className={`relative p-8 ${plan.featured ? 'border-primary-500 shadow-lg scale-105' : ''}`}
+            <Card
+              key={index}
+              className={`relative p-8 ${plan.featured ? 'scale-105 border-primary-500 shadow-lg' : ''}`}
             >
               {plan.featured && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary-500 px-4 py-2 text-sm font-medium text-white">
                   Más popular
                 </div>
               )}
-              
+
               <div className="mb-6">
                 <h3 className="text-2xl font-bold">{plan.name}</h3>
                 <p className="text-muted-foreground mt-2">{plan.description}</p>
@@ -85,8 +85,8 @@ export function PricingSection() {
                 ))}
               </ul>
 
-              <Button 
-                variant={plan.featured ? 'default' : 'outline'} 
+              <Button
+                variant={plan.featured ? 'default' : 'outline'}
                 className="w-full"
               >
                 {plan.name === 'Empresarial' ? 'Contactar' : 'Empezar'}

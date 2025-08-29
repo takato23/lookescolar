@@ -1,6 +1,6 @@
 /**
  * QR Analytics API
- * 
+ *
  * Provides endpoints for QR code analytics, usage metrics, and performance tracking.
  */
 
@@ -26,7 +26,7 @@ async function GET(request: NextRequest) {
           );
         }
         return getQRMetrics(qrCodeId);
-      
+
       case 'event-metrics':
         if (!eventId) {
           return NextResponse.json(
@@ -35,7 +35,7 @@ async function GET(request: NextRequest) {
           );
         }
         return getEventMetrics(eventId);
-      
+
       case 'top-codes':
         const limit = parseInt(searchParams.get('limit') || '10');
         if (!eventId) {
@@ -45,7 +45,7 @@ async function GET(request: NextRequest) {
           );
         }
         return getTopQRCodes(eventId, limit);
-      
+
       default:
         return NextResponse.json(
           { error: 'Invalid action. Use metrics, event-metrics, or top-codes' },
@@ -55,9 +55,9 @@ async function GET(request: NextRequest) {
   } catch (error) {
     logger.error('qr_analytics_api_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -69,12 +69,13 @@ async function GET(request: NextRequest) {
 async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Extract IP address
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
-    
+    const ipAddress =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+
     // Record the scan event
     await qrAnalyticsService.recordScan({
       qrCodeId: body.qrCodeId,
@@ -93,9 +94,9 @@ async function POST(request: NextRequest) {
   } catch (error) {
     logger.error('qr_analytics_record_error', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     return NextResponse.json(
       { error: 'Failed to record scan event' },
       { status: 500 }
@@ -110,20 +111,20 @@ async function getQRMetrics(qrCodeId: string) {
   try {
     // Parse time range if provided
     const timeRange = undefined; // In a real implementation, you would parse this from query params
-    
+
     const metrics = await qrAnalyticsService.getQRMetrics(qrCodeId, timeRange);
-    
+
     return NextResponse.json({
       qrCodeId,
       metrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('qr_metrics_failed', {
       qrCodeId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
       { error: 'Failed to get QR metrics' },
       { status: 500 }
@@ -137,18 +138,18 @@ async function getQRMetrics(qrCodeId: string) {
 async function getEventMetrics(eventId: string) {
   try {
     const metrics = await qrAnalyticsService.getEventQRMetrics(eventId);
-    
+
     return NextResponse.json({
       eventId,
       metrics,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('event_metrics_failed', {
       eventId,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
       { error: 'Failed to get event metrics' },
       { status: 500 }
@@ -162,20 +163,20 @@ async function getEventMetrics(eventId: string) {
 async function getTopQRCodes(eventId: string, limit: number) {
   try {
     const topCodes = await qrAnalyticsService.getTopQRCodes(eventId, limit);
-    
+
     return NextResponse.json({
       eventId,
       topCodes,
       limit,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('top_codes_failed', {
       eventId,
       limit,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     return NextResponse.json(
       { error: 'Failed to get top QR codes' },
       { status: 500 }

@@ -3,11 +3,23 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Users, Image as ImageIcon, ArrowRight, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import {
+  Users,
+  Image as ImageIcon,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+} from 'lucide-react';
 
 interface Subject {
   id: string;
@@ -29,17 +41,21 @@ interface AssignFolderPhotosProps {
   onAssignmentComplete?: () => void;
 }
 
-export function AssignFolderPhotos({ 
-  eventId, 
-  currentFolderId, 
+export function AssignFolderPhotos({
+  eventId,
+  currentFolderId,
   currentFolderName,
-  onAssignmentComplete 
+  onAssignmentComplete,
 }: AssignFolderPhotosProps) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(currentFolderId || null);
-  const [assignmentMode, setAssignmentMode] = useState<'all_to_all' | 'sequential' | 'qr_detection'>('all_to_all');
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(
+    currentFolderId || null
+  );
+  const [assignmentMode, setAssignmentMode] = useState<
+    'all_to_all' | 'sequential' | 'qr_detection'
+  >('all_to_all');
   const [forceReassign, setForceReassign] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -52,25 +68,27 @@ export function AssignFolderPhotos({
   const loadData = async () => {
     try {
       setLoadingData(true);
-      
+
       // Load subjects
-      const subjectsResponse = await fetch(`/api/admin/events/${eventId}/subjects`);
+      const subjectsResponse = await globalThis.fetch(
+        `/api/admin/events/${eventId}/subjects`
+      );
       const subjectsData = await subjectsResponse.json();
-      
+
       if (subjectsData.success) {
         setSubjects(subjectsData.subjects || []);
       }
 
       // Load folders
-      const foldersResponse = await fetch(`/api/admin/events/${eventId}/folders`);
+      const foldersResponse = await globalThis.fetch(
+        `/api/admin/events/${eventId}/folders`
+      );
       const foldersData = await foldersResponse.json();
-      
+
       if (foldersData.success) {
         setFolders(foldersData.folders || []);
       }
-
     } catch (error) {
-      console.error('Error loading data:', error);
       toast.error('Error al cargar los datos');
     } finally {
       setLoadingData(false);
@@ -78,15 +96,15 @@ export function AssignFolderPhotos({
   };
 
   const handleSubjectToggle = (subjectId: string) => {
-    setSelectedSubjects(prev => 
+    setSelectedSubjects((prev) =>
       prev.includes(subjectId)
-        ? prev.filter(id => id !== subjectId)
+        ? prev.filter((id) => id !== subjectId)
         : [...prev, subjectId]
     );
   };
 
   const selectAllSubjects = () => {
-    setSelectedSubjects(subjects.map(s => s.id));
+    setSelectedSubjects(subjects.map((s) => s.id));
   };
 
   const clearAllSubjects = () => {
@@ -101,17 +119,20 @@ export function AssignFolderPhotos({
 
     try {
       setLoading(true);
-      
-      const response = await fetch(`/api/admin/events/${eventId}/assign-folder-photos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          folderId: selectedFolderId,
-          subjectIds: selectedSubjects,
-          assignmentMode,
-          forceReassign,
-        }),
-      });
+
+      const response = await globalThis.fetch(
+        `/api/admin/events/${eventId}/assign-folder-photos`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            folderId: selectedFolderId,
+            subjectIds: selectedSubjects,
+            assignmentMode,
+            forceReassign,
+          }),
+        }
+      );
 
       const result = await response.json();
 
@@ -120,7 +141,7 @@ export function AssignFolderPhotos({
       }
 
       const { summary } = result;
-      
+
       toast.success(
         `Asignación completada: ${summary.assignedCount} asignaciones creadas para ${summary.totalPhotos} fotos y ${summary.totalSubjects} estudiantes`,
         { duration: 5000 }
@@ -130,16 +151,16 @@ export function AssignFolderPhotos({
       if (onAssignmentComplete) {
         onAssignmentComplete();
       }
-
     } catch (error) {
-      console.error('Error assigning photos:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al asignar fotos');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al asignar fotos'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedFolder = folders.find(f => f.id === selectedFolderId);
+  const selectedFolder = folders.find((f) => f.id === selectedFolderId);
   const photoCount = selectedFolder?.photo_count || 0;
   const totalAssignments = selectedSubjects.length * photoCount;
 
@@ -168,9 +189,11 @@ export function AssignFolderPhotos({
         {/* Folder Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Carpeta de origen</label>
-          <Select 
-            value={selectedFolderId || undefined} 
-            onValueChange={(value) => setSelectedFolderId(value === 'all' ? null : value)}
+          <Select
+            value={selectedFolderId || undefined}
+            onValueChange={(value) =>
+              setSelectedFolderId(value === 'all' ? null : value)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar carpeta..." />
@@ -179,7 +202,7 @@ export function AssignFolderPhotos({
               <SelectItem value="all">
                 🌐 Todas las fotos del evento (sin asignar)
               </SelectItem>
-              {folders.map(folder => (
+              {folders.map((folder) => (
                 <SelectItem key={folder.id} value={folder.id}>
                   📁 {folder.path} ({folder.photo_count} fotos)
                 </SelectItem>
@@ -187,7 +210,7 @@ export function AssignFolderPhotos({
             </SelectContent>
           </Select>
           {currentFolderName && selectedFolderId === currentFolderId && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               📍 Carpeta actual: {currentFolderName}
             </p>
           )}
@@ -196,7 +219,10 @@ export function AssignFolderPhotos({
         {/* Assignment Mode */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Modo de asignación</label>
-          <Select value={assignmentMode} onValueChange={(value: any) => setAssignmentMode(value)}>
+          <Select
+            value={assignmentMode}
+            onValueChange={(value: any) => setAssignmentMode(value)}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -229,23 +255,23 @@ export function AssignFolderPhotos({
               </Button>
             </div>
           </div>
-          
-          <div className="max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
+
+          <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
             {subjects.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-muted-foreground py-4 text-center text-sm">
                 No hay estudiantes en este evento
               </p>
             ) : (
-              subjects.map(subject => (
+              subjects.map((subject) => (
                 <div key={subject.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={subject.id}
                     checked={selectedSubjects.includes(subject.id)}
                     onCheckedChange={() => handleSubjectToggle(subject.id)}
                   />
-                  <label 
+                  <label
                     htmlFor={subject.id}
-                    className="text-sm flex-1 cursor-pointer"
+                    className="flex-1 cursor-pointer text-sm"
                   >
                     {subject.name}
                     {subject.grade_section && (
@@ -266,9 +292,11 @@ export function AssignFolderPhotos({
             <Checkbox
               id="force-reassign"
               checked={forceReassign}
-              onCheckedChange={(checked) => setForceReassign(checked as boolean)}
+              onCheckedChange={(checked) =>
+                setForceReassign(checked as boolean)
+              }
             />
-            <label htmlFor="force-reassign" className="text-sm cursor-pointer">
+            <label htmlFor="force-reassign" className="cursor-pointer text-sm">
               Reasignar fotos ya asignadas
             </label>
           </div>
@@ -276,17 +304,19 @@ export function AssignFolderPhotos({
 
         {/* Summary */}
         {selectedSubjects.length > 0 && photoCount > 0 && (
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-            <h4 className="font-medium flex items-center space-x-2">
+          <div className="bg-muted/50 space-y-2 rounded-lg p-4">
+            <h4 className="flex items-center space-x-2 font-medium">
               <ImageIcon className="h-4 w-4" />
               <span>Resumen de asignación</span>
             </h4>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium">Fotos:</span> {photoCount.toLocaleString()}
+                <span className="font-medium">Fotos:</span>{' '}
+                {photoCount.toLocaleString()}
               </div>
               <div>
-                <span className="font-medium">Estudiantes:</span> {selectedSubjects.length}
+                <span className="font-medium">Estudiantes:</span>{' '}
+                {selectedSubjects.length}
               </div>
               <div className="col-span-2">
                 <span className="font-medium">Total asignaciones:</span>{' '}
@@ -299,31 +329,34 @@ export function AssignFolderPhotos({
         )}
 
         {/* Action Button */}
-        <Button 
+        <Button
           onClick={handleAssign}
-          disabled={loading || selectedSubjects.length === 0 || photoCount === 0}
+          disabled={
+            loading || selectedSubjects.length === 0 || photoCount === 0
+          }
           className="w-full"
           size="lg"
         >
           {loading ? (
             <>
-              <Clock className="h-4 w-4 mr-2 animate-spin" />
+              <Clock className="mr-2 h-4 w-4 animate-spin" />
               Asignando...
             </>
           ) : (
             <>
-              <CheckCircle className="h-4 w-4 mr-2" />
+              <CheckCircle className="mr-2 h-4 w-4" />
               Asignar {photoCount} fotos a {selectedSubjects.length} estudiantes
             </>
           )}
         </Button>
 
         {/* Warning */}
-        <div className="flex items-start space-x-2 text-sm text-muted-foreground">
-          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+        <div className="text-muted-foreground flex items-start space-x-2 text-sm">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <p>
-            Esta acción creará las conexiones necesarias para que las fotos aparezcan en las galerías familiares. 
-            Los estudiantes podrán ver estas fotos cuando accedan con su token familiar.
+            Esta acción creará las conexiones necesarias para que las fotos
+            aparezcan en las galerías familiares. Los estudiantes podrán ver
+            estas fotos cuando accedan con su token familiar.
           </p>
         </div>
       </CardContent>

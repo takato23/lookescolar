@@ -22,7 +22,8 @@ export interface FamilyTokenData {
 }
 
 // Regex para validación
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TOKEN_REGEX = /^[A-Za-z0-9_-]{20,100}$/;
 
 /**
@@ -34,7 +35,7 @@ export const detectGalleryContext = (params: {
   pathname: string;
 }): GalleryParams => {
   const { eventId, token, pathname } = params;
-  
+
   // Rutas familiares siempre tienen precedencia
   if (pathname.startsWith('/f/') && token) {
     return {
@@ -43,11 +44,15 @@ export const detectGalleryContext = (params: {
       route: `/f/${token}`,
     };
   }
-  
+
   // Rutas públicas con eventId
   if (pathname.startsWith('/gallery/') && eventId && UUID_REGEX.test(eventId)) {
     // Si también hay token en query params, podría ser acceso familiar via URL pública
-    if (token && TOKEN_REGEX.test(token) && isFeatureEnabled('TOKEN_AUTO_DETECTION')) {
+    if (
+      token &&
+      TOKEN_REGEX.test(token) &&
+      isFeatureEnabled('TOKEN_AUTO_DETECTION')
+    ) {
       return {
         eventId,
         token,
@@ -55,14 +60,14 @@ export const detectGalleryContext = (params: {
         route: `/gallery/${eventId}?token=${token}`,
       };
     }
-    
+
     return {
       eventId,
       context: 'public',
       route: `/gallery/${eventId}`,
     };
   }
-  
+
   // Fallback a contexto público
   return {
     eventId: eventId || undefined,
@@ -75,22 +80,24 @@ export const detectGalleryContext = (params: {
 /**
  * Valida token familiar y extrae metadata
  */
-export const validateFamilyToken = async (token: string): Promise<FamilyTokenData | null> => {
+export const validateFamilyToken = async (
+  token: string
+): Promise<FamilyTokenData | null> => {
   if (!TOKEN_REGEX.test(token)) {
     return null;
   }
-  
+
   try {
     const response = await fetch(`/api/family/validate-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
-    
+
     if (!response.ok) {
       return null;
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error validating family token:', error);
@@ -113,21 +120,24 @@ export const redirectToGalleryContext = (
     // Usar ruta familiar tradicional
     return `/f/${params.token}`;
   }
-  
+
   if (params.context === 'public' && params.eventId) {
     return `/gallery/${params.eventId}`;
   }
-  
+
   return '/';
 };
 
 /**
  * Hook para componentes que necesitan contexto de galería
  */
-export const useGalleryContext = (pathname: string, searchParams: URLSearchParams) => {
+export const useGalleryContext = (
+  pathname: string,
+  searchParams: URLSearchParams
+) => {
   const eventId = searchParams.get('eventId') || pathname.split('/')[2];
   const token = searchParams.get('token') || pathname.split('/')[2];
-  
+
   return detectGalleryContext({
     eventId: eventId || undefined,
     token: token || undefined,
@@ -145,9 +155,9 @@ export const generateGalleryUrl = (params: {
   preserveQueryParams?: Record<string, string>;
 }): string => {
   const { eventId, token, context, preserveQueryParams = {} } = params;
-  
+
   let baseUrl = '';
-  
+
   if (context === 'family' && token) {
     if (isFeatureEnabled('FAMILY_IN_GALLERY_ROUTE') && eventId) {
       baseUrl = `/gallery/${eventId}`;
@@ -160,7 +170,7 @@ export const generateGalleryUrl = (params: {
   } else {
     baseUrl = '/';
   }
-  
+
   // Agregar query parameters
   const queryString = new URLSearchParams(preserveQueryParams).toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
@@ -172,7 +182,7 @@ export const generateGalleryUrl = (params: {
 export const detectApiContext = (request: Request): GalleryParams => {
   const url = new URL(request.url);
   const pathname = url.pathname;
-  
+
   // API familiar
   if (pathname.includes('/api/family/')) {
     const tokenMatch = pathname.match(/\/api\/family\/[^/]+\/([^/?]+)/);
@@ -182,7 +192,7 @@ export const detectApiContext = (request: Request): GalleryParams => {
       route: pathname,
     };
   }
-  
+
   // API pública
   if (pathname.includes('/api/gallery/')) {
     const eventIdMatch = pathname.match(/\/api\/gallery\/([^/?]+)/);
@@ -192,7 +202,7 @@ export const detectApiContext = (request: Request): GalleryParams => {
       route: pathname,
     };
   }
-  
+
   return {
     context: 'public',
     route: pathname,
