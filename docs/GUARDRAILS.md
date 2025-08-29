@@ -4,7 +4,14 @@ Objetivo: mantener el proyecto enfocado y simple mientras construimos cimientos 
 
 - Páginas habilitadas: Dashboard (`/admin`) y Fotos (`/admin/photos`).
 - Flujo base: Subir fotos → generar previews → organizar en carpetas (opcional) → aprobar/desaprobar → tagging manual/QR (pospuesto si no es crítico).
-- API mínima: `GET/DELETE /api/admin/photos`, `POST /api/admin/photos/simple-upload`, `POST /api/admin/photos/download`, `PATCH /api/admin/photos/:id/move`, `GET /api/admin/publish/list`, `POST /api/admin/codes`.
+- API mínima: 
+  - GET/DELETE `/api/admin/photos`
+  - POST `/api/admin/photos/simple-upload`
+  - POST `/api/admin/photos/download`
+  - PATCH `/api/admin/photos/:id/move`
+  - GET `/api/admin/publish/list`
+  - POST `/api/admin/publish`
+  - (opciones de revoke/unpublish quedan para fase 2)
 - Autenticación: mock en dev, real en prod (Supabase).
 
 Política de documentación (por ahora):
@@ -20,5 +27,3 @@ Documentos que conservamos:
 - `GUARDRAILS.md` (este archivo)
 
 Nota: cualquier doc adicional debe responder a una necesidad inmediata del MVP de Fotos. Si no es imprescindible, no se agrega todavía.
-
-
