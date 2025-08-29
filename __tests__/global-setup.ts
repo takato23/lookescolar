@@ -11,7 +11,7 @@ async function globalSetup(config: FullConfig) {
   // Create test directories
   const fs = require('fs');
   const path = require('path');
-  
+
   const testDirs = [
     'test-reports/usability',
     'test-reports/screenshots',
@@ -31,7 +31,8 @@ async function globalSetup(config: FullConfig) {
   const fixtures = [
     {
       name: 'sample-photo.jpg',
-      content: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD//gA7Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2NjIpLCBxdWFsaXR5ID0gOTAK/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/9sAQwEDBAQFBAUJBQUJFA0LDRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU/8AAEQgAEAAQAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+gEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5/oooor//2Q==',
+      content:
+        'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD//gA7Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2NjIpLCBxdWFsaXR5ID0gOTAK/9sAQwADAgIDAgIDAwMDBAMDBAUIBQUEBAUKBwcGCAwKDAwLCgsLDQ4SEA0OEQ4LCxAWEBETFBUVFQwPFxgWFBgSFBUU/9sAQwEDBAQFBAUJBQUJFA0LDRQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU/8AAEQgAEAAQAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+gEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD5/oooor//2Q==',
     },
     {
       name: 'students.csv',
@@ -43,11 +44,18 @@ María Fernández Torres,5B,maria.fernandez@example.com`,
   ];
 
   for (const fixture of fixtures) {
-    const fixturePath = path.join(process.cwd(), '__tests__/fixtures', fixture.name);
+    const fixturePath = path.join(
+      process.cwd(),
+      '__tests__/fixtures',
+      fixture.name
+    );
     if (!fs.existsSync(fixturePath)) {
       if (fixture.content.startsWith('data:')) {
         // Handle base64 images
-        const base64Data = fixture.content.replace(/^data:image\/\w+;base64,/, '');
+        const base64Data = fixture.content.replace(
+          /^data:image\/\w+;base64,/,
+          ''
+        );
         fs.writeFileSync(fixturePath, base64Data, 'base64');
       } else {
         fs.writeFileSync(fixturePath, fixture.content);
@@ -70,7 +78,7 @@ María Fernández Torres,5B,maria.fernandez@example.com`,
   try {
     const browser = await chromium.launch();
     const page = await browser.newPage();
-    
+
     const maxRetries = 30;
     let retries = 0;
     let serverReady = false;
@@ -84,7 +92,7 @@ María Fernández Torres,5B,maria.fernandez@example.com`,
         }
       } catch (error) {
         retries++;
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         console.log(`⏳ Waiting for server... (${retries}/${maxRetries})`);
       }
     }
@@ -94,7 +102,6 @@ María Fernández Torres,5B,maria.fernandez@example.com`,
     if (!serverReady) {
       throw new Error('Development server not accessible after 60 seconds');
     }
-
   } catch (error) {
     console.error('❌ Server check failed:', error);
     throw error;
@@ -105,7 +112,9 @@ María Fernández Torres,5B,maria.fernandez@example.com`,
   console.log(`  - Node.js: ${process.version}`);
   console.log(`  - Platform: ${process.platform}`);
   console.log(`  - CI: ${process.env.CI || 'false'}`);
-  console.log(`  - Base URL: ${config.projects[0]?.use?.baseURL || 'http://localhost:3000'}`);
+  console.log(
+    `  - Base URL: ${config.projects[0]?.use?.baseURL || 'http://localhost:3000'}`
+  );
 
   console.log('✅ Global setup completed successfully');
 }

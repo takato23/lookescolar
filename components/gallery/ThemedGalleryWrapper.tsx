@@ -1,64 +1,63 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { GalleryThemeService, SchoolLevel, GalleryTheme } from '@/lib/services/gallery-theme.service';
+import {
+  GalleryThemeService,
+  EventTheme,
+  GalleryTheme,
+} from '@/lib/services/gallery-theme.service';
 
 interface ThemedGalleryWrapperProps {
   children: ReactNode;
-  schoolLevel?: SchoolLevel;
-  eventName?: string;
-  gradeSection?: string;
+  eventTheme?: EventTheme;
   className?: string;
 }
 
 export function ThemedGalleryWrapper({
   children,
-  schoolLevel,
-  eventName,
-  gradeSection,
+  eventTheme = 'default',
   className = '',
 }: ThemedGalleryWrapperProps) {
   const [theme, setTheme] = useState<GalleryTheme | null>(null);
 
   useEffect(() => {
-    // Determine school level and load theme
-    const level = schoolLevel || GalleryThemeService.detectSchoolLevel(eventName, gradeSection);
-    const selectedTheme = GalleryThemeService.getTheme(level);
+    // Load theme directly from eventTheme prop
+    const selectedTheme = GalleryThemeService.getTheme(eventTheme);
     setTheme(selectedTheme);
 
     // Apply CSS custom properties to document root
     const cssVars = GalleryThemeService.generateCSSVars(selectedTheme);
     const root = document.documentElement;
-    
+
     Object.entries(cssVars).forEach(([property, value]) => {
       root.style.setProperty(property, value);
     });
 
     // Cleanup function to remove custom properties
     return () => {
-      Object.keys(cssVars).forEach(property => {
+      Object.keys(cssVars).forEach((property) => {
         root.style.removeProperty(property);
       });
     };
-  }, [schoolLevel, eventName, gradeSection]);
+  }, [eventTheme]);
 
   if (!theme) {
-    return <div className="animate-pulse bg-gray-100 min-h-screen" />;
+    return <div className="min-h-screen animate-pulse bg-gray-100" />;
   }
 
   const themedStyles = GalleryThemeService.getThemedStyles(theme);
 
   return (
-    <div 
+    <div
       className={`themed-gallery-wrapper min-h-screen transition-all duration-500 ${className}`}
       style={themedStyles.container}
     >
       {/* Theme Header */}
-      <div 
-        className="themed-header p-6 mb-6 rounded-lg"
+      <div
+        className="themed-header mb-6 rounded-lg p-6"
         style={themedStyles.header}
       >
-        <div className="flex items-center gap-3 mb-2">
+        <div className="mb-2 flex items-center gap-3">
           <span className="text-2xl" role="img" aria-label="Gallery">
             {theme.icons.gallery}
           </span>
@@ -72,9 +71,7 @@ export function ThemedGalleryWrapper({
       </div>
 
       {/* Themed Content */}
-      <div className="themed-content">
-        {children}
-      </div>
+      <div className="themed-content">{children}</div>
 
       {/* Theme-specific CSS styles */}
       <style jsx>{`
@@ -83,7 +80,11 @@ export function ThemedGalleryWrapper({
           border: 1px solid ${theme.colors.border};
           background-image: ${theme.patterns.cardPattern};
           transition: all 0.3s ease;
-          border-radius: ${theme.id === 'kindergarten' ? '12px' : theme.id === 'primary' ? '8px' : '6px'};
+          border-radius: ${theme.id === 'kindergarten'
+            ? '12px'
+            : theme.id === 'primary'
+              ? '8px'
+              : '6px'};
         }
 
         .themed-gallery-wrapper :global(.photo-card:hover) {
@@ -99,7 +100,11 @@ export function ThemedGalleryWrapper({
           color: white;
           font-family: ${theme.fonts.body};
           transition: all 0.2s ease;
-          border-radius: ${theme.id === 'kindergarten' ? '20px' : theme.id === 'primary' ? '8px' : '4px'};
+          border-radius: ${theme.id === 'kindergarten'
+            ? '20px'
+            : theme.id === 'primary'
+              ? '8px'
+              : '4px'};
           padding: ${theme.id === 'kindergarten' ? '12px 20px' : '10px 16px'};
           font-size: ${theme.id === 'kindergarten' ? '16px' : '14px'};
           font-weight: ${theme.id === 'kindergarten' ? '600' : '500'};
@@ -147,34 +152,40 @@ export function ThemedGalleryWrapper({
         }
 
         /* Kindergarten specific styles */
-        ${theme.id === 'kindergarten' ? `
+        ${theme.id === 'kindergarten'
+          ? `
           .themed-gallery-wrapper :global(.photo-card) {
             box-shadow: 0 2px 8px rgba(255,107,157,0.1);
           }
           .themed-gallery-wrapper :global(.photo-card:hover) {
             box-shadow: 0 8px 20px rgba(255,107,157,0.2);
           }
-        ` : ''}
+        `
+          : ''}
 
         /* Primary specific styles */
-        ${theme.id === 'primary' ? `
+        ${theme.id === 'primary'
+          ? `
           .themed-gallery-wrapper :global(.photo-card) {
             box-shadow: 0 1px 6px rgba(59,130,246,0.1);
           }
           .themed-gallery-wrapper :global(.photo-card:hover) {
             box-shadow: 0 4px 16px rgba(59,130,246,0.15);
           }
-        ` : ''}
+        `
+          : ''}
 
         /* Secondary specific styles */
-        ${theme.id === 'secondary' ? `
+        ${theme.id === 'secondary'
+          ? `
           .themed-gallery-wrapper :global(.photo-card) {
             box-shadow: 0 1px 3px rgba(99,102,241,0.1);
           }
           .themed-gallery-wrapper :global(.photo-card:hover) {
             box-shadow: 0 2px 12px rgba(99,102,241,0.12);
           }
-        ` : ''}
+        `
+          : ''}
       `}</style>
     </div>
   );

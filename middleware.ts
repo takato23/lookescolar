@@ -10,23 +10,22 @@ const ALLOWED_ORIGINS = [
   'https://admin.lookescolar.com',
 ];
 
-// Configuración CSP según CLAUDE.md - TEMPORALMENTE DESHABILITADO PARA DESARROLLO
-// const CSP_HEADER = `
-//   default-src 'self';
-//   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://sdk.mercadopago.com;
-//   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-//   img-src 'self' blob: data: https://*.supabase.co;
-//   font-src 'self' https://fonts.gstatic.com;
-//   connect-src 'self' https://*.supabase.co https://api.mercadopago.com;
-//   frame-src 'self' https://mercadopago.com https://*.mercadopago.com;
-//   object-src 'none';
-//   base-uri 'self';
-//   form-action 'self';
-//   frame-ancestors 'none';
-//   block-all-mixed-content;
-//   upgrade-insecure-requests;
-// `.replace(/\s{2,}/g, ' ').trim();
-const CSP_HEADER = null; // Temporalmente deshabilitado
+// Configuración CSP (activada en producción). Ajusta fuentes si agregas nuevos orígenes.
+const CSP_HEADER = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://sdk.mercadopago.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' blob: data: https://*.supabase.co;
+  font-src 'self' https://fonts.gstatic.com;
+  connect-src 'self' https://*.supabase.co https://api.mercadopago.com;
+  frame-src 'self' https://mercadopago.com https://*.mercadopago.com;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+  frame-ancestors 'none';
+  block-all-mixed-content;
+  upgrade-insecure-requests;
+`.replace(/\s{2,}/g, ' ').trim();
 
 // Rutas que requieren anti-hotlinking estricto
 const PROTECTED_PATHS = [
@@ -52,11 +51,11 @@ const TRUSTED_IPS = [
 export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
-  
+
   // Agregar request ID a headers para tracking
   const response = NextResponse.next();
   response.headers.set('X-Request-ID', requestId);
-  
+
   try {
     const url = request.nextUrl.clone();
     const pathname = url.pathname;
@@ -76,16 +75,19 @@ export async function middleware(request: NextRequest) {
     });
 
     // 1. HTTPS Enforcement en producción
-    if (process.env.NODE_ENV === 'production' && !request.headers.get('x-forwarded-proto')?.includes('https')) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      !request.headers.get('x-forwarded-proto')?.includes('https')
+    ) {
       const redirectUrl = url.clone();
       redirectUrl.protocol = 'https:';
-      
+
       logger.warn('HTTP request redirected to HTTPS', {
         requestId,
         originalUrl: url.href,
         redirectUrl: redirectUrl.href,
       });
-      
+
       return NextResponse.redirect(redirectUrl, 301);
     }
 
@@ -96,15 +98,19 @@ export async function middleware(request: NextRequest) {
     });
 
     // 3. Security Headers
-    const securityHeaders = getSecurityHeaders();
+    const securityHeaders = getSecurityHeaders(pathname);
     Object.entries(securityHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
 
     // 4. Anti-hotlinking para rutas protegidas
-    if (PROTECTED_PATHS.some(path => pathname.startsWith(path))) {
-      const antiHotlinkResult = validateAntiHotlinking(request, referer, clientIP);
-      
+    if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
+      const antiHotlinkResult = validateAntiHotlinking(
+        request,
+        referer,
+        clientIP
+      );
+
       if (!antiHotlinkResult.allowed) {
         logger.warn('Anti-hotlinking blocked request', {
           requestId,
@@ -113,7 +119,7 @@ export async function middleware(request: NextRequest) {
           referer: referer ? maskUrl(referer) : null,
           clientIP: maskIP(clientIP),
         });
-        
+
         return new NextResponse('Forbidden', {
           status: 403,
           headers: {
@@ -125,9 +131,12 @@ export async function middleware(request: NextRequest) {
     }
 
     // 5. Rate Limiting - DISABLED IN DEVELOPMENT
-    if (pathname.startsWith('/api/') && process.env.NODE_ENV !== 'development') {
+    if (
+      pathname.startsWith('/api/') &&
+      process.env.NODE_ENV !== 'development'
+    ) {
       const rateLimitResult = await rateLimitMiddleware(request, requestId);
-      
+
       if (!rateLimitResult.allowed) {
         logger.warn('Rate limit exceeded', {
           requestId,
@@ -137,24 +146,36 @@ export async function middleware(request: NextRequest) {
           remaining: rateLimitResult.remaining,
           resetTime: rateLimitResult.resetTime,
         });
-        
+
         return new NextResponse('Too Many Requests', {
           status: 429,
           headers: {
             'X-Request-ID': requestId,
             'X-RateLimit-Limit': rateLimitResult.limit?.toString() || '0',
-            'X-RateLimit-Remaining': rateLimitResult.remaining?.toString() || '0',
+            'X-RateLimit-Remaining':
+              rateLimitResult.remaining?.toString() || '0',
             'X-RateLimit-Reset': rateLimitResult.resetTime?.toString() || '0',
-            'Retry-After': Math.ceil(((rateLimitResult.resetTime || Date.now()) - Date.now()) / 1000).toString(),
+            'Retry-After': Math.ceil(
+              ((rateLimitResult.resetTime || Date.now()) - Date.now()) / 1000
+            ).toString(),
           },
         });
       }
-      
+
       // Agregar headers de rate limit a respuestas exitosas
       if (rateLimitResult.limit) {
-        response.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
-        response.headers.set('X-RateLimit-Remaining', (rateLimitResult.remaining || 0).toString());
-        response.headers.set('X-RateLimit-Reset', (rateLimitResult.resetTime || 0).toString());
+        response.headers.set(
+          'X-RateLimit-Limit',
+          rateLimitResult.limit.toString()
+        );
+        response.headers.set(
+          'X-RateLimit-Remaining',
+          (rateLimitResult.remaining || 0).toString()
+        );
+        response.headers.set(
+          'X-RateLimit-Reset',
+          (rateLimitResult.resetTime || 0).toString()
+        );
       }
     }
 
@@ -165,7 +186,7 @@ export async function middleware(request: NextRequest) {
         userAgent: maskUserAgent(userAgent),
         clientIP: maskIP(clientIP),
       });
-      
+
       return new NextResponse('Forbidden', {
         status: 403,
         headers: {
@@ -186,10 +207,9 @@ export async function middleware(request: NextRequest) {
     });
 
     return response;
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    
+
     logger.error('Middleware error', {
       requestId,
       pathname: request.nextUrl.pathname,
@@ -204,7 +224,7 @@ export async function middleware(request: NextRequest) {
     errorResponse.headers.set('X-Content-Type-Options', 'nosniff');
     errorResponse.headers.set('X-Frame-Options', 'DENY');
     errorResponse.headers.set('X-XSS-Protection', '1; mode=block');
-    
+
     return errorResponse;
   }
 }
@@ -219,20 +239,20 @@ function getClientIP(request: NextRequest): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
   const connectingIP = request.headers.get('cf-connecting-ip'); // Cloudflare
-  
+
   if (forwardedFor) {
     // x-forwarded-for puede ser una lista separada por comas
     return forwardedFor.split(',')[0].trim();
   }
-  
+
   if (realIP) {
     return realIP;
   }
-  
+
   if (connectingIP) {
     return connectingIP;
   }
-  
+
   // Fallback a IP de Next.js
   return request.ip || 'unknown';
 }
@@ -243,38 +263,45 @@ function getClientIP(request: NextRequest): string {
  * @param {string|null} referer - Referer header
  * @returns {Record<string, string>} CORS headers
  */
-function getCorsHeaders(request: NextRequest, referer?: string | null): Record<string, string> {
+function getCorsHeaders(
+  request: NextRequest,
+  referer?: string | null
+): Record<string, string> {
   const origin = request.headers.get('origin');
-  const isAllowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => {
-    if (allowed.includes('*')) {
-      const pattern = allowed.replace('*', '[^.]*');
-      const regex = new RegExp(`^${pattern}$`, 'i');
-      return regex.test(origin);
-    }
-    return origin === allowed;
-  });
-  
+  const isAllowedOrigin =
+    origin &&
+    ALLOWED_ORIGINS.some((allowed) => {
+      if (allowed.includes('*')) {
+        const pattern = allowed.replace('*', '[^.]*');
+        const regex = new RegExp(`^${pattern}$`, 'i');
+        return regex.test(origin);
+      }
+      return origin === allowed;
+    });
+
   const headers: Record<string, string> = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Request-ID',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Requested-With, X-Request-ID',
     'Access-Control-Max-Age': '86400', // 24 horas
   };
-  
+
   if (isAllowedOrigin) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers['Access-Control-Allow-Credentials'] = 'true';
   } else {
     headers['Access-Control-Allow-Origin'] = 'null';
   }
-  
+
   return headers;
 }
 
 /**
  * Generates security headers.
+ * @param {string} pathname - Request pathname for context-specific headers
  * @returns {Record<string, string>} Security headers
  */
-function getSecurityHeaders(): Record<string, string> {
+function getSecurityHeaders(pathname?: string): Record<string, string> {
   const headers: Record<string, string> = {
     // Otros headers de seguridad
     'X-Content-Type-Options': 'nosniff',
@@ -282,18 +309,26 @@ function getSecurityHeaders(): Record<string, string> {
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    
+
     // HSTS en producción
     ...(process.env.NODE_ENV === 'production' && {
-      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+      'Strict-Transport-Security':
+        'max-age=31536000; includeSubDomains; preload',
     }),
   };
-  
-  // CSP - Solo agregar si está definido (temporalmente deshabilitado)
-  if (CSP_HEADER) {
+
+  // Headers específicos para rutas de tokens (/s/* y /api/s/*)
+  if (pathname && (pathname.startsWith('/s/') || pathname.startsWith('/api/s/'))) {
+    headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive, nosnippet, nocache';
+    headers['Referrer-Policy'] = 'no-referrer';
+    headers['Cache-Control'] = 'private, max-age=60, stale-while-revalidate=120';
+  }
+
+  // CSP - Solo en producción para no romper desarrollo local
+  if (process.env.NODE_ENV === 'production' && CSP_HEADER) {
     headers['Content-Security-Policy'] = CSP_HEADER;
   }
-  
+
   return headers;
 }
 
@@ -305,8 +340,8 @@ function getSecurityHeaders(): Record<string, string> {
  * @returns {{allowed: boolean; reason?: string}} Validation result
  */
 function validateAntiHotlinking(
-  request: NextRequest, 
-  referer?: string | null, 
+  request: NextRequest,
+  referer?: string | null,
   clientIP?: string
 ): { allowed: boolean; reason?: string } {
   // Permitir IPs confiables sin referer check y relajar protección en desarrollo
@@ -314,7 +349,7 @@ function validateAntiHotlinking(
   if (isLocal || process.env.NODE_ENV !== 'production') {
     return { allowed: true };
   }
-  
+
   // Permitir requests directos (sin referer) solo para GET
   if (!referer) {
     if (request.method === 'GET') {
@@ -322,28 +357,27 @@ function validateAntiHotlinking(
     }
     return { allowed: false, reason: 'no-referer-non-get' };
   }
-  
+
   try {
     const refererUrl = new URL(referer);
-    
+
     // Verificar si el referer está en la lista de permitidos
-    const isAllowed = ALLOWED_ORIGINS.some(origin => {
+    const isAllowed = ALLOWED_ORIGINS.some((origin) => {
       if (origin.includes('*')) {
         const pattern = origin.replace('*', '[^.]*');
         const regex = new RegExp(`^https?://${pattern}$`, 'i');
         return regex.test(`${refererUrl.protocol}//${refererUrl.hostname}`);
       }
-      
+
       const originUrl = new URL(origin);
       return refererUrl.hostname === originUrl.hostname;
     });
-    
+
     if (!isAllowed) {
       return { allowed: false, reason: 'invalid-referer' };
     }
-    
+
     return { allowed: true };
-    
   } catch {
     return { allowed: false, reason: 'malformed-referer' };
   }
@@ -365,9 +399,9 @@ function isBlockedUserAgent(userAgent: string): boolean {
     /spider/i,
     /wget/i,
     /curl/i,
-    /^$/,  // User-Agent vacío
+    /^$/, // User-Agent vacío
   ];
-  
+
   // Permitir bots legítimos conocidos
   const allowedBots = [
     /googlebot/i,
@@ -378,14 +412,14 @@ function isBlockedUserAgent(userAgent: string): boolean {
     /twitterbot/i,
     /linkedinbot/i,
   ];
-  
+
   // Si es un bot permitido, no bloquear
-  if (allowedBots.some(pattern => pattern.test(userAgent))) {
+  if (allowedBots.some((pattern) => pattern.test(userAgent))) {
     return false;
   }
-  
+
   // Bloquear si coincide con patrones maliciosos
-  return blockedPatterns.some(pattern => pattern.test(userAgent));
+  return blockedPatterns.some((pattern) => pattern.test(userAgent));
 }
 
 /**
@@ -397,7 +431,7 @@ function maskIP(ip?: string): string {
   if (!ip || ip === 'unknown') {
     return 'unknown';
   }
-  
+
   if (ip.includes(':')) {
     // IPv6 - mostrar solo primeros 4 grupos
     const parts = ip.split(':');
@@ -421,7 +455,7 @@ function maskUserAgent(ua: string): string {
   if (ua.length <= 20) {
     return ua.substring(0, 5) + '***';
   }
-  
+
   return ua.substring(0, 10) + '***' + ua.substring(ua.length - 5);
 }
 
@@ -444,11 +478,12 @@ export const config = {
   matcher: [
     // Aplicar a todas las rutas de API
     '/api/:path*',
-    
+
     // Aplicar a rutas específicas de la app (pero NO a estáticos de Next)
     '/admin/:path*',
     '/f/:path*',
-    
+    '/s/:path*',
+
     // Excluir explícitamente archivos estáticos y assets de Next
     // Importante: evitar interceptar `/_next/*` para no romper CSS/JS
     '/((?!_next/|_next/static|_next/image|favicon.ico|\.well-known|robots\.txt|sitemap\.xml).*)',

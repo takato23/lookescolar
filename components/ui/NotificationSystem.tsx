@@ -1,30 +1,41 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  CheckCircle2, 
-  AlertCircle, 
-  Info, 
-  AlertTriangle, 
-  X, 
-  Bell, 
-  Camera, 
-  Upload, 
-  Download, 
-  Users, 
+import {
+  CheckCircle2,
+  AlertCircle,
+  Info,
+  AlertTriangle,
+  X,
+  Bell,
+  Camera,
+  Upload,
+  Download,
+  Users,
   DollarSign,
   Clock,
   Zap,
   Star,
   Target,
-  Activity
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 
 // Notification types
-export type NotificationType = 'success' | 'error' | 'warning' | 'info' | 'system';
+export type NotificationType =
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'system';
 
 export interface Notification {
   id: string;
@@ -46,19 +57,25 @@ export interface Notification {
 
 interface NotificationContextValue {
   notifications: Notification[];
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => string;
+  addNotification: (
+    notification: Omit<Notification, 'id' | 'timestamp'>
+  ) => string;
   removeNotification: (id: string) => void;
   clearAll: () => void;
   markAsRead: (id: string) => void;
   unreadCount: number;
 }
 
-const NotificationContext = createContext<NotificationContextValue | null>(null);
+const NotificationContext = createContext<NotificationContextValue | null>(
+  null
+);
 
 export function useNotifications() {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error(
+      'useNotifications must be used within a NotificationProvider'
+    );
   }
   return context;
 }
@@ -69,38 +86,48 @@ interface NotificationProviderProps {
   maxNotifications?: number;
 }
 
-export function NotificationProvider({ children, maxNotifications = 10 }: NotificationProviderProps) {
+export function NotificationProvider({
+  children,
+  maxNotifications = 10,
+}: NotificationProviderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp'>) => {
-    const id = Math.random().toString(36).substring(2, 15);
-    const newNotification: Notification = {
-      ...notification,
-      id,
-      timestamp: new Date(),
-      duration: notification.duration ?? (notification.persistent ? 0 : 5000)
-    };
+  const addNotification = useCallback(
+    (notification: Omit<Notification, 'id' | 'timestamp'>) => {
+      const id = Math.random().toString(36).substring(2, 15);
+      const newNotification: Notification = {
+        ...notification,
+        id,
+        timestamp: new Date(),
+        duration: notification.duration ?? (notification.persistent ? 0 : 5000),
+      };
 
-    setNotifications(prev => {
-      const updated = [newNotification, ...prev];
-      return updated.slice(0, maxNotifications);
-    });
+      setNotifications((prev) => {
+        const updated = [newNotification, ...prev];
+        return updated.slice(0, maxNotifications);
+      });
 
-    setUnreadCount(prev => prev + 1);
+      setUnreadCount((prev) => prev + 1);
 
-    // Auto-remove if not persistent
-    if (!notification.persistent && newNotification.duration && newNotification.duration > 0) {
-      setTimeout(() => {
-        removeNotification(id);
-      }, newNotification.duration);
-    }
+      // Auto-remove if not persistent
+      if (
+        !notification.persistent &&
+        newNotification.duration &&
+        newNotification.duration > 0
+      ) {
+        setTimeout(() => {
+          removeNotification(id);
+        }, newNotification.duration);
+      }
 
-    return id;
-  }, [maxNotifications]);
+      return id;
+    },
+    [maxNotifications]
+  );
 
   const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
   const clearAll = useCallback(() => {
@@ -109,7 +136,7 @@ export function NotificationProvider({ children, maxNotifications = 10 }: Notifi
   }, []);
 
   const markAsRead = useCallback((id: string) => {
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
   }, []);
 
   const value: NotificationContextValue = {
@@ -118,7 +145,7 @@ export function NotificationProvider({ children, maxNotifications = 10 }: Notifi
     removeNotification,
     clearAll,
     markAsRead,
-    unreadCount
+    unreadCount,
   };
 
   return (
@@ -136,7 +163,11 @@ interface NotificationToastProps {
   onAction?: () => void;
 }
 
-function NotificationToast({ notification, onClose, onAction }: NotificationToastProps) {
+function NotificationToast({
+  notification,
+  onClose,
+  onAction,
+}: NotificationToastProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -189,22 +220,22 @@ function NotificationToast({ notification, onClose, onAction }: NotificationToas
     <div
       className={cn(
         'neural-glass-card transform transition-all duration-300 ease-out',
-        'border backdrop-blur-md shadow-lg rounded-xl p-4 max-w-sm w-full',
+        'w-full max-w-sm rounded-xl border p-4 shadow-lg backdrop-blur-md',
         getColorScheme(),
-        isVisible && !isLeaving ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        isVisible && !isLeaving
+          ? 'translate-x-0 opacity-100'
+          : 'translate-x-full opacity-0'
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-0.5">
-          {getIcon()}
-        </div>
-        
-        <div className="flex-1 min-w-0">
+        <div className="mt-0.5 flex-shrink-0">{getIcon()}</div>
+
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <h4 className="text-sm font-semibold">{notification.title}</h4>
-              <p className="text-sm opacity-90 mt-1">{notification.message}</p>
-              
+              <p className="mt-1 text-sm opacity-90">{notification.message}</p>
+
               {notification.action && (
                 <div className="mt-3">
                   <Button
@@ -221,18 +252,18 @@ function NotificationToast({ notification, onClose, onAction }: NotificationToas
                 </div>
               )}
             </div>
-            
+
             <Button
               size="sm"
               variant="ghost"
               onClick={handleClose}
-              className="h-6 w-6 p-0 ml-2 opacity-60 hover:opacity-100"
+              className="ml-2 h-6 w-6 p-0 opacity-60 hover:opacity-100"
             >
               <X className="h-3 w-3" />
             </Button>
           </div>
-          
-          <div className="flex items-center justify-between mt-2 text-xs opacity-60">
+
+          <div className="mt-2 flex items-center justify-between text-xs opacity-60">
             <span>{notification.timestamp.toLocaleTimeString()}</span>
             {notification.category && (
               <span className="capitalize">{notification.category}</span>
@@ -256,7 +287,7 @@ function NotificationContainer() {
   if (!mounted || typeof window === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+    <div className="pointer-events-none fixed right-4 top-4 z-50 space-y-2">
       {notifications.slice(0, 5).map((notification) => (
         <div key={notification.id} className="pointer-events-auto">
           <NotificationToast
@@ -281,19 +312,19 @@ export function NotificationBell() {
         variant="ghost"
         size="sm"
         onClick={() => setShowPanel(!showPanel)}
-        className="neural-glass-card border-white/20 relative"
+        className="neural-glass-card relative border-white/20"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+          <div className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
             {unreadCount > 9 ? '9+' : unreadCount}
           </div>
         )}
       </Button>
 
       {showPanel && (
-        <div className="absolute top-full right-0 mt-2 w-80 neural-glass-card border border-white/20 bg-white/95 backdrop-blur-md rounded-xl shadow-lg z-50">
-          <div className="p-4 border-b border-gray-200/50">
+        <div className="neural-glass-card absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-white/20 bg-white/95 shadow-lg backdrop-blur-md">
+          <div className="border-b border-gray-200/50 p-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Notificaciones</h3>
               {notifications.length > 0 && (
@@ -308,11 +339,11 @@ export function NotificationBell() {
               )}
             </div>
           </div>
-          
+
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-6 text-center text-gray-500">
-                <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p className="text-sm">No hay notificaciones</p>
               </div>
             ) : (
@@ -320,24 +351,24 @@ export function NotificationBell() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className="p-3 rounded-lg hover:bg-gray-50/50 transition-colors"
+                    className="rounded-lg p-3 transition-colors hover:bg-gray-50/50"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-0.5">
+                      <div className="mt-0.5 flex-shrink-0">
                         {notification.icon ? (
                           <notification.icon className="h-4 w-4 text-gray-600" />
                         ) : (
                           <Bell className="h-4 w-4 text-gray-600" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-gray-900">
                           {notification.title}
                         </p>
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="mt-1 text-xs text-gray-600">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="mt-1 text-xs text-gray-500">
                           {notification.timestamp.toLocaleString()}
                         </p>
                       </div>
@@ -365,7 +396,7 @@ export const showSuccessNotification = (
     title,
     message,
     icon: CheckCircle2,
-    ...options
+    ...options,
   });
 };
 
@@ -381,7 +412,7 @@ export const showErrorNotification = (
     message,
     icon: AlertCircle,
     persistent: true,
-    ...options
+    ...options,
   });
 };
 
@@ -400,8 +431,8 @@ export const showPhotoUploadNotification = (
     eventId,
     action: {
       label: 'Ver evento',
-      onClick: () => window.open(`/admin/events/${eventId}`, '_blank')
-    }
+      onClick: () => window.open(`/admin/events/${eventId}`, '_blank'),
+    },
   });
 };
 
@@ -420,8 +451,8 @@ export const showEventUpdateNotification = (
     eventId,
     action: {
       label: 'Ver detalles',
-      onClick: () => window.open(`/admin/events/${eventId}`, '_blank')
-    }
+      onClick: () => window.open(`/admin/events/${eventId}`, '_blank'),
+    },
   });
 };
 
@@ -440,19 +471,23 @@ export const showRevenueNotification = (
     eventId,
     action: {
       label: 'Ver analytics',
-      onClick: () => window.open(`/admin/events/${eventId}`, '_blank')
-    }
+      onClick: () => window.open(`/admin/events/${eventId}`, '_blank'),
+    },
   });
 };
 
 // Real-time notification hook for WebSocket/Server-Sent Events
 export function useRealTimeNotifications() {
   const { addNotification } = useNotifications();
-  
+
   useEffect(() => {
     // In a real implementation, you would connect to WebSocket or SSE here
-    // For demo purposes, we'll simulate some notifications
-    
+    // Demo notifications are disabled by default. Enable with NEXT_PUBLIC_NOTIFICATIONS_DEMO=true
+    const demoEnabled =
+      typeof process !== 'undefined' &&
+      (process as any).env?.NEXT_PUBLIC_NOTIFICATIONS_DEMO === 'true';
+    if (!demoEnabled) return;
+
     const simulateNotifications = () => {
       const notifications = [
         {
@@ -460,34 +495,37 @@ export function useRealTimeNotifications() {
           title: 'Sistema actualizado',
           message: 'Nueva versión disponible con mejoras de rendimiento',
           icon: Zap,
-          category: 'system' as const
+          category: 'system' as const,
         },
         {
           type: 'success' as const,
           title: 'Fotos procesadas',
           message: 'Se procesaron 25 fotos nuevas automáticamente',
           icon: Camera,
-          category: 'photo' as const
+          category: 'photo' as const,
         },
         {
           type: 'info' as const,
           title: 'Recordatorio',
           message: 'Evento "Graduación 2024" mañana a las 10:00 AM',
           icon: Clock,
-          category: 'event' as const
-        }
+          category: 'event' as const,
+        },
       ];
-      
+
       notifications.forEach((notification, index) => {
-        setTimeout(() => {
-          addNotification(notification);
-        }, (index + 1) * 3000);
+        setTimeout(
+          () => {
+            addNotification(notification);
+          },
+          (index + 1) * 3000
+        );
       });
     };
-    
+
     // Simulate notifications after a delay
     const timer = setTimeout(simulateNotifications, 2000);
-    
+
     return () => clearTimeout(timer);
   }, [addNotification]);
 }

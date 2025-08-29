@@ -1,6 +1,6 @@
 /**
  * Enhanced Rate Limiting Middleware
- * 
+ *
  * Provides sophisticated rate limiting with QR-specific protections,
  * adaptive limits, and comprehensive logging.
  */
@@ -45,8 +45,12 @@ export interface AdaptiveRateLimitConfig extends RateLimitConfig {
 
 export class EnhancedRateLimitService {
   private redis: Redis | null = null;
-  private memoryStore: Map<string, { count: number; resetTime: number }> = new Map();
-  private suspiciousIPs: Map<string, { failures: number; lastFailure: number }> = new Map();
+  private memoryStore: Map<string, { count: number; resetTime: number }> =
+    new Map();
+  private suspiciousIPs: Map<
+    string,
+    { failures: number; lastFailure: number }
+  > = new Map();
 
   constructor() {
     // Initialize Redis if available
@@ -87,10 +91,10 @@ export class EnhancedRateLimitService {
     config: RateLimitConfig
   ): Promise<{ response?: NextResponse; result: RateLimitResult }> {
     const identifier = await this.getIdentifier(request, config);
-    
+
     // Check if IP is suspicious and apply adaptive limits
     const adaptiveConfig = await this.getAdaptiveConfig(identifier, config);
-    
+
     let result: RateLimitResult;
 
     if (this.redis) {
@@ -102,7 +106,7 @@ export class EnhancedRateLimitService {
     // Log rate limit event if blocked
     if (result.blocked) {
       await this.logRateLimitEvent(request, identifier, result, adaptiveConfig);
-      
+
       if (config.onLimitReached) {
         await config.onLimitReached(request, identifier);
       }
@@ -126,23 +130,29 @@ export class EnhancedRateLimitService {
   ): Promise<{ response?: NextResponse; result: RateLimitResult }> {
     const configs = {
       generation: {
-        identifier: await this.getIdentifier(request, { identifier: 'ip' } as RateLimitConfig),
+        identifier: await this.getIdentifier(request, {
+          identifier: 'ip',
+        } as RateLimitConfig),
         limit: 50, // 50 QR generations per hour
         window: '1h',
-        message: 'Too many QR code generation requests'
+        message: 'Too many QR code generation requests',
       },
       validation: {
-        identifier: await this.getIdentifier(request, { identifier: 'ip' } as RateLimitConfig),
+        identifier: await this.getIdentifier(request, {
+          identifier: 'ip',
+        } as RateLimitConfig),
         limit: 100, // 100 validations per hour
         window: '1h',
-        message: 'Too many QR code validation requests'
+        message: 'Too many QR code validation requests',
       },
       access: {
-        identifier: await this.getIdentifier(request, { identifier: 'ip' } as RateLimitConfig),
+        identifier: await this.getIdentifier(request, {
+          identifier: 'ip',
+        } as RateLimitConfig),
         limit: 200, // 200 QR accesses per hour
         window: '1h',
-        message: 'Too many QR code access requests'
-      }
+        message: 'Too many QR code access requests',
+      },
     };
 
     const config = configs[qrType];
@@ -157,13 +167,13 @@ export class EnhancedRateLimitService {
     email?: string
   ): Promise<{ response?: NextResponse; result: RateLimitResult }> {
     const ip = this.getClientIP(request);
-    
+
     // Apply both IP and email-based rate limiting
     const ipResult = await this.applyRateLimit(request, {
       identifier: ip,
       limit: 5, // 5 attempts per 15 minutes per IP
       window: '15m',
-      message: 'Too many authentication attempts from this IP'
+      message: 'Too many authentication attempts from this IP',
     });
 
     if (ipResult.response) {
@@ -175,7 +185,7 @@ export class EnhancedRateLimitService {
         identifier: `email:${email}`,
         limit: 3, // 3 attempts per 15 minutes per email
         window: '15m',
-        message: 'Too many authentication attempts for this email'
+        message: 'Too many authentication attempts for this email',
       });
 
       if (emailResult.response) {
@@ -194,7 +204,10 @@ export class EnhancedRateLimitService {
     const now = Date.now();
 
     // Track IP failures
-    const ipFailures = this.suspiciousIPs.get(ip) || { failures: 0, lastFailure: 0 };
+    const ipFailures = this.suspiciousIPs.get(ip) || {
+      failures: 0,
+      lastFailure: 0,
+    };
     ipFailures.failures += 1;
     ipFailures.lastFailure = now;
     this.suspiciousIPs.set(ip, ipFailures);
@@ -202,7 +215,10 @@ export class EnhancedRateLimitService {
     // Track email failures if provided
     if (email) {
       const emailKey = `email:${email}`;
-      const emailFailures = this.suspiciousIPs.get(emailKey) || { failures: 0, lastFailure: 0 };
+      const emailFailures = this.suspiciousIPs.get(emailKey) || {
+        failures: 0,
+        lastFailure: 0,
+      };
       emailFailures.failures += 1;
       emailFailures.lastFailure = now;
       this.suspiciousIPs.set(emailKey, emailFailures);
@@ -214,7 +230,7 @@ export class EnhancedRateLimitService {
       ip,
       userAgent: request.headers.get('user-agent') || undefined,
       result: 'failure',
-      reason: 'authentication_failed'
+      reason: 'authentication_failed',
     });
   }
 
@@ -223,9 +239,9 @@ export class EnhancedRateLimitService {
    */
   async resetAuthFailures(request: NextRequest, email?: string): Promise<void> {
     const ip = this.getClientIP(request);
-    
+
     this.suspiciousIPs.delete(ip);
-    
+
     if (email) {
       this.suspiciousIPs.delete(`email:${email}`);
     }
@@ -235,19 +251,23 @@ export class EnhancedRateLimitService {
    * Get adaptive configuration based on past behavior
    */
   private async getAdaptiveConfig(
-    identifier: string, 
+    identifier: string,
     baseConfig: RateLimitConfig
   ): Promise<RateLimitConfig> {
     const suspicious = this.suspiciousIPs.get(identifier);
     const now = Date.now();
-    const fiveMinutesAgo = now - (5 * 60 * 1000);
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
 
     // If there are recent failures, apply stricter limits
-    if (suspicious && suspicious.failures >= 3 && suspicious.lastFailure > fiveMinutesAgo) {
+    if (
+      suspicious &&
+      suspicious.failures >= 3 &&
+      suspicious.lastFailure > fiveMinutesAgo
+    ) {
       return {
         ...baseConfig,
         limit: Math.max(1, Math.floor(baseConfig.limit / 2)), // Halve the limit
-        message: `Rate limited due to suspicious activity. ${baseConfig.message || ''}`
+        message: `Rate limited due to suspicious activity. ${baseConfig.message || ''}`,
       };
     }
 
@@ -262,7 +282,7 @@ export class EnhancedRateLimitService {
     config: RateLimitConfig
   ): Promise<RateLimitResult> {
     const rateLimiter = this.createRateLimiter(config);
-    
+
     if (!rateLimiter) {
       // Fallback to memory store
       return this.applyMemoryRateLimit(identifier, config);
@@ -270,14 +290,14 @@ export class EnhancedRateLimitService {
 
     try {
       const result = await rateLimiter.limit(identifier);
-      
+
       return {
         success: result.success,
         limit: result.limit,
         remaining: result.remaining,
         reset: new Date(result.reset),
         identifier,
-        blocked: !result.success
+        blocked: !result.success,
       };
     } catch (error) {
       console.error('[RateLimit] Redis rate limiting failed:', error);
@@ -298,18 +318,18 @@ export class EnhancedRateLimitService {
     const resetTime = now + windowMs;
 
     const existing = this.memoryStore.get(identifier);
-    
+
     if (!existing || existing.resetTime <= now) {
       // New window or expired
       this.memoryStore.set(identifier, { count: 1, resetTime });
-      
+
       return {
         success: true,
         limit: config.limit,
         remaining: config.limit - 1,
         reset: new Date(resetTime),
         identifier,
-        blocked: false
+        blocked: false,
       };
     }
 
@@ -325,18 +345,21 @@ export class EnhancedRateLimitService {
       remaining: Math.max(0, config.limit - existing.count),
       reset: new Date(existing.resetTime),
       identifier,
-      blocked
+      blocked,
     };
   }
 
   /**
    * Get request identifier
    */
-  private async getIdentifier(request: NextRequest, config: RateLimitConfig): Promise<string> {
+  private async getIdentifier(
+    request: NextRequest,
+    config: RateLimitConfig
+  ): Promise<string> {
     if (config.identifier === 'ip') {
       return this.getClientIP(request);
     }
-    
+
     return config.identifier;
   }
 
@@ -347,19 +370,19 @@ export class EnhancedRateLimitService {
     const forwarded = request.headers.get('x-forwarded-for');
     const real = request.headers.get('x-real-ip');
     const remoteAddress = request.headers.get('x-remote-address');
-    
+
     if (forwarded) {
       return forwarded.split(',')[0].trim();
     }
-    
+
     if (real) {
       return real;
     }
-    
+
     if (remoteAddress) {
       return remoteAddress;
     }
-    
+
     return 'unknown';
   }
 
@@ -376,36 +399,53 @@ export class EnhancedRateLimitService {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value * 1000;
-      case 'm': return value * 60 * 1000;
-      case 'h': return value * 60 * 60 * 1000;
-      case 'd': return value * 24 * 60 * 60 * 1000;
-      default: throw new Error(`Invalid time unit: ${unit}`);
+      case 's':
+        return value * 1000;
+      case 'm':
+        return value * 60 * 1000;
+      case 'h':
+        return value * 60 * 60 * 1000;
+      case 'd':
+        return value * 24 * 60 * 60 * 1000;
+      default:
+        throw new Error(`Invalid time unit: ${unit}`);
     }
   }
 
   /**
    * Create rate limit response
    */
-  private createRateLimitResponse(config: RateLimitConfig, result: RateLimitResult): NextResponse {
+  private createRateLimitResponse(
+    config: RateLimitConfig,
+    result: RateLimitResult
+  ): NextResponse {
     const message = config.message || 'Too many requests';
-    
+
     const response = NextResponse.json(
-      { 
+      {
         error: 'Rate limit exceeded',
         message,
         limit: result.limit,
         remaining: result.remaining,
-        reset: result.reset.toISOString()
+        reset: result.reset.toISOString(),
       },
       { status: 429 }
     );
 
     if (config.headers !== false) {
       response.headers.set('X-RateLimit-Limit', result.limit.toString());
-      response.headers.set('X-RateLimit-Remaining', result.remaining.toString());
-      response.headers.set('X-RateLimit-Reset', Math.ceil(result.reset.getTime() / 1000).toString());
-      response.headers.set('Retry-After', Math.ceil((result.reset.getTime() - Date.now()) / 1000).toString());
+      response.headers.set(
+        'X-RateLimit-Remaining',
+        result.remaining.toString()
+      );
+      response.headers.set(
+        'X-RateLimit-Reset',
+        Math.ceil(result.reset.getTime() / 1000).toString()
+      );
+      response.headers.set(
+        'Retry-After',
+        Math.ceil((result.reset.getTime() - Date.now()) / 1000).toString()
+      );
     }
 
     return response;
@@ -429,7 +469,7 @@ export class EnhancedRateLimitService {
       limit: result.limit,
       current: result.limit - result.remaining,
       windowMs: this.parseWindow(config.window),
-      userAgent: userAgent || undefined
+      userAgent: userAgent || undefined,
     });
   }
 
@@ -438,7 +478,7 @@ export class EnhancedRateLimitService {
    */
   cleanup(): void {
     const now = Date.now();
-    
+
     // Clean memory store
     for (const [key, value] of this.memoryStore.entries()) {
       if (value.resetTime <= now) {
@@ -447,7 +487,7 @@ export class EnhancedRateLimitService {
     }
 
     // Clean suspicious IPs (older than 1 hour)
-    const oneHourAgo = now - (60 * 60 * 1000);
+    const oneHourAgo = now - 60 * 60 * 1000;
     for (const [key, value] of this.suspiciousIPs.entries()) {
       if (value.lastFailure < oneHourAgo) {
         this.suspiciousIPs.delete(key);
@@ -462,7 +502,7 @@ export class EnhancedRateLimitService {
     return {
       memoryEntries: this.memoryStore.size,
       suspiciousIPs: this.suspiciousIPs.size,
-      redisEnabled: !!this.redis
+      redisEnabled: !!this.redis,
     };
   }
 }
@@ -471,6 +511,9 @@ export class EnhancedRateLimitService {
 export const enhancedRateLimitService = new EnhancedRateLimitService();
 
 // Cleanup interval
-setInterval(() => {
-  enhancedRateLimitService.cleanup();
-}, 5 * 60 * 1000); // Every 5 minutes
+setInterval(
+  () => {
+    enhancedRateLimitService.cleanup();
+  },
+  5 * 60 * 1000
+); // Every 5 minutes

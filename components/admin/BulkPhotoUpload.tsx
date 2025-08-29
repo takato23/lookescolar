@@ -9,16 +9,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { 
-  Upload, 
-  File, 
-  X, 
-  Check, 
-  AlertCircle, 
+import {
+  Upload,
+  File,
+  X,
+  Check,
+  AlertCircle,
   Image as ImageIcon,
   QrCode,
   Wand2,
-  Trash2
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -49,23 +49,29 @@ interface BulkPhotoUploadProps {
   onUploadComplete?: (results: any) => void;
 }
 
-export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }: BulkPhotoUploadProps) {
+export default function BulkPhotoUpload({
+  eventId,
+  eventName,
+  onUploadComplete,
+}: BulkPhotoUploadProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>({
-    generatePreviews: true,
-    detectQrCodes: true,
-    processWatermarks: true,
-    autoClassify: false
-  });
+  const [processingOptions, setProcessingOptions] = useState<ProcessingOptions>(
+    {
+      generatePreviews: true,
+      detectQrCodes: true,
+      processWatermarks: true,
+      autoClassify: false,
+    }
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelection = useCallback((selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
 
     const newFiles: UploadFile[] = [];
-    
+
     Array.from(selectedFiles).forEach((file) => {
       // Validate file type
       if (!file.type.startsWith('image/')) {
@@ -80,38 +86,41 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
       }
 
       const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         const preview = e.target?.result as string;
-        
+
         const uploadFile: UploadFile = {
           id,
           file,
           preview,
-          status: 'pending'
+          status: 'pending',
         };
 
-        setFiles(prev => [...prev, uploadFile]);
+        setFiles((prev) => [...prev, uploadFile]);
       };
-      
+
       reader.readAsDataURL(file);
     });
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const droppedFiles = e.dataTransfer.files;
-    handleFileSelection(droppedFiles);
-  }, [handleFileSelection]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const droppedFiles = e.dataTransfer.files;
+      handleFileSelection(droppedFiles);
+    },
+    [handleFileSelection]
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
   }, []);
 
   const removeFile = (fileId: string) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId));
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
   };
 
   const clearAll = () => {
@@ -127,7 +136,7 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
         const result = reader.result as string;
         resolve(result);
       };
-      reader.onerror = error => reject(error);
+      reader.onerror = (error) => reject(error);
     });
   };
 
@@ -149,14 +158,14 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
             filename: uploadFile.file.name,
             size: uploadFile.file.size,
             type: uploadFile.file.type,
-            base64Data
+            base64Data,
           };
         })
       );
 
       // Update all files to uploading status
-      setFiles(prev => 
-        prev.map(f => ({ ...f, status: 'uploading' as const }))
+      setFiles((prev) =>
+        prev.map((f) => ({ ...f, status: 'uploading' as const }))
       );
 
       // Upload in batches to avoid overwhelming the server
@@ -165,7 +174,7 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
 
       for (let i = 0; i < photosData.length; i += batchSize) {
         const batch = photosData.slice(i, i + batchSize);
-        
+
         const response = await fetch('/api/admin/photos/bulk-upload', {
           method: 'POST',
           headers: {
@@ -174,7 +183,7 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
           body: JSON.stringify({
             eventId,
             photos: batch,
-            processingOptions
+            processingOptions,
           }),
         });
 
@@ -187,53 +196,61 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
         results.push(...batchResult.results);
 
         // Update progress
-        const progress = Math.round(((i + batch.length) / photosData.length) * 100);
+        const progress = Math.round(
+          ((i + batch.length) / photosData.length) * 100
+        );
         setUploadProgress(progress);
 
         // Update file statuses
-        setFiles(prev => 
-          prev.map(uploadFile => {
-            const result = batchResult.results.find((r: any) => 
-              r.filename === uploadFile.file.name || 
-              r.filename.includes(uploadFile.file.name.replace(/\.[^/.]+$/, ''))
+        setFiles((prev) =>
+          prev.map((uploadFile) => {
+            const result = batchResult.results.find(
+              (r: any) =>
+                r.filename === uploadFile.file.name ||
+                r.filename.includes(
+                  uploadFile.file.name.replace(/\.[^/.]+$/, '')
+                )
             );
-            
+
             if (result) {
               return {
                 ...uploadFile,
                 status: result.status === 'success' ? 'success' : 'error',
                 error: result.error,
-                uploadResult: result.status === 'success' ? result : undefined
+                uploadResult: result.status === 'success' ? result : undefined,
               };
             }
-            
+
             return uploadFile;
           })
         );
       }
 
-      const successful = results.filter(r => r.status === 'success').length;
-      const failed = results.filter(r => r.status === 'error').length;
+      const successful = results.filter((r) => r.status === 'success').length;
+      const failed = results.filter((r) => r.status === 'error').length;
 
-      toast.success(`Upload completed: ${successful} successful, ${failed} failed`);
+      toast.success(
+        `Upload completed: ${successful} successful, ${failed} failed`
+      );
 
       if (onUploadComplete) {
         onUploadComplete({
           total: results.length,
           successful,
           failed,
-          results
+          results,
         });
       }
-
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
+      toast.error(
+        `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+
       // Mark all uploading files as error
-      setFiles(prev => 
-        prev.map(f => 
-          f.status === 'uploading' 
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.status === 'uploading'
             ? { ...f, status: 'error', error: 'Upload failed' }
             : f
         )
@@ -249,7 +266,9 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
       case 'pending':
         return <File className="h-4 w-4 text-gray-400" />;
       case 'uploading':
-        return <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
+        return (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+        );
       case 'success':
         return <Check className="h-4 w-4 text-green-500" />;
       case 'error':
@@ -270,16 +289,18 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
     }
   };
 
-  const pendingFiles = files.filter(f => f.status === 'pending').length;
-  const successfulFiles = files.filter(f => f.status === 'success').length;
-  const errorFiles = files.filter(f => f.status === 'error').length;
+  const pendingFiles = files.filter((f) => f.status === 'pending').length;
+  const successfulFiles = files.filter((f) => f.status === 'success').length;
+  const errorFiles = files.filter((f) => f.status === 'error').length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h3 className="text-lg font-semibold">Bulk Photo Upload</h3>
-        <p className="text-sm text-muted-foreground">Upload multiple photos to {eventName}</p>
+        <p className="text-muted-foreground text-sm">
+          Upload multiple photos to {eventName}
+        </p>
       </div>
 
       {/* Processing Options */}
@@ -294,7 +315,10 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
                 id="generatePreviews"
                 checked={processingOptions.generatePreviews}
                 onCheckedChange={(checked) =>
-                  setProcessingOptions(prev => ({ ...prev, generatePreviews: !!checked }))
+                  setProcessingOptions((prev) => ({
+                    ...prev,
+                    generatePreviews: !!checked,
+                  }))
                 }
               />
               <Label htmlFor="generatePreviews" className="text-sm">
@@ -307,7 +331,10 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
                 id="detectQrCodes"
                 checked={processingOptions.detectQrCodes}
                 onCheckedChange={(checked) =>
-                  setProcessingOptions(prev => ({ ...prev, detectQrCodes: !!checked }))
+                  setProcessingOptions((prev) => ({
+                    ...prev,
+                    detectQrCodes: !!checked,
+                  }))
                 }
               />
               <Label htmlFor="detectQrCodes" className="text-sm">
@@ -320,7 +347,10 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
                 id="processWatermarks"
                 checked={processingOptions.processWatermarks}
                 onCheckedChange={(checked) =>
-                  setProcessingOptions(prev => ({ ...prev, processWatermarks: !!checked }))
+                  setProcessingOptions((prev) => ({
+                    ...prev,
+                    processWatermarks: !!checked,
+                  }))
                 }
               />
               <Label htmlFor="processWatermarks" className="text-sm">
@@ -333,7 +363,10 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
                 id="autoClassify"
                 checked={processingOptions.autoClassify}
                 onCheckedChange={(checked) =>
-                  setProcessingOptions(prev => ({ ...prev, autoClassify: !!checked }))
+                  setProcessingOptions((prev) => ({
+                    ...prev,
+                    autoClassify: !!checked,
+                  }))
                 }
               />
               <Label htmlFor="autoClassify" className="text-sm">
@@ -348,21 +381,26 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
       <Card>
         <CardContent className="p-6">
           <div
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors"
+            className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-gray-400"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
           >
-            <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium mb-2">Drop photos here or click to browse</h4>
-            <p className="text-sm text-muted-foreground mb-4">
+            <Upload className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <h4 className="mb-2 text-lg font-medium">
+              Drop photos here or click to browse
+            </h4>
+            <p className="text-muted-foreground mb-4 text-sm">
               Supports JPEG, PNG, WebP. Maximum 10MB per file.
             </p>
-            
-            <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-              <Upload className="h-4 w-4 mr-2" />
+
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <Upload className="mr-2 h-4 w-4" />
               Select Photos
             </Button>
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -383,7 +421,7 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
               <CardTitle className="text-base">
                 Selected Photos ({files.length})
               </CardTitle>
-              
+
               <div className="flex items-center gap-2">
                 {successfulFiles > 0 && (
                   <Badge variant="default" className="bg-green-500">
@@ -391,68 +429,73 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
                   </Badge>
                 )}
                 {errorFiles > 0 && (
-                  <Badge variant="destructive">
-                    {errorFiles} failed
-                  </Badge>
+                  <Badge variant="destructive">{errorFiles} failed</Badge>
                 )}
-                
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={clearAll}
                   disabled={uploading}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Clear All
                 </Button>
               </div>
             </div>
           </CardHeader>
-          
+
           <CardContent>
             <ScrollArea className="h-64">
               <div className="space-y-2">
                 {files.map((uploadFile) => (
                   <div
                     key={uploadFile.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border ${getStatusColor(uploadFile.status)}`}
+                    className={`flex items-center gap-3 rounded-lg border p-3 ${getStatusColor(uploadFile.status)}`}
                   >
                     {/* Preview */}
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                      <div className="h-12 w-12 overflow-hidden rounded bg-gray-100">
                         <img
                           src={uploadFile.preview}
                           alt={uploadFile.file.name}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       </div>
                     </div>
 
                     {/* File Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{uploadFile.file.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {uploadFile.file.name}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
                         {(uploadFile.file.size / 1024 / 1024).toFixed(1)} MB
                       </p>
-                      
+
                       {uploadFile.error && (
-                        <p className="text-xs text-red-600 mt-1">{uploadFile.error}</p>
+                        <p className="mt-1 text-xs text-red-600">
+                          {uploadFile.error}
+                        </p>
                       )}
-                      
-                      {uploadFile.uploadResult?.detected_qr_codes && uploadFile.uploadResult.detected_qr_codes.length > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <QrCode className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs text-blue-600">
-                            {uploadFile.uploadResult.detected_qr_codes.length} QR codes detected
-                          </span>
-                        </div>
-                      )}
+
+                      {uploadFile.uploadResult?.detected_qr_codes &&
+                        uploadFile.uploadResult.detected_qr_codes.length >
+                          0 && (
+                          <div className="mt-1 flex items-center gap-1">
+                            <QrCode className="h-3 w-3 text-blue-500" />
+                            <span className="text-xs text-blue-600">
+                              {uploadFile.uploadResult.detected_qr_codes.length}{' '}
+                              QR codes detected
+                            </span>
+                          </div>
+                        )}
                     </div>
 
                     {/* Status and Actions */}
                     <div className="flex items-center gap-2">
                       {getStatusIcon(uploadFile.status)}
-                      
+
                       {uploadFile.status === 'pending' && (
                         <Button
                           variant="ghost"
@@ -489,19 +532,19 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button 
-          onClick={uploadFiles} 
+        <Button
+          onClick={uploadFiles}
           disabled={files.length === 0 || uploading || pendingFiles === 0}
           className="flex-1"
         >
           {uploading ? (
             <>
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               Uploading...
             </>
           ) : (
             <>
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="mr-2 h-4 w-4" />
               Upload {pendingFiles} Photo{pendingFiles !== 1 ? 's' : ''}
             </>
           )}
@@ -514,7 +557,8 @@ export default function BulkPhotoUpload({ eventId, eventName, onUploadComplete }
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {pendingFiles > 0 && `${pendingFiles} photos ready to upload. `}
-            {successfulFiles > 0 && `${successfulFiles} photos uploaded successfully. `}
+            {successfulFiles > 0 &&
+              `${successfulFiles} photos uploaded successfully. `}
             {errorFiles > 0 && `${errorFiles} photos failed to upload.`}
           </AlertDescription>
         </Alert>

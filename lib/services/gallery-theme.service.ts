@@ -1,16 +1,16 @@
 /**
  * Gallery Theme System
- * 
+ *
  * Provides different visual themes and motifs for different school levels:
  * - Kindergarten: Playful, colorful, animal motifs
  * - Primary: Bright colors, simple icons, friendly design
  * - Secondary: Modern, sophisticated, clean design
  */
 
-export type SchoolLevel = 'kindergarten' | 'primary' | 'secondary';
+export type EventTheme = 'default' | 'jardin' | 'secundaria' | 'bautismo';
 
 export interface GalleryTheme {
-  id: SchoolLevel;
+  id: EventTheme;
   name: string;
   colors: {
     primary: string;
@@ -46,9 +46,50 @@ export interface GalleryTheme {
   };
 }
 
-export const GALLERY_THEMES: Record<SchoolLevel, GalleryTheme> = {
-  kindergarten: {
-    id: 'kindergarten',
+export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
+  default: {
+    id: 'default',
+    name: 'Tema Predeterminado',
+    colors: {
+      primary: '#7C3AED', // Violet - similar a landing page
+      secondary: '#EC4899', // Pink - acento vibrante
+      accent: '#F59E0B', // Amber - detalles cálidos
+      background: 'linear-gradient(135deg, #FAFAFA 0%, #F8FAFC 100%)',
+      cardBackground: '#FFFFFF',
+      textPrimary: '#1F2937',
+      textSecondary: '#6B7280',
+      border: '#E5E7EB',
+    },
+    fonts: {
+      heading: "'Inter', 'system-ui', sans-serif",
+      body: "'Inter', 'system-ui', sans-serif",
+    },
+    icons: {
+      favorite: '♡',
+      selected: '✓',
+      gallery: '✦',
+      package: '◇',
+    },
+    patterns: {
+      headerPattern:
+        'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%237C3AED" fill-opacity="0.05"%3E%3Ccircle cx="20" cy="20" r="3"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      cardPattern:
+        'linear-gradient(135deg, transparent 40%, rgba(124,58,237,0.03) 50%, transparent 60%)',
+    },
+    animations: {
+      cardHover:
+        'transform: translateY(-2px); box-shadow: 0 8px 16px rgba(124,58,237,0.1);',
+      buttonHover:
+        'transform: translateY(-1px); background: linear-gradient(135deg, #7C3AED, #EC4899);',
+    },
+    spacing: {
+      cardGap: '1.25rem',
+      containerPadding: '1.5rem',
+    },
+  },
+
+  jardin: {
+    id: 'jardin',
     name: 'Jardín de Infantes',
     colors: {
       primary: '#FF6B9D', // Pink
@@ -71,58 +112,25 @@ export const GALLERY_THEMES: Record<SchoolLevel, GalleryTheme> = {
       package: '🎁',
     },
     patterns: {
-      headerPattern: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23FFE66D" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-      cardPattern: 'linear-gradient(45deg, transparent 30%, rgba(255,230,109,0.1) 50%, transparent 70%)',
+      headerPattern:
+        'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23FFE66D" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      cardPattern:
+        'linear-gradient(45deg, transparent 30%, rgba(255,230,109,0.1) 50%, transparent 70%)',
     },
     animations: {
-      cardHover: 'transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 24px rgba(255,107,157,0.2);',
-      buttonHover: 'transform: scale(1.05); background: linear-gradient(135deg, #FF6B9D, #4ECDC4);',
+      cardHover:
+        'transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 24px rgba(255,107,157,0.2);',
+      buttonHover:
+        'transform: scale(1.05); background: linear-gradient(135deg, #FF6B9D, #4ECDC4);',
     },
     spacing: {
       cardGap: '1.5rem',
       containerPadding: '1.5rem',
     },
   },
-  
-  primary: {
-    id: 'primary',
-    name: 'Escuela Primaria',
-    colors: {
-      primary: '#3B82F6', // Blue
-      secondary: '#10B981', // Green
-      accent: '#F59E0B', // Orange
-      background: 'linear-gradient(135deg, #F0F9FF 0%, #F0FDF4 100%)',
-      cardBackground: '#FFFFFF',
-      textPrimary: '#1F2937',
-      textSecondary: '#6B7280',
-      border: '#D1D5DB',
-    },
-    fonts: {
-      heading: "'Poppins', sans-serif",
-      body: "'Inter', sans-serif",
-    },
-    icons: {
-      favorite: '⭐',
-      selected: '✅',
-      gallery: '📸',
-      package: '📦',
-    },
-    patterns: {
-      headerPattern: 'url("data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%233B82F6" fill-opacity="0.1"%3E%3Cpath d="M20 20l10-10v20z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-      cardPattern: 'linear-gradient(135deg, transparent 30%, rgba(59,130,246,0.05) 50%, transparent 70%)',
-    },
-    animations: {
-      cardHover: 'transform: translateY(-2px); box-shadow: 0 8px 16px rgba(59,130,246,0.15);',
-      buttonHover: 'transform: translateY(-1px); background: linear-gradient(135deg, #3B82F6, #10B981);',
-    },
-    spacing: {
-      cardGap: '1.25rem',
-      containerPadding: '1.25rem',
-    },
-  },
-  
-  secondary: {
-    id: 'secondary',
+
+  secundaria: {
+    id: 'secundaria',
     name: 'Escuela Secundaria',
     colors: {
       primary: '#6366F1', // Indigo
@@ -145,54 +153,90 @@ export const GALLERY_THEMES: Record<SchoolLevel, GalleryTheme> = {
       package: '□',
     },
     patterns: {
-      headerPattern: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%236366F1" fill-opacity="0.08"%3E%3Cpath d="M30 30h30v30H30z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-      cardPattern: 'linear-gradient(135deg, transparent 40%, rgba(99,102,241,0.03) 50%, transparent 60%)',
+      headerPattern:
+        'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%236366F1" fill-opacity="0.08"%3E%3Cpath d="M30 30h30v30H30z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      cardPattern:
+        'linear-gradient(135deg, transparent 40%, rgba(99,102,241,0.03) 50%, transparent 60%)',
     },
     animations: {
-      cardHover: 'transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.12);',
-      buttonHover: 'transform: scale(1.02); background: linear-gradient(135deg, #6366F1, #8B5CF6);',
+      cardHover:
+        'transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.12);',
+      buttonHover:
+        'transform: scale(1.02); background: linear-gradient(135deg, #6366F1, #8B5CF6);',
     },
     spacing: {
       cardGap: '1rem',
       containerPadding: '1rem',
     },
   },
+
+  bautismo: {
+    id: 'bautismo',
+    name: 'Bautismo',
+    colors: {
+      primary: '#0EA5E9', // Sky blue
+      secondary: '#F8FAFC', // Light gray
+      accent: '#FBBF24', // Amber
+      background: 'linear-gradient(135deg, #F0F9FF 0%, #EFF6FF 100%)',
+      cardBackground: '#FFFFFF',
+      textPrimary: '#0F172A',
+      textSecondary: '#64748B',
+      border: '#CBD5E1',
+    },
+    fonts: {
+      heading: "'Playfair Display', serif",
+      body: "'Inter', sans-serif",
+    },
+    icons: {
+      favorite: '♡',
+      selected: '✓',
+      gallery: '✦',
+      package: '◇',
+    },
+    patterns: {
+      headerPattern:
+        'url("data:image/svg+xml,%3Csvg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%230EA5E9" fill-opacity="0.06"%3E%3Ccircle cx="25" cy="25" r="5"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+      cardPattern:
+        'linear-gradient(135deg, transparent 35%, rgba(14,165,233,0.04) 50%, transparent 65%)',
+    },
+    animations: {
+      cardHover:
+        'transform: translateY(-3px); box-shadow: 0 10px 20px rgba(14,165,233,0.15);',
+      buttonHover:
+        'transform: translateY(-1px); background: linear-gradient(135deg, #0EA5E9, #FBBF24);',
+    },
+    spacing: {
+      cardGap: '1.25rem',
+      containerPadding: '1.5rem',
+    },
+  },
 };
 
 export class GalleryThemeService {
   /**
-   * Get theme by school level
+   * Get theme by event theme
    */
-  static getTheme(level: SchoolLevel): GalleryTheme {
-    return GALLERY_THEMES[level];
+  static getTheme(theme: EventTheme): GalleryTheme {
+    return GALLERY_THEMES[theme];
   }
 
   /**
-   * Detect school level from event or subject data
+   * Get all available themes for selection
    */
-  static detectSchoolLevel(eventName?: string, gradeSection?: string): SchoolLevel {
-    if (!eventName && !gradeSection) return 'primary'; // Default
+  static getAllThemes(): GalleryTheme[] {
+    return Object.values(GALLERY_THEMES);
+  }
 
-    const text = `${eventName || ''} ${gradeSection || ''}`.toLowerCase();
-    
-    // Kindergarten patterns
-    if (text.includes('jardín') || text.includes('jardin') || 
-        text.includes('sala') || text.includes('inicial') ||
-        text.includes('kindergarten') || text.includes('preescolar')) {
-      return 'kindergarten';
-    }
-    
-    // Secondary patterns
-    if (text.includes('secundaria') || text.includes('secundario') ||
-        text.includes('bachillerato') || text.includes('preparatoria') ||
-        text.includes('1°') || text.includes('2°') || text.includes('3°') ||
-        text.includes('4°') || text.includes('5°') || text.includes('6°') ||
-        text.includes('año') || text.includes('high school')) {
-      return 'secondary';
-    }
-    
-    // Primary as default
-    return 'primary';
+  /**
+   * Get theme options for admin selection
+   */
+  static getThemeOptions() {
+    return [
+      { value: 'default', label: 'Predeterminado' },
+      { value: 'jardin', label: 'Jardín de Infantes' },
+      { value: 'secundaria', label: 'Escuela Secundaria' },
+      { value: 'bautismo', label: 'Bautismo' },
+    ];
   }
 
   /**

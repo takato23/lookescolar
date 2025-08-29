@@ -1,18 +1,41 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  FolderPlus, Sparkles, GraduationCap, Baby, School,
-  Users, CheckCircle, AlertCircle, Loader2, Play,
-  Settings, ChevronRight, BookOpen, User
+import {
+  FolderPlus,
+  Sparkles,
+  GraduationCap,
+  Baby,
+  School,
+  Users,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  Play,
+  Settings,
+  ChevronRight,
+  BookOpen,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -48,17 +71,47 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
       {
         name: 'Nivel Inicial',
         courses: [
-          { name: 'Sala de 3', grade: 'Inicial', section: '3 años', capacity: 15 },
-          { name: 'Sala de 4', grade: 'Inicial', section: '4 años', capacity: 20 },
-          { name: 'Sala de 5', grade: 'Inicial', section: '5 años', capacity: 25 },
-          { name: 'Salita Naranja', grade: 'Inicial', section: 'Mixta', capacity: 18 },
-          { name: 'Salita Verde', grade: 'Inicial', section: 'Mixta', capacity: 18 },
-          { name: 'Salita Azul', grade: 'Inicial', section: 'Mixta', capacity: 18 }
-        ]
-      }
+          {
+            name: 'Sala de 3',
+            grade: 'Inicial',
+            section: '3 años',
+            capacity: 15,
+          },
+          {
+            name: 'Sala de 4',
+            grade: 'Inicial',
+            section: '4 años',
+            capacity: 20,
+          },
+          {
+            name: 'Sala de 5',
+            grade: 'Inicial',
+            section: '5 años',
+            capacity: 25,
+          },
+          {
+            name: 'Salita Naranja',
+            grade: 'Inicial',
+            section: 'Mixta',
+            capacity: 18,
+          },
+          {
+            name: 'Salita Verde',
+            grade: 'Inicial',
+            section: 'Mixta',
+            capacity: 18,
+          },
+          {
+            name: 'Salita Azul',
+            grade: 'Inicial',
+            section: 'Mixta',
+            capacity: 18,
+          },
+        ],
+      },
     ],
     estimatedStudents: 114,
-    tags: ['Inicial', 'Jardín', 'Salas por edad']
+    tags: ['Inicial', 'Jardín', 'Salas por edad'],
   },
   {
     id: 'primaria',
@@ -75,8 +128,8 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
           { name: '2° A', grade: '2°', section: 'A', capacity: 25 },
           { name: '2° B', grade: '2°', section: 'B', capacity: 25 },
           { name: '3° A', grade: '3°', section: 'A', capacity: 25 },
-          { name: '3° B', grade: '3°', section: 'B', capacity: 25 }
-        ]
+          { name: '3° B', grade: '3°', section: 'B', capacity: 25 },
+        ],
       },
       {
         name: 'Segundo Ciclo',
@@ -86,12 +139,12 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
           { name: '5° A', grade: '5°', section: 'A', capacity: 28 },
           { name: '5° B', grade: '5°', section: 'B', capacity: 28 },
           { name: '6° A', grade: '6°', section: 'A', capacity: 30 },
-          { name: '6° B', grade: '6°', section: 'B', capacity: 30 }
-        ]
-      }
+          { name: '6° B', grade: '6°', section: 'B', capacity: 30 },
+        ],
+      },
     ],
     estimatedStudents: 322,
-    tags: ['Primaria', 'Ciclos', 'Grados A-B']
+    tags: ['Primaria', 'Ciclos', 'Grados A-B'],
   },
   {
     id: 'secundaria',
@@ -108,23 +161,53 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
           { name: '2° 1°', grade: '2°', section: '1°', capacity: 28 },
           { name: '2° 2°', grade: '2°', section: '2°', capacity: 28 },
           { name: '3° 1°', grade: '3°', section: '1°', capacity: 28 },
-          { name: '3° 2°', grade: '3°', section: '2°', capacity: 28 }
-        ]
+          { name: '3° 2°', grade: '3°', section: '2°', capacity: 28 },
+        ],
       },
       {
         name: 'Ciclo Orientado',
         courses: [
-          { name: '4° Naturales', grade: '4°', section: 'Ciencias Naturales', capacity: 25 },
-          { name: '4° Sociales', grade: '4°', section: 'Ciencias Sociales', capacity: 25 },
-          { name: '5° Naturales', grade: '5°', section: 'Ciencias Naturales', capacity: 23 },
-          { name: '5° Sociales', grade: '5°', section: 'Ciencias Sociales', capacity: 23 },
-          { name: '6° Naturales', grade: '6°', section: 'Ciencias Naturales', capacity: 20 },
-          { name: '6° Sociales', grade: '6°', section: 'Ciencias Sociales', capacity: 20 }
-        ]
-      }
+          {
+            name: '4° Naturales',
+            grade: '4°',
+            section: 'Ciencias Naturales',
+            capacity: 25,
+          },
+          {
+            name: '4° Sociales',
+            grade: '4°',
+            section: 'Ciencias Sociales',
+            capacity: 25,
+          },
+          {
+            name: '5° Naturales',
+            grade: '5°',
+            section: 'Ciencias Naturales',
+            capacity: 23,
+          },
+          {
+            name: '5° Sociales',
+            grade: '5°',
+            section: 'Ciencias Sociales',
+            capacity: 23,
+          },
+          {
+            name: '6° Naturales',
+            grade: '6°',
+            section: 'Ciencias Naturales',
+            capacity: 20,
+          },
+          {
+            name: '6° Sociales',
+            grade: '6°',
+            section: 'Ciencias Sociales',
+            capacity: 20,
+          },
+        ],
+      },
     ],
     estimatedStudents: 308,
-    tags: ['Secundaria', 'Orientaciones', 'Ciclo Básico/Orientado']
+    tags: ['Secundaria', 'Orientaciones', 'Ciclo Básico/Orientado'],
   },
   {
     id: 'integral',
@@ -136,9 +219,19 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
       {
         name: 'Nivel Inicial',
         courses: [
-          { name: 'Sala de 4', grade: 'Inicial', section: '4 años', capacity: 20 },
-          { name: 'Sala de 5', grade: 'Inicial', section: '5 años', capacity: 25 }
-        ]
+          {
+            name: 'Sala de 4',
+            grade: 'Inicial',
+            section: '4 años',
+            capacity: 20,
+          },
+          {
+            name: 'Sala de 5',
+            grade: 'Inicial',
+            section: '5 años',
+            capacity: 25,
+          },
+        ],
       },
       {
         name: 'Primaria',
@@ -148,20 +241,20 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
           { name: '3° Grado', grade: '3°', section: 'Único', capacity: 28 },
           { name: '4° Grado', grade: '4°', section: 'Único', capacity: 28 },
           { name: '5° Grado', grade: '5°', section: 'Único', capacity: 30 },
-          { name: '6° Grado', grade: '6°', section: 'Único', capacity: 30 }
-        ]
+          { name: '6° Grado', grade: '6°', section: 'Único', capacity: 30 },
+        ],
       },
       {
         name: 'Secundaria',
         courses: [
           { name: '1° Año', grade: '1°', section: 'Único', capacity: 32 },
           { name: '2° Año', grade: '2°', section: 'Único', capacity: 30 },
-          { name: '3° Año', grade: '3°', section: 'Único', capacity: 30 }
-        ]
-      }
+          { name: '3° Año', grade: '3°', section: 'Único', capacity: 30 },
+        ],
+      },
     ],
     estimatedStudents: 323,
-    tags: ['Integral', 'Todos los niveles', 'Sección única']
+    tags: ['Integral', 'Todos los niveles', 'Sección única'],
   },
   {
     id: 'custom',
@@ -171,8 +264,8 @@ const FOLDER_TEMPLATES: FolderTemplate[] = [
     color: 'gray',
     levels: [],
     estimatedStudents: 0,
-    tags: ['Personalizado', 'Flexible']
-  }
+    tags: ['Personalizado', 'Flexible'],
+  },
 ];
 
 // Creation progress tracking
@@ -192,130 +285,152 @@ interface QuickFolderTemplatesProps {
 export default function QuickFolderTemplates({
   eventId,
   onTemplateApplied,
-  trigger
+  trigger,
 }: QuickFolderTemplatesProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<FolderTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<FolderTemplate | null>(null);
   const [customizations, setCustomizations] = useState<Record<string, any>>({});
   const [isCreating, setIsCreating] = useState(false);
   const [progress, setProgress] = useState<CreationProgress | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
   // Apply template
-  const applyTemplate = useCallback(async (template: FolderTemplate) => {
-    if (template.id === 'custom') {
-      // Handle custom template creation
-      setShowPreview(true);
-      return;
-    }
-
-    setIsCreating(true);
-    setProgress({ step: 'Iniciando', completed: 0, total: 100, message: 'Preparando estructura...' });
-
-    try {
-      // Calculate total operations
-      const totalLevels = template.levels.length;
-      const totalCourses = template.levels.reduce((sum, level) => sum + level.courses.length, 0);
-      const totalOperations = totalLevels + totalCourses;
-      let completedOperations = 0;
-
-      // Create levels
-      for (const level of template.levels) {
-        setProgress({
-          step: 'Creando niveles',
-          completed: Math.round((completedOperations / totalOperations) * 100),
-          total: 100,
-          message: `Creando nivel: ${level.name}`
-        });
-
-        const levelResponse = await fetch(`/api/admin/events/${eventId}/levels`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: level.name,
-            description: `Nivel creado desde plantilla: ${template.name}`,
-            active: true
-          })
-        });
-
-        if (!levelResponse.ok) throw new Error(`Error creando nivel: ${level.name}`);
-        
-        const levelData = await levelResponse.json();
-        const levelId = levelData.level?.id;
-        completedOperations++;
-
-        // Create courses for this level
-        for (const course of level.courses) {
-          setProgress({
-            step: 'Creando cursos',
-            completed: Math.round((completedOperations / totalOperations) * 100),
-            total: 100,
-            message: `Creando curso: ${course.name}`
-          });
-
-          await fetch(`/api/admin/events/${eventId}/courses`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: course.name,
-              grade: course.grade,
-              section: course.section,
-              level_id: levelId,
-              active: true,
-              description: `Curso creado desde plantilla: ${template.name}`
-            })
-          });
-
-          completedOperations++;
-        }
+  const applyTemplate = useCallback(
+    async (template: FolderTemplate) => {
+      if (template.id === 'custom') {
+        // Handle custom template creation
+        setShowPreview(true);
+        return;
       }
 
+      setIsCreating(true);
       setProgress({
-        step: 'Completado',
-        completed: 100,
+        step: 'Iniciando',
+        completed: 0,
         total: 100,
-        message: 'Estructura creada exitosamente'
+        message: 'Preparando estructura...',
       });
 
-      toast.success(`Estructura "${template.name}" creada exitosamente`);
-      
-      setTimeout(() => {
-        setIsOpen(false);
+      try {
+        // Calculate total operations
+        const totalLevels = template.levels.length;
+        const totalCourses = template.levels.reduce(
+          (sum, level) => sum + level.courses.length,
+          0
+        );
+        const totalOperations = totalLevels + totalCourses;
+        let completedOperations = 0;
+
+        // Create levels
+        for (const level of template.levels) {
+          setProgress({
+            step: 'Creando niveles',
+            completed: Math.round(
+              (completedOperations / totalOperations) * 100
+            ),
+            total: 100,
+            message: `Creando nivel: ${level.name}`,
+          });
+
+          const levelResponse = await fetch(
+            `/api/admin/events/${eventId}/levels`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: level.name,
+                description: `Nivel creado desde plantilla: ${template.name}`,
+                active: true,
+              }),
+            }
+          );
+
+          if (!levelResponse.ok)
+            throw new Error(`Error creando nivel: ${level.name}`);
+
+          const levelData = await levelResponse.json();
+          const levelId = levelData.level?.id;
+          completedOperations++;
+
+          // Create courses for this level
+          for (const course of level.courses) {
+            setProgress({
+              step: 'Creando cursos',
+              completed: Math.round(
+                (completedOperations / totalOperations) * 100
+              ),
+              total: 100,
+              message: `Creando curso: ${course.name}`,
+            });
+
+            await fetch(`/api/admin/events/${eventId}/courses`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: course.name,
+                grade: course.grade,
+                section: course.section,
+                level_id: levelId,
+                active: true,
+                description: `Curso creado desde plantilla: ${template.name}`,
+              }),
+            });
+
+            completedOperations++;
+          }
+        }
+
+        setProgress({
+          step: 'Completado',
+          completed: 100,
+          total: 100,
+          message: 'Estructura creada exitosamente',
+        });
+
+        toast.success(`Estructura "${template.name}" creada exitosamente`);
+
+        setTimeout(() => {
+          setIsOpen(false);
+          setIsCreating(false);
+          setProgress(null);
+          onTemplateApplied();
+        }, 2000);
+      } catch (error) {
+        console.error('Error applying template:', error);
+        toast.error('Error al crear la estructura');
         setIsCreating(false);
         setProgress(null);
-        onTemplateApplied();
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error applying template:', error);
-      toast.error('Error al crear la estructura');
-      setIsCreating(false);
-      setProgress(null);
-    }
-  }, [eventId, onTemplateApplied]);
+      }
+    },
+    [eventId, onTemplateApplied]
+  );
 
   // Template card component
   const TemplateCard = ({ template }: { template: FolderTemplate }) => {
     const Icon = template.icon;
-    
+
     return (
-      <Card 
+      <Card
         className={cn(
-          "cursor-pointer transition-all hover:shadow-md border-2",
-          selectedTemplate?.id === template.id && "border-blue-500 ring-2 ring-blue-200"
+          'cursor-pointer border-2 transition-all hover:shadow-md',
+          selectedTemplate?.id === template.id &&
+            'border-blue-500 ring-2 ring-blue-200'
         )}
         onClick={() => setSelectedTemplate(template)}
       >
         <CardHeader className="pb-2">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "p-2 rounded-lg",
-              template.color === 'pink' && "bg-pink-100 text-pink-600",
-              template.color === 'blue' && "bg-blue-100 text-blue-600",
-              template.color === 'purple' && "bg-purple-100 text-purple-600",
-              template.color === 'green' && "bg-green-100 text-green-600",
-              template.color === 'gray' && "bg-gray-100 text-gray-600"
-            )}>
+            <div
+              className={cn(
+                'rounded-lg p-2',
+                template.color === 'pink' && 'bg-pink-100 text-pink-600',
+                template.color === 'blue' && 'bg-blue-100 text-blue-600',
+                template.color === 'purple' && 'bg-purple-100 text-purple-600',
+                template.color === 'green' && 'bg-green-100 text-green-600',
+                template.color === 'gray' && 'bg-gray-100 text-gray-600'
+              )}
+            >
               <Icon className="h-6 w-6" />
             </div>
             <div className="flex-1">
@@ -326,10 +441,10 @@ export default function QuickFolderTemplates({
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="space-y-3">
           {/* Stats */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
               <span>{template.levels.length} niveles</span>
@@ -339,20 +454,22 @@ export default function QuickFolderTemplates({
               <span>~{template.estimatedStudents} estudiantes</span>
             </div>
           </div>
-          
+
           {/* Tags */}
           <div className="flex flex-wrap gap-1">
-            {template.tags.map(tag => (
+            {template.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="text-xs">
                 {tag}
               </Badge>
             ))}
           </div>
-          
+
           {/* Structure preview */}
           {template.levels.length > 0 && (
-            <div className="border-t pt-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Estructura:</p>
+            <div className="space-y-2 border-t pt-3">
+              <p className="text-muted-foreground text-xs font-medium">
+                Estructura:
+              </p>
               {template.levels.slice(0, 2).map((level, levelIndex) => (
                 <div key={levelIndex} className="space-y-1">
                   <div className="flex items-center gap-1 text-xs">
@@ -362,14 +479,18 @@ export default function QuickFolderTemplates({
                       {level.courses.length} cursos
                     </Badge>
                   </div>
-                  <div className="ml-4 text-xs text-muted-foreground">
-                    {level.courses.slice(0, 3).map(course => course.name).join(', ')}
-                    {level.courses.length > 3 && ` +${level.courses.length - 3} más...`}
+                  <div className="text-muted-foreground ml-4 text-xs">
+                    {level.courses
+                      .slice(0, 3)
+                      .map((course) => course.name)
+                      .join(', ')}
+                    {level.courses.length > 3 &&
+                      ` +${level.courses.length - 3} más...`}
                   </div>
                 </div>
               ))}
               {template.levels.length > 2 && (
-                <div className="text-xs text-muted-foreground ml-4">
+                <div className="text-muted-foreground ml-4 text-xs">
                   +{template.levels.length - 2} niveles más...
                 </div>
               )}
@@ -390,8 +511,8 @@ export default function QuickFolderTemplates({
           </Button>
         )}
       </DialogTrigger>
-      
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FolderPlus className="h-5 w-5" />
@@ -403,11 +524,11 @@ export default function QuickFolderTemplates({
           // Creation progress
           <div className="space-y-6 py-8">
             <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
+              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-blue-600" />
               <h3 className="text-lg font-semibold">Creando estructura...</h3>
               <p className="text-muted-foreground">{progress.message}</p>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span>{progress.step}</span>
@@ -419,15 +540,15 @@ export default function QuickFolderTemplates({
         ) : (
           <div className="space-y-6">
             {/* Template grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {FOLDER_TEMPLATES.map(template => (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {FOLDER_TEMPLATES.map((template) => (
                 <TemplateCard key={template.id} template={template} />
               ))}
             </div>
 
             {/* Actions */}
             {selectedTemplate && (
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-4">
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-5 w-5 text-blue-600" />
                   <div>
@@ -435,12 +556,14 @@ export default function QuickFolderTemplates({
                       {selectedTemplate.name} seleccionada
                     </p>
                     <p className="text-sm text-blue-700">
-                      Esta plantilla creará {selectedTemplate.levels.length} niveles y aproximadamente {selectedTemplate.estimatedStudents} estudiantes
+                      Esta plantilla creará {selectedTemplate.levels.length}{' '}
+                      niveles y aproximadamente{' '}
+                      {selectedTemplate.estimatedStudents} estudiantes
                     </p>
                   </div>
                 </div>
-                
-                <Button 
+
+                <Button
                   onClick={() => applyTemplate(selectedTemplate)}
                   className="gap-2"
                   disabled={isCreating}

@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import {
-  maskToken,
-} from '@/lib/utils/tokens';
+import { maskToken } from '@/lib/utils/tokens';
 
 interface Subject {
   id: string;

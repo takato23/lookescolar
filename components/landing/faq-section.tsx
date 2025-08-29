@@ -7,23 +7,28 @@ export function FAQSection() {
   const faqs = [
     {
       question: '¿Cómo funciona la seguridad de las fotos?',
-      answer: 'Las fotos originales nunca se suben a nuestros servidores. Solo se crean previews con watermark y URLs temporales que expiran automáticamente.',
+      answer:
+        'Las fotos originales nunca se suben a nuestros servidores. Solo se crean previews con watermark y URLs temporales que expiran automáticamente.',
     },
     {
       question: '¿Puedo personalizar los códigos QR?',
-      answer: 'Sí, puedes personalizar completamente el diseño de los códigos QR con tu logo, colores y estilo de marca.',
+      answer:
+        'Sí, puedes personalizar completamente el diseño de los códigos QR con tu logo, colores y estilo de marca.',
     },
     {
       question: '¿Hay límite en el número de fotos?',
-      answer: 'En el plan gratuito hay un límite de 100 fotos por evento. En los planes de pago no hay límites.',
+      answer:
+        'En el plan gratuito hay un límite de 100 fotos por evento. En los planes de pago no hay límites.',
     },
     {
       question: '¿Cómo funcionan los pagos?',
-      answer: 'Integramos con Mercado Pago para procesar los pagos de manera segura. Las familias pueden pagar directamente en la plataforma.',
+      answer:
+        'Integramos con Mercado Pago para procesar los pagos de manera segura. Las familias pueden pagar directamente en la plataforma.',
     },
     {
       question: '¿Ofrecen soporte técnico?',
-      answer: 'Sí, ofrecemos soporte por email en todos los planes, y soporte prioritario 24/7 en el plan empresarial.',
+      answer:
+        'Sí, ofrecemos soporte por email en todos los planes, y soporte prioritario 24/7 en el plan empresarial.',
     },
   ];
 
@@ -41,24 +46,24 @@ export function FAQSection() {
 
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div 
-              key={index} 
-              className="border border-gray-200 rounded-lg overflow-hidden"
+            <div
+              key={index}
+              className="overflow-hidden rounded-lg border border-gray-200"
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="flex w-full items-center justify-between px-6 py-4 text-left transition-colors hover:bg-gray-50"
               >
                 <span className="font-semibold">{faq.question}</span>
-                <ChevronDown 
+                <ChevronDown
                   className={`h-5 w-5 transition-transform ${
                     openIndex === index ? 'rotate-180' : ''
                   }`}
                 />
               </button>
-              
+
               {openIndex === index && (
-                <div className="px-6 pb-4 text-muted-foreground">
+                <div className="text-muted-foreground px-6 pb-4">
                   {faq.answer}
                 </div>
               )}

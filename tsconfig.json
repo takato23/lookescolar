@@ -18,9 +18,12 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     },
+    // Development performance optimizations for Fast Refresh
+    "assumeChangesOnlyAffectDirectDependencies": true,
     // Configuraciones estrictas adicionales
     "noImplicitAny": true,
     "noImplicitReturns": true,

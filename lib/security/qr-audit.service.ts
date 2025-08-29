@@ -1,6 +1,6 @@
 /**
  * Comprehensive Security Audit Logging Service
- * 
+ *
  * Provides structured logging for security events, QR code usage,
  * authentication attempts, and system access patterns.
  */
@@ -36,7 +36,7 @@ export interface SecurityEvent {
   };
 }
 
-export type SecurityEventType = 
+export type SecurityEventType =
   | 'authentication'
   | 'authorization'
   | 'qr_access'
@@ -49,7 +49,7 @@ export type SecurityEventType =
   | 'security_violation'
   | 'system_event';
 
-export type SecurityEventCategory = 
+export type SecurityEventCategory =
   | 'access_control'
   | 'qr_security'
   | 'data_protection'
@@ -88,12 +88,14 @@ export class SecurityAuditService {
   /**
    * Log a security event
    */
-  async logSecurityEvent(event: Omit<SecurityEvent, 'id' | 'timestamp'>): Promise<void> {
+  async logSecurityEvent(
+    event: Omit<SecurityEvent, 'id' | 'timestamp'>
+  ): Promise<void> {
     try {
       const securityEvent: SecurityEvent = {
         ...event,
         id: this.generateEventId(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       // Add to in-memory storage (for demo purposes)
@@ -112,7 +114,6 @@ export class SecurityAuditService {
       // - External logging service (Datadog, LogRocket, etc.)
       // - SIEM system
       await this.persistToDatabase(securityEvent);
-
     } catch (error) {
       console.error('[Audit] Failed to log security event:', error);
     }
@@ -138,19 +139,19 @@ export class SecurityAuditService {
       action: 'qr_token_access',
       user: {
         ip: params.ip,
-        userAgent: params.userAgent
+        userAgent: params.userAgent,
       },
       resource: {
         type: 'qr_token',
-        id: this.hashSensitiveData(params.qrToken)
+        id: this.hashSensitiveData(params.qrToken),
       },
       details: {
         studentId: params.studentId,
         eventId: params.eventId,
         error: params.error,
-        ...params.metadata
+        ...params.metadata,
       },
-      result: params.result
+      result: params.result,
     });
   }
 
@@ -170,19 +171,19 @@ export class SecurityAuditService {
       severity: 'low',
       action: 'qr_code_generated',
       user: {
-        id: params.userId
+        id: params.userId,
       },
       resource: {
         type: 'qr_code',
-        id: `${params.eventId}-${params.studentId}`
+        id: `${params.eventId}-${params.studentId}`,
       },
       details: {
         studentId: params.studentId,
         eventId: params.eventId,
         qrType: params.qrType,
-        ...params.metadata
+        ...params.metadata,
       },
-      result: 'success'
+      result: 'success',
     });
   }
 
@@ -205,13 +206,13 @@ export class SecurityAuditService {
       user: {
         email: params.email,
         ip: params.ip,
-        userAgent: params.userAgent
+        userAgent: params.userAgent,
       },
       details: {
         reason: params.reason,
-        ...params.metadata
+        ...params.metadata,
       },
-      result: params.result
+      result: params.result,
     });
   }
 
@@ -235,18 +236,18 @@ export class SecurityAuditService {
       user: {
         id: params.userId,
         ip: params.ip,
-        userAgent: params.userAgent
+        userAgent: params.userAgent,
       },
       resource: {
         type: 'api_endpoint',
-        path: params.endpoint
+        path: params.endpoint,
       },
       details: {
         limit: params.limit,
         current: params.current,
-        windowMs: params.windowMs
+        windowMs: params.windowMs,
       },
-      result: 'blocked'
+      result: 'blocked',
     });
   }
 
@@ -270,14 +271,14 @@ export class SecurityAuditService {
       user: {
         id: params.userId,
         ip: params.ip,
-        userAgent: params.userAgent
+        userAgent: params.userAgent,
       },
       resource: {
         type: params.resourceType,
-        id: params.resourceId
+        id: params.resourceId,
       },
       details: params.details || {},
-      result: 'success'
+      result: 'success',
     });
   }
 
@@ -289,31 +290,41 @@ export class SecurityAuditService {
 
     // Apply filters
     if (query.startDate) {
-      filteredLogs = filteredLogs.filter(log => log.timestamp >= query.startDate!.getTime());
+      filteredLogs = filteredLogs.filter(
+        (log) => log.timestamp >= query.startDate!.getTime()
+      );
     }
 
     if (query.endDate) {
-      filteredLogs = filteredLogs.filter(log => log.timestamp <= query.endDate!.getTime());
+      filteredLogs = filteredLogs.filter(
+        (log) => log.timestamp <= query.endDate!.getTime()
+      );
     }
 
     if (query.type) {
-      filteredLogs = filteredLogs.filter(log => log.type === query.type);
+      filteredLogs = filteredLogs.filter((log) => log.type === query.type);
     }
 
     if (query.category) {
-      filteredLogs = filteredLogs.filter(log => log.category === query.category);
+      filteredLogs = filteredLogs.filter(
+        (log) => log.category === query.category
+      );
     }
 
     if (query.severity) {
-      filteredLogs = filteredLogs.filter(log => log.severity === query.severity);
+      filteredLogs = filteredLogs.filter(
+        (log) => log.severity === query.severity
+      );
     }
 
     if (query.userId) {
-      filteredLogs = filteredLogs.filter(log => log.user?.id === query.userId);
+      filteredLogs = filteredLogs.filter(
+        (log) => log.user?.id === query.userId
+      );
     }
 
     if (query.result) {
-      filteredLogs = filteredLogs.filter(log => log.result === query.result);
+      filteredLogs = filteredLogs.filter((log) => log.result === query.result);
     }
 
     // Sort by timestamp (newest first)
@@ -322,7 +333,7 @@ export class SecurityAuditService {
     // Apply pagination
     const offset = query.offset || 0;
     const limit = query.limit || 100;
-    
+
     return filteredLogs.slice(offset, offset + limit);
   }
 
@@ -330,19 +341,20 @@ export class SecurityAuditService {
    * Get audit log statistics
    */
   async getAuditStats(days: number = 7): Promise<AuditLogStats> {
-    const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
-    const recentLogs = this.logs.filter(log => log.timestamp >= cutoffTime);
+    const cutoffTime = Date.now() - days * 24 * 60 * 60 * 1000;
+    const recentLogs = this.logs.filter((log) => log.timestamp >= cutoffTime);
 
     const eventsByType: Record<string, number> = {};
     const eventsBySeverity: Record<string, number> = {};
     const userEventCounts: Record<string, number> = {};
 
-    recentLogs.forEach(log => {
+    recentLogs.forEach((log) => {
       // Count by type
       eventsByType[log.type] = (eventsByType[log.type] || 0) + 1;
 
       // Count by severity
-      eventsBySeverity[log.severity] = (eventsBySeverity[log.severity] || 0) + 1;
+      eventsBySeverity[log.severity] =
+        (eventsBySeverity[log.severity] || 0) + 1;
 
       // Count by user
       if (log.user?.id) {
@@ -363,8 +375,8 @@ export class SecurityAuditService {
       topUsers,
       timeRange: {
         start: new Date(cutoffTime),
-        end: new Date()
-      }
+        end: new Date(),
+      },
     };
   }
 
@@ -372,29 +384,34 @@ export class SecurityAuditService {
    * Get recent security alerts
    */
   async getSecurityAlerts(hours: number = 24): Promise<SecurityEvent[]> {
-    const cutoffTime = Date.now() - (hours * 60 * 60 * 1000);
-    
-    return this.logs.filter(log => 
-      log.timestamp >= cutoffTime && 
-      (log.severity === 'high' || log.severity === 'critical' || log.result === 'blocked')
-    ).sort((a, b) => b.timestamp - a.timestamp);
+    const cutoffTime = Date.now() - hours * 60 * 60 * 1000;
+
+    return this.logs
+      .filter(
+        (log) =>
+          log.timestamp >= cutoffTime &&
+          (log.severity === 'high' ||
+            log.severity === 'critical' ||
+            log.result === 'blocked')
+      )
+      .sort((a, b) => b.timestamp - a.timestamp);
   }
 
   /**
    * Clean up old logs
    */
   async cleanupOldLogs(): Promise<number> {
-    const cutoffTime = Date.now() - (this.logRetentionDays * 24 * 60 * 60 * 1000);
+    const cutoffTime = Date.now() - this.logRetentionDays * 24 * 60 * 60 * 1000;
     const originalLength = this.logs.length;
-    
-    this.logs = this.logs.filter(log => log.timestamp >= cutoffTime);
-    
+
+    this.logs = this.logs.filter((log) => log.timestamp >= cutoffTime);
+
     const cleaned = originalLength - this.logs.length;
-    
+
     if (cleaned > 0) {
       console.log(`[Audit] Cleaned up ${cleaned} old audit logs`);
     }
-    
+
     return cleaned;
   }
 
@@ -432,7 +449,7 @@ export class SecurityAuditService {
       user: event.user,
       resource: event.resource,
       details: event.details,
-      metadata: event.metadata
+      metadata: event.metadata,
     };
 
     switch (logLevel) {
@@ -470,7 +487,7 @@ export class SecurityAuditService {
     // TODO: Implement actual database persistence
     // This would write to a dedicated audit_logs table in Supabase
     // with proper retention policies and indexing
-    
+
     // For now, we'll just log that we would persist
     if (process.env.NODE_ENV === 'development') {
       // Only log in development to avoid noise

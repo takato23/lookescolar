@@ -139,7 +139,11 @@ export class ErrorHandler {
     let recoverable = true;
 
     // Network errors
-    if (message.includes('fetch') || message.includes('network') || message.includes('connection')) {
+    if (
+      message.includes('fetch') ||
+      message.includes('network') ||
+      message.includes('connection')
+    ) {
       type = ErrorType.NETWORK;
       statusCode = 0;
     }
@@ -199,17 +203,26 @@ export class ErrorHandler {
    */
   private getDefaultUserMessage(type: ErrorType): string {
     const messages = {
-      [ErrorType.NETWORK]: 'Problema de conexión. Verifica tu internet e intenta nuevamente.',
-      [ErrorType.VALIDATION]: 'Los datos ingresados no son válidos. Revisa e intenta nuevamente.',
-      [ErrorType.AUTHENTICATION]: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
-      [ErrorType.AUTHORIZATION]: 'No tienes permisos para realizar esta acción.',
+      [ErrorType.NETWORK]:
+        'Problema de conexión. Verifica tu internet e intenta nuevamente.',
+      [ErrorType.VALIDATION]:
+        'Los datos ingresados no son válidos. Revisa e intenta nuevamente.',
+      [ErrorType.AUTHENTICATION]:
+        'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+      [ErrorType.AUTHORIZATION]:
+        'No tienes permisos para realizar esta acción.',
       [ErrorType.NOT_FOUND]: 'El recurso solicitado no se encontró.',
-      [ErrorType.SERVER]: 'Error del servidor. Intenta nuevamente en unos momentos.',
+      [ErrorType.SERVER]:
+        'Error del servidor. Intenta nuevamente en unos momentos.',
       [ErrorType.CLIENT]: 'Ocurrió un error inesperado. Intenta nuevamente.',
-      [ErrorType.RATE_LIMIT]: 'Demasiadas solicitudes. Espera un momento e intenta nuevamente.',
-      [ErrorType.UPLOAD]: 'Error al subir el archivo. Verifica el formato e intenta nuevamente.',
-      [ErrorType.PAYMENT]: 'Error en el procesamiento del pago. Intenta nuevamente.',
-      [ErrorType.DATABASE]: 'Error de base de datos. Intenta nuevamente en unos momentos.',
+      [ErrorType.RATE_LIMIT]:
+        'Demasiadas solicitudes. Espera un momento e intenta nuevamente.',
+      [ErrorType.UPLOAD]:
+        'Error al subir el archivo. Verifica el formato e intenta nuevamente.',
+      [ErrorType.PAYMENT]:
+        'Error en el procesamiento del pago. Intenta nuevamente.',
+      [ErrorType.DATABASE]:
+        'Error de base de datos. Intenta nuevamente en unos momentos.',
       [ErrorType.STORAGE]: 'Error de almacenamiento. Intenta nuevamente.',
     };
 
@@ -270,11 +283,11 @@ export class ErrorHandler {
     recoveryActions: ErrorRecoveryAction[] = []
   ): void {
     const message = customMessage || error.userMessage || error.message;
-    
+
     if (recoveryActions.length > 0) {
       // Show toast with action buttons
       toast.error(message, {
-        action: recoveryActions.map(action => ({
+        action: recoveryActions.map((action) => ({
           label: action.label,
           onClick: action.action,
         }))[0], // Sonner supports one action
@@ -292,10 +305,10 @@ export class ErrorHandler {
    */
   private shouldAttemptRecovery(error: AppError): boolean {
     if (!error.recoverable) return false;
-    
+
     const key = `${error.type}:${error.code || 'general'}`;
     const count = this.errorCount.get(key) || 0;
-    
+
     return count <= this.maxRetries;
   }
 
@@ -313,7 +326,12 @@ export class ErrorHandler {
 
         case ErrorType.RATE_LIMIT:
           // Exponential backoff for rate limiting
-          const backoffTime = this.retryDelay * Math.pow(2, this.errorCount.get(`${error.type}:${error.code}`) || 1);
+          const backoffTime =
+            this.retryDelay *
+            Math.pow(
+              2,
+              this.errorCount.get(`${error.type}:${error.code}`) || 1
+            );
           await this.delay(Math.min(backoffTime, 30000)); // Max 30 seconds
           logger.info('Attempting rate limit recovery', { backoffTime });
           break;
@@ -327,13 +345,16 @@ export class ErrorHandler {
           break;
 
         default:
-          logger.info('No automatic recovery available', { errorType: error.type });
+          logger.info('No automatic recovery available', {
+            errorType: error.type,
+          });
           break;
       }
     } catch (recoveryError) {
       logger.warn('Error recovery failed', {
         originalError: error.type,
-        recoveryError: recoveryError instanceof Error ? recoveryError.message : 'Unknown',
+        recoveryError:
+          recoveryError instanceof Error ? recoveryError.message : 'Unknown',
       });
     }
   }
@@ -342,14 +363,18 @@ export class ErrorHandler {
    * Utility: Check if error is AppError
    */
   private isAppError(error: any): error is AppError {
-    return error && typeof error.type === 'string' && Object.values(ErrorType).includes(error.type);
+    return (
+      error &&
+      typeof error.type === 'string' &&
+      Object.values(ErrorType).includes(error.type)
+    );
   }
 
   /**
    * Utility: Delay for retry mechanisms
    */
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -357,7 +382,7 @@ export class ErrorHandler {
    */
   getErrorStats(): { type: string; count: number; lastOccurrence: Date }[] {
     const stats: { type: string; count: number; lastOccurrence: Date }[] = [];
-    
+
     for (const [key, count] of this.errorCount.entries()) {
       const lastOccurrence = this.lastErrors.get(key);
       if (lastOccurrence) {
@@ -450,7 +475,10 @@ export function withErrorBoundary<P extends object>(
 
       return () => {
         window.removeEventListener('error', handleUnhandledError);
-        window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        window.removeEventListener(
+          'unhandledrejection',
+          handleUnhandledRejection
+        );
       };
     }, []);
 
@@ -461,12 +489,12 @@ export function withErrorBoundary<P extends object>(
       }
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[200px] p-4 text-center">
-          <h3 className="text-lg font-semibold mb-2">Algo salió mal</h3>
+        <div className="flex min-h-[200px] flex-col items-center justify-center p-4 text-center">
+          <h3 className="mb-2 text-lg font-semibold">Algo salió mal</h3>
           <p className="text-muted-foreground mb-4">{error.userMessage}</p>
           <button
             onClick={retry}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded px-4 py-2"
           >
             Intentar nuevamente
           </button>
@@ -477,4 +505,3 @@ export function withErrorBoundary<P extends object>(
     return <Component {...props} />;
   };
 }
-

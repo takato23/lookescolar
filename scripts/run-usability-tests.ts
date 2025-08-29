@@ -20,11 +20,19 @@ const TEST_CONFIG = {
     { name: 'desktop', width: 1440, height: 900 },
   ],
   categories: [
-    { name: 'accessibility', file: 'accessibility-comprehensive.test.ts', weight: 30 },
+    {
+      name: 'accessibility',
+      file: 'accessibility-comprehensive.test.ts',
+      weight: 30,
+    },
     { name: 'responsive', file: 'responsive-design.test.ts', weight: 20 },
     { name: 'workflows', file: 'user-journey-workflows.test.ts', weight: 25 },
     { name: 'performance', file: 'performance-web-vitals.test.ts', weight: 15 },
-    { name: 'browsers', file: 'cross-browser-compatibility.test.ts', weight: 5 },
+    {
+      name: 'browsers',
+      file: 'cross-browser-compatibility.test.ts',
+      weight: 5,
+    },
     { name: 'visual', file: 'visual-regression.test.ts', weight: 3 },
     { name: 'errors', file: 'error-handling-edge-cases.test.ts', weight: 2 },
   ],
@@ -32,22 +40,22 @@ const TEST_CONFIG = {
 
 // Performance thresholds
 const PERFORMANCE_THRESHOLDS = {
-  LCP: 2500,      // Largest Contentful Paint
-  FID: 100,       // First Input Delay
-  CLS: 0.1,       // Cumulative Layout Shift
-  FCP: 1800,      // First Contentful Paint
-  TTI: 3800,      // Time to Interactive
-  TBT: 200,       // Total Blocking Time
+  LCP: 2500, // Largest Contentful Paint
+  FID: 100, // First Input Delay
+  CLS: 0.1, // Cumulative Layout Shift
+  FCP: 1800, // First Contentful Paint
+  TTI: 3800, // Time to Interactive
+  TBT: 200, // Total Blocking Time
 };
 
 // Quality targets
 const QUALITY_TARGETS = {
-  accessibility: 95,    // WCAG compliance %
-  performance: 90,      // Performance score
-  visual: 98,          // Visual regression accuracy
-  crossBrowser: 95,    // Cross-browser compatibility
-  errorHandling: 90,   // Error recovery success rate
-  workflows: 95,       // User workflow success rate
+  accessibility: 95, // WCAG compliance %
+  performance: 90, // Performance score
+  visual: 98, // Visual regression accuracy
+  crossBrowser: 95, // Cross-browser compatibility
+  errorHandling: 90, // Error recovery success rate
+  workflows: 95, // User workflow success rate
 };
 
 interface TestResult {
@@ -87,22 +95,25 @@ class UsabilityTestRunner {
     }
   }
 
-  private log(message: string, level: 'info' | 'warn' | 'error' = 'info'): void {
+  private log(
+    message: string,
+    level: 'info' | 'warn' | 'error' = 'info'
+  ): void {
     const timestamp = new Date().toISOString();
     const prefix = {
       info: '✅',
       warn: '⚠️',
       error: '❌',
     };
-    
+
     console.log(`${prefix[level]} [${timestamp}] ${message}`);
   }
 
   private async runTestCategory(category: any): Promise<TestResult> {
     this.log(`Running ${category.name} tests...`);
-    
+
     const startTime = Date.now();
-    let result: TestResult = {
+    const result: TestResult = {
       category: category.name,
       passed: 0,
       failed: 0,
@@ -115,28 +126,30 @@ class UsabilityTestRunner {
     try {
       // Run Playwright tests for this category
       const testCommand = `npx playwright test __tests__/usability/${category.file} --reporter=json`;
-      const output = execSync(testCommand, { 
+      const output = execSync(testCommand, {
         encoding: 'utf-8',
         timeout: TEST_CONFIG.timeout * 10, // Allow more time for full suites
       });
 
       // Parse Playwright JSON output
       const testResults = JSON.parse(output);
-      
+
       result.passed = testResults.stats?.expected || 0;
       result.failed = testResults.stats?.unexpected || 0;
       result.skipped = testResults.stats?.skipped || 0;
       result.duration = Date.now() - startTime;
-      
+
       // Calculate score based on success rate and category weight
       const totalTests = result.passed + result.failed;
-      const successRate = totalTests > 0 ? (result.passed / totalTests) * 100 : 0;
+      const successRate =
+        totalTests > 0 ? (result.passed / totalTests) * 100 : 0;
       result.score = Math.round(successRate);
-      
+
       result.details = testResults.suites || [];
 
-      this.log(`${category.name} completed: ${result.passed}✅ ${result.failed}❌ ${result.skipped}⏭️ (Score: ${result.score}%)`);
-      
+      this.log(
+        `${category.name} completed: ${result.passed}✅ ${result.failed}❌ ${result.skipped}⏭️ (Score: ${result.score}%)`
+      );
     } catch (error: any) {
       this.log(`${category.name} tests failed: ${error.message}`, 'error');
       result.failed = 1;
@@ -149,7 +162,7 @@ class UsabilityTestRunner {
 
   private async runAccessibilityTests(): Promise<TestResult> {
     this.log('Running comprehensive accessibility tests...');
-    
+
     try {
       // Run axe-core accessibility tests
       const axeCommand = `npx playwright test __tests__/usability/accessibility-comprehensive.test.ts --reporter=json`;
@@ -158,8 +171,8 @@ class UsabilityTestRunner {
 
       // Calculate accessibility score
       const violations = this.extractAccessibilityViolations(axeResults);
-      const wcagCompliance = Math.max(0, 100 - (violations.length * 2)); // Penalty per violation
-      
+      const wcagCompliance = Math.max(0, 100 - violations.length * 2); // Penalty per violation
+
       return {
         category: 'accessibility',
         passed: axeResults.stats?.expected || 0,
@@ -185,7 +198,7 @@ class UsabilityTestRunner {
 
   private async runPerformanceTests(): Promise<TestResult> {
     this.log('Running performance and Core Web Vitals tests...');
-    
+
     try {
       // Run Lighthouse performance audit
       const lighthouseCommand = `npx lighthouse http://localhost:3000 --output=json --output-path=${this.reportDir}/lighthouse.json --chrome-flags="--headless"`;
@@ -196,11 +209,14 @@ class UsabilityTestRunner {
       );
 
       // Extract Core Web Vitals
-      const lcp = lighthouseReport.audits['largest-contentful-paint']?.displayValue;
+      const lcp =
+        lighthouseReport.audits['largest-contentful-paint']?.displayValue;
       const fid = lighthouseReport.audits['max-potential-fid']?.displayValue;
-      const cls = lighthouseReport.audits['cumulative-layout-shift']?.displayValue;
-      
-      const performanceScore = lighthouseReport.categories.performance.score * 100;
+      const cls =
+        lighthouseReport.audits['cumulative-layout-shift']?.displayValue;
+
+      const performanceScore =
+        lighthouseReport.categories.performance.score * 100;
 
       return {
         category: 'performance',
@@ -233,7 +249,7 @@ class UsabilityTestRunner {
 
   private async runVisualRegressionTests(): Promise<TestResult> {
     this.log('Running visual regression tests...');
-    
+
     try {
       const visualCommand = `npx playwright test __tests__/usability/visual-regression.test.ts --reporter=json`;
       const visualOutput = execSync(visualCommand, { encoding: 'utf-8' });
@@ -242,10 +258,11 @@ class UsabilityTestRunner {
       // Analyze visual differences
       const totalScreenshots = visualResults.stats?.expected || 0;
       const failedScreenshots = visualResults.stats?.unexpected || 0;
-      
-      const visualAccuracy = totalScreenshots > 0 
-        ? ((totalScreenshots - failedScreenshots) / totalScreenshots) * 100 
-        : 100;
+
+      const visualAccuracy =
+        totalScreenshots > 0
+          ? ((totalScreenshots - failedScreenshots) / totalScreenshots) * 100
+          : 100;
 
       return {
         category: 'visual',
@@ -272,7 +289,7 @@ class UsabilityTestRunner {
 
   private extractAccessibilityViolations(axeResults: any): any[] {
     const violations: any[] = [];
-    
+
     // Extract violations from axe results
     if (axeResults.suites) {
       for (const suite of axeResults.suites) {
@@ -295,12 +312,17 @@ class UsabilityTestRunner {
         }
       }
     }
-    
+
     return violations;
   }
 
-  private categorizeSeverity(errorMessage: string): 'critical' | 'serious' | 'moderate' | 'minor' {
-    if (errorMessage.includes('color-contrast') || errorMessage.includes('keyboard')) {
+  private categorizeSeverity(
+    errorMessage: string
+  ): 'critical' | 'serious' | 'moderate' | 'minor' {
+    if (
+      errorMessage.includes('color-contrast') ||
+      errorMessage.includes('keyboard')
+    ) {
       return 'critical';
     }
     if (errorMessage.includes('aria-') || errorMessage.includes('role')) {
@@ -317,9 +339,11 @@ class UsabilityTestRunner {
     let totalWeight = 0;
 
     for (const result of results) {
-      const category = TEST_CONFIG.categories.find(c => c.name === result.category);
+      const category = TEST_CONFIG.categories.find(
+        (c) => c.name === result.category
+      );
       const weight = category?.weight || 1;
-      
+
       weightedScore += result.score * weight;
       totalWeight += weight;
     }
@@ -331,22 +355,35 @@ class UsabilityTestRunner {
     const recommendations: string[] = [];
 
     for (const result of results) {
-      if (result.score < QUALITY_TARGETS[result.category as keyof typeof QUALITY_TARGETS]) {
+      if (
+        result.score <
+        QUALITY_TARGETS[result.category as keyof typeof QUALITY_TARGETS]
+      ) {
         switch (result.category) {
           case 'accessibility':
-            recommendations.push(`Mejore la accesibilidad: Score ${result.score}% vs objetivo ${QUALITY_TARGETS.accessibility}%`);
+            recommendations.push(
+              `Mejore la accesibilidad: Score ${result.score}% vs objetivo ${QUALITY_TARGETS.accessibility}%`
+            );
             break;
           case 'performance':
-            recommendations.push(`Optimice el rendimiento: Score ${result.score}% vs objetivo ${QUALITY_TARGETS.performance}%`);
+            recommendations.push(
+              `Optimice el rendimiento: Score ${result.score}% vs objetivo ${QUALITY_TARGETS.performance}%`
+            );
             break;
           case 'visual':
-            recommendations.push(`Corrija inconsistencias visuales: ${result.failed} capturas fallaron`);
+            recommendations.push(
+              `Corrija inconsistencias visuales: ${result.failed} capturas fallaron`
+            );
             break;
           case 'responsive':
-            recommendations.push(`Mejore el diseño responsivo en ${result.failed} viewports`);
+            recommendations.push(
+              `Mejore el diseño responsivo en ${result.failed} viewports`
+            );
             break;
           case 'workflows':
-            recommendations.push(`Optimice flujos de usuario: ${result.failed} workflows fallaron`);
+            recommendations.push(
+              `Optimice flujos de usuario: ${result.failed} workflows fallaron`
+            );
             break;
         }
       }
@@ -359,16 +396,23 @@ class UsabilityTestRunner {
     const critical: string[] = [];
 
     for (const result of results) {
-      if (result.score < 70) { // Critical threshold
-        critical.push(`CRÍTICO: ${result.category} score ${result.score}% - Requiere atención inmediata`);
+      if (result.score < 70) {
+        // Critical threshold
+        critical.push(
+          `CRÍTICO: ${result.category} score ${result.score}% - Requiere atención inmediata`
+        );
       }
-      
+
       if (result.category === 'accessibility' && result.score < 90) {
-        critical.push('CRÍTICO: Problemas de accesibilidad pueden afectar usuarios con discapacidades');
+        critical.push(
+          'CRÍTICO: Problemas de accesibilidad pueden afectar usuarios con discapacidades'
+        );
       }
-      
+
       if (result.category === 'performance' && result.score < 80) {
-        critical.push('CRÍTICO: Performance baja afecta experiencia de usuario y SEO');
+        critical.push(
+          'CRÍTICO: Performance baja afecta experiencia de usuario y SEO'
+        );
       }
     }
 
@@ -417,7 +461,9 @@ class UsabilityTestRunner {
         </div>
 
         <div class="categories">
-            ${report.categories.map(cat => `
+            ${report.categories
+              .map(
+                (cat) => `
                 <div class="category-card">
                     <h3>${cat.category.charAt(0).toUpperCase() + cat.category.slice(1)}</h3>
                     <div class="category-score ${this.getScoreClass(cat.score)}">${cat.score}%</div>
@@ -428,26 +474,36 @@ class UsabilityTestRunner {
                         <br>Duración: ${Math.round(cat.duration / 1000)}s
                     </div>
                 </div>
-            `).join('')}
+            `
+              )
+              .join('')}
         </div>
 
-        ${report.recommendations.length > 0 ? `
+        ${
+          report.recommendations.length > 0
+            ? `
             <div class="recommendations">
                 <h3>📋 Recomendaciones</h3>
                 <ul>
-                    ${report.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    ${report.recommendations.map((rec) => `<li>${rec}</li>`).join('')}
                 </ul>
             </div>
-        ` : ''}
+        `
+            : ''
+        }
 
-        ${report.criticalIssues.length > 0 ? `
+        ${
+          report.criticalIssues.length > 0
+            ? `
             <div class="critical">
                 <h3>🚨 Problemas Críticos</h3>
                 <ul>
-                    ${report.criticalIssues.map(issue => `<li>${issue}</li>`).join('')}
+                    ${report.criticalIssues.map((issue) => `<li>${issue}</li>`).join('')}
                 </ul>
             </div>
-        ` : ''}
+        `
+            : ''
+        }
 
         <div class="timestamp">
             Generado: ${report.timestamp}<br>
@@ -458,7 +514,9 @@ class UsabilityTestRunner {
 </html>`;
 
     writeFileSync(join(this.reportDir, 'usability-report.html'), html);
-    this.log(`HTML report generated: ${join(this.reportDir, 'usability-report.html')}`);
+    this.log(
+      `HTML report generated: ${join(this.reportDir, 'usability-report.html')}`
+    );
   }
 
   private getScoreClass(score: number): string {
@@ -489,8 +547,8 @@ class UsabilityTestRunner {
     this.results.push(accessibilityResult, performanceResult, visualResult);
 
     // Run standard test categories
-    for (const category of TEST_CONFIG.categories.filter(c => 
-      !['accessibility', 'performance', 'visual'].includes(c.name)
+    for (const category of TEST_CONFIG.categories.filter(
+      (c) => !['accessibility', 'performance', 'visual'].includes(c.name)
     )) {
       const result = await this.runTestCategory(category);
       this.results.push(result);
@@ -506,8 +564,10 @@ class UsabilityTestRunner {
       environment: process.env.NODE_ENV || 'development',
       overallScore,
       categories: this.results,
-      performance: this.results.find(r => r.category === 'performance')?.details || {},
-      accessibility: this.results.find(r => r.category === 'accessibility')?.details || {},
+      performance:
+        this.results.find((r) => r.category === 'performance')?.details || {},
+      accessibility:
+        this.results.find((r) => r.category === 'accessibility')?.details || {},
       recommendations,
       criticalIssues,
     };
@@ -530,7 +590,7 @@ class UsabilityTestRunner {
 
     if (criticalIssues.length > 0) {
       this.log('🚨 Critical issues detected:', 'error');
-      criticalIssues.forEach(issue => this.log(`  - ${issue}`, 'error'));
+      criticalIssues.forEach((issue) => this.log(`  - ${issue}`, 'error'));
     }
 
     if (overallScore < 75) {
@@ -545,7 +605,7 @@ class UsabilityTestRunner {
 // Main execution
 if (require.main === module) {
   const runner = new UsabilityTestRunner();
-  runner.runAllTests().catch(error => {
+  runner.runAllTests().catch((error) => {
     console.error('❌ Test runner failed:', error);
     process.exit(1);
   });

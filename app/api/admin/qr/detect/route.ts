@@ -6,16 +6,23 @@ import { z } from 'zod';
 
 const detectQRSchema = z.object({
   eventId: z.string().uuid('Invalid event ID').optional(),
-  images: z.array(z.object({
-    filename: z.string().min(1, 'Filename is required'),
-    buffer: z.string().min(1, 'Image data is required'), // Base64 encoded
-  })).min(1, 'At least one image is required').max(10, 'Maximum 10 images per request'),
-  options: z.object({
-    maxWidth: z.number().min(100).max(4096).optional(),
-    maxHeight: z.number().min(100).max(4096).optional(),
-    enhanceContrast: z.boolean().optional(),
-    rotateDegrees: z.array(z.number()).optional(),
-  }).optional(),
+  images: z
+    .array(
+      z.object({
+        filename: z.string().min(1, 'Filename is required'),
+        buffer: z.string().min(1, 'Image data is required'), // Base64 encoded
+      })
+    )
+    .min(1, 'At least one image is required')
+    .max(10, 'Maximum 10 images per request'),
+  options: z
+    .object({
+      maxWidth: z.number().min(100).max(4096).optional(),
+      maxHeight: z.number().min(100).max(4096).optional(),
+      enhanceContrast: z.boolean().optional(),
+      rotateDegrees: z.array(z.number()).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -51,17 +58,20 @@ export async function POST(request: NextRequest) {
     const { eventId, images, options } = validation.data;
 
     // Convert base64 images to buffers
-    const imageBuffers = images.map(img => ({
+    const imageBuffers = images.map((img) => ({
       filename: img.filename,
       buffer: Buffer.from(img.buffer, 'base64'),
       eventId,
     }));
 
     // Detect QR codes in batch
-    const results = await qrDetectionService.batchDetectQRCodes(imageBuffers, options);
+    const results = await qrDetectionService.batchDetectQRCodes(
+      imageBuffers,
+      options
+    );
 
     const totalQRs = results.reduce((sum, r) => sum + r.qrCodes.length, 0);
-    const successCount = results.filter(r => !r.error).length;
+    const successCount = results.filter((r) => !r.error).length;
 
     logger.info('QR detection completed via API', {
       requestId,
@@ -84,7 +94,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
   } catch (error) {
     logger.error('QR detection API error', {
       requestId,

@@ -8,7 +8,7 @@ import { logger } from '@/lib/utils/logger';
 export const POST = RateLimitMiddleware.withRateLimit(
   withAuth(async (req: NextRequest) => {
     const requestId = crypto.randomUUID();
-    
+
     try {
       let body;
       try {
@@ -31,29 +31,45 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Validate input
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'Photo IDs array is required and must not be empty' },
+          {
+            success: false,
+            error: 'Photo IDs array is required and must not be empty',
+          },
           { status: 400 }
         );
       }
 
       if (photoIds.length > 50) {
         return NextResponse.json(
-          { success: false, error: 'Cannot generate URLs for more than 50 photos at once' },
+          {
+            success: false,
+            error: 'Cannot generate URLs for more than 50 photos at once',
+          },
           { status: 400 }
         );
       }
 
       // Validate expiration time
-      if (typeof expiresIn !== 'number' || expiresIn < 60 || expiresIn > 86400) {
+      if (
+        typeof expiresIn !== 'number' ||
+        expiresIn < 60 ||
+        expiresIn > 86400
+      ) {
         return NextResponse.json(
-          { success: false, error: 'Expires in must be between 60 and 86400 seconds' },
+          {
+            success: false,
+            error: 'Expires in must be between 60 and 86400 seconds',
+          },
           { status: 400 }
         );
       }
 
       // Validate all photoIds are valid UUIDs
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (!photoIds.every(id => typeof id === 'string' && uuidRegex.test(id))) {
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (
+        !photoIds.every((id) => typeof id === 'string' && uuidRegex.test(id))
+      ) {
         return NextResponse.json(
           { success: false, error: 'All photo IDs must be valid UUIDs' },
           { status: 400 }
@@ -74,7 +90,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           photoIds,
           error: photosError.message,
         });
-        
+
         return NextResponse.json(
           { success: false, error: 'Failed to validate photos' },
           { status: 500 }
@@ -89,14 +105,14 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       if (photos.length !== photoIds.length) {
-        const foundIds = photos.map(p => p.id);
-        const missingIds = photoIds.filter(id => !foundIds.includes(id));
-        
+        const foundIds = photos.map((p) => p.id);
+        const missingIds = photoIds.filter((id) => !foundIds.includes(id));
+
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: 'Some photos were not found',
-            details: { missing: missingIds }
+            details: { missing: missingIds },
           },
           { status: 404 }
         );
@@ -105,21 +121,22 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Generate signed URLs for each photo
       const signedUrls: Record<string, string> = {};
       const errors: Record<string, string> = {};
-      
+
       await Promise.all(
         photos.map(async (photo) => {
           try {
             // Use preview path if available, fallback to storage path
             const path = photo.preview_path || photo.storage_path;
-            
+
             if (!path) {
               errors[photo.id] = 'No storage path available';
               return;
             }
 
-            const { data: signedUrlData, error: urlError } = await supabase.storage
-              .from('photos')
-              .createSignedUrl(path, expiresIn);
+            const { data: signedUrlData, error: urlError } =
+              await supabase.storage
+                .from('photos')
+                .createSignedUrl(path, expiresIn);
 
             if (urlError) {
               logger.warn('Failed to generate signed URL for photo', {
@@ -143,7 +160,8 @@ export const POST = RateLimitMiddleware.withRateLimit(
               photoId: photo.id,
               error: error instanceof Error ? error.message : 'Unknown error',
             });
-            errors[photo.id] = error instanceof Error ? error.message : 'Unknown error';
+            errors[photo.id] =
+              error instanceof Error ? error.message : 'Unknown error';
           }
         })
       );
@@ -176,7 +194,6 @@ export const POST = RateLimitMiddleware.withRateLimit(
       };
 
       return NextResponse.json(response);
-
     } catch (error) {
       logger.error('Unexpected error in batch signed URLs endpoint', {
         requestId,

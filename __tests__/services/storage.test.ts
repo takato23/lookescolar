@@ -1,5 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
-import { storageService, BatchSignedUrlRequest, SignedUrlOptions } from '@/lib/services/storage';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+} from 'vitest';
+import {
+  storageService,
+  BatchSignedUrlRequest,
+  SignedUrlOptions,
+} from '@/lib/services/storage';
 import { egressService } from '@/lib/services/egress.service';
 import { logger } from '@/lib/utils/logger';
 
@@ -14,12 +26,12 @@ const mockSupabase = {
       list: vi.fn(),
       remove: vi.fn(),
     })),
-  }
+  },
 };
 
 // Mock external services
 vi.mock('@supabase/supabase-js', () => ({
-  createClient: () => mockSupabase
+  createClient: () => mockSupabase,
 }));
 
 vi.mock('@/lib/services/egress.service');
@@ -28,7 +40,8 @@ vi.mock('@/lib/utils/logger');
 // Test constants
 const TEST_BUCKET = 'test-photos';
 const TEST_PATH = 'events/test-event/photos/IMG_001.jpg';
-const TEST_SIGNED_URL = 'https://storage.supabase.co/object/sign/bucket/photo.jpg?token=signed-token-123';
+const TEST_SIGNED_URL =
+  'https://storage.supabase.co/object/sign/bucket/photo.jpg?token=signed-token-123';
 const TEST_EVENT_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 describe('StorageService - Comprehensive Tests', () => {
@@ -42,24 +55,30 @@ describe('StorageService - Comprehensive Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default mocks
     mockStorageFrom = {
       createSignedUrl: vi.fn(),
       list: vi.fn(),
       remove: vi.fn(),
     };
-    
+
     mockSupabase.storage.from.mockReturnValue(mockStorageFrom);
-    mockSupabase.storage.listBuckets.mockResolvedValue({ data: [], error: null });
+    mockSupabase.storage.listBuckets.mockResolvedValue({
+      data: [],
+      error: null,
+    });
     mockSupabase.storage.createBucket.mockResolvedValue({ error: null });
-    mockSupabase.storage.getBucket.mockResolvedValue({ data: { public: false }, error: null });
-    
+    mockSupabase.storage.getBucket.mockResolvedValue({
+      data: { public: false },
+      error: null,
+    });
+
     mockStorageFrom.createSignedUrl.mockResolvedValue({
       data: { signedUrl: TEST_SIGNED_URL },
-      error: null
+      error: null,
     });
-    
+
     (egressService.trackEgress as any).mockResolvedValue(undefined);
   });
 
@@ -74,16 +93,19 @@ describe('StorageService - Comprehensive Tests', () => {
       // Mock bucket no existe
       mockSupabase.storage.listBuckets.mockResolvedValue({
         data: [], // No buckets
-        error: null
+        error: null,
       });
 
       await storageService.configureBucketPrivate();
 
-      expect(mockSupabase.storage.createBucket).toHaveBeenCalledWith(TEST_BUCKET, {
-        public: false,
-        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-        fileSizeLimit: 10 * 1024 * 1024,
-      });
+      expect(mockSupabase.storage.createBucket).toHaveBeenCalledWith(
+        TEST_BUCKET,
+        {
+          public: false,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          fileSizeLimit: 10 * 1024 * 1024,
+        }
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         'Private bucket created successfully',
@@ -95,7 +117,7 @@ describe('StorageService - Comprehensive Tests', () => {
       // Mock bucket existe
       mockSupabase.storage.listBuckets.mockResolvedValue({
         data: [{ name: TEST_BUCKET, public: false }],
-        error: null
+        error: null,
       });
 
       await storageService.configureBucketPrivate();
@@ -107,12 +129,12 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería advertir si bucket existente es público', async () => {
       mockSupabase.storage.listBuckets.mockResolvedValue({
         data: [{ name: TEST_BUCKET, public: true }],
-        error: null
+        error: null,
       });
 
       mockSupabase.storage.getBucket.mockResolvedValue({
         data: { public: true },
-        error: null
+        error: null,
       });
 
       await storageService.configureBucketPrivate();
@@ -126,11 +148,11 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería manejar errores al crear bucket', async () => {
       mockSupabase.storage.listBuckets.mockResolvedValue({
         data: [],
-        error: null
+        error: null,
       });
 
       mockSupabase.storage.createBucket.mockResolvedValue({
-        error: { message: 'Permission denied' }
+        error: { message: 'Permission denied' },
       });
 
       await expect(storageService.configureBucketPrivate()).rejects.toThrow(
@@ -141,7 +163,7 @@ describe('StorageService - Comprehensive Tests', () => {
         'Failed to configure bucket',
         expect.objectContaining({
           error: 'Error creating bucket: Permission denied',
-          bucket: TEST_BUCKET
+          bucket: TEST_BUCKET,
         })
       );
     });
@@ -149,7 +171,7 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería manejar errores al listar buckets', async () => {
       mockSupabase.storage.listBuckets.mockResolvedValue({
         data: null,
-        error: { message: 'Access denied' }
+        error: { message: 'Access denied' },
       });
 
       await expect(storageService.configureBucketPrivate()).rejects.toThrow(
@@ -189,8 +211,8 @@ describe('StorageService - Comprehensive Tests', () => {
         transform: {
           width: 800,
           height: 600,
-          resize: 'cover'
-        }
+          resize: 'cover',
+        },
       };
 
       const url = await storageService.createSignedUrl(TEST_PATH, options);
@@ -204,8 +226,8 @@ describe('StorageService - Comprehensive Tests', () => {
           transform: {
             width: 800,
             height: 600,
-            resize: 'cover'
-          }
+            resize: 'cover',
+          },
         }
       );
     });
@@ -213,7 +235,7 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería usar cache para URLs repetidas', async () => {
       // Primera llamada
       const url1 = await storageService.createSignedUrl(TEST_PATH);
-      
+
       // Segunda llamada (debería usar cache)
       const url2 = await storageService.createSignedUrl(TEST_PATH);
 
@@ -224,7 +246,7 @@ describe('StorageService - Comprehensive Tests', () => {
         'Returning cached signed URL',
         expect.objectContaining({
           path: 'eve***jpg',
-          cacheHit: true
+          cacheHit: true,
         })
       );
     });
@@ -233,7 +255,7 @@ describe('StorageService - Comprehensive Tests', () => {
       const egressData = {
         eventId: TEST_EVENT_ID,
         bytes: 1024,
-        requests: 1
+        requests: 1,
       };
 
       await storageService.createSignedUrl(TEST_PATH, {}, egressData);
@@ -241,7 +263,7 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(egressService.trackEgress).toHaveBeenCalledWith({
         eventId: TEST_EVENT_ID,
         bytes: 1024,
-        requests: 1
+        requests: 1,
       });
     });
 
@@ -249,12 +271,12 @@ describe('StorageService - Comprehensive Tests', () => {
       const egressData = {
         eventId: TEST_EVENT_ID,
         bytes: 1024,
-        requests: 1
+        requests: 1,
       };
 
       // Primera llamada (crear cache)
       await storageService.createSignedUrl(TEST_PATH, {}, egressData);
-      
+
       // Segunda llamada (cache hit)
       await storageService.createSignedUrl(TEST_PATH, {}, egressData);
 
@@ -262,25 +284,25 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(egressService.trackEgress).toHaveBeenLastCalledWith({
         eventId: TEST_EVENT_ID,
         bytes: 0, // Cache hit no transfiere bytes
-        requests: 1
+        requests: 1,
       });
     });
 
     it('debería manejar error de Supabase', async () => {
       mockStorageFrom.createSignedUrl.mockResolvedValue({
         data: null,
-        error: { message: 'File not found' }
+        error: { message: 'File not found' },
       });
 
-      await expect(
-        storageService.createSignedUrl(TEST_PATH)
-      ).rejects.toThrow('Error creating signed URL: File not found');
+      await expect(storageService.createSignedUrl(TEST_PATH)).rejects.toThrow(
+        'Error creating signed URL: File not found'
+      );
 
       expect(logger.error).toHaveBeenCalledWith(
         'Failed to create signed URL',
         expect.objectContaining({
           path: 'eve***jpg',
-          error: 'Error creating signed URL: File not found'
+          error: 'Error creating signed URL: File not found',
         })
       );
     });
@@ -288,12 +310,12 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería manejar respuesta sin signedUrl', async () => {
       mockStorageFrom.createSignedUrl.mockResolvedValue({
         data: { signedUrl: null },
-        error: null
+        error: null,
       });
 
-      await expect(
-        storageService.createSignedUrl(TEST_PATH)
-      ).rejects.toThrow('No signed URL returned from Supabase');
+      await expect(storageService.createSignedUrl(TEST_PATH)).rejects.toThrow(
+        'No signed URL returned from Supabase'
+      );
     });
 
     it('debería generar requestId único para cada llamada', async () => {
@@ -313,7 +335,7 @@ describe('StorageService - Comprehensive Tests', () => {
       const requests: BatchSignedUrlRequest[] = [
         { path: 'path1.jpg' },
         { path: 'path2.jpg', options: { expiresIn: 1800 } },
-        { path: 'path3.jpg', options: { download: true } }
+        { path: 'path3.jpg', options: { download: true } },
       ];
 
       const results = await storageService.createBatchSignedUrls(requests);
@@ -329,9 +351,11 @@ describe('StorageService - Comprehensive Tests', () => {
     });
 
     it('debería procesar en lotes de 10 para no sobrecargar Supabase', async () => {
-      const requests = Array(25).fill(0).map((_, i) => ({
-        path: `path${i}.jpg`
-      }));
+      const requests = Array(25)
+        .fill(0)
+        .map((_, i) => ({
+          path: `path${i}.jpg`,
+        }));
 
       await storageService.createBatchSignedUrls(requests);
 
@@ -342,7 +366,7 @@ describe('StorageService - Comprehensive Tests', () => {
           totalRequests: 25,
           successCount: 25,
           failureCount: 0,
-          batchSize: 10
+          batchSize: 10,
         })
       );
     });
@@ -351,7 +375,7 @@ describe('StorageService - Comprehensive Tests', () => {
       const requests: BatchSignedUrlRequest[] = [
         { path: 'success.jpg' },
         { path: 'error.jpg' },
-        { path: 'success2.jpg' }
+        { path: 'success2.jpg' },
       ];
 
       // Mock que el segundo falla
@@ -361,12 +385,12 @@ describe('StorageService - Comprehensive Tests', () => {
         if (callCount === 2) {
           return Promise.resolve({
             data: null,
-            error: { message: 'File not found' }
+            error: { message: 'File not found' },
           });
         }
         return Promise.resolve({
           data: { signedUrl: TEST_SIGNED_URL },
-          error: null
+          error: null,
         });
       });
 
@@ -383,7 +407,7 @@ describe('StorageService - Comprehensive Tests', () => {
         expect.objectContaining({
           totalRequests: 3,
           successCount: 2,
-          failureCount: 1
+          failureCount: 1,
         })
       );
     });
@@ -391,13 +415,13 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería trackear egress para batch con datos agregados', async () => {
       const requests: BatchSignedUrlRequest[] = [
         { path: 'path1.jpg' },
-        { path: 'path2.jpg' }
+        { path: 'path2.jpg' },
       ];
 
       const egressData = {
         eventId: TEST_EVENT_ID,
         bytes: 2048,
-        requests: 2
+        requests: 2,
       };
 
       await storageService.createBatchSignedUrls(requests, egressData);
@@ -407,9 +431,11 @@ describe('StorageService - Comprehensive Tests', () => {
     });
 
     it('debería medir y reportar duración del procesamiento', async () => {
-      const requests = Array(5).fill(0).map((_, i) => ({
-        path: `path${i}.jpg`
-      }));
+      const requests = Array(5)
+        .fill(0)
+        .map((_, i) => ({
+          path: `path${i}.jpg`,
+        }));
 
       const startTime = Date.now();
       await storageService.createBatchSignedUrls(requests);
@@ -418,13 +444,13 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(logger.info).toHaveBeenCalledWith(
         'Batch signed URLs created',
         expect.objectContaining({
-          duration: expect.any(Number)
+          duration: expect.any(Number),
         })
       );
 
       // La duración reportada debería ser razonable
-      const logCall = (logger.info as any).mock.calls.find((call: any) => 
-        call[0] === 'Batch signed URLs created'
+      const logCall = (logger.info as any).mock.calls.find(
+        (call: any) => call[0] === 'Batch signed URLs created'
       );
       const reportedDuration = logCall[1].duration;
       expect(reportedDuration).toBeGreaterThan(0);
@@ -438,7 +464,7 @@ describe('StorageService - Comprehensive Tests', () => {
       (storageService as any).trustedOrigins = [
         'https://lookescolar.com',
         'http://localhost:3000',
-        'https://*.lookescolar.com'
+        'https://*.lookescolar.com',
       ];
     });
 
@@ -446,10 +472,10 @@ describe('StorageService - Comprehensive Tests', () => {
       const validReferers = [
         'https://lookescolar.com/gallery',
         'http://localhost:3000/admin',
-        'https://app.lookescolar.com/family'
+        'https://app.lookescolar.com/family',
       ];
 
-      validReferers.forEach(referer => {
+      validReferers.forEach((referer) => {
         const isValid = storageService.validateReferer(referer);
         expect(isValid).toBe(true);
       });
@@ -460,10 +486,10 @@ describe('StorageService - Comprehensive Tests', () => {
         'https://malicious-site.com/',
         'https://phishing.lookescolar.fake/',
         'http://evil.com/steal-photos',
-        'https://lookescolar.com.evil.com/'
+        'https://lookescolar.com.evil.com/',
       ];
 
-      invalidReferers.forEach(referer => {
+      invalidReferers.forEach((referer) => {
         const isValid = storageService.validateReferer(referer);
         expect(isValid).toBe(false);
       });
@@ -473,7 +499,7 @@ describe('StorageService - Comprehensive Tests', () => {
       const wildcardTests = [
         { referer: 'https://admin.lookescolar.com/', expected: true },
         { referer: 'https://api.lookescolar.com/photos', expected: true },
-        { referer: 'https://malicious.lookescolar.fake/', expected: false }
+        { referer: 'https://malicious.lookescolar.fake/', expected: false },
       ];
 
       wildcardTests.forEach(({ referer, expected }) => {
@@ -493,10 +519,10 @@ describe('StorageService - Comprehensive Tests', () => {
         'not-a-url',
         'htp://invalid-protocol.com',
         'https://',
-        'javascript:alert("xss")'
+        'javascript:alert("xss")',
       ];
 
-      malformedUrls.forEach(url => {
+      malformedUrls.forEach((url) => {
         const isValid = storageService.validateReferer(url);
         expect(isValid).toBe(false);
       });
@@ -510,14 +536,14 @@ describe('StorageService - Comprehensive Tests', () => {
 
       const cache = (storageService as any).urlCache;
       const cacheKey = `${TEST_PATH}:{"expiresIn":3600}`;
-      
+
       expect(cache.has(cacheKey)).toBe(true);
-      
+
       const cached = cache.get(cacheKey);
       expect(cached.url).toBe(TEST_SIGNED_URL);
-      
+
       // Debe expirar 5 minutos antes del tiempo real para buffer de seguridad
-      const expectedExpiry = Date.now() + (expiresIn * 1000) - (5 * 60 * 1000);
+      const expectedExpiry = Date.now() + expiresIn * 1000 - 5 * 60 * 1000;
       expect(cached.expiresAt).toBeLessThanOrEqual(expectedExpiry);
       expect(cached.expiresAt).toBeGreaterThan(expectedExpiry - 1000); // 1s tolerance
     });
@@ -535,7 +561,7 @@ describe('StorageService - Comprehensive Tests', () => {
       storageService.invalidateCache('events/event1');
 
       expect(cache.size).toBe(1);
-      
+
       // Verificar que solo queda event2
       const remainingKeys = Array.from(cache.keys());
       expect(remainingKeys[0]).toContain('events/event2/photo1.jpg');
@@ -567,7 +593,7 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(cache.size).toBe(1);
 
       // Avanzar tiempo más allá de expiración
-      mockNow.mockReturnValue(baseTime + (4 * 60 * 60 * 1000)); // 4 horas después
+      mockNow.mockReturnValue(baseTime + 4 * 60 * 60 * 1000); // 4 horas después
 
       // Ejecutar limpieza manual (normalmente automática)
       (storageService as any).cleanExpiredCache();
@@ -602,26 +628,26 @@ describe('StorageService - Comprehensive Tests', () => {
         {
           name: 'old-file-1.jpg',
           created_at: '2024-01-01T00:00:00Z',
-          metadata: { size: 1024 }
+          metadata: { size: 1024 },
         },
         {
           name: 'old-file-2.jpg',
           created_at: '2024-01-02T00:00:00Z',
-          metadata: { size: 2048 }
-        }
+          metadata: { size: 2048 },
+        },
       ];
 
       const recentFiles = [
         {
           name: 'recent-file.jpg',
           created_at: new Date().toISOString(),
-          metadata: { size: 512 }
-        }
+          metadata: { size: 512 },
+        },
       ];
 
       mockStorageFrom.list.mockResolvedValue({
         data: [...oldFiles, ...recentFiles],
-        error: null
+        error: null,
       });
 
       mockStorageFrom.remove.mockResolvedValue({ error: null });
@@ -633,7 +659,7 @@ describe('StorageService - Comprehensive Tests', () => {
 
       expect(mockStorageFrom.remove).toHaveBeenCalledWith([
         'previews/old-file-1.jpg',
-        'previews/old-file-2.jpg'
+        'previews/old-file-2.jpg',
       ]);
 
       expect(logger.info).toHaveBeenCalledWith(
@@ -642,21 +668,23 @@ describe('StorageService - Comprehensive Tests', () => {
           deletedCount: 2,
           totalSizeBytes: 3072,
           totalSizeMB: 3,
-          olderThanDays: 30
+          olderThanDays: 30,
         })
       );
     });
 
     it('debería procesar eliminación en lotes de 100', async () => {
-      const oldFiles = Array(250).fill(0).map((_, i) => ({
-        name: `old-file-${i}.jpg`,
-        created_at: '2024-01-01T00:00:00Z',
-        metadata: { size: 1024 }
-      }));
+      const oldFiles = Array(250)
+        .fill(0)
+        .map((_, i) => ({
+          name: `old-file-${i}.jpg`,
+          created_at: '2024-01-01T00:00:00Z',
+          metadata: { size: 1024 },
+        }));
 
       mockStorageFrom.list.mockResolvedValue({
         data: oldFiles,
-        error: null
+        error: null,
       });
 
       mockStorageFrom.remove.mockResolvedValue({ error: null });
@@ -674,15 +702,17 @@ describe('StorageService - Comprehensive Tests', () => {
     });
 
     it('debería continuar aunque algunos lotes fallen', async () => {
-      const oldFiles = Array(150).fill(0).map((_, i) => ({
-        name: `old-file-${i}.jpg`,
-        created_at: '2024-01-01T00:00:00Z',
-        metadata: { size: 1024 }
-      }));
+      const oldFiles = Array(150)
+        .fill(0)
+        .map((_, i) => ({
+          name: `old-file-${i}.jpg`,
+          created_at: '2024-01-01T00:00:00Z',
+          metadata: { size: 1024 },
+        }));
 
       mockStorageFrom.list.mockResolvedValue({
         data: oldFiles,
-        error: null
+        error: null,
       });
 
       // Mock que el segundo lote falla
@@ -703,7 +733,7 @@ describe('StorageService - Comprehensive Tests', () => {
         expect.objectContaining({
           batchStart: 100,
           batchSize: 100,
-          error: 'Network error'
+          error: 'Network error',
         })
       );
     });
@@ -714,10 +744,10 @@ describe('StorageService - Comprehensive Tests', () => {
           {
             name: 'recent-file.jpg',
             created_at: new Date().toISOString(),
-            metadata: { size: 1024 }
-          }
+            metadata: { size: 1024 },
+          },
         ],
-        error: null
+        error: null,
       });
 
       const result = await storageService.cleanupOldFiles(30);
@@ -732,13 +762,13 @@ describe('StorageService - Comprehensive Tests', () => {
         {
           name: 'old-file.jpg',
           created_at: '2024-01-01T00:00:00Z',
-          metadata: { size: 1024 }
-        }
+          metadata: { size: 1024 },
+        },
       ];
 
       mockStorageFrom.list.mockResolvedValue({
         data: oldFiles,
-        error: null
+        error: null,
       });
 
       mockStorageFrom.remove.mockResolvedValue({ error: null });
@@ -756,12 +786,12 @@ describe('StorageService - Comprehensive Tests', () => {
           name: 'file-no-size.jpg',
           created_at: '2024-01-01T00:00:00Z',
           // Sin metadata.size
-        }
+        },
       ];
 
       mockStorageFrom.list.mockResolvedValue({
         data: filesWithoutSize,
-        error: null
+        error: null,
       });
 
       mockStorageFrom.remove.mockResolvedValue({ error: null });
@@ -778,12 +808,12 @@ describe('StorageService - Comprehensive Tests', () => {
       const mockFiles = [
         { name: 'file1.jpg', metadata: { size: 1024 } },
         { name: 'file2.jpg', metadata: { size: 2048 } },
-        { name: 'file3.jpg' } // Sin size
+        { name: 'file3.jpg' }, // Sin size
       ];
 
       mockStorageFrom.list.mockResolvedValue({
         data: mockFiles,
-        error: null
+        error: null,
       });
 
       // Agregar entradas al cache
@@ -800,7 +830,7 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería manejar storage vacío', async () => {
       mockStorageFrom.list.mockResolvedValue({
         data: [],
-        error: null
+        error: null,
       });
 
       const stats = await storageService.getStorageStats();
@@ -813,7 +843,7 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería manejar errores al obtener estadísticas', async () => {
       mockStorageFrom.list.mockResolvedValue({
         data: null,
-        error: { message: 'Access denied' }
+        error: { message: 'Access denied' },
       });
 
       await expect(storageService.getStorageStats()).rejects.toThrow(
@@ -823,7 +853,7 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(logger.error).toHaveBeenCalledWith(
         'Failed to get storage stats',
         expect.objectContaining({
-          error: 'Error getting storage stats: Access denied'
+          error: 'Error getting storage stats: Access denied',
         })
       );
     });
@@ -832,12 +862,14 @@ describe('StorageService - Comprehensive Tests', () => {
   describe('Seguridad y Logging', () => {
     it('debería enmascarar paths en logs de seguridad', async () => {
       // Test método privado a través de su uso
-      await storageService.createSignedUrl('very/long/sensitive/path/to/file.jpg');
+      await storageService.createSignedUrl(
+        'very/long/sensitive/path/to/file.jpg'
+      );
 
       expect(logger.info).toHaveBeenCalledWith(
         'Signed URL created successfully',
         expect.objectContaining({
-          path: 'ver***jpg' // Path enmascarado
+          path: 'ver***jpg', // Path enmascarado
         })
       );
     });
@@ -848,7 +880,7 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(logger.info).toHaveBeenCalledWith(
         'Signed URL created successfully',
         expect.objectContaining({
-          path: '*********' // Completamente enmascarado
+          path: '*********', // Completamente enmascarado
         })
       );
     });
@@ -861,7 +893,7 @@ describe('StorageService - Comprehensive Tests', () => {
       expect(logger.info).toHaveBeenCalledWith(
         'Signed URL created successfully',
         expect.objectContaining({
-          requestId: 'unique-request-id-123'
+          requestId: 'unique-request-id-123',
         })
       );
     });
@@ -869,7 +901,10 @@ describe('StorageService - Comprehensive Tests', () => {
     it('debería logear errores sin exponer información sensible', async () => {
       mockStorageFrom.createSignedUrl.mockResolvedValue({
         data: null,
-        error: { message: 'Database connection string leaked: postgres://user:pass@host' }
+        error: {
+          message:
+            'Database connection string leaked: postgres://user:pass@host',
+        },
       });
 
       try {
@@ -882,7 +917,7 @@ describe('StorageService - Comprehensive Tests', () => {
         'Failed to create signed URL',
         expect.objectContaining({
           path: 'eve***jpg', // Path enmascarado
-          error: expect.stringContaining('Database connection string leaked') // Error message puede contener info sensible pero no el path
+          error: expect.stringContaining('Database connection string leaked'), // Error message puede contener info sensible pero no el path
         })
       );
     });
@@ -896,17 +931,19 @@ describe('StorageService - Comprehensive Tests', () => {
   describe('Performance y Límites', () => {
     it('debería completar operaciones de URL firmada rápidamente', async () => {
       const startTime = Date.now();
-      
+
       await storageService.createSignedUrl(TEST_PATH);
-      
+
       const duration = Date.now() - startTime;
       expect(duration).toBeLessThan(1000); // 1 segundo máximo
     });
 
     it('debería manejar batch grande eficientemente', async () => {
-      const largeRequests = Array(100).fill(0).map((_, i) => ({
-        path: `large/batch/photo-${i}.jpg`
-      }));
+      const largeRequests = Array(100)
+        .fill(0)
+        .map((_, i) => ({
+          path: `large/batch/photo-${i}.jpg`,
+        }));
 
       const startTime = Date.now();
       const results = await storageService.createBatchSignedUrls(largeRequests);
@@ -914,21 +951,23 @@ describe('StorageService - Comprehensive Tests', () => {
 
       expect(results).toHaveLength(100);
       expect(duration).toBeLessThan(5000); // 5 segundos máximo para 100 URLs
-      
+
       // Verificar que se procesan en lotes
       expect(logger.info).toHaveBeenCalledWith(
         'Batch signed URLs created',
         expect.objectContaining({
-          batchSize: 10
+          batchSize: 10,
         })
       );
     });
 
     it('debería manejar memoria eficientemente con cache grande', async () => {
       // Crear muchas URLs cacheadas
-      const promises = Array(1000).fill(0).map((_, i) => 
-        storageService.createSignedUrl(`cache/test/photo-${i}.jpg`)
-      );
+      const promises = Array(1000)
+        .fill(0)
+        .map((_, i) =>
+          storageService.createSignedUrl(`cache/test/photo-${i}.jpg`)
+        );
 
       await Promise.all(promises);
 
@@ -947,13 +986,17 @@ describe('StorageService - Comprehensive Tests', () => {
       mockNow.mockReturnValue(baseTime);
 
       // Crear URLs con diferentes tiempos de expiración
-      await storageService.createSignedUrl('short-cache.jpg', { expiresIn: 60 });
-      await storageService.createSignedUrl('long-cache.jpg', { expiresIn: 3600 });
+      await storageService.createSignedUrl('short-cache.jpg', {
+        expiresIn: 60,
+      });
+      await storageService.createSignedUrl('long-cache.jpg', {
+        expiresIn: 3600,
+      });
 
       expect((storageService as any).urlCache.size).toBe(2);
 
       // Avanzar tiempo 2 minutos
-      mockNow.mockReturnValue(baseTime + (2 * 60 * 1000));
+      mockNow.mockReturnValue(baseTime + 2 * 60 * 1000);
 
       // Ejecutar limpieza
       (storageService as any).cleanExpiredCache();
@@ -973,16 +1016,18 @@ describe('StorageService - Comprehensive Tests', () => {
 
     it('debería configurar orígenes confiables correctamente', async () => {
       const trustedOrigins = (storageService as any).trustedOrigins;
-      
+
       expect(trustedOrigins).toContain('https://lookescolar.com');
       expect(trustedOrigins).toContain('https://*.lookescolar.com');
-      expect(trustedOrigins.some((origin: string) => origin.includes('localhost'))).toBe(true);
+      expect(
+        trustedOrigins.some((origin: string) => origin.includes('localhost'))
+      ).toBe(true);
     });
 
     it('debería no ejecutar configuración automática en test environment', async () => {
       // Verificar que NODE_ENV=test previene auto-configuración
       expect(process.env.NODE_ENV).toBe('test');
-      
+
       // La configuración automática no debería haberse ejecutado
       // (esto es verificable por la ausencia de llamadas no mockeadas)
     });
@@ -994,13 +1039,13 @@ describe('StorageService - Comprehensive Tests', () => {
         'events/test event/photo with spaces.jpg',
         'events/тест/фото.jpg',
         'events/test/photo%20encoded.jpg',
-        'events/test/photo-with-émojis-🎉.jpg'
+        'events/test/photo-with-émojis-🎉.jpg',
       ];
 
       for (const path of specialPaths) {
-        await expect(
-          storageService.createSignedUrl(path)
-        ).resolves.toBe(TEST_SIGNED_URL);
+        await expect(storageService.createSignedUrl(path)).resolves.toBe(
+          TEST_SIGNED_URL
+        );
       }
     });
 
@@ -1011,11 +1056,14 @@ describe('StorageService - Comprehensive Tests', () => {
         transform: {
           width: 1920,
           height: 1080,
-          resize: 'contain'
-        }
+          resize: 'contain',
+        },
       };
 
-      const url = await storageService.createSignedUrl(TEST_PATH, complexOptions);
+      const url = await storageService.createSignedUrl(
+        TEST_PATH,
+        complexOptions
+      );
       expect(url).toBe(TEST_SIGNED_URL);
 
       expect(mockStorageFrom.createSignedUrl).toHaveBeenCalledWith(
@@ -1026,8 +1074,8 @@ describe('StorageService - Comprehensive Tests', () => {
           transform: {
             width: 1920,
             height: 1080,
-            resize: 'contain'
-          }
+            resize: 'contain',
+          },
         }
       );
     });
@@ -1038,13 +1086,13 @@ describe('StorageService - Comprehensive Tests', () => {
         .mockRejectedValueOnce(new Error('Request timeout'))
         .mockResolvedValue({
           data: { signedUrl: TEST_SIGNED_URL },
-          error: null
+          error: null,
         });
 
       // Primera llamada falla, pero no implementamos retry por defecto
-      await expect(
-        storageService.createSignedUrl(TEST_PATH)
-      ).rejects.toThrow('Request timeout');
+      await expect(storageService.createSignedUrl(TEST_PATH)).rejects.toThrow(
+        'Request timeout'
+      );
     });
 
     it('debería manejar responses malformados de Supabase', async () => {
@@ -1053,12 +1101,12 @@ describe('StorageService - Comprehensive Tests', () => {
         { data: {}, error: null }, // Sin signedUrl
         { data: { signedUrl: '' }, error: null }, // signedUrl vacío
         null, // Respuesta completamente null
-        undefined // Respuesta undefined
+        undefined, // Respuesta undefined
       ];
 
       for (const response of malformedResponses) {
         mockStorageFrom.createSignedUrl.mockResolvedValueOnce(response);
-        
+
         await expect(
           storageService.createSignedUrl(TEST_PATH)
         ).rejects.toThrow();

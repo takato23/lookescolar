@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  GridIcon, 
-  ListIcon, 
-  CalendarIcon, 
+import {
+  GridIcon,
+  ListIcon,
+  CalendarIcon,
   FilterIcon,
   XIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,7 +47,7 @@ export function PhotoFilters({
   onSortByChange,
   photoCount,
   filteredCount,
-  className
+  className,
 }: PhotoFiltersProps) {
   const [hasActiveFilters, setHasActiveFilters] = useState(false);
 
@@ -62,34 +62,43 @@ export function PhotoFilters({
 
   const getDateFilterLabel = (filter: DateFilter) => {
     switch (filter) {
-      case 'today': return 'Hoy';
-      case 'week': return 'Esta semana';
-      case 'month': return 'Este mes';
-      case 'custom': return 'Personalizado';
-      default: return 'Todas las fechas';
+      case 'today':
+        return 'Hoy';
+      case 'week':
+        return 'Esta semana';
+      case 'month':
+        return 'Este mes';
+      case 'custom':
+        return 'Personalizado';
+      default:
+        return 'Todas las fechas';
     }
   };
 
   const getSortByLabel = (sort: SortBy) => {
     switch (sort) {
-      case 'date_asc': return 'Más antiguas primero';
-      case 'name': return 'Por nombre';
-      case 'size': return 'Por tamaño';
-      default: return 'Más recientes primero';
+      case 'date_asc':
+        return 'Más antiguas primero';
+      case 'name':
+        return 'Por nombre';
+      case 'size':
+        return 'Por tamaño';
+      default:
+        return 'Más recientes primero';
     }
   };
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-3", className)}>
+    <div className={cn('flex flex-wrap items-center gap-3', className)}>
       {/* View Mode Toggle */}
-      <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+      <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
         <Button
           variant={viewMode === 'grid' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => onViewModeChange('grid')}
           className="h-8 px-3"
         >
-          <GridIcon className="w-4 h-4" />
+          <GridIcon className="h-4 w-4" />
           <span className="ml-1 hidden sm:inline">Grilla</span>
         </Button>
         <Button
@@ -98,7 +107,7 @@ export function PhotoFilters({
           onClick={() => onViewModeChange('list')}
           className="h-8 px-3"
         >
-          <ListIcon className="w-4 h-4" />
+          <ListIcon className="h-4 w-4" />
           <span className="ml-1 hidden sm:inline">Lista</span>
         </Button>
       </div>
@@ -107,24 +116,22 @@ export function PhotoFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8">
-            <CalendarIcon className="w-4 h-4 mr-2" />
+            <CalendarIcon className="mr-2 h-4 w-4" />
             {getDateFilterLabel(dateFilter)}
-            <ChevronDownIcon className="w-4 h-4 ml-2" />
+            <ChevronDownIcon className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuLabel>Filtrar por fecha</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup 
-            value={dateFilter} 
+          <DropdownMenuRadioGroup
+            value={dateFilter}
             onValueChange={(value) => onDateFilterChange(value as DateFilter)}
           >
             <DropdownMenuRadioItem value="all">
               Todas las fechas
             </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="today">
-              Hoy
-            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="today">Hoy</DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="week">
               Esta semana
             </DropdownMenuRadioItem>
@@ -139,16 +146,16 @@ export function PhotoFilters({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8">
-            <FilterIcon className="w-4 h-4 mr-2" />
+            <FilterIcon className="mr-2 h-4 w-4" />
             {getSortByLabel(sortBy)}
-            <ChevronDownIcon className="w-4 h-4 ml-2" />
+            <ChevronDownIcon className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuLabel>Ordenar por</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup 
-            value={sortBy} 
+          <DropdownMenuRadioGroup
+            value={sortBy}
             onValueChange={(value) => onSortByChange(value as SortBy)}
           >
             <DropdownMenuRadioItem value="date_desc">
@@ -173,15 +180,15 @@ export function PhotoFilters({
           variant="ghost"
           size="sm"
           onClick={clearFilters}
-          className="h-8 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-8"
         >
-          <XIcon className="w-4 h-4 mr-1" />
+          <XIcon className="mr-1 h-4 w-4" />
           Limpiar filtros
         </Button>
       )}
 
       {/* Photo Count */}
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="ml-auto flex items-center gap-2">
         {filteredCount !== undefined && filteredCount !== photoCount && (
           <Badge variant="secondary" className="text-xs">
             {filteredCount} de {photoCount} fotos

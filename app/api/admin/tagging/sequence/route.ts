@@ -9,16 +9,19 @@ const SequenceAssignSchema = z.object({
   eventId: z.string().uuid(),
   sortBy: z.enum(['exif', 'filename', 'created_at']).default('exif'),
   onlyUnassigned: z.boolean().default(true),
-  sequence: z.array(
-    z.object({
-      subjectId: z.string().uuid(),
-      count: z.number().min(1).max(50),
-    })
-  ).min(1).max(100),
+  sequence: z
+    .array(
+      z.object({
+        subjectId: z.string().uuid(),
+        count: z.number().min(1).max(50),
+      })
+    )
+    .min(1)
+    .max(100),
 });
 
 // POST: Apply sequential photo assignment
-export const POST = withAuth(async function(request: NextRequest) {
+export const POST = withAuth(async function (request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
@@ -32,10 +35,11 @@ export const POST = withAuth(async function(request: NextRequest) {
     });
 
     // Validate schema
-    const { eventId, sortBy, onlyUnassigned, sequence } = SequenceAssignSchema.parse(body);
+    const { eventId, sortBy, onlyUnassigned, sequence } =
+      SequenceAssignSchema.parse(body);
 
     // Verify all subjects exist and belong to the event
-    const subjectIds = sequence.map(s => s.subjectId);
+    const subjectIds = sequence.map((s) => s.subjectId);
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
       .select('id')
@@ -61,15 +65,14 @@ export const POST = withAuth(async function(request: NextRequest) {
       const { data: assignedPhotoIds } = await supabase
         .from('photo_subjects')
         .select('photo_id')
-        .in('photo_id', 
-          (await supabase
-            .from('photos')
-            .select('id')
-            .eq('event_id', eventId)
-          ).data?.map(p => p.id) || []
+        .in(
+          'photo_id',
+          (
+            await supabase.from('photos').select('id').eq('event_id', eventId)
+          ).data?.map((p) => p.id) || []
         );
-      
-      const assignedIds = assignedPhotoIds?.map(p => p.photo_id) || [];
+
+      const assignedIds = assignedPhotoIds?.map((p) => p.photo_id) || [];
       if (assignedIds.length > 0) {
         photoQuery = photoQuery.not('id', 'in', `(${assignedIds.join(',')})`);
       }
@@ -103,32 +106,38 @@ export const POST = withAuth(async function(request: NextRequest) {
     photos.sort((a, b) => {
       switch (sortBy) {
         case 'exif':
-          const dateA = a.exif_taken_at ? new Date(a.exif_taken_at).getTime() : new Date(a.created_at).getTime();
-          const dateB = b.exif_taken_at ? new Date(b.exif_taken_at).getTime() : new Date(b.created_at).getTime();
+          const dateA = a.exif_taken_at
+            ? new Date(a.exif_taken_at).getTime()
+            : new Date(a.created_at).getTime();
+          const dateB = b.exif_taken_at
+            ? new Date(b.exif_taken_at).getTime()
+            : new Date(b.created_at).getTime();
           return dateA - dateB;
-        
+
         case 'filename':
           const nameA = a.original_filename || '';
           const nameB = b.original_filename || '';
           return nameA.localeCompare(nameB);
-        
+
         case 'created_at':
         default:
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return (
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
       }
     });
 
     // Calculate total photos needed
     const totalNeeded = sequence.reduce((sum, s) => sum + s.count, 0);
-    
+
     if (totalNeeded > photos.length) {
       return NextResponse.json(
-        { 
+        {
           error: 'Not enough photos available',
           details: {
             requested: totalNeeded,
             available: photos.length,
-          }
+          },
         },
         { status: 400 }
       );
@@ -211,7 +220,7 @@ export const POST = withAuth(async function(request: NextRequest) {
       assignedCount: assignments.length,
       totalPhotos: photos.length,
       skippedPhotos: photos.length - assignments.length,
-      assignments: assignments.map(a => ({
+      assignments: assignments.map((a) => ({
         photoId: a.photo_id,
         subjectId: a.subject_id,
       })),
@@ -223,7 +232,6 @@ export const POST = withAuth(async function(request: NextRequest) {
         requestId,
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
 
@@ -247,7 +255,7 @@ export const POST = withAuth(async function(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
         message: 'Failed to process sequential assignment',
         requestId,
@@ -258,4 +266,3 @@ export const POST = withAuth(async function(request: NextRequest) {
 });
 
 export const runtime = 'nodejs';
-

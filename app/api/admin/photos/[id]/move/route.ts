@@ -32,7 +32,8 @@ async function handlePATCH(
   // Next.js requires awaiting params in dynamic Route Handlers
   const { id: awaitedId } = await context.params;
   const photoId = awaitedId as string | undefined;
-  if (!photoId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+  if (!photoId)
+    return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   let parsed: ReturnType<typeof BodySchema.safeParse>;
   try {
@@ -42,7 +43,10 @@ async function handlePATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid body', details: parsed.error.issues }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid body', details: parsed.error.issues },
+      { status: 400 }
+    );
   }
 
   const targetCodeId = parsed.data.codeId;
@@ -57,8 +61,9 @@ async function handlePATCH(
       .limit(1);
     if ((schemaCheck as any)?.error) {
       return NextResponse.json(
-        { 
-          error: "Faltan migraciones: agrega la columna 'code_id' a 'photos' (ver supabase/migrations/20250109_qr_anchor_v1_schema.sql) y vuelve a intentar."
+        {
+          error:
+            "Faltan migraciones: agrega la columna 'code_id' a 'photos' (ver supabase/migrations/20250109_qr_anchor_v1_schema.sql) y vuelve a intentar.",
         },
         { status: 400 }
       );
@@ -66,8 +71,9 @@ async function handlePATCH(
   } catch (_) {
     // If even the check fails unexpectedly, return a friendly message
     return NextResponse.json(
-      { 
-        error: "No se pudo validar el esquema. Asegúrate de aplicar la migración que agrega 'code_id' a 'photos'."
+      {
+        error:
+          "No se pudo validar el esquema. Asegúrate de aplicar la migración que agrega 'code_id' a 'photos'.",
       },
       { status: 400 }
     );
@@ -96,8 +102,15 @@ async function handlePATCH(
     .single();
 
   if (error) {
-    SecurityLogger.logSecurityEvent('photo_move_error', { requestId, photoId, error: error.message }, 'error');
-    await logErrorToFile('move', `[${new Date().toISOString()}] ${requestId} photo_move_error: ${error.message}`);
+    SecurityLogger.logSecurityEvent(
+      'photo_move_error',
+      { requestId, photoId, error: error.message },
+      'error'
+    );
+    await logErrorToFile(
+      'move',
+      `[${new Date().toISOString()}] ${requestId} photo_move_error: ${error.message}`
+    );
     // Return 400 to avoid 500s bubbling to UI
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
@@ -108,5 +121,3 @@ async function handlePATCH(
 export const runtime = 'nodejs';
 
 export const PATCH = withAuth(handlePATCH);
-
-

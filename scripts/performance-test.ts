@@ -33,11 +33,15 @@ class PerformanceTester {
     console.log(`Base URL: ${this.baseUrl}\n`);
 
     // Tests básicos de endpoints públicos
-    await this.testEndpoint('/api/family/gallery/fake_token_123456789012345', 'GET', 10);
+    await this.testEndpoint(
+      '/api/family/gallery/fake_token_123456789012345',
+      'GET',
+      10
+    );
     await this.testEndpoint('/api/storage/signed-url', 'POST', 5, {
       token: 'fake_token_123456789012345',
       photo_id: 'fake-photo-id',
-      type: 'preview'
+      type: 'preview',
     });
 
     // Test de rate limiting
@@ -47,8 +51,8 @@ class PerformanceTester {
   }
 
   private async testEndpoint(
-    path: string, 
-    method: string, 
+    path: string,
+    method: string,
     requestCount: number,
     body?: any
   ): Promise<void> {
@@ -58,38 +62,40 @@ class PerformanceTester {
     const errors: string[] = [];
     let successCount = 0;
 
-    const promises = Array(requestCount).fill(null).map(async () => {
-      const startTime = Date.now();
-      
-      try {
-        const options: RequestInit = {
-          method,
-          headers: {
-            'Content-Type': 'application/json'
+    const promises = Array(requestCount)
+      .fill(null)
+      .map(async () => {
+        const startTime = Date.now();
+
+        try {
+          const options: RequestInit = {
+            method,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          };
+
+          if (body && method !== 'GET') {
+            options.body = JSON.stringify(body);
           }
-        };
 
-        if (body && method !== 'GET') {
-          options.body = JSON.stringify(body);
-        }
+          const response = await fetch(`${this.baseUrl}${path}`, options);
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
 
-        const response = await fetch(`${this.baseUrl}${path}`, options);
-        const endTime = Date.now();
-        const responseTime = endTime - startTime;
-        
-        times.push(responseTime);
-        
-        if (response.status < 500) {
-          successCount++;
-        } else {
-          errors.push(`HTTP ${response.status}`);
+          times.push(responseTime);
+
+          if (response.status < 500) {
+            successCount++;
+          } else {
+            errors.push(`HTTP ${response.status}`);
+          }
+        } catch (error) {
+          const endTime = Date.now();
+          times.push(endTime - startTime);
+          errors.push(error instanceof Error ? error.message : 'Unknown error');
         }
-      } catch (error) {
-        const endTime = Date.now();
-        times.push(endTime - startTime);
-        errors.push(error instanceof Error ? error.message : 'Unknown error');
-      }
-    });
+      });
 
     await Promise.all(promises);
 
@@ -106,7 +112,7 @@ class PerformanceTester {
       minResponseTime: minTime,
       successRate,
       requestCount,
-      errors: [...new Set(errors)] // Remove duplicates
+      errors: [...new Set(errors)], // Remove duplicates
     });
 
     console.log(`  ✓ Completado: ${avgTime.toFixed(0)}ms promedio\n`);
@@ -119,19 +125,22 @@ class PerformanceTester {
     const requestCount = 30;
     const startTime = Date.now();
 
-    const promises = Array(requestCount).fill(null).map(() =>
-      fetch(`${this.baseUrl}${path}`)
-    );
+    const promises = Array(requestCount)
+      .fill(null)
+      .map(() => fetch(`${this.baseUrl}${path}`));
 
     const responses = await Promise.all(promises);
     const endTime = Date.now();
 
-    const statusCounts = responses.reduce((acc, res) => {
-      acc[res.status] = (acc[res.status] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
+    const statusCounts = responses.reduce(
+      (acc, res) => {
+        acc[res.status] = (acc[res.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<number, number>
+    );
 
-    const rateLimited = responses.filter(r => r.status === 429).length;
+    const rateLimited = responses.filter((r) => r.status === 429).length;
     const totalTime = endTime - startTime;
     const avgTime = totalTime / requestCount;
 
@@ -143,7 +152,7 @@ class PerformanceTester {
       minResponseTime: 0,
       successRate: rateLimited > 0 ? 100 : 0, // Success = rate limiting works
       requestCount,
-      errors: rateLimited === 0 ? ['Rate limiting not working'] : []
+      errors: rateLimited === 0 ? ['Rate limiting not working'] : [],
     });
 
     console.log(`  Status codes: ${JSON.stringify(statusCounts)}`);
@@ -154,83 +163,110 @@ class PerformanceTester {
   private printResults(): void {
     console.log('📊 Resultados de Performance\n');
 
-    const maxEndpointLength = Math.max(...this.results.map(r => r.endpoint.length));
+    const maxEndpointLength = Math.max(
+      ...this.results.map((r) => r.endpoint.length)
+    );
 
     // Header
-    console.log('Endpoint'.padEnd(maxEndpointLength) + ' | Promedio | Máximo  | Éxito | Estado');
+    console.log(
+      'Endpoint'.padEnd(maxEndpointLength) +
+        ' | Promedio | Máximo  | Éxito | Estado'
+    );
     console.log('-'.repeat(maxEndpointLength + 50));
 
     let allPassed = true;
 
-    this.results.forEach(result => {
-      const { endpoint, avgResponseTime, maxResponseTime, successRate, errors } = result;
-      
+    this.results.forEach((result) => {
+      const {
+        endpoint,
+        avgResponseTime,
+        maxResponseTime,
+        successRate,
+        errors,
+      } = result;
+
       // Criterios de performance
       const avgOk = avgResponseTime < 200; // <200ms promedio
       const maxOk = maxResponseTime < 2000; // <2s máximo
-      const successOk = endpoint.includes('Rate Limiting') ? successRate > 0 : successRate >= 90;
-      const errorsOk = errors.length === 0 || endpoint.includes('Rate Limiting');
+      const successOk = endpoint.includes('Rate Limiting')
+        ? successRate > 0
+        : successRate >= 90;
+      const errorsOk =
+        errors.length === 0 || endpoint.includes('Rate Limiting');
 
-      const status = avgOk && maxOk && successOk && errorsOk ? '✅ PASS' : '❌ FAIL';
+      const status =
+        avgOk && maxOk && successOk && errorsOk ? '✅ PASS' : '❌ FAIL';
       if (!avgOk || !maxOk || !successOk || !errorsOk) {
         allPassed = false;
       }
 
       console.log(
-        endpoint.padEnd(maxEndpointLength) + 
-        ' | ' + 
-        `${avgResponseTime.toFixed(0)}ms`.padEnd(8) + 
-        ' | ' + 
-        `${maxResponseTime.toFixed(0)}ms`.padEnd(8) + 
-        ' | ' + 
-        `${successRate.toFixed(0)}%`.padEnd(5) + 
-        ' | ' + 
-        status
+        endpoint.padEnd(maxEndpointLength) +
+          ' | ' +
+          `${avgResponseTime.toFixed(0)}ms`.padEnd(8) +
+          ' | ' +
+          `${maxResponseTime.toFixed(0)}ms`.padEnd(8) +
+          ' | ' +
+          `${successRate.toFixed(0)}%`.padEnd(5) +
+          ' | ' +
+          status
       );
 
       if (errors.length > 0) {
-        errors.forEach(error => {
+        errors.forEach((error) => {
           console.log('  '.repeat(maxEndpointLength / 4) + `⚠️  ${error}`);
         });
       }
     });
 
     console.log('\n📈 RESUMEN');
-    
-    const avgResponseTime = this.results
-      .filter(r => !r.endpoint.includes('Rate Limiting'))
-      .reduce((sum, r) => sum + r.avgResponseTime, 0) / 
-      Math.max(1, this.results.filter(r => !r.endpoint.includes('Rate Limiting')).length);
+
+    const avgResponseTime =
+      this.results
+        .filter((r) => !r.endpoint.includes('Rate Limiting'))
+        .reduce((sum, r) => sum + r.avgResponseTime, 0) /
+      Math.max(
+        1,
+        this.results.filter((r) => !r.endpoint.includes('Rate Limiting')).length
+      );
 
     console.log(`  Tiempo promedio general: ${avgResponseTime.toFixed(0)}ms`);
     console.log(`  Tests ejecutados: ${this.results.length}`);
-    
+
     // Verificaciones específicas
     const performanceIssues: string[] = [];
-    
-    this.results.forEach(result => {
+
+    this.results.forEach((result) => {
       if (!result.endpoint.includes('Rate Limiting')) {
         if (result.avgResponseTime > 200) {
-          performanceIssues.push(`${result.endpoint}: ${result.avgResponseTime.toFixed(0)}ms promedio (>200ms)`);
+          performanceIssues.push(
+            `${result.endpoint}: ${result.avgResponseTime.toFixed(0)}ms promedio (>200ms)`
+          );
         }
         if (result.maxResponseTime > 2000) {
-          performanceIssues.push(`${result.endpoint}: ${result.maxResponseTime.toFixed(0)}ms máximo (>2s)`);
+          performanceIssues.push(
+            `${result.endpoint}: ${result.maxResponseTime.toFixed(0)}ms máximo (>2s)`
+          );
         }
         if (result.successRate < 90) {
-          performanceIssues.push(`${result.endpoint}: ${result.successRate.toFixed(0)}% éxito (<90%)`);
+          performanceIssues.push(
+            `${result.endpoint}: ${result.successRate.toFixed(0)}% éxito (<90%)`
+          );
         }
       }
     });
 
     if (performanceIssues.length > 0) {
       console.log('\n🐌 PROBLEMAS DE PERFORMANCE:');
-      performanceIssues.forEach(issue => {
+      performanceIssues.forEach((issue) => {
         console.log(`  • ${issue}`);
       });
     }
 
     // Verificar rate limiting
-    const rateLimitingTest = this.results.find(r => r.endpoint.includes('Rate Limiting'));
+    const rateLimitingTest = this.results.find((r) =>
+      r.endpoint.includes('Rate Limiting')
+    );
     if (rateLimitingTest) {
       if (rateLimitingTest.successRate > 0) {
         console.log('\n🛡️  RATE LIMITING: Funcionando correctamente');

@@ -27,12 +27,12 @@ describe('Security Validation Tests', () => {
         .eq('table_schema', 'public')
         .in('table_name', [
           'events',
-          'subjects', 
+          'subjects',
           'photos',
           'photo_assignments',
           'orders',
           'order_items',
-          'egress_metrics'
+          'egress_metrics',
         ]);
 
       expect(tables).toBeDefined();
@@ -40,9 +40,10 @@ describe('Security Validation Tests', () => {
 
       // Cada tabla debería tener policies definidas
       for (const table of tables) {
-        const { data: policies } = await supabase
-          .rpc('get_table_policies', { table_name: table.table_name });
-        
+        const { data: policies } = await supabase.rpc('get_table_policies', {
+          table_name: table.table_name,
+        });
+
         // Al menos debería haber una policy por tabla
         expect(policies).toBeDefined();
       }
@@ -59,28 +60,19 @@ describe('Security Validation Tests', () => {
     });
 
     it('should block anonymous access to subjects', async () => {
-      const { data } = await anonSupabase
-        .from('subjects')
-        .select()
-        .limit(1);
+      const { data } = await anonSupabase.from('subjects').select().limit(1);
 
       expect(data).toEqual([]);
     });
 
     it('should block anonymous access to photos', async () => {
-      const { data } = await anonSupabase
-        .from('photos')
-        .select()
-        .limit(1);
+      const { data } = await anonSupabase.from('photos').select().limit(1);
 
       expect(data).toEqual([]);
     });
 
     it('should block anonymous access to orders', async () => {
-      const { data } = await anonSupabase
-        .from('orders')
-        .select()
-        .limit(1);
+      const { data } = await anonSupabase.from('orders').select().limit(1);
 
       expect(data).toEqual([]);
     });
@@ -89,12 +81,10 @@ describe('Security Validation Tests', () => {
       const testEvent = {
         name: 'Unauthorized Event',
         school: 'Hack School',
-        date: '2024-01-01'
+        date: '2024-01-01',
       };
 
-      const { error } = await anonSupabase
-        .from('events')
-        .insert(testEvent);
+      const { error } = await anonSupabase.from('events').insert(testEvent);
 
       // Debería fallar por RLS
       expect(error).toBeDefined();
@@ -122,15 +112,13 @@ describe('Security Validation Tests', () => {
   describe('Token Security', () => {
     it('should enforce minimum token length constraint', async () => {
       // Intentar crear subject con token corto
-      const { error } = await supabase
-        .from('subjects')
-        .insert({
-          event_id: 'dummy-id',
-          type: 'student',
-          first_name: 'Test',
-          token: 'short', // <20 chars
-          expires_at: new Date().toISOString()
-        });
+      const { error } = await supabase.from('subjects').insert({
+        event_id: 'dummy-id',
+        type: 'student',
+        first_name: 'Test',
+        token: 'short', // <20 chars
+        expires_at: new Date().toISOString(),
+      });
 
       // Debería fallar por constraint
       expect(error).toBeDefined();
@@ -145,7 +133,7 @@ describe('Security Validation Tests', () => {
         id: testEventId,
         name: 'Test Event',
         school: 'Test School',
-        date: '2024-01-01'
+        date: '2024-01-01',
       });
 
       // Crear primer subject
@@ -154,19 +142,21 @@ describe('Security Validation Tests', () => {
         type: 'student',
         first_name: 'First',
         token: duplicateToken,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
       });
 
       // Intentar crear segundo con mismo token
-      const { error } = await supabase
-        .from('subjects')
-        .insert({
-          event_id: testEventId,
-          type: 'student', 
-          first_name: 'Second',
-          token: duplicateToken,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        });
+      const { error } = await supabase.from('subjects').insert({
+        event_id: testEventId,
+        type: 'student',
+        first_name: 'Second',
+        token: duplicateToken,
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      });
 
       expect(error).toBeDefined();
       expect(error.code).toBe('23505'); // Unique constraint violation
@@ -184,14 +174,14 @@ describe('Security Validation Tests', () => {
         .limit(10);
 
       if (subjects && subjects.length > 0) {
-        subjects.forEach(subject => {
+        subjects.forEach((subject) => {
           // Token debe ser alfanumérico + guiones/guiones bajos
           expect(/^[A-Za-z0-9_-]+$/.test(subject.token)).toBe(true);
-          
+
           // No debe ser predecible (no secuencial)
           expect(subject.token).not.toMatch(/123456/);
           expect(subject.token).not.toMatch(/abcdef/);
-          
+
           // Debe tener suficiente entropía (no repetir caracteres)
           const chars = subject.token.split('');
           const uniqueChars = new Set(chars);
@@ -208,17 +198,19 @@ describe('Security Validation Tests', () => {
         .limit(5);
 
       if (subjects && subjects.length > 0) {
-        subjects.forEach(subject => {
+        subjects.forEach((subject) => {
           if (subject.expires_at) {
             const expiresAt = new Date(subject.expires_at);
             const createdAt = new Date(subject.created_at);
-            
+
             // Token debería expirar en el futuro (para tokens activos)
             // O estar expirado por diseño
             expect(expiresAt > createdAt).toBe(true);
-            
+
             // No debería expirar en más de 1 año
-            const maxExpiry = new Date(createdAt.getTime() + 365 * 24 * 60 * 60 * 1000);
+            const maxExpiry = new Date(
+              createdAt.getTime() + 365 * 24 * 60 * 60 * 1000
+            );
             expect(expiresAt <= maxExpiry).toBe(true);
           }
         });
@@ -235,8 +227,8 @@ describe('Security Validation Tests', () => {
       await supabase.from('events').insert({
         id: testEventId,
         name: 'Test Event',
-        school: 'Test School', 
-        date: '2024-01-01'
+        school: 'Test School',
+        date: '2024-01-01',
       });
 
       await supabase.from('subjects').insert({
@@ -245,7 +237,9 @@ describe('Security Validation Tests', () => {
         type: 'student',
         first_name: 'Test',
         token: 'test_token_123456789012345',
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
       });
 
       // Test invalid email formats
@@ -254,20 +248,18 @@ describe('Security Validation Tests', () => {
         'no-at-sign.com',
         '@no-local.com',
         'no-domain@.com',
-        'spaces in@email.com'
+        'spaces in@email.com',
       ];
 
       for (const email of invalidEmails) {
-        const { error } = await supabase
-          .from('orders')
-          .insert({
-            subject_id: testSubjectId,
-            total_amount: 1000,
-            status: 'pending',
-            contact_name: 'Test User',
-            contact_email: email,
-            contact_phone: '+541234567890'
-          });
+        const { error } = await supabase.from('orders').insert({
+          subject_id: testSubjectId,
+          total_amount: 1000,
+          status: 'pending',
+          contact_name: 'Test User',
+          contact_email: email,
+          contact_phone: '+541234567890',
+        });
 
         expect(error).toBeDefined();
       }
@@ -285,7 +277,7 @@ describe('Security Validation Tests', () => {
         id: testEventId,
         name: 'Test Event',
         school: 'Test School',
-        date: '2024-01-01'
+        date: '2024-01-01',
       });
 
       await supabase.from('subjects').insert({
@@ -294,7 +286,9 @@ describe('Security Validation Tests', () => {
         type: 'student',
         first_name: 'Test',
         token: 'test_token_123456789012345',
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
       });
 
       // Test invalid phone formats
@@ -302,20 +296,18 @@ describe('Security Validation Tests', () => {
         '123', // Muy corto
         'abc123def', // Con letras
         '++541234567890', // Doble signo
-        '+54-123-456-7890-extra' // Muy largo
+        '+54-123-456-7890-extra', // Muy largo
       ];
 
       for (const phone of invalidPhones) {
-        const { error } = await supabase
-          .from('orders')
-          .insert({
-            subject_id: testSubjectId,
-            total_amount: 1000,
-            status: 'pending',
-            contact_name: 'Test User',
-            contact_email: 'test@test.com',
-            contact_phone: phone
-          });
+        const { error } = await supabase.from('orders').insert({
+          subject_id: testSubjectId,
+          total_amount: 1000,
+          status: 'pending',
+          contact_name: 'Test User',
+          contact_email: 'test@test.com',
+          contact_phone: phone,
+        });
 
         expect(error).toBeDefined();
       }
@@ -330,17 +322,15 @@ describe('Security Validation Tests', () => {
         "'; DROP TABLE events; --",
         "' OR '1'='1",
         "'; DELETE FROM subjects; --",
-        "' UNION SELECT * FROM orders --"
+        "' UNION SELECT * FROM orders --",
       ];
 
       for (const maliciousInput of sqlInjectionAttempts) {
-        const { error } = await supabase
-          .from('events')
-          .insert({
-            name: maliciousInput,
-            school: 'Test School',
-            date: '2024-01-01'
-          });
+        const { error } = await supabase.from('events').insert({
+          name: maliciousInput,
+          school: 'Test School',
+          date: '2024-01-01',
+        });
 
         // No debería causar inyección SQL, solo error de validación si acaso
         // El input debería ser escapado automáticamente por Supabase
@@ -351,10 +341,10 @@ describe('Security Validation Tests', () => {
             .select()
             .eq('name', maliciousInput)
             .single();
-          
+
           // El valor debe estar exactamente como se envió (escapado)
           expect(data?.name).toBe(maliciousInput);
-          
+
           // Limpiar
           await supabase.from('events').delete().eq('name', maliciousInput);
         }
@@ -367,7 +357,7 @@ describe('Security Validation Tests', () => {
       // Intentar acceder a una URL de bucket sin signed URL
       const testPath = 'eventos/test/nonexistent.jpg';
       const directUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos-private/${testPath}`;
-      
+
       try {
         const response = await fetch(directUrl);
         // Bucket privado debería retornar 400/403/404, no 200
@@ -382,7 +372,7 @@ describe('Security Validation Tests', () => {
       // Este test requiere una signed URL real para validar
       // Por ahora verificamos que el servicio genere URLs con expiración
       const testPath = 'eventos/test/test.jpg';
-      
+
       try {
         const { data } = await supabase.storage
           .from('photos-private')
@@ -404,47 +394,63 @@ describe('Security Validation Tests', () => {
     it('should prevent cross-subject data access', async () => {
       // Crear dos subjects diferentes
       const testEventId = 'test-event-' + Date.now();
-      
+
       await supabase.from('events').insert({
         id: testEventId,
         name: 'Test Event',
         school: 'Test School',
-        date: '2024-01-01'
+        date: '2024-01-01',
       });
 
-      const { data: subject1 } = await supabase.from('subjects').insert({
-        event_id: testEventId,
-        type: 'student',
-        first_name: 'Subject1',
-        token: 'subject1_token_123456789012345',
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      }).select().single();
+      const { data: subject1 } = await supabase
+        .from('subjects')
+        .insert({
+          event_id: testEventId,
+          type: 'student',
+          first_name: 'Subject1',
+          token: 'subject1_token_123456789012345',
+          expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        })
+        .select()
+        .single();
 
-      const { data: subject2 } = await supabase.from('subjects').insert({
-        event_id: testEventId,
-        type: 'student',
-        first_name: 'Subject2',
-        token: 'subject2_token_123456789012345',
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      }).select().single();
+      const { data: subject2 } = await supabase
+        .from('subjects')
+        .insert({
+          event_id: testEventId,
+          type: 'student',
+          first_name: 'Subject2',
+          token: 'subject2_token_123456789012345',
+          expires_at: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        })
+        .select()
+        .single();
 
       // Crear orden para subject1
-      const { data: order1 } = await supabase.from('orders').insert({
-        subject_id: subject1.id,
-        total_amount: 1000,
-        status: 'pending',
-        contact_name: 'Parent 1',
-        contact_email: 'parent1@test.com',
-        contact_phone: '+541111111111'
-      }).select().single();
+      const { data: order1 } = await supabase
+        .from('orders')
+        .insert({
+          subject_id: subject1.id,
+          total_amount: 1000,
+          status: 'pending',
+          contact_name: 'Parent 1',
+          contact_email: 'parent1@test.com',
+          contact_phone: '+541111111111',
+        })
+        .select()
+        .single();
 
       // Intentar acceder a la orden de subject1 usando token de subject2
       const response = await fetch('/api/family/order/status', {
         method: 'GET',
         headers: {
           'X-Subject-Token': subject2.token,
-          'X-Order-Id': order1.id
-        }
+          'X-Order-Id': order1.id,
+        },
       });
 
       // Debería fallar o no mostrar la orden
@@ -467,12 +473,12 @@ describe('Security Validation Tests', () => {
         '/api/admin/events',
         '/api/admin/subjects',
         '/api/admin/photos/upload',
-        '/api/admin/orders'
+        '/api/admin/orders',
       ];
 
       for (const endpoint of adminEndpoints) {
         const response = await fetch(endpoint);
-        
+
         // Debería retornar 401 Unauthorized o 403 Forbidden
         expect([401, 403]).toContain(response.status);
       }
@@ -485,7 +491,7 @@ describe('Security Validation Tests', () => {
       const criticalEndpoints = [
         { path: '/api/admin/auth', method: 'POST' },
         { path: '/api/storage/signed-url', method: 'POST' },
-        { path: '/api/admin/photos/upload', method: 'POST' }
+        { path: '/api/admin/photos/upload', method: 'POST' },
       ];
 
       // Este test es conceptual - en implementación real verificaríamos
@@ -496,18 +502,16 @@ describe('Security Validation Tests', () => {
     it('should block excessive requests', async () => {
       // Test básico de rate limiting en endpoint público
       const promises = [];
-      
+
       // Hacer muchas requests a galería (endpoint público)
       for (let i = 0; i < 50; i++) {
-        promises.push(
-          fetch('/api/family/gallery/fake_token_123456789012345')
-        );
+        promises.push(fetch('/api/family/gallery/fake_token_123456789012345'));
       }
 
       const responses = await Promise.all(promises);
-      
+
       // Al menos algunas deberían ser rate limited (429) o rejected (4xx)
-      const blockedRequests = responses.filter(r => r.status >= 400);
+      const blockedRequests = responses.filter((r) => r.status >= 400);
       expect(blockedRequests.length).toBeGreaterThan(0);
     });
   });

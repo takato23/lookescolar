@@ -1,13 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Save, DollarSign, Package, ImageIcon, AlertCircle } from 'lucide-react';
+import {
+  Save,
+  DollarSign,
+  Package,
+  ImageIcon,
+  AlertCircle,
+} from 'lucide-react';
 
 interface PricingPackage {
   id: string;
@@ -67,9 +79,9 @@ export function PricingManagement() {
             includes: [
               '1 foto INDIVIDUAL (15x21)',
               '4 fotos 4x5 (de la misma individual elegida)',
-              '1 foto grupal (15x21)'
+              '1 foto grupal (15x21)',
             ],
-            photoRequirements: { individual: 1, group: 1 }
+            photoRequirements: { individual: 1, group: 1 },
           },
           {
             id: 'option-b',
@@ -79,20 +91,20 @@ export function PricingManagement() {
             includes: [
               '2 fotos INDIVIDUALES (15x21)',
               '8 fotos 4x5 (de las mismas individuales elegidas)',
-              '1 foto grupal (15x21)'
+              '1 foto grupal (15x21)',
             ],
-            photoRequirements: { individual: 2, group: 1 }
-          }
+            photoRequirements: { individual: 2, group: 1 },
+          },
         ],
         extraCopies: [
           { id: 'extra-4x5', name: '4x5 (4 fotitos)', price: 0 },
           { id: 'extra-10x15', name: 'Foto 10x15', price: 0 },
           { id: 'extra-13x18', name: 'Foto 13x18', price: 0 },
           { id: 'extra-15x21', name: 'Foto 15x21', price: 0 },
-          { id: 'extra-20x30', name: 'Poster 20x30', price: 0 }
+          { id: 'extra-20x30', name: 'Poster 20x30', price: 0 },
         ],
         lastUpdated: new Date().toISOString(),
-        updatedBy: 'Sistema'
+        updatedBy: 'Sistema',
       });
     } finally {
       setLoading(false);
@@ -101,22 +113,22 @@ export function PricingManagement() {
 
   const savePricing = async () => {
     if (!pricing) return;
-    
+
     try {
       setSaving(true);
       const response = await fetch('/api/admin/pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pricing)
+        body: JSON.stringify(pricing),
       });
-      
+
       if (!response.ok) {
         throw new Error('Error guardando precios');
       }
-      
+
       setHasChanges(false);
       alert('Precios actualizados correctamente');
-      
+
       // Reload to get updated timestamps
       await loadPricing();
     } catch (error) {
@@ -129,24 +141,24 @@ export function PricingManagement() {
 
   const updatePackagePrice = (packageId: string, price: number) => {
     if (!pricing) return;
-    
+
     setPricing({
       ...pricing,
-      packages: pricing.packages.map(pkg => 
+      packages: pricing.packages.map((pkg) =>
         pkg.id === packageId ? { ...pkg, price } : pkg
-      )
+      ),
     });
     setHasChanges(true);
   };
 
   const updateExtraPrice = (extraId: string, price: number) => {
     if (!pricing) return;
-    
+
     setPricing({
       ...pricing,
-      extraCopies: pricing.extraCopies.map(extra => 
+      extraCopies: pricing.extraCopies.map((extra) =>
         extra.id === extraId ? { ...extra, price } : extra
-      )
+      ),
     });
     setHasChanges(true);
   };
@@ -155,23 +167,23 @@ export function PricingManagement() {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
     }).format(amount);
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
-        <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+        <div className="h-32 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-48 animate-pulse rounded-lg bg-gray-100" />
       </div>
     );
   }
 
   if (!pricing) {
     return (
-      <div className="text-center p-8">
-        <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+      <div className="p-8 text-center">
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
         <p className="text-gray-600">No se pudieron cargar los precios</p>
         <Button onClick={loadPricing} className="mt-4">
           Reintentar
@@ -185,21 +197,26 @@ export function PricingManagement() {
       {/* Header with Save Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Precios</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Gestión de Precios
+          </h1>
+          <p className="mt-1 text-gray-600">
             Configura los precios de los paquetes y copias adicionales
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {hasChanges && (
-            <Badge variant="outline" className="text-orange-600 border-orange-600">
+            <Badge
+              variant="outline"
+              className="border-orange-600 text-orange-600"
+            >
               Cambios sin guardar
             </Badge>
           )}
-          
-          <Button 
-            onClick={savePricing} 
+
+          <Button
+            onClick={savePricing}
             disabled={saving || !hasChanges}
             className="flex items-center gap-2"
           >
@@ -216,7 +233,8 @@ export function PricingManagement() {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <AlertCircle className="h-4 w-4" />
               <span>
-                Última actualización: {new Date(pricing.lastUpdated).toLocaleString('es-AR')} 
+                Última actualización:{' '}
+                {new Date(pricing.lastUpdated).toLocaleString('es-AR')}
                 por {pricing.updatedBy}
               </span>
             </div>
@@ -238,59 +256,75 @@ export function PricingManagement() {
         <CardContent className="space-y-6">
           {pricing.packages.map((pkg, index) => (
             <div key={pkg.id}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <Badge variant="outline">{pkg.name}</Badge>
-                    <h3 className="font-semibold text-lg">{pkg.description}</h3>
+                    <h3 className="text-lg font-semibold">{pkg.description}</h3>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Incluye:</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      Incluye:
+                    </p>
                     <ul className="space-y-1">
                       {pkg.includes.map((item, i) => (
-                        <li key={i} className="text-sm text-gray-600 flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                        <li
+                          key={i}
+                          className="flex items-center gap-2 text-sm text-gray-600"
+                        >
+                          <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
                           {item}
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor={`price-${pkg.id}`} className="text-base font-medium">
+                    <Label
+                      htmlFor={`price-${pkg.id}`}
+                      className="text-base font-medium"
+                    >
                       Precio del Paquete
                     </Label>
                     <div className="relative mt-2">
-                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                       <Input
                         id={`price-${pkg.id}`}
                         type="number"
                         min="0"
                         step="100"
                         value={pkg.price}
-                        onChange={(e) => updatePackagePrice(pkg.id, parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          updatePackagePrice(
+                            pkg.id,
+                            parseInt(e.target.value) || 0
+                          )
+                        }
                         className="pl-10 text-lg font-semibold"
                         placeholder="0"
                       />
                     </div>
                     {pkg.price > 0 && (
-                      <p className="text-sm text-green-600 mt-1">
+                      <p className="mt-1 text-sm text-green-600">
                         Precio: {formatCurrency(pkg.price)}
                       </p>
                     )}
                   </div>
-                  
-                  <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+
+                  <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
                     <p className="font-medium">Requisitos de fotos:</p>
-                    <p>• {pkg.photoRequirements.individual} foto(s) individual(es)</p>
+                    <p>
+                      • {pkg.photoRequirements.individual} foto(s)
+                      individual(es)
+                    </p>
                     <p>• {pkg.photoRequirements.group} foto(s) grupal(es)</p>
                   </div>
                 </div>
               </div>
-              
+
               {index < pricing.packages.length - 1 && (
                 <Separator className="mt-6" />
               )}
@@ -311,35 +345,43 @@ export function PricingManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {pricing.extraCopies.map((extra) => (
-              <div key={extra.id} className="p-4 border rounded-lg space-y-3">
+              <div key={extra.id} className="space-y-3 rounded-lg border p-4">
                 <div>
-                  <h4 className="font-medium text-base">{extra.name}</h4>
+                  <h4 className="text-base font-medium">{extra.name}</h4>
                   {extra.description && (
                     <p className="text-sm text-gray-600">{extra.description}</p>
                   )}
                 </div>
-                
+
                 <div>
-                  <Label htmlFor={`extra-price-${extra.id}`} className="text-sm">
+                  <Label
+                    htmlFor={`extra-price-${extra.id}`}
+                    className="text-sm"
+                  >
                     Precio
                   </Label>
                   <div className="relative mt-1">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                     <Input
                       id={`extra-price-${extra.id}`}
                       type="number"
                       min="0"
                       step="50"
                       value={extra.price}
-                      onChange={(e) => updateExtraPrice(extra.id, parseInt(e.target.value) || 0)}
+                      onChange={(e) =>
+                        updateExtraPrice(
+                          extra.id,
+                          parseInt(e.target.value) || 0
+                        )
+                      }
                       className="pl-10"
                       placeholder="0"
                     />
                   </div>
                   {extra.price > 0 && (
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="mt-1 text-xs text-green-600">
                       {formatCurrency(extra.price)}
                     </p>
                   )}
@@ -349,14 +391,19 @@ export function PricingManagement() {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Help Section */}
       <Card>
         <CardContent className="pt-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">💡 Consejos para configurar precios:</h4>
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <h4 className="mb-2 font-medium text-blue-900">
+              💡 Consejos para configurar precios:
+            </h4>
             <ul className="space-y-1 text-sm text-blue-800">
-              <li>• Los precios se muestran automáticamente a las familias en la galería</li>
+              <li>
+                • Los precios se muestran automáticamente a las familias en la
+                galería
+              </li>
               <li>• Los cambios se aplican inmediatamente a nuevos pedidos</li>
               <li>• Los pedidos existentes mantienen los precios originales</li>
               <li>• Puedes actualizar los precios las veces que necesites</li>

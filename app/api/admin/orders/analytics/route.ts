@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { orderAnalyticsService, type AnalyticsFilters } from '@/lib/services/order-analytics.service';
+import {
+  orderAnalyticsService,
+  type AnalyticsFilters,
+} from '@/lib/services/order-analytics.service';
 
 // Validation schema for analytics request
 const AnalyticsRequestSchema = z.object({
@@ -27,7 +30,8 @@ export async function GET(request: NextRequest) {
       start_date: searchParams.get('start_date') || undefined,
       end_date: searchParams.get('end_date') || undefined,
       event_id: searchParams.get('event_id') || undefined,
-      status: searchParams.get('status')?.split(',').filter(Boolean) || undefined,
+      status:
+        searchParams.get('status')?.split(',').filter(Boolean) || undefined,
       include_forecasting: searchParams.get('include_forecasting') !== 'false',
     };
 
@@ -37,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Invalid analytics parameters',
-          details: validation.error.issues
+          details: validation.error.issues,
         },
         { status: 400 }
       );
@@ -46,7 +50,9 @@ export async function GET(request: NextRequest) {
     const filters: AnalyticsFilters = validation.data;
 
     console.log(`[Order Analytics API] Generating analytics`, {
-      filters: Object.keys(filters).filter(key => filters[key as keyof AnalyticsFilters] !== undefined),
+      filters: Object.keys(filters).filter(
+        (key) => filters[key as keyof AnalyticsFilters] !== undefined
+      ),
       include_forecasting: filters.include_forecasting,
     });
 
@@ -70,7 +76,9 @@ export async function GET(request: NextRequest) {
         cache_status: 'fresh',
       },
       metadata: {
-        filters_applied: Object.keys(filters).filter(key => filters[key as keyof AnalyticsFilters] !== undefined).length,
+        filters_applied: Object.keys(filters).filter(
+          (key) => filters[key as keyof AnalyticsFilters] !== undefined
+        ).length,
         generated_at: new Date().toISOString(),
         data_points: {
           daily_trends: metrics.trends.daily_orders.length,
@@ -80,18 +88,17 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Order Analytics API] Analytics generation failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Analytics generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -114,7 +121,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Invalid analytics parameters',
-          details: validation.error.issues
+          details: validation.error.issues,
         },
         { status: 400 }
       );
@@ -123,7 +130,9 @@ export async function POST(request: NextRequest) {
     const filters: AnalyticsFilters = validation.data;
 
     console.log(`[Order Analytics API] POST analytics request`, {
-      filters: Object.keys(filters).filter(key => filters[key as keyof AnalyticsFilters] !== undefined),
+      filters: Object.keys(filters).filter(
+        (key) => filters[key as keyof AnalyticsFilters] !== undefined
+      ),
       body_size: JSON.stringify(body).length,
     });
 
@@ -132,11 +141,14 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime;
 
-    console.log(`[Order Analytics API] POST analytics completed in ${duration}ms`, {
-      total_orders: metrics.overview.total_orders,
-      revenue: metrics.overview.total_revenue_cents,
-      alerts: metrics.alerts.length,
-    });
+    console.log(
+      `[Order Analytics API] POST analytics completed in ${duration}ms`,
+      {
+        total_orders: metrics.overview.total_orders,
+        revenue: metrics.overview.total_revenue_cents,
+        alerts: metrics.alerts.length,
+      }
+    );
 
     // Return analytics data with additional metadata for POST requests
     return NextResponse.json({
@@ -149,35 +161,46 @@ export async function POST(request: NextRequest) {
       },
       metadata: {
         request_method: 'POST',
-        filters_applied: Object.keys(filters).filter(key => filters[key as keyof AnalyticsFilters] !== undefined).length,
+        filters_applied: Object.keys(filters).filter(
+          (key) => filters[key as keyof AnalyticsFilters] !== undefined
+        ).length,
         generated_at: new Date().toISOString(),
         data_coverage: {
-          date_range_days: filters.start_date && filters.end_date ? 
-            Math.ceil((new Date(filters.end_date).getTime() - new Date(filters.start_date).getTime()) / (1000 * 60 * 60 * 24)) : 
-            30,
+          date_range_days:
+            filters.start_date && filters.end_date
+              ? Math.ceil(
+                  (new Date(filters.end_date).getTime() -
+                    new Date(filters.start_date).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                )
+              : 30,
           forecasting_included: filters.include_forecasting,
         },
         insights: {
           conversion_rate: metrics.overview.conversion_rate,
-          growth_trend: metrics.trends.monthly_summary.growth_rate > 0 ? 'positive' : 
-                       metrics.trends.monthly_summary.growth_rate < 0 ? 'negative' : 'stable',
+          growth_trend:
+            metrics.trends.monthly_summary.growth_rate > 0
+              ? 'positive'
+              : metrics.trends.monthly_summary.growth_rate < 0
+                ? 'negative'
+                : 'stable',
           peak_performance_hour: metrics.performance.peak_hours[0]?.hour || 12,
-          top_performing_event: metrics.performance.top_events[0]?.event_name || 'N/A',
+          top_performing_event:
+            metrics.performance.top_events[0]?.event_name || 'N/A',
         },
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Order Analytics API] POST analytics failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Analytics generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

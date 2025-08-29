@@ -40,7 +40,9 @@ interface PublicGalleryProps {
 export function PublicGallery({ eventId }: PublicGalleryProps) {
   const [galleryData, setGalleryData] = useState<GalleryData | null>(null);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'todas' | 'tu-hijo' | 'seleccionadas' | 'ordenar'>('todas');
+  const [activeTab, setActiveTab] = useState<
+    'todas' | 'tu-hijo' | 'seleccionadas' | 'ordenar'
+  >('todas');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,13 +77,19 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
         }
 
         const apiResponse = await response.json();
-        
+
         // La API devuelve { data: { event, photos }, pagination }
         // Necesitamos reestructurar para que coincida con GalleryData
         const data: GalleryData = {
           event: apiResponse.data.event,
           photos: apiResponse.data.photos || [],
-          pagination: apiResponse.pagination || { page: 1, limit: 24, total: 0, has_more: false, total_pages: 1 }
+          pagination: apiResponse.pagination || {
+            page: 1,
+            limit: 24,
+            total: 0,
+            has_more: false,
+            total_pages: 1,
+          },
         };
 
         setGalleryData((prevData) => {
@@ -125,11 +133,11 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   // Filtrar fotos basado en el tab activo
   const getFilteredPhotos = () => {
     if (!galleryData || !galleryData.photos) return [];
-    
+
     switch (activeTab) {
       case 'seleccionadas':
-        return galleryData.photos.filter(photo => 
-          items.some(item => item.photoId === photo.id)
+        return galleryData.photos.filter((photo) =>
+          items.some((item) => item.photoId === photo.id)
         );
       case 'tu-hijo':
       case 'ordenar':
@@ -166,30 +174,34 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   const tabs = [
     { id: 'todas' as const, label: 'Todas', count: photos.length },
     { id: 'tu-hijo' as const, label: 'Tu hijo', count: 0 },
-    { id: 'seleccionadas' as const, label: 'Seleccionadas', count: items.length },
-    { id: 'ordenar' as const, label: 'Ordenar ↓', count: null }
+    {
+      id: 'seleccionadas' as const,
+      label: 'Seleccionadas',
+      count: items.length,
+    },
+    { id: 'ordenar' as const, label: 'Ordenar ↓', count: null },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="public-gallery">
       {/* Tabs navegación */}
-      <div className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
+      <div className="flex space-x-1 rounded-2xl bg-white/80 p-2 shadow-lg backdrop-blur-sm">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`
-              flex-1 px-4 py-3 rounded-xl font-semibold text-sm transition-all
-              ${activeTab === tab.id
+            className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
+              activeTab === tab.id
                 ? 'bg-white text-gray-900 shadow-md'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
-              }
-            `}
+                : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
+            } `}
             aria-label={`Filtrar por ${tab.label}`}
           >
             {tab.label}
             {tab.count !== null && (
-              <span className={`ml-1 ${activeTab === tab.id ? 'text-gray-600' : 'text-gray-400'}`}>
+              <span
+                className={`ml-1 ${activeTab === tab.id ? 'text-gray-600' : 'text-gray-400'}`}
+              >
                 ({tab.count})
               </span>
             )}
@@ -198,13 +210,18 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
       </div>
 
       {/* Grid de fotos */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" role="grid" aria-label="Galería de fotos">
+      <div
+        className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        role="grid"
+        aria-label="Galería de fotos"
+        data-testid="photo-grid"
+      >
         {filteredPhotos.map((photo) => (
           <PhotoCard
             key={photo.id}
             photo={{
               id: photo.id,
-              signed_url: photo.signed_url
+              signed_url: photo.signed_url,
             }}
             price={1000}
             onOpenModal={openModal}
@@ -228,7 +245,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
             ) : (
               <>
                 ✨ Ver más fotos ✨
-                <span className="ml-2 bg-white/20 px-2 py-1 rounded-full text-sm">
+                <span className="ml-2 rounded-full bg-white/20 px-2 py-1 text-sm">
                   {pagination.total - photos.length} más
                 </span>
               </>
@@ -242,28 +259,30 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
         <PhotoModal
           isOpen={true}
           onClose={closeModal}
-          photo={photos.find(p => p.id === selectedPhotoId) || null}
-          photos={photos.map(p => ({ id: p.id, signed_url: p.signed_url }))}
+          photo={photos.find((p) => p.id === selectedPhotoId) || null}
+          photos={photos.map((p) => ({ id: p.id, signed_url: p.signed_url }))}
           price={1000}
         />
       )}
 
       {/* Loading more indicator */}
       {loadingMore && (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => {
             const gradients = [
               'from-orange-300 to-yellow-400',
-              'from-cyan-300 to-blue-400', 
+              'from-cyan-300 to-blue-400',
               'from-purple-300 to-pink-400',
               'from-green-300 to-emerald-400',
               'from-rose-300 to-red-400',
-              'from-indigo-300 to-purple-400'
+              'from-indigo-300 to-purple-400',
             ];
             const gradient = gradients[i % gradients.length];
             return (
               <div key={`skeleton-${i}`} className="aspect-square">
-                <div className={`animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
+                <div
+                  className={`animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`}
+                />
               </div>
             );
           })}
@@ -276,29 +295,34 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
 function GalleryLoadingSkeleton() {
   const gradients = [
     'from-orange-300 to-yellow-400',
-    'from-cyan-300 to-blue-400', 
+    'from-cyan-300 to-blue-400',
     'from-purple-300 to-pink-400',
     'from-green-300 to-emerald-400',
     'from-rose-300 to-red-400',
-    'from-indigo-300 to-purple-400'
+    'from-indigo-300 to-purple-400',
   ];
 
   return (
     <div className="space-y-6">
       {/* Tabs skeleton */}
-      <div className="flex space-x-1 bg-white/80 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
+      <div className="flex space-x-1 rounded-2xl bg-white/80 p-2 shadow-lg backdrop-blur-sm">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex-1 h-12 animate-pulse rounded-xl bg-gray-200" />
+          <div
+            key={i}
+            className="h-12 flex-1 animate-pulse rounded-xl bg-gray-200"
+          />
         ))}
       </div>
-      
+
       {/* Grid skeleton */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => {
           const gradient = gradients[i % gradients.length];
           return (
             <div key={i} className="aspect-square">
-              <div className={`animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
+              <div
+                className={`animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`}
+              />
             </div>
           );
         })}
@@ -321,7 +345,7 @@ function GalleryErrorState({ error, onRetry }: GalleryErrorStateProps) {
       <h3 className="mb-4 text-2xl font-bold text-gray-800">
         ¡Ups! No pudimos cargar las fotos
       </h3>
-      <p className="mx-auto mb-6 max-w-md text-gray-600 text-lg">{error}</p>
+      <p className="mx-auto mb-6 max-w-md text-lg text-gray-600">{error}</p>
       <Button
         onClick={onRetry}
         className="rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-8 py-4 font-bold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl"
@@ -347,7 +371,7 @@ function GalleryEmptyState({
       <h3 className="mb-4 text-2xl font-bold text-gray-800">
         ¡Aún no hay fotos aquí!
       </h3>
-      <p className="mx-auto max-w-md text-gray-600 text-lg">{message}</p>
+      <p className="mx-auto max-w-md text-lg text-gray-600">{message}</p>
       <p className="mx-auto mt-4 max-w-md text-sm text-gray-500">
         Las fotos aparecerán aquí cuando estén disponibles ✨
       </p>

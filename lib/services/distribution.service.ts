@@ -1,13 +1,31 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { enhancedTokenService, EnhancedTokenData } from './enhanced-token.service';
-import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
+import {
+  enhancedTokenService,
+  EnhancedTokenData,
+} from './enhanced-token.service';
+import {
+  SecurityLogger,
+  generateRequestId,
+} from '@/lib/middleware/auth.middleware';
 
 // ============================================================
 // TYPES AND INTERFACES
 // ============================================================
 
-export type DistributionMethod = 'email' | 'whatsapp' | 'sms' | 'print' | 'direct' | 'qr_code';
-export type DistributionStatus = 'pending' | 'sent' | 'delivered' | 'opened' | 'failed' | 'bounced';
+export type DistributionMethod =
+  | 'email'
+  | 'whatsapp'
+  | 'sms'
+  | 'print'
+  | 'direct'
+  | 'qr_code';
+export type DistributionStatus =
+  | 'pending'
+  | 'sent'
+  | 'delivered'
+  | 'opened'
+  | 'failed'
+  | 'bounced';
 
 export interface DistributionTemplate {
   id: string;
@@ -174,7 +192,7 @@ const EMAIL_TEMPLATES = {
     </div>
 </body>
 </html>
-    `
+    `,
   },
 
   token_expiry_warning_es: {
@@ -261,8 +279,8 @@ const EMAIL_TEMPLATES = {
     </div>
 </body>
 </html>
-    `
-  }
+    `,
+  },
 };
 
 // ============================================================
@@ -317,7 +335,7 @@ Hemos renovado tu acceso por {{new_expiry_days}} días más.
 Después de la fecha de expiración ya no podrás ver ni comprar las fotos.
 
 ¿Necesitas ayuda? Contacta con el fotógrafo del evento.
-  `.trim()
+  `.trim(),
 };
 
 // ============================================================
@@ -330,21 +348,24 @@ export class DistributionService {
   /**
    * Send token access links to families via specified method
    */
-  async distributeTokens(request: DistributionRequest): Promise<DistributionResult> {
+  async distributeTokens(
+    request: DistributionRequest
+  ): Promise<DistributionResult> {
     const requestId = generateRequestId();
     const supabase = await this.supabase;
 
     console.log(`[${requestId}] Starting token distribution:`, {
       tokenCount: request.token_ids.length,
       method: request.method,
-      dryRun: request.dry_run || false
+      dryRun: request.dry_run || false,
     });
 
     try {
       // Get token details
       const { data: tokens, error: tokensError } = await supabase
         .from('enhanced_tokens')
-        .select(`
+        .select(
+          `
           id,
           token,
           type,
@@ -359,7 +380,8 @@ export class DistributionService {
             school_name,
             photographer_contact
           )
-        `)
+        `
+        )
         .in('id', request.token_ids)
         .eq('is_active', true);
 
@@ -368,15 +390,13 @@ export class DistributionService {
       }
 
       // Get student information for tokens
-      const allStudentIds = tokens.flatMap(t => t.student_ids || []);
+      const allStudentIds = tokens.flatMap((t) => t.student_ids || []);
       const { data: students } = await supabase
         .from('students')
         .select('id, first_name, last_name, parent_email')
         .in('id', allStudentIds);
 
-      const studentsMap = new Map(
-        (students || []).map(s => [s.id, s])
-      );
+      const studentsMap = new Map((students || []).map((s) => [s.id, s]));
 
       const distributionLogs: DistributionResult['distribution_logs'] = [];
       const errors: DistributionResult['errors'] = [];
@@ -388,14 +408,15 @@ export class DistributionService {
       for (const tokenData of tokens) {
         try {
           // Get recipients
-          let recipients: string[] = [];
+          const recipients: string[] = [];
           let familyName = '';
-          let studentNames: string[] = [];
+          const studentNames: string[] = [];
 
           if (tokenData.family_email) {
             recipients.push(tokenData.family_email);
             const emailParts = tokenData.family_email.split('@');
-            familyName = emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1);
+            familyName =
+              emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1);
           }
 
           if (tokenData.student_ids) {
@@ -403,7 +424,10 @@ export class DistributionService {
               const student = studentsMap.get(studentId);
               if (student) {
                 studentNames.push(`${student.first_name} ${student.last_name}`);
-                if (student.parent_email && !recipients.includes(student.parent_email)) {
+                if (
+                  student.parent_email &&
+                  !recipients.includes(student.parent_email)
+                ) {
                   recipients.push(student.parent_email);
                 }
               }
@@ -414,7 +438,7 @@ export class DistributionService {
             skipped++;
             errors.push({
               token_id: tokenData.id,
-              error: 'No recipients found for token'
+              error: 'No recipients found for token',
             });
             continue;
           }
@@ -422,36 +446,43 @@ export class DistributionService {
           // Calculate expiry days
           const expiresAt = new Date(tokenData.expires_at);
           const now = new Date();
-          const expiresInDays = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const expiresInDays = Math.ceil(
+            (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          );
 
           // Build template variables
           const templateVars = {
             family_name: familyName || 'Familia',
             event_name: tokenData.events?.name || 'Evento Escolar',
             school_name: tokenData.events?.school_name || '',
-            students: studentNames.map(name => ({ name })),
+            students: studentNames.map((name) => ({ name })),
             multiple_students: studentNames.length > 1,
             portal_url: enhancedTokenService.generatePortalUrl(tokenData.token),
-            qr_code_data: enhancedTokenService.generateQRCodeData(tokenData.token),
+            qr_code_data: enhancedTokenService.generateQRCodeData(
+              tokenData.token
+            ),
             expires_in_days: expiresInDays,
             custom_message: request.custom_message || '',
-            photographer_contact: tokenData.events?.photographer_contact || ''
+            photographer_contact: tokenData.events?.photographer_contact || '',
           };
 
           // Send to each recipient
           for (const recipient of recipients) {
             try {
               if (request.dry_run) {
-                console.log(`[${requestId}] DRY RUN - Would send to ${recipient}:`, {
-                  method: request.method,
-                  templateVars
-                });
-                
+                console.log(
+                  `[${requestId}] DRY RUN - Would send to ${recipient}:`,
+                  {
+                    method: request.method,
+                    templateVars,
+                  }
+                );
+
                 distributionLogs.push({
                   token_id: tokenData.id,
                   recipient,
                   status: 'sent',
-                  message: 'DRY RUN - Distribution simulated'
+                  message: 'DRY RUN - Distribution simulated',
                 });
                 successful++;
                 continue;
@@ -469,7 +500,7 @@ export class DistributionService {
                 token_id: tokenData.id,
                 recipient,
                 status: sendResult.status,
-                message: sendResult.message
+                message: sendResult.message,
               });
 
               if (sendResult.success) {
@@ -478,40 +509,36 @@ export class DistributionService {
                 failed++;
                 errors.push({
                   token_id: tokenData.id,
-                  error: sendResult.message || 'Distribution failed'
+                  error: sendResult.message || 'Distribution failed',
                 });
               }
 
               // Log distribution in database
-              await supabase
-                .from('token_distribution_log')
-                .insert({
-                  token_id: tokenData.id,
-                  distribution_method: request.method,
-                  recipient_contact: recipient,
-                  distributed_by: 'system', // This would come from auth context
-                  status: sendResult.status,
-                  metadata: {
-                    request_id: requestId,
-                    template_vars: templateVars,
-                    dry_run: request.dry_run || false
-                  }
-                });
-
+              await supabase.from('token_distribution_log').insert({
+                token_id: tokenData.id,
+                distribution_method: request.method,
+                recipient_contact: recipient,
+                distributed_by: 'system', // This would come from auth context
+                status: sendResult.status,
+                metadata: {
+                  request_id: requestId,
+                  template_vars: templateVars,
+                  dry_run: request.dry_run || false,
+                },
+              });
             } catch (recipientError: any) {
               failed++;
               errors.push({
                 token_id: tokenData.id,
-                error: `Failed to send to ${recipient}: ${recipientError.message}`
+                error: `Failed to send to ${recipient}: ${recipientError.message}`,
               });
             }
           }
-
         } catch (tokenError: any) {
           failed++;
           errors.push({
             token_id: tokenData.id,
-            error: tokenError.message
+            error: tokenError.message,
           });
         }
       }
@@ -523,7 +550,7 @@ export class DistributionService {
         failed,
         skipped,
         distribution_logs: distributionLogs,
-        errors
+        errors,
       };
 
       SecurityLogger.logSecurityEvent(
@@ -535,7 +562,7 @@ export class DistributionService {
           successful,
           failed,
           skipped,
-          dryRun: request.dry_run || false
+          dryRun: request.dry_run || false,
         },
         'info'
       );
@@ -544,11 +571,10 @@ export class DistributionService {
         totalRequested: result.total_requested,
         successful: result.successful,
         failed: result.failed,
-        skipped: result.skipped
+        skipped: result.skipped,
       });
 
       return result;
-
     } catch (error: any) {
       console.error(`[${requestId}] Distribution error:`, error);
       throw error;
@@ -574,11 +600,11 @@ export class DistributionService {
     summary: BulkDistributionSummary;
   }> {
     const requestId = generateRequestId();
-    
+
     console.log(`[${requestId}] Generating event distribution:`, {
       eventId: `${eventId.substring(0, 8)}***`,
       method,
-      options
+      options,
     });
 
     try {
@@ -604,8 +630,8 @@ export class DistributionService {
           distributionMethod: method,
           metadata: {
             generation_request_id: requestId,
-            bulk_distribution: true
-          }
+            bulk_distribution: true,
+          },
         }
       );
 
@@ -618,13 +644,13 @@ export class DistributionService {
       // Send distributions if auto_send is enabled
       if (options.auto_send !== false) {
         const tokenIds = Array.from(bulkResult.successful.keys());
-        
+
         distributionResult = await this.distributeTokens({
           token_ids: tokenIds,
           method,
           template_id: options.template_id,
           custom_message: options.custom_message,
-          dry_run: options.dry_run || false
+          dry_run: options.dry_run || false,
         });
       }
 
@@ -636,10 +662,13 @@ export class DistributionService {
         total_families: bulkResult.summary.totalRequested,
         links_generated: bulkResult.summary.successful,
         distributions_sent: distributionResult?.successful || 0,
-        delivery_rate: distributionResult ? 
-          (distributionResult.successful / distributionResult.total_requested) * 100 : 0,
+        delivery_rate: distributionResult
+          ? (distributionResult.successful /
+              distributionResult.total_requested) *
+            100
+          : 0,
         open_rate: 0, // Would be calculated from tracking data
-        generated_at: new Date().toISOString()
+        generated_at: new Date().toISOString(),
       };
 
       console.log(`[${requestId}] Event distribution completed:`, summary);
@@ -647,9 +676,8 @@ export class DistributionService {
       return {
         tokens_generated: bulkResult.summary.successful,
         distributions_sent: distributionResult?.successful || 0,
-        summary
+        summary,
       };
-
     } catch (error: any) {
       console.error(`[${requestId}] Event distribution error:`, error);
       throw error;
@@ -665,20 +693,21 @@ export class DistributionService {
     errors: string[];
   }> {
     const requestId = generateRequestId();
-    
+
     console.log(`[${requestId}] Checking for expiring tokens:`, {
-      daysBeforeExpiry
+      daysBeforeExpiry,
     });
 
     try {
-      const { tokens } = await enhancedTokenService.getExpiringTokens(daysBeforeExpiry);
-      
+      const { tokens } =
+        await enhancedTokenService.getExpiringTokens(daysBeforeExpiry);
+
       if (tokens.length === 0) {
         console.log(`[${requestId}] No expiring tokens found`);
         return { warnings_sent: 0, tokens_rotated: 0, errors: [] };
       }
 
-      const tokenIds = tokens.map(t => t.id);
+      const tokenIds = tokens.map((t) => t.id);
       const errors: string[] = [];
       let warningsSent = 0;
 
@@ -687,33 +716,34 @@ export class DistributionService {
         const distributionResult = await this.distributeTokens({
           token_ids: tokenIds,
           method: 'email', // Default to email for warnings
-          template_id: 'token_expiry_warning_es'
+          template_id: 'token_expiry_warning_es',
         });
 
         warningsSent = distributionResult.successful;
-        
+
         for (const error of distributionResult.errors) {
           errors.push(`Token ${error.token_id}: ${error.error}`);
         }
-
       } catch (distributionError: any) {
         errors.push(`Distribution failed: ${distributionError.message}`);
       }
 
       // Auto-rotate tokens that are very close to expiry (1 day or less)
-      const criticalTokens = tokens.filter(t => {
+      const criticalTokens = tokens.filter((t) => {
         const expiresAt = new Date(t.expiresAt);
         const now = new Date();
-        const hoursLeft = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+        const hoursLeft =
+          (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
         return hoursLeft <= 24;
       });
 
       let tokensRotated = 0;
       if (criticalTokens.length > 0) {
         try {
-          const rotationResult = await enhancedTokenService.rotateExpiringTokens(1);
+          const rotationResult =
+            await enhancedTokenService.rotateExpiringTokens(1);
           tokensRotated = rotationResult.rotated;
-          
+
           for (const error of rotationResult.errors) {
             errors.push(`Rotation failed for ${error.tokenId}: ${error.error}`);
           }
@@ -726,15 +756,14 @@ export class DistributionService {
         tokensChecked: tokens.length,
         warningsSent,
         tokensRotated,
-        errorsCount: errors.length
+        errorsCount: errors.length,
       });
 
       return {
         warnings_sent: warningsSent,
         tokens_rotated: tokensRotated,
-        errors
+        errors,
       };
-
     } catch (error: any) {
       console.error(`[${requestId}] Expiry warnings error:`, error);
       throw error;
@@ -757,25 +786,25 @@ export class DistributionService {
       switch (method) {
         case 'email':
           return await this.sendEmail(recipient, templateVars, templateId);
-        
+
         case 'whatsapp':
           return await this.sendWhatsApp(recipient, templateVars, templateId);
-          
+
         case 'sms':
           return await this.sendSMS(recipient, templateVars, templateId);
-          
+
         default:
           return {
             success: false,
             status: 'failed',
-            message: `Distribution method ${method} not implemented`
+            message: `Distribution method ${method} not implemented`,
           };
       }
     } catch (error: any) {
       return {
         success: false,
         status: 'failed',
-        message: error.message
+        message: error.message,
       };
     }
   }
@@ -784,15 +813,24 @@ export class DistributionService {
     recipient: string,
     templateVars: Record<string, any>,
     templateId?: string
-  ): Promise<{ success: boolean; status: DistributionStatus; message: string; }> {
+  ): Promise<{
+    success: boolean;
+    status: DistributionStatus;
+    message: string;
+  }> {
     // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-    console.log('Email would be sent to:', recipient, 'with vars:', templateVars);
-    
+    console.log(
+      'Email would be sent to:',
+      recipient,
+      'with vars:',
+      templateVars
+    );
+
     // For now, return simulated success
     return {
       success: true,
       status: 'sent',
-      message: 'Email queued for delivery'
+      message: 'Email queued for delivery',
     };
   }
 
@@ -800,15 +838,24 @@ export class DistributionService {
     recipient: string,
     templateVars: Record<string, any>,
     templateId?: string
-  ): Promise<{ success: boolean; status: DistributionStatus; message: string; }> {
+  ): Promise<{
+    success: boolean;
+    status: DistributionStatus;
+    message: string;
+  }> {
     // TODO: Integrate with WhatsApp Business API
-    console.log('WhatsApp would be sent to:', recipient, 'with vars:', templateVars);
-    
+    console.log(
+      'WhatsApp would be sent to:',
+      recipient,
+      'with vars:',
+      templateVars
+    );
+
     // For now, return simulated success
     return {
       success: true,
       status: 'sent',
-      message: 'WhatsApp message queued for delivery'
+      message: 'WhatsApp message queued for delivery',
     };
   }
 
@@ -816,50 +863,62 @@ export class DistributionService {
     recipient: string,
     templateVars: Record<string, any>,
     templateId?: string
-  ): Promise<{ success: boolean; status: DistributionStatus; message: string; }> {
+  ): Promise<{
+    success: boolean;
+    status: DistributionStatus;
+    message: string;
+  }> {
     // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
     console.log('SMS would be sent to:', recipient, 'with vars:', templateVars);
-    
+
     // For now, return simulated success
     return {
       success: true,
       status: 'sent',
-      message: 'SMS queued for delivery'
+      message: 'SMS queued for delivery',
     };
   }
 
   private compileTemplate(template: string, vars: Record<string, any>): string {
     let compiled = template;
-    
+
     // Simple template compilation (replace {{variable}} with values)
     for (const [key, value] of Object.entries(vars)) {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
       compiled = compiled.replace(regex, String(value));
     }
-    
+
     // Handle conditionals (basic implementation)
     // {{#if condition}}content{{/if}}
-    compiled = compiled.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, condition, content) => {
-      return vars[condition] ? content : '';
-    });
-    
-    // Handle loops (basic implementation)  
-    // {{#each array}}{{name}}{{/each}}
-    compiled = compiled.replace(/\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g, (match, arrayName, content) => {
-      const array = vars[arrayName];
-      if (Array.isArray(array)) {
-        return array.map(item => {
-          let itemContent = content;
-          for (const [itemKey, itemValue] of Object.entries(item)) {
-            const itemRegex = new RegExp(`\\{\\{${itemKey}\\}\\}`, 'g');
-            itemContent = itemContent.replace(itemRegex, String(itemValue));
-          }
-          return itemContent;
-        }).join('');
+    compiled = compiled.replace(
+      /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
+      (match, condition, content) => {
+        return vars[condition] ? content : '';
       }
-      return '';
-    });
-    
+    );
+
+    // Handle loops (basic implementation)
+    // {{#each array}}{{name}}{{/each}}
+    compiled = compiled.replace(
+      /\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g,
+      (match, arrayName, content) => {
+        const array = vars[arrayName];
+        if (Array.isArray(array)) {
+          return array
+            .map((item) => {
+              let itemContent = content;
+              for (const [itemKey, itemValue] of Object.entries(item)) {
+                const itemRegex = new RegExp(`\\{\\{${itemKey}\\}\\}`, 'g');
+                itemContent = itemContent.replace(itemRegex, String(itemValue));
+              }
+              return itemContent;
+            })
+            .join('');
+        }
+        return '';
+      }
+    );
+
     return compiled;
   }
 }

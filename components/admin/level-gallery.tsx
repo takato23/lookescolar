@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -93,7 +93,7 @@ export default function LevelGallery({
   eventId,
   levelId,
   levelName,
-  onBack
+  onBack,
 }: LevelGalleryProps) {
   // State
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
@@ -106,26 +106,28 @@ export default function LevelGallery({
   const [hasMore, setHasMore] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [draggedPhoto, setDraggedPhoto] = useState<string | null>(null);
-  
+
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'created_at' | 'taken_at' | 'filename'>('created_at');
+  const [sortBy, setSortBy] = useState<'created_at' | 'taken_at' | 'filename'>(
+    'created_at'
+  );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [photoType, setPhotoType] = useState<string>('');
   const [approvedFilter, setApprovedFilter] = useState<boolean | 'all'>('all');
-  
+
   // UI State
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Refs
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
-  
+
   // Load gallery data
   const loadGallery = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -134,17 +136,21 @@ export default function LevelGallery({
         sort_order: sortOrder,
         ...(searchTerm && { search: searchTerm }),
         ...(photoType && { photo_type: photoType }),
-        ...(approvedFilter !== 'all' && { approved: approvedFilter.toString() }),
+        ...(approvedFilter !== 'all' && {
+          approved: approvedFilter.toString(),
+        }),
       });
-      
-      const response = await fetch(`/api/admin/events/${eventId}/levels/${levelId}/gallery?${params}`);
-      
+
+      const response = await fetch(
+        `/api/admin/events/${eventId}/levels/${levelId}/gallery?${params}`
+      );
+
       if (!response.ok) {
         throw new Error('Failed to load gallery');
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setPhotos(data.photos);
         setStats(data.stats);
@@ -158,7 +164,16 @@ export default function LevelGallery({
     } finally {
       setLoading(false);
     }
-  }, [eventId, levelId, page, sortBy, sortOrder, searchTerm, photoType, approvedFilter]);
+  }, [
+    eventId,
+    levelId,
+    page,
+    sortBy,
+    sortOrder,
+    searchTerm,
+    photoType,
+    approvedFilter,
+  ]);
 
   // Load gallery on mount and when filters change
   useEffect(() => {
@@ -167,15 +182,15 @@ export default function LevelGallery({
 
   // Handle photo selection
   const togglePhotoSelection = (photoId: string) => {
-    setSelectedPhotos(prev => 
-      prev.includes(photoId) 
-        ? prev.filter(id => id !== photoId) 
+    setSelectedPhotos((prev) =>
+      prev.includes(photoId)
+        ? prev.filter((id) => id !== photoId)
         : [...prev, photoId]
     );
   };
 
   const selectAllPhotos = () => {
-    setSelectedPhotos(photos.map(photo => photo.id));
+    setSelectedPhotos(photos.map((photo) => photo.id));
   };
 
   const clearSelection = () => {
@@ -186,22 +201,25 @@ export default function LevelGallery({
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/levels/${levelId}/gallery/download?action=download`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photo_ids: selectedPhotos.length > 0 ? selectedPhotos : undefined,
-        }),
-      });
-      
+      const response = await fetch(
+        `/api/admin/events/${eventId}/levels/${levelId}/gallery/download?action=download`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photo_ids: selectedPhotos.length > 0 ? selectedPhotos : undefined,
+          }),
+        }
+      );
+
       if (!response.ok) {
         throw new Error('Failed to generate download URLs');
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.download_urls) {
         // Open download URLs in new tabs
         data.download_urls.forEach((urlObj: { download_url: string }) => {
@@ -212,7 +230,9 @@ export default function LevelGallery({
       }
     } catch (err) {
       console.error('Error downloading photos:', err);
-      setError(err instanceof Error ? err.message : 'Failed to download photos');
+      setError(
+        err instanceof Error ? err.message : 'Failed to download photos'
+      );
     } finally {
       setIsDownloading(false);
     }
@@ -253,21 +273,21 @@ export default function LevelGallery({
 
     // Create a copy of the photos array
     const newPhotos = [...photos];
-    
+
     // Remove the dragged item
     const draggedItem = newPhotos.splice(dragItem.current, 1)[0];
-    
+
     // Insert the dragged item at the new position
     newPhotos.splice(dragOverItem.current, 0, draggedItem);
-    
+
     // Update state
     setPhotos(newPhotos);
-    
+
     // Reset drag positions
     dragItem.current = null;
     dragOverItem.current = null;
     setDraggedPhoto(null);
-    
+
     // TODO: Save the new order to the backend
     // This would involve calling an API endpoint to update the photo order
   };
@@ -279,72 +299,93 @@ export default function LevelGallery({
   };
 
   // Photo grid item
-  const PhotoGridItem = ({ photo, index }: { photo: GalleryPhoto; index: number }) => (
-    <div 
+  const PhotoGridItem = ({
+    photo,
+    index,
+  }: {
+    photo: GalleryPhoto;
+    index: number;
+  }) => (
+    <div
       draggable
       onDragStart={(e) => handleDragStart(e, index)}
       onDragEnter={(e) => handleDragEnter(e, index)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onDragEnd={handleDragEnd}
-      className={`relative group glass-card border rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-lg ${
-        selectedPhotos.includes(photo.id) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-white/20'
+      className={`glass-card group relative cursor-pointer overflow-hidden rounded-xl border transition-all hover:shadow-lg ${
+        selectedPhotos.includes(photo.id)
+          ? 'border-blue-500 ring-2 ring-blue-500'
+          : 'border-white/20'
       } ${draggedPhoto === photo.id ? 'opacity-50' : ''}`}
       onClick={() => togglePhotoSelection(photo.id)}
     >
       {/* Drag handle */}
-      <div 
-        className="absolute top-2 left-2 z-10 cursor-move"
+      <div
+        className="absolute left-2 top-2 z-10 cursor-move"
         draggable
         onDragStart={(e) => {
           e.stopPropagation();
           handleDragStart(e, index);
         }}
       >
-        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-          selectedPhotos.includes(photo.id) 
-            ? 'bg-blue-500 border-blue-500' 
-            : 'bg-white/80 border-white/50'
-        }`}>
-          <GripVertical className="w-3 h-3 text-gray-600" />
+        <div
+          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+            selectedPhotos.includes(photo.id)
+              ? 'border-blue-500 bg-blue-500'
+              : 'border-white/50 bg-white/80'
+          }`}
+        >
+          <GripVertical className="h-3 w-3 text-gray-600" />
         </div>
       </div>
-      
+
       {/* Selection indicator */}
-      <div className="absolute top-2 right-2 z-10">
-        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-          selectedPhotos.includes(photo.id) 
-            ? 'bg-blue-500 border-blue-500' 
-            : 'bg-white/80 border-white/50'
-        }`}>
-          {selectedPhotos.includes(photo.id) && <Check className="w-4 h-4 text-white" />}
+      <div className="absolute right-2 top-2 z-10">
+        <div
+          className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+            selectedPhotos.includes(photo.id)
+              ? 'border-blue-500 bg-blue-500'
+              : 'border-white/50 bg-white/80'
+          }`}
+        >
+          {selectedPhotos.includes(photo.id) && (
+            <Check className="h-4 w-4 text-white" />
+          )}
         </div>
       </div>
-      
+
       {/* Photo preview */}
-      <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 relative">
+      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
         {photo.preview_url ? (
-          <img 
-            src={photo.preview_url} 
+          <img
+            src={photo.preview_url}
             alt={photo.filename}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="w-8 h-8 text-gray-400" />
+          <div className="flex h-full w-full items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-gray-400" />
           </div>
         )}
-        
+
         {/* Photo type badge */}
-        <div className="absolute top-2 left-10">
-          <Badge variant="secondary" className="text-xs backdrop-blur-sm bg-white/30 dark:bg-black/30">
-            {photo.photo_type === 'individual' ? 'Individual' : 
-             photo.photo_type === 'group' ? 'Grupo' : 
-             photo.photo_type === 'activity' ? 'Actividad' : 'Evento'}
+        <div className="absolute left-10 top-2">
+          <Badge
+            variant="secondary"
+            className="bg-white/30 text-xs backdrop-blur-sm dark:bg-black/30"
+          >
+            {photo.photo_type === 'individual'
+              ? 'Individual'
+              : photo.photo_type === 'group'
+                ? 'Grupo'
+                : photo.photo_type === 'activity'
+                  ? 'Actividad'
+                  : 'Evento'}
           </Badge>
         </div>
-        
+
         {/* Approval status */}
         {photo.approved && (
           <div className="absolute bottom-2 right-2">
@@ -353,18 +394,18 @@ export default function LevelGallery({
             </Badge>
           </div>
         )}
-        
+
         {/* Favorite indicator */}
         <div className="absolute bottom-2 left-2">
-          <Heart className="w-4 h-4 text-red-500 fill-current opacity-70" />
+          <Heart className="h-4 w-4 fill-current text-red-500 opacity-70" />
         </div>
       </div>
-      
+
       {/* Photo info */}
-      <div className="p-3 bg-white/5 dark:bg-black/10">
-        <p className="text-xs font-medium truncate">{photo.filename}</p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-muted-foreground">
+      <div className="bg-white/5 p-3 dark:bg-black/10">
+        <p className="truncate text-xs font-medium">{photo.filename}</p>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-muted-foreground text-xs">
             {new Date(photo.created_at).toLocaleDateString()}
           </span>
           <div className="flex items-center gap-1">
@@ -372,7 +413,7 @@ export default function LevelGallery({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <Users className="text-muted-foreground h-4 w-4" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{photo.tagged_students.length} estudiantes</p>
@@ -384,7 +425,7 @@ export default function LevelGallery({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
-                    <BookOpen className="w-4 h-4 text-muted-foreground" />
+                    <BookOpen className="text-muted-foreground h-4 w-4" />
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>{photo.tagged_courses.length} cursos</p>
@@ -399,21 +440,29 @@ export default function LevelGallery({
   );
 
   // Photo list item
-  const PhotoListItem = ({ photo, index }: { photo: GalleryPhoto; index: number }) => (
-    <div 
+  const PhotoListItem = ({
+    photo,
+    index,
+  }: {
+    photo: GalleryPhoto;
+    index: number;
+  }) => (
+    <div
       draggable
       onDragStart={(e) => handleDragStart(e, index)}
       onDragEnter={(e) => handleDragEnter(e, index)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       onDragEnd={handleDragEnd}
-      className={`flex items-center gap-4 p-4 glass-card border rounded-xl hover:bg-white/10 cursor-pointer transition-colors ${
-        selectedPhotos.includes(photo.id) ? 'bg-white/10 ring-1 ring-blue-500 border-blue-500' : 'border-white/20'
+      className={`glass-card flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors hover:bg-white/10 ${
+        selectedPhotos.includes(photo.id)
+          ? 'border-blue-500 bg-white/10 ring-1 ring-blue-500'
+          : 'border-white/20'
       } ${draggedPhoto === photo.id ? 'opacity-50' : ''}`}
       onClick={() => togglePhotoSelection(photo.id)}
     >
       {/* Drag handle */}
-      <div 
+      <div
         className="cursor-move"
         draggable
         onDragStart={(e) => {
@@ -421,41 +470,49 @@ export default function LevelGallery({
           handleDragStart(e, index);
         }}
       >
-        <GripVertical className="w-5 h-5 text-gray-400" />
+        <GripVertical className="h-5 w-5 text-gray-400" />
       </div>
-      
+
       {/* Selection checkbox */}
-      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-        selectedPhotos.includes(photo.id) 
-          ? 'bg-blue-500 border-blue-500' 
-          : 'border-white/50'
-      }`}>
-        {selectedPhotos.includes(photo.id) && <Check className="w-4 h-4 text-white" />}
+      <div
+        className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+          selectedPhotos.includes(photo.id)
+            ? 'border-blue-500 bg-blue-500'
+            : 'border-white/50'
+        }`}
+      >
+        {selectedPhotos.includes(photo.id) && (
+          <Check className="h-4 w-4 text-white" />
+        )}
       </div>
-      
+
       {/* Photo preview */}
-      <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg overflow-hidden flex-shrink-0">
+      <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
         {photo.preview_url ? (
-          <img 
-            src={photo.preview_url} 
+          <img
+            src={photo.preview_url}
             alt={photo.filename}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="w-8 h-8 text-gray-400" />
+          <div className="flex h-full w-full items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-gray-400" />
           </div>
         )}
       </div>
-      
+
       {/* Photo details */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h4 className="font-medium truncate">{photo.filename}</h4>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="truncate font-medium">{photo.filename}</h4>
           <Badge variant="secondary" className="text-xs">
-            {photo.photo_type === 'individual' ? 'Individual' : 
-             photo.photo_type === 'group' ? 'Grupo' : 
-             photo.photo_type === 'activity' ? 'Actividad' : 'Evento'}
+            {photo.photo_type === 'individual'
+              ? 'Individual'
+              : photo.photo_type === 'group'
+                ? 'Grupo'
+                : photo.photo_type === 'activity'
+                  ? 'Actividad'
+                  : 'Evento'}
           </Badge>
           {photo.approved && (
             <Badge variant="default" className="bg-green-500 text-xs">
@@ -463,27 +520,27 @@ export default function LevelGallery({
             </Badge>
           )}
         </div>
-        
-        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
+
+        <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-4 text-sm">
           <span>{new Date(photo.created_at).toLocaleDateString()}</span>
           <span>{Math.round(photo.file_size / 1024)} KB</span>
           <div className="flex items-center gap-2">
             {photo.tagged_students.length > 0 && (
               <span className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
+                <Users className="h-4 w-4" />
                 {photo.tagged_students.length}
               </span>
             )}
             {photo.tagged_courses.length > 0 && (
               <span className="flex items-center gap-1">
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="h-4 w-4" />
                 {photo.tagged_courses.length}
               </span>
             )}
           </div>
         </div>
       </div>
-      
+
       {/* Action buttons */}
       <div className="flex gap-2">
         <Button variant="outline" size="sm" className="glass-button">
@@ -496,7 +553,7 @@ export default function LevelGallery({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-500"></div>
         <span className="ml-2">Cargando galería...</span>
       </div>
     );
@@ -505,15 +562,15 @@ export default function LevelGallery({
   if (error) {
     return (
       <div className="p-6">
-        <div className="glass-card border border-red-500/30 rounded-xl p-4 bg-red-500/10">
+        <div className="glass-card rounded-xl border border-red-500/30 bg-red-500/10 p-4">
           <div className="flex items-center gap-2">
             <X className="h-5 w-5 text-red-500" />
             <h3 className="font-medium text-red-500">Error</h3>
           </div>
           <p className="mt-2 text-sm text-red-400">{error}</p>
-          <Button 
-            variant="outline" 
-            className="mt-3 text-red-500 border-red-500 hover:bg-red-500/10 glass-button"
+          <Button
+            variant="outline"
+            className="glass-button mt-3 border-red-500 text-red-500 hover:bg-red-500/10"
             onClick={loadGallery}
           >
             Reintentar
@@ -528,17 +585,21 @@ export default function LevelGallery({
       {/* Header - Mobile Optimized */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={onBack} className="flex items-center gap-2 glass-button">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="glass-button flex items-center gap-2"
+          >
             <ChevronLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Volver</span>
           </Button>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('grid')}
-              className="flex items-center gap-1 glass-button"
+              className="glass-button flex items-center gap-1"
             >
               <Grid3X3 className="h-4 w-4" />
               <span className="hidden sm:inline">Cuadrícula</span>
@@ -547,55 +608,51 @@ export default function LevelGallery({
               variant={viewMode === 'list' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('list')}
-              className="flex items-center gap-1 glass-button"
+              className="glass-button flex items-center gap-1"
             >
               <List className="h-4 w-4" />
               <span className="hidden sm:inline">Lista</span>
             </Button>
           </div>
         </div>
-        
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">{levelName} Gallery</h1>
-              <GalleryMetadata 
-                eventId={eventId}
-                levelId={levelId}
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-2xl font-bold text-transparent">
+                {levelName} Gallery
+              </h1>
+              <GalleryMetadata eventId={eventId} levelId={levelId} />
             </div>
             {stats && (
-              <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                <span className="flex items-center gap-1 glass-badge">
+              <div className="mt-3 flex flex-wrap gap-4 text-sm">
+                <span className="glass-badge flex items-center gap-1">
                   <Camera className="h-4 w-4" />
                   {stats.total_photos} fotos
                 </span>
-                <span className="flex items-center gap-1 glass-badge">
+                <span className="glass-badge flex items-center gap-1">
                   <Check className="h-4 w-4" />
                   {stats.approved_photos} aprobadas
                 </span>
-                <span className="flex items-center gap-1 glass-badge">
+                <span className="glass-badge flex items-center gap-1">
                   <Users className="h-4 w-4" />
                   {stats.individual_photos} individuales
                 </span>
-                <span className="flex items-center gap-1 glass-badge">
+                <span className="glass-badge flex items-center gap-1">
                   <BookOpen className="h-4 w-4" />
                   {stats.group_photos} grupales
                 </span>
               </div>
             )}
           </div>
-          
-          <div className="flex items-center gap-2 flex-wrap">
-            <GalleryShare 
-              eventId={eventId}
-              levelId={levelId}
-            />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <GalleryShare eventId={eventId} levelId={levelId} />
             {selectedPhotos.length > 0 && (
-              <Button 
-                onClick={handleDownload} 
+              <Button
+                onClick={handleDownload}
                 disabled={isDownloading}
-                className="flex items-center gap-2 glass-button"
+                className="glass-button flex items-center gap-2"
               >
                 {isDownloading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -605,12 +662,10 @@ export default function LevelGallery({
                 <span className="hidden sm:inline">
                   Descargar ({selectedPhotos.length})
                 </span>
-                <span className="sm:hidden">
-                  {selectedPhotos.length}
-                </span>
+                <span className="sm:hidden">{selectedPhotos.length}</span>
               </Button>
             )}
-            <BulkDownload 
+            <BulkDownload
               eventId={eventId}
               level="level"
               levelId={levelId}
@@ -622,30 +677,33 @@ export default function LevelGallery({
       </div>
 
       {/* Enhanced Filters - Mobile Optimized */}
-      <div className="glass-card border border-white/20 rounded-xl p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="glass-card rounded-xl border border-white/20 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Buscar fotos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 glass-input"
+              className="glass-input pl-9"
             />
           </div>
-          
+
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 glass-button"
+              className="glass-button flex items-center gap-2"
             >
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Filtros</span>
             </Button>
-            
-            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
-              <SelectTrigger className="w-28 sm:w-32 glass-input">
+
+            <Select
+              value={sortBy}
+              onValueChange={(value: any) => setSortBy(value)}
+            >
+              <SelectTrigger className="glass-input w-28 sm:w-32">
                 <SelectValue placeholder="Ordenar" />
               </SelectTrigger>
               <SelectContent className="glass-card border border-white/20">
@@ -654,9 +712,12 @@ export default function LevelGallery({
                 <SelectItem value="filename">Nombre</SelectItem>
               </SelectContent>
             </Select>
-            
-            <Select value={sortOrder} onValueChange={(value: any) => setSortOrder(value)}>
-              <SelectTrigger className="w-20 sm:w-24 glass-input">
+
+            <Select
+              value={sortOrder}
+              onValueChange={(value: any) => setSortOrder(value)}
+            >
+              <SelectTrigger className="glass-input w-20 sm:w-24">
                 <SelectValue placeholder="Orden" />
               </SelectTrigger>
               <SelectContent className="glass-card border border-white/20">
@@ -666,13 +727,18 @@ export default function LevelGallery({
             </Select>
           </div>
         </div>
-        
+
         {/* Advanced Filters */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-white/20 pt-4 sm:grid-cols-3">
             <div>
-              <label className="text-sm font-medium mb-1 block">Tipo de foto</label>
-              <Select value={photoType} onValueChange={(value: any) => setPhotoType(value)}>
+              <label className="mb-1 block text-sm font-medium">
+                Tipo de foto
+              </label>
+              <Select
+                value={photoType}
+                onValueChange={(value: any) => setPhotoType(value)}
+              >
                 <SelectTrigger className="glass-input">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
@@ -685,10 +751,17 @@ export default function LevelGallery({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
-              <label className="text-sm font-medium mb-1 block">Aprobación</label>
-              <Select value={approvedFilter.toString()} onValueChange={(value: any) => setApprovedFilter(value === 'all' ? 'all' : value === 'true')}>
+              <label className="mb-1 block text-sm font-medium">
+                Aprobación
+              </label>
+              <Select
+                value={approvedFilter.toString()}
+                onValueChange={(value: any) =>
+                  setApprovedFilter(value === 'all' ? 'all' : value === 'true')
+                }
+              >
                 <SelectTrigger className="glass-input">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
@@ -699,10 +772,10 @@ export default function LevelGallery({
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="flex items-end">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setPhotoType('');
                   setApprovedFilter('all');
@@ -715,12 +788,12 @@ export default function LevelGallery({
           </div>
         )}
       </div>
-      
+
       {/* Photo gallery - Mobile Optimized */}
       {photos.length > 0 ? (
         <div className="space-y-6">
           {viewMode === 'grid' ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {photos.map((photo, index) => (
                 <PhotoGridItem key={photo.id} photo={photo} index={index} />
               ))}
@@ -732,32 +805,34 @@ export default function LevelGallery({
               ))}
             </div>
           )}
-          
+
           {/* Pagination - Mobile Optimized */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 glass-card border border-white/20 rounded-xl p-4">
-            <div className="text-sm text-muted-foreground text-center sm:text-left">
-              {Math.min((page * 50) + 1, stats?.total_photos || 0)} - {Math.min((page + 1) * 50, stats?.total_photos || 0)} de {stats?.total_photos || 0}
+          <div className="glass-card flex flex-col items-center justify-between gap-3 rounded-xl border border-white/20 p-4 sm:flex-row">
+            <div className="text-muted-foreground text-center text-sm sm:text-left">
+              {Math.min(page * 50 + 1, stats?.total_photos || 0)} -{' '}
+              {Math.min((page + 1) * 50, stats?.total_photos || 0)} de{' '}
+              {stats?.total_photos || 0}
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={goToPreviousPage}
                 disabled={page === 0}
-                className="flex items-center gap-1 glass-button"
+                className="glass-button flex items-center gap-1"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Anterior</span>
               </Button>
-              <span className="text-sm px-3 py-1 rounded-lg bg-white/10">
+              <span className="rounded-lg bg-white/10 px-3 py-1 text-sm">
                 {page + 1}
               </span>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={goToNextPage}
                 disabled={!hasMore}
-                className="flex items-center gap-1 glass-button"
+                className="glass-button flex items-center gap-1"
               >
                 <span className="hidden sm:inline">Siguiente</span>
                 <ChevronRight className="h-4 w-4" />
@@ -766,14 +841,17 @@ export default function LevelGallery({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center p-12 text-center glass-card border border-white/20 rounded-xl">
-          <ImageIcon className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-medium mb-2">No hay fotos en esta galería</h3>
+        <div className="glass-card flex flex-col items-center justify-center rounded-xl border border-white/20 p-12 text-center">
+          <ImageIcon className="text-muted-foreground mb-4 h-16 w-16" />
+          <h3 className="mb-2 text-xl font-medium">
+            No hay fotos en esta galería
+          </h3>
           <p className="text-muted-foreground mb-6 max-w-md">
-            Aún no se han subido fotos para este nivel. Sube fotos para comenzar a organizarlas.
+            Aún no se han subido fotos para este nivel. Sube fotos para comenzar
+            a organizarlas.
           </p>
           <Button className="glass-button">
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="mr-2 h-4 w-4" />
             Subir fotos
           </Button>
         </div>

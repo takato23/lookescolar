@@ -10,16 +10,19 @@ const supabase = createClient(
 
 async function checkAndFixOrderView() {
   console.log('🔍 Checking order_details_with_audit view...');
-  
+
   try {
     // First, check if the view exists by trying to query it
     const { data, error } = await supabase
       .from('order_details_with_audit')
       .select('id')
       .limit(1);
-    
+
     if (error) {
-      console.log('❌ Error querying order_details_with_audit view:', error.message);
+      console.log(
+        '❌ Error querying order_details_with_audit view:',
+        error.message
+      );
       console.log('🔧 Attempting to recreate the view...');
       await recreateOrderView();
     } else {
@@ -36,13 +39,13 @@ async function recreateOrderView() {
     // Drop the view if it exists
     console.log('🗑️  Dropping existing view if it exists...');
     const { error: dropError } = await supabase.rpc('execute_sql', {
-      sql: 'DROP VIEW IF EXISTS order_details_with_audit'
+      sql: 'DROP VIEW IF EXISTS order_details_with_audit',
     });
-    
+
     if (dropError) {
       console.log('⚠️  Warning dropping view:', dropError.message);
     }
-    
+
     // Create the view
     console.log('🔨 Creating order_details_with_audit view...');
     const createViewSQL = `
@@ -83,25 +86,25 @@ async function recreateOrderView() {
           END as hours_since_status_change
       FROM orders o
     `;
-    
+
     const { error: createError } = await supabase.rpc('execute_sql', {
-      sql: createViewSQL
+      sql: createViewSQL,
     });
-    
+
     if (createError) {
       console.log('❌ Error creating view:', createError.message);
       return;
     }
-    
+
     console.log('✅ order_details_with_audit view created successfully');
-    
+
     // Test the view
     console.log('🧪 Testing the new view...');
     const { data, error } = await supabase
       .from('order_details_with_audit')
       .select('id')
       .limit(1);
-    
+
     if (error) {
       console.log('❌ Error querying newly created view:', error.message);
     } else {

@@ -3,7 +3,12 @@ import type { OrderWithDetails } from '@/types/admin-api';
 import type { OrderFilters } from './enhanced-order.service';
 
 export type ExportFormat = 'csv' | 'excel' | 'pdf' | 'json';
-export type ExportTemplate = 'standard' | 'detailed' | 'summary' | 'financial' | 'labels';
+export type ExportTemplate =
+  | 'standard'
+  | 'detailed'
+  | 'summary'
+  | 'financial'
+  | 'labels';
 
 export interface ExportOptions {
   format: ExportFormat;
@@ -41,11 +46,11 @@ export class OrderExportService {
    */
   async exportOrders(options: ExportOptions): Promise<ExportResult> {
     const startTime = Date.now();
-    
+
     try {
       // Get orders based on filters
       const orders = await this.getOrdersForExport(options.filters);
-      
+
       // Generate export based on format
       let exportData: string | Buffer;
       let filename: string;
@@ -60,7 +65,8 @@ export class OrderExportService {
         case 'excel':
           exportData = await this.generateExcel(orders, options);
           filename = `orders-${this.getTimestamp()}.xlsx`;
-          mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          mimeType =
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           break;
         case 'pdf':
           exportData = await this.generatePDF(orders, options);
@@ -77,8 +83,8 @@ export class OrderExportService {
       }
 
       // Calculate file size
-      const fileSize = Buffer.isBuffer(exportData) 
-        ? exportData.length 
+      const fileSize = Buffer.isBuffer(exportData)
+        ? exportData.length
         : Buffer.byteLength(exportData, 'utf8');
 
       const result: ExportResult = {
@@ -90,25 +96,31 @@ export class OrderExportService {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
       };
 
-      console.log(`[Order Export] Generated ${options.format.toUpperCase()} export`, {
-        template: options.template,
-        recordCount: orders.length,
-        fileSize: `${(fileSize / 1024).toFixed(2)} KB`,
-        duration: `${Date.now() - startTime}ms`
-      });
+      console.log(
+        `[Order Export] Generated ${options.format.toUpperCase()} export`,
+        {
+          template: options.template,
+          recordCount: orders.length,
+          fileSize: `${(fileSize / 1024).toFixed(2)} KB`,
+          duration: `${Date.now() - startTime}ms`,
+        }
+      );
 
       return result;
-
     } catch (error) {
       console.error('[Order Export] Export failed:', error);
-      throw new Error(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   /**
    * Get orders for export based on filters
    */
-  private async getOrdersForExport(filters?: OrderFilters): Promise<OrderWithDetails[]> {
+  private async getOrdersForExport(
+    filters?: OrderFilters
+  ): Promise<OrderWithDetails[]> {
     let query = this.supabase
       .from('order_details_with_audit')
       .select('*')
@@ -138,7 +150,10 @@ export class OrderExportService {
         query = query.lte('total_amount_cents', filters.amount_max * 100);
       }
       if (filters.overdue_only) {
-        query = query.in('enhanced_status', ['pending_overdue', 'delivery_overdue']);
+        query = query.in('enhanced_status', [
+          'pending_overdue',
+          'delivery_overdue',
+        ]);
       }
     }
 
@@ -154,13 +169,18 @@ export class OrderExportService {
   /**
    * Generate CSV export
    */
-  private async generateCSV(orders: OrderWithDetails[], options: ExportOptions): Promise<string> {
+  private async generateCSV(
+    orders: OrderWithDetails[],
+    options: ExportOptions
+  ): Promise<string> {
     const headers = this.getCSVHeaders(options.template);
-    const rows = orders.map(order => this.orderToCSVRow(order, options.template));
+    const rows = orders.map((order) =>
+      this.orderToCSVRow(order, options.template)
+    );
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.join(','))
+      ...rows.map((row) => row.join(',')),
     ].join('\n');
 
     return csvContent;
@@ -169,7 +189,10 @@ export class OrderExportService {
   /**
    * Generate Excel export (simplified - would use a library like xlsx in real implementation)
    */
-  private async generateExcel(orders: OrderWithDetails[], options: ExportOptions): Promise<Buffer> {
+  private async generateExcel(
+    orders: OrderWithDetails[],
+    options: ExportOptions
+  ): Promise<Buffer> {
     // For now, return CSV content as buffer (in real implementation, use xlsx library)
     const csvContent = await this.generateCSV(orders, options);
     return Buffer.from(csvContent, 'utf8');
@@ -178,10 +201,13 @@ export class OrderExportService {
   /**
    * Generate PDF export
    */
-  private async generatePDF(orders: OrderWithDetails[], options: ExportOptions): Promise<Buffer> {
+  private async generatePDF(
+    orders: OrderWithDetails[],
+    options: ExportOptions
+  ): Promise<Buffer> {
     // Simplified PDF generation (in real implementation, use puppeteer or pdfkit)
     const htmlContent = this.generateHTMLReport(orders, options);
-    
+
     // For now, return HTML as buffer (in real implementation, convert to PDF)
     return Buffer.from(htmlContent, 'utf8');
   }
@@ -189,7 +215,10 @@ export class OrderExportService {
   /**
    * Generate JSON export
    */
-  private async generateJSON(orders: OrderWithDetails[], options: ExportOptions): Promise<string> {
+  private async generateJSON(
+    orders: OrderWithDetails[],
+    options: ExportOptions
+  ): Promise<string> {
     const exportData = {
       metadata: {
         exportedAt: new Date().toISOString(),
@@ -197,7 +226,9 @@ export class OrderExportService {
         template: options.template,
         filters: options.filters,
       },
-      orders: orders.map(order => this.orderToJSONObject(order, options.template)),
+      orders: orders.map((order) =>
+        this.orderToJSONObject(order, options.template)
+      ),
     };
 
     return JSON.stringify(exportData, null, 2);
@@ -218,7 +249,7 @@ export class OrderExportService {
       'Created At',
       'Event Name',
       'Event School',
-      'Subject Name'
+      'Subject Name',
     ];
 
     switch (template) {
@@ -234,7 +265,7 @@ export class OrderExportService {
           'MP Payment ID',
           'MP Status',
           'Hours Since Created',
-          'Hours Since Status Change'
+          'Hours Since Status Change',
         ];
 
       case 'financial':
@@ -246,7 +277,7 @@ export class OrderExportService {
           'Created At',
           'Payment ID',
           'Payment Status',
-          'Revenue Category'
+          'Revenue Category',
         ];
 
       case 'summary':
@@ -256,7 +287,7 @@ export class OrderExportService {
           'Status',
           'Total Amount (ARS)',
           'Items Count',
-          'Created At'
+          'Created At',
         ];
 
       case 'labels':
@@ -268,7 +299,7 @@ export class OrderExportService {
           'Event Name',
           'School Name',
           'Delivery Method',
-          'Tracking Number'
+          'Tracking Number',
         ];
 
       default: // standard
@@ -279,7 +310,10 @@ export class OrderExportService {
   /**
    * Convert order to CSV row
    */
-  private orderToCSVRow(order: OrderWithDetails, template: ExportTemplate): string[] {
+  private orderToCSVRow(
+    order: OrderWithDetails,
+    template: ExportTemplate
+  ): string[] {
     const escapeCSV = (value: any): string => {
       if (value === null || value === undefined) return '';
       const str = String(value);
@@ -300,7 +334,7 @@ export class OrderExportService {
       new Date(order.created_at).toLocaleDateString(),
       order.event?.name || '',
       order.event?.school || '',
-      order.subject?.name || ''
+      order.subject?.name || '',
     ].map(escapeCSV);
 
     switch (template) {
@@ -310,13 +344,17 @@ export class OrderExportService {
           order.priority_level?.toString() || '1',
           order.delivery_method || '',
           order.tracking_number || '',
-          order.estimated_delivery_date ? new Date(order.estimated_delivery_date).toLocaleDateString() : '',
-          order.actual_delivery_date ? new Date(order.actual_delivery_date).toLocaleDateString() : '',
+          order.estimated_delivery_date
+            ? new Date(order.estimated_delivery_date).toLocaleDateString()
+            : '',
+          order.actual_delivery_date
+            ? new Date(order.actual_delivery_date).toLocaleDateString()
+            : '',
           order.admin_notes || '',
           order.mp_payment_id || '',
           order.mp_status || '',
           order.hours_since_created?.toFixed(1) || '',
-          order.hours_since_status_change?.toFixed(1) || ''
+          order.hours_since_status_change?.toFixed(1) || '',
         ].map(escapeCSV);
 
       case 'financial':
@@ -328,7 +366,9 @@ export class OrderExportService {
           new Date(order.created_at).toLocaleDateString(),
           order.mp_payment_id || '',
           order.mp_status || '',
-          order.status === 'delivered' || order.status === 'approved' ? 'Revenue' : 'Pending'
+          order.status === 'delivered' || order.status === 'approved'
+            ? 'Revenue'
+            : 'Pending',
         ].map(escapeCSV);
 
       case 'summary':
@@ -338,7 +378,7 @@ export class OrderExportService {
           order.status,
           (order.total_amount_cents / 100).toFixed(2),
           order.total_items.toString(),
-          new Date(order.created_at).toLocaleDateString()
+          new Date(order.created_at).toLocaleDateString(),
         ].map(escapeCSV);
 
       case 'labels':
@@ -350,7 +390,7 @@ export class OrderExportService {
           order.event?.name || '',
           order.event?.school || '',
           order.delivery_method || 'pickup',
-          order.tracking_number || ''
+          order.tracking_number || '',
         ].map(escapeCSV);
 
       default: // standard
@@ -361,7 +401,10 @@ export class OrderExportService {
   /**
    * Convert order to JSON object
    */
-  private orderToJSONObject(order: OrderWithDetails, template: ExportTemplate): any {
+  private orderToJSONObject(
+    order: OrderWithDetails,
+    template: ExportTemplate
+  ): any {
     const baseObject = {
       id: order.id,
       customer: {
@@ -412,7 +455,10 @@ export class OrderExportService {
           created_at: order.created_at,
           payment_id: order.mp_payment_id,
           payment_status: order.mp_status,
-          revenue_category: order.status === 'delivered' || order.status === 'approved' ? 'Revenue' : 'Pending',
+          revenue_category:
+            order.status === 'delivered' || order.status === 'approved'
+              ? 'Revenue'
+              : 'Pending',
         };
 
       case 'summary':
@@ -433,11 +479,16 @@ export class OrderExportService {
   /**
    * Generate HTML report for PDF conversion
    */
-  private generateHTMLReport(orders: OrderWithDetails[], options: ExportOptions): string {
+  private generateHTMLReport(
+    orders: OrderWithDetails[],
+    options: ExportOptions
+  ): string {
     const title = `Orders Report - ${options.template.charAt(0).toUpperCase() + options.template.slice(1)}`;
     const generatedAt = new Date().toLocaleString();
-    
-    const ordersHTML = orders.map(order => `
+
+    const ordersHTML = orders
+      .map(
+        (order) => `
       <tr>
         <td>${order.id.slice(-8)}</td>
         <td>${order.contact_name}</td>
@@ -447,7 +498,9 @@ export class OrderExportService {
         <td>${order.total_items}</td>
         <td>${new Date(order.created_at).toLocaleDateString()}</td>
       </tr>
-    `).join('');
+    `
+      )
+      .join('');
 
     return `
       <!DOCTYPE html>
@@ -508,7 +561,7 @@ export class OrderExportService {
    */
   async generateShippingLabels(orderIds: string[]): Promise<ExportResult> {
     const orders = await this.getOrdersByIds(orderIds);
-    
+
     const options: ExportOptions = {
       format: 'pdf',
       template: 'labels',
@@ -521,7 +574,9 @@ export class OrderExportService {
   /**
    * Get orders by IDs
    */
-  private async getOrdersByIds(orderIds: string[]): Promise<OrderWithDetails[]> {
+  private async getOrdersByIds(
+    orderIds: string[]
+  ): Promise<OrderWithDetails[]> {
     const { data: orders, error } = await this.supabase
       .from('order_details_with_audit')
       .select('*')

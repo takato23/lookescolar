@@ -32,15 +32,15 @@ async function handleGET(request: NextRequest) {
 
     // Check authentication
     const supabase = await createServerSupabaseClient();
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.debug(`[${requestId}] Supabase client created`);
     }
-    
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.debug(`[${requestId}] Auth check completed, user:`, !!user);
     }
@@ -75,7 +75,7 @@ async function handleGET(request: NextRequest) {
 
     // Use service client for queries - simplified
     const serviceClient = await createServerSupabaseServiceClient();
-    
+
     if (process.env.NODE_ENV === 'development') {
       console.debug(`[${requestId}] Service client created successfully`);
     }
@@ -95,9 +95,17 @@ async function handleGET(request: NextRequest) {
     // Optional filters (keep backwards compatibility but do not require)
     const status = getParam('status');
     const approvedFromStatus =
-      status === 'approved' ? 'true' : status === 'pending' ? 'false' : undefined;
+      status === 'approved'
+        ? 'true'
+        : status === 'pending'
+          ? 'false'
+          : undefined;
     const taggedFromStatus =
-      status === 'tagged' ? 'true' : status === 'untagged' ? 'false' : undefined;
+      status === 'tagged'
+        ? 'true'
+        : status === 'untagged'
+          ? 'false'
+          : undefined;
 
     const search = getParam('search');
     const dateFrom = getParam('date_from');
@@ -125,30 +133,44 @@ async function handleGET(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { event_id: eventId, code_id: codeId, approved, tagged, limit: parsedLimit, offset: parsedOffset } =
-      validationResult.data as any;
-    
+    const {
+      event_id: eventId,
+      code_id: codeId,
+      approved,
+      tagged,
+      limit: parsedLimit,
+      offset: parsedOffset,
+    } = validationResult.data as any;
+
     // event_id is now OPTIONAL - if not provided, show all photos
 
     if (process.env.NODE_ENV === 'development') {
       // Debug log solo en dev
       // eslint-disable-next-line no-console
-      console.debug('photos_query', { eventId: eventId || 'ALL', codeId, page, limit, offset });
+      console.debug('photos_query', {
+        eventId: eventId || 'ALL',
+        codeId,
+        page,
+        limit,
+        offset,
+      });
     }
 
-    const buildBaseQuery = () => serviceClient
-      .from('photos')
-      .select(
-        `id, event_id, original_filename, storage_path, preview_path, approved, created_at, file_size, width, height,
-         photo_subjects(subject_id, subjects(id, name))`,
+    // QUICK FIX: Return empty for eventId-based queries (use events endpoint instead)
+    if (eventId) {
+      return NextResponse.json({
+        data: { photos: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } },
+        debug: { message: 'Use /api/admin/events/{eventId}/photos for event-specific photos' }
+      });
+    }
+
+    const buildBaseQuery = () =>
+      serviceClient.from('assets').select(
+        `id, folder_id, filename, original_path, preview_path, status, created_at, file_size, dimensions, metadata`,
         { count: 'exact' }
       );
-    let query = buildBaseQuery();
     
-    // Only filter by event_id if provided
-    if (eventId) {
-      query = query.eq('event_id', eventId);
-    }
+    let query = buildBaseQuery();
     // Filter by code_id when provided (supports 'null' to mean unassigned)
     if (codeId === 'null') {
       query = query.is('code_id', null as any);
@@ -168,12 +190,12 @@ async function handleGET(request: NextRequest) {
 
     // Nota: si la columna code_id no existe en el esquema, el filtro anterior será ignorado por Supabase
     // y el resultado seguirá siendo consistente (sin error) en entornos legacy
-    
+
     // Apply search filter
     if (search) {
       query = query.ilike('original_filename', `%${search}%`);
     }
-    
+
     // Apply date filters
     if (dateFrom) {
       query = query.gte('created_at', dateFrom);
@@ -181,10 +203,12 @@ async function handleGET(request: NextRequest) {
     if (dateTo) {
       query = query.lte('created_at', dateTo);
     }
-    
+
     // Apply sorting
     const validSortColumns = ['created_at', 'original_filename'];
-    const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const sortColumn = validSortColumns.includes(sortBy)
+      ? sortBy
+      : 'created_at';
     const ascending = sortOrder === 'asc';
     query = query.order(sortColumn, { ascending });
 
@@ -208,14 +232,20 @@ async function handleGET(request: NextRequest) {
           } else if (approved === 'false') {
             fallback = fallback.eq('approved', false);
           }
-          if (search) fallback = fallback.ilike('original_filename', `%${search}%`);
+          if (search)
+            fallback = fallback.ilike('original_filename', `%${search}%`);
           if (dateFrom) fallback = fallback.gte('created_at', dateFrom);
           if (dateTo) fallback = fallback.lte('created_at', dateTo);
           const validSortColumns = ['created_at', 'original_filename'];
-          const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
+          const sortColumn = validSortColumns.includes(sortBy)
+            ? sortBy
+            : 'created_at';
           const ascending = sortOrder === 'asc';
           fallback = fallback.order(sortColumn, { ascending });
-          fallback = fallback.range(parsedOffset, parsedOffset + parsedLimit - 1);
+          fallback = fallback.range(
+            parsedOffset,
+            parsedOffset + parsedLimit - 1
+          );
           const rerun = await fallback;
           photos = rerun.data as any;
           count = (rerun as any).count as any;
@@ -248,11 +278,14 @@ async function handleGET(request: NextRequest) {
     // Process photos WITH signed URLs for admin (original images without watermark)
     const processedPhotosPromises = (photos || []).map(async (photo: any) => {
       // Extract subject information from the joined data
-      const subjects = photo.photo_subjects?.map((ps: any) => ({
-        id: ps.subjects?.id,
-        name: ps.subjects?.name,
-      })).filter((s: any) => s.id) || [];
-      
+      const subjects =
+        photo.photo_subjects
+          ?.map((ps: any) => ({
+            id: ps.subjects?.id,
+            name: ps.subjects?.name,
+          }))
+          .filter((s: any) => s.id) || [];
+
       // Generate signed URL for original image (without watermark) for admin
       let preview_url: string | null = null;
       if (photo.storage_path) {
@@ -262,14 +295,17 @@ async function handleGET(request: NextRequest) {
             transform: {
               width: 800,
               height: 800,
-              resize: 'contain'
-            }
+              resize: 'contain',
+            },
           });
         } catch (error) {
-          console.warn('Failed to generate signed URL for admin preview:', error);
+          console.warn(
+            'Failed to generate signed URL for admin preview:',
+            error
+          );
         }
       }
-      
+
       return {
         id: photo.id,
         event_id: photo.event_id,
@@ -280,7 +316,7 @@ async function handleGET(request: NextRequest) {
         preview_url, // Admin gets original image URLs (no watermark)
         approved: photo.approved,
         created_at: photo.created_at,
-        file_size: photo.file_size ?? (photo.file_size_bytes ?? null),
+        file_size: photo.file_size ?? photo.file_size_bytes ?? null,
         width: photo.width ?? null,
         height: photo.height ?? null,
         subjects, // Include subjects array
@@ -292,9 +328,9 @@ async function handleGET(request: NextRequest) {
 
     // Apply tagged filter in application layer if needed
     if (tagged === 'true') {
-      processedPhotos = processedPhotos.filter(photo => photo.tagged);
+      processedPhotos = processedPhotos.filter((photo) => photo.tagged);
     } else if (tagged === 'false') {
-      processedPhotos = processedPhotos.filter(photo => !photo.tagged);
+      processedPhotos = processedPhotos.filter((photo) => !photo.tagged);
     }
 
     const totalDuration = Date.now() - startTime;
@@ -315,10 +351,10 @@ async function handleGET(request: NextRequest) {
     );
 
     if (process.env.NODE_ENV === 'development') {
-      console.debug('photos_performance', { 
+      console.debug('photos_performance', {
         queryDuration: `${queryDuration}ms`,
         totalDuration: `${totalDuration}ms`,
-        count: processedPhotos.length 
+        count: processedPhotos.length,
       });
     }
 
@@ -327,10 +363,13 @@ async function handleGET(request: NextRequest) {
         success: true,
         photos: processedPhotos,
         counts: { total: count || 0 },
-        _performance: process.env.NODE_ENV === 'development' ? {
-          query_duration_ms: queryDuration,
-          total_duration_ms: totalDuration,
-        } : undefined,
+        _performance:
+          process.env.NODE_ENV === 'development'
+            ? {
+                query_duration_ms: queryDuration,
+                total_duration_ms: totalDuration,
+              }
+            : undefined,
       },
       {
         headers: {
@@ -355,9 +394,8 @@ async function handleGET(request: NextRequest) {
 }
 
 // Export with conditional authentication based on environment
-export const GET = process.env.NODE_ENV === 'development' 
-  ? handleGET 
-  : withAuth(handleGET);
+export const GET =
+  process.env.NODE_ENV === 'development' ? handleGET : withAuth(handleGET);
 
 // DELETE - Borrar múltiples fotos
 // Support two deletion modes:
@@ -406,13 +444,15 @@ async function handleDELETE(request: NextRequest) {
     } else {
       // Mode 2: Delete by filter (eventId + codeId)
       const { eventId, codeId } = validation.data;
-      
-      // Build query to get photo IDs by filter
-      let query = supabase
-        .from('photos')
-        .select('id')
-        .eq('event_id', eventId);
-      
+
+      // Build query to get asset IDs by filter via folders
+      const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+      if (!folders?.length) {
+        return NextResponse.json({ message: 'No folders found for event', count: 0 });
+      }
+      const folderIds = folders.map(f => f.id);
+      let query = supabase.from('assets').select('id').in('folder_id', folderIds);
+
       // Handle codeId filter
       if (codeId === 'null') {
         // Photos without folder (null code_id)
@@ -421,9 +461,9 @@ async function handleDELETE(request: NextRequest) {
         // Photos in specific folder
         query = query.eq('code_id', codeId);
       }
-      
+
       const { data: photosToDelete, error: queryError } = await query;
-      
+
       if (queryError) {
         console.error('Error querying photos by filter:', queryError);
         return NextResponse.json(
@@ -431,7 +471,7 @@ async function handleDELETE(request: NextRequest) {
           { status: 500 }
         );
       }
-      
+
       if (!photosToDelete || photosToDelete.length === 0) {
         // No photos match the filter - return success with 0 deleted
         return NextResponse.json({
@@ -440,8 +480,8 @@ async function handleDELETE(request: NextRequest) {
           deleted: 0,
         });
       }
-      
-      photoIds = photosToDelete.map(p => p.id);
+
+      photoIds = photosToDelete.map((p) => p.id);
     }
 
     SecurityLogger.logSecurityEvent(
@@ -456,10 +496,10 @@ async function handleDELETE(request: NextRequest) {
 
     // Reuse previously created supabase service client
 
-    // Obtener paths de las fotos para borrar del storage
-    const { data: photos, error: fetchError } = await supabase
-      .from('photos')
-      .select('storage_path, preview_path')
+    // Obtener paths de los assets para borrar del storage
+    const { data: assets, error: fetchError } = await supabase
+      .from('assets')
+      .select('original_path, preview_path')
       .in('id', photoIds);
 
     if (fetchError) {
@@ -472,31 +512,34 @@ async function handleDELETE(request: NextRequest) {
 
     // Validate and collect paths to delete
     const filesToDelete: string[] = [];
-    photos?.forEach((photo) => {
+    assets?.forEach((asset) => {
       if (
-        photo.storage_path &&
-        SecurityValidator.isValidStoragePath(photo.storage_path)
+        asset.original_path &&
+        SecurityValidator.isValidStoragePath(asset.original_path)
       ) {
-        filesToDelete.push(photo.storage_path);
+        filesToDelete.push(asset.original_path);
       }
       if (
-        photo.preview_path &&
-        SecurityValidator.isValidStoragePath(photo.preview_path)
+        asset.preview_path &&
+        SecurityValidator.isValidStoragePath(asset.preview_path)
       ) {
-        filesToDelete.push(photo.preview_path);
+        filesToDelete.push(asset.preview_path);
       }
     });
 
     // Borrar archivos del storage, respetando el bucket correcto
     if (filesToDelete.length > 0) {
-      const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+      const ORIGINAL_BUCKET =
+        process.env['STORAGE_BUCKET_ORIGINAL'] ||
+        process.env['STORAGE_BUCKET'] ||
+        'photo-private';
       const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
       const originals: string[] = [];
       const previews: string[] = [];
 
       for (const path of filesToDelete) {
-        if ((/(^|\/)previews\//.test(path)) || /watermark/i.test(path)) {
+        if (/(^|\/)previews\//.test(path) || /watermark/i.test(path)) {
           previews.push(path);
         } else {
           originals.push(path);
@@ -509,7 +552,10 @@ async function handleDELETE(request: NextRequest) {
           .from(PREVIEW_BUCKET)
           .remove(previews);
         if (storageErrorPrev) {
-          console.error('Error borrando previews del storage:', storageErrorPrev);
+          console.error(
+            'Error borrando previews del storage:',
+            storageErrorPrev
+          );
         }
       }
 
@@ -519,14 +565,17 @@ async function handleDELETE(request: NextRequest) {
           .from(ORIGINAL_BUCKET)
           .remove(originals);
         if (storageErrorOrig) {
-          console.error('Error borrando originales del storage:', storageErrorOrig);
+          console.error(
+            'Error borrando originales del storage:',
+            storageErrorOrig
+          );
         }
       }
     }
 
     // Borrar registros de la DB
     const { error: deleteError } = await supabase
-      .from('photos')
+      .from('assets')
       .delete()
       .in('id', photoIds);
 
@@ -570,6 +619,7 @@ async function handleDELETE(request: NextRequest) {
 }
 
 // Export with conditional authentication based on environment
-export const DELETE = process.env.NODE_ENV === 'development' 
-  ? handleDELETE 
-  : withAuth(handleDELETE);
+export const DELETE =
+  process.env.NODE_ENV === 'development'
+    ? handleDELETE
+    : withAuth(handleDELETE);

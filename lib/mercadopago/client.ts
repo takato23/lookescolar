@@ -8,8 +8,8 @@ export const mercadopago = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
   options: {
     timeout: 5000,
-    idempotencyKey: 'unique-key'
-  }
+    idempotencyKey: 'unique-key',
+  },
 });
 
 export const preferenceClient = new Preference(mercadopago);
@@ -22,5 +22,5 @@ export const MP_CONFIG = {
   notificationUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/webhook`,
   successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/f`,
   failureUrl: `${process.env.NEXT_PUBLIC_APP_URL}/f`,
-  pendingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/f`
+  pendingUrl: `${process.env.NEXT_PUBLIC_APP_URL}/f`,
 };

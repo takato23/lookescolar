@@ -6,9 +6,9 @@
 
 async function testLogin() {
   const baseUrl = 'http://localhost:3000';
-  
+
   console.log('🔐 Testing login and dashboard access...\n');
-  
+
   // Test 1: Check if login page is accessible
   console.log('1. Testing login page...');
   try {
@@ -21,12 +21,12 @@ async function testLogin() {
   } catch (error) {
     console.log(`   ❌ Failed to access login page: ${error}`);
   }
-  
+
   // Test 2: Check admin redirect without auth
   console.log('\n2. Testing admin redirect without auth...');
   try {
     const adminResponse = await fetch(`${baseUrl}/admin`, {
-      redirect: 'manual'
+      redirect: 'manual',
     });
     if (adminResponse.status === 307) {
       console.log('   ✅ Correctly redirects to login when not authenticated');
@@ -36,7 +36,7 @@ async function testLogin() {
   } catch (error) {
     console.log(`   ❌ Failed to check admin redirect: ${error}`);
   }
-  
+
   // Test 3: Check API endpoints
   console.log('\n3. Testing API endpoints...');
   const endpoints = [
@@ -44,15 +44,17 @@ async function testLogin() {
     '/api/admin/events',
     '/api/admin/orders',
     '/api/admin/activity',
-    '/api/admin/performance'
+    '/api/admin/performance',
   ];
-  
+
   for (const endpoint of endpoints) {
     try {
       const response = await fetch(`${baseUrl}${endpoint}`);
       if (response.ok) {
         const data = await response.json();
-        console.log(`   ✅ ${endpoint} - OK (${JSON.stringify(data).length} bytes)`);
+        console.log(
+          `   ✅ ${endpoint} - OK (${JSON.stringify(data).length} bytes)`
+        );
       } else {
         console.log(`   ⚠️ ${endpoint} - Status ${response.status}`);
       }
@@ -60,7 +62,7 @@ async function testLogin() {
       console.log(`   ❌ ${endpoint} - Error: ${error}`);
     }
   }
-  
+
   console.log('\n✨ Test complete!\n');
   console.log('To access the admin panel:');
   console.log('1. Go to http://localhost:3000/login');

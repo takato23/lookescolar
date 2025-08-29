@@ -37,7 +37,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
     async (
       request: NextRequest,
       authContext,
-      { params }: { params: { token: string } }
+      { params }: { params: Promise<{ token: string }> }
     ) => {
       const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const startTime = Date.now();
@@ -61,7 +61,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
         );
 
         // Validar parámetros de la URL
-        const { token } = tokenParamsSchema.parse(params);
+        const { token } = tokenParamsSchema.parse(await params);
         const { searchParams } = new URL(request.url);
         const { page, limit, offset } = parsePaginationParams(searchParams);
         const photo_id = searchParams.get('photo_id');
@@ -94,7 +94,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
             }
 
             // Generar URL firmada para la foto
-            const key = (photoInfo.photo as any).watermark_path || (photoInfo.photo as any).preview_path;
+            const key =
+              (photoInfo.photo as any).watermark_path ||
+              (photoInfo.photo as any).preview_path;
             if (!key) {
               return createErrorResponse(
                 'Vista previa no disponible',
@@ -108,21 +110,33 @@ export const GET = RateLimitMiddleware.withRateLimit(
             // Trackear view
             await familyService.trackPhotoView(photo_id, subject.id);
 
-            logDevRequest(requestId, 'GET', `/api/family/gallery/${token}`, Date.now() - startTime, 200);
+            logDevRequest(
+              requestId,
+              'GET',
+              `/api/family/gallery/${token}`,
+              Date.now() - startTime,
+              200
+            );
 
-            return createSuccessResponse({
-              photo: {
-                id: photoInfo.photo.id,
-                filename: photoInfo.photo.filename,
-                storage_path: photoInfo.photo.storage_path,
-                created_at: photoInfo.photo.created_at,
-                signed_url: signedUrl,
+            return createSuccessResponse(
+              {
+                photo: {
+                  id: photoInfo.photo.id,
+                  filename: photoInfo.photo.filename,
+                  storage_path: photoInfo.photo.storage_path,
+                  created_at: photoInfo.photo.created_at,
+                  signed_url: signedUrl,
+                },
               },
-            }, undefined, requestId);
+              undefined,
+              requestId
+            );
           } catch (photoError) {
             return createErrorResponse(
               'Error loading photo',
-              photoError instanceof Error ? photoError.message : 'Unknown error',
+              photoError instanceof Error
+                ? photoError.message
+                : 'Unknown error',
               500,
               requestId
             );
@@ -137,13 +151,16 @@ export const GET = RateLimitMiddleware.withRateLimit(
         const photosWithUrls = (
           await Promise.all(
             photos.map(async (assignment) => {
-              const key = (assignment.photo as any).watermark_path || (assignment.photo as any).preview_path;
+              const key =
+                (assignment.photo as any).watermark_path ||
+                (assignment.photo as any).preview_path;
               if (!key) return null;
               const signedUrl = await signedUrlForKey(key, 900); // 15 min de expiración
-              
+
               // Determine if this is a group photo based on the structure
-              const isGroupPhoto = 'course_id' in assignment && assignment.course_id;
-              
+              const isGroupPhoto =
+                'course_id' in assignment && assignment.course_id;
+
               return {
                 id: assignment.photo.id,
                 filename: assignment.photo.filename,
@@ -185,7 +202,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
                   id: subject.event.id,
                   name: subject.event.name,
                   date: (subject.event as any).date,
-                  school_name: (subject.event as any).school_name || (subject.event as any).school,
+                  school_name:
+                    (subject.event as any).school_name ||
+                    (subject.event as any).school,
                 }
               : null,
             course: (subject as any).course

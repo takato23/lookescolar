@@ -1,6 +1,8 @@
 import { WizardOption, Upsell } from './stores/wizard-store';
 
 // Note: Legacy functions are exported below with their implementations
+// getPricing() has been removed as it was causing client-side import issues
+// Use PRICING_CONFIG.defaults for static pricing or call API endpoints for dynamic pricing
 
 export interface PriceBreakdown {
   basePrice: number;
@@ -29,7 +31,7 @@ export function calculatePriceBreakdown(
   availableUpsells: Upsell[]
 ): PriceBreakdown {
   const items: PriceItem[] = [];
-  
+
   // Base option
   const basePrice = selectedOption?.price || 0;
   if (selectedOption) {
@@ -39,38 +41,38 @@ export function calculatePriceBreakdown(
       quantity: 1,
       unitPrice: basePrice,
       totalPrice: basePrice,
-      category: 'base'
+      category: 'base',
     });
   }
-  
+
   // Upsells
   let upsellsPrice = 0;
   Object.entries(selectedUpsells).forEach(([upsellId, quantity]) => {
-    const upsell = availableUpsells.find(u => u.id === upsellId);
+    const upsell = availableUpsells.find((u) => u.id === upsellId);
     if (upsell && quantity > 0) {
       const totalPrice = upsell.price * quantity;
       upsellsPrice += totalPrice;
-      
+
       items.push({
         id: upsell.id,
         name: upsell.name,
         quantity,
         unitPrice: upsell.price,
         totalPrice,
-        category: upsell.category
+        category: upsell.category,
       });
     }
   });
-  
+
   const subtotal = basePrice + upsellsPrice;
   const total = subtotal; // No tax for now
-  
+
   return {
     basePrice,
     upsellsPrice,
     subtotal,
     total,
-    items
+    items,
   };
 }
 
@@ -121,6 +123,29 @@ export function validatePhotoSelection(
   selectedPhotos: PhotoSelectionState,
   selectedPackage: PackageOption | null
 ): PhotoValidationResult {
+  // Defensive null check for selectedPhotos
+  if (!selectedPhotos || typeof selectedPhotos !== 'object') {
+    return {
+      isValid: false,
+      individual: {
+        required: 0,
+        selected: 0,
+        isValid: false,
+        message: 'Error: datos de selección no válidos',
+      },
+      group: {
+        required: false,
+        selected: 0,
+        isValid: false,
+        message: 'Error: datos de selección no válidos',
+      },
+      overall: {
+        canProceed: false,
+        message: 'Error en la selección de fotos. Intenta recargar la página.',
+      },
+    };
+  }
+
   if (!selectedPackage) {
     return {
       isValid: false,
@@ -128,29 +153,34 @@ export function validatePhotoSelection(
         required: 0,
         selected: 0,
         isValid: false,
-        message: 'Selecciona un paquete primero'
+        message: 'Selecciona un paquete primero',
       },
       group: {
         required: false,
         selected: 0,
         isValid: false,
-        message: 'Selecciona un paquete primero'
+        message: 'Selecciona un paquete primero',
       },
       overall: {
         canProceed: false,
-        message: 'Debes seleccionar una opción (A o B) primero'
-      }
+        message: 'Debes seleccionar una opción (A o B) primero',
+      },
     };
   }
-  
+
   const req = selectedPackage.photoRequirements;
-  const individualSelected = selectedPhotos.individual.length;
-  const groupSelected = selectedPhotos.group.length;
-  
+  // Defensive checks for array properties
+  const individualSelected = (selectedPhotos.individual && Array.isArray(selectedPhotos.individual)) 
+    ? selectedPhotos.individual.length 
+    : 0;
+  const groupSelected = (selectedPhotos.group && Array.isArray(selectedPhotos.group)) 
+    ? selectedPhotos.group.length 
+    : 0;
+
   // Validate individual photos
   const individualValid = individualSelected === req.individualPhotos;
   let individualMessage = '';
-  
+
   if (individualSelected === 0) {
     individualMessage = `Selecciona ${req.individualPhotos} foto${req.individualPhotos > 1 ? 's' : ''} individual${req.individualPhotos > 1 ? 'es' : ''}`;
   } else if (individualSelected < req.individualPhotos) {
@@ -162,11 +192,11 @@ export function validatePhotoSelection(
   } else {
     individualMessage = `✓ ${individualSelected} foto${individualSelected > 1 ? 's' : ''} individual${individualSelected > 1 ? 'es' : ''} seleccionada${individualSelected > 1 ? 's' : ''}`;
   }
-  
+
   // Validate group photo
   const groupValid = req.groupPhoto ? groupSelected === 1 : groupSelected === 0;
   let groupMessage = '';
-  
+
   if (req.groupPhoto) {
     if (groupSelected === 0) {
       groupMessage = 'Selecciona 1 foto grupal';
@@ -182,38 +212,39 @@ export function validatePhotoSelection(
       groupMessage = 'Este paquete no incluye foto grupal';
     }
   }
-  
+
   // Overall validation
   const isValid = individualValid && groupValid;
   let overallMessage = '';
-  
+
   if (isValid) {
-    overallMessage = '¡Perfecto! Todas las fotos requeridas están seleccionadas';
+    overallMessage =
+      '¡Perfecto! Todas las fotos requeridas están seleccionadas';
   } else {
     const issues = [];
     if (!individualValid) issues.push('fotos individuales');
     if (!groupValid) issues.push('foto grupal');
     overallMessage = `Revisa la selección de: ${issues.join(', ')}`;
   }
-  
+
   return {
     isValid,
     individual: {
       required: req.individualPhotos,
       selected: individualSelected,
       isValid: individualValid,
-      message: individualMessage
+      message: individualMessage,
     },
     group: {
       required: req.groupPhoto,
       selected: groupSelected,
       isValid: groupValid,
-      message: groupMessage
+      message: groupMessage,
     },
     overall: {
       canProceed: isValid,
-      message: overallMessage
-    }
+      message: overallMessage,
+    },
   };
 }
 
@@ -236,24 +267,24 @@ export function validatePhotoSelectionLegacy(
       required: 0,
       selected: 0,
       canRepeat: false,
-      message: 'Debes seleccionar una opción primero'
+      message: 'Debes seleccionar una opción primero',
     };
   }
-  
+
   const required = selectedOption.photos;
   const selected = selectedPhotos.length;
   const canRepeat = selectedOption.photos > 1; // Allow repetition in Option 2
-  
+
   if (selected === 0) {
     return {
       isValid: false,
       required,
       selected,
       canRepeat,
-      message: `Selecciona ${required} foto${required > 1 ? 's' : ''}`
+      message: `Selecciona ${required} foto${required > 1 ? 's' : ''}`,
     };
   }
-  
+
   if (selected < required) {
     const remaining = required - selected;
     return {
@@ -261,26 +292,26 @@ export function validatePhotoSelectionLegacy(
       required,
       selected,
       canRepeat,
-      message: `Selecciona ${remaining} foto${remaining > 1 ? 's' : ''} más`
+      message: `Selecciona ${remaining} foto${remaining > 1 ? 's' : ''} más`,
     };
   }
-  
+
   if (selected > required) {
     return {
       isValid: false,
       required,
       selected,
       canRepeat,
-      message: `Solo puedes seleccionar ${required} foto${required > 1 ? 's' : ''}`
+      message: `Solo puedes seleccionar ${required} foto${required > 1 ? 's' : ''}`,
     };
   }
-  
+
   return {
     isValid: true,
     required,
     selected,
     canRepeat,
-    message: `${selected} foto${selected > 1 ? 's' : ''} seleccionada${selected > 1 ? 's' : ''}`
+    message: `${selected} foto${selected > 1 ? 's' : ''} seleccionada${selected > 1 ? 's' : ''}`,
   };
 }
 
@@ -295,18 +326,32 @@ export function getSelectionInstructions(
   group: string;
   overall: string;
 } {
+  // Defensive null check for selectedPhotos
+  if (!selectedPhotos || typeof selectedPhotos !== 'object') {
+    return {
+      individual: 'Error en los datos de selección',
+      group: 'Error en los datos de selección',
+      overall: 'Recarga la página para continuar',
+    };
+  }
+
   if (!selectedPackage) {
     return {
       individual: 'Selecciona un paquete primero',
       group: 'Selecciona un paquete primero',
-      overall: 'Elige OPCIÓN A o OPCIÓN B para comenzar'
+      overall: 'Elige OPCIÓN A o OPCIÓN B para comenzar',
     };
   }
-  
+
   const req = selectedPackage.photoRequirements;
-  const individualCount = selectedPhotos.individual.length;
-  const groupCount = selectedPhotos.group.length;
-  
+  // Defensive checks for array properties
+  const individualCount = (selectedPhotos.individual && Array.isArray(selectedPhotos.individual)) 
+    ? selectedPhotos.individual.length 
+    : 0;
+  const groupCount = (selectedPhotos.group && Array.isArray(selectedPhotos.group)) 
+    ? selectedPhotos.group.length 
+    : 0;
+
   // Individual photo instructions
   let individualInstr = '';
   if (individualCount === 0) {
@@ -323,7 +368,7 @@ export function getSelectionInstructions(
     const excess = individualCount - req.individualPhotos;
     individualInstr = `Quita ${excess} foto${excess > 1 ? 's' : ''} individual${excess > 1 ? 'es' : ''}`;
   }
-  
+
   // Group photo instructions
   let groupInstr = '';
   if (req.groupPhoto) {
@@ -337,7 +382,7 @@ export function getSelectionInstructions(
   } else {
     groupInstr = 'Este paquete no incluye foto grupal';
   }
-  
+
   // Overall instructions
   let overallInstr = '';
   const validation = validatePhotoSelection(selectedPhotos, selectedPackage);
@@ -346,11 +391,11 @@ export function getSelectionInstructions(
   } else {
     overallInstr = 'Completa la selección de fotos para continuar';
   }
-  
+
   return {
     individual: individualInstr,
     group: groupInstr,
-    overall: overallInstr
+    overall: overallInstr,
   };
 }
 
@@ -362,10 +407,10 @@ export function getSelectionInstructionsLegacy(
   selectedPhotos: string[]
 ): string {
   if (!selectedOption) return '';
-  
+
   const required = selectedOption.photos;
   const selected = selectedPhotos.length;
-  
+
   if (selected === 0) {
     if (required === 1) {
       return 'Toca una foto para seleccionarla';
@@ -373,16 +418,16 @@ export function getSelectionInstructionsLegacy(
       return `Toca ${required} fotos para seleccionarlas (puedes repetir la misma)`;
     }
   }
-  
+
   if (selected < required) {
     const remaining = required - selected;
     return `Selecciona ${remaining} foto${remaining > 1 ? 's' : ''} más`;
   }
-  
+
   if (selected === required) {
     return '¡Perfecto! Puedes continuar al siguiente paso';
   }
-  
+
   return `Solo puedes seleccionar ${required} foto${required > 1 ? 's' : ''}`;
 }
 
@@ -432,18 +477,38 @@ export const PACKAGE_OPTIONS: PackageOption[] = [
     description: 'Carpeta impresa con diseño personalizado',
     price: 18500, // Updated realistic pricing for Argentina
     includes: [
-      { type: 'carpeta', size: '20x30', quantity: 1, description: 'Carpeta impresa con diseño personalizado (20x30)' },
-      { type: 'individual', size: '15x21', quantity: 1, description: '1 foto INDIVIDUAL (15x21)' },
-      { type: 'mini', size: '4x5', quantity: 4, description: '4 fotos 4x5 (de la misma que la individual elegida)' },
-      { type: 'grupo', size: '15x21', quantity: 1, description: '1 foto grupal (15x21)' }
+      {
+        type: 'carpeta',
+        size: '20x30',
+        quantity: 1,
+        description: 'Carpeta impresa con diseño personalizado (20x30)',
+      },
+      {
+        type: 'individual',
+        size: '15x21',
+        quantity: 1,
+        description: '1 foto INDIVIDUAL (15x21)',
+      },
+      {
+        type: 'mini',
+        size: '4x5',
+        quantity: 4,
+        description: '4 fotos 4x5 (de la misma que la individual elegida)',
+      },
+      {
+        type: 'grupo',
+        size: '15x21',
+        quantity: 1,
+        description: '1 foto grupal (15x21)',
+      },
     ],
     photoRequirements: {
       individualPhotos: 1,
       groupPhoto: true,
       canRepeatIndividual: true,
-      totalSelections: 2 // 1 individual + 1 group
+      totalSelections: 2, // 1 individual + 1 group
     },
-    mockupUrl: '/mockups/option1.jpg'
+    mockupUrl: '/mockups/option1.jpg',
   },
   {
     id: 'option-b',
@@ -451,19 +516,40 @@ export const PACKAGE_OPTIONS: PackageOption[] = [
     description: 'Carpeta impresa con diseño personalizado (opción premium)',
     price: 28500, // Updated realistic pricing for Argentina
     includes: [
-      { type: 'carpeta', size: '20x30', quantity: 1, description: 'Carpeta impresa con diseño personalizado (20x30)' },
-      { type: 'individual', size: '15x21', quantity: 2, description: '2 fotos INDIVIDUALES (15x21)' },
-      { type: 'mini', size: '4x5', quantity: 8, description: '8 fotos 4x5 (de las mismas que las individuales elegidas)' },
-      { type: 'grupo', size: '15x21', quantity: 1, description: '1 foto grupal (15x21)' }
+      {
+        type: 'carpeta',
+        size: '20x30',
+        quantity: 1,
+        description: 'Carpeta impresa con diseño personalizado (20x30)',
+      },
+      {
+        type: 'individual',
+        size: '15x21',
+        quantity: 2,
+        description: '2 fotos INDIVIDUALES (15x21)',
+      },
+      {
+        type: 'mini',
+        size: '4x5',
+        quantity: 8,
+        description:
+          '8 fotos 4x5 (de las mismas que las individuales elegidas)',
+      },
+      {
+        type: 'grupo',
+        size: '15x21',
+        quantity: 1,
+        description: '1 foto grupal (15x21)',
+      },
     ],
     photoRequirements: {
       individualPhotos: 2,
       groupPhoto: true,
       canRepeatIndividual: true,
-      totalSelections: 3 // 2 individual + 1 group
+      totalSelections: 3, // 2 individual + 1 group
     },
-    mockupUrl: '/mockups/option2.jpg'
-  }
+    mockupUrl: '/mockups/option2.jpg',
+  },
 ];
 
 /**
@@ -476,7 +562,7 @@ export const ADDITIONAL_COPIES: AdditionalCopy[] = [
     size: '4x5',
     price: 2800,
     description: '4 fotos mini adicionales (4x5)',
-    requiresBasePackage: true
+    requiresBasePackage: true,
   },
   {
     id: 'standard-10x15',
@@ -484,7 +570,7 @@ export const ADDITIONAL_COPIES: AdditionalCopy[] = [
     size: '10x15',
     price: 2200,
     description: 'Foto estándar (10x15)',
-    requiresBasePackage: true
+    requiresBasePackage: true,
   },
   {
     id: 'medium-13x18',
@@ -492,7 +578,7 @@ export const ADDITIONAL_COPIES: AdditionalCopy[] = [
     size: '13x18',
     price: 3200,
     description: 'Foto mediana (13x18)',
-    requiresBasePackage: true
+    requiresBasePackage: true,
   },
   {
     id: 'large-15x21',
@@ -500,7 +586,7 @@ export const ADDITIONAL_COPIES: AdditionalCopy[] = [
     size: '15x21',
     price: 4500,
     description: 'Foto grande (15x21)',
-    requiresBasePackage: true
+    requiresBasePackage: true,
   },
   {
     id: 'poster-20x30',
@@ -508,8 +594,8 @@ export const ADDITIONAL_COPIES: AdditionalCopy[] = [
     size: '20x30',
     price: 7800,
     description: 'Poster grande (20x30)',
-    requiresBasePackage: true
-  }
+    requiresBasePackage: true,
+  },
 ];
 
 /**
@@ -532,7 +618,7 @@ export function validatePackageSelection(
 ): PackageValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  
+
   // Check if base package is selected
   if (!selectedPackage) {
     errors.push('Debes seleccionar una opción base (OPCIÓN A o OPCIÓN B)');
@@ -540,52 +626,60 @@ export function validatePackageSelection(
       isValid: false,
       canPurchaseExtras: false,
       errors,
-      warnings
+      warnings,
     };
   }
-  
+
   // Validate photo selection requirements
   const photoReq = selectedPackage.photoRequirements;
   const individualCount = selectedPhotos.individual.length;
   const hasGroupPhoto = selectedPhotos.group.length > 0;
-  
+
   if (individualCount < photoReq.individualPhotos) {
     const missing = photoReq.individualPhotos - individualCount;
-    errors.push(`Falta${missing > 1 ? 'n' : ''} ${missing} foto${missing > 1 ? 's' : ''} individual${missing > 1 ? 'es' : ''}`);
+    errors.push(
+      `Falta${missing > 1 ? 'n' : ''} ${missing} foto${missing > 1 ? 's' : ''} individual${missing > 1 ? 'es' : ''}`
+    );
   }
-  
+
   if (individualCount > photoReq.individualPhotos) {
     const excess = individualCount - photoReq.individualPhotos;
-    errors.push(`Has seleccionado ${excess} foto${excess > 1 ? 's' : ''} individual${excess > 1 ? 'es' : ''} de más`);
+    errors.push(
+      `Has seleccionado ${excess} foto${excess > 1 ? 's' : ''} individual${excess > 1 ? 'es' : ''} de más`
+    );
   }
-  
+
   if (photoReq.groupPhoto && !hasGroupPhoto) {
     errors.push('Debes seleccionar una foto grupal');
   }
-  
+
   if (!photoReq.groupPhoto && hasGroupPhoto) {
-    warnings.push('Has seleccionado una foto grupal que no está incluida en este paquete');
+    warnings.push(
+      'Has seleccionado una foto grupal que no está incluida en este paquete'
+    );
   }
-  
+
   // Validate extras can only be purchased with base package
-  const hasExtras = Object.values(additionalCopies).some(qty => qty > 0);
+  const hasExtras = Object.values(additionalCopies).some((qty) => qty > 0);
   if (hasExtras) {
     // Check if any additional copy requires base package
     Object.entries(additionalCopies).forEach(([copyId, quantity]) => {
       if (quantity > 0) {
-        const copy = ADDITIONAL_COPIES.find(c => c.id === copyId);
+        const copy = ADDITIONAL_COPIES.find((c) => c.id === copyId);
         if (copy?.requiresBasePackage && !selectedPackage) {
-          errors.push(`${copy.name} solo se puede comprar junto con una opción base`);
+          errors.push(
+            `${copy.name} solo se puede comprar junto con una opción base`
+          );
         }
       }
     });
   }
-  
+
   return {
     isValid: errors.length === 0,
     canPurchaseExtras: !!selectedPackage,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -600,11 +694,21 @@ export function calculateUnifiedTotal(
   packagePrice: number;
   additionalPrice: number;
   total: number;
-  breakdown: Array<{ name: string; quantity: number; price: number; total: number }>;
+  breakdown: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }>;
   validation?: PackageValidationResult;
 } {
-  const breakdown: Array<{ name: string; quantity: number; price: number; total: number }> = [];
-  
+  const breakdown: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }> = [];
+
   // Package price
   const packagePrice = selectedPackage?.price || 0;
   if (selectedPackage) {
@@ -612,16 +716,16 @@ export function calculateUnifiedTotal(
       name: selectedPackage.name,
       quantity: 1,
       price: packagePrice,
-      total: packagePrice
+      total: packagePrice,
     });
   }
-  
+
   // Additional copies (only if base package is selected)
   let additionalPrice = 0;
   if (selectedPackage) {
     Object.entries(additionalCopies).forEach(([copyId, quantity]) => {
       if (quantity > 0) {
-        const copy = ADDITIONAL_COPIES.find(c => c.id === copyId);
+        const copy = ADDITIONAL_COPIES.find((c) => c.id === copyId);
         if (copy) {
           const total = copy.price * quantity;
           additionalPrice += total;
@@ -629,25 +733,29 @@ export function calculateUnifiedTotal(
             name: copy.name,
             quantity,
             price: copy.price,
-            total
+            total,
           });
         }
       }
     });
   }
-  
+
   const result = {
     packagePrice,
     additionalPrice,
     total: packagePrice + additionalPrice,
-    breakdown
+    breakdown,
   };
-  
+
   // Add validation if photo selection is provided
   if (selectedPhotos) {
-    result.validation = validatePackageSelection(selectedPackage, additionalCopies, selectedPhotos);
+    result.validation = validatePackageSelection(
+      selectedPackage,
+      additionalCopies,
+      selectedPhotos
+    );
   }
-  
+
   return result;
 }
 
@@ -657,43 +765,51 @@ export function calculateUnifiedTotal(
 export const PRICING_CONFIG = {
   // Tax rate (0 = no tax)
   taxRate: 0,
-  
+
   // Currency settings
   currency: 'ARS',
   locale: 'es-AR',
-  
+
+  // Default pricing (fallback when settings are unavailable)
+  defaults: {
+    defaultPhotoPriceArs: 500,
+    bulkDiscountPercentage: 10,
+    bulkDiscountMinimum: 5,
+    packPriceArs: 2000,
+  },
+
   // Discount thresholds (future use)
   discounts: {
     bulk: { threshold: 5, percentage: 0.1 }, // 10% off 5+ items
     firstTime: { percentage: 0.05 }, // 5% off first purchase
   },
-  
+
   // Price limits for validation (updated for Argentina 2024)
   limits: {
     maxTotal: 150000, // Maximum order total (ARS)
-    minTotal: 15000,  // Minimum order total (ARS)
+    minTotal: 15000, // Minimum order total (ARS)
   },
-  
+
   // Package-specific rules
   packageRules: {
     requiresBasePackage: true, // Extras require base package
     allowPhotoRepetition: true, // Same photo can be used for mini copies
     groupPhotoMandatory: true, // Group photo is mandatory in both packages
-  }
+  },
 } as const;
 
 /**
  * Helper function to get package by ID
  */
 export function getPackageById(packageId: string): PackageOption | null {
-  return PACKAGE_OPTIONS.find(pkg => pkg.id === packageId) || null;
+  return PACKAGE_OPTIONS.find((pkg) => pkg.id === packageId) || null;
 }
 
 /**
  * Helper function to get additional copy by ID
  */
 export function getAdditionalCopyById(copyId: string): AdditionalCopy | null {
-  return ADDITIONAL_COPIES.find(copy => copy.id === copyId) || null;
+  return ADDITIONAL_COPIES.find((copy) => copy.id === copyId) || null;
 }
 
 /**
@@ -705,11 +821,11 @@ export function calculatePackageSavings(packageOption: PackageOption): number {
     carpeta: 8000,
     individual_15x21: 4500,
     mini_4x5: 2800 / 4, // Price per unit
-    grupo_15x21: 4500
+    grupo_15x21: 4500,
   };
-  
+
   let individualTotal = 0;
-  packageOption.includes.forEach(item => {
+  packageOption.includes.forEach((item) => {
     switch (item.type) {
       case 'carpeta':
         individualTotal += individualPrices.carpeta * item.quantity;
@@ -725,6 +841,6 @@ export function calculatePackageSavings(packageOption: PackageOption): number {
         break;
     }
   });
-  
+
   return Math.max(0, individualTotal - packageOption.price);
 }

@@ -49,10 +49,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (orderFetchError || !orderRow) {
-        return NextResponse.json(
-          { error: 'Order not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
       }
 
       // Count items to estimate total (sandbox: dummy pricing)
@@ -100,13 +97,17 @@ export async function POST(request: NextRequest) {
         payer: {
           name: orderRow.contact_name || orderRow.customer_name || 'Cliente',
           email:
-            orderRow.contact_email || orderRow.customer_email || 'cliente@example.com',
-          phone: orderRow.contact_phone || orderRow.customer_phone
-            ? {
-                area_code: '',
-                number: (orderRow.contact_phone || orderRow.customer_phone) as string,
-              }
-            : undefined,
+            orderRow.contact_email ||
+            orderRow.customer_email ||
+            'cliente@example.com',
+          phone:
+            orderRow.contact_phone || orderRow.customer_phone
+              ? {
+                  area_code: '',
+                  number: (orderRow.contact_phone ||
+                    orderRow.customer_phone) as string,
+                }
+              : undefined,
         },
         back_urls: {
           success: `${MP_CONFIG.successUrl}/${selectionData.token}/payment-success?order=${selectionData.orderId}`,
@@ -119,10 +120,14 @@ export async function POST(request: NextRequest) {
         statement_descriptor: 'LookEscolar Fotos',
         expires: true,
         expiration_date_from: new Date().toISOString(),
-        expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        expiration_date_to: new Date(
+          Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString(),
       };
 
-      const mpResponse = await preferenceClient.create({ body: mpPreferenceBody });
+      const mpResponse = await preferenceClient.create({
+        body: mpPreferenceBody,
+      });
 
       if (!mpResponse.id) {
         throw new Error('Failed to create Mercado Pago preference');
@@ -166,10 +171,7 @@ export async function POST(request: NextRequest) {
 
     // Check token expiration
     if (new Date(subject.token_expires_at) < new Date()) {
-      return NextResponse.json(
-        { error: 'Token expired' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Token expired' }, { status: 401 });
     }
 
     // Verify all photos belong to the subject
@@ -273,7 +275,9 @@ export async function POST(request: NextRequest) {
       statement_descriptor: 'LookEscolar Fotos',
       expires: true,
       expiration_date_from: new Date().toISOString(),
-      expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+      expiration_date_to: new Date(
+        Date.now() + 24 * 60 * 60 * 1000
+      ).toISOString(), // 24 hours
     };
 
     const mpResponse = await preferenceClient.create({ body: preference });
@@ -309,6 +313,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

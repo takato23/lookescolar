@@ -112,7 +112,9 @@ export function EnhancedQRScanner({
 
   const [scanResults, setScanResults] = useState<QRScanResult[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>(
+    'environment'
+  );
   const [soundEnabled, setSoundEnabled] = useState(enableSound);
 
   // Refs
@@ -154,14 +156,14 @@ export function EnhancedQRScanner({
     } catch (error: any) {
       console.error('Camera initialization failed:', error);
       setHasCamera(false);
-      
+
       let errorMessage = 'Failed to access camera';
       if (error.name === 'NotAllowedError') {
         errorMessage = 'Camera permission denied. Please allow camera access.';
       } else if (error.name === 'NotFoundError') {
         errorMessage = 'No camera found. Please check your device.';
       }
-      
+
       setError(errorMessage);
       return false;
     }
@@ -193,15 +195,15 @@ export function EnhancedQRScanner({
     }
 
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
+
     try {
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      
+
       // Try multiple QR detection libraries if enabled
       let qrResult = null;
-      
+
       // Primary detection with jsQR
-      const jsQR = await import('jsqr').then(m => m.default);
+      const jsQR = await import('jsqr').then((m) => m.default);
       qrResult = jsQR(imageData.data, imageData.width, imageData.height, {
         inversionAttempts: 'attemptBoth',
       });
@@ -218,92 +220,106 @@ export function EnhancedQRScanner({
   /**
    * Handle QR detection with enhanced processing
    */
-  const handleQRDetection = useCallback(async (qrData: string, scanDuration: number) => {
-    // Prevent duplicate scans
-    const now = Date.now();
-    if (now - lastScanTime.current < settings.scanInterval) {
-      return;
-    }
-    lastScanTime.current = now;
+  const handleQRDetection = useCallback(
+    async (qrData: string, scanDuration: number) => {
+      // Prevent duplicate scans
+      const now = Date.now();
+      if (now - lastScanTime.current < settings.scanInterval) {
+        return;
+      }
+      lastScanTime.current = now;
 
-    setIsProcessing(true);
+      setIsProcessing(true);
 
-    try {
-      // Validate QR code
-      const response = await fetch('/api/qr/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        // Validate QR code
+        const response = await fetch('/api/qr/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            qrCode: qrData,
+            eventId,
+          }),
+        });
+
+        const validationResult = await response.json();
+        const isSuccess = validationResult.success && validationResult.valid;
+
+        // Create scan result
+        const scanResult: QRScanResult = {
           qrCode: qrData,
-          eventId,
-        }),
-      });
+          studentData: isSuccess ? validationResult.data : undefined,
+          confidence: isSuccess ? 1.0 : 0.0,
+          timestamp: new Date(),
+          deviceType: getDeviceType(),
+          scanDuration,
+        };
 
-      const validationResult = await response.json();
-      const isSuccess = validationResult.success && validationResult.valid;
+        // Update statistics
+        setScanStats((prev) => ({
+          totalScans: prev.totalScans + 1,
+          successfulScans: prev.successfulScans + (isSuccess ? 1 : 0),
+          failedScans: prev.failedScans + (isSuccess ? 0 : 1),
+          avgScanTime:
+            (prev.avgScanTime * prev.totalScans + scanDuration) /
+            (prev.totalScans + 1),
+          scanRate:
+            prev.totalScans / ((Date.now() - prev.totalScans * 60000) / 60000),
+          deviceTypes: {
+            ...prev.deviceTypes,
+            [scanResult.deviceType]:
+              (prev.deviceTypes[scanResult.deviceType] || 0) + 1,
+          },
+        }));
 
-      // Create scan result
-      const scanResult: QRScanResult = {
-        qrCode: qrData,
-        studentData: isSuccess ? validationResult.data : undefined,
-        confidence: isSuccess ? 1.0 : 0.0,
-        timestamp: new Date(),
-        deviceType: getDeviceType(),
-        scanDuration,
-      };
+        // Add to results
+        setScanResults((prev) => [scanResult, ...prev.slice(0, 9)]); // Keep last 10 results
 
-      // Update statistics
-      setScanStats(prev => ({
-        totalScans: prev.totalScans + 1,
-        successfulScans: prev.successfulScans + (isSuccess ? 1 : 0),
-        failedScans: prev.failedScans + (isSuccess ? 0 : 1),
-        avgScanTime: (prev.avgScanTime * prev.totalScans + scanDuration) / (prev.totalScans + 1),
-        scanRate: prev.totalScans / ((Date.now() - (prev.totalScans * 60000)) / 60000),
-        deviceTypes: {
-          ...prev.deviceTypes,
-          [scanResult.deviceType]: (prev.deviceTypes[scanResult.deviceType] || 0) + 1,
-        },
-      }));
+        // Analytics tracking
+        if (enableAnalytics) {
+          await recordScanEvent(scanResult);
+        }
 
-      // Add to results
-      setScanResults(prev => [scanResult, ...prev.slice(0, 9)]); // Keep last 10 results
+        // Sound feedback
+        if (soundEnabled) {
+          playFeedbackSound(isSuccess);
+        }
 
-      // Analytics tracking
-      if (enableAnalytics) {
-        await recordScanEvent(scanResult);
+        // Callbacks
+        if (isSuccess) {
+          onScan?.(scanResult);
+          onSubjectFound?.(scanResult.studentData!);
+
+          toast.success(`Student detected: ${scanResult.studentData?.name}`, {
+            duration: 3000,
+          });
+        } else {
+          toast.error('QR code not recognized', {
+            description: 'Make sure the QR code is from this event',
+          });
+        }
+
+        // Stop scanning if in single mode
+        if (scanMode === 'single' && isSuccess) {
+          stopScanning();
+        }
+      } catch (error) {
+        console.error('QR validation failed:', error);
+        toast.error('Failed to validate QR code');
+      } finally {
+        setIsProcessing(false);
       }
-
-      // Sound feedback
-      if (soundEnabled) {
-        playFeedbackSound(isSuccess);
-      }
-
-      // Callbacks
-      if (isSuccess) {
-        onScan?.(scanResult);
-        onSubjectFound?.(scanResult.studentData!);
-        
-        toast.success(`Student detected: ${scanResult.studentData?.name}`, {
-          duration: 3000,
-        });
-      } else {
-        toast.error('QR code not recognized', {
-          description: 'Make sure the QR code is from this event',
-        });
-      }
-
-      // Stop scanning if in single mode
-      if (scanMode === 'single' && isSuccess) {
-        stopScanning();
-      }
-
-    } catch (error) {
-      console.error('QR validation failed:', error);
-      toast.error('Failed to validate QR code');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [settings.scanInterval, eventId, enableAnalytics, soundEnabled, onScan, onSubjectFound, scanMode]);
+    },
+    [
+      settings.scanInterval,
+      eventId,
+      enableAnalytics,
+      soundEnabled,
+      onScan,
+      onSubjectFound,
+      scanMode,
+    ]
+  );
 
   /**
    * Record scan event for analytics
@@ -319,7 +335,9 @@ export function EnhancedQRScanner({
           deviceType: scanResult.deviceType,
           scanDuration: scanResult.scanDuration,
           success: !!scanResult.studentData,
-          errorMessage: scanResult.studentData ? undefined : 'QR not recognized',
+          errorMessage: scanResult.studentData
+            ? undefined
+            : 'QR not recognized',
         }),
       });
     } catch (error) {
@@ -332,8 +350,10 @@ export function EnhancedQRScanner({
    */
   const getDeviceType = (): string => {
     const userAgent = navigator.userAgent.toLowerCase();
-    if (userAgent.includes('mobile') || userAgent.includes('android')) return 'mobile';
-    if (userAgent.includes('tablet') || userAgent.includes('ipad')) return 'tablet';
+    if (userAgent.includes('mobile') || userAgent.includes('android'))
+      return 'mobile';
+    if (userAgent.includes('tablet') || userAgent.includes('ipad'))
+      return 'tablet';
     return 'desktop';
   };
 
@@ -341,7 +361,8 @@ export function EnhancedQRScanner({
    * Play audio feedback
    */
   const playFeedbackSound = (success: boolean) => {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -351,7 +372,10 @@ export function EnhancedQRScanner({
     oscillator.frequency.value = success ? 1000 : 400;
     oscillator.type = 'sine';
     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      audioContext.currentTime + 0.1
+    );
 
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.1);
@@ -363,7 +387,7 @@ export function EnhancedQRScanner({
   const startScanning = useCallback(async () => {
     if (disabled) return;
 
-    const cameraReady = hasCamera || await initializeCamera();
+    const cameraReady = hasCamera || (await initializeCamera());
     if (!cameraReady) return;
 
     setIsScanning(true);
@@ -385,14 +409,14 @@ export function EnhancedQRScanner({
    */
   const stopScanning = useCallback(() => {
     setIsScanning(false);
-    
+
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
 
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
 
@@ -449,7 +473,13 @@ export function EnhancedQRScanner({
   }
 
   return (
-    <Card className={cn('overflow-hidden', isFullscreen && 'fixed inset-0 z-50 rounded-none', className)}>
+    <Card
+      className={cn(
+        'overflow-hidden',
+        isFullscreen && 'fixed inset-0 z-50 rounded-none',
+        className
+      )}
+    >
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -457,7 +487,8 @@ export function EnhancedQRScanner({
             <div>
               <span className="text-lg">Enhanced QR Scanner</span>
               <div className="text-xs font-normal text-gray-500">
-                {scanMode} Mode • {facingMode === 'environment' ? 'Back Camera' : 'Front Camera'}
+                {scanMode} Mode •{' '}
+                {facingMode === 'environment' ? 'Back Camera' : 'Front Camera'}
               </div>
             </div>
           </div>
@@ -489,13 +520,13 @@ export function EnhancedQRScanner({
             muted
             style={{ display: isScanning ? 'block' : 'none' }}
           />
-          
+
           <canvas ref={canvasRef} className="hidden" />
 
           {/* Scanning overlay */}
           {isScanning && (
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-4 border-2 border-green-400 rounded-lg">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-4 rounded-lg border-2 border-green-400">
                 <motion.div
                   className="absolute inset-x-0 h-0.5 bg-green-400"
                   animate={{ y: [0, '100%', 0] }}
@@ -507,10 +538,10 @@ export function EnhancedQRScanner({
 
           {/* Processing overlay */}
           {isProcessing && (
-            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-              <div className="bg-white p-4 rounded-lg text-center">
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-50">
+              <div className="rounded-lg bg-white p-4 text-center">
                 <LoadingSpinner size="sm" />
-                <p className="text-sm mt-2">Processing QR code...</p>
+                <p className="mt-2 text-sm">Processing QR code...</p>
               </div>
             </div>
           )}
@@ -519,52 +550,68 @@ export function EnhancedQRScanner({
         {/* Controls */}
         <div className="flex gap-2">
           {!isScanning ? (
-            <Button onClick={startScanning} disabled={disabled} className="flex-1">
+            <Button
+              onClick={startScanning}
+              disabled={disabled}
+              className="flex-1"
+            >
               <Camera className="mr-2 h-4 w-4" />
               Start Scanner
             </Button>
           ) : (
-            <Button onClick={stopScanning} variant="destructive" className="flex-1">
+            <Button
+              onClick={stopScanning}
+              variant="danger"
+              className="flex-1"
+            >
               <Square className="mr-2 h-4 w-4" />
               Stop Scanner
             </Button>
           )}
 
-          <Button onClick={() => setIsFullscreen(!isFullscreen)} variant="outline" size="sm">
+          <Button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            variant="outline"
+            size="sm"
+          >
             <Maximize2 className="h-4 w-4" />
           </Button>
 
-          <Button 
-            onClick={() => setSoundEnabled(!soundEnabled)} 
-            variant="outline" 
+          <Button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            variant="outline"
             size="sm"
           >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {soundEnabled ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
         {/* Scan Results */}
         {scanResults.length > 0 && (
           <div className="space-y-2">
-            <h4 className="font-semibold text-sm">Recent Scans:</h4>
-            <div className="space-y-1 max-h-40 overflow-y-auto">
+            <h4 className="text-sm font-semibold">Recent Scans:</h4>
+            <div className="max-h-40 space-y-1 overflow-y-auto">
               {scanResults.map((result, index) => (
                 <div
                   key={`${result.qrCode}-${result.timestamp.getTime()}`}
                   className={cn(
-                    'flex items-center justify-between p-2 rounded border',
-                    result.studentData 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-red-50 border-red-200'
+                    'flex items-center justify-between rounded border p-2',
+                    result.studentData
+                      ? 'border-green-200 bg-green-50'
+                      : 'border-red-200 bg-red-50'
                   )}
                 >
                   <div className="flex items-center gap-2">
                     {result.studentData ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600" />
                     ) : (
-                      <X className="w-4 h-4 text-red-600" />
+                      <X className="h-4 w-4 text-red-600" />
                     )}
-                    <span className="font-medium text-sm">
+                    <span className="text-sm font-medium">
                       {result.studentData?.name || 'Unknown QR'}
                     </span>
                   </div>
@@ -594,7 +641,11 @@ export function EnhancedQRScanner({
             </div>
             <div className="space-y-1">
               <div className="text-2xl font-bold text-purple-600">
-                {((scanStats.successfulScans / scanStats.totalScans) * 100).toFixed(0)}%
+                {(
+                  (scanStats.successfulScans / scanStats.totalScans) *
+                  100
+                ).toFixed(0)}
+                %
               </div>
               <div className="text-xs text-gray-500">Success Rate</div>
             </div>

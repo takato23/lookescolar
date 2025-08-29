@@ -7,16 +7,27 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCw, 
-  Search, 
-  User, 
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Search,
+  User,
   Users,
   Tag,
   Check,
@@ -26,7 +37,7 @@ import {
   Wand2,
   AlertCircle,
   Camera,
-  FileImage
+  FileImage,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
@@ -92,13 +103,13 @@ interface PhotoPreviewWithNameDetectionProps {
   onUpdatePhotoType: (photoId: string, type: Photo['photo_type']) => void;
 }
 
-export default function PhotoPreviewWithNameDetection({ 
-  photo, 
-  students, 
-  open, 
+export default function PhotoPreviewWithNameDetection({
+  photo,
+  students,
+  open,
   onOpenChange,
   onClassifyStudent,
-  onUpdatePhotoType
+  onUpdatePhotoType,
 }: PhotoPreviewWithNameDetectionProps) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -106,13 +117,17 @@ export default function PhotoPreviewWithNameDetection({
   const [selectedNameCard, setSelectedNameCard] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestedStudents, setSuggestedStudents] = useState<Student[]>([]);
-  const [detectionMode, setDetectionMode] = useState<'faces' | 'name_cards' | 'manual'>('manual');
+  const [detectionMode, setDetectionMode] = useState<
+    'faces' | 'name_cards' | 'manual'
+  >('manual');
   const [loading, setLoading] = useState(false);
 
   // Filter students based on search
-  const filteredStudents = students.filter(student => 
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (student.course_name && student.course_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredStudents = students.filter(
+    (student) =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (student.course_name &&
+        student.course_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Reset state when photo changes
@@ -132,8 +147,8 @@ export default function PhotoPreviewWithNameDetection({
     try {
       // This would call an AI service to detect name cards or faces
       // For now, we'll simulate some detection results
-      
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
+
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate processing time
 
       // Mock detection results
       const mockNameCards: NameCardDetection[] = [
@@ -143,9 +158,9 @@ export default function PhotoPreviewWithNameDetection({
           text: 'JUAN PEREZ',
           confidence: 0.85,
           suggested_students: students
-            .filter(s => s.name.toLowerCase().includes('juan'))
-            .map(s => s.id)
-            .slice(0, 3)
+            .filter((s) => s.name.toLowerCase().includes('juan'))
+            .map((s) => s.id)
+            .slice(0, 3),
         },
         {
           id: '2',
@@ -153,10 +168,10 @@ export default function PhotoPreviewWithNameDetection({
           text: 'MARIA GARCIA',
           confidence: 0.92,
           suggested_students: students
-            .filter(s => s.name.toLowerCase().includes('maria'))
-            .map(s => s.id)
-            .slice(0, 3)
-        }
+            .filter((s) => s.name.toLowerCase().includes('maria'))
+            .map((s) => s.id)
+            .slice(0, 3),
+        },
       ];
 
       const mockFaces: FaceDetection[] = [
@@ -164,28 +179,29 @@ export default function PhotoPreviewWithNameDetection({
           id: '1',
           bbox: { x: 0.1, y: 0.2, width: 0.2, height: 0.3 },
           confidence: 0.78,
-          suggested_students: students.slice(0, 3).map(s => s.id)
+          suggested_students: students.slice(0, 3).map((s) => s.id),
         },
         {
           id: '2',
           bbox: { x: 0.7, y: 0.25, width: 0.18, height: 0.28 },
           confidence: 0.82,
-          suggested_students: students.slice(3, 6).map(s => s.id)
-        }
+          suggested_students: students.slice(3, 6).map((s) => s.id),
+        },
       ];
 
       // Update photo with detection results (in real app, this would update the database)
       photo.face_detections = mockFaces;
       photo.name_card_detections = mockNameCards;
 
-      toast.success(`Detected ${mockFaces.length} faces and ${mockNameCards.length} name cards`);
-      
+      toast.success(
+        `Detected ${mockFaces.length} faces and ${mockNameCards.length} name cards`
+      );
+
       if (mockNameCards.length > 0) {
         setDetectionMode('name_cards');
       } else if (mockFaces.length > 0) {
         setDetectionMode('faces');
       }
-
     } catch (error) {
       console.error('Name detection error:', error);
       toast.error('Failed to detect names in photo');
@@ -198,7 +214,7 @@ export default function PhotoPreviewWithNameDetection({
     try {
       await onClassifyStudent(photo.id, studentId);
       toast.success('Student classified successfully');
-      
+
       // Clear selections
       setSelectedFace(null);
       setSelectedNameCard(null);
@@ -223,73 +239,79 @@ export default function PhotoPreviewWithNameDetection({
     if (!photo.preview_path) return null;
 
     return (
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="pointer-events-none absolute inset-0">
         {/* Name card detections */}
-        {detectionMode === 'name_cards' && photo.name_card_detections?.map((detection) => (
-          <div
-            key={detection.id}
-            className={`absolute border-2 pointer-events-auto cursor-pointer ${
-              selectedNameCard === detection.id 
-                ? 'border-green-500 bg-green-500/20' 
-                : 'border-blue-500 bg-blue-500/10'
-            }`}
-            style={{
-              left: `${detection.bbox.x * 100}%`,
-              top: `${detection.bbox.y * 100}%`,
-              width: `${detection.bbox.width * 100}%`,
-              height: `${detection.bbox.height * 100}%`
-            }}
-            onClick={() => {
-              setSelectedNameCard(detection.id);
-              if (detection.suggested_students) {
-                setSuggestedStudents(
-                  students.filter(s => detection.suggested_students!.includes(s.id))
-                );
-              }
-            }}
-          >
-            <div className="absolute -top-6 left-0 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-              {detection.text} ({Math.round(detection.confidence * 100)}%)
+        {detectionMode === 'name_cards' &&
+          photo.name_card_detections?.map((detection) => (
+            <div
+              key={detection.id}
+              className={`pointer-events-auto absolute cursor-pointer border-2 ${
+                selectedNameCard === detection.id
+                  ? 'border-green-500 bg-green-500/20'
+                  : 'border-blue-500 bg-blue-500/10'
+              }`}
+              style={{
+                left: `${detection.bbox.x * 100}%`,
+                top: `${detection.bbox.y * 100}%`,
+                width: `${detection.bbox.width * 100}%`,
+                height: `${detection.bbox.height * 100}%`,
+              }}
+              onClick={() => {
+                setSelectedNameCard(detection.id);
+                if (detection.suggested_students) {
+                  setSuggestedStudents(
+                    students.filter((s) =>
+                      detection.suggested_students!.includes(s.id)
+                    )
+                  );
+                }
+              }}
+            >
+              <div className="absolute -top-6 left-0 rounded bg-blue-500 px-2 py-1 text-xs text-white">
+                {detection.text} ({Math.round(detection.confidence * 100)}%)
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
         {/* Face detections */}
-        {detectionMode === 'faces' && photo.face_detections?.map((detection) => (
-          <div
-            key={detection.id}
-            className={`absolute border-2 rounded-full pointer-events-auto cursor-pointer ${
-              selectedFace === detection.id 
-                ? 'border-green-500 bg-green-500/20' 
-                : 'border-yellow-500 bg-yellow-500/10'
-            }`}
-            style={{
-              left: `${detection.bbox.x * 100}%`,
-              top: `${detection.bbox.y * 100}%`,
-              width: `${detection.bbox.width * 100}%`,
-              height: `${detection.bbox.height * 100}%`
-            }}
-            onClick={() => {
-              setSelectedFace(detection.id);
-              if (detection.suggested_students) {
-                setSuggestedStudents(
-                  students.filter(s => detection.suggested_students!.includes(s.id))
-                );
-              }
-            }}
-          >
-            <div className="absolute -top-6 left-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded">
-              Face ({Math.round(detection.confidence * 100)}%)
+        {detectionMode === 'faces' &&
+          photo.face_detections?.map((detection) => (
+            <div
+              key={detection.id}
+              className={`pointer-events-auto absolute cursor-pointer rounded-full border-2 ${
+                selectedFace === detection.id
+                  ? 'border-green-500 bg-green-500/20'
+                  : 'border-yellow-500 bg-yellow-500/10'
+              }`}
+              style={{
+                left: `${detection.bbox.x * 100}%`,
+                top: `${detection.bbox.y * 100}%`,
+                width: `${detection.bbox.width * 100}%`,
+                height: `${detection.bbox.height * 100}%`,
+              }}
+              onClick={() => {
+                setSelectedFace(detection.id);
+                if (detection.suggested_students) {
+                  setSuggestedStudents(
+                    students.filter((s) =>
+                      detection.suggested_students!.includes(s.id)
+                    )
+                  );
+                }
+              }}
+            >
+              <div className="absolute -top-6 left-0 rounded bg-yellow-500 px-2 py-1 text-xs text-white">
+                Face ({Math.round(detection.confidence * 100)}%)
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
     );
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+      <DialogContent className="flex h-[90vh] max-w-6xl flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileImage className="h-5 w-5" />
@@ -297,11 +319,11 @@ export default function PhotoPreviewWithNameDetection({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex gap-4 min-h-0">
+        <div className="flex min-h-0 flex-1 gap-4">
           {/* Photo Preview */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex flex-1 flex-col">
             {/* Photo Controls */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -310,7 +332,7 @@ export default function PhotoPreviewWithNameDetection({
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   {Math.round(zoom * 100)}%
                 </span>
                 <Button
@@ -330,7 +352,10 @@ export default function PhotoPreviewWithNameDetection({
               </div>
 
               <div className="flex items-center gap-2">
-                <Select value={detectionMode} onValueChange={(value: any) => setDetectionMode(value)}>
+                <Select
+                  value={detectionMode}
+                  onValueChange={(value: any) => setDetectionMode(value)}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
@@ -347,9 +372,9 @@ export default function PhotoPreviewWithNameDetection({
                   size="sm"
                 >
                   {loading ? (
-                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   ) : (
-                    <Wand2 className="h-4 w-4 mr-2" />
+                    <Wand2 className="mr-2 h-4 w-4" />
                   )}
                   Detect Names
                 </Button>
@@ -357,14 +382,14 @@ export default function PhotoPreviewWithNameDetection({
             </div>
 
             {/* Photo Display */}
-            <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden relative">
+            <div className="relative flex-1 overflow-hidden rounded-lg bg-gray-100">
               {photo.preview_path ? (
-                <div className="relative w-full h-full flex items-center justify-center">
+                <div className="relative flex h-full w-full items-center justify-center">
                   <div
                     className="relative"
                     style={{
                       transform: `scale(${zoom}) rotate(${rotation}deg)`,
-                      transition: 'transform 0.2s ease'
+                      transition: 'transform 0.2s ease',
                     }}
                   >
                     <Image
@@ -372,16 +397,16 @@ export default function PhotoPreviewWithNameDetection({
                       alt={photo.filename}
                       width={800}
                       height={600}
-                      className="max-w-full max-h-full object-contain"
+                      className="max-h-full max-w-full object-contain"
                     />
-                    
+
                     {renderDetectionOverlay()}
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex h-full items-center justify-center">
                   <div className="text-center">
-                    <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <Camera className="mx-auto mb-4 h-16 w-16 text-gray-400" />
                     <p className="text-gray-500">No preview available</p>
                   </div>
                 </div>
@@ -392,9 +417,11 @@ export default function PhotoPreviewWithNameDetection({
             <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
               <div>
                 <Label>Type</Label>
-                <Select 
-                  value={photo.photo_type} 
-                  onValueChange={(value: Photo['photo_type']) => handlePhotoTypeChange(value)}
+                <Select
+                  value={photo.photo_type}
+                  onValueChange={(value: Photo['photo_type']) =>
+                    handlePhotoTypeChange(value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -407,29 +434,32 @@ export default function PhotoPreviewWithNameDetection({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div>
                 <Label>QR Codes</Label>
-                <div className="flex items-center gap-1 mt-1">
+                <div className="mt-1 flex items-center gap-1">
                   <QrCode className="h-4 w-4" />
                   <span>{photo.detected_qr_codes.length}</span>
                 </div>
               </div>
-              
+
               <div>
                 <Label>Status</Label>
-                <Badge variant={photo.approved ? "default" : "secondary"} className="mt-1">
-                  {photo.approved ? "Approved" : "Pending"}
+                <Badge
+                  variant={photo.approved ? 'default' : 'secondary'}
+                  className="mt-1"
+                >
+                  {photo.approved ? 'Approved' : 'Pending'}
                 </Badge>
               </div>
             </div>
           </div>
 
           {/* Student Selection Panel */}
-          <div className="w-80 flex flex-col">
+          <div className="flex w-80 flex-col">
             <Card className="flex-1">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <User className="h-4 w-4" />
                   Classify Student
                 </CardTitle>
@@ -439,7 +469,7 @@ export default function PhotoPreviewWithNameDetection({
                 <div>
                   <Label htmlFor="student-search">Search Students</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Search className="text-muted-foreground absolute left-3 top-3 h-4 w-4" />
                     <Input
                       id="student-search"
                       placeholder="Search by name or course..."
@@ -454,7 +484,7 @@ export default function PhotoPreviewWithNameDetection({
                 {suggestedStudents.length > 0 && (
                   <div>
                     <Label>AI Suggestions</Label>
-                    <div className="space-y-2 mt-2">
+                    <div className="mt-2 space-y-2">
                       {suggestedStudents.map((student) => (
                         <Button
                           key={student.id}
@@ -466,7 +496,7 @@ export default function PhotoPreviewWithNameDetection({
                           <div className="text-left">
                             <div className="font-medium">{student.name}</div>
                             {student.course_name && (
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-muted-foreground text-xs">
                                 {student.course_name}
                               </div>
                             )}
@@ -481,28 +511,26 @@ export default function PhotoPreviewWithNameDetection({
                 {/* All Students */}
                 <div>
                   <Label>All Students ({filteredStudents.length})</Label>
-                  <ScrollArea className="h-64 mt-2">
+                  <ScrollArea className="mt-2 h-64">
                     <div className="space-y-2">
                       {filteredStudents.map((student) => (
                         <Button
                           key={student.id}
                           variant="ghost"
                           size="sm"
-                          className="w-full justify-start p-3 h-auto"
+                          className="h-auto w-full justify-start p-3"
                           onClick={() => handleStudentSelection(student.id)}
                         >
-                          <div className="text-left flex-1">
+                          <div className="flex-1 text-left">
                             <div className="font-medium">{student.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {student.course_name ? (
-                                `${student.course_name} • ${student.photo_count} photos`
-                              ) : (
-                                `No course • ${student.photo_count} photos`
-                              )}
+                            <div className="text-muted-foreground text-xs">
+                              {student.course_name
+                                ? `${student.course_name} • ${student.photo_count} photos`
+                                : `No course • ${student.photo_count} photos`}
                             </div>
                             {student.qr_code && (
-                              <Badge variant="outline" className="text-xs mt-1">
-                                <QrCode className="h-3 w-3 mr-1" />
+                              <Badge variant="outline" className="mt-1 text-xs">
+                                <QrCode className="mr-1 h-3 w-3" />
                                 QR
                               </Badge>
                             )}

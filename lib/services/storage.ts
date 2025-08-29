@@ -170,7 +170,7 @@ class StorageService {
     try {
       // SECURITY: Sanitize path to prevent path traversal attacks
       const sanitizedPath = this.sanitizePath(path);
-      
+
       // Verificar cache primero
       const cacheKey = `${sanitizedPath}:${JSON.stringify(options)}`;
       const cached = this.urlCache.get(cacheKey);
@@ -216,7 +216,7 @@ class StorageService {
       // Cache URL for performance
       this.urlCache.set(cacheKey, {
         url: data.signedUrl,
-        expiresAt: Date.now() + (expiresIn * 1000) - 5000, // 5 seconds buffer
+        expiresAt: Date.now() + expiresIn * 1000 - 5000, // 5 seconds buffer
       });
 
       // Track egress for new URL generation
@@ -231,7 +231,7 @@ class StorageService {
       logger.debug('Generated new signed URL', {
         requestId,
         path: this.maskPath(sanitizedPath),
-        expiresAt: new Date(Date.now() + (expiresIn * 1000)).toISOString(),
+        expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
         cacheHit: false,
       });
 
@@ -262,7 +262,11 @@ class StorageService {
       const batchResults = await Promise.all(
         batch.map(async (req) => {
           try {
-            const url = await this.createSignedUrl(req.path, req.options, egressData);
+            const url = await this.createSignedUrl(
+              req.path,
+              req.options,
+              egressData
+            );
             return { path: req.path, url };
           } catch (error) {
             return {
@@ -306,16 +310,16 @@ class StorageService {
   private sanitizePath(path: string): string {
     // Remove null bytes
     let sanitized = path.replace(/\0/g, '');
-    
+
     // Prevent directory traversal
     sanitized = sanitized.replace(/(\.\.[/\\])+/, '');
-    
+
     // Normalize path separators
     sanitized = sanitized.replace(/[/\\]+/g, '/');
-    
+
     // Remove leading/trailing slashes
     sanitized = sanitized.replace(/^\/+|\/+$/g, '');
-    
+
     return sanitized;
   }
 

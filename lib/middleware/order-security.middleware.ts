@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { orderSecurityService, type SecurityContext } from '@/lib/services/order-security.service';
+import {
+  orderSecurityService,
+  type SecurityContext,
+} from '@/lib/services/order-security.service';
 
 export interface SecurityMiddlewareOptions {
   required_role?: ('admin' | 'moderator' | 'viewer')[];
@@ -26,18 +29,20 @@ export function withOrderSecurity(
 ) {
   return async (request: NextRequest): Promise<NextResponse> => {
     const startTime = Date.now();
-    
+
     try {
       // Create security context
-      const securityContext = await orderSecurityService.createSecurityContext(request);
-      
+      const securityContext =
+        await orderSecurityService.createSecurityContext(request);
+
       if (!securityContext) {
         console.warn('[Security Middleware] Authentication failed');
         return NextResponse.json(
-          { 
+          {
             error: 'Authentication required',
             code: 'AUTH_REQUIRED',
-            message: 'Valid authentication token is required to access this resource'
+            message:
+              'Valid authentication token is required to access this resource',
           },
           { status: 401 }
         );
@@ -46,11 +51,14 @@ export function withOrderSecurity(
       // Check rate limiting
       if (options.rate_limit) {
         const rateLimitKey = `${securityContext.ip_address}_${securityContext.user_id}`;
-        const isWithinLimit = orderSecurityService.checkRateLimit(rateLimitKey, {
-          max_requests: options.rate_limit.max_requests,
-          window_ms: options.rate_limit.window_ms,
-          identifier_key: 'ip',
-        });
+        const isWithinLimit = orderSecurityService.checkRateLimit(
+          rateLimitKey,
+          {
+            max_requests: options.rate_limit.max_requests,
+            window_ms: options.rate_limit.window_ms,
+            identifier_key: 'ip',
+          }
+        );
 
         if (!isWithinLimit) {
           console.warn('[Security Middleware] Rate limit exceeded', {
@@ -66,24 +74,31 @@ export function withOrderSecurity(
             'rate_limit',
             undefined,
             undefined,
-            { limit: options.rate_limit.max_requests, window: options.rate_limit.window_ms }
+            {
+              limit: options.rate_limit.max_requests,
+              window: options.rate_limit.window_ms,
+            }
           );
 
           return NextResponse.json(
-            { 
+            {
               error: 'Rate limit exceeded',
               code: 'RATE_LIMIT_EXCEEDED',
               message: 'Too many requests. Please try again later.',
-              retry_after: Math.ceil(options.rate_limit.window_ms / 1000)
+              retry_after: Math.ceil(options.rate_limit.window_ms / 1000),
             },
-            { 
+            {
               status: 429,
               headers: {
-                'Retry-After': Math.ceil(options.rate_limit.window_ms / 1000).toString(),
+                'Retry-After': Math.ceil(
+                  options.rate_limit.window_ms / 1000
+                ).toString(),
                 'X-RateLimit-Limit': options.rate_limit.max_requests.toString(),
                 'X-RateLimit-Remaining': '0',
-                'X-RateLimit-Reset': (Date.now() + options.rate_limit.window_ms).toString(),
-              }
+                'X-RateLimit-Reset': (
+                  Date.now() + options.rate_limit.window_ms
+                ).toString(),
+              },
             }
           );
         }
@@ -106,14 +121,17 @@ export function withOrderSecurity(
             'access_control',
             undefined,
             undefined,
-            { required_role: options.required_role, user_role: securityContext.user_role }
+            {
+              required_role: options.required_role,
+              user_role: securityContext.user_role,
+            }
           );
 
           return NextResponse.json(
-            { 
+            {
               error: 'Insufficient permissions',
               code: 'PERMISSION_DENIED',
-              message: 'You do not have permission to access this resource'
+              message: 'You do not have permission to access this resource',
             },
             { status: 403 }
           );
@@ -147,10 +165,10 @@ export function withOrderSecurity(
           );
 
           return NextResponse.json(
-            { 
+            {
               error: 'Resource access denied',
               code: 'RESOURCE_ACCESS_DENIED',
-              message: `You do not have permission to ${options.action} ${options.resource_type} resources`
+              message: `You do not have permission to ${options.action} ${options.resource_type} resources`,
             },
             { status: 403 }
           );
@@ -178,10 +196,10 @@ export function withOrderSecurity(
           'security_alert',
           undefined,
           undefined,
-          { 
+          {
             action: options.action,
             detection_reason: 'pattern_analysis',
-            risk_level: 'medium'
+            risk_level: 'medium',
           }
         );
 
@@ -232,7 +250,6 @@ export function withOrderSecurity(
       });
 
       return secureResponse;
-
     } catch (error) {
       console.error('[Security Middleware] Unexpected error:', error);
 
@@ -247,9 +264,9 @@ export function withOrderSecurity(
             'system_error',
             undefined,
             undefined,
-            { 
+            {
               error: error instanceof Error ? error.message : 'Unknown error',
-              stack: error instanceof Error ? error.stack : undefined
+              stack: error instanceof Error ? error.stack : undefined,
             }
           );
         }
@@ -258,10 +275,10 @@ export function withOrderSecurity(
       }
 
       return NextResponse.json(
-        { 
+        {
           error: 'Internal security error',
           code: 'SECURITY_ERROR',
-          message: 'A security error occurred while processing your request'
+          message: 'A security error occurred while processing your request',
         },
         { status: 500 }
       );
@@ -273,14 +290,18 @@ export function withOrderSecurity(
  * Input validation middleware
  */
 export function withInputValidation<T>(
-  validator: (data: unknown) => { success: true; data: T } | { success: false; errors: string[] }
+  validator: (
+    data: unknown
+  ) => { success: true; data: T } | { success: false; errors: string[] }
 ) {
-  return (handler: (request: SecureRequest, validatedData: T) => Promise<NextResponse>) => {
+  return (
+    handler: (request: SecureRequest, validatedData: T) => Promise<NextResponse>
+  ) => {
     return async (request: SecureRequest): Promise<NextResponse> => {
       try {
         // Parse request body
         let requestData: unknown;
-        
+
         if (request.method === 'GET') {
           // For GET requests, validate query parameters
           const url = new URL(request.url);
@@ -291,10 +312,10 @@ export function withInputValidation<T>(
             requestData = await request.json();
           } catch {
             return NextResponse.json(
-              { 
+              {
                 error: 'Invalid JSON',
                 code: 'INVALID_JSON',
-                message: 'Request body must be valid JSON'
+                message: 'Request body must be valid JSON',
               },
               { status: 400 }
             );
@@ -303,9 +324,12 @@ export function withInputValidation<T>(
 
         // Validate data
         const validation = validator(requestData);
-        
+
         if (!validation.success) {
-          console.warn('[Input Validation] Validation failed:', validation.errors);
+          console.warn(
+            '[Input Validation] Validation failed:',
+            validation.errors
+          );
 
           // Log validation failure
           if (request.security) {
@@ -316,19 +340,19 @@ export function withInputValidation<T>(
               'validation_error',
               undefined,
               undefined,
-              { 
+              {
                 errors: validation.errors,
-                raw_data: requestData
+                raw_data: requestData,
               }
             );
           }
 
           return NextResponse.json(
-            { 
+            {
               error: 'Input validation failed',
               code: 'VALIDATION_ERROR',
               message: 'The provided data is invalid',
-              details: validation.errors
+              details: validation.errors,
             },
             { status: 400 }
           );
@@ -336,14 +360,13 @@ export function withInputValidation<T>(
 
         // Call handler with validated data
         return handler(request, validation.data);
-
       } catch (error) {
         console.error('[Input Validation] Unexpected error:', error);
         return NextResponse.json(
-          { 
+          {
             error: 'Validation error',
             code: 'VALIDATION_ERROR',
-            message: 'An error occurred while validating input'
+            message: 'An error occurred while validating input',
           },
           { status: 500 }
         );
@@ -362,10 +385,10 @@ export function withAuditLogging(
   return (handler: (request: SecureRequest) => Promise<NextResponse>) => {
     return async (request: SecureRequest): Promise<NextResponse> => {
       const startTime = Date.now();
-      
+
       try {
         const response = await handler(request);
-        
+
         // Log successful operation
         if (request.security) {
           await orderSecurityService.logAuditEvent(
@@ -386,7 +409,6 @@ export function withAuditLogging(
         }
 
         return response;
-
       } catch (error) {
         // Log failed operation
         if (request.security) {
@@ -426,7 +448,9 @@ export const OrderMiddleware = {
     }),
 
   // Moderator and admin operations
-  moderatorAccess: (options: Omit<SecurityMiddlewareOptions, 'required_role'> = {}) =>
+  moderatorAccess: (
+    options: Omit<SecurityMiddlewareOptions, 'required_role'> = {}
+  ) =>
     withOrderSecurity(async () => NextResponse.next(), {
       ...options,
       required_role: ['admin', 'moderator'],
@@ -434,7 +458,9 @@ export const OrderMiddleware = {
     }),
 
   // Read-only access
-  readAccess: (options: Omit<SecurityMiddlewareOptions, 'required_role'> = {}) =>
+  readAccess: (
+    options: Omit<SecurityMiddlewareOptions, 'required_role'> = {}
+  ) =>
     withOrderSecurity(async () => NextResponse.next(), {
       ...options,
       required_role: ['admin', 'moderator', 'viewer'],

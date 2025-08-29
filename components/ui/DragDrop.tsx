@@ -34,7 +34,10 @@ interface DragDropProviderProps {
   onReorder: (draggedId: string, targetId: string) => void;
 }
 
-export function DragDropProvider({ children, onReorder }: DragDropProviderProps) {
+export function DragDropProvider({
+  children,
+  onReorder,
+}: DragDropProviderProps) {
   const [draggedItem, setDraggedItem] = useState<DragItem | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
@@ -80,8 +83,15 @@ interface DraggableProps {
   handle?: boolean;
 }
 
-export function Draggable({ id, data, children, className, handle = false }: DraggableProps) {
-  const { startDrag, endDrag, isDragging, draggedItem, dragOverId } = useDragDrop();
+export function Draggable({
+  id,
+  data,
+  children,
+  className,
+  handle = false,
+}: DraggableProps) {
+  const { startDrag, endDrag, isDragging, draggedItem, dragOverId } =
+    useDragDrop();
 
   const isDraggedItem = draggedItem?.id === id;
   const isDraggedOver = dragOverId === id;
@@ -89,7 +99,7 @@ export function Draggable({ id, data, children, className, handle = false }: Dra
   const handleDragStart = (e: React.DragEvent) => {
     startDrag({ id, type: 'event', data });
     e.dataTransfer.effectAllowed = 'move';
-    
+
     // Create a custom drag image
     const dragImage = e.currentTarget.cloneNode(true) as HTMLElement;
     dragImage.style.transform = 'rotate(5deg)';
@@ -108,8 +118,10 @@ export function Draggable({ id, data, children, className, handle = false }: Dra
       onDragEnd={handleDragEnd}
       className={cn(
         'transition-all duration-200',
-        isDraggedItem && 'opacity-50 scale-95 transform rotate-2',
-        isDraggedOver && !isDraggedItem && 'scale-105 ring-2 ring-blue-400 ring-opacity-50',
+        isDraggedItem && 'rotate-2 scale-95 transform opacity-50',
+        isDraggedOver &&
+          !isDraggedItem &&
+          'scale-105 ring-2 ring-blue-400 ring-opacity-50',
         isDragging && !isDraggedItem && 'hover:scale-102 hover:shadow-lg',
         className
       )}
@@ -158,7 +170,7 @@ export function DropZone({ id, children, className, onDrop }: DropZoneProps) {
       onDrop={handleDrop}
       className={cn(
         'transition-all duration-200',
-        isDragging && 'ring-2 ring-dashed ring-gray-300 ring-opacity-50',
+        isDragging && 'ring-dashed ring-2 ring-gray-300 ring-opacity-50',
         className
       )}
     >
@@ -174,19 +186,14 @@ interface DragHandleProps {
 
 export function DragHandle({ className }: DragHandleProps) {
   return (
-    <div 
+    <div
       className={cn(
-        'cursor-grab active:cursor-grabbing opacity-50 hover:opacity-100 transition-opacity',
+        'cursor-grab opacity-50 transition-opacity hover:opacity-100 active:cursor-grabbing',
         'flex items-center justify-center p-2',
         className
       )}
     >
-      <svg
-        width="10"
-        height="16"
-        viewBox="0 0 10 16"
-        className="fill-current"
-      >
+      <svg width="10" height="16" viewBox="0 0 10 16" className="fill-current">
         <circle cx="2" cy="2" r="1" />
         <circle cx="6" cy="2" r="1" />
         <circle cx="2" cy="6" r="1" />

@@ -43,7 +43,7 @@ export function normalizeEvent(event: any): EventCompat {
     school: event.school || event.location || '',
     date: event.date,
     status: event.status || (event.active ? 'active' : 'inactive'),
-    active: event.active ?? (event.status === 'active'),
+    active: event.active ?? event.status === 'active',
     price_per_photo: event.price_per_photo || 0,
     created_at: event.created_at,
     updated_at: event.updated_at,
@@ -55,8 +55,9 @@ export function normalizeEvent(event: any): EventCompat {
  */
 export function normalizeOrder(order: any): OrderCompat {
   // Priorizar campos más nuevos sobre legacy
-  const totalAmount = order.total_amount || order.total_amount_cents || order.total_cents || 0;
-  
+  const totalAmount =
+    order.total_amount || order.total_amount_cents || order.total_cents || 0;
+
   return {
     id: order.id,
     status: order.status,
@@ -79,26 +80,32 @@ export function normalizeOrder(order: any): OrderCompat {
 export function buildEventQuery(supabase: any, baseSelect?: string) {
   const defaultSelect = 'id, name, date, created_at, updated_at';
   const select = baseSelect || defaultSelect;
-  
+
   // Intentar con campos nuevos primero
   return supabase
     .from('events')
     .select(`${select}, location, status, price_per_photo`)
     .then((result: any) => {
       // Si falla, intentar con campos legacy
-      if (result.error && (result.error.message?.includes('location') || result.error.message?.includes('status'))) {
+      if (
+        result.error &&
+        (result.error.message?.includes('location') ||
+          result.error.message?.includes('status'))
+      ) {
         return supabase
           .from('events')
           .select(`${select}, school, active`)
           .then((legacyResult: any) => {
             if (legacyResult.data) {
               // Normalizar datos legacy
-              legacyResult.data = legacyResult.data.map((event: any) => normalizeEvent(event));
+              legacyResult.data = legacyResult.data.map((event: any) =>
+                normalizeEvent(event)
+              );
             }
             return legacyResult;
           });
       }
-      
+
       // Si no hay error, normalizar datos nuevos
       if (result.data) {
         result.data = result.data.map((event: any) => normalizeEvent(event));
@@ -113,26 +120,36 @@ export function buildEventQuery(supabase: any, baseSelect?: string) {
 export function buildOrderQuery(supabase: any, baseSelect?: string) {
   const defaultSelect = 'id, status, created_at';
   const select = baseSelect || defaultSelect;
-  
+
   // Intentar con campos nuevos primero
   return supabase
     .from('orders')
-    .select(`${select}, total_amount, contact_name, contact_email, contact_phone`)
+    .select(
+      `${select}, total_amount, contact_name, contact_email, contact_phone`
+    )
     .then((result: any) => {
       // Si falla, intentar con campos legacy
-      if (result.error && (result.error.message?.includes('total_amount') || result.error.message?.includes('contact_'))) {
+      if (
+        result.error &&
+        (result.error.message?.includes('total_amount') ||
+          result.error.message?.includes('contact_'))
+      ) {
         return supabase
           .from('orders')
-          .select(`${select}, total_cents, customer_name, customer_email, customer_phone`)
+          .select(
+            `${select}, total_cents, customer_name, customer_email, customer_phone`
+          )
           .then((legacyResult: any) => {
             if (legacyResult.data) {
               // Normalizar datos legacy
-              legacyResult.data = legacyResult.data.map((order: any) => normalizeOrder(order));
+              legacyResult.data = legacyResult.data.map((order: any) =>
+                normalizeOrder(order)
+              );
             }
             return legacyResult;
           });
       }
-      
+
       // Si no hay error, normalizar datos nuevos
       if (result.data) {
         result.data = result.data.map((order: any) => normalizeOrder(order));
@@ -155,7 +172,7 @@ export function prepareEventInsert(eventData: {
   return {
     name: eventData.name,
     location: eventData.location, // Campo nuevo
-    school: eventData.location,   // Campo legacy (compatibilidad)
+    school: eventData.location, // Campo legacy (compatibilidad)
     date: eventData.date,
     status: eventData.status || 'active', // Campo nuevo
     active: (eventData.status || 'active') === 'active', // Campo legacy
@@ -184,15 +201,15 @@ export function prepareOrderInsert(orderData: {
     subject_id: orderData.subject_id,
     order_number: orderData.order_number,
     status: orderData.status,
-    total_amount: orderData.total_amount,        // Campo nuevo
-    total_cents: orderData.total_amount,         // Campo legacy
-    total_amount_cents: orderData.total_amount,  // Campo alternativo
-    contact_name: orderData.contact_name,        // Campo nuevo
-    customer_name: orderData.contact_name,       // Campo legacy
-    contact_email: orderData.contact_email,      // Campo nuevo
-    customer_email: orderData.contact_email,     // Campo legacy
-    contact_phone: orderData.contact_phone,      // Campo nuevo
-    customer_phone: orderData.contact_phone,     // Campo legacy
+    total_amount: orderData.total_amount, // Campo nuevo
+    total_cents: orderData.total_amount, // Campo legacy
+    total_amount_cents: orderData.total_amount, // Campo alternativo
+    contact_name: orderData.contact_name, // Campo nuevo
+    customer_name: orderData.contact_name, // Campo legacy
+    contact_email: orderData.contact_email, // Campo nuevo
+    customer_email: orderData.contact_email, // Campo legacy
+    contact_phone: orderData.contact_phone, // Campo nuevo
+    customer_phone: orderData.contact_phone, // Campo legacy
     payment_method: orderData.payment_method || 'mercadopago',
     metadata: orderData.metadata || {},
   };

@@ -4,27 +4,27 @@ import React, { Suspense, lazy, ComponentType } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 // Loading component
-function ComponentLoader({ 
-  message = "Cargando...", 
-  className = "",
-  showProgress = false 
-}: { 
-  message?: string; 
+function ComponentLoader({
+  message = 'Cargando...',
+  className = '',
+  showProgress = false,
+}: {
+  message?: string;
   className?: string;
   showProgress?: boolean;
 }) {
   return (
-    <div className={cn("flex items-center justify-center p-8", className)}>
+    <div className={cn('flex items-center justify-center p-8', className)}>
       <div className="neural-glass-card p-6 text-center">
-        <div className="w-12 h-12 mx-auto mb-4">
+        <div className="mx-auto mb-4 h-12 w-12">
           {showProgress ? (
-            <div className="relative w-12 h-12">
-              <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            <div className="relative h-12 w-12">
+              <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
+              <div className="absolute inset-0 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
             </div>
           ) : (
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl flex items-center justify-center">
-              <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+              <div className="border-3 h-6 w-6 animate-spin rounded-full border-blue-600 border-t-transparent" />
             </div>
           )}
         </div>
@@ -39,7 +39,10 @@ class LazyErrorBoundary extends React.Component<
   { children: React.ReactNode; fallback?: React.ReactNode },
   { hasError: boolean; error?: Error }
 > {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  constructor(props: {
+    children: React.ReactNode;
+    fallback?: React.ReactNode;
+  }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -54,16 +57,18 @@ class LazyErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="neural-glass-card p-6 text-center border-red-200 bg-red-50">
-          <div className="text-red-600 mb-2">Error al cargar componente</div>
-          <button 
-            onClick={() => this.setState({ hasError: false })}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            Reintentar
-          </button>
-        </div>
+      return (
+        this.props.fallback || (
+          <div className="neural-glass-card border-red-200 bg-red-50 p-6 text-center">
+            <div className="mb-2 text-red-600">Error al cargar componente</div>
+            <button
+              onClick={() => this.setState({ hasError: false })}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Reintentar
+            </button>
+          </div>
+        )
       );
     }
 
@@ -82,7 +87,7 @@ export function createOptimizedLazy<T extends ComponentType<any>>(
   } = {}
 ) {
   const LazyComponent = lazy(importFn);
-  
+
   // Preload component if requested
   if (options.preload) {
     importFn();
@@ -110,63 +115,63 @@ export function createOptimizedLazy<T extends ComponentType<any>>(
 export const LazyAdvancedAnalyticsDashboard = createOptimizedLazy(
   () => import('@/components/admin/AdvancedAnalyticsDashboard'),
   {
-    loadingMessage: "Cargando dashboard de analytics...",
+    loadingMessage: 'Cargando dashboard de analytics...',
     showProgress: true,
-    preload: false
+    preload: false,
   }
 );
 
 export const LazyEventPreviewModal = createOptimizedLazy(
   () => import('@/components/admin/EventPreviewModal'),
   {
-    loadingMessage: "Cargando vista previa...",
+    loadingMessage: 'Cargando vista previa...',
     showProgress: false,
-    preload: true // Preload since it's commonly used
+    preload: true, // Preload since it's commonly used
   }
 );
 
 export const LazyExportSystem = createOptimizedLazy(
   () => import('@/components/admin/ExportSystem'),
   {
-    loadingMessage: "Cargando sistema de exportación...",
+    loadingMessage: 'Cargando sistema de exportación...',
     showProgress: true,
-    preload: false
+    preload: false,
   }
 );
 
 export const LazyNotificationSystem = createOptimizedLazy(
   () => import('@/components/ui/NotificationSystem'),
   {
-    loadingMessage: "Cargando notificaciones...",
+    loadingMessage: 'Cargando notificaciones...',
     showProgress: false,
-    preload: true // Preload since it's used globally
+    preload: true, // Preload since it's used globally
   }
 );
 
 export const LazyKeyboardShortcuts = createOptimizedLazy(
   () => import('@/components/ui/KeyboardShortcuts'),
   {
-    loadingMessage: "Cargando atajos de teclado...",
+    loadingMessage: 'Cargando atajos de teclado...',
     showProgress: false,
-    preload: true // Preload since it's used globally
+    preload: true, // Preload since it's used globally
   }
 );
 
 export const LazyDragDrop = createOptimizedLazy(
   () => import('@/components/ui/DragDrop'),
   {
-    loadingMessage: "Cargando funcionalidad drag & drop...",
+    loadingMessage: 'Cargando funcionalidad drag & drop...',
     showProgress: false,
-    preload: false
+    preload: false,
   }
 );
 
 export const LazyAdvancedSearch = createOptimizedLazy(
   () => import('@/components/admin/AdvancedSearch'),
   {
-    loadingMessage: "Cargando búsqueda avanzada...",
+    loadingMessage: 'Cargando búsqueda avanzada...',
     showProgress: false,
-    preload: true // Preload since it's in the header
+    preload: true, // Preload since it's in the header
   }
 );
 
@@ -176,27 +181,43 @@ export class ComponentPreloader {
 
   static preloadComponent(componentName: string, importFn: () => Promise<any>) {
     if (this.preloadedComponents.has(componentName)) return;
-    
+
     this.preloadedComponents.add(componentName);
-    
+
     // Preload on idle
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => {
-        importFn().catch(err => console.warn(`Failed to preload ${componentName}:`, err));
+        importFn().catch((err) =>
+          console.warn(`Failed to preload ${componentName}:`, err)
+        );
       });
     } else {
       setTimeout(() => {
-        importFn().catch(err => console.warn(`Failed to preload ${componentName}:`, err));
+        importFn().catch((err) =>
+          console.warn(`Failed to preload ${componentName}:`, err)
+        );
       }, 100);
     }
   }
 
   static preloadCriticalComponents() {
     // Preload commonly used components
-    this.preloadComponent('EventPreviewModal', () => import('@/components/admin/EventPreviewModal'));
-    this.preloadComponent('NotificationSystem', () => import('@/components/ui/NotificationSystem'));
-    this.preloadComponent('KeyboardShortcuts', () => import('@/components/ui/KeyboardShortcuts'));
-    this.preloadComponent('AdvancedSearch', () => import('@/components/admin/AdvancedSearch'));
+    this.preloadComponent(
+      'EventPreviewModal',
+      () => import('@/components/admin/EventPreviewModal')
+    );
+    this.preloadComponent(
+      'NotificationSystem',
+      () => import('@/components/ui/NotificationSystem')
+    );
+    this.preloadComponent(
+      'KeyboardShortcuts',
+      () => import('@/components/ui/KeyboardShortcuts')
+    );
+    this.preloadComponent(
+      'AdvancedSearch',
+      () => import('@/components/admin/AdvancedSearch')
+    );
   }
 }
 
@@ -217,11 +238,11 @@ export function useConditionalLazyLoad<T>(
     setError(null);
 
     importFn()
-      .then(module => {
+      .then((module) => {
         setComponent(() => module.default);
         setLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         setError(err);
         setLoading(false);
       });
@@ -247,11 +268,11 @@ export function useIntersectionLazyLoad<T>(
         if (entry.isIntersecting && !Component && !loading) {
           setLoading(true);
           importFn()
-            .then(module => {
+            .then((module) => {
               setComponent(() => module.default);
               setLoading(false);
             })
-            .catch(err => {
+            .catch((err) => {
               console.error('Intersection lazy load error:', err);
               setLoading(false);
             });
@@ -260,7 +281,7 @@ export function useIntersectionLazyLoad<T>(
       {
         threshold: 0.1,
         rootMargin: '100px',
-        ...options
+        ...options,
       }
     );
 
@@ -277,18 +298,19 @@ export function analyzeLazyComponents() {
   if (typeof window === 'undefined') return null;
 
   const scripts = Array.from(document.scripts);
-  const lazyChunks = scripts.filter(script => 
-    script.src && script.src.includes('/_next/static/chunks/')
+  const lazyChunks = scripts.filter(
+    (script) => script.src && script.src.includes('/_next/static/chunks/')
   );
 
   return {
     totalChunks: lazyChunks.length,
-    chunks: lazyChunks.map(script => ({
+    chunks: lazyChunks.map((script) => ({
       src: script.src,
-      size: script.src.length // Rough estimate
+      size: script.src.length, // Rough estimate
     })),
-    recommendation: lazyChunks.length > 20 ? 
-      'Consider consolidating some lazy components' : 
-      'Lazy loading is well optimized'
+    recommendation:
+      lazyChunks.length > 20
+        ? 'Consider consolidating some lazy components'
+        : 'Lazy loading is well optimized',
   };
 }

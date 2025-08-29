@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import HolisticEventDashboard from './holistic-dashboard';
 import { featureFlags } from '@/lib/feature-flags';
 import { SchoolFolderTemplateSelector } from '@/components/admin/SchoolFolderTemplateSelector';
+import StudentsView from '@/components/admin/StudentsView';
 import {
   RefreshCw,
   AlertCircle,
@@ -41,7 +42,9 @@ interface Event {
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params['id'] as string;
+  const view = searchParams.get('view');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showLegacyMode, setShowLegacyMode] = useState(false);
@@ -467,6 +470,271 @@ export default function EventDetailPage() {
     );
   }
 
-  // Show new holistic dashboard by default
-  return <HolisticEventDashboard />;
+  // Handle students view
+  if (view === 'students' && event) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-6 py-8">
+          <StudentsView
+            eventId={id}
+            eventName={event.school || event.name}
+            onBack={() => router.push(`/admin/events/${id}`)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show simplified photographer-focused dashboard by default
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="border-b bg-white">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/admin/events')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  📸 {event.school || event.name}
+                </h1>
+                <p className="text-gray-600">
+                  {event.location} •{' '}
+                  {new Date(event.date).toLocaleDateString('es-AR')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">{event.status}</Badge>
+              <Button
+                variant="outline"
+                onClick={() => setShowLegacyMode(!showLegacyMode)}
+              >
+                {showLegacyMode ? 'Modo Avanzado' : 'Modo Simple'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-6 py-8">
+        {/* Estadísticas Rápidas */}
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">📷 Total Fotos</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.total_photos}
+                  </p>
+                </div>
+                <Camera className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">👨‍👩‍👧‍👦 Familias</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stats.total_students}
+                  </p>
+                </div>
+                <Users className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">🛒 Pedidos</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    0 {/* TODO: Add orders count */}
+                  </p>
+                </div>
+                <DollarSign className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">💵 Ventas</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    $0 {/* TODO: Add revenue */}
+                  </p>
+                </div>
+                <DollarSign className="h-8 w-8 text-amber-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Gestión Principal */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            🎯 Gestión Principal
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
+            <Card className="cursor-pointer border-blue-200 bg-blue-50/50 transition-shadow hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-700">
+                  <Camera className="h-5 w-5" />
+                  Subir y Gestionar Fotos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-blue-600">
+                  Sistema unificado para subir fotos y organizarlas por carpetas familiares
+                </p>
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Ir a Gestión de Fotos
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer border-green-200 bg-green-50/50 transition-shadow hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <Eye className="h-5 w-5" />
+                  Galería Pública
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-green-600">
+                  Ver todas las fotos del evento como las verían las familias
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full border-green-200 text-green-600 hover:bg-green-50"
+                  onClick={() => router.push(`/gallery/${id}`)}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  Abrir Galería Pública
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Gestión Secundaria */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            📋 Información y Pedidos
+          </h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <Card className="cursor-pointer transition-shadow hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Lista de Alumnos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-gray-600">
+                  Ver estudiantes registrados en el evento
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => router.push(`/admin/events/${id}?view=students`)}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Ver Estudiantes
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer transition-shadow hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Pedidos y Ventas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-gray-600">
+                  Revisar pedidos realizados por las familias
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => router.push(`/admin/orders?event=${id}`)}
+                >
+                  <DollarSign className="mr-2 h-4 w-4" />
+                  Ver Pedidos
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="cursor-pointer transition-shadow hover:shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <QrCode className="h-5 w-5" />
+                  Códigos de Acceso
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-sm text-gray-600">
+                  Generar códigos QR para acceso de familias
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => router.push(`/admin/publish?eventId=${id}`)}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Gestionar Accesos
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal para modo avanzado si se requiere */}
+      {showLegacyMode && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>¿Cambiar a Modo Avanzado?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4 text-sm text-gray-600">
+                El modo avanzado incluye funciones adicionales y dashboard holístico.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLegacyMode(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={() => window.location.href = `/admin/events/${id}/holistic`}>
+                  Ir a Modo Avanzado
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
 }

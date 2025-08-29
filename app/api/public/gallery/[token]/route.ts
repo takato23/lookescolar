@@ -3,9 +3,9 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // GET /api/public/gallery/[token]
-export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
-    const token = params.token;
+    const token = (await params).token;
 
     // Validate token format
     if (!token || token.length !== 32) {
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
     }
 
     // Fetch gallery data based on hierarchy level
-    let galleryData: any = {
+    const galleryData: any = {
       share: {
         id: validationData.share_id,
         allow_download: validationData.allow_download,
@@ -89,12 +89,13 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       // Fetch student photos
       const { data: photosData, error: photosError } = await supabase
-        .from('photos')
+        .from('assets')
         .select(`
           id,
           filename,
           storage_path,
           preview_path,
+          watermark_path,
           file_size,
           width,
           height,
@@ -116,7 +117,10 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       galleryData.photos = (photosData || []).map(photo => ({
         ...photo,
-        preview_url: photo.preview_path 
+        // For buyer views, prioritize watermarked/lower quality versions
+        preview_url: photo.watermark_path
+          ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.watermark_path}`
+          : photo.preview_path 
           ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.preview_path}`
           : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`,
       }));
@@ -140,12 +144,13 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       // Fetch course photos (either directly associated or through students)
       const { data: photosData, error: photosError } = await supabase
-        .from('photos')
+        .from('assets')
         .select(`
           id,
           filename,
           storage_path,
           preview_path,
+          watermark_path,
           file_size,
           width,
           height,
@@ -177,7 +182,10 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       galleryData.photos = (photosData || []).map(photo => ({
         ...photo,
-        preview_url: photo.preview_path 
+        // For buyer views, prioritize watermarked/lower quality versions
+        preview_url: photo.watermark_path
+          ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.watermark_path}`
+          : photo.preview_path 
           ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.preview_path}`
           : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`,
         tagged_students: photo.photo_students?.map(ps => ps.students).filter(Boolean) || [],
@@ -202,12 +210,13 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       // Fetch level photos (through courses and students)
       const { data: photosData, error: photosError } = await supabase
-        .from('photos')
+        .from('assets')
         .select(`
           id,
           filename,
           storage_path,
           preview_path,
+          watermark_path,
           file_size,
           width,
           height,
@@ -249,7 +258,10 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       galleryData.photos = (photosData || []).map(photo => ({
         ...photo,
-        preview_url: photo.preview_path 
+        // For buyer views, prioritize watermarked/lower quality versions
+        preview_url: photo.watermark_path
+          ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.watermark_path}`
+          : photo.preview_path 
           ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.preview_path}`
           : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`,
         tagged_students: photo.photo_students?.map(ps => ps.students).filter(Boolean) || [],
@@ -259,12 +271,13 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
       // Event-level gallery
       // Fetch event photos
       const { data: photosData, error: photosError } = await supabase
-        .from('photos')
+        .from('assets')
         .select(`
           id,
           filename,
           storage_path,
           preview_path,
+          watermark_path,
           file_size,
           width,
           height,
@@ -305,7 +318,10 @@ export async function GET(req: NextRequest, { params }: { params: { token: strin
 
       galleryData.photos = (photosData || []).map(photo => ({
         ...photo,
-        preview_url: photo.preview_path 
+        // For buyer views, prioritize watermarked/lower quality versions
+        preview_url: photo.watermark_path
+          ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.watermark_path}`
+          : photo.preview_path 
           ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.preview_path}`
           : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.storage_path}`,
         tagged_students: photo.photo_students?.map(ps => ps.students).filter(Boolean) || [],
@@ -381,7 +397,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
 
     // Fetch photos based on hierarchy level and filters
     let photoQuery = supabase
-      .from('photos')
+      .from('assets')
       .select('id, filename, storage_path')
       .eq('event_id', validationData.event_id);
 
@@ -426,7 +442,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     const downloadUrls = await Promise.all(
       photos.map(async (photo) => {
         const { data } = await supabase.storage
-          .from('photos')
+          .from('assets')
           .createSignedUrl(photo.storage_path, 3600); // 1 hour expiry
 
         return {

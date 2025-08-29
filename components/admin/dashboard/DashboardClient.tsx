@@ -4,7 +4,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Card, CardHeader, CardContent, CardTitle, StatsCard } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  StatsCard,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortcuts';
@@ -66,24 +72,43 @@ interface Activity {
   count?: number;
 }
 
-// Fetch dashboard stats from API
+// Fetch dashboard stats from unified Admin Stats API and map to expected shape
 async function fetchDashboardStats(): Promise<DashboardStats> {
-  const response = await fetch('/api/admin/dashboard/stats', {
+  const response = await fetch('/api/admin/stats', {
     headers: {
       'Content-Type': 'application/json',
     },
   });
 
   if (!response.ok) {
-    // Check if we got fallback data
-    if (response.headers.get('X-Error') === 'true') {
-      const data = await response.json();
-      return data; // Use fallback data
-    }
-    throw new Error('Failed to fetch dashboard stats');
+    throw new Error('Failed to fetch admin stats');
   }
 
-  return response.json();
+  const json = await response.json();
+  const data = json?.data;
+
+  // Map server response to DashboardClient shape
+  const mapped: DashboardStats = {
+    activeEvents: data?.events?.active ?? 0,
+    totalPhotos: data?.photos?.total ?? 0,
+    registeredFamilies: data?.subjects?.total ?? 0,
+    totalSales: data?.orders?.total_revenue_cents ?? 0,
+    todayUploads: data?.photos?.uploaded_today ?? 0,
+    todayOrders: data?.activity?.recent_orders ?? 0,
+    todayPayments: data?.activity?.recent_payments ?? 0,
+    pendingOrders: data?.orders?.pending ?? 0,
+    storageUsed:
+      (data?.storage?.estimated_size_gb ?? 0) * 1024 * 1024 * 1024,
+    storageLimit: 5 * 1024 * 1024 * 1024,
+    recentActivity: (data?.recent_activity || []).map((a: any) => ({
+      id: a.id,
+      type: a.type,
+      message: a.message,
+      timestamp: a.timestamp,
+    })),
+  };
+
+  return mapped;
 }
 
 export function DashboardClient() {
@@ -205,7 +230,8 @@ export function DashboardClient() {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">
-            Bienvenido de vuelta! Hoy es {currentTime.toLocaleDateString('es-ES')}
+            Bienvenido de vuelta! Hoy es{' '}
+            {currentTime.toLocaleDateString('es-ES')}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -283,19 +309,27 @@ export function DashboardClient() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Hoy - Subidas</span>
-                  <span className="font-medium">{dashboardStats.todayUploads}</span>
+                  <span className="font-medium">
+                    {dashboardStats.todayUploads}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Hoy - Pedidos</span>
-                  <span className="font-medium">{dashboardStats.todayOrders}</span>
+                  <span className="font-medium">
+                    {dashboardStats.todayOrders}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Hoy - Pagos</span>
-                  <span className="font-medium">{dashboardStats.todayPayments}</span>
+                  <span className="font-medium">
+                    {dashboardStats.todayPayments}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Pedidos Pendientes</span>
-                  <span className="font-medium">{dashboardStats.pendingOrders}</span>
+                  <span className="font-medium">
+                    {dashboardStats.pendingOrders}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -315,10 +349,18 @@ export function DashboardClient() {
                 dashboardStats.recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-start gap-3">
                     <div className="liquid-glass-button-ios26 mt-1 flex h-8 w-8 items-center justify-center rounded-full">
-                      {activity.type === 'event_created' && <Calendar className="h-4 w-4" />}
-                      {activity.type === 'photos_uploaded' && <Camera className="h-4 w-4" />}
-                      {activity.type === 'order_created' && <Package className="h-4 w-4" />}
-                      {activity.type === 'order_completed' && <DollarSign className="h-4 w-4" />}
+                      {activity.type === 'event_created' && (
+                        <Calendar className="h-4 w-4" />
+                      )}
+                      {activity.type === 'photos_uploaded' && (
+                        <Camera className="h-4 w-4" />
+                      )}
+                      {activity.type === 'order_created' && (
+                        <Package className="h-4 w-4" />
+                      )}
+                      {activity.type === 'order_completed' && (
+                        <DollarSign className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <p className="text-sm">{activity.message}</p>
@@ -346,10 +388,16 @@ export function DashboardClient() {
               <div>
                 <div className="mb-2 flex justify-between text-sm">
                   <span>
-                    {Math.round((dashboardStats.storageUsed / 1024 / 1024 / 1024) * 100) / 100} GB
+                    {Math.round(
+                      (dashboardStats.storageUsed / 1024 / 1024 / 1024) * 100
+                    ) / 100}{' '}
+                    GB
                   </span>
                   <span>
-                    {Math.round((dashboardStats.storageLimit / 1024 / 1024 / 1024) * 100) / 100} GB
+                    {Math.round(
+                      (dashboardStats.storageLimit / 1024 / 1024 / 1024) * 100
+                    ) / 100}{' '}
+                    GB
                   </span>
                 </div>
                 <div className="liquid-glass-button-ios26 h-2 rounded-full">
@@ -357,7 +405,9 @@ export function DashboardClient() {
                     className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
                     style={{
                       width: `${Math.min(
-                        (dashboardStats.storageUsed / dashboardStats.storageLimit) * 100,
+                        (dashboardStats.storageUsed /
+                          dashboardStats.storageLimit) *
+                          100,
                         100
                       )}%`,
                     }}
@@ -382,7 +432,9 @@ export function DashboardClient() {
       {/* Performance Monitor */}
       {showPerformanceMonitor && (
         <div className="mt-8">
-          <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
+          <PerformanceMonitor
+            onClose={() => setShowPerformanceMonitor(false)}
+          />
         </div>
       )}
 

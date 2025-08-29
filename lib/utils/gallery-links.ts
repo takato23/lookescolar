@@ -11,14 +11,23 @@ interface GenerateGalleryLinkParams {
  * Genera el enlace correcto para acceder a la galería familiar
  * basado en los feature flags activos
  */
-export function generateFamilyGalleryLink({ token, eventId, origin }: GenerateGalleryLinkParams): string {
-  const baseOrigin = origin || (typeof window !== 'undefined' ? window.location.origin : '');
-  
+export function generateFamilyGalleryLink({
+  token,
+  eventId,
+  origin,
+}: GenerateGalleryLinkParams): string {
+  const baseOrigin =
+    origin || (typeof window !== 'undefined' ? window.location.origin : '');
+
   // Si el sistema unificado está habilitado y tenemos eventId, usar el nuevo formato
-  if (featureFlags.UNIFIED_GALLERY_ENABLED && featureFlags.FAMILY_IN_GALLERY_ROUTE && eventId) {
+  if (
+    featureFlags.UNIFIED_GALLERY_ENABLED &&
+    featureFlags.FAMILY_IN_GALLERY_ROUTE &&
+    eventId
+  ) {
     return `${baseOrigin}/gallery/${eventId}?token=${token}`;
   }
-  
+
   // Fallback al sistema legacy
   return `${baseOrigin}/f/${token}/simple-page`;
 }
@@ -27,7 +36,8 @@ export function generateFamilyGalleryLink({ token, eventId, origin }: GenerateGa
  * Genera un enlace para QR basado en el token
  */
 export function generateQRLink(token: string, origin?: string): string {
-  const baseOrigin = origin || (typeof window !== 'undefined' ? window.location.origin : '');
+  const baseOrigin =
+    origin || (typeof window !== 'undefined' ? window.location.origin : '');
   return `${baseOrigin}/api/qr?token=${token}`;
 }
 
@@ -45,12 +55,12 @@ export function migrateLegacyLink(legacyUrl: string, eventId?: string): string {
   if (!isLegacyGalleryLink(legacyUrl) || !eventId) {
     return legacyUrl;
   }
-  
+
   try {
     const url = new URL(legacyUrl);
     const pathParts = url.pathname.split('/');
     const token = pathParts[2]; // /f/[token]/simple-page
-    
+
     if (token && token.length >= 20) {
       return generateFamilyGalleryLink({
         token,
@@ -61,6 +71,6 @@ export function migrateLegacyLink(legacyUrl: string, eventId?: string): string {
   } catch (error) {
     console.warn('Failed to migrate legacy link:', error);
   }
-  
+
   return legacyUrl;
 }

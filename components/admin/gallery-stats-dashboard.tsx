@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   BarChart,
   Bar,
   XAxis,
@@ -16,7 +16,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { 
+import {
   Camera,
   Check,
   Users,
@@ -34,7 +34,7 @@ interface GalleryStats {
   activity_photos: number;
   event_photos: number;
   by_grade?: Record<string, number>;
-  by_date?: Array<{date: string, count: number}>;
+  by_date?: Array<{ date: string; count: number }>;
 }
 
 interface GalleryStatsDashboardProps {
@@ -50,7 +50,7 @@ export default function GalleryStatsDashboard({
   eventId,
   levelId,
   courseId,
-  studentId
+  studentId,
 }: GalleryStatsDashboardProps) {
   const [stats, setStats] = useState<GalleryStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,21 +63,23 @@ export default function GalleryStatsDashboard({
   const loadStats = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const params = new URLSearchParams();
       if (levelId) params.set('level_id', levelId);
       if (courseId) params.set('course_id', courseId);
       if (studentId) params.set('student_id', studentId);
-      
-      const response = await fetch(`/api/admin/events/${eventId}/stats/gallery?${params}`);
-      
+
+      const response = await fetch(
+        `/api/admin/events/${eventId}/stats/gallery?${params}`
+      );
+
       if (!response.ok) {
         throw new Error('Failed to load gallery statistics');
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setStats(data.stats);
       } else {
@@ -85,7 +87,9 @@ export default function GalleryStatsDashboard({
       }
     } catch (err) {
       console.error('Error loading gallery stats:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load gallery statistics');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load gallery statistics'
+      );
     } finally {
       setLoading(false);
     }
@@ -94,7 +98,7 @@ export default function GalleryStatsDashboard({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
         <span className="ml-2">Cargando estadísticas...</span>
       </div>
     );
@@ -103,14 +107,14 @@ export default function GalleryStatsDashboard({
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+        <div className="bg-destructive/10 border-destructive/20 rounded-lg border p-4">
           <div className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-destructive" />
-            <h3 className="font-medium text-destructive">Error</h3>
+            <ImageIcon className="text-destructive h-5 w-5" />
+            <h3 className="text-destructive font-medium">Error</h3>
           </div>
-          <p className="mt-2 text-sm text-destructive">{error}</p>
-          <button 
-            className="mt-3 text-sm text-destructive hover:underline"
+          <p className="text-destructive mt-2 text-sm">{error}</p>
+          <button
+            className="text-destructive mt-3 text-sm hover:underline"
             onClick={loadStats}
           >
             Reintentar
@@ -124,8 +128,10 @@ export default function GalleryStatsDashboard({
     return (
       <div className="p-6">
         <div className="bg-muted rounded-lg p-4 text-center">
-          <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground">No hay estadísticas disponibles</p>
+          <ImageIcon className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
+          <p className="text-muted-foreground">
+            No hay estadísticas disponibles
+          </p>
         </div>
       </div>
     );
@@ -141,60 +147,70 @@ export default function GalleryStatsDashboard({
 
   const approvalData = [
     { name: 'Aprobadas', value: stats.approved_photos || 0 },
-    { name: 'Pendientes', value: (stats.total_photos || 0) - (stats.approved_photos || 0) },
+    {
+      name: 'Pendientes',
+      value: (stats.total_photos || 0) - (stats.approved_photos || 0),
+    },
   ];
 
-  const gradeData = stats.by_grade ? 
-    Object.entries(stats.by_grade).map(([grade, count]) => ({ name: grade, value: count })) : 
-    [];
+  const gradeData = stats.by_grade
+    ? Object.entries(stats.by_grade).map(([grade, count]) => ({
+        name: grade,
+        value: count,
+      }))
+    : [];
 
   const dateData = stats.by_date || [];
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-muted-foreground text-sm">Total</p>
                 <p className="text-2xl font-bold">{stats.total_photos || 0}</p>
               </div>
               <Camera className="h-8 w-8 text-blue-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Aprobadas</p>
-                <p className="text-2xl font-bold">{stats.approved_photos || 0}</p>
+                <p className="text-muted-foreground text-sm">Aprobadas</p>
+                <p className="text-2xl font-bold">
+                  {stats.approved_photos || 0}
+                </p>
               </div>
               <Check className="h-8 w-8 text-green-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Individuales</p>
-                <p className="text-2xl font-bold">{stats.individual_photos || 0}</p>
+                <p className="text-muted-foreground text-sm">Individuales</p>
+                <p className="text-2xl font-bold">
+                  {stats.individual_photos || 0}
+                </p>
               </div>
               <Users className="h-8 w-8 text-purple-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Grupales</p>
+                <p className="text-muted-foreground text-sm">Grupales</p>
                 <p className="text-2xl font-bold">{stats.group_photos || 0}</p>
               </div>
               <BookOpen className="h-8 w-8 text-orange-500 opacity-50" />
@@ -204,7 +220,7 @@ export default function GalleryStatsDashboard({
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Photo Types Chart */}
         <Card>
           <CardHeader>
@@ -225,10 +241,15 @@ export default function GalleryStatsDashboard({
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {photoTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value) => [value, 'Fotos']} />
@@ -259,12 +280,14 @@ export default function GalleryStatsDashboard({
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {approvalData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={index === 0 ? '#10B981' : '#EF4444'} 
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={index === 0 ? '#10B981' : '#EF4444'}
                       />
                     ))}
                   </Pie>

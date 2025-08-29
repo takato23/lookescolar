@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Settings,
   Loader2,
   CheckCircle,
@@ -61,7 +61,7 @@ export default function GalleryMetadata({
   levelId,
   courseId,
   studentId,
-  onMetadataUpdate
+  onMetadataUpdate,
 }: GalleryMetadataProps) {
   // State
   const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +69,7 @@ export default function GalleryMetadata({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
+
   // Form state
   const [metadata, setMetadata] = useState<GalleryMetadata | null>(null);
   const [title, setTitle] = useState('');
@@ -91,22 +91,24 @@ export default function GalleryMetadata({
   const loadMetadata = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const params = new URLSearchParams();
       if (levelId) params.set('level_id', levelId);
       if (courseId) params.set('course_id', courseId);
       if (studentId) params.set('student_id', studentId);
-      
-      const response = await fetch(`/api/admin/events/${eventId}/gallery/metadata?${params}`);
-      
+
+      const response = await fetch(
+        `/api/admin/events/${eventId}/gallery/metadata?${params}`
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to load metadata');
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.metadata) {
         const metadata = data.metadata;
         setMetadata(metadata);
@@ -130,7 +132,7 @@ export default function GalleryMetadata({
     setIsSaving(true);
     setError(null);
     setSuccess(false);
-    
+
     try {
       const requestBody: any = {
         level_id: levelId,
@@ -140,18 +142,22 @@ export default function GalleryMetadata({
         description: description || null,
         cover_photo_id: coverPhotoId || null,
         tags: tags.length > 0 ? tags : null,
-        custom_fields: Object.keys(customFields).length > 0 ? customFields : null,
+        custom_fields:
+          Object.keys(customFields).length > 0 ? customFields : null,
         sort_order: sortOrder,
         active,
       };
 
-      const response = await fetch(`/api/admin/events/${eventId}/gallery/metadata`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/gallery/metadata`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -159,16 +165,16 @@ export default function GalleryMetadata({
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.metadata) {
         setMetadata(data.metadata);
         setSuccess(true);
-        
+
         // Call update callback if provided
         if (onMetadataUpdate) {
           onMetadataUpdate(data.metadata);
         }
-        
+
         // Close dialog after a short delay
         setTimeout(() => {
           setIsOpen(false);
@@ -192,7 +198,7 @@ export default function GalleryMetadata({
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -213,7 +219,7 @@ export default function GalleryMetadata({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
+          <Settings className="mr-2 h-4 w-4" />
           Metadata
         </Button>
       </DialogTrigger>
@@ -224,27 +230,25 @@ export default function GalleryMetadata({
             Configura la metadata para esta galería
           </DialogDescription>
         </DialogHeader>
-        
+
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <Loader2 className="text-primary mb-4 h-8 w-8 animate-spin" />
             <p className="text-center">Cargando metadata...</p>
           </div>
         ) : success ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-lg font-medium mb-2">¡Metadata guardada!</h3>
-            <p className="text-center text-muted-foreground">
+            <CheckCircle className="mb-4 h-12 w-12 text-green-500" />
+            <h3 className="mb-2 text-lg font-medium">¡Metadata guardada!</h3>
+            <p className="text-muted-foreground text-center">
               La metadata de la galería se ha actualizado correctamente.
             </p>
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-8">
-            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-            <h3 className="text-lg font-medium mb-2">Error</h3>
-            <p className="text-center text-muted-foreground mb-4">
-              {error}
-            </p>
+            <AlertCircle className="text-destructive mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-medium">Error</h3>
+            <p className="text-muted-foreground mb-4 text-center">{error}</p>
             <Button variant="outline" onClick={() => setError(null)}>
               Reintentar
             </Button>
@@ -261,7 +265,7 @@ export default function GalleryMetadata({
                 placeholder="Título de la galería"
               />
             </div>
-            
+
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
@@ -273,7 +277,7 @@ export default function GalleryMetadata({
                 rows={3}
               />
             </div>
-            
+
             {/* Cover Photo ID */}
             <div className="space-y-2">
               <Label htmlFor="cover-photo">ID de Foto de Portada</Label>
@@ -289,7 +293,7 @@ export default function GalleryMetadata({
                 </Button>
               </div>
             </div>
-            
+
             {/* Tags */}
             <div className="space-y-2">
               <Label>Etiquetas</Label>
@@ -306,18 +310,22 @@ export default function GalleryMetadata({
                   }}
                 />
                 <Button onClick={addTag} variant="outline">
-                  <Tag className="h-4 w-4 mr-1" />
+                  <Tag className="mr-1 h-4 w-4" />
                   Agregar
                 </Button>
               </div>
               {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
                       {tag}
-                      <button 
+                      <button
                         onClick={() => removeTag(tag)}
-                        className="text-xs hover:text-destructive"
+                        className="hover:text-destructive text-xs"
                       >
                         ×
                       </button>
@@ -326,7 +334,7 @@ export default function GalleryMetadata({
                 </div>
               )}
             </div>
-            
+
             {/* Sort Order */}
             <div className="space-y-2">
               <Label htmlFor="sort-order">Orden</Label>
@@ -338,7 +346,7 @@ export default function GalleryMetadata({
                 placeholder="Orden de visualización"
               />
             </div>
-            
+
             {/* Active Status */}
             <div className="flex items-center space-x-2">
               <input
@@ -346,7 +354,7 @@ export default function GalleryMetadata({
                 type="checkbox"
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                className="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
               />
               <label
                 htmlFor="active"
@@ -357,24 +365,22 @@ export default function GalleryMetadata({
             </div>
           </div>
         )}
-        
+
         {!isLoading && !success && !error && (
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancelar
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Guardar
             </Button>
           </DialogFooter>
         )}
-        
+
         {(success || error) && (
           <DialogFooter>
-            <Button onClick={() => setIsOpen(false)}>
-              Cerrar
-            </Button>
+            <Button onClick={() => setIsOpen(false)}>Cerrar</Button>
           </DialogFooter>
         )}
       </DialogContent>

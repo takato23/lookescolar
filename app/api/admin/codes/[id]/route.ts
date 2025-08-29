@@ -5,10 +5,16 @@ import { z } from 'zod';
 
 const ParamsSchema = z.object({ id: z.string().uuid() });
 
-async function handleDELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+async function handleDELETE(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   const parse = ParamsSchema.safeParse(params);
   if (!parse.success) {
-    return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Parámetros inválidos' },
+      { status: 400 }
+    );
   }
   const codeId = parse.data.id;
 
@@ -21,7 +27,10 @@ async function handleDELETE(_req: NextRequest, { params }: { params: { id: strin
     .eq('id', codeId)
     .single();
   if (codeErr || !codeRow) {
-    return NextResponse.json({ error: 'Código no encontrado' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Código no encontrado' },
+      { status: 404 }
+    );
   }
 
   // Intentar borrar directamente el código. Si existe FK con ON DELETE SET NULL, esto basta.
@@ -45,14 +54,22 @@ async function handleDELETE(_req: NextRequest, { params }: { params: { id: strin
       .eq('id', codeId));
 
     if (delErr) {
-      return NextResponse.json({ error: 'No se pudo eliminar la carpeta' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'No se pudo eliminar la carpeta' },
+        { status: 500 }
+      );
     }
   }
 
-  return NextResponse.json({ ok: true, deleted: codeId, eventId: (codeRow as any).event_id });
+  return NextResponse.json({
+    ok: true,
+    deleted: codeId,
+    eventId: (codeRow as any).event_id,
+  });
 }
 
 // Allow unauthenticated in development to simplify local testing
-export const DELETE = process.env.NODE_ENV === 'development' ? handleDELETE : withAuth(handleDELETE);
-
-
+export const DELETE =
+  process.env.NODE_ENV === 'development'
+    ? handleDELETE
+    : withAuth(handleDELETE);

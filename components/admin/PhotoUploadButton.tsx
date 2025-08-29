@@ -24,18 +24,20 @@ export function PhotoUploadButton({
   variant = 'default',
   size = 'default',
   showIcon = true,
-  children
+  children,
 }: PhotoUploadButtonProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = Array.from(event.target.files || []);
-    
+
     if (files.length === 0) return;
 
     // Validate file types
-    const validFiles = files.filter(file => {
+    const validFiles = files.filter((file) => {
       const isValidType = file.type.startsWith('image/');
       if (!isValidType) {
         toast.error(`Archivo "${file.name}" no es una imagen válida`);
@@ -49,11 +51,13 @@ export function PhotoUploadButton({
     }
 
     if (validFiles.length !== files.length) {
-      toast.warning(`Se ignoraron ${files.length - validFiles.length} archivos no válidos`);
+      toast.warning(
+        `Se ignoraron ${files.length - validFiles.length} archivos no válidos`
+      );
     }
 
     setIsUploading(true);
-    
+
     try {
       await onUpload(validFiles);
     } catch (error) {
@@ -84,14 +88,14 @@ export function PhotoUploadButton({
         className={className}
       >
         {isUploading ? (
-          <Loader2Icon className="w-4 h-4 animate-spin" />
+          <Loader2Icon className="h-4 w-4 animate-spin" />
         ) : showIcon ? (
-          <UploadIcon className="w-4 h-4" />
+          <UploadIcon className="h-4 w-4" />
         ) : null}
         {showIcon && <span className="ml-2" />}
         {children || (isUploading ? 'Subiendo...' : 'Subir Fotos')}
       </Button>
-      
+
       <input
         ref={fileInputRef}
         type="file"

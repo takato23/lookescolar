@@ -78,7 +78,7 @@ class PhotoService {
         sortBy = 'created_at',
         sortOrder = 'desc',
         page = 1,
-        limit = 50
+        limit = 50,
       } = filters;
 
       const supabase = await this.getSupabase();
@@ -86,7 +86,8 @@ class PhotoService {
       // Build query
       let query = supabase
         .from('photos')
-        .select(`
+        .select(
+          `
           id,
           event_id,
           folder_id,
@@ -102,7 +103,8 @@ class PhotoService {
           metadata,
           created_at,
           updated_at
-        `)
+        `
+        )
         .eq('event_id', eventId);
 
       // Apply folder filter
@@ -143,7 +145,10 @@ class PhotoService {
       const { data: photos, error } = await query;
 
       if (error) {
-        logger.error('Failed to fetch photos', { filters, error: error.message });
+        logger.error('Failed to fetch photos', {
+          filters,
+          error: error.message,
+        });
         return { success: false, error: error.message };
       }
 
@@ -168,7 +173,8 @@ class PhotoService {
       logger.error('Unexpected error in getPhotos', { filters, error });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch photos',
+        error:
+          error instanceof Error ? error.message : 'Failed to fetch photos',
       };
     }
   }
@@ -187,7 +193,10 @@ class PhotoService {
         .single();
 
       if (error) {
-        logger.error('Failed to fetch photo', { photoId, error: error.message });
+        logger.error('Failed to fetch photo', {
+          photoId,
+          error: error.message,
+        });
         return { success: false, error: error.message };
       }
 
@@ -204,7 +213,9 @@ class PhotoService {
   /**
    * Batch move photos to a different folder
    */
-  async batchMovePhotos(options: BatchMoveOptions): Promise<ServiceResult<Photo[]>> {
+  async batchMovePhotos(
+    options: BatchMoveOptions
+  ): Promise<ServiceResult<Photo[]>> {
     try {
       const { photoIds, targetFolderId, eventId } = options;
 
@@ -213,7 +224,10 @@ class PhotoService {
       }
 
       if (photoIds.length > 100) {
-        return { success: false, error: 'Cannot move more than 100 photos at once' };
+        return {
+          success: false,
+          error: 'Cannot move more than 100 photos at once',
+        };
       }
 
       const supabase = await this.getSupabase();
@@ -225,7 +239,10 @@ class PhotoService {
         .in('id', photoIds);
 
       if (fetchError) {
-        logger.error('Failed to validate photos', { photoIds, error: fetchError.message });
+        logger.error('Failed to validate photos', {
+          photoIds,
+          error: fetchError.message,
+        });
         return { success: false, error: 'Failed to validate photos' };
       }
 
@@ -233,15 +250,20 @@ class PhotoService {
         return { success: false, error: 'Some photos not found' };
       }
 
-      const invalidPhotos = photos.filter(photo => photo.event_id !== eventId);
+      const invalidPhotos = photos.filter(
+        (photo) => photo.event_id !== eventId
+      );
       if (invalidPhotos.length > 0) {
-        return { success: false, error: 'Some photos do not belong to this event' };
+        return {
+          success: false,
+          error: 'Some photos do not belong to this event',
+        };
       }
 
       // If target folder is specified, validate it exists
       if (targetFolderId) {
         const { data: folder, error: folderError } = await supabase
-          .from('event_folders')
+          .from('folders')
           .select('id, event_id')
           .eq('id', targetFolderId)
           .single();
@@ -251,7 +273,10 @@ class PhotoService {
         }
 
         if (folder.event_id !== eventId) {
-          return { success: false, error: 'Target folder does not belong to this event' };
+          return {
+            success: false,
+            error: 'Target folder does not belong to this event',
+          };
         }
       }
 
@@ -266,7 +291,10 @@ class PhotoService {
         .select();
 
       if (updateError) {
-        logger.error('Failed to move photos', { options, error: updateError.message });
+        logger.error('Failed to move photos', {
+          options,
+          error: updateError.message,
+        });
         return { success: false, error: 'Failed to move photos' };
       }
 
@@ -289,7 +317,9 @@ class PhotoService {
   /**
    * Generate signed URLs for multiple photos
    */
-  async batchGenerateSignedUrls(options: BatchUrlOptions): Promise<ServiceResult<Record<string, string>>> {
+  async batchGenerateSignedUrls(
+    options: BatchUrlOptions
+  ): Promise<ServiceResult<Record<string, string>>> {
     try {
       const { photoIds, expiryMinutes = 60, usePreview = false } = options;
 
@@ -298,7 +328,10 @@ class PhotoService {
       }
 
       if (photoIds.length > 100) {
-        return { success: false, error: 'Cannot generate URLs for more than 100 photos at once' };
+        return {
+          success: false,
+          error: 'Cannot generate URLs for more than 100 photos at once',
+        };
       }
 
       const supabase = await this.getSupabase();
@@ -310,7 +343,10 @@ class PhotoService {
         .in('id', photoIds);
 
       if (fetchError) {
-        logger.error('Failed to fetch photos for URL generation', { photoIds, error: fetchError.message });
+        logger.error('Failed to fetch photos for URL generation', {
+          photoIds,
+          error: fetchError.message,
+        });
         return { success: false, error: 'Failed to fetch photos' };
       }
 
@@ -325,11 +361,15 @@ class PhotoService {
       await Promise.all(
         photos.map(async (photo) => {
           try {
-            const path = usePreview && photo.preview_path ? photo.preview_path : photo.storage_path;
-            
-            const { data: signedUrlData, error: urlError } = await supabase.storage
-              .from('photos')
-              .createSignedUrl(path, expirySeconds);
+            const path =
+              usePreview && photo.preview_path
+                ? photo.preview_path
+                : photo.storage_path;
+
+            const { data: signedUrlData, error: urlError } =
+              await supabase.storage
+                .from('photos')
+                .createSignedUrl(path, expirySeconds);
 
             if (urlError) {
               logger.warn('Failed to generate signed URL for photo', {
@@ -351,10 +391,16 @@ class PhotoService {
 
       return { success: true, data: urlMap };
     } catch (error) {
-      logger.error('Unexpected error in batchGenerateSignedUrls', { options, error });
+      logger.error('Unexpected error in batchGenerateSignedUrls', {
+        options,
+        error,
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate signed URLs',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to generate signed URLs',
       };
     }
   }
@@ -362,7 +408,10 @@ class PhotoService {
   /**
    * Update photo approval status
    */
-  async updatePhotoApproval(photoId: string, approved: boolean): Promise<ServiceResult<Photo>> {
+  async updatePhotoApproval(
+    photoId: string,
+    approved: boolean
+  ): Promise<ServiceResult<Photo>> {
     try {
       const supabase = await this.getSupabase();
 
@@ -377,16 +426,27 @@ class PhotoService {
         .single();
 
       if (error) {
-        logger.error('Failed to update photo approval', { photoId, approved, error: error.message });
+        logger.error('Failed to update photo approval', {
+          photoId,
+          approved,
+          error: error.message,
+        });
         return { success: false, error: error.message };
       }
 
       return { success: true, data: photo };
     } catch (error) {
-      logger.error('Unexpected error in updatePhotoApproval', { photoId, approved, error });
+      logger.error('Unexpected error in updatePhotoApproval', {
+        photoId,
+        approved,
+        error,
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update photo approval',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update photo approval',
       };
     }
   }
@@ -394,14 +454,20 @@ class PhotoService {
   /**
    * Delete photos (batch operation)
    */
-  async deletePhotos(photoIds: string[], eventId: string): Promise<ServiceResult<string[]>> {
+  async deletePhotos(
+    photoIds: string[],
+    eventId: string
+  ): Promise<ServiceResult<string[]>> {
     try {
       if (photoIds.length === 0) {
         return { success: false, error: 'No photos provided' };
       }
 
       if (photoIds.length > 50) {
-        return { success: false, error: 'Cannot delete more than 50 photos at once' };
+        return {
+          success: false,
+          error: 'Cannot delete more than 50 photos at once',
+        };
       }
 
       const supabase = await this.getSupabase();
@@ -413,7 +479,10 @@ class PhotoService {
         .in('id', photoIds);
 
       if (fetchError) {
-        logger.error('Failed to fetch photos for deletion', { photoIds, error: fetchError.message });
+        logger.error('Failed to fetch photos for deletion', {
+          photoIds,
+          error: fetchError.message,
+        });
         return { success: false, error: 'Failed to fetch photos for deletion' };
       }
 
@@ -422,9 +491,14 @@ class PhotoService {
       }
 
       // Validate all photos belong to the event
-      const invalidPhotos = photos.filter(photo => photo.event_id !== eventId);
+      const invalidPhotos = photos.filter(
+        (photo) => photo.event_id !== eventId
+      );
       if (invalidPhotos.length > 0) {
-        return { success: false, error: 'Some photos do not belong to this event' };
+        return {
+          success: false,
+          error: 'Some photos do not belong to this event',
+        };
       }
 
       // Delete from database first
@@ -434,7 +508,10 @@ class PhotoService {
         .in('id', photoIds);
 
       if (deleteError) {
-        logger.error('Failed to delete photos from database', { photoIds, error: deleteError.message });
+        logger.error('Failed to delete photos from database', {
+          photoIds,
+          error: deleteError.message,
+        });
         return { success: false, error: 'Failed to delete photos' };
       }
 
@@ -457,14 +534,22 @@ class PhotoService {
 
       await Promise.all(storageCleanupPromises);
 
-      logger.info('Successfully deleted photos', { photoCount: photoIds.length, eventId });
+      logger.info('Successfully deleted photos', {
+        photoCount: photoIds.length,
+        eventId,
+      });
 
       return { success: true, data: photoIds };
     } catch (error) {
-      logger.error('Unexpected error in deletePhotos', { photoIds, eventId, error });
+      logger.error('Unexpected error in deletePhotos', {
+        photoIds,
+        eventId,
+        error,
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete photos',
+        error:
+          error instanceof Error ? error.message : 'Failed to delete photos',
       };
     }
   }
@@ -472,14 +557,19 @@ class PhotoService {
   /**
    * Get photos statistics for an event or folder
    */
-  async getPhotoStats(eventId: string, folderId?: string | null): Promise<ServiceResult<{
-    total: number;
-    approved: number;
-    pending: number;
-    processing: number;
-    failed: number;
-    totalSize: number;
-  }>> {
+  async getPhotoStats(
+    eventId: string,
+    folderId?: string | null
+  ): Promise<
+    ServiceResult<{
+      total: number;
+      approved: number;
+      pending: number;
+      processing: number;
+      failed: number;
+      totalSize: number;
+    }>
+  > {
     try {
       const supabase = await this.getSupabase();
 
@@ -499,25 +589,37 @@ class PhotoService {
       const { data: photos, error } = await query;
 
       if (error) {
-        logger.error('Failed to fetch photo stats', { eventId, folderId, error: error.message });
+        logger.error('Failed to fetch photo stats', {
+          eventId,
+          folderId,
+          error: error.message,
+        });
         return { success: false, error: error.message };
       }
 
       const stats = {
         total: photos?.length || 0,
-        approved: photos?.filter(p => p.approved).length || 0,
-        pending: photos?.filter(p => !p.approved).length || 0,
-        processing: photos?.filter(p => p.processing_status === 'processing').length || 0,
-        failed: photos?.filter(p => p.processing_status === 'failed').length || 0,
+        approved: photos?.filter((p) => p.approved).length || 0,
+        pending: photos?.filter((p) => !p.approved).length || 0,
+        processing:
+          photos?.filter((p) => p.processing_status === 'processing').length ||
+          0,
+        failed:
+          photos?.filter((p) => p.processing_status === 'failed').length || 0,
         totalSize: photos?.reduce((sum, p) => sum + (p.file_size || 0), 0) || 0,
       };
 
       return { success: true, data: stats };
     } catch (error) {
-      logger.error('Unexpected error in getPhotoStats', { eventId, folderId, error });
+      logger.error('Unexpected error in getPhotoStats', {
+        eventId,
+        folderId,
+        error,
+      });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get photo stats',
+        error:
+          error instanceof Error ? error.message : 'Failed to get photo stats',
       };
     }
   }

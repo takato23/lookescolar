@@ -168,14 +168,16 @@ export default function CourseManagement({
       }
 
       const data = await response.json();
-      setCourses(prev => [...prev, data.course]);
+      setCourses((prev) => [...prev, data.course]);
       setShowCreateDialog(false);
       resetForm();
       toast.success('Curso creado exitosamente');
       onCourseUpdate?.();
     } catch (error) {
       console.error('Error creating course:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al crear curso');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al crear curso'
+      );
     } finally {
       setLoading(false);
     }
@@ -191,11 +193,14 @@ export default function CourseManagement({
       }
 
       setLoading(true);
-      const response = await fetch(`/api/admin/events/${eventId}/courses/${editingCourse.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/${editingCourse.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -203,41 +208,54 @@ export default function CourseManagement({
       }
 
       const data = await response.json();
-      setCourses(prev => prev.map(c => c.id === editingCourse.id ? data.course : c));
+      setCourses((prev) =>
+        prev.map((c) => (c.id === editingCourse.id ? data.course : c))
+      );
       setEditingCourse(null);
       resetForm();
       toast.success('Curso actualizado exitosamente');
       onCourseUpdate?.();
     } catch (error) {
       console.error('Error updating course:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al actualizar curso');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al actualizar curso'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteCourse = async (course: Course) => {
-    if (!confirm(`¿Estás seguro de eliminar el curso "${course.name}"? Esta acción no se puede deshacer.`)) {
+    if (
+      !confirm(
+        `¿Estás seguro de eliminar el curso "${course.name}"? Esta acción no se puede deshacer.`
+      )
+    ) {
       return;
     }
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/events/${eventId}/courses/${course.id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/${course.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Error deleting course');
       }
 
-      setCourses(prev => prev.filter(c => c.id !== course.id));
+      setCourses((prev) => prev.filter((c) => c.id !== course.id));
       toast.success('Curso eliminado exitosamente');
       onCourseUpdate?.();
     } catch (error) {
       console.error('Error deleting course:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al eliminar curso');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al eliminar curso'
+      );
     } finally {
       setLoading(false);
     }
@@ -267,12 +285,14 @@ export default function CourseManagement({
       }
 
       const data = await response.json();
-      setCourses(prev => [...prev, data.course]);
+      setCourses((prev) => [...prev, data.course]);
       toast.success('Curso duplicado exitosamente');
       onCourseUpdate?.();
     } catch (error) {
       console.error('Error duplicating course:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al duplicar curso');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al duplicar curso'
+      );
     } finally {
       setLoading(false);
     }
@@ -283,14 +303,17 @@ export default function CourseManagement({
 
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/events/${eventId}/courses/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action,
-          course_ids: courseIds,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action,
+            course_ids: courseIds,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -301,7 +324,9 @@ export default function CourseManagement({
       toast.success(`Acción "${action}" ejecutada exitosamente`);
     } catch (error) {
       console.error(`Error executing ${action}:`, error);
-      toast.error(error instanceof Error ? error.message : `Error al ejecutar ${action}`);
+      toast.error(
+        error instanceof Error ? error.message : `Error al ejecutar ${action}`
+      );
     } finally {
       setLoading(false);
     }
@@ -332,11 +357,15 @@ export default function CourseManagement({
     setEditingCourse(course);
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (course.grade && course.grade.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (course.section && course.section.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (course.level_name && course.level_name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredCourses = courses.filter(
+    (course) =>
+      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (course.grade &&
+        course.grade.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (course.section &&
+        course.section.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (course.level_name &&
+        course.level_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Course Form Component
@@ -349,7 +378,9 @@ export default function CourseManagement({
           <Input
             id="name"
             value={formData.name}
-            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
             placeholder="ej: Matemáticas Avanzadas"
           />
         </div>
@@ -357,7 +388,9 @@ export default function CourseManagement({
           <Label htmlFor="level">Nivel Educativo</Label>
           <Select
             value={formData.level_id}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, level_id: value }))}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, level_id: value }))
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="Seleccionar nivel" />
@@ -380,7 +413,9 @@ export default function CourseManagement({
           <Input
             id="grade"
             value={formData.grade}
-            onChange={(e) => setFormData(prev => ({ ...prev, grade: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, grade: e.target.value }))
+            }
             placeholder="ej: 5º, Preescolar"
           />
         </div>
@@ -389,7 +424,9 @@ export default function CourseManagement({
           <Input
             id="section"
             value={formData.section}
-            onChange={(e) => setFormData(prev => ({ ...prev, section: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, section: e.target.value }))
+            }
             placeholder="ej: A, Verde, Mañana"
           />
         </div>
@@ -400,7 +437,9 @@ export default function CourseManagement({
         <Textarea
           id="description"
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
           placeholder="Descripción opcional del curso..."
           rows={3}
         />
@@ -413,14 +452,21 @@ export default function CourseManagement({
             id="sort_order"
             type="number"
             value={formData.sort_order}
-            onChange={(e) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                sort_order: parseInt(e.target.value) || 0,
+              }))
+            }
           />
         </div>
         <div className="flex items-center space-x-2">
           <Switch
             id="active"
             checked={formData.active}
-            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, active: checked }))}
+            onCheckedChange={(checked) =>
+              setFormData((prev) => ({ ...prev, active: checked }))
+            }
           />
           <Label htmlFor="active">Curso activo</Label>
         </div>
@@ -431,20 +477,24 @@ export default function CourseManagement({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Cursos</h2>
-          <p className="text-muted-foreground">Administra los cursos y clases del evento</p>
+          <p className="text-muted-foreground">
+            Administra los cursos y clases del evento
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={loadCourses} variant="outline" disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+            />
             Actualizar
           </Button>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Nuevo Curso
               </Button>
             </DialogTrigger>
@@ -457,11 +507,16 @@ export default function CourseManagement({
               </DialogHeader>
               <CourseForm />
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                >
                   Cancelar
                 </Button>
                 <Button onClick={handleCreateCourse} disabled={loading}>
-                  {loading && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+                  {loading && (
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Crear Curso
                 </Button>
               </DialogFooter>
@@ -478,21 +533,21 @@ export default function CourseManagement({
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
-        <Badge variant="secondary">
-          {filteredCourses.length} cursos
-        </Badge>
+        <Badge variant="secondary">{filteredCourses.length} cursos</Badge>
       </div>
 
       {/* Courses Grid */}
       {filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredCourses.map((course) => (
-            <Card key={course.id} className="relative group">
+            <Card key={course.id} className="group relative">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-lg truncate">{course.name}</CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
+                    <CardTitle className="truncate text-lg">
+                      {course.name}
+                    </CardTitle>
+                    <div className="mt-1 flex items-center gap-2">
                       {course.grade && (
                         <Badge variant="outline" className="text-xs">
                           {course.grade}
@@ -517,7 +572,7 @@ export default function CourseManagement({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
@@ -528,7 +583,7 @@ export default function CourseManagement({
                 <div className="space-y-4">
                   {/* Description */}
                   {course.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-muted-foreground line-clamp-2 text-sm">
                       {course.description}
                     </p>
                   )}
@@ -536,19 +591,27 @@ export default function CourseManagement({
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-medium">{course.student_count || 0}</p>
-                      <p className="text-xs text-muted-foreground">Estudiantes</p>
+                      <Users className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
+                      <p className="text-sm font-medium">
+                        {course.student_count || 0}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        Estudiantes
+                      </p>
                     </div>
                     <div>
-                      <Camera className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-medium">{course.photo_count || 0}</p>
-                      <p className="text-xs text-muted-foreground">Fotos</p>
+                      <Camera className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
+                      <p className="text-sm font-medium">
+                        {course.photo_count || 0}
+                      </p>
+                      <p className="text-muted-foreground text-xs">Fotos</p>
                     </div>
                     <div>
-                      <BookOpen className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                      <p className="text-sm font-medium">{course.group_photo_count || 0}</p>
-                      <p className="text-xs text-muted-foreground">Grupales</p>
+                      <BookOpen className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
+                      <p className="text-sm font-medium">
+                        {course.group_photo_count || 0}
+                      </p>
+                      <p className="text-muted-foreground text-xs">Grupales</p>
                     </div>
                   </div>
 
@@ -558,9 +621,13 @@ export default function CourseManagement({
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => router.push(`/admin/events/${eventId}?view=students&course=${course.id}`)}
+                      onClick={() =>
+                        router.push(
+                          `/admin/events/${eventId}?view=students&course=${course.id}`
+                        )
+                      }
                     >
-                      <Eye className="h-4 w-4 mr-1" />
+                      <Eye className="mr-1 h-4 w-4" />
                       Ver
                     </Button>
                     <Button
@@ -588,10 +655,17 @@ export default function CourseManagement({
                   </div>
 
                   {/* Metadata */}
-                  <div className="text-xs text-muted-foreground pt-2 border-t">
-                    Creado: {new Date(course.created_at).toLocaleDateString('es-AR')}
+                  <div className="text-muted-foreground border-t pt-2 text-xs">
+                    Creado:{' '}
+                    {new Date(course.created_at).toLocaleDateString('es-AR')}
                     {course.updated_at !== course.created_at && (
-                      <span> • Modificado: {new Date(course.updated_at).toLocaleDateString('es-AR')}</span>
+                      <span>
+                        {' '}
+                        • Modificado:{' '}
+                        {new Date(course.updated_at).toLocaleDateString(
+                          'es-AR'
+                        )}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -601,15 +675,17 @@ export default function CourseManagement({
         </div>
       ) : (
         <Card>
-          <CardContent className="text-center py-12">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No hay cursos</h3>
+          <CardContent className="py-12 text-center">
+            <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-medium">No hay cursos</h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'No se encontraron cursos con esos criterios' : 'Comienza agregando tu primer curso'}
+              {searchTerm
+                ? 'No se encontraron cursos con esos criterios'
+                : 'Comienza agregando tu primer curso'}
             </p>
             {!searchTerm && (
               <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Crear Primer Curso
               </Button>
             )}
@@ -618,7 +694,10 @@ export default function CourseManagement({
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={!!editingCourse} onOpenChange={() => setEditingCourse(null)}>
+      <Dialog
+        open={!!editingCourse}
+        onOpenChange={() => setEditingCourse(null)}
+      >
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Editar Curso</DialogTitle>
@@ -632,7 +711,7 @@ export default function CourseManagement({
               Cancelar
             </Button>
             <Button onClick={handleUpdateCourse} disabled={loading}>
-              {loading && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+              {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
               Actualizar Curso
             </Button>
           </DialogFooter>

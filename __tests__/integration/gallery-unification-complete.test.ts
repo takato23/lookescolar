@@ -41,13 +41,15 @@ describe('Gallery Unification System - Complete Integration', () => {
     });
 
     it('should have correctly configured feature flags', async () => {
-      const { featureFlags, validateFeatureFlags } = await import('@/lib/feature-flags');
-      
+      const { featureFlags, validateFeatureFlags } = await import(
+        '@/lib/feature-flags'
+      );
+
       // Validar configuración de feature flags
       const validation = validateFeatureFlags();
       expect(validation.isValid).toBe(true);
       expect(validation.errors).toHaveLength(0);
-      
+
       // Verificar flags específicas para el sistema unificado
       expect(featureFlags.UNIFIED_GALLERY_ENABLED).toBe(true);
       expect(featureFlags.FAMILY_IN_GALLERY_ROUTE).toBe(true);
@@ -59,33 +61,41 @@ describe('Gallery Unification System - Complete Integration', () => {
   describe('Context Detection System', () => {
     it('should correctly detect all context scenarios', async () => {
       const { detectGalleryContext } = await import('@/lib/gallery-context');
-      
+
       // Test 1: Contexto público
       const publicContext = detectGalleryContext({
         eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74',
         searchParams: new URLSearchParams(),
       });
-      
+
       expect(publicContext.context).toBe('public');
-      expect(publicContext.eventId).toBe('a7eed8dd-a432-4dbe-9cd8-328338fa5c74');
+      expect(publicContext.eventId).toBe(
+        'a7eed8dd-a432-4dbe-9cd8-328338fa5c74'
+      );
       expect(publicContext.token).toBeUndefined();
-      
+
       // Test 2: Contexto familiar con token válido
       const familyContext = detectGalleryContext({
         eventId: 'b8ff4cfe-5543-5eef-ae9d-439449gb6d85',
-        searchParams: new URLSearchParams('?token=4ecebc495344b51b5b3cae049d27edd2'),
+        searchParams: new URLSearchParams(
+          '?token=4ecebc495344b51b5b3cae049d27edd2'
+        ),
       });
-      
+
       expect(familyContext.context).toBe('family');
-      expect(familyContext.eventId).toBe('b8ff4cfe-5543-5eef-ae9d-439449gb6d85');
+      expect(familyContext.eventId).toBe(
+        'b8ff4cfe-5543-5eef-ae9d-439449gb6d85'
+      );
       expect(familyContext.token).toBe('4ecebc495344b51b5b3cae049d27edd2');
-      
+
       // Test 3: Contexto familiar con flag legacy
       const legacyContext = detectGalleryContext({
         eventId: 'c9ff4cfe-6644-6fef-bf0d-549559hc7d96',
-        searchParams: new URLSearchParams('?token=5fdfcd506455c62c6c4dbf059e38fee3&from=legacy'),
+        searchParams: new URLSearchParams(
+          '?token=5fdfcd506455c62c6c4dbf059e38fee3&from=legacy'
+        ),
       });
-      
+
       expect(legacyContext.context).toBe('family');
       expect(legacyContext.isLegacyRedirect).toBe(true);
       expect(legacyContext.token).toBe('5fdfcd506455c62c6c4dbf059e38fee3');
@@ -93,16 +103,16 @@ describe('Gallery Unification System - Complete Integration', () => {
 
     it('should handle edge cases properly', async () => {
       const { detectGalleryContext } = await import('@/lib/gallery-context');
-      
+
       // Token muy corto debería resultar en contexto público
       const shortTokenContext = detectGalleryContext({
         eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74',
         searchParams: new URLSearchParams('?token=short'),
       });
-      
+
       expect(shortTokenContext.context).toBe('public');
       expect(shortTokenContext.token).toBeUndefined();
-      
+
       // eventId inválido debería lanzar error
       expect(() => {
         detectGalleryContext({
@@ -115,15 +125,17 @@ describe('Gallery Unification System - Complete Integration', () => {
 
   describe('Unified Cart Store Integration', () => {
     it('should support both context types correctly', async () => {
-      const { useUnifiedCartStore } = await import('@/lib/stores/unified-cart-store');
-      
+      const { useUnifiedCartStore } = await import(
+        '@/lib/stores/unified-cart-store'
+      );
+
       // La función del store debería estar disponible
       expect(typeof useUnifiedCartStore).toBe('function');
       expect(typeof useUnifiedCartStore.getState).toBe('function');
-      
+
       // Obtener estado inicial
       const initialState = useUnifiedCartStore.getState();
-      
+
       expect(initialState.items).toEqual([]);
       expect(initialState.isOpen).toBe(false);
       expect(initialState.context).toBeNull();
@@ -132,26 +144,28 @@ describe('Gallery Unification System - Complete Integration', () => {
     });
 
     it('should handle context switching', async () => {
-      const { useUnifiedCartStore } = await import('@/lib/stores/unified-cart-store');
-      
+      const { useUnifiedCartStore } = await import(
+        '@/lib/stores/unified-cart-store'
+      );
+
       const store = useUnifiedCartStore.getState();
-      
+
       // Contexto familiar
       const familyContext = {
         context: 'family' as const,
         eventId: 'test-event',
         token: '4ecebc495344b51b5b3cae049d27edd2',
       };
-      
+
       store.setContext(familyContext);
       expect(useUnifiedCartStore.getState().context).toEqual(familyContext);
-      
+
       // Contexto público
       const publicContext = {
         context: 'public' as const,
         eventId: 'test-event-2',
       };
-      
+
       store.setContext(publicContext);
       expect(useUnifiedCartStore.getState().context).toEqual(publicContext);
     });
@@ -163,20 +177,22 @@ describe('Gallery Unification System - Complete Integration', () => {
         {
           eventId: 'a7eed8dd-a432-4dbe-9cd8-328338fa5c74',
           token: '4ecebc495344b51b5b3cae049d27edd2',
-          expected: '/gallery/a7eed8dd-a432-4dbe-9cd8-328338fa5c74?token=4ecebc495344b51b5b3cae049d27edd2&from=legacy'
+          expected:
+            '/gallery/a7eed8dd-a432-4dbe-9cd8-328338fa5c74?token=4ecebc495344b51b5b3cae049d27edd2&from=legacy',
         },
         {
           eventId: 'b8ff4cfe-5543-5eef-ae9d-439449gb6d85',
           token: '5fdfcd506455c62c6c4dbf059e38fee3',
-          expected: '/gallery/b8ff4cfe-5543-5eef-ae9d-439449gb6d85?token=5fdfcd506455c62c6c4dbf059e38fee3&from=legacy'
-        }
+          expected:
+            '/gallery/b8ff4cfe-5543-5eef-ae9d-439449gb6d85?token=5fdfcd506455c62c6c4dbf059e38fee3&from=legacy',
+        },
       ];
 
       testCases.forEach(({ eventId, token, expected }) => {
         const redirectUrl = `/gallery/${eventId}?token=${token}&from=legacy`;
-        
+
         expect(redirectUrl).toBe(expected);
-        
+
         // Verificar que se puede parsear correctamente
         const url = new URL(redirectUrl, 'http://localhost:3000');
         expect(url.searchParams.get('token')).toBe(token);
@@ -192,18 +208,13 @@ describe('Gallery Unification System - Complete Integration', () => {
         '6ggedc517566d73d7d5ecf160f49ffe4',
       ];
 
-      const invalidTokens = [
-        'short',
-        '',
-        '12345',
-        'too-short-token',
-      ];
+      const invalidTokens = ['short', '', '12345', 'too-short-token'];
 
-      validTokens.forEach(token => {
+      validTokens.forEach((token) => {
         expect(token.length).toBeGreaterThanOrEqual(20);
       });
 
-      invalidTokens.forEach(token => {
+      invalidTokens.forEach((token) => {
         expect(token.length).toBeLessThan(20);
       });
     });
@@ -212,12 +223,15 @@ describe('Gallery Unification System - Complete Integration', () => {
   describe('Component Integration', () => {
     it('should have compatible component interfaces', async () => {
       // Verificar que los componentes tienen las interfaces esperadas
-      const UnifiedGallery = (await import('@/components/gallery/UnifiedGallery')).UnifiedGallery;
-      const FamilyGallery = (await import('@/components/gallery/FamilyGallery')).FamilyGallery;
-      
+      const UnifiedGallery = (
+        await import('@/components/gallery/UnifiedGallery')
+      ).UnifiedGallery;
+      const FamilyGallery = (await import('@/components/gallery/FamilyGallery'))
+        .FamilyGallery;
+
       expect(typeof UnifiedGallery).toBe('function');
       expect(typeof FamilyGallery).toBe('function');
-      
+
       // Los componentes deberían ser válidos React components
       expect(UnifiedGallery.name).toBe('UnifiedGallery');
       expect(FamilyGallery.name).toBe('FamilyGallery');
@@ -228,7 +242,7 @@ describe('Gallery Unification System - Complete Integration', () => {
       const unifiedProps = {
         eventId: 'test-event-id',
         initialPhotos: [],
-        initialEvent: { id: 'test', name: 'Test Event' }
+        initialEvent: { id: 'test', name: 'Test Event' },
       };
 
       // FamilyGallery props
@@ -236,8 +250,8 @@ describe('Gallery Unification System - Complete Integration', () => {
         context: {
           context: 'family' as const,
           eventId: 'test-event-id',
-          token: '4ecebc495344b51b5b3cae049d27edd2'
-        }
+          token: '4ecebc495344b51b5b3cae049d27edd2',
+        },
       };
 
       // Props deberían tener las propiedades requeridas
@@ -251,13 +265,25 @@ describe('Gallery Unification System - Complete Integration', () => {
     it('should handle all error scenarios gracefully', () => {
       const errorScenarios = [
         { type: 'invalid_token', status: 400, message: 'Token inválido' },
-        { type: 'token_not_found', status: 404, message: 'Token no encontrado' },
+        {
+          type: 'token_not_found',
+          status: 404,
+          message: 'Token no encontrado',
+        },
         { type: 'token_expired', status: 410, message: 'Token expirado' },
-        { type: 'event_not_available', status: 404, message: 'Evento no disponible' },
-        { type: 'server_error', status: 500, message: 'Error interno del servidor' },
+        {
+          type: 'event_not_available',
+          status: 404,
+          message: 'Evento no disponible',
+        },
+        {
+          type: 'server_error',
+          status: 500,
+          message: 'Error interno del servidor',
+        },
       ];
 
-      errorScenarios.forEach(scenario => {
+      errorScenarios.forEach((scenario) => {
         expect(scenario.status).toBeGreaterThanOrEqual(400);
         expect(scenario.message).toBeDefined();
         expect(typeof scenario.message).toBe('string');
@@ -272,20 +298,16 @@ describe('Gallery Unification System - Complete Integration', () => {
         'abcdef01-2345-6789-abcd-ef0123456789',
       ];
 
-      const invalidUUIDs = [
-        'invalid-uuid',
-        'not-a-uuid',
-        '123456',
-        '',
-      ];
+      const invalidUUIDs = ['invalid-uuid', 'not-a-uuid', '123456', ''];
 
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-      validUUIDs.forEach(uuid => {
+      validUUIDs.forEach((uuid) => {
         expect(uuidRegex.test(uuid)).toBe(true);
       });
 
-      invalidUUIDs.forEach(uuid => {
+      invalidUUIDs.forEach((uuid) => {
         expect(uuidRegex.test(uuid)).toBe(false);
       });
     });
@@ -295,15 +317,15 @@ describe('Gallery Unification System - Complete Integration', () => {
     it('should have acceptable bundle size impact', async () => {
       // Verificar que los módulos se cargan rápidamente
       const start = performance.now();
-      
+
       await Promise.all([
         import('@/lib/feature-flags'),
         import('@/lib/gallery-context'),
         import('@/lib/stores/unified-cart-store'),
       ]);
-      
+
       const loadTime = performance.now() - start;
-      
+
       // Los módulos principales deberían cargar en menos de 100ms
       expect(loadTime).toBeLessThan(100);
     });
@@ -318,7 +340,7 @@ describe('Gallery Unification System - Complete Integration', () => {
       ];
 
       // Las rutas deberían seguir el patrón esperado
-      requiredRoutes.forEach(route => {
+      requiredRoutes.forEach((route) => {
         expect(route).toMatch(/^\/api\//);
         expect(typeof route).toBe('string');
         expect(route.length).toBeGreaterThan(5);
@@ -330,7 +352,7 @@ describe('Gallery Unification System - Complete Integration', () => {
     it('should report complete system readiness', async () => {
       const systemStatus = {
         phase1_infrastructure: true,
-        phase2_family_context: true, 
+        phase2_family_context: true,
         phase3_redirects: true,
         phase4_unified_cart: true,
         phase5_integration: true,
@@ -343,7 +365,7 @@ describe('Gallery Unification System - Complete Integration', () => {
 
       // Verificar flags del sistema
       const { featureFlags } = await import('@/lib/feature-flags');
-      
+
       expect(featureFlags.UNIFIED_GALLERY_ENABLED).toBe(true);
       expect(featureFlags.FAMILY_IN_GALLERY_ROUTE).toBe(true);
       expect(featureFlags.TOKEN_AUTO_DETECTION).toBe(true);

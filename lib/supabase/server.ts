@@ -33,7 +33,7 @@ export async function createServerSupabaseClient(): Promise<
   // TEMPORARY FIX: Use simple client creation to avoid AsyncHook issues
   // This skips complex cookie handling which is causing memory leaks
   const { createClient } = await import('@supabase/supabase-js');
-  
+
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: false,
@@ -74,7 +74,7 @@ export async function createServerSupabaseServiceClient(): Promise<
   });
 
   // No caching to prevent memory leaks
-  
+
   return client;
 }
 

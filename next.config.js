@@ -19,6 +19,18 @@ const nextConfig = {
         pathname: '/storage/v1/object/**',
       },
       {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '54321',
+        pathname: '/storage/v1/object/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '54321',
+        pathname: '/storage/v1/object/**',
+      },
+      {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         port: '',
@@ -126,13 +138,13 @@ const nextConfig = {
     // esmExternals: true,
   },
 
-  // Development optimizations
+  // Development optimizations (keep dev chunks around longer to avoid 404s)
   ...(process.env.NODE_ENV === 'development' && {
     onDemandEntries: {
-      // period (in ms) where the server will keep pages in the buffer
-      maxInactiveAge: 25 * 1000,
-      // number of pages that should be kept simultaneously without being disposed
-      pagesBufferLength: 2,
+      // Keep pages in memory longer to avoid disposed chunk 404s during HMR/navigation
+      maxInactiveAge: 120 * 1000, // 2 minutes
+      // Keep more pages buffered in dev
+      pagesBufferLength: 10,
     },
   }),
 };

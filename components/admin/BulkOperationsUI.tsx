@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -31,10 +31,31 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Download, Upload, CheckCircle, X, Tag, Move, Trash2,
-  Eye, EyeOff, Copy, Scissors, Edit, Share, Archive,
-  MoreHorizontal, Play, Pause, RotateCcw, AlertTriangle,
-  Loader2, Users, FileImage, Folder, Settings, Zap
+  Download,
+  Upload,
+  CheckCircle,
+  X,
+  Tag,
+  Move,
+  Trash2,
+  Eye,
+  EyeOff,
+  Copy,
+  Scissors,
+  Edit,
+  Share,
+  Archive,
+  MoreHorizontal,
+  Play,
+  Pause,
+  RotateCcw,
+  AlertTriangle,
+  Loader2,
+  Users,
+  FileImage,
+  Folder,
+  Settings,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -78,14 +99,14 @@ const BULK_OPERATIONS: BulkOperation[] = [
     name: 'Aprobar Fotos',
     description: 'Marca las fotos seleccionadas como aprobadas',
     icon: CheckCircle,
-    color: 'green'
+    color: 'green',
   },
   {
     id: 'disapprove',
     name: 'Desaprobar Fotos',
     description: 'Marca las fotos seleccionadas como no aprobadas',
     icon: EyeOff,
-    color: 'orange'
+    color: 'orange',
   },
   {
     id: 'tag',
@@ -93,7 +114,7 @@ const BULK_OPERATIONS: BulkOperation[] = [
     description: 'Asigna estudiantes a las fotos seleccionadas',
     icon: Tag,
     color: 'blue',
-    requiresTarget: true
+    requiresTarget: true,
   },
   {
     id: 'move',
@@ -101,21 +122,21 @@ const BULK_OPERATIONS: BulkOperation[] = [
     description: 'Mueve las fotos a una carpeta específica',
     icon: Move,
     color: 'purple',
-    requiresTarget: true
+    requiresTarget: true,
   },
   {
     id: 'download',
     name: 'Descargar ZIP',
     description: 'Descarga las fotos seleccionadas en un archivo ZIP',
     icon: Download,
-    color: 'blue'
+    color: 'blue',
   },
   {
     id: 'export',
     name: 'Exportar Metadatos',
     description: 'Exporta información detallada de las fotos',
     icon: Upload,
-    color: 'teal'
+    color: 'teal',
   },
   {
     id: 'rename',
@@ -123,7 +144,7 @@ const BULK_OPERATIONS: BulkOperation[] = [
     description: 'Renombra las fotos con un patrón específico',
     icon: Edit,
     color: 'indigo',
-    requiresInput: true
+    requiresInput: true,
   },
   {
     id: 'delete',
@@ -131,8 +152,8 @@ const BULK_OPERATIONS: BulkOperation[] = [
     description: 'Elimina permanentemente las fotos seleccionadas',
     icon: Trash2,
     color: 'red',
-    dangerous: true
-  }
+    dangerous: true,
+  },
 ];
 
 export default function BulkOperationsUI({
@@ -141,129 +162,146 @@ export default function BulkOperationsUI({
   onOperationComplete,
   onSelectionClear,
   availableFolders = [],
-  availableStudents = []
+  availableStudents = [],
 }: BulkOperationsUIProps) {
-  const [activeOperations, setActiveOperations] = useState<BulkOperationProgress[]>([]);
-  const [selectedOperation, setSelectedOperation] = useState<BulkOperation | null>(null);
+  const [activeOperations, setActiveOperations] = useState<
+    BulkOperationProgress[]
+  >([]);
+  const [selectedOperation, setSelectedOperation] =
+    useState<BulkOperation | null>(null);
   const [operationTarget, setOperationTarget] = useState<string>('');
   const [operationInput, setOperationInput] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Execute bulk operation
-  const executeBulkOperation = useCallback(async (
-    operation: BulkOperation,
-    photoIds: string[],
-    target?: string,
-    input?: string
-  ) => {
-    const operationId = `${operation.id}-${Date.now()}`;
-    
-    const progressData: BulkOperationProgress = {
-      operationId,
-      status: 'pending',
-      processed: 0,
-      total: photoIds.length,
-      errors: [],
-      startTime: new Date()
-    };
+  const executeBulkOperation = useCallback(
+    async (
+      operation: BulkOperation,
+      photoIds: string[],
+      target?: string,
+      input?: string
+    ) => {
+      const operationId = `${operation.id}-${Date.now()}`;
 
-    setActiveOperations(prev => [...prev, progressData]);
-    setIsDialogOpen(false);
+      const progressData: BulkOperationProgress = {
+        operationId,
+        status: 'pending',
+        processed: 0,
+        total: photoIds.length,
+        errors: [],
+        startTime: new Date(),
+      };
 
-    try {
-      // Update status to running
-      setActiveOperations(prev => 
-        prev.map(op => 
-          op.operationId === operationId 
-            ? { ...op, status: 'running' as const }
-            : op
-        )
-      );
+      setActiveOperations((prev) => [...prev, progressData]);
+      setIsDialogOpen(false);
 
-      const batchSize = 10; // Process in batches
-      let processed = 0;
-      const errors: string[] = [];
-
-      for (let i = 0; i < photoIds.length; i += batchSize) {
-        const batch = photoIds.slice(i, i + batchSize);
-        
-        try {
-          const response = await fetch(`/api/admin/photos/bulk`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              operation: operation.id,
-              photoIds: batch,
-              eventId,
-              target,
-              input,
-              metadata: {
-                batchIndex: Math.floor(i / batchSize),
-                totalBatches: Math.ceil(photoIds.length / batchSize)
-              }
-            })
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${errorData.error || 'Error desconocido'}`);
-          } else {
-            processed += batch.length;
-          }
-        } catch (error) {
-          errors.push(`Batch ${Math.floor(i / batchSize) + 1}: Error de conexión`);
-        }
-
-        // Update progress
-        setActiveOperations(prev => 
-          prev.map(op => 
-            op.operationId === operationId 
-              ? { ...op, processed, errors: [...errors] }
+      try {
+        // Update status to running
+        setActiveOperations((prev) =>
+          prev.map((op) =>
+            op.operationId === operationId
+              ? { ...op, status: 'running' as const }
               : op
           )
         );
 
-        // Small delay to prevent overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 100));
+        const batchSize = 10; // Process in batches
+        let processed = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < photoIds.length; i += batchSize) {
+          const batch = photoIds.slice(i, i + batchSize);
+
+          try {
+            const response = await fetch(`/api/admin/photos/bulk`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                operation: operation.id,
+                photoIds: batch,
+                eventId,
+                target,
+                input,
+                metadata: {
+                  batchIndex: Math.floor(i / batchSize),
+                  totalBatches: Math.ceil(photoIds.length / batchSize),
+                },
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              errors.push(
+                `Batch ${Math.floor(i / batchSize) + 1}: ${errorData.error || 'Error desconocido'}`
+              );
+            } else {
+              processed += batch.length;
+            }
+          } catch (error) {
+            errors.push(
+              `Batch ${Math.floor(i / batchSize) + 1}: Error de conexión`
+            );
+          }
+
+          // Update progress
+          setActiveOperations((prev) =>
+            prev.map((op) =>
+              op.operationId === operationId
+                ? { ...op, processed, errors: [...errors] }
+                : op
+            )
+          );
+
+          // Small delay to prevent overwhelming the server
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
+        // Mark as completed
+        setActiveOperations((prev) =>
+          prev.map((op) =>
+            op.operationId === operationId
+              ? {
+                  ...op,
+                  status:
+                    errors.length === 0
+                      ? ('completed' as const)
+                      : ('failed' as const),
+                  endTime: new Date(),
+                  processed,
+                }
+              : op
+          )
+        );
+
+        if (errors.length === 0) {
+          toast.success(`${operation.name} completada exitosamente`);
+          onOperationComplete();
+        } else {
+          toast.error(`${operation.name} completada con errores`);
+        }
+      } catch (error) {
+        setActiveOperations((prev) =>
+          prev.map((op) =>
+            op.operationId === operationId
+              ? {
+                  ...op,
+                  status: 'failed' as const,
+                  errors: [
+                    ...op.errors,
+                    error instanceof Error
+                      ? error.message
+                      : 'Error desconocido',
+                  ],
+                  endTime: new Date(),
+                }
+              : op
+          )
+        );
+        toast.error(`Error en ${operation.name}`);
       }
-
-      // Mark as completed
-      setActiveOperations(prev => 
-        prev.map(op => 
-          op.operationId === operationId 
-            ? { 
-                ...op, 
-                status: errors.length === 0 ? 'completed' as const : 'failed' as const,
-                endTime: new Date(),
-                processed
-              }
-            : op
-        )
-      );
-
-      if (errors.length === 0) {
-        toast.success(`${operation.name} completada exitosamente`);
-        onOperationComplete();
-      } else {
-        toast.error(`${operation.name} completada con errores`);
-      }
-
-    } catch (error) {
-      setActiveOperations(prev => 
-        prev.map(op => 
-          op.operationId === operationId 
-            ? { 
-                ...op, 
-                status: 'failed' as const,
-                errors: [...op.errors, error instanceof Error ? error.message : 'Error desconocido'],
-                endTime: new Date()
-              }
-            : op
-        )
-      );
-      toast.error(`Error en ${operation.name}`);
-    }
-  }, [eventId, onOperationComplete]);
+    },
+    [eventId, onOperationComplete]
+  );
 
   // Handle operation start
   const handleOperationStart = useCallback((operation: BulkOperation) => {
@@ -293,33 +331,47 @@ export default function BulkOperationsUI({
       operationTarget,
       operationInput
     );
-  }, [selectedOperation, operationTarget, operationInput, selectedPhotoIds, executeBulkOperation]);
+  }, [
+    selectedOperation,
+    operationTarget,
+    operationInput,
+    selectedPhotoIds,
+    executeBulkOperation,
+  ]);
 
   // Cancel operation
   const cancelOperation = useCallback((operationId: string) => {
-    setActiveOperations(prev => prev.filter(op => op.operationId !== operationId));
+    setActiveOperations((prev) =>
+      prev.filter((op) => op.operationId !== operationId)
+    );
   }, []);
 
   // Operation stats
   const operationStats = useMemo(() => {
     const total = activeOperations.length;
-    const running = activeOperations.filter(op => op.status === 'running').length;
-    const completed = activeOperations.filter(op => op.status === 'completed').length;
-    const failed = activeOperations.filter(op => op.status === 'failed').length;
-    
+    const running = activeOperations.filter(
+      (op) => op.status === 'running'
+    ).length;
+    const completed = activeOperations.filter(
+      (op) => op.status === 'completed'
+    ).length;
+    const failed = activeOperations.filter(
+      (op) => op.status === 'failed'
+    ).length;
+
     return { total, running, completed, failed };
   }, [activeOperations]);
 
   // Quick operation buttons
-  const quickOperations = BULK_OPERATIONS.filter(op => 
-    !op.requiresTarget && !op.requiresInput && !op.dangerous
+  const quickOperations = BULK_OPERATIONS.filter(
+    (op) => !op.requiresTarget && !op.requiresInput && !op.dangerous
   );
 
   if (selectedPhotoIds.length === 0) {
     return (
       <Card className="border-dashed border-gray-300">
         <CardContent className="p-6 text-center">
-          <FileImage className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+          <FileImage className="mx-auto mb-3 h-12 w-12 text-gray-400" />
           <p className="text-muted-foreground">
             Selecciona fotos para habilitar las operaciones masivas
           </p>
@@ -331,7 +383,7 @@ export default function BulkOperationsUI({
   return (
     <div className="space-y-4">
       {/* Selection summary */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="border-blue-200 bg-blue-50">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -341,10 +393,10 @@ export default function BulkOperationsUI({
                   {selectedPhotoIds.length} fotos seleccionadas
                 </span>
               </div>
-              
+
               {/* Quick operations */}
               <div className="flex items-center gap-1">
-                {quickOperations.slice(0, 3).map(operation => {
+                {quickOperations.slice(0, 3).map((operation) => {
                   const Icon = operation.icon;
                   return (
                     <Button
@@ -352,14 +404,16 @@ export default function BulkOperationsUI({
                       size="sm"
                       variant="outline"
                       className="h-8 gap-1"
-                      onClick={() => executeBulkOperation(operation, selectedPhotoIds)}
+                      onClick={() =>
+                        executeBulkOperation(operation, selectedPhotoIds)
+                      }
                     >
                       <Icon className="h-3 w-3" />
                       <span className="hidden sm:inline">{operation.name}</span>
                     </Button>
                   );
                 })}
-                
+
                 {/* More operations dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -368,21 +422,21 @@ export default function BulkOperationsUI({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    {BULK_OPERATIONS.map(operation => {
+                    {BULK_OPERATIONS.map((operation) => {
                       const Icon = operation.icon;
                       return (
                         <DropdownMenuItem
                           key={operation.id}
                           onClick={() => handleOperationStart(operation)}
                           className={cn(
-                            "gap-2",
-                            operation.dangerous && "text-destructive"
+                            'gap-2',
+                            operation.dangerous && 'text-destructive'
                           )}
                         >
                           <Icon className="h-4 w-4" />
                           <div className="flex-1">
                             <div className="font-medium">{operation.name}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               {operation.description}
                             </div>
                           </div>
@@ -393,14 +447,14 @@ export default function BulkOperationsUI({
                 </DropdownMenu>
               </div>
             </div>
-            
+
             <Button
               variant="outline"
               size="sm"
               onClick={onSelectionClear}
-              className="text-blue-700 border-blue-300"
+              className="border-blue-300 text-blue-700"
             >
-              <X className="h-4 w-4 mr-1" />
+              <X className="mr-1 h-4 w-4" />
               Limpiar
             </Button>
           </div>
@@ -413,17 +467,23 @@ export default function BulkOperationsUI({
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Operaciones en Curso</CardTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Badge variant="outline">{operationStats.running} activas</Badge>
-                <Badge variant="outline">{operationStats.completed} completadas</Badge>
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                <Badge variant="outline">
+                  {operationStats.running} activas
+                </Badge>
+                <Badge variant="outline">
+                  {operationStats.completed} completadas
+                </Badge>
                 {operationStats.failed > 0 && (
-                  <Badge variant="destructive">{operationStats.failed} fallidas</Badge>
+                  <Badge variant="destructive">
+                    {operationStats.failed} fallidas
+                  </Badge>
                 )}
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {activeOperations.map(operation => (
+            {activeOperations.map((operation) => (
               <OperationProgressCard
                 key={operation.operationId}
                 operation={operation}
@@ -439,7 +499,9 @@ export default function BulkOperationsUI({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {selectedOperation && <selectedOperation.icon className="h-5 w-5" />}
+              {selectedOperation && (
+                <selectedOperation.icon className="h-5 w-5" />
+              )}
               {selectedOperation?.name}
             </DialogTitle>
             <DialogDescription>
@@ -453,17 +515,20 @@ export default function BulkOperationsUI({
               <div className="space-y-2">
                 <Label>Seleccionar destino</Label>
                 {selectedOperation.id === 'move' ? (
-                  <Select value={operationTarget} onValueChange={setOperationTarget}>
+                  <Select
+                    value={operationTarget}
+                    onValueChange={setOperationTarget}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar carpeta..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableFolders.map(folder => (
+                      {availableFolders.map((folder) => (
                         <SelectItem key={folder.id} value={folder.id}>
                           <div className="flex items-center gap-2">
                             <Folder className="h-4 w-4" />
                             <span>{folder.name}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                               {folder.path}
                             </span>
                           </div>
@@ -472,17 +537,20 @@ export default function BulkOperationsUI({
                     </SelectContent>
                   </Select>
                 ) : selectedOperation.id === 'tag' ? (
-                  <Select value={operationTarget} onValueChange={setOperationTarget}>
+                  <Select
+                    value={operationTarget}
+                    onValueChange={setOperationTarget}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar estudiante..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableStudents.map(student => (
+                      {availableStudents.map((student) => (
                         <SelectItem key={student.id} value={student.id}>
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
                             <span>{student.name}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                               {student.course}
                             </span>
                           </div>
@@ -504,13 +572,13 @@ export default function BulkOperationsUI({
                   value={operationInput}
                   onChange={(e) => setOperationInput(e.target.value)}
                   placeholder={
-                    selectedOperation.id === 'rename' 
+                    selectedOperation.id === 'rename'
                       ? 'Ej: Evento_2024_{index}'
                       : 'Ingresa el texto...'
                   }
                 />
                 {selectedOperation.id === 'rename' && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Usa {'{index}'} para numerar automáticamente
                   </p>
                 )}
@@ -519,13 +587,14 @@ export default function BulkOperationsUI({
 
             {/* Warning for dangerous operations */}
             {selectedOperation?.dangerous && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                 <div className="flex items-center gap-2 text-red-800">
                   <AlertTriangle className="h-4 w-4" />
                   <span className="font-medium">Operación irreversible</span>
                 </div>
-                <p className="text-sm text-red-700 mt-1">
-                  Esta acción no se puede deshacer. Las fotos eliminadas no se podrán recuperar.
+                <p className="mt-1 text-sm text-red-700">
+                  Esta acción no se puede deshacer. Las fotos eliminadas no se
+                  podrán recuperar.
                 </p>
               </div>
             )}
@@ -535,13 +604,13 @@ export default function BulkOperationsUI({
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={handleOperationConfirm}
                 className={cn(
-                  selectedOperation?.dangerous && "bg-red-600 hover:bg-red-700"
+                  selectedOperation?.dangerous && 'bg-red-600 hover:bg-red-700'
                 )}
               >
-                <Play className="h-4 w-4 mr-1" />
+                <Play className="mr-1 h-4 w-4" />
                 Ejecutar
               </Button>
             </div>
@@ -553,16 +622,17 @@ export default function BulkOperationsUI({
 }
 
 // Operation progress card component
-function OperationProgressCard({ 
-  operation, 
-  onCancel 
-}: { 
-  operation: BulkOperationProgress; 
-  onCancel: () => void; 
+function OperationProgressCard({
+  operation,
+  onCancel,
+}: {
+  operation: BulkOperationProgress;
+  onCancel: () => void;
 }) {
-  const progressPercentage = operation.total > 0 
-    ? Math.round((operation.processed / operation.total) * 100) 
-    : 0;
+  const progressPercentage =
+    operation.total > 0
+      ? Math.round((operation.processed / operation.total) * 100)
+      : 0;
 
   const getStatusIcon = () => {
     switch (operation.status) {
@@ -582,7 +652,7 @@ function OperationProgressCard({
   return (
     <Card className="border-l-4 border-l-blue-500">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getStatusIcon()}
             <span className="font-medium">
@@ -592,31 +662,38 @@ function OperationProgressCard({
               {operation.status}
             </Badge>
           </div>
-          
+
           {operation.status === 'running' && (
             <Button variant="ghost" size="sm" onClick={onCancel}>
               <X className="h-4 w-4" />
             </Button>
           )}
         </div>
-        
+
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span>Progreso: {operation.processed} / {operation.total}</span>
+            <span>
+              Progreso: {operation.processed} / {operation.total}
+            </span>
             <span>{progressPercentage}%</span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
         </div>
-        
+
         {operation.errors.length > 0 && (
           <div className="mt-2 text-xs text-red-600">
             {operation.errors.length} errores encontrados
           </div>
         )}
-        
+
         {operation.endTime && operation.startTime && (
-          <div className="mt-2 text-xs text-muted-foreground">
-            Duración: {Math.round((operation.endTime.getTime() - operation.startTime.getTime()) / 1000)}s
+          <div className="text-muted-foreground mt-2 text-xs">
+            Duración:{' '}
+            {Math.round(
+              (operation.endTime.getTime() - operation.startTime.getTime()) /
+                1000
+            )}
+            s
           </div>
         )}
       </CardContent>

@@ -8,29 +8,35 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
 } from '@/components/ui/dialog';
-import { 
-  Users, 
-  Image, 
-  Upload, 
-  Trash2, 
-  Eye, 
-  CheckCircle, 
+import {
+  Users,
+  Image,
+  Upload,
+  Trash2,
+  Eye,
+  CheckCircle,
   XCircle,
   Camera,
   Calendar,
   Tag,
-  Download
+  Download,
 } from 'lucide-react';
 
 interface Course {
@@ -72,27 +78,36 @@ interface GroupPhotoManagerProps {
   courses: Course[];
 }
 
-export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManagerProps) {
+export default function GroupPhotoManager({
+  eventId,
+  courses,
+}: GroupPhotoManagerProps) {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [groupPhotos, setGroupPhotos] = useState<GroupPhoto[]>([]);
   const [availablePhotos, setAvailablePhotos] = useState<AvailablePhoto[]>([]);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
-  const [selectedPhotoType, setSelectedPhotoType] = useState<'group' | 'activity' | 'event'>('group');
+  const [selectedPhotoType, setSelectedPhotoType] = useState<
+    'group' | 'activity' | 'event'
+  >('group');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'group' | 'activity' | 'event'>('all');
+  const [filterType, setFilterType] = useState<
+    'all' | 'group' | 'activity' | 'event'
+  >('all');
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   // Load group photos for selected course
   const loadGroupPhotos = async (courseId: string) => {
     if (!courseId) return;
-    
+
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/courses/${courseId}/photos`);
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/${courseId}/photos`
+      );
       if (!response.ok) throw new Error('Failed to load group photos');
-      
+
       const data = await response.json();
       setGroupPhotos(data.photos || []);
     } catch (error) {
@@ -106,9 +121,11 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
   // Load available photos that can be assigned to courses
   const loadAvailablePhotos = async () => {
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/photos/group?approved=true&limit=100`);
+      const response = await fetch(
+        `/api/admin/events/${eventId}/photos/group?approved=true&limit=100`
+      );
       if (!response.ok) throw new Error('Failed to load available photos');
-      
+
       const data = await response.json();
       setAvailablePhotos(data.photos || []);
     } catch (error) {
@@ -126,16 +143,19 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
 
     setUploading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/courses/${selectedCourse.id}/photos`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photo_ids: selectedPhotoIds,
-          photo_type: selectedPhotoType,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/${selectedCourse.id}/photos`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photo_ids: selectedPhotoIds,
+            photo_type: selectedPhotoType,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -144,14 +164,16 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
 
       const result = await response.json();
       toast.success(result.message);
-      
+
       // Refresh data
       await loadGroupPhotos(selectedCourse.id);
       setSelectedPhotoIds([]);
       setIsAssignDialogOpen(false);
     } catch (error) {
       console.error('Error assigning photos:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to assign photos');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to assign photos'
+      );
     } finally {
       setUploading(false);
     }
@@ -174,12 +196,14 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
 
       const result = await response.json();
       toast.success(result.message);
-      
+
       // Refresh data
       await loadGroupPhotos(selectedCourse.id);
     } catch (error) {
       console.error('Error removing photo:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to remove photo');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to remove photo'
+      );
     }
   };
 
@@ -191,16 +215,19 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
     }
 
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/photos/group/bulk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action,
-          photo_ids: photoIds,
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/photos/group/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action,
+            photo_ids: photoIds,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -209,14 +236,16 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
 
       const result = await response.json();
       toast.success(result.message);
-      
+
       // Refresh data
       if (selectedCourse) {
         await loadGroupPhotos(selectedCourse.id);
       }
     } catch (error) {
       console.error('Error in bulk action:', error);
-      toast.error(error instanceof Error ? error.message : 'Bulk action failed');
+      toast.error(
+        error instanceof Error ? error.message : 'Bulk action failed'
+      );
     }
   };
 
@@ -230,22 +259,27 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
     }
   }, [selectedCourse]);
 
-  const filteredGroupPhotos = groupPhotos.filter(photo => {
-    const matchesSearch = photo.filename.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredGroupPhotos = groupPhotos.filter((photo) => {
+    const matchesSearch = photo.filename
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || photo.photo_type === filterType;
     return matchesSearch && matchesType;
   });
 
-  const filteredAvailablePhotos = availablePhotos.filter(photo =>
-    !selectedPhotoIds.includes(photo.id) &&
-    photo.filename.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAvailablePhotos = availablePhotos.filter(
+    (photo) =>
+      !selectedPhotoIds.includes(photo.id) &&
+      photo.filename.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold tracking-tight">Group Photo Management</h3>
+          <h3 className="text-2xl font-bold tracking-tight">
+            Group Photo Management
+          </h3>
           <p className="text-muted-foreground">
             Manage group photos for courses in this event
           </p>
@@ -261,12 +295,14 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {courses.map(course => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {courses.map((course) => (
               <Card
                 key={course.id}
                 className={`cursor-pointer transition-colors ${
-                  selectedCourse?.id === course.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                  selectedCourse?.id === course.id
+                    ? 'border-primary bg-primary/5'
+                    : 'hover:bg-muted/50'
                 }`}
                 onClick={() => setSelectedCourse(course)}
               >
@@ -274,7 +310,7 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-semibold">{course.name}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {course.grade} - {course.section}
                       </p>
                     </div>
@@ -305,26 +341,35 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
                   {selectedCourse.grade} - {selectedCourse.section}
                 </p>
                 <div className="flex gap-2">
-                  <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
+                  <Dialog
+                    open={isAssignDialogOpen}
+                    onOpenChange={setIsAssignDialogOpen}
+                  >
                     <DialogTrigger asChild>
                       <Button onClick={loadAvailablePhotos}>
-                        <Upload className="h-4 w-4 mr-2" />
+                        <Upload className="mr-2 h-4 w-4" />
                         Assign Photos
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Assign Photos to Course</DialogTitle>
                         <DialogDescription>
-                          Select photos to assign to {selectedCourse.name} as group photos
+                          Select photos to assign to {selectedCourse.name} as
+                          group photos
                         </DialogDescription>
                       </DialogHeader>
-                      
+
                       <div className="space-y-4">
                         {/* Photo Type Selection */}
                         <div className="flex items-center gap-4">
                           <Label>Photo Type:</Label>
-                          <Select value={selectedPhotoType} onValueChange={(value: any) => setSelectedPhotoType(value)}>
+                          <Select
+                            value={selectedPhotoType}
+                            onValueChange={(value: any) =>
+                              setSelectedPhotoType(value)
+                            }
+                          >
                             <SelectTrigger className="w-40">
                               <SelectValue />
                             </SelectTrigger>
@@ -344,63 +389,70 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
                         />
 
                         {/* Available Photos Grid */}
-                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                          {filteredAvailablePhotos.map(photo => (
+                        <div className="grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-6">
+                          {filteredAvailablePhotos.map((photo) => (
                             <div
                               key={photo.id}
-                              className={`relative border-2 rounded-lg overflow-hidden cursor-pointer transition-colors ${
+                              className={`relative cursor-pointer overflow-hidden rounded-lg border-2 transition-colors ${
                                 selectedPhotoIds.includes(photo.id)
                                   ? 'border-primary bg-primary/10'
                                   : 'border-border hover:border-primary/50'
                               }`}
                               onClick={() => {
-                                setSelectedPhotoIds(prev =>
+                                setSelectedPhotoIds((prev) =>
                                   prev.includes(photo.id)
-                                    ? prev.filter(id => id !== photo.id)
+                                    ? prev.filter((id) => id !== photo.id)
                                     : [...prev, photo.id]
                                 );
                               }}
                             >
-                              <div className="aspect-square bg-muted flex items-center justify-center">
+                              <div className="bg-muted flex aspect-square items-center justify-center">
                                 {photo.preview_url ? (
                                   <img
                                     src={photo.preview_url}
                                     alt={photo.filename}
-                                    className="w-full h-full object-cover"
+                                    className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <Image className="h-8 w-8 text-muted-foreground" />
+                                  <Image className="text-muted-foreground h-8 w-8" />
                                 )}
                               </div>
-                              <div className="absolute top-2 left-2">
+                              <div className="absolute left-2 top-2">
                                 <Checkbox
                                   checked={selectedPhotoIds.includes(photo.id)}
                                   onChange={() => {}}
                                 />
                               </div>
-                              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-1">
-                                <p className="text-xs truncate">{photo.filename}</p>
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-white">
+                                <p className="truncate text-xs">
+                                  {photo.filename}
+                                </p>
                               </div>
                             </div>
                           ))}
                         </div>
 
                         {filteredAvailablePhotos.length === 0 && (
-                          <div className="text-center py-8 text-muted-foreground">
+                          <div className="text-muted-foreground py-8 text-center">
                             No available photos found
                           </div>
                         )}
                       </div>
 
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAssignDialogOpen(false)}
+                        >
                           Cancel
                         </Button>
-                        <Button 
+                        <Button
                           onClick={assignPhotosToourse}
                           disabled={uploading || selectedPhotoIds.length === 0}
                         >
-                          {uploading ? 'Assigning...' : `Assign ${selectedPhotoIds.length} Photo(s)`}
+                          {uploading
+                            ? 'Assigning...'
+                            : `Assign ${selectedPhotoIds.length} Photo(s)`}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -420,7 +472,10 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="max-w-xs"
                 />
-                <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+                <Select
+                  value={filterType}
+                  onValueChange={(value: any) => setFilterType(value)}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue />
                   </SelectTrigger>
@@ -448,38 +503,44 @@ export default function GroupPhotoManager({ eventId, courses }: GroupPhotoManage
           ) : filteredGroupPhotos.length === 0 ? (
             <Card>
               <CardContent className="p-8">
-                <div className="text-center text-muted-foreground">
+                <div className="text-muted-foreground text-center">
                   No group photos found for this course
                 </div>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-              {filteredGroupPhotos.map(photo => (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+              {filteredGroupPhotos.map((photo) => (
                 <Card key={photo.id} className="overflow-hidden">
-                  <div className="aspect-square bg-muted relative">
+                  <div className="bg-muted relative aspect-square">
                     <img
                       src={photo.preview_url}
                       alt={photo.filename}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                     />
-                    <div className="absolute top-2 left-2">
-                      <Badge variant={photo.approved ? 'default' : 'destructive'}>
-                        {photo.approved ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                    <div className="absolute left-2 top-2">
+                      <Badge
+                        variant={photo.approved ? 'default' : 'destructive'}
+                      >
+                        {photo.approved ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
                       </Badge>
                     </div>
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="secondary">
-                        {photo.photo_type}
-                      </Badge>
+                    <div className="absolute right-2 top-2">
+                      <Badge variant="secondary">{photo.photo_type}</Badge>
                     </div>
                   </div>
                   <CardContent className="p-3">
-                    <p className="text-xs font-medium truncate">{photo.filename}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-xs font-medium">
+                      {photo.filename}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
                       {new Date(photo.created_at).toLocaleDateString()}
                     </p>
-                    <div className="flex gap-1 mt-2">
+                    <div className="mt-2 flex gap-1">
                       <Button
                         size="sm"
                         variant="outline"

@@ -2,15 +2,23 @@
 
 /**
  * Production Readiness Validation Script
- * 
+ *
  * Validates all critical systems and configurations before production deployment.
  * Run this script before deploying to production to ensure everything is ready.
- * 
+ *
  * Usage: npm run validate:production
  */
 
-import { validateEnvironment, validateCriticalSecuritySettings, logEnvironmentStatus } from '../lib/utils/env-validation';
-import { getProductionConfig, validateProductionConfig, logConfigurationSummary } from '../lib/config/production.config';
+import {
+  validateEnvironment,
+  validateCriticalSecuritySettings,
+  logEnvironmentStatus,
+} from '../lib/utils/env-validation';
+import {
+  getProductionConfig,
+  validateProductionConfig,
+  logConfigurationSummary,
+} from '../lib/config/production.config';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -47,7 +55,7 @@ class ProductionReadinessValidator {
     this.generateSummaryReport();
 
     // Return overall status
-    return this.results.every(result => result.passed);
+    return this.results.every((result) => result.passed);
   }
 
   private async validateEnvironmentVariables(): Promise<void> {
@@ -74,15 +82,18 @@ class ProductionReadinessValidator {
 
     try {
       console.log('\n📊 Validating Supabase connection...');
-      
+
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
       // Test database connection
-      const { data, error } = await supabase.from('events').select('count').limit(1);
-      
+      const { data, error } = await supabase
+        .from('events')
+        .select('count')
+        .limit(1);
+
       if (error) {
         critical.push(`Database connection failed: ${error.message}`);
       } else {
@@ -90,28 +101,37 @@ class ProductionReadinessValidator {
       }
 
       // Test RLS policies
-      const { data: rlsData, error: rlsError } = await supabase.rpc('check_rls_enabled');
+      const { data: rlsData, error: rlsError } =
+        await supabase.rpc('check_rls_enabled');
       if (rlsError) {
         warnings.push('Could not verify RLS policies are enabled');
       }
 
       // Test storage bucket
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      const { data: buckets, error: bucketError } =
+        await supabase.storage.listBuckets();
       if (bucketError) {
         issues.push(`Storage bucket validation failed: ${bucketError.message}`);
       } else {
-        const photoBucket = buckets.find(b => b.name === this.config.storageBucket);
+        const photoBucket = buckets.find(
+          (b) => b.name === this.config.storageBucket
+        );
         if (!photoBucket) {
-          critical.push(`Storage bucket '${this.config.storageBucket}' not found`);
+          critical.push(
+            `Storage bucket '${this.config.storageBucket}' not found`
+          );
         } else if (photoBucket.public) {
-          critical.push(`Storage bucket '${this.config.storageBucket}' must be private`);
+          critical.push(
+            `Storage bucket '${this.config.storageBucket}' must be private`
+          );
         } else {
           console.log('✅ Private storage bucket configured correctly');
         }
       }
-
     } catch (error) {
-      critical.push(`Supabase validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      critical.push(
+        `Supabase validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     this.results.push({
@@ -131,16 +151,23 @@ class ProductionReadinessValidator {
     console.log('\n📁 Validating storage configuration...');
 
     // Validate storage settings
-    if (this.config.maxFileSize > 50 * 1024 * 1024) { // 50MB
-      warnings.push('Maximum file size is very large and may cause upload issues');
+    if (this.config.maxFileSize > 50 * 1024 * 1024) {
+      // 50MB
+      warnings.push(
+        'Maximum file size is very large and may cause upload issues'
+      );
     }
 
     if (this.config.signedUrlExpiryMinutes > 120) {
-      warnings.push('Signed URL expiry is longer than recommended (120 minutes)');
+      warnings.push(
+        'Signed URL expiry is longer than recommended (120 minutes)'
+      );
     }
 
     if (this.config.maxFilesPerRequest > 50) {
-      warnings.push('Maximum files per request is very high and may cause timeouts');
+      warnings.push(
+        'Maximum files per request is very high and may cause timeouts'
+      );
     }
 
     // Test upload directory permissions
@@ -189,7 +216,9 @@ class ProductionReadinessValidator {
       }
 
       if (this.config.tokenMinLength < 20) {
-        critical.push('Token minimum length must be at least 20 characters in production');
+        critical.push(
+          'Token minimum length must be at least 20 characters in production'
+        );
       }
     }
 
@@ -236,9 +265,13 @@ class ProductionReadinessValidator {
 
       if (!redisUrl || !redisToken) {
         if (this.config.isProduction) {
-          critical.push('Redis configuration is required for rate limiting in production');
+          critical.push(
+            'Redis configuration is required for rate limiting in production'
+          );
         } else {
-          warnings.push('Redis not configured - rate limiting will use memory store');
+          warnings.push(
+            'Redis not configured - rate limiting will use memory store'
+          );
         }
       } else {
         try {
@@ -278,19 +311,25 @@ class ProductionReadinessValidator {
 
     // Check webhook secret strength
     if (mercadoPago.webhookSecret.length < 32) {
-      critical.push('Mercado Pago webhook secret must be at least 32 characters long');
+      critical.push(
+        'Mercado Pago webhook secret must be at least 32 characters long'
+      );
     }
 
     // Production environment checks
     if (this.config.isProduction && mercadoPago.environment === 'sandbox') {
-      critical.push('Mercado Pago must use production environment in production');
+      critical.push(
+        'Mercado Pago must use production environment in production'
+      );
     }
 
     // Test keys format
     if (!mercadoPago.publicKey || !mercadoPago.accessToken) {
       critical.push('Mercado Pago keys are missing');
     } else {
-      const isTestKey = mercadoPago.publicKey.includes('TEST-') || mercadoPago.accessToken.includes('TEST-');
+      const isTestKey =
+        mercadoPago.publicKey.includes('TEST-') ||
+        mercadoPago.accessToken.includes('TEST-');
       if (this.config.isProduction && isTestKey) {
         critical.push('Using test Mercado Pago keys in production');
       }
@@ -319,7 +358,7 @@ class ProductionReadinessValidator {
     try {
       // Check read/write permissions in key directories
       const testDirs = ['./uploads', './temp', './logs'];
-      
+
       for (const dir of testDirs) {
         try {
           await fs.mkdir(dir, { recursive: true });
@@ -332,7 +371,6 @@ class ProductionReadinessValidator {
       }
 
       console.log('✅ File system permissions verified');
-
     } catch (error) {
       issues.push('File system permission validation failed');
     }
@@ -356,24 +394,32 @@ class ProductionReadinessValidator {
     try {
       // Check Next.js configuration
       const nextConfigPath = path.join(process.cwd(), 'next.config.js');
-      const nextConfigExists = await fs.access(nextConfigPath).then(() => true).catch(() => false);
-      
+      const nextConfigExists = await fs
+        .access(nextConfigPath)
+        .then(() => true)
+        .catch(() => false);
+
       if (!nextConfigExists) {
         warnings.push('next.config.js not found - using default configuration');
       }
 
       // Check TypeScript configuration
       const tsconfigPath = path.join(process.cwd(), 'tsconfig.json');
-      const tsconfigExists = await fs.access(tsconfigPath).then(() => true).catch(() => false);
-      
+      const tsconfigExists = await fs
+        .access(tsconfigPath)
+        .then(() => true)
+        .catch(() => false);
+
       if (!tsconfigExists) {
         issues.push('tsconfig.json not found');
       }
 
       // Check package.json
       const packageJsonPath = path.join(process.cwd(), 'package.json');
-      const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-      
+      const packageJson = JSON.parse(
+        await fs.readFile(packageJsonPath, 'utf-8')
+      );
+
       if (!packageJson.scripts?.build) {
         critical.push('Build script not found in package.json');
       }
@@ -383,7 +429,6 @@ class ProductionReadinessValidator {
       }
 
       console.log('✅ Build configuration validated');
-
     } catch (error) {
       critical.push('Build configuration validation failed');
     }
@@ -406,12 +451,16 @@ class ProductionReadinessValidator {
 
     // Check concurrent upload limits
     if (this.config.maxConcurrentUploads > 10) {
-      warnings.push('High concurrent upload limit may cause performance issues');
+      warnings.push(
+        'High concurrent upload limit may cause performance issues'
+      );
     }
 
     // Check photo processing settings
     if (this.config.photoMaxSize > 2000) {
-      warnings.push('Large photo max size may cause storage and processing issues');
+      warnings.push(
+        'Large photo max size may cause storage and processing issues'
+      );
     }
 
     // Check cache settings
@@ -452,7 +501,9 @@ class ProductionReadinessValidator {
 
     // Check egress monitoring
     if (!this.config.enableEgressMonitoring && this.config.isProduction) {
-      critical.push('Egress monitoring must be enabled in production to track Supabase limits');
+      critical.push(
+        'Egress monitoring must be enabled in production to track Supabase limits'
+      );
     }
 
     console.log('✅ Monitoring setup validated');
@@ -476,54 +527,62 @@ class ProductionReadinessValidator {
     let totalWarnings = 0;
     let passedCategories = 0;
 
-    this.results.forEach(result => {
+    this.results.forEach((result) => {
       const status = result.passed ? '✅ PASS' : '❌ FAIL';
       console.log(`${status} ${result.category}`);
-      
+
       if (result.critical.length > 0) {
         console.log('  🚨 CRITICAL:');
-        result.critical.forEach(issue => console.log(`    - ${issue}`));
+        result.critical.forEach((issue) => console.log(`    - ${issue}`));
         totalCritical += result.critical.length;
       }
-      
+
       if (result.issues.length > 0) {
         console.log('  ❌ ISSUES:');
-        result.issues.forEach(issue => console.log(`    - ${issue}`));
+        result.issues.forEach((issue) => console.log(`    - ${issue}`));
         totalIssues += result.issues.length;
       }
-      
+
       if (result.warnings.length > 0) {
         console.log('  ⚠️  WARNINGS:');
-        result.warnings.forEach(warning => console.log(`    - ${warning}`));
+        result.warnings.forEach((warning) => console.log(`    - ${warning}`));
         totalWarnings += result.warnings.length;
       }
-      
+
       if (result.passed) {
         passedCategories++;
       }
-      
+
       console.log('');
     });
 
     console.log('='.repeat(60));
-    console.log(`📊 OVERALL STATUS: ${passedCategories}/${this.results.length} categories passed`);
+    console.log(
+      `📊 OVERALL STATUS: ${passedCategories}/${this.results.length} categories passed`
+    );
     console.log(`🚨 Critical Issues: ${totalCritical}`);
     console.log(`❌ Issues: ${totalIssues}`);
     console.log(`⚠️  Warnings: ${totalWarnings}`);
     console.log('='.repeat(60));
 
     if (totalCritical > 0) {
-      console.log('\n🚨 DEPLOYMENT BLOCKED: Critical issues must be resolved before production deployment.');
+      console.log(
+        '\n🚨 DEPLOYMENT BLOCKED: Critical issues must be resolved before production deployment.'
+      );
       console.log('Fix all critical issues and run validation again.\n');
     } else if (totalIssues > 0) {
-      console.log('\n⚠️  DEPLOYMENT CAUTIONED: Issues should be resolved before production deployment.');
+      console.log(
+        '\n⚠️  DEPLOYMENT CAUTIONED: Issues should be resolved before production deployment.'
+      );
       console.log('Review and fix issues, then run validation again.\n');
     } else {
       console.log('\n🎉 PRODUCTION READY: All critical validations passed!');
       console.log('System is ready for production deployment.\n');
-      
+
       if (totalWarnings > 0) {
-        console.log(`ℹ️  Note: ${totalWarnings} warnings were found. Consider reviewing them for optimal performance.\n`);
+        console.log(
+          `ℹ️  Note: ${totalWarnings} warnings were found. Consider reviewing them for optimal performance.\n`
+        );
       }
     }
   }
@@ -533,13 +592,17 @@ class ProductionReadinessValidator {
 async function main() {
   const validator = new ProductionReadinessValidator();
   const isReady = await validator.validate();
-  
-  process.exit(isReady && validator['results'].every(r => r.critical.length === 0) ? 0 : 1);
+
+  process.exit(
+    isReady && validator['results'].every((r) => r.critical.length === 0)
+      ? 0
+      : 1
+  );
 }
 
 // Run if called directly
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('❌ Validation failed with error:', error);
     process.exit(1);
   });

@@ -1,16 +1,33 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  Folder, 
-  FolderOpen, 
-  ChevronRight, 
-  ChevronDown, 
+import {
+  Folder,
+  FolderOpen,
+  ChevronRight,
+  ChevronDown,
   Home,
-  Loader2
+  Loader2,
+  Plus,
+  MoreHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface FolderNode {
   id: string;
@@ -34,8 +51,14 @@ interface FolderTreePanelProps {
   currentFolderId: string | null;
   onFolderSelect: (folderId: string | null) => void;
   onFolderDoubleClick: (folderId: string) => void;
-  onPhotosMove?: (photoIds: string[], targetFolderId: string | null) => Promise<void>;
-  onFolderMove?: (folderId: string, targetFolderId: string | null) => Promise<void>;
+  onPhotosMove?: (
+    photoIds: string[],
+    targetFolderId: string | null
+  ) => Promise<void>;
+  onFolderMove?: (
+    folderId: string,
+    targetFolderId: string | null
+  ) => Promise<void>;
 }
 
 export function FolderTreePanel({
@@ -49,32 +72,52 @@ export function FolderTreePanel({
   const [treeData, setTreeData] = useState<FolderNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set()
+  );
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [draggedFolder, setDraggedFolder] = useState<string | null>(null);
 
+  // Folder creation state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingInFolder, setCreatingInFolder] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [contextMenuFolder, setContextMenuFolder] = useState<string | null>(
+    null
+  );
+
   // Helper to check if moving a folder would create a cycle
-  const wouldCreateCycle = useCallback((folderId: string, targetFolderId: string | null): boolean => {
-    if (!targetFolderId || folderId === targetFolderId) return true;
-    
-    // Find the target folder and check if folderId is in its ancestry
-    const findInTree = (nodes: FolderNode[], searchId: string): FolderNode | null => {
-      for (const node of nodes) {
-        if (node.id === searchId) return node;
-        if (node.children) {
-          const found = findInTree(node.children, searchId);
-          if (found) return found;
+  const wouldCreateCycle = useCallback(
+    (folderId: string, targetFolderId: string | null): boolean => {
+      if (!targetFolderId || folderId === targetFolderId) return true;
+
+      // Find the target folder and check if folderId is in its ancestry
+      const findInTree = (
+        nodes: FolderNode[],
+        searchId: string
+      ): FolderNode | null => {
+        for (const node of nodes) {
+          if (node.id === searchId) return node;
+          if (node.children) {
+            const found = findInTree(node.children, searchId);
+            if (found) return found;
+          }
         }
-      }
-      return null;
-    };
-    
-    const targetFolder = findInTree(treeData, targetFolderId);
-    if (!targetFolder) return false;
-    
-    // Check if target folder's path contains the dragged folder
-    return targetFolder.path.includes(`/${folderId}/`) || targetFolder.path.endsWith(`/${folderId}`);
-  }, [treeData]);
+        return null;
+      };
+
+      const targetFolder = findInTree(treeData, targetFolderId);
+      if (!targetFolder) return false;
+
+      // Check if target folder's path contains the dragged folder
+      return (
+        targetFolder.path.includes(`/${folderId}/`) ||
+        targetFolder.path.endsWith(`/${folderId}`)
+      );
+    },
+    [treeData]
+  );
 
   // Load root folders initially
   useEffect(() => {
@@ -86,7 +129,9 @@ export function FolderTreePanel({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/admin/events/${eventId}/folders?parentId=`);
+      const response = await fetch(
+        `/api/admin/events/${eventId}/folders?parentId=`
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -94,16 +139,19 @@ export function FolderTreePanel({
       }
 
       const folders = data.folders || [];
-      setTreeData(folders.map((folder: any) => ({
-        ...folder,
-        children: [],
-        expanded: false,
-        loading: false,
-      })));
-
+      setTreeData(
+        folders.map((folder: any) => ({
+          ...folder,
+          children: [],
+          expanded: false,
+          loading: false,
+        }))
+      );
     } catch (error) {
       console.error('Error loading root folders:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load folders');
+      setError(
+        error instanceof Error ? error.message : 'Failed to load folders'
+      );
     } finally {
       setLoading(false);
     }
@@ -112,9 +160,11 @@ export function FolderTreePanel({
   // Load children for a specific folder
   const loadFolderChildren = async (folderId: string) => {
     try {
-      setTreeData(prev => updateFolderLoading(prev, folderId, true));
+      setTreeData((prev) => updateFolderLoading(prev, folderId, true));
 
-      const response = await fetch(`/api/admin/events/${eventId}/folders?parentId=${folderId}`);
+      const response = await fetch(
+        `/api/admin/events/${eventId}/folders?parentId=${folderId}`
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -128,24 +178,27 @@ export function FolderTreePanel({
         loading: false,
       }));
 
-      setTreeData(prev => updateFolderChildren(prev, folderId, children));
-
+      setTreeData((prev) => updateFolderChildren(prev, folderId, children));
     } catch (error) {
       console.error('Error loading folder children:', error);
-      setTreeData(prev => updateFolderLoading(prev, folderId, false));
+      setTreeData((prev) => updateFolderLoading(prev, folderId, false));
     }
   };
 
   // Helper function to update folder loading state
-  const updateFolderLoading = (folders: FolderNode[], folderId: string, loading: boolean): FolderNode[] => {
-    return folders.map(folder => {
+  const updateFolderLoading = (
+    folders: FolderNode[],
+    folderId: string,
+    loading: boolean
+  ): FolderNode[] => {
+    return folders.map((folder) => {
       if (folder.id === folderId) {
         return { ...folder, loading };
       }
       if (folder.children && folder.children.length > 0) {
         return {
           ...folder,
-          children: updateFolderLoading(folder.children, folderId, loading)
+          children: updateFolderLoading(folder.children, folderId, loading),
         };
       }
       return folder;
@@ -153,57 +206,156 @@ export function FolderTreePanel({
   };
 
   // Helper function to update folder children
-  const updateFolderChildren = (folders: FolderNode[], folderId: string, children: FolderNode[]): FolderNode[] => {
-    return folders.map(folder => {
+  const updateFolderChildren = (
+    folders: FolderNode[],
+    folderId: string,
+    children: FolderNode[]
+  ): FolderNode[] => {
+    return folders.map((folder) => {
       if (folder.id === folderId) {
-        return { 
-          ...folder, 
+        return {
+          ...folder,
           children,
           expanded: true,
-          loading: false 
+          loading: false,
         };
       }
       if (folder.children && folder.children.length > 0) {
         return {
           ...folder,
-          children: updateFolderChildren(folder.children, folderId, children)
+          children: updateFolderChildren(folder.children, folderId, children),
         };
       }
       return folder;
     });
   };
 
-  // Handle folder expand/collapse
-  const handleFolderToggle = useCallback((folderId: string, hasChildren: boolean) => {
-    if (!hasChildren) return;
+  // Create folder functionality
+  const handleCreateFolder = useCallback(async (parentId: string | null) => {
+    setCreatingInFolder(parentId);
+    setNewFolderName('');
+    setShowCreateModal(true);
+  }, []);
 
-    const isExpanded = expandedFolders.has(folderId);
-    
-    if (isExpanded) {
-      // Collapse
-      setExpandedFolders(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(folderId);
-        return newSet;
-      });
-      
-      setTreeData(prev => updateFolderExpanded(prev, folderId, false));
-    } else {
-      // Expand
-      setExpandedFolders(prev => new Set(prev).add(folderId));
-      
-      // Load children if not already loaded
-      const folder = findFolderById(treeData, folderId);
-      if (folder && (!folder.children || folder.children.length === 0)) {
-        loadFolderChildren(folderId);
-      } else {
-        setTreeData(prev => updateFolderExpanded(prev, folderId, true));
-      }
+  const createFolder = useCallback(async () => {
+    if (!newFolderName.trim()) {
+      toast.error('El nombre de la carpeta es requerido');
+      return;
     }
-  }, [expandedFolders, treeData]);
+
+    setIsCreating(true);
+    try {
+      const response = await fetch(`/api/admin/events/${eventId}/folders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newFolderName.trim(),
+          parent_id: creatingInFolder,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al crear la carpeta');
+      }
+
+      toast.success('Carpeta creada exitosamente');
+
+      // Refresh the appropriate folder's children or root folders
+      if (creatingInFolder) {
+        // If creating in a specific folder, expand it and reload its children
+        setExpandedFolders((prev) => new Set(prev).add(creatingInFolder));
+        await loadFolderChildren(creatingInFolder);
+      } else {
+        // If creating in root, reload root folders
+        await loadRootFolders();
+      }
+
+      // Close modal and reset state
+      setShowCreateModal(false);
+      setNewFolderName('');
+      setCreatingInFolder(null);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Error al crear la carpeta'
+      );
+    } finally {
+      setIsCreating(false);
+    }
+  }, [
+    eventId,
+    newFolderName,
+    creatingInFolder,
+    loadRootFolders,
+    loadFolderChildren,
+  ]);
+
+  // Listen for context-aware folder creation from header
+  useEffect(() => {
+    const handleCreateFolderInContext = (event: CustomEvent) => {
+      const { parentFolderId } = event.detail;
+      handleCreateFolder(parentFolderId);
+    };
+
+    window.addEventListener(
+      'createFolderInContext',
+      handleCreateFolderInContext as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        'createFolderInContext',
+        handleCreateFolderInContext as EventListener
+      );
+    };
+  }, [handleCreateFolder]);
+
+  const handleCancelCreate = useCallback(() => {
+    setShowCreateModal(false);
+    setNewFolderName('');
+    setCreatingInFolder(null);
+  }, []);
+
+  // Handle folder expand/collapse
+  const handleFolderToggle = useCallback(
+    (folderId: string, hasChildren: boolean) => {
+      if (!hasChildren) return;
+
+      const isExpanded = expandedFolders.has(folderId);
+
+      if (isExpanded) {
+        // Collapse
+        setExpandedFolders((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(folderId);
+          return newSet;
+        });
+
+        setTreeData((prev) => updateFolderExpanded(prev, folderId, false));
+      } else {
+        // Expand
+        setExpandedFolders((prev) => new Set(prev).add(folderId));
+
+        // Load children if not already loaded
+        const folder = findFolderById(treeData, folderId);
+        if (folder && (!folder.children || folder.children.length === 0)) {
+          loadFolderChildren(folderId);
+        } else {
+          setTreeData((prev) => updateFolderExpanded(prev, folderId, true));
+        }
+      }
+    },
+    [expandedFolders, treeData]
+  );
 
   // Helper function to find folder by ID
-  const findFolderById = (folders: FolderNode[], folderId: string): FolderNode | null => {
+  const findFolderById = (
+    folders: FolderNode[],
+    folderId: string
+  ): FolderNode | null => {
     for (const folder of folders) {
       if (folder.id === folderId) {
         return folder;
@@ -217,15 +369,19 @@ export function FolderTreePanel({
   };
 
   // Helper function to update folder expanded state
-  const updateFolderExpanded = (folders: FolderNode[], folderId: string, expanded: boolean): FolderNode[] => {
-    return folders.map(folder => {
+  const updateFolderExpanded = (
+    folders: FolderNode[],
+    folderId: string,
+    expanded: boolean
+  ): FolderNode[] => {
+    return folders.map((folder) => {
       if (folder.id === folderId) {
         return { ...folder, expanded };
       }
       if (folder.children && folder.children.length > 0) {
         return {
           ...folder,
-          children: updateFolderExpanded(folder.children, folderId, expanded)
+          children: updateFolderExpanded(folder.children, folderId, expanded),
         };
       }
       return folder;
@@ -233,11 +389,14 @@ export function FolderTreePanel({
   };
 
   // Handle drag over folder
-  const handleDragOver = useCallback((e: React.DragEvent, folderId: string | null) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverFolder(folderId === null ? 'root' : folderId);
-  }, []);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, folderId: string | null) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverFolder(folderId === null ? 'root' : folderId);
+    },
+    []
+  );
 
   // Handle drag leave
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -248,43 +407,58 @@ export function FolderTreePanel({
   }, []);
 
   // Handle drop
-  const handleDrop = useCallback(async (e: React.DragEvent, targetFolderId: string | null) => {
-    e.preventDefault();
-    setDragOverFolder(null);
-    setDraggedFolder(null);
-    
-    if (!onPhotosMove && !onFolderMove) return;
-    
-    try {
-      const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
-      
-      if (dragData.type === 'photos' && dragData.photoIds && onPhotosMove) {
-        await onPhotosMove(dragData.photoIds, targetFolderId);
-      } else if (dragData.type === 'folder' && dragData.folderId && onFolderMove) {
-        // Prevent cycles and self-drops
-        if (wouldCreateCycle(dragData.folderId, targetFolderId)) {
-          console.warn('Cannot move folder: would create a cycle or invalid move');
-          return;
+  const handleDrop = useCallback(
+    async (e: React.DragEvent, targetFolderId: string | null) => {
+      e.preventDefault();
+      setDragOverFolder(null);
+      setDraggedFolder(null);
+
+      if (!onPhotosMove && !onFolderMove) return;
+
+      try {
+        const dragData = JSON.parse(e.dataTransfer.getData('text/plain'));
+
+        if (dragData.type === 'photos' && dragData.photoIds && onPhotosMove) {
+          await onPhotosMove(dragData.photoIds, targetFolderId);
+        } else if (
+          dragData.type === 'folder' &&
+          dragData.folderId &&
+          onFolderMove
+        ) {
+          // Prevent cycles and self-drops
+          if (wouldCreateCycle(dragData.folderId, targetFolderId)) {
+            console.warn(
+              'Cannot move folder: would create a cycle or invalid move'
+            );
+            return;
+          }
+
+          await onFolderMove(dragData.folderId, targetFolderId);
         }
-        
-        await onFolderMove(dragData.folderId, targetFolderId);
+      } catch (error) {
+        console.error('Error handling drop in folder tree:', error);
       }
-    } catch (error) {
-      console.error('Error handling drop in folder tree:', error);
-    }
-  }, [onPhotosMove, onFolderMove, wouldCreateCycle]);
+    },
+    [onPhotosMove, onFolderMove, wouldCreateCycle]
+  );
 
   // Handle drag start for folders
-  const handleFolderDragStart = useCallback((e: React.DragEvent, folderId: string) => {
-    setDraggedFolder(folderId);
-    
-    e.dataTransfer.setData('text/plain', JSON.stringify({
-      type: 'folder',
-      folderId,
-      eventId,
-    }));
-    e.dataTransfer.effectAllowed = 'move';
-  }, [eventId]);
+  const handleFolderDragStart = useCallback(
+    (e: React.DragEvent, folderId: string) => {
+      setDraggedFolder(folderId);
+
+      e.dataTransfer.setData(
+        'text/plain',
+        JSON.stringify({
+          type: 'folder',
+          folderId,
+          eventId,
+        })
+      );
+      e.dataTransfer.effectAllowed = 'move';
+    },
+    [eventId]
+  );
 
   // Handle drag end
   const handleFolderDragEnd = useCallback(() => {
@@ -300,19 +474,25 @@ export function FolderTreePanel({
     const isLoading = folder.loading;
     const isDragOver = dragOverFolder === folder.id;
     const isDragged = draggedFolder === folder.id;
-    const isDropDisabled = draggedFolder ? wouldCreateCycle(draggedFolder, folder.id) : false;
+    const isDropDisabled = draggedFolder
+      ? wouldCreateCycle(draggedFolder, folder.id)
+      : false;
 
     return (
       <div key={folder.id}>
         <div
           className={cn(
-            "flex items-center gap-1 py-1 px-2 rounded-md cursor-pointer transition-colors group",
-            "hover:bg-gray-100",
-            isSelected && "bg-blue-100 text-blue-700",
-            isDragOver && !isDropDisabled && "bg-green-100 border-2 border-green-400 border-dashed",
-            isDragOver && isDropDisabled && "bg-red-100 border-2 border-red-400 border-dashed",
-            isDragged && "opacity-50",
-            level > 0 && "ml-4"
+            'group flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors',
+            'hover:bg-gray-100',
+            isSelected && 'bg-blue-100 text-blue-700',
+            isDragOver &&
+              !isDropDisabled &&
+              'border-2 border-dashed border-green-400 bg-green-100',
+            isDragOver &&
+              isDropDisabled &&
+              'border-2 border-dashed border-red-400 bg-red-100',
+            isDragged && 'opacity-50',
+            level > 0 && 'ml-4'
           )}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={() => onFolderSelect(folder.id)}
@@ -325,14 +505,14 @@ export function FolderTreePanel({
           onDrop={(e) => !isDropDisabled && handleDrop(e, folder.id)}
         >
           {/* Expand/collapse button */}
-          <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+          <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center">
             {hasChildren && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleFolderToggle(folder.id, hasChildren);
                 }}
-                className="p-0.5 rounded hover:bg-gray-200 transition-colors"
+                className="rounded p-0.5 transition-colors hover:bg-gray-200"
               >
                 {isLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -355,25 +535,52 @@ export function FolderTreePanel({
           </div>
 
           {/* Folder name */}
-          <span 
-            className="text-sm truncate flex-1 min-w-0"
-            title={folder.name}
-          >
+          <span className="min-w-0 flex-1 truncate text-sm" title={folder.name}>
             {folder.name}
           </span>
 
           {/* Photo count */}
           {folder.photo_count > 0 && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
               {folder.photo_count}
             </span>
           )}
+
+          {/* Context menu for folder actions */}
+          <div className="opacity-0 transition-opacity group-hover:opacity-100">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setContextMenuFolder(folder.id);
+                  }}
+                >
+                  <MoreHorizontal className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateFolder(folder.id);
+                  }}
+                >
+                  <Plus className="mr-2 h-3 w-3" />
+                  Nueva subcarpeta
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Render children */}
         {isExpanded && folder.children && folder.children.length > 0 && (
           <div>
-            {folder.children.map(child => renderFolderItem(child, level + 1))}
+            {folder.children.map((child) => renderFolderItem(child, level + 1))}
           </div>
         )}
       </div>
@@ -383,7 +590,7 @@ export function FolderTreePanel({
   if (loading) {
     return (
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm text-gray-600">Cargando carpetas...</span>
         </div>
@@ -394,7 +601,9 @@ export function FolderTreePanel({
   if (error) {
     return (
       <div className="p-4">
-        <div className="text-sm text-red-600 mb-2">Error al cargar carpetas</div>
+        <div className="mb-2 text-sm text-red-600">
+          Error al cargar carpetas
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -408,59 +617,167 @@ export function FolderTreePanel({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex h-full flex-col">
       {/* Panel header */}
-      <div className="p-3 border-b border-gray-200 bg-gray-50">
+      <div className="border-b border-gray-200 bg-gray-50 p-3">
         <h3 className="text-sm font-medium text-gray-700">Carpetas</h3>
       </div>
 
       {/* Tree navigation */}
       <div className="flex-1 overflow-auto p-2">
         {/* Root folder */}
-        <div
-          className={cn(
-            "flex items-center gap-2 py-2 px-2 rounded-md cursor-pointer transition-colors mb-1",
-            "hover:bg-gray-100",
-            currentFolderId === null && "bg-blue-100 text-blue-700",
-            dragOverFolder === 'root' && "bg-green-100 border-2 border-green-400 border-dashed"
-          )}
-          onClick={() => onFolderSelect(null)}
-          onDoubleClick={() => onFolderSelect(null)}
-          onDragOver={(e) => handleDragOver(e, null)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, null)}
-        >
-          <Home className="h-4 w-4 text-gray-500" />
-          <span className="text-sm font-medium">Fotos</span>
+        <div className="group">
+          <div
+            className={cn(
+              'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition-colors',
+              'hover:bg-gray-100',
+              currentFolderId === null && 'bg-blue-100 text-blue-700',
+              dragOverFolder === 'root' &&
+                'border-2 border-dashed border-green-400 bg-green-100'
+            )}
+            onClick={() => onFolderSelect(null)}
+            onDoubleClick={() => onFolderSelect(null)}
+            onDragOver={(e) => handleDragOver(e, null)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, null)}
+          >
+            <Home className="h-4 w-4 text-gray-500" />
+            <span className="flex-1 text-sm font-medium">Fotos</span>
+
+            {/* Root folder context menu */}
+            <div className="opacity-0 transition-opacity group-hover:opacity-100">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <MoreHorizontal className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCreateFolder(null);
+                    }}
+                  >
+                    <Plus className="mr-2 h-3 w-3" />
+                    Nueva carpeta
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </div>
 
         {/* Folder tree */}
         {treeData.length > 0 ? (
           <div className="space-y-0.5">
-            {treeData.map(folder => renderFolderItem(folder))}
+            {treeData.map((folder) => renderFolderItem(folder))}
           </div>
         ) : (
-          <div className="text-sm text-gray-500 py-4 text-center">
+          <div className="py-4 text-center text-sm text-gray-500">
             No hay carpetas
           </div>
         )}
       </div>
 
       {/* Quick actions */}
-      <div className="p-2 border-t border-gray-200 bg-gray-50">
+      <div className="border-t border-gray-200 bg-gray-50 p-2">
         <Button
           variant="ghost"
           size="sm"
           className="w-full justify-start text-xs"
-          onClick={() => {
-            // TODO: Implement create folder
-            console.log('Create folder in:', currentFolderId || 'root');
-          }}
+          onClick={() => handleCreateFolder(currentFolderId)}
         >
-          <Folder className="h-3 w-3 mr-1" />
+          <Plus className="mr-1 h-3 w-3" />
           Nueva carpeta
         </Button>
       </div>
+
+      {/* Create Folder Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Nueva carpeta
+              {creatingInFolder ? (
+                <span className="block text-sm font-normal text-gray-500">
+                  en:{' '}
+                  {findFolderById(treeData, creatingInFolder)?.name ||
+                    'Carpeta'}
+                </span>
+              ) : (
+                <span className="block text-sm font-normal text-gray-500">
+                  en: Fotos (raíz)
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="folder-name"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Nombre de la carpeta
+              </label>
+              <Input
+                id="folder-name"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Ej: Graduación, Deportes, etc."
+                maxLength={255}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === 'Enter' &&
+                    !isCreating &&
+                    newFolderName.trim()
+                  ) {
+                    createFolder();
+                  } else if (e.key === 'Escape') {
+                    handleCancelCreate();
+                  }
+                }}
+                className="w-full"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelCreate}
+              disabled={isCreating}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={createFolder}
+              disabled={isCreating || !newFolderName.trim()}
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-3 w-3" />
+                  Crear carpeta
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

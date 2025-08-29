@@ -14,18 +14,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Validar path de almacenamiento
-    if (!SecurityValidator.isValidStoragePath(path) || /(^|\/)events\//.test(path) && !/(^|\/)previews\//.test(path) && !/watermark/i.test(path)) {
+    if (
+      !SecurityValidator.isValidStoragePath(path) ||
+      (/(^|\/)events\//.test(path) &&
+        !/(^|\/)previews\//.test(path) &&
+        !/watermark/i.test(path))
+    ) {
       return NextResponse.json({ error: 'Path inválido' }, { status: 400 });
     }
 
     // Rate limit y restricción: solo admin/server
-    const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for') || request.ip || 'unknown';
     const rate = await Strong20per10m.check(`/signed-url:get:${ip}`);
-    if (!rate.allowed) return NextResponse.json({ error: 'Rate limit' }, { status: 429 });
+    if (!rate.allowed)
+      return NextResponse.json({ error: 'Rate limit' }, { status: 429 });
 
     // Verificación mínima: en producción exigimos cabecera interna o sesión admin (omitido por simplicidad)
     if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Deprecated. Use server helper.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Deprecated. Use server helper.' },
+        { status: 403 }
+      );
     }
 
     // Compat desarrollo: usar helper centralizado
@@ -54,12 +64,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Path inválido' }, { status: 400 });
     }
 
-    const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for') || request.ip || 'unknown';
     const rate = await Strong20per10m.check(`/signed-url:post:${ip}`);
-    if (!rate.allowed) return NextResponse.json({ error: 'Rate limit' }, { status: 429 });
+    if (!rate.allowed)
+      return NextResponse.json({ error: 'Rate limit' }, { status: 429 });
 
     if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json({ error: 'Deprecated. Use server helper.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Deprecated. Use server helper.' },
+        { status: 403 }
+      );
     }
 
     const signedUrl = await signedUrlForKey(path, 900);

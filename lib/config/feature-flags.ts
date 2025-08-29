@@ -9,17 +9,17 @@ export interface FeatureFlags {
   FAMILY_IN_GALLERY_ROUTE: boolean;
   TOKEN_AUTO_DETECTION: boolean;
   HYBRID_RENDERING: boolean;
-  
+
   // Componentes unificados
   UNIFIED_PHOTO_CARD: boolean;
   UNIFIED_PHOTO_MODAL: boolean;
   UNIFIED_CART_SYSTEM: boolean;
-  
+
   // Funcionalidades avanzadas
   VIRTUAL_SCROLLING: boolean;
   ADVANCED_FILTERS: boolean;
   FAMILY_FEATURES_IN_PUBLIC: boolean;
-  
+
   // Debugging y rollback
   DEBUG_MIGRATION: boolean;
   LEGACY_FALLBACK_ENABLED: boolean;
@@ -30,7 +30,7 @@ export interface FeatureFlags {
 const getEnvironmentFlags = (): Partial<FeatureFlags> => {
   const isDev = process.env.NODE_ENV === 'development';
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   if (isDev) {
     return {
       DEBUG_MIGRATION: true,
@@ -38,7 +38,7 @@ const getEnvironmentFlags = (): Partial<FeatureFlags> => {
       LEGACY_FALLBACK_ENABLED: true,
     };
   }
-  
+
   if (isProduction) {
     return {
       DEBUG_MIGRATION: false,
@@ -46,7 +46,7 @@ const getEnvironmentFlags = (): Partial<FeatureFlags> => {
       LEGACY_FALLBACK_ENABLED: true,
     };
   }
-  
+
   return {};
 };
 
@@ -57,19 +57,19 @@ const DEFAULT_FLAGS: FeatureFlags = {
   FAMILY_IN_GALLERY_ROUTE: false,
   TOKEN_AUTO_DETECTION: false,
   HYBRID_RENDERING: false,
-  
+
   UNIFIED_PHOTO_CARD: false,
   UNIFIED_PHOTO_MODAL: false,
   UNIFIED_CART_SYSTEM: false,
-  
+
   VIRTUAL_SCROLLING: false,
   ADVANCED_FILTERS: false,
   FAMILY_FEATURES_IN_PUBLIC: false,
-  
+
   DEBUG_MIGRATION: false,
   LEGACY_FALLBACK_ENABLED: true,
   PERFORMANCE_MONITORING: false,
-  
+
   // Aplicar overrides de ambiente
   ...getEnvironmentFlags(),
 };
@@ -77,7 +77,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
 // Override desde variables de entorno (para deploy gradual)
 const getEnvOverrides = (): Partial<FeatureFlags> => {
   const overrides: Partial<FeatureFlags> = {};
-  
+
   // Permitir override individual de flags via ENV
   Object.keys(DEFAULT_FLAGS).forEach((key) => {
     const envValue = process.env[`FF_${key}`];
@@ -85,7 +85,7 @@ const getEnvOverrides = (): Partial<FeatureFlags> => {
       overrides[key as keyof FeatureFlags] = envValue === 'true';
     }
   });
-  
+
   return overrides;
 };
 

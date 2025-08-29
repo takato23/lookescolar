@@ -11,10 +11,10 @@ async function getEvents() {
     const response = await fetch(
       path.startsWith('/') ? await absoluteUrl(path) : path,
       {
-      cache: 'no-store',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
     );
 
@@ -23,9 +23,9 @@ async function getEvents() {
     }
 
     const data = await response.json();
-    
+
     // El endpoint devuelve directamente un array, no un objeto con propiedad 'events'
-    const events = Array.isArray(data) ? data : (data.events || []);
+    const events = Array.isArray(data) ? data : data.events || [];
     return { events, error: null };
   } catch (error) {
     console.error('[Service] Error obteniendo eventos:', error);
@@ -39,5 +39,5 @@ export const revalidate = 0;
 
 export default async function EventsPage() {
   const { events, error } = await getEvents();
-  return <EventsPageClient events={events as any[]} error={error} />;
+  return <EventsPageClient events={events} error={error} />;
 }

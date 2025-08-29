@@ -18,37 +18,45 @@ const testUtils = {
   },
   createTestEvent: async (userId?: string) => {
     const eventId = crypto.randomUUID();
-    const { data } = await testUtils.supabase.from('events').insert({
-      id: eventId,
-      name: 'Test Event',
-      school: 'Test School',
-      date: '2024-01-01',
-      status: 'active',
-      created_by: userId || crypto.randomUUID(),
-      public_gallery_enabled: true
-    }).select().single();
+    const { data } = await testUtils.supabase
+      .from('events')
+      .insert({
+        id: eventId,
+        name: 'Test Event',
+        school: 'Test School',
+        date: '2024-01-01',
+        status: 'active',
+        created_by: userId || crypto.randomUUID(),
+        public_gallery_enabled: true,
+      })
+      .select()
+      .single();
     return data;
   },
   createTestAdmin: async () => {
     const adminId = crypto.randomUUID();
     return { id: adminId };
   },
-  makeAuthenticatedRequest: async (handler: any, requestOptions: any, userId: string) => {
+  makeAuthenticatedRequest: async (
+    handler: any,
+    requestOptions: any,
+    userId: string
+  ) => {
     const { req } = createMocks({
       ...requestOptions,
       headers: {
         ...requestOptions.headers,
-        'x-user-id': userId
-      }
+        'x-user-id': userId,
+      },
     });
-    
+
     // Mock del auth context
     vi.mocked(handler).mockImplementation(async () => {
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     });
-    
+
     return handler(req as NextRequest);
-  }
+  },
 };
 
 describe('/api/admin/photos/upload - Enhanced Tests', () => {
@@ -78,8 +86,8 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
         width,
         height,
         channels: 3,
-        background: { r: 255, g: 0, b: 0 }
-      }
+        background: { r: 255, g: 0, b: 0 },
+      },
     })
       .jpeg()
       .toBuffer();
@@ -92,31 +100,34 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
         width: 800,
         height: 600,
         channels: 3,
-        background: { r: 0, g: 255, b: 0 }
-      }
+        background: { r: 0, g: 255, b: 0 },
+      },
     })
-      .jpeg({ 
+      .jpeg({
         quality: 90,
-        mozjpeg: true
+        mozjpeg: true,
       })
       .withMetadata({
         exif: {
           IFD0: {
             Make: 'Test Camera',
             Model: 'Test Model',
-            DateTime: '2024:01:01 12:00:00'
-          }
-        }
+            DateTime: '2024:01:01 12:00:00',
+          },
+        },
       })
       .toBuffer();
   };
 
   // Helper para crear FormData con archivos
-  const createUploadFormData = (eventId: string, files: Array<{
-    buffer: Buffer;
-    filename: string;
-    contentType?: string;
-  }>) => {
+  const createUploadFormData = (
+    eventId: string,
+    files: Array<{
+      buffer: Buffer;
+      filename: string;
+      contentType?: string;
+    }>
+  ) => {
     const formData = new FormData();
     formData.append('eventId', eventId);
 
@@ -150,22 +161,28 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       const image = await createTestImage();
 
       // Simular múltiples requests rápidos
-      const requests = Array.from({ length: 12 }, () => 
-        testUtils.makeAuthenticatedRequest(POST, {
-          method: 'POST',
-          body: createUploadFormData(event.id, [{
-            buffer: image,
-            filename: 'test.jpg'
-          }]),
-          headers: {
-            'x-forwarded-for': '127.0.0.1'
-          }
-        }, admin.id)
+      const requests = Array.from({ length: 12 }, () =>
+        testUtils.makeAuthenticatedRequest(
+          POST,
+          {
+            method: 'POST',
+            body: createUploadFormData(event.id, [
+              {
+                buffer: image,
+                filename: 'test.jpg',
+              },
+            ]),
+            headers: {
+              'x-forwarded-for': '127.0.0.1',
+            },
+          },
+          admin.id
+        )
       );
 
       const responses = await Promise.all(requests);
-      const rateLimitedCount = responses.filter(r => r.status === 429).length;
-      
+      const rateLimitedCount = responses.filter((r) => r.status === 429).length;
+
       // Según configuración: máximo 10 req/min por IP
       expect(rateLimitedCount).toBeGreaterThan(0);
     });
@@ -177,16 +194,22 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       const admin = await testUtils.createTestAdmin();
       const image = await createTestImage(1200, 900);
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: image,
-          filename: 'test.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: image,
+              filename: 'test.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.success).toBe(true);
       expect(result.uploaded).toHaveLength(1);
@@ -195,7 +218,7 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
         size: expect.any(Number),
         width: expect.any(Number),
         height: expect.any(Number),
-        path: expect.any(String)
+        path: expect.any(String),
       });
 
       // Verificar que se redimensionó correctamente (máx 1600px)
@@ -208,16 +231,22 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       const admin = await testUtils.createTestAdmin();
       const imageWithExif = await createImageWithExif();
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: imageWithExif,
-          filename: 'test-exif.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: imageWithExif,
+              filename: 'test-exif.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.success).toBe(true);
 
@@ -233,61 +262,69 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
 
       const formData = createUploadFormData(event.id, [
         { buffer: image, filename: 'original.jpg' },
-        { buffer: image, filename: 'duplicate.jpg' } // Mismo buffer = mismo hash
+        { buffer: image, filename: 'duplicate.jpg' }, // Mismo buffer = mismo hash
       ]);
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: formData
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: formData,
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.duplicates).toBeDefined();
       expect(result.duplicates).toHaveLength(1);
       expect(result.duplicates[0]).toMatchObject({
         originalName: 'duplicate.jpg',
         duplicateOf: 'original.jpg',
-        hash: expect.any(String)
+        hash: expect.any(String),
       });
     });
 
     it('debe manejar múltiples archivos con límite de concurrencia', async () => {
       const event = await testUtils.createTestEvent();
       const admin = await testUtils.createTestAdmin();
-      
+
       // Crear 5 imágenes diferentes
       const images = await Promise.all([
         createTestImage(600, 400),
         createTestImage(800, 600),
         createTestImage(1000, 800),
         createTestImage(1200, 900),
-        createTestImage(1400, 1000)
+        createTestImage(1400, 1000),
       ]);
 
       const formData = createUploadFormData(
         event.id,
         images.map((buffer, i) => ({
           buffer,
-          filename: `test-${i + 1}.jpg`
+          filename: `test-${i + 1}.jpg`,
         }))
       );
 
       const startTime = Date.now();
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: formData
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: formData,
+        },
+        admin.id
+      );
       const duration = Date.now() - startTime;
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.success).toBe(true);
       expect(result.uploaded).toHaveLength(5);
       expect(result.stats.processed).toBe(5);
-      
+
       // Verificar que el procesamiento no tardó demasiado (concurrencia)
       expect(duration).toBeLessThan(30000); // 30 segundos máx
     });
@@ -297,29 +334,35 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
     it('debe rechazar archivos muy grandes', async () => {
       const event = await testUtils.createTestEvent();
       const admin = await testUtils.createTestAdmin();
-      
+
       // Crear imagen muy grande (>10MB)
       const largeImage = await sharp({
         create: {
           width: 5000,
           height: 5000,
           channels: 3,
-          background: { r: 255, g: 255, b: 255 }
-        }
+          background: { r: 255, g: 255, b: 255 },
+        },
       })
         .jpeg({ quality: 100 })
         .toBuffer();
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: largeImage,
-          filename: 'large.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: largeImage,
+              filename: 'large.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.errors).toBeDefined();
       expect(result.errors[0].error).toContain('File too large');
@@ -331,17 +374,23 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
 
       const textFile = Buffer.from('This is not an image');
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: textFile,
-          filename: 'not-image.txt',
-          contentType: 'text/plain'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: textFile,
+              filename: 'not-image.txt',
+              contentType: 'text/plain',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.errors).toBeDefined();
       expect(result.errors[0].error).toContain('File type not allowed');
@@ -353,16 +402,22 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       const event = await testUtils.createTestEvent(otherAdmin.id);
       const image = await createTestImage();
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: image,
-          filename: 'test.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: image,
+              filename: 'test.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(403);
-      
+
       const result = await response.json();
       expect(result.error).toContain('Access denied');
     });
@@ -375,16 +430,20 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       // Crear 25 archivos
       const files = Array.from({ length: 25 }, (_, i) => ({
         buffer: image,
-        filename: `test-${i + 1}.jpg`
+        filename: `test-${i + 1}.jpg`,
       }));
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, files)
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, files),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(400);
-      
+
       const result = await response.json();
       expect(result.error).toContain('Maximum 20 files');
     });
@@ -394,26 +453,32 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
     it('debe redimensionar imágenes grandes a máx 1600px', async () => {
       const event = await testUtils.createTestEvent();
       const admin = await testUtils.createTestAdmin();
-      
+
       const largeImage = await createTestImage(3000, 2000);
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: largeImage,
-          filename: 'large.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: largeImage,
+              filename: 'large.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.success).toBe(true);
-      
+
       const uploaded = result.uploaded[0];
       expect(uploaded.width).toBeLessThanOrEqual(1600);
       expect(uploaded.height).toBeLessThanOrEqual(1600);
-      
+
       // Mantener proporción
       const originalRatio = 3000 / 2000;
       const processedRatio = uploaded.width / uploaded.height;
@@ -423,32 +488,38 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
     it('debe convertir a WebP con calidad 72', async () => {
       const event = await testUtils.createTestEvent();
       const admin = await testUtils.createTestAdmin();
-      
+
       const pngImage = await sharp({
         create: {
           width: 800,
           height: 600,
           channels: 4,
-          background: { r: 255, g: 0, b: 0, alpha: 0.5 }
-        }
+          background: { r: 255, g: 0, b: 0, alpha: 0.5 },
+        },
       })
         .png()
         .toBuffer();
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: pngImage,
-          filename: 'test.png',
-          contentType: 'image/png'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: pngImage,
+              filename: 'test.png',
+              contentType: 'image/png',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.success).toBe(true);
-      
+
       const uploaded = result.uploaded[0];
       expect(uploaded.filename).toMatch(/\.webp$/);
     });
@@ -460,16 +531,22 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       const admin = await testUtils.createTestAdmin();
       const image = await createTestImage(800, 600);
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: image,
-          filename: 'test.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: image,
+              filename: 'test.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       const uploadedPhoto = result.uploaded[0];
 
@@ -486,7 +563,7 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
         width: expect.any(Number),
         height: expect.any(Number),
         approved: false,
-        subject_id: null
+        subject_id: null,
       });
     });
 
@@ -495,13 +572,19 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
       const admin = await testUtils.createTestAdmin();
       const image = await createTestImage();
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: image,
-          filename: 'test.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: image,
+              filename: 'test.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       const result = await response.json();
       const uploadedPhoto = result.uploaded[0];
@@ -520,19 +603,27 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
 
       // Mock storage error
       vi.mock('@/lib/services/storage', () => ({
-        uploadToStorage: vi.fn().mockRejectedValue(new Error('Storage unavailable'))
+        uploadToStorage: vi
+          .fn()
+          .mockRejectedValue(new Error('Storage unavailable')),
       }));
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [{
-          buffer: image,
-          filename: 'test.jpg'
-        }])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            {
+              buffer: image,
+              filename: 'test.jpg',
+            },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.errors).toBeDefined();
       expect(result.errors[0].error).toContain('Upload failed');
@@ -541,27 +632,31 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
     it('debe retornar respuesta estructurada incluso con fallos parciales', async () => {
       const event = await testUtils.createTestEvent();
       const admin = await testUtils.createTestAdmin();
-      
+
       const validImage = await createTestImage();
       const invalidFile = Buffer.from('invalid');
 
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: createUploadFormData(event.id, [
-          { buffer: validImage, filename: 'valid.jpg' },
-          { buffer: invalidFile, filename: 'invalid.jpg' }
-        ])
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: createUploadFormData(event.id, [
+            { buffer: validImage, filename: 'valid.jpg' },
+            { buffer: invalidFile, filename: 'invalid.jpg' },
+          ]),
+        },
+        admin.id
+      );
 
       expect(response.status).toBe(200);
-      
+
       const result = await response.json();
       expect(result.uploaded).toHaveLength(1);
       expect(result.errors).toHaveLength(1);
       expect(result.stats).toMatchObject({
         processed: 1,
         errors: 1,
-        total: 2
+        total: 2,
       });
     });
   });
@@ -570,7 +665,7 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
     it('debe completar dentro del timeout configurado', async () => {
       const event = await testUtils.createTestEvent();
       const admin = await testUtils.createTestAdmin();
-      
+
       // Crear imágenes de tamaño mediano
       const images = await Promise.all(
         Array.from({ length: 10 }, () => createTestImage(1200, 800))
@@ -580,20 +675,24 @@ describe('/api/admin/photos/upload - Enhanced Tests', () => {
         event.id,
         images.map((buffer, i) => ({
           buffer,
-          filename: `perf-test-${i + 1}.jpg`
+          filename: `perf-test-${i + 1}.jpg`,
         }))
       );
 
       const startTime = Date.now();
-      const response = await testUtils.makeAuthenticatedRequest(POST, {
-        method: 'POST',
-        body: formData
-      }, admin.id);
+      const response = await testUtils.makeAuthenticatedRequest(
+        POST,
+        {
+          method: 'POST',
+          body: formData,
+        },
+        admin.id
+      );
       const duration = Date.now() - startTime;
 
       expect(response.status).toBe(200);
       expect(duration).toBeLessThan(60000); // 60s timeout configurado
-      
+
       const result = await response.json();
       expect(result.success).toBe(true);
       expect(result.uploaded).toHaveLength(10);

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { preferenceClient, MP_CONFIG } from '@/lib/mercadopago/client';
+import { preferenceClient } from '@/lib/mercadopago/client';
 import { nanoid } from 'nanoid';
 import {
   createErrorResponse,
@@ -41,7 +41,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (eventError || !event) {
-      logDevRequest(requestId, 'POST', '/api/gallery/checkout', Date.now() - startTime, 404);
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/gallery/checkout',
+        Date.now() - startTime,
+        404
+      );
       return createErrorResponse(
         'Evento no encontrado o inactivo',
         'El evento especificado no existe o no está disponible',
@@ -58,8 +64,18 @@ export async function POST(request: NextRequest) {
       .eq('approved', true)
       .in('id', validatedData.photoIds);
 
-    if (photosError || !photos || photos.length !== validatedData.photoIds.length) {
-      logDevRequest(requestId, 'POST', '/api/gallery/checkout', Date.now() - startTime, 400);
+    if (
+      photosError ||
+      !photos ||
+      photos.length !== validatedData.photoIds.length
+    ) {
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/gallery/checkout',
+        Date.now() - startTime,
+        400
+      );
       return createErrorResponse(
         'Fotos no válidas',
         'Algunas fotos no están disponibles o no están aprobadas',
@@ -70,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Resolver subject público (crear o encontrar existente por email)
     let subjectId: string;
-    
+
     const { data: existingSubject } = await supabase
       .from('subjects')
       .select('id')
@@ -99,7 +115,13 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (subjectError || !newSubject) {
-        logDevRequest(requestId, 'POST', '/api/gallery/checkout', Date.now() - startTime, 500);
+        logDevRequest(
+          requestId,
+          'POST',
+          '/api/gallery/checkout',
+          Date.now() - startTime,
+          500
+        );
         return createErrorResponse(
           'Error creando subject público',
           subjectError?.message || 'No se pudo crear el subject',
@@ -112,6 +134,7 @@ export async function POST(request: NextRequest) {
 
     // 4. Calcular precios usando price_list del evento o fallback
     const pricePerPhoto = (event as any).price_per_photo || 1000; // 1000 centavos = $10 ARS
+    // total en centavos
     const totalAmount = pricePerPhoto * photos.length;
 
     // 5. Crear orden
@@ -126,7 +149,9 @@ export async function POST(request: NextRequest) {
         subject_id: subjectId,
         order_number: orderNumber,
         status: 'pending',
-        total_amount: totalAmount,
+        total_cents: totalAmount,
+        total_amount_cents: totalAmount,
+        total_items: photos.length,
         contact_name: validatedData.contactInfo.name,
         contact_email: validatedData.contactInfo.email,
         contact_phone: validatedData.contactInfo.phone || null,
@@ -141,7 +166,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError || !order) {
-      logDevRequest(requestId, 'POST', '/api/gallery/checkout', Date.now() - startTime, 500);
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/gallery/checkout',
+        Date.now() - startTime,
+        500
+      );
       return createErrorResponse(
         'Error creando la orden',
         orderError?.message || 'No se pudo crear la orden',
@@ -151,13 +182,16 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Crear items de la orden
+    const unitPriceCents = pricePerPhoto;
+    const unitPrice = unitPriceCents / 100;
     const orderItems = validatedData.photoIds.map((photoId) => ({
       order_id: orderId,
       photo_id: photoId,
       quantity: 1,
-      unit_price: pricePerPhoto,
-      subtotal: pricePerPhoto,
-      price_list_item_id: crypto.randomUUID(), // Campo requerido por el esquema
+      unit_price: unitPrice,
+      subtotal: unitPrice,
+      unit_price_cents: unitPriceCents,
+      subtotal_cents: unitPriceCents,
     }));
 
     const { error: itemsError } = await supabase
@@ -167,7 +201,13 @@ export async function POST(request: NextRequest) {
     if (itemsError) {
       // Rollback: eliminar la orden si fallan los items
       await supabase.from('orders').delete().eq('id', orderId);
-      logDevRequest(requestId, 'POST', '/api/gallery/checkout', Date.now() - startTime, 500);
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/gallery/checkout',
+        Date.now() - startTime,
+        500
+      );
       return createErrorResponse(
         'Error creando los items de la orden',
         itemsError.message,
@@ -176,14 +216,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Crear preferencia de MercadoPago
-    const preference: any = {
+    // 7. Crear preferencia de MercadoPago (URLs basadas en APP_URL)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const preferenceBody: any = {
       items: [
         {
           id: order.id,
           title: `${validatedData.package} (${photos.length} fotos)`,
           quantity: 1,
-          unit_price: totalAmount / 100, // Convertir centavos a pesos
+          unit_price: totalAmount / 100, // pesos
           currency_id: 'ARS',
         },
       ],
@@ -191,30 +232,47 @@ export async function POST(request: NextRequest) {
         name: validatedData.contactInfo.name,
         email: validatedData.contactInfo.email,
         ...(validatedData.contactInfo.phone && {
-          phone: {
-            area_code: '',
-            number: validatedData.contactInfo.phone,
-          },
+          phone: { area_code: '', number: validatedData.contactInfo.phone },
         }),
       },
       back_urls: {
-        success: `${MP_CONFIG.successUrl}/public/payment-success?order=${order.id}`,
-        failure: `${MP_CONFIG.failureUrl}/public/payment-failure?order=${order.id}`,
-        pending: `${MP_CONFIG.pendingUrl}/public/payment-pending?order=${order.id}`,
+        success: `${appUrl}/public/payment-success?order=${order.id}`,
+        failure: `${appUrl}/public/payment-failure?order=${order.id}`,
+        pending: `${appUrl}/public/payment-pending?order=${order.id}`,
       },
-      auto_return: 'approved' as const,
       external_reference: order.id,
-      notification_url: MP_CONFIG.notificationUrl,
+      notification_url: `${appUrl}/api/payments/webhook`,
       statement_descriptor: 'LookEscolar Fotos',
-      expires: true,
-      expiration_date_from: new Date().toISOString(),
-      expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
     };
 
-    const mpResponse = await preferenceClient.create({ body: preference });
+    let mpResponse: any;
+    try {
+      mpResponse = await preferenceClient.create({ body: preferenceBody });
+    } catch (mpErr: any) {
+      console.error('MercadoPago preference error:', mpErr?.message || mpErr);
+      // Rollback order and items to avoid orphans
+      try {
+        await supabase.from('order_items').delete().eq('order_id', orderId);
+        await supabase.from('orders').delete().eq('id', orderId);
+      } catch (rollbackErr) {
+        console.error('Rollback after MP failure failed:', rollbackErr);
+      }
+      return createErrorResponse(
+        'Error creando preferencia de MercadoPago',
+        mpErr?.message || 'MP error',
+        500,
+        requestId
+      );
+    }
 
     if (!mpResponse.id) {
-      logDevRequest(requestId, 'POST', '/api/gallery/checkout', Date.now() - startTime, 500);
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/gallery/checkout',
+        Date.now() - startTime,
+        500
+      );
       return createErrorResponse(
         'Error creando preferencia de MercadoPago',
         'No se pudo crear la preferencia de pago',
@@ -239,9 +297,7 @@ export async function POST(request: NextRequest) {
       {
         orderId: order.id,
         preferenceId: mpResponse.id,
-        redirectUrl: MP_CONFIG.sandbox
-          ? mpResponse.sandbox_init_point || ''
-          : mpResponse.init_point || '',
+        redirectUrl: mpResponse.sandbox_init_point || mpResponse.init_point || '',
         totalAmount: totalAmount / 100, // En pesos para el frontend
         photoCount: photos.length,
         package: validatedData.package,
@@ -251,7 +307,13 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     const duration = Date.now() - startTime;
-    logDevRequest(requestId, 'POST', '/api/gallery/checkout', duration, 'error');
+    logDevRequest(
+      requestId,
+      'POST',
+      '/api/gallery/checkout',
+      duration,
+      'error'
+    );
 
     if (error instanceof z.ZodError) {
       return createErrorResponse(

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Security Tests for QR Tagging Workflow
- * 
+ *
  * Tests:
  * - Rate limiting enforcement and thresholds
  * - Token validation and expiration
@@ -11,7 +11,16 @@
  * - Data leakage prevention
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  vi,
+} from 'vitest';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { NextRequest } from 'next/server';
 
@@ -41,12 +50,16 @@ class SecurityTester {
     });
   }
 
-  getRateLimitViolations(endpoint: string, windowMs: number, maxRequests: number): number {
+  getRateLimitViolations(
+    endpoint: string,
+    windowMs: number,
+    maxRequests: number
+  ): number {
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     const recentRequests = this.requestLog.filter(
-      req => req.endpoint === endpoint && req.timestamp >= windowStart
+      (req) => req.endpoint === endpoint && req.timestamp >= windowStart
     );
 
     return Math.max(0, recentRequests.length - maxRequests);
@@ -60,7 +73,7 @@ class SecurityTester {
 // Mock rate limiter to test rate limiting behavior
 class MockRateLimiter {
   private requests: Map<string, number[]> = new Map();
-  
+
   constructor(
     private windowMs: number,
     private maxRequests: number
@@ -69,15 +82,17 @@ class MockRateLimiter {
   isAllowed(key: string): boolean {
     const now = Date.now();
     const windowStart = now - this.windowMs;
-    
+
     if (!this.requests.has(key)) {
       this.requests.set(key, []);
     }
 
     const keyRequests = this.requests.get(key)!;
-    
+
     // Clean old requests
-    const validRequests = keyRequests.filter(timestamp => timestamp >= windowStart);
+    const validRequests = keyRequests.filter(
+      (timestamp) => timestamp >= windowStart
+    );
     this.requests.set(key, validRequests);
 
     if (validRequests.length >= this.maxRequests) {
@@ -108,7 +123,7 @@ describe('QR Workflow Security Tests', () => {
     testData = new TestDataManager();
     securityTester = new SecurityTester();
     supabase = await createServerSupabaseServiceClient();
-    
+
     await testDb.setup();
   });
 
@@ -162,7 +177,7 @@ describe('QR Workflow Security Tests', () => {
         return photo;
       })
     );
-    photoIds = photos.map(p => p.id);
+    photoIds = photos.map((p) => p.id);
   });
 
   afterEach(async () => {
@@ -201,7 +216,7 @@ describe('QR Workflow Security Tests', () => {
       // Should have allowed exactly 30 requests and blocked 10
       expect(allowedRequests).toBeLessThanOrEqual(30);
       expect(blockedRequests).toBeGreaterThanOrEqual(10);
-      
+
       console.log('🚦 Rate Limiting Test Results:', {
         totalAttempts: 40,
         allowedRequests,
@@ -213,7 +228,7 @@ describe('QR Workflow Security Tests', () => {
     it('should enforce rate limits per IP address independently', async () => {
       const rateLimiter = new MockRateLimiter(60000, 5); // 5 requests per minute
       const endpoint = '/api/admin/qr/decode';
-      
+
       const ip1 = '192.168.1.101';
       const ip2 = '192.168.1.102';
 
@@ -273,7 +288,10 @@ describe('QR Workflow Security Tests', () => {
             allowedRequests++;
           } catch (error) {
             // Count as blocked if it fails due to rate limiting
-            if (error instanceof Error && error.message.includes('rate limit')) {
+            if (
+              error instanceof Error &&
+              error.message.includes('rate limit')
+            ) {
               blockedRequests++;
             }
           }
@@ -305,18 +323,21 @@ describe('QR Workflow Security Tests', () => {
 
       for (const shortToken of shortTokens) {
         const qrCode = `STUDENT:${validStudentId}:Test Student:${eventId}`;
-        
-        const request = new NextRequest('http://localhost/api/admin/qr/decode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ qrCode }),
-        });
+
+        const request = new NextRequest(
+          'http://localhost/api/admin/qr/decode',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrCode }),
+          }
+        );
 
         const response = await decodeQR(request);
-        
+
         if (shortToken.length < 20) {
           expect(response.status).toBe(400);
-          
+
           const data = await response.json();
           expect(data.error).toMatch(/Invalid QR code format|Token inválido/i);
         }
@@ -325,12 +346,12 @@ describe('QR Workflow Security Tests', () => {
 
     it('should reject expired tokens', async () => {
       const expiredQRCode = `STUDENT:${validStudentId}:Test Student:${eventId}`;
-      
+
       // Update student to have expired token
       await supabase
         .from('subjects')
-        .update({ 
-          token_expires_at: TestHelpers.getPastDate(1) // 1 day ago
+        .update({
+          token_expires_at: TestHelpers.getPastDate(1), // 1 day ago
         })
         .eq('id', validStudentId);
 
@@ -359,12 +380,15 @@ describe('QR Workflow Security Tests', () => {
 
       for (const token of attemptedTokens) {
         const fakeQRCode = `STUDENT:${validStudentId}:Test Student:${eventId}`;
-        
-        const request = new NextRequest('http://localhost/api/admin/qr/decode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ qrCode: fakeQRCode }),
-        });
+
+        const request = new NextRequest(
+          'http://localhost/api/admin/qr/decode',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrCode: fakeQRCode }),
+          }
+        );
 
         const startTime = Date.now();
         const response = await decodeQR(request);
@@ -378,20 +402,24 @@ describe('QR Workflow Security Tests', () => {
       }
 
       // All should fail with same status
-      responses.forEach(r => {
+      responses.forEach((r) => {
         expect(r.status).toBe(404); // Student not found
       });
 
       // Response times should be consistent (prevent timing attacks)
-      const avgResponseTime = responses.reduce((sum, r) => sum + r.responseTime, 0) / responses.length;
-      const maxDeviation = Math.max(...responses.map(r => Math.abs(r.responseTime - avgResponseTime)));
-      
+      const avgResponseTime =
+        responses.reduce((sum, r) => sum + r.responseTime, 0) /
+        responses.length;
+      const maxDeviation = Math.max(
+        ...responses.map((r) => Math.abs(r.responseTime - avgResponseTime))
+      );
+
       // Deviation should be less than 50% of average (allowing for some variance)
       expect(maxDeviation).toBeLessThan(avgResponseTime * 0.5);
 
       console.log('🔍 Token Enumeration Protection:', {
         attempts: attemptedTokens.length,
-        allFailed: responses.every(r => r.status === 404),
+        allFailed: responses.every((r) => r.status === 404),
         avgResponseTime: `${avgResponseTime.toFixed(2)}ms`,
         maxDeviation: `${maxDeviation.toFixed(2)}ms`,
         timingAttackProtection: maxDeviation < avgResponseTime * 0.5,
@@ -412,17 +440,20 @@ describe('QR Workflow Security Tests', () => {
       ];
 
       for (const maliciousQR of sqlInjectionAttempts) {
-        const request = new NextRequest('http://localhost/api/admin/qr/decode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ qrCode: maliciousQR }),
-        });
+        const request = new NextRequest(
+          'http://localhost/api/admin/qr/decode',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrCode: maliciousQR }),
+          }
+        );
 
         const response = await decodeQR(request);
-        
+
         // Should reject with 400 Bad Request, not cause database error
         expect(response.status).toBe(400);
-        
+
         const data = await response.json();
         expect(data.error).toMatch(/Invalid QR code format/i);
       }
@@ -469,17 +500,20 @@ describe('QR Workflow Security Tests', () => {
       ];
 
       for (const maliciousInput of maliciousInputs) {
-        const request = new NextRequest('http://localhost/api/admin/tagging/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(maliciousInput),
-        });
+        const request = new NextRequest(
+          'http://localhost/api/admin/tagging/batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(maliciousInput),
+          }
+        );
 
         const response = await batchTag(request);
-        
+
         // Should reject with validation error, not execute malicious SQL
         expect(response.status).toBe(400);
-        
+
         const data = await response.json();
         expect(data.error).toBe('Invalid request data');
       }
@@ -506,14 +540,17 @@ describe('QR Workflow Security Tests', () => {
       ];
 
       for (const malformedInput of malformedInputs) {
-        const request = new NextRequest('http://localhost/api/admin/qr/decode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: malformedInput,
-        });
+        const request = new NextRequest(
+          'http://localhost/api/admin/qr/decode',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: malformedInput,
+          }
+        );
 
         const response = await decodeQR(request);
-        
+
         // Should handle gracefully with 400 or 500, not crash
         expect([400, 500]).toContain(response.status);
       }
@@ -560,15 +597,18 @@ describe('QR Workflow Security Tests', () => {
       });
 
       // Try to use photos from current event with student from other event
-      const request = new NextRequest('http://localhost/api/admin/tagging/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId, // Current event
-          photoIds: photoIds.slice(0, 3),
-          studentId: otherStudent.id, // Student from different event
-        }),
-      });
+      const request = new NextRequest(
+        'http://localhost/api/admin/tagging/batch',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventId, // Current event
+            photoIds: photoIds.slice(0, 3),
+            studentId: otherStudent.id, // Student from different event
+          }),
+        }
+      );
 
       const response = await batchTag(request);
       expect(response.status).toBe(400);
@@ -582,7 +622,7 @@ describe('QR Workflow Security Tests', () => {
       expect(assignments).toHaveLength(0);
     });
 
-    it('should prevent unauthorized access to other students\' data', async () => {
+    it("should prevent unauthorized access to other students' data", async () => {
       // Create two students in same event
       const student1 = await testData.createSubject({
         event_id: eventId,
@@ -599,19 +639,17 @@ describe('QR Workflow Security Tests', () => {
       });
 
       // Assign photos to student1
-      await supabase
-        .from('photo_subjects')
-        .insert(
-          photoIds.slice(0, 3).map(photoId => ({
-            photo_id: photoId,
-            subject_id: student1.id,
-          }))
-        );
+      await supabase.from('photo_subjects').insert(
+        photoIds.slice(0, 3).map((photoId) => ({
+          photo_id: photoId,
+          subject_id: student1.id,
+        }))
+      );
 
       // Try to use student1's token to access student2's data (if such endpoint existed)
       // This simulates checking that tokens can't be used for unauthorized data access
       const qrCode1 = `STUDENT:${student1.id}:Student One:${eventId}`;
-      
+
       const request = new NextRequest('http://localhost/api/admin/qr/decode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -622,11 +660,11 @@ describe('QR Workflow Security Tests', () => {
       expect(response.status).toBe(200);
 
       const data = await response.json();
-      
+
       // Should only return data for the correct student
       expect(data.student.id).toBe(student1.id);
       expect(data.student.name).toBe('Student One');
-      
+
       // Should not leak information about other students
       expect(data.student.id).not.toBe(student2.id);
     });
@@ -644,11 +682,11 @@ describe('QR Workflow Security Tests', () => {
       expect(response.status).toBe(200);
 
       const data = await response.json();
-      
+
       // Token should be masked in response
       expect(data.student.token).toMatch(/^tok_\w{3}\*\*\*$/);
       expect(data.student.token).not.toBe(validToken);
-      
+
       // Should not expose internal database fields
       expect(data.student).not.toHaveProperty('password');
       expect(data.student).not.toHaveProperty('internal_id');
@@ -657,7 +695,7 @@ describe('QR Workflow Security Tests', () => {
 
     it('should not leak sensitive information in error messages', async () => {
       const invalidQRCode = `STUDENT:${TestHelpers.generateUUID()}:Test Student:${eventId}`;
-      
+
       const request = new NextRequest('http://localhost/api/admin/qr/decode', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -668,14 +706,14 @@ describe('QR Workflow Security Tests', () => {
       expect(response.status).toBe(404);
 
       const data = await response.json();
-      
+
       // Should not leak database schema or internal details
       expect(data.error).toBe('Student not found');
       expect(data.details).not.toContain('table');
       expect(data.details).not.toContain('column');
       expect(data.details).not.toContain('constraint');
       expect(data.details).not.toContain('postgresql');
-      
+
       // Should not expose internal UUIDs or sensitive data
       expect(JSON.stringify(data)).not.toContain(validToken);
     });
@@ -690,29 +728,37 @@ describe('QR Workflow Security Tests', () => {
       for (let i = 0; i < 10; i++) {
         // Valid request
         const validStart = Date.now();
-        await decodeQR(new NextRequest('http://localhost', {
-          method: 'POST',
-          body: JSON.stringify({ qrCode: validQRCode }),
-        }));
+        await decodeQR(
+          new NextRequest('http://localhost', {
+            method: 'POST',
+            body: JSON.stringify({ qrCode: validQRCode }),
+          })
+        );
         const validTime = Date.now() - validStart;
 
         // Invalid request
         const invalidStart = Date.now();
-        await decodeQR(new NextRequest('http://localhost', {
-          method: 'POST',
-          body: JSON.stringify({ qrCode: invalidQRCode }),
-        }));
+        await decodeQR(
+          new NextRequest('http://localhost', {
+            method: 'POST',
+            body: JSON.stringify({ qrCode: invalidQRCode }),
+          })
+        );
         const invalidTime = Date.now() - invalidStart;
 
         measurements.push({ valid: validTime, invalid: invalidTime });
       }
 
-      const avgValidTime = measurements.reduce((sum, m) => sum + m.valid, 0) / measurements.length;
-      const avgInvalidTime = measurements.reduce((sum, m) => sum + m.invalid, 0) / measurements.length;
+      const avgValidTime =
+        measurements.reduce((sum, m) => sum + m.valid, 0) / measurements.length;
+      const avgInvalidTime =
+        measurements.reduce((sum, m) => sum + m.invalid, 0) /
+        measurements.length;
 
       // Time difference should not be significant enough to enable timing attacks
       const timeDifference = Math.abs(avgValidTime - avgInvalidTime);
-      const timeDifferencePercent = timeDifference / Math.max(avgValidTime, avgInvalidTime);
+      const timeDifferencePercent =
+        timeDifference / Math.max(avgValidTime, avgInvalidTime);
 
       expect(timeDifferencePercent).toBeLessThan(0.5); // Less than 50% difference
 
@@ -746,21 +792,24 @@ describe('QR Workflow Security Tests', () => {
         });
 
         const qrCode = `STUDENT:${dangerousStudent.id}:${dangerousName}:${eventId}`;
-        
-        const request = new NextRequest('http://localhost/api/admin/qr/decode', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ qrCode }),
-        });
+
+        const request = new NextRequest(
+          'http://localhost/api/admin/qr/decode',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrCode }),
+          }
+        );
 
         const response = await decodeQR(request);
-        
+
         if (response.status === 200) {
           const data = await response.json();
-          
+
           // Name should be sanitized or escaped in response
           expect(data.student.name).toBe(dangerousName); // Should store original but be careful in rendering
-          
+
           // Response should not contain executable JavaScript
           const responseText = JSON.stringify(data);
           expect(responseText).not.toContain('<script>');
@@ -791,7 +840,7 @@ describe('QR Workflow Security Tests', () => {
 
         try {
           await testData.createPhoto(photo);
-          
+
           // If it was created, verify the filename was sanitized
           const { data: savedPhotos } = await supabase
             .from('photos')
@@ -800,7 +849,7 @@ describe('QR Workflow Security Tests', () => {
 
           if (savedPhotos && savedPhotos.length > 0) {
             const savedPhoto = savedPhotos[0];
-            
+
             // Storage path should not contain directory traversal
             expect(savedPhoto.storage_path).not.toContain('../');
             expect(savedPhoto.storage_path).not.toContain('..\\');
@@ -818,7 +867,7 @@ describe('QR Workflow Security Tests', () => {
     it('should handle distributed rate limiting correctly', async () => {
       // Test rate limiting across different request headers and patterns
       const requests = [];
-      
+
       for (let i = 0; i < 20; i++) {
         requests.push({
           headers: {
@@ -826,30 +875,38 @@ describe('QR Workflow Security Tests', () => {
             'User-Agent': i % 2 === 0 ? 'Browser/1.0' : 'Mobile/2.0',
             'X-Real-IP': `10.0.0.${50 + (i % 3)}`, // 3 different real IPs
           },
-          qrCode: qrCodes ? qrCodes[i % qrCodes.length] || validQRCode : validQRCode,
+          qrCode: qrCodes
+            ? qrCodes[i % qrCodes.length] || validQRCode
+            : validQRCode,
         });
       }
 
       const responses = await Promise.all(
-        requests.map(req => 
-          decodeQR(new NextRequest('http://localhost', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...req.headers,
-            },
-            body: JSON.stringify({ qrCode: req.qrCode }),
-          }))
+        requests.map((req) =>
+          decodeQR(
+            new NextRequest('http://localhost', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...req.headers,
+              },
+              body: JSON.stringify({ qrCode: req.qrCode }),
+            })
+          )
         )
       );
 
       // Should have a mix of successful and rate-limited responses
-      const successfulResponses = responses.filter(r => r.status === 200).length;
-      const rateLimitedResponses = responses.filter(r => r.status === 429).length;
+      const successfulResponses = responses.filter(
+        (r) => r.status === 200
+      ).length;
+      const rateLimitedResponses = responses.filter(
+        (r) => r.status === 429
+      ).length;
 
       expect(successfulResponses + rateLimitedResponses).toBe(20);
       expect(successfulResponses).toBeGreaterThan(0);
-      
+
       console.log('🌐 Distributed Rate Limiting:', {
         totalRequests: 20,
         successfulResponses,
@@ -874,7 +931,7 @@ describe('QR Workflow Security Tests', () => {
       const fourthAllowed = rateLimiter.isAllowed(clientIP);
 
       // Wait for rate limit window to expire
-      await new Promise(resolve => setTimeout(resolve, 1100));
+      await new Promise((resolve) => setTimeout(resolve, 1100));
 
       // Should be able to make requests again
       let secondBatchAllowed = 0;

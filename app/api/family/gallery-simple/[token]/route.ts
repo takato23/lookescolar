@@ -10,12 +10,16 @@ export async function GET(
 ) {
   try {
     // rate limit por token + IP
-    const ip = request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for') || request.ip || 'unknown';
     const { token } = await params;
     const key = `gal-simple:${token}:${ip}`;
     const { allowed } = await Soft60per10m.check(key);
     if (!allowed) {
-      return NextResponse.json({ error: 'Demasiadas solicitudes' }, { status: 429 });
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes' },
+        { status: 429 }
+      );
     }
     // token ya resuelto arriba
 
@@ -23,7 +27,10 @@ export async function GET(
     if (!token || token.length < 20) {
       // Soporte de mock en desarrollo
       const { searchParams } = new URL(request.url);
-      if (process.env.NODE_ENV !== 'production' && searchParams.get('mock') === '1') {
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        searchParams.get('mock') === '1'
+      ) {
         const mockPhotos = Array.from({ length: 12 }).map((_, i) => ({
           id: `mock-${i + 1}`,
           filename: `mock-${i + 1}.jpg`,
@@ -35,9 +42,20 @@ export async function GET(
         }));
         return NextResponse.json({
           success: true,
-          subject: { id: 'mock', name: 'Tu galería', grade_section: null, event: null },
+          subject: {
+            id: 'mock',
+            name: 'Tu galería',
+            grade_section: null,
+            event: null,
+          },
           photos: mockPhotos,
-          pagination: { page: 1, limit: 12, total: 12, total_pages: 1, has_more: false },
+          pagination: {
+            page: 1,
+            limit: 12,
+            total: 12,
+            total_pages: 1,
+            has_more: false,
+          },
         });
       }
       return NextResponse.json({ error: 'Token inválido' }, { status: 400 });
@@ -45,27 +63,51 @@ export async function GET(
 
     const supabase = await createServerSupabaseServiceClient();
 
-    // Resolver token en dos esquemas: codes.token y subject_tokens.token
-    let mode: 'code' | 'subject' | null = null;
+    // Resolver token en tres esquemas: folders.share_token, codes.token y subject_tokens.token
+    let mode: 'folder' | 'code' | 'subject' | null = null;
+    let folderId: string | null = null;
     let codeId: string | null = null;
     let eventId: string | null = null;
     let subjectId: string | null = null;
 
-    const { data: codeTok } = await supabase
-      .from('codes' as any)
-      .select('id, event_id, code_value, is_published')
-      .eq('token', token)
+    // FIRST: Check for folder token (new system)
+    const { data: folderTok } = await supabase
+      .from('folders')
+      .select('id, name, event_id, is_published, photo_count')
+      .eq('share_token', token)
       .single();
 
-    if (codeTok) {
-      mode = 'code';
-      codeId = codeTok.id as string;
-      eventId = codeTok.event_id as string;
-      if (codeTok.is_published === false) {
-        return NextResponse.json({ error: 'Este enlace no está publicado' }, { status: 403 });
+    if (folderTok) {
+      mode = 'folder';
+      folderId = folderTok.id as string;
+      eventId = folderTok.event_id as string;
+      if (folderTok.is_published === false) {
+        return NextResponse.json(
+          { error: 'Este enlace no está publicado' },
+          { status: 403 }
+        );
       }
     } else {
-      const { data: tokenRow } = await supabase
+      // SECOND: Check codes table (legacy system)
+      const { data: codeTok } = await supabase
+        .from('codes' as any)
+        .select('id, event_id, code_value, is_published')
+        .eq('token', token)
+        .single();
+
+      if (codeTok) {
+        mode = 'code';
+        codeId = codeTok.id as string;
+        eventId = codeTok.event_id as string;
+        if (codeTok.is_published === false) {
+          return NextResponse.json(
+            { error: 'Este enlace no está publicado' },
+            { status: 403 }
+          );
+        }
+      } else {
+        // THIRD: Check subject_tokens table (individual student access)
+        const { data: tokenRow } = await supabase
         .from('subject_tokens')
         .select('subject_id, expires_at')
         .eq('token', token)
@@ -87,47 +129,85 @@ export async function GET(
         .eq('id', subjectId)
         .single();
       if (!subj) {
-        return NextResponse.json({ error: 'Sujeto no encontrado' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Sujeto no encontrado' },
+          { status: 404 }
+        );
       }
-      eventId = subj.event_id as string;
-      mode = 'subject';
+        eventId = subj.event_id as string;
+        mode = 'subject';
+      }
     }
 
     // Cargar evento (opcional)
-    let eventInfo: { id: string; name: string; school_name?: string } | null = null;
+    let eventInfo: { id: string; name: string; school_name?: string; theme?: string } | null =
+      null;
     if (eventId) {
       const { data: eventData } = await supabase
         .from('events')
-        .select('id, name, school_name:school')
+        .select('id, name, school_name:school, theme')
         .eq('id', eventId)
         .single();
-      if (eventData) eventInfo = { id: (eventData as any).id, name: (eventData as any).name, school_name: (eventData as any).school_name };
+      if (eventData)
+        eventInfo = {
+          id: (eventData as any).id,
+          name: (eventData as any).name,
+          school_name: (eventData as any).school_name,
+          theme: (eventData as any).theme || 'default',
+        };
     }
 
     // Paginación
     const { searchParams } = new URL(request.url);
     const pageParam = parseInt(searchParams.get('page') || '1', 10);
-    const limitParam = Math.min(Math.max(parseInt(searchParams.get('limit') || '60', 10), 1), 100);
+    const limitParam = Math.min(
+      Math.max(parseInt(searchParams.get('limit') || '60', 10), 1),
+      100
+    );
     const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
     const limit = Number.isNaN(limitParam) ? 60 : limitParam;
     const offset = (page - 1) * limit;
 
     // Obtener fotos según modo
     let photos: any[] = [];
-    if (mode === 'code' && codeId) {
+    if (mode === 'folder' && folderId) {
+      // Fotos de la carpeta (nuevo sistema basado en assets)
+      const { data: folderPhotos, error: photosError } = await supabase
+        .from('assets')
+        .select(
+          'id, filename, original_path, preview_path, file_size, created_at, folder_id'
+        )
+        .eq('folder_id', folderId)
+        .eq('status', 'ready')
+        .order('created_at', { ascending: true })
+        .range(offset, offset + limit - 1);
+      
+      if (photosError) {
+        console.error('Error fetching folder photos:', photosError);
+        return NextResponse.json(
+          { error: 'Error obteniendo fotos de la carpeta' },
+          { status: 500 }
+        );
+      }
+      photos = folderPhotos || [];
+    } else if (mode === 'code' && codeId) {
       // Fotos por code_id
       // Intentar con filtro approved=true; si falla, repetir sin filtro
-      let res = await supabase
-        .from('photos')
-        .select('id, event_id, original_filename, storage_path, preview_path, watermark_path, file_size, width, height, created_at, code_id')
+      const res = await supabase
+        .from('assets')
+        .select(
+          'id, event_id, original_filename, storage_path, preview_path, watermark_path, file_size, width, height, created_at, code_id'
+        )
         .eq('code_id', codeId)
         .eq('approved', true)
         .order('created_at', { ascending: true })
         .range(offset, offset + limit - 1);
       if (res.error) {
         const res2 = await supabase
-          .from('photos')
-          .select('id, event_id, original_filename, storage_path, preview_path, watermark_path, file_size, width, height, created_at, code_id')
+          .from('assets')
+          .select(
+            'id, event_id, original_filename, storage_path, preview_path, watermark_path, file_size, width, height, created_at, code_id'
+          )
           .eq('code_id', codeId)
           .order('created_at', { ascending: true })
           .range(offset, offset + limit - 1);
@@ -160,7 +240,10 @@ export async function GET(
         .range(offset, offset + limit - 1);
       if (photosError) {
         console.error('Error fetching photos:', photosError);
-        return NextResponse.json({ error: 'Error obteniendo fotos' }, { status: 500 });
+        return NextResponse.json(
+          { error: 'Error obteniendo fotos' },
+          { status: 500 }
+        );
       }
       photos = (rows ?? []).map((r: any) => r.photos).filter(Boolean);
     }
@@ -168,17 +251,32 @@ export async function GET(
     // Generar URLs firmadas para cada foto
     const photosWithUrls = await Promise.all(
       (photos || []).map(async (photo: any) => {
-        // preferir watermark/preview únicamente; nunca exponer original en UI
-        const key = photo.watermark_path || photo.preview_path;
+        let key: string | null = null;
+        let filename: string | null = null;
+        let fileSize: number | null = null;
+        
+        if (mode === 'folder') {
+          // Nuevo sistema: assets table
+          key = photo.preview_path || photo.original_path;
+          filename = photo.filename;
+          fileSize = photo.file_size;
+        } else {
+          // Sistema legacy: photos table  
+          key = photo.watermark_path || photo.preview_path;
+          filename = photo.original_filename;
+          fileSize = photo.file_size;
+        }
+        
         const preview_url = key ? await signedUrlForKey(key, 900) : null;
         if (!preview_url) return null;
+        
         return {
           id: photo.id,
-          filename: (photo as any).original_filename ?? null,
+          filename: filename ?? null,
           preview_url,
-          size: (photo as any).file_size ?? null,
-          width: photo.width,
-          height: photo.height,
+          size: fileSize ?? null,
+          width: photo.width || null,
+          height: photo.height || null,
           created_at: photo.created_at,
         };
       })
@@ -195,22 +293,48 @@ export async function GET(
       await bumpRequest(eventId, dateISO, 1, approxBytes);
       if (mode === 'code') {
         await bumpUnique(eventId, dateISO, token);
+      } else if (mode === 'folder') {
+        await bumpUnique(eventId, dateISO, token);
       }
     }
 
-    // Calcular grade_section si no existe
-    const subjectPayload = mode === 'subject' && subjectId
-      ? (() => {
-          // Cargar datos mínimos de subject para el encabezado
-          return { id: subjectId, name: 'Tu galería', grade_section: null, event: eventInfo };
-        })()
-      : { id: codeId || 'code', name: `Código ${codeTok?.code_value ?? ''}`.trim(), grade_section: null, event: eventInfo };
+    // Calcular subject payload según modo
+    let subjectPayload;
+    if (mode === 'subject' && subjectId) {
+      subjectPayload = {
+        id: subjectId,
+        name: 'Tu galería',
+        grade_section: null,
+        event: eventInfo,
+      };
+    } else if (mode === 'folder' && folderId) {
+      subjectPayload = {
+        id: folderId,
+        name: folderTok?.name || 'Galería de clase',
+        grade_section: null,
+        event: eventInfo,
+      };
+    } else {
+      subjectPayload = {
+        id: codeId || 'code',
+        name: `Código ${codeTok?.code_value ?? ''}`.trim(),
+        grade_section: null,
+        event: eventInfo,
+      };
+    }
 
     // Total para paginación (consulta rápida por cuenta)
     let total = 0;
-    if (mode === 'code' && codeId) {
+    if (mode === 'folder' && folderId) {
       const { count } = await supabase
-        .from('photos')
+        .from('assets')
+        .select('id', { count: 'exact', head: true })
+        .eq('folder_id', folderId)
+        .eq('status', 'ready');
+      total = count || 0;
+    } else if (mode === 'code' && codeId) {
+      const { count } = await supabase
+        .from('assets')
         .select('id', { count: 'exact', head: true })
         .eq('code_id', codeId)
         .eq('approved', true);

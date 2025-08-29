@@ -8,39 +8,56 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 const BatchCourseSchema = z.object({
   eventId: z.string().uuid('Invalid event ID'),
   operation: z.enum(['create', 'update', 'delete', 'import']),
-  courses: z.array(z.object({
-    id: z.string().uuid().optional(), // For updates
-    name: z.string().min(1, 'Course name required'),
-    grade: z.string().optional(),
-    section: z.string().optional(),
-    levelId: z.string().uuid().optional(), // Optional level assignment
-    description: z.string().optional(),
-    sortOrder: z.number().default(0),
-    active: z.boolean().default(true)
-  })).min(1, 'At least one course required').max(50, 'Maximum 50 courses per batch')
+  courses: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(), // For updates
+        name: z.string().min(1, 'Course name required'),
+        grade: z.string().optional(),
+        section: z.string().optional(),
+        levelId: z.string().uuid().optional(), // Optional level assignment
+        description: z.string().optional(),
+        sortOrder: z.number().default(0),
+        active: z.boolean().default(true),
+      })
+    )
+    .min(1, 'At least one course required')
+    .max(50, 'Maximum 50 courses per batch'),
 });
 
 // Batch student operations schema
 const BatchStudentSchema = z.object({
   eventId: z.string().uuid('Invalid event ID'),
   courseId: z.string().uuid().optional(), // Optional course assignment
-  operation: z.enum(['create', 'update', 'delete', 'import', 'assign_course', 'generate_tokens']),
-  students: z.array(z.object({
-    id: z.string().uuid().optional(), // For updates
-    name: z.string().min(1, 'Student name required'),
-    grade: z.string().optional(),
-    section: z.string().optional(),
-    studentNumber: z.string().optional(),
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    parentName: z.string().optional(),
-    parentEmail: z.string().email().optional(),
-    parentPhone: z.string().optional(),
-    courseId: z.string().uuid().optional(),
-    generateQrCode: z.boolean().default(true),
-    generateToken: z.boolean().default(true),
-    active: z.boolean().default(true)
-  })).min(1, 'At least one student required').max(100, 'Maximum 100 students per batch')
+  operation: z.enum([
+    'create',
+    'update',
+    'delete',
+    'import',
+    'assign_course',
+    'generate_tokens',
+  ]),
+  students: z
+    .array(
+      z.object({
+        id: z.string().uuid().optional(), // For updates
+        name: z.string().min(1, 'Student name required'),
+        grade: z.string().optional(),
+        section: z.string().optional(),
+        studentNumber: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        parentName: z.string().optional(),
+        parentEmail: z.string().email().optional(),
+        parentPhone: z.string().optional(),
+        courseId: z.string().uuid().optional(),
+        generateQrCode: z.boolean().default(true),
+        generateToken: z.boolean().default(true),
+        active: z.boolean().default(true),
+      })
+    )
+    .min(1, 'At least one student required')
+    .max(100, 'Maximum 100 students per batch'),
 });
 
 // CSV Import schema
@@ -48,13 +65,15 @@ const ImportCsvSchema = z.object({
   eventId: z.string().uuid('Invalid event ID'),
   type: z.enum(['courses', 'students']),
   csvData: z.string().min(1, 'CSV data required'),
-  options: z.object({
-    hasHeader: z.boolean().default(true),
-    delimiter: z.string().default(','),
-    skipEmptyRows: z.boolean().default(true),
-    generateTokens: z.boolean().default(true),
-    generateQrCodes: z.boolean().default(true)
-  }).optional()
+  options: z
+    .object({
+      hasHeader: z.boolean().default(true),
+      delimiter: z.string().default(','),
+      skipEmptyRows: z.boolean().default(true),
+      generateTokens: z.boolean().default(true),
+      generateQrCodes: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 // POST endpoint for batch operations
@@ -72,10 +91,7 @@ export async function POST(req: NextRequest) {
     // Verify admin authentication
     const user = await verifyAuthAdmin();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
@@ -85,20 +101,19 @@ export async function POST(req: NextRequest) {
     switch (operation) {
       case 'courses':
         return await batchCourseOperations(body, user.id);
-      
+
       case 'students':
         return await batchStudentOperations(body, user.id);
-      
+
       case 'import-csv':
         return await importFromCsv(body, user.id);
-        
+
       default:
         return NextResponse.json(
           { error: 'Invalid operation. Use: courses, students, or import-csv' },
           { status: 400 }
         );
     }
-
   } catch (error) {
     console.error('Batch operation error:', error);
 
@@ -106,10 +121,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: 'Validation failed',
-          details: error.errors.map(e => ({
+          details: error.errors.map((e) => ({
             path: e.path.join('.'),
-            message: e.message
-          }))
+            message: e.message,
+          })),
         },
         { status: 400 }
       );
@@ -134,10 +149,7 @@ async function batchCourseOperations(body: any, adminId: string) {
     .single();
 
   if (eventError || !event) {
-    return NextResponse.json(
-      { error: 'Event not found' },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 
   const results: Array<{
@@ -151,7 +163,7 @@ async function batchCourseOperations(body: any, adminId: string) {
   try {
     for (let i = 0; i < validatedData.courses.length; i++) {
       const course = validatedData.courses[i];
-      
+
       try {
         switch (validatedData.operation) {
           case 'create':
@@ -165,7 +177,7 @@ async function batchCourseOperations(body: any, adminId: string) {
                 section: course.section,
                 description: course.description,
                 sort_order: course.sortOrder,
-                active: course.active
+                active: course.active,
               })
               .select('id')
               .single();
@@ -176,7 +188,7 @@ async function batchCourseOperations(body: any, adminId: string) {
               index: i,
               courseName: course.name,
               status: 'success',
-              id: newCourse.id
+              id: newCourse.id,
             });
             break;
 
@@ -194,7 +206,7 @@ async function batchCourseOperations(body: any, adminId: string) {
                 section: course.section,
                 description: course.description,
                 sort_order: course.sortOrder,
-                active: course.active
+                active: course.active,
               })
               .eq('id', course.id)
               .eq('event_id', validatedData.eventId);
@@ -205,7 +217,7 @@ async function batchCourseOperations(body: any, adminId: string) {
               index: i,
               courseName: course.name,
               status: 'success',
-              id: course.id
+              id: course.id,
             });
             break;
 
@@ -222,7 +234,9 @@ async function batchCourseOperations(body: any, adminId: string) {
               .limit(1);
 
             if (students && students.length > 0) {
-              throw new Error('Cannot delete course with students. Move students first.');
+              throw new Error(
+                'Cannot delete course with students. Move students first.'
+              );
             }
 
             const { error: deleteError } = await supabaseAdmin
@@ -237,57 +251,55 @@ async function batchCourseOperations(body: any, adminId: string) {
               index: i,
               courseName: course.name,
               status: 'success',
-              id: course.id
+              id: course.id,
             });
             break;
 
           default:
-            throw new Error(`Unsupported operation: ${validatedData.operation}`);
+            throw new Error(
+              `Unsupported operation: ${validatedData.operation}`
+            );
         }
-
       } catch (error) {
         results.push({
           index: i,
           courseName: course.name,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
     // Log batch activity
-    const successful = results.filter(r => r.status === 'success').length;
-    const failed = results.filter(r => r.status === 'error').length;
+    const successful = results.filter((r) => r.status === 'success').length;
+    const failed = results.filter((r) => r.status === 'error').length;
 
-    await supabaseAdmin
-      .from('admin_activity')
-      .insert({
-        admin_id: adminId,
-        action: `batch_${validatedData.operation}_courses`,
-        resource_type: 'event',
-        resource_id: validatedData.eventId,
-        metadata: {
-          total_courses: validatedData.courses.length,
-          successful,
-          failed,
-          operation: validatedData.operation
-        }
-      });
+    await supabaseAdmin.from('admin_activity').insert({
+      admin_id: adminId,
+      action: `batch_${validatedData.operation}_courses`,
+      resource_type: 'event',
+      resource_id: validatedData.eventId,
+      metadata: {
+        total_courses: validatedData.courses.length,
+        successful,
+        failed,
+        operation: validatedData.operation,
+      },
+    });
 
     return NextResponse.json({
       success: true,
       summary: {
         total: validatedData.courses.length,
         successful,
-        failed
+        failed,
       },
       results,
       event: {
         id: event.id,
-        name: event.name
-      }
+        name: event.name,
+      },
     });
-
   } catch (error) {
     console.error('Course batch operation error:', error);
     return NextResponse.json(
@@ -309,10 +321,7 @@ async function batchStudentOperations(body: any, adminId: string) {
     .single();
 
   if (eventError || !event) {
-    return NextResponse.json(
-      { error: 'Event not found' },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
 
   const results: Array<{
@@ -328,7 +337,7 @@ async function batchStudentOperations(body: any, adminId: string) {
   try {
     for (let i = 0; i < validatedData.students.length; i++) {
       const student = validatedData.students[i];
-      
+
       try {
         switch (validatedData.operation) {
           case 'create':
@@ -353,7 +362,7 @@ async function batchStudentOperations(body: any, adminId: string) {
                 parent_email: student.parentEmail,
                 parent_phone: student.parentPhone,
                 qr_code: qrCode,
-                active: student.active
+                active: student.active,
               })
               .select('id')
               .single();
@@ -365,13 +374,16 @@ async function batchStudentOperations(body: any, adminId: string) {
             if (student.generateToken) {
               const tokenValue = Buffer.from(
                 `${newStudent.id}-${Date.now()}-${Math.random()}`
-              ).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+              )
+                .toString('base64')
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .substring(0, 32);
 
               const { error: tokenError } = await supabaseAdmin
                 .from('student_tokens')
                 .insert({
                   student_id: newStudent.id,
-                  token: tokenValue
+                  token: tokenValue,
                 });
 
               if (!tokenError) {
@@ -385,7 +397,7 @@ async function batchStudentOperations(body: any, adminId: string) {
               status: 'success',
               id: newStudent.id,
               token,
-              qrCode
+              qrCode,
             });
             break;
 
@@ -407,7 +419,7 @@ async function batchStudentOperations(body: any, adminId: string) {
                 parent_name: student.parentName,
                 parent_email: student.parentEmail,
                 parent_phone: student.parentPhone,
-                active: student.active
+                active: student.active,
               })
               .eq('id', student.id)
               .eq('event_id', validatedData.eventId);
@@ -418,7 +430,7 @@ async function batchStudentOperations(body: any, adminId: string) {
               index: i,
               studentName: student.name,
               status: 'success',
-              id: student.id
+              id: student.id,
             });
             break;
 
@@ -444,7 +456,7 @@ async function batchStudentOperations(body: any, adminId: string) {
               index: i,
               studentName: student.name,
               status: 'success',
-              id: student.id
+              id: student.id,
             });
             break;
 
@@ -455,16 +467,22 @@ async function batchStudentOperations(body: any, adminId: string) {
 
             const tokenValue = Buffer.from(
               `${student.id}-${Date.now()}-${Math.random()}`
-            ).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+            )
+              .toString('base64')
+              .replace(/[^a-zA-Z0-9]/g, '')
+              .substring(0, 32);
 
             const { error: tokenError } = await supabaseAdmin
               .from('student_tokens')
-              .upsert({
-                student_id: student.id,
-                token: tokenValue
-              }, {
-                onConflict: 'student_id'
-              });
+              .upsert(
+                {
+                  student_id: student.id,
+                  token: tokenValue,
+                },
+                {
+                  onConflict: 'student_id',
+                }
+              );
 
             if (tokenError) throw tokenError;
 
@@ -473,58 +491,56 @@ async function batchStudentOperations(body: any, adminId: string) {
               studentName: student.name,
               status: 'success',
               id: student.id,
-              token: tokenValue
+              token: tokenValue,
             });
             break;
 
           default:
-            throw new Error(`Unsupported operation: ${validatedData.operation}`);
+            throw new Error(
+              `Unsupported operation: ${validatedData.operation}`
+            );
         }
-
       } catch (error) {
         results.push({
           index: i,
           studentName: student.name,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
     // Log batch activity
-    const successful = results.filter(r => r.status === 'success').length;
-    const failed = results.filter(r => r.status === 'error').length;
+    const successful = results.filter((r) => r.status === 'success').length;
+    const failed = results.filter((r) => r.status === 'error').length;
 
-    await supabaseAdmin
-      .from('admin_activity')
-      .insert({
-        admin_id: adminId,
-        action: `batch_${validatedData.operation}_students`,
-        resource_type: 'event',
-        resource_id: validatedData.eventId,
-        metadata: {
-          total_students: validatedData.students.length,
-          successful,
-          failed,
-          operation: validatedData.operation,
-          course_id: validatedData.courseId
-        }
-      });
+    await supabaseAdmin.from('admin_activity').insert({
+      admin_id: adminId,
+      action: `batch_${validatedData.operation}_students`,
+      resource_type: 'event',
+      resource_id: validatedData.eventId,
+      metadata: {
+        total_students: validatedData.students.length,
+        successful,
+        failed,
+        operation: validatedData.operation,
+        course_id: validatedData.courseId,
+      },
+    });
 
     return NextResponse.json({
       success: true,
       summary: {
         total: validatedData.students.length,
         successful,
-        failed
+        failed,
       },
       results,
       event: {
         id: event.id,
-        name: event.name
-      }
+        name: event.name,
+      },
     });
-
   } catch (error) {
     console.error('Student batch operation error:', error);
     return NextResponse.json(
@@ -546,12 +562,12 @@ async function importFromCsv(body: any, adminId: string) {
       skipEmptyRows: true,
       generateTokens: true,
       generateQrCodes: true,
-      ...validatedData.options
+      ...validatedData.options,
     };
 
-    const lines = validatedData.csvData.split('\n').filter(line => 
-      options.skipEmptyRows ? line.trim() : true
-    );
+    const lines = validatedData.csvData
+      .split('\n')
+      .filter((line) => (options.skipEmptyRows ? line.trim() : true));
 
     if (lines.length === 0) {
       return NextResponse.json(
@@ -564,7 +580,9 @@ async function importFromCsv(body: any, adminId: string) {
     let headers: string[] = [];
 
     if (options.hasHeader) {
-      headers = lines[0].split(options.delimiter).map(h => h.trim().replace(/"/g, ''));
+      headers = lines[0]
+        .split(options.delimiter)
+        .map((h) => h.trim().replace(/"/g, ''));
       dataLines = lines.slice(1);
     }
 
@@ -582,8 +600,10 @@ async function importFromCsv(body: any, adminId: string) {
       if (!line.trim()) continue;
 
       try {
-        const values = line.split(options.delimiter).map(v => v.trim().replace(/"/g, ''));
-        
+        const values = line
+          .split(options.delimiter)
+          .map((v) => v.trim().replace(/"/g, ''));
+
         if (validatedData.type === 'courses') {
           // Expected columns: name, grade, section, description
           const courseName = values[0] || '';
@@ -599,7 +619,7 @@ async function importFromCsv(body: any, adminId: string) {
               grade: values[1] || null,
               section: values[2] || null,
               description: values[3] || null,
-              sort_order: i
+              sort_order: i,
             })
             .select('id')
             .single();
@@ -610,9 +630,8 @@ async function importFromCsv(body: any, adminId: string) {
             row: i + 1,
             name: courseName,
             status: 'success',
-            id: newCourse.id
+            id: newCourse.id,
           });
-
         } else if (validatedData.type === 'students') {
           // Expected columns: name, grade, section, student_number, email, parent_name, parent_email, course_name
           const studentName = values[0] || '';
@@ -630,12 +649,12 @@ async function importFromCsv(body: any, adminId: string) {
               .eq('event_id', validatedData.eventId)
               .eq('name', courseName)
               .single();
-            
+
             courseId = course?.id || null;
           }
 
           // Generate QR code and token
-          const qrCode = options.generateQrCodes 
+          const qrCode = options.generateQrCodes
             ? `STU-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`
             : null;
 
@@ -651,7 +670,7 @@ async function importFromCsv(body: any, adminId: string) {
               email: values[4] || null,
               parent_name: values[5] || null,
               parent_email: values[6] || null,
-              qr_code: qrCode
+              qr_code: qrCode,
             })
             .select('id')
             .single();
@@ -662,71 +681,65 @@ async function importFromCsv(body: any, adminId: string) {
           if (options.generateTokens) {
             const tokenValue = Buffer.from(
               `${newStudent.id}-${Date.now()}-${Math.random()}`
-            ).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+            )
+              .toString('base64')
+              .replace(/[^a-zA-Z0-9]/g, '')
+              .substring(0, 32);
 
-            await supabaseAdmin
-              .from('student_tokens')
-              .insert({
-                student_id: newStudent.id,
-                token: tokenValue
-              });
+            await supabaseAdmin.from('student_tokens').insert({
+              student_id: newStudent.id,
+              token: tokenValue,
+            });
           }
 
           results.push({
             row: i + 1,
             name: studentName,
             status: 'success',
-            id: newStudent.id
+            id: newStudent.id,
           });
         }
-
       } catch (error) {
         results.push({
           row: i + 1,
           name: 'Unknown',
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
 
     // Log import activity
-    const successful = results.filter(r => r.status === 'success').length;
-    const failed = results.filter(r => r.status === 'error').length;
+    const successful = results.filter((r) => r.status === 'success').length;
+    const failed = results.filter((r) => r.status === 'error').length;
 
-    await supabaseAdmin
-      .from('admin_activity')
-      .insert({
-        admin_id: adminId,
-        action: `import_csv_${validatedData.type}`,
-        resource_type: 'event',
-        resource_id: validatedData.eventId,
-        metadata: {
-          total_rows: dataLines.length,
-          successful,
-          failed,
-          type: validatedData.type,
-          options
-        }
-      });
+    await supabaseAdmin.from('admin_activity').insert({
+      admin_id: adminId,
+      action: `import_csv_${validatedData.type}`,
+      resource_type: 'event',
+      resource_id: validatedData.eventId,
+      metadata: {
+        total_rows: dataLines.length,
+        successful,
+        failed,
+        type: validatedData.type,
+        options,
+      },
+    });
 
     return NextResponse.json({
       success: true,
       summary: {
         total: dataLines.length,
         successful,
-        failed
+        failed,
       },
       results,
-      headers: options.hasHeader ? headers : null
+      headers: options.hasHeader ? headers : null,
     });
-
   } catch (error) {
     console.error('CSV import error:', error);
-    return NextResponse.json(
-      { error: 'Import failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Import failed' }, { status: 500 });
   }
 }
 
@@ -735,10 +748,7 @@ export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuthAdmin();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -758,17 +768,28 @@ export async function GET(req: NextRequest) {
         const templates = {
           courses: {
             headers: ['name', 'grade', 'section', 'description'],
-            example: 'Primer Grado A,1º,A,Primer grado sección A\nSegundo Grado B,2º,B,Segundo grado sección B'
+            example:
+              'Primer Grado A,1º,A,Primer grado sección A\nSegundo Grado B,2º,B,Segundo grado sección B',
           },
           students: {
-            headers: ['name', 'grade', 'section', 'student_number', 'email', 'parent_name', 'parent_email', 'course_name'],
-            example: 'Juan Pérez,1º,A,12345,juan@example.com,María Pérez,maria@example.com,Primer Grado A\nAna García,1º,A,12346,ana@example.com,Carlos García,carlos@example.com,Primer Grado A'
-          }
+            headers: [
+              'name',
+              'grade',
+              'section',
+              'student_number',
+              'email',
+              'parent_name',
+              'parent_email',
+              'course_name',
+            ],
+            example:
+              'Juan Pérez,1º,A,12345,juan@example.com,María Pérez,maria@example.com,Primer Grado A\nAna García,1º,A,12346,ana@example.com,Carlos García,carlos@example.com,Primer Grado A',
+          },
         };
 
         return NextResponse.json({
           success: true,
-          template: templates[type]
+          template: templates[type],
         });
 
       case 'statistics':
@@ -797,24 +818,27 @@ export async function GET(req: NextRequest) {
 
         const stats = {
           courses: {
-            total: courses?.length || 0
+            total: courses?.length || 0,
           },
           students: {
             total: students?.length || 0,
-            assigned_to_courses: students?.filter(s => s.course_id).length || 0,
-            unassigned: students?.filter(s => !s.course_id).length || 0
+            assigned_to_courses:
+              students?.filter((s) => s.course_id).length || 0,
+            unassigned: students?.filter((s) => !s.course_id).length || 0,
           },
           photos: {
             total: photos?.length || 0,
-            classified: photos?.filter(p => p.photo_type !== 'individual').length || 0,
-            unclassified: photos?.filter(p => p.photo_type === 'individual').length || 0
-          }
+            classified:
+              photos?.filter((p) => p.photo_type !== 'individual').length || 0,
+            unclassified:
+              photos?.filter((p) => p.photo_type === 'individual').length || 0,
+          },
         };
 
         return NextResponse.json({
           success: true,
           event_id: eventId,
-          statistics: stats
+          statistics: stats,
         });
 
       default:
@@ -823,7 +847,6 @@ export async function GET(req: NextRequest) {
           { status: 400 }
         );
     }
-
   } catch (error) {
     console.error('Batch operations GET error:', error);
     return NextResponse.json(

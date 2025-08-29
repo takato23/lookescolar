@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { enhancedTokenService } from '@/lib/services/enhanced-token.service';
-import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
+import {
+  SecurityLogger,
+  generateRequestId,
+} from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
 
 // ============================================================
@@ -14,8 +17,10 @@ const GalleryQuerySchema = z.object({
   student_id: z.string().uuid().optional(),
   sort_by: z.enum(['created_at', 'filename', 'taken_at']).default('created_at'),
   sort_order: z.enum(['asc', 'desc']).default('desc'),
-  filter_by: z.enum(['all', 'favorites', 'purchased', 'unpurchased']).default('all'),
-  search: z.string().max(100).optional()
+  filter_by: z
+    .enum(['all', 'favorites', 'purchased', 'unpurchased'])
+    .default('all'),
+  search: z.string().max(100).optional(),
 });
 
 interface PhotoWithMetadata {
@@ -55,18 +60,18 @@ interface EventInfo {
 
 interface GalleryResponse {
   success: boolean;
-  
+
   // Access information
   access_level: 'student' | 'family' | 'group' | 'event';
   token_type: string;
   expires_in_days: number;
   warnings?: string[];
-  
+
   // Content data
   photos: PhotoWithMetadata[];
   students: StudentInfo[];
   event: EventInfo;
-  
+
   // Pagination
   pagination: {
     current_page: number;
@@ -75,7 +80,7 @@ interface GalleryResponse {
     has_more: boolean;
     per_page: number;
   };
-  
+
   // Statistics
   stats: {
     total_photos: number;
@@ -84,14 +89,18 @@ interface GalleryResponse {
     total_in_cart: number;
     total_purchased: number;
   };
-  
+
   // Filters and metadata
   filters: {
-    available_students: Array<{ id: string; name: string; photo_count: number }>;
+    available_students: Array<{
+      id: string;
+      name: string;
+      photo_count: number;
+    }>;
     date_range: { earliest: string; latest: string };
     file_types: string[];
   };
-  
+
   error?: string;
 }
 
@@ -104,69 +113,74 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse<GalleryResponse>> {
   const requestId = generateRequestId();
-  
+
   try {
     const { token } = await params;
     const { searchParams } = new URL(request.url);
-    
-    console.log(`[${requestId}] Enhanced gallery request:`, { 
-      token: `${token.slice(0, 8)}***`
+
+    console.log(`[${requestId}] Enhanced gallery request:`, {
+      token: `${token.slice(0, 8)}***`,
     });
 
     // Validate query parameters
-    const queryResult = GalleryQuerySchema.safeParse(Object.fromEntries(searchParams));
+    const queryResult = GalleryQuerySchema.safeParse(
+      Object.fromEntries(searchParams)
+    );
     if (!queryResult.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Parámetros de consulta inválidos',
-        // @ts-ignore - partial response for error case
-        details: queryResult.error.errors
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Parámetros de consulta inválidos',
+          // @ts-ignore - partial response for error case
+          details: queryResult.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
-    const {
-      page,
-      limit,
-      student_id,
-      sort_by,
-      sort_order,
-      filter_by,
-      search
-    } = queryResult.data;
+    const { page, limit, student_id, sort_by, sort_order, filter_by, search } =
+      queryResult.data;
 
     // Validate token using enhanced service
     const validationResult = await enhancedTokenService.validateToken(token);
-    
+
     if (!validationResult.isValid) {
-      console.log(`[${requestId}] Token validation failed:`, { 
-        token: `${token.slice(0, 8)}***` 
+      console.log(`[${requestId}] Token validation failed:`, {
+        token: `${token.slice(0, 8)}***`,
       });
-      
-      return NextResponse.json({
-        success: false,
-        error: 'Token no válido o expirado'
-        // @ts-ignore - partial response for error case
-      }, { status: 401 });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Token no válido o expirado',
+          // @ts-ignore - partial response for error case
+        },
+        { status: 401 }
+      );
     }
 
     const tokenData = validationResult.token!;
     const students = validationResult.students || [];
     const event = validationResult.event!;
-    
+
     if (!event || event.status !== 'active') {
-      return NextResponse.json({
-        success: false,
-        error: 'El evento no está disponible actualmente'
-        // @ts-ignore - partial response for error case
-      }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'El evento no está disponible actualmente',
+          // @ts-ignore - partial response for error case
+        },
+        { status: 404 }
+      );
     }
 
     const supabase = await createServerSupabaseServiceClient();
 
     // Build photo query based on access level and filters
     let photoQuery = supabase
-      .from('photos')
-      .select(`
+      .from('assets')
+      .select(
+        `
         id,
         filename,
         storage_path,
@@ -189,25 +203,32 @@ export async function GET(
             qr_code
           )
         )
-      `)
+      `
+      )
       .eq('event_id', event.id)
       .eq('approved', true);
 
     // Filter by accessible students
-    const accessibleStudentIds = students.map(s => s.id);
+    const accessibleStudentIds = students.map((s) => s.id);
     if (student_id) {
       // Specific student requested - verify access
       if (!accessibleStudentIds.includes(student_id)) {
-        return NextResponse.json({
-          success: false,
-          error: 'No tienes acceso a las fotos de este estudiante'
-          // @ts-ignore - partial response for error case
-        }, { status: 403 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'No tienes acceso a las fotos de este estudiante',
+            // @ts-ignore - partial response for error case
+          },
+          { status: 403 }
+        );
       }
       photoQuery = photoQuery.eq('photo_students.student_id', student_id);
     } else {
       // All accessible students
-      photoQuery = photoQuery.in('photo_students.student_id', accessibleStudentIds);
+      photoQuery = photoQuery.in(
+        'photo_students.student_id',
+        accessibleStudentIds
+      );
     }
 
     // Apply search filter
@@ -219,12 +240,19 @@ export async function GET(
     // This would require joining with user-specific tables like favorites, orders, etc.
 
     // Apply sorting
-    const sortColumn = sort_by === 'taken_at' ? 'taken_at' : sort_by === 'filename' ? 'filename' : 'created_at';
-    photoQuery = photoQuery.order(sortColumn, { ascending: sort_order === 'asc' });
+    const sortColumn =
+      sort_by === 'taken_at'
+        ? 'taken_at'
+        : sort_by === 'filename'
+          ? 'filename'
+          : 'created_at';
+    photoQuery = photoQuery.order(sortColumn, {
+      ascending: sort_order === 'asc',
+    });
 
     // Get total count for pagination
     const { count: totalCount } = await supabase
-      .from('photos')
+      .from('assets')
       .select('id', { count: 'exact', head: true })
       .eq('event_id', event.id)
       .eq('approved', true)
@@ -239,36 +267,36 @@ export async function GET(
 
     // Execute query
     const { data: photosData, error: photosError } = await photoQuery;
-    
+
     if (photosError) {
       console.error(`[${requestId}] Error fetching photos:`, photosError);
       throw new Error(`Failed to fetch photos: ${photosError.message}`);
     }
 
     // Process photos and build response
-    const photos: PhotoWithMetadata[] = (photosData || []).map(photo => ({
+    const photos: PhotoWithMetadata[] = (photosData || []).map((photo) => ({
       id: photo.id,
       filename: photo.filename,
       preview_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.preview_path || photo.storage_path}`,
-      watermark_url: photo.watermark_path ? 
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.watermark_path}` : 
-        undefined,
+      watermark_url: photo.watermark_path
+        ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${photo.watermark_path}`
+        : undefined,
       size: photo.file_size || 0,
       width: photo.width || 0,
       height: photo.height || 0,
       taken_at: photo.taken_at,
       created_at: photo.created_at,
-      metadata: photo.metadata
+      metadata: photo.metadata,
     }));
 
     // Build student information
-    const studentInfo: StudentInfo[] = students.map(student => ({
+    const studentInfo: StudentInfo[] = students.map((student) => ({
       id: student.id,
       first_name: student.first_name,
       last_name: student.last_name,
       grade: student.grade || undefined,
       section: student.section || undefined,
-      qr_code: student.qr_code || undefined
+      qr_code: student.qr_code || undefined,
     }));
 
     // Build event information
@@ -278,14 +306,14 @@ export async function GET(
       school_name: event.school_name || '',
       date: event.date,
       description: event.description,
-      photographer_contact: event.photographer_contact
+      photographer_contact: event.photographer_contact,
     };
 
     // Calculate statistics
     const photosByStudent: Record<string, number> = {};
-    let totalFavorites = 0; // TODO: Implement favorites counting
-    let totalInCart = 0; // TODO: Implement cart counting
-    let totalPurchased = 0; // TODO: Implement purchased counting
+    const totalFavorites = 0; // TODO: Implement favorites counting
+    const totalInCart = 0; // TODO: Implement cart counting
+    const totalPurchased = 0; // TODO: Implement purchased counting
 
     // Count photos by student
     for (const photo of photosData || []) {
@@ -296,15 +324,15 @@ export async function GET(
     }
 
     // Build filters metadata
-    const availableStudents = studentInfo.map(student => ({
+    const availableStudents = studentInfo.map((student) => ({
       id: student.id,
       name: `${student.first_name} ${student.last_name}`,
-      photo_count: photosByStudent[student.id] || 0
+      photo_count: photosByStudent[student.id] || 0,
     }));
 
     // Get date range for filters
     const { data: dateRange } = await supabase
-      .from('photos')
+      .from('assets')
       .select('created_at, taken_at')
       .eq('event_id', event.id)
       .eq('approved', true)
@@ -313,7 +341,7 @@ export async function GET(
       .limit(1);
 
     const { data: latestDate } = await supabase
-      .from('photos')
+      .from('assets')
       .select('created_at, taken_at')
       .eq('event_id', event.id)
       .eq('approved', true)
@@ -323,45 +351,45 @@ export async function GET(
 
     const response: GalleryResponse = {
       success: true,
-      
+
       // Access information
       access_level: validationResult.accessLevel as any,
       token_type: tokenData.type,
       expires_in_days: validationResult.expiresInDays || 0,
       warnings: validationResult.warnings,
-      
+
       // Content data
       photos,
       students: studentInfo,
       event: eventInfo,
-      
+
       // Pagination
       pagination: {
         current_page: page,
         total_pages: totalPages,
         total_photos: totalPhotos,
         has_more: page < totalPages,
-        per_page: limit
+        per_page: limit,
       },
-      
+
       // Statistics
       stats: {
         total_photos: totalPhotos,
         photos_by_student: photosByStudent,
         total_favorites: totalFavorites,
         total_in_cart: totalInCart,
-        total_purchased: totalPurchased
+        total_purchased: totalPurchased,
       },
-      
+
       // Filters and metadata
       filters: {
         available_students: availableStudents,
         date_range: {
           earliest: dateRange?.[0]?.created_at || new Date().toISOString(),
-          latest: latestDate?.[0]?.created_at || new Date().toISOString()
+          latest: latestDate?.[0]?.created_at || new Date().toISOString(),
         },
-        file_types: ['jpg', 'jpeg', 'png', 'webp'] // TODO: Get actual file types
-      }
+        file_types: ['jpg', 'jpeg', 'png', 'webp'], // TODO: Get actual file types
+      },
     };
 
     // Log successful access
@@ -381,8 +409,8 @@ export async function GET(
           student_id: student_id ? `${student_id.substring(0, 8)}***` : 'all',
           sort_by,
           filter_by,
-          search: search ? 'provided' : 'none'
-        }
+          search: search ? 'provided' : 'none',
+        },
       },
       'info'
     );
@@ -393,37 +421,36 @@ export async function GET(
       studentsAccessed: students.length,
       photosReturned: photos.length,
       totalPhotos,
-      currentPage: page
+      currentPage: page,
     });
 
     return NextResponse.json(response, {
-      headers: { 
+      headers: {
         'X-Request-Id': requestId,
         'X-Access-Level': validationResult.accessLevel,
-        'X-Total-Photos': totalPhotos.toString()
-      }
+        'X-Total-Photos': totalPhotos.toString(),
+      },
     });
-
   } catch (error) {
     console.error(`[${requestId}] Enhanced gallery error:`, error);
-    
+
     SecurityLogger.logSecurityEvent(
       'enhanced_gallery_error',
       {
         requestId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       'error'
     );
 
     const errorResponse: Partial<GalleryResponse> = {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
 
-    return NextResponse.json(errorResponse, { 
+    return NextResponse.json(errorResponse, {
       status: 500,
-      headers: { 'X-Request-Id': requestId }
+      headers: { 'X-Request-Id': requestId },
     });
   }
 }
@@ -437,34 +464,37 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse<GalleryResponse>> {
   const requestId = generateRequestId();
-  
+
   try {
     const { token } = await params;
     const body = await request.json();
-    
+
     const {
       page = 1,
       limit = 60,
       filters = {},
       preferences = {},
-      device_context = {}
+      device_context = {},
     } = body;
 
-    console.log(`[${requestId}] Enhanced gallery POST request:`, { 
+    console.log(`[${requestId}] Enhanced gallery POST request:`, {
       token: `${token.slice(0, 8)}***`,
       hasFilters: Object.keys(filters).length > 0,
-      hasPreferences: Object.keys(preferences).length > 0
+      hasPreferences: Object.keys(preferences).length > 0,
     });
 
     // Validate token
     const validationResult = await enhancedTokenService.validateToken(token);
-    
+
     if (!validationResult.isValid) {
-      return NextResponse.json({
-        success: false,
-        error: 'Token no válido o expirado'
-        // @ts-ignore - partial response for error case
-      }, { status: 401 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Token no válido o expirado',
+          // @ts-ignore - partial response for error case
+        },
+        { status: 401 }
+      );
     }
 
     // TODO: Implement advanced filtering with POST body
@@ -482,7 +512,7 @@ export async function POST(
       limit: limit.toString(),
       ...(filters.student_id && { student_id: filters.student_id }),
       ...(filters.sort_by && { sort_by: filters.sort_by }),
-      ...(filters.search && { search: filters.search })
+      ...(filters.search && { search: filters.search }),
     });
 
     // Create a new request with query parameters
@@ -493,18 +523,17 @@ export async function POST(
 
     // Call the GET handler
     return GET(getRequest, { params });
-
   } catch (error) {
     console.error(`[${requestId}] Enhanced gallery POST error:`, error);
-    
+
     const errorResponse: Partial<GalleryResponse> = {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
 
-    return NextResponse.json(errorResponse, { 
+    return NextResponse.json(errorResponse, {
       status: 500,
-      headers: { 'X-Request-Id': requestId }
+      headers: { 'X-Request-Id': requestId },
     });
   }
 }

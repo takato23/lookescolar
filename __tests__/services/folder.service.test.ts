@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi, MockedFunction } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  MockedFunction,
+} from 'vitest';
 import { folderService } from '@/lib/services/folder.service';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
@@ -26,7 +34,7 @@ const mockFrom = {
 };
 
 // Chain all methods to return mockFrom for method chaining
-Object.keys(mockFrom).forEach(key => {
+Object.keys(mockFrom).forEach((key) => {
   if (key !== 'single' && key !== 'count') {
     mockFrom[key] = vi.fn().mockReturnValue(mockFrom);
   }
@@ -34,7 +42,9 @@ Object.keys(mockFrom).forEach(key => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  (createServerSupabaseServiceClient as MockedFunction<any>).mockResolvedValue(mockSupabase);
+  (createServerSupabaseServiceClient as MockedFunction<any>).mockResolvedValue(
+    mockSupabase
+  );
   mockSupabase.from.mockReturnValue(mockFrom);
 });
 
@@ -61,11 +71,14 @@ describe('FolderService', () => {
     it('should return folders for an event', async () => {
       mockFrom.single.mockResolvedValue({ data: null, error: null });
       mockFrom.count.mockResolvedValue({ count: 2, error: null });
-      
-      const mockFolders = [mockFolder, { ...mockFolder, id: 'folder-456', name: 'Another Folder' }];
+
+      const mockFolders = [
+        mockFolder,
+        { ...mockFolder, id: 'folder-456', name: 'Another Folder' },
+      ];
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockFolders, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockFolders, error: null }),
       });
 
       const result = await folderService.getFolders(mockEventId);
@@ -78,7 +91,7 @@ describe('FolderService', () => {
 
     it('should filter by parent folder', async () => {
       mockFrom.single.mockResolvedValue({ data: null, error: null });
-      
+
       const result = await folderService.getFolders(mockEventId, mockParentId);
 
       expect(mockFrom.eq).toHaveBeenCalledWith('parent_id', mockParentId);
@@ -88,7 +101,7 @@ describe('FolderService', () => {
       const error = new Error('Database error');
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error })
+        single: vi.fn().mockResolvedValue({ data: null, error }),
       });
 
       const result = await folderService.getFolders(mockEventId);
@@ -113,12 +126,14 @@ describe('FolderService', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockFolder);
       expect(mockSupabase.from).toHaveBeenCalledWith('event_folders');
-      expect(mockFrom.insert).toHaveBeenCalledWith(expect.objectContaining({
-        event_id: mockEventId,
-        name: folderData.name,
-        parent_id: folderData.parent_id,
-        sort_order: folderData.sort_order,
-      }));
+      expect(mockFrom.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_id: mockEventId,
+          name: folderData.name,
+          parent_id: folderData.parent_id,
+          sort_order: folderData.sort_order,
+        })
+      );
     });
 
     it('should validate folder name', async () => {
@@ -142,7 +157,9 @@ describe('FolderService', () => {
     it('should validate parent folder exists', async () => {
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: new Error('Not found') })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: null, error: new Error('Not found') }),
       });
 
       const result = await folderService.createFolder(mockEventId, folderData);
@@ -162,13 +179,16 @@ describe('FolderService', () => {
       // Mock folder exists check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockFolder, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockFolder, error: null }),
       });
 
       // Mock parent folder check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: { id: updateData.parent_id }, error: null })
+        single: vi.fn().mockResolvedValue({
+          data: { id: updateData.parent_id },
+          error: null,
+        }),
       });
 
       // Mock cycle detection
@@ -177,7 +197,10 @@ describe('FolderService', () => {
       // Mock update
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: { ...mockFolder, ...updateData }, error: null })
+        single: vi.fn().mockResolvedValue({
+          data: { ...mockFolder, ...updateData },
+          error: null,
+        }),
       });
 
       const result = await folderService.updateFolder(mockFolderId, updateData);
@@ -190,13 +213,16 @@ describe('FolderService', () => {
       // Mock folder exists check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: mockFolder, error: null })
+        single: vi.fn().mockResolvedValue({ data: mockFolder, error: null }),
       });
 
       // Mock parent folder check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: { id: updateData.parent_id }, error: null })
+        single: vi.fn().mockResolvedValue({
+          data: { id: updateData.parent_id },
+          error: null,
+        }),
       });
 
       // Mock cycle detection - returns true (cycle detected)
@@ -205,13 +231,17 @@ describe('FolderService', () => {
       const result = await folderService.updateFolder(mockFolderId, updateData);
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Cannot move folder: would create circular reference');
+      expect(result.error).toBe(
+        'Cannot move folder: would create circular reference'
+      );
     });
 
     it('should validate folder exists', async () => {
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: new Error('Not found') })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: null, error: new Error('Not found') }),
       });
 
       const result = await folderService.updateFolder(mockFolderId, updateData);
@@ -223,18 +253,22 @@ describe('FolderService', () => {
 
   describe('deleteFolder', () => {
     it('should delete empty folder successfully', async () => {
-      const emptyFolder = { ...mockFolder, child_folder_count: 0, photo_count: 0 };
-      
+      const emptyFolder = {
+        ...mockFolder,
+        child_folder_count: 0,
+        photo_count: 0,
+      };
+
       // Mock folder exists check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: emptyFolder, error: null })
+        single: vi.fn().mockResolvedValue({ data: emptyFolder, error: null }),
       });
 
       // Mock delete operation
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
 
       const result = await folderService.deleteFolder(mockFolderId);
@@ -244,12 +278,18 @@ describe('FolderService', () => {
     });
 
     it('should handle folder with content using default action', async () => {
-      const folderWithContent = { ...mockFolder, child_folder_count: 2, photo_count: 5 };
-      
+      const folderWithContent = {
+        ...mockFolder,
+        child_folder_count: 2,
+        photo_count: 5,
+      };
+
       // Mock folder exists check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: folderWithContent, error: null })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: folderWithContent, error: null }),
       });
 
       const result = await folderService.deleteFolder(mockFolderId);
@@ -259,41 +299,59 @@ describe('FolderService', () => {
     });
 
     it('should move content when action is moveToParent', async () => {
-      const folderWithContent = { ...mockFolder, child_folder_count: 1, photo_count: 3 };
-      
+      const folderWithContent = {
+        ...mockFolder,
+        child_folder_count: 1,
+        photo_count: 3,
+      };
+
       // Mock folder exists check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: folderWithContent, error: null })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: folderWithContent, error: null }),
       });
 
       // Mock move operations
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
 
-      const result = await folderService.deleteFolder(mockFolderId, 'moveToParent');
+      const result = await folderService.deleteFolder(
+        mockFolderId,
+        'moveToParent'
+      );
 
       expect(result.success).toBe(true);
     });
 
     it('should delete content when action is deleteAll', async () => {
-      const folderWithContent = { ...mockFolder, child_folder_count: 1, photo_count: 3 };
-      
-      // Mock folder exists check  
+      const folderWithContent = {
+        ...mockFolder,
+        child_folder_count: 1,
+        photo_count: 3,
+      };
+
+      // Mock folder exists check
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: folderWithContent, error: null })
+        single: vi
+          .fn()
+          .mockResolvedValue({ data: folderWithContent, error: null }),
       });
 
       // Mock delete operations
       mockSupabase.from.mockReturnValue({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
 
-      const result = await folderService.deleteFolder(mockFolderId, 'deleteAll');
+      const result = await folderService.deleteFolder(
+        mockFolderId,
+        'deleteAll'
+      );
 
       expect(result.success).toBe(true);
     });
@@ -312,7 +370,9 @@ describe('FolderService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(breadcrumb);
-      expect(mockSupabase.rpc).toHaveBeenCalledWith('get_folder_breadcrumb', { folder_id: mockFolderId });
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('get_folder_breadcrumb', {
+        folder_id: mockFolderId,
+      });
     });
 
     it('should handle RPC errors', async () => {
@@ -331,7 +391,7 @@ describe('FolderService', () => {
       const searchResults = [mockFolder];
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: searchResults, error: null })
+        single: vi.fn().mockResolvedValue({ data: searchResults, error: null }),
       });
 
       const result = await folderService.searchFolders(mockEventId, 'Test');
@@ -364,7 +424,9 @@ describe('FolderService', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(stats);
-      expect(mockSupabase.rpc).toHaveBeenCalledWith('get_folder_stats', { event_id: mockEventId });
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('get_folder_stats', {
+        event_id: mockEventId,
+      });
     });
   });
 
@@ -383,7 +445,7 @@ describe('FolderService', () => {
     it('should handle null data responses', async () => {
       mockSupabase.from.mockReturnValueOnce({
         ...mockFrom,
-        single: vi.fn().mockResolvedValue({ data: null, error: null })
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
       });
 
       const result = await folderService.getFolders(mockEventId);

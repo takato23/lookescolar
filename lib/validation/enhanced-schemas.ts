@@ -1,26 +1,39 @@
 import { z } from 'zod';
 
 // Custom validators
-const fileSize = (maxSizeInMB: number) => 
-  z.number().max(maxSizeInMB * 1024 * 1024, `El archivo no debe superar ${maxSizeInMB}MB`);
+const fileSize = (maxSizeInMB: number) =>
+  z
+    .number()
+    .max(
+      maxSizeInMB * 1024 * 1024,
+      `El archivo no debe superar ${maxSizeInMB}MB`
+    );
 
 const imageFile = z.object({
-  type: z.string().regex(/^image\/(jpeg|png|webp)$/, 'Solo se permiten imágenes JPEG, PNG o WebP'),
+  type: z
+    .string()
+    .regex(
+      /^image\/(jpeg|png|webp)$/,
+      'Solo se permiten imágenes JPEG, PNG o WebP'
+    ),
   size: fileSize(10),
   name: z.string().min(1, 'El archivo debe tener un nombre'),
 });
 
-const phoneNumber = z.string()
+const phoneNumber = z
+  .string()
   .regex(/^[\+]?[1-9][\d]{0,15}$/, 'Número de teléfono inválido')
   .optional();
 
-const email = z.string()
-  .email('Email inválido')
-  .min(1, 'Email es requerido');
+const email = z.string().email('Email inválido').min(1, 'Email es requerido');
 
-const password = z.string()
+const password = z
+  .string()
   .min(8, 'La contraseña debe tener al menos 8 caracteres')
-  .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'La contraseña debe contener al menos una mayúscula, una minúscula y un número');
+  .regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+    'La contraseña debe contener al menos una mayúscula, una minúscula y un número'
+  );
 
 const uuid = z.string().uuid('ID inválido');
 
@@ -65,19 +78,27 @@ export const eventCreateSchema = z.object({
   date: z.string().datetime('Fecha inválida'),
   description: z.string().max(500, 'La descripción es muy larga').optional(),
   active: z.boolean().default(true),
-  pricing: z.object({
-    basePrice: positiveNumber,
-    bulkDiscounts: z.array(z.object({
-      minQuantity: positiveNumber,
-      discountPercent: z.number().min(0).max(100),
-    })).optional(),
-  }).optional(),
-  settings: z.object({
-    allowPublicGallery: z.boolean().default(false),
-    requireApproval: z.boolean().default(true),
-    autoGenerateTokens: z.boolean().default(true),
-    maxPhotosPerFamily: z.number().positive().optional(),
-  }).optional(),
+  pricing: z
+    .object({
+      basePrice: positiveNumber,
+      bulkDiscounts: z
+        .array(
+          z.object({
+            minQuantity: positiveNumber,
+            discountPercent: z.number().min(0).max(100),
+          })
+        )
+        .optional(),
+    })
+    .optional(),
+  settings: z
+    .object({
+      allowPublicGallery: z.boolean().default(false),
+      requireApproval: z.boolean().default(true),
+      autoGenerateTokens: z.boolean().default(true),
+      maxPhotosPerFamily: z.number().positive().optional(),
+    })
+    .optional(),
 });
 
 export const eventUpdateSchema = eventCreateSchema.partial().extend({
@@ -119,7 +140,9 @@ export const studentUpdateSchema = studentCreateSchema.partial().extend({
 
 export const studentBulkCreateSchema = z.object({
   subjectId: uuid,
-  students: z.array(studentCreateSchema.omit({ subjectId: true })).min(1, 'Debes incluir al menos un estudiante'),
+  students: z
+    .array(studentCreateSchema.omit({ subjectId: true }))
+    .min(1, 'Debes incluir al menos un estudiante'),
   generateTokens: z.boolean().default(true),
   sendEmails: z.boolean().default(false),
 });
@@ -131,19 +154,27 @@ export const orderCreateSchema = z.object({
   customerName: nonEmptyString.max(200),
   customerEmail: email,
   customerPhone: phoneNumber,
-  items: z.array(z.object({
-    photoId: uuid,
-    priceListItemId: uuid,
-    quantity: positiveNumber,
-  })).min(1, 'Debes seleccionar al menos una foto'),
+  items: z
+    .array(
+      z.object({
+        photoId: uuid,
+        priceListItemId: uuid,
+        quantity: positiveNumber,
+      })
+    )
+    .min(1, 'Debes seleccionar al menos una foto'),
   notes: z.string().max(500).optional(),
   totalCents: positiveNumber,
-  paymentMethod: z.enum(['mercadopago', 'transfer', 'cash']).default('mercadopago'),
+  paymentMethod: z
+    .enum(['mercadopago', 'transfer', 'cash'])
+    .default('mercadopago'),
 });
 
 export const orderUpdateSchema = z.object({
   id: uuid,
-  status: z.enum(['pending', 'paid', 'processing', 'completed', 'cancelled']).optional(),
+  status: z
+    .enum(['pending', 'paid', 'processing', 'completed', 'cancelled'])
+    .optional(),
   mpPaymentId: z.string().optional(),
   notes: z.string().max(500).optional(),
   processedAt: z.string().datetime().optional(),
@@ -156,37 +187,50 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().default(false),
 });
 
-export const registerSchema = z.object({
-  email,
-  password,
-  confirmPassword: z.string(),
-  firstName: nonEmptyString.max(100),
-  lastName: nonEmptyString.max(100),
-  acceptTerms: z.boolean().refine(val => val === true, 'Debes aceptar los términos y condiciones'),
-}).refine(data => data.password === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword'],
-});
+export const registerSchema = z
+  .object({
+    email,
+    password,
+    confirmPassword: z.string(),
+    firstName: nonEmptyString.max(100),
+    lastName: nonEmptyString.max(100),
+    acceptTerms: z
+      .boolean()
+      .refine(
+        (val) => val === true,
+        'Debes aceptar los términos y condiciones'
+      ),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
 
-export const resetPasswordSchema = z.object({
-  email,
-  token: z.string().min(1, 'Token inválido'),
-  newPassword: password,
-  confirmPassword: z.string(),
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword'],
-});
+export const resetPasswordSchema = z
+  .object({
+    email,
+    token: z.string().min(1, 'Token inválido'),
+    newPassword: password,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
 
 // Enhanced payment schemas
 export const paymentPreferenceSchema = z.object({
   orderId: uuid,
-  items: z.array(z.object({
-    title: nonEmptyString,
-    quantity: positiveNumber,
-    unitPrice: positiveNumber,
-    pictureUrl: z.string().url().optional(),
-  })).min(1),
+  items: z
+    .array(
+      z.object({
+        title: nonEmptyString,
+        quantity: positiveNumber,
+        unitPrice: positiveNumber,
+        pictureUrl: z.string().url().optional(),
+      })
+    )
+    .min(1),
   payer: z.object({
     name: nonEmptyString,
     email,
@@ -234,7 +278,9 @@ export const photoFilterSchema = z.object({
 export const orderFilterSchema = z.object({
   eventId: uuid.optional(),
   subjectId: uuid.optional(),
-  status: z.enum(['pending', 'paid', 'processing', 'completed', 'cancelled']).optional(),
+  status: z
+    .enum(['pending', 'paid', 'processing', 'completed', 'cancelled'])
+    .optional(),
   customerEmail: email.optional(),
   dateFrom: z.string().date().optional(),
   dateTo: z.string().date().optional(),
@@ -307,13 +353,16 @@ export type OrderFilter = z.infer<typeof orderFilterSchema>;
 export type AppConfig = z.infer<typeof appConfigSchema>;
 
 // Validation utilities
-export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: string[] } {
+export function validateData<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown
+): { success: true; data: T } | { success: false; errors: string[] } {
   try {
     const result = schema.parse(data);
     return { success: true, data: result };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.errors.map(err => {
+      const errors = error.errors.map((err) => {
         const path = err.path.join('.');
         return path ? `${path}: ${err.message}` : err.message;
       });

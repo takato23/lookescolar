@@ -6,12 +6,12 @@ import { logger } from '@/lib/utils/logger';
 
 // POST /admin/events/{eventId}/upload-url
 export const POST = RateLimitMiddleware.withRateLimit(
-  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
+  withAuth(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const requestId = crypto.randomUUID();
-    
+
     try {
-      const eventId = params.id;
-      
+      const eventId = (await params).id;
+
       if (!eventId) {
         return NextResponse.json(
           { success: false, error: 'Event ID is required' },
@@ -65,16 +65,19 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Validate content type
       const allowedTypes = [
         'image/jpeg',
-        'image/jpg', 
+        'image/jpg',
         'image/png',
         'image/webp',
         'image/heic',
-        'image/heif'
+        'image/heif',
       ];
 
       if (!allowedTypes.includes(contentType.toLowerCase())) {
         return NextResponse.json(
-          { success: false, error: 'Unsupported file type. Only images are allowed.' },
+          {
+            success: false,
+            error: 'Unsupported file type. Only images are allowed.',
+          },
           { status: 400 }
         );
       }
@@ -132,7 +135,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const randomString = Math.random().toString(36).substring(2, 8);
       const fileExtension = filename.split('.').pop() || '';
       const uniqueFilename = `${timestamp}-${randomString}.${fileExtension}`;
-      
+
       // Construct storage path
       const storagePath = `events/${eventId}/uploads/${uniqueFilename}`;
 
@@ -140,7 +143,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('photos')
         .createSignedUploadUrl(storagePath, {
-          upsert: false // Don't overwrite existing files
+          upsert: false, // Don't overwrite existing files
         });
 
       if (uploadError) {
@@ -151,7 +154,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           storagePath,
           error: uploadError.message,
         });
-        
+
         return NextResponse.json(
           { success: false, error: 'Failed to generate upload URL' },
           { status: 500 }
@@ -182,11 +185,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
           timestamp,
         },
       });
-
     } catch (error) {
       logger.error('Unexpected error in upload URL endpoint', {
         requestId,
-        eventId: params.id,
+        eventId: eventId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
 

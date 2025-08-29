@@ -28,11 +28,16 @@ async function logErrorToFile(name: string, content: string) {
 
 async function handlePOST(request: NextRequest) {
   const supabase = await createServerSupabaseServiceClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   // En desarrollo, permitir sin autenticación
   if (!user && process.env.NODE_ENV !== 'development') {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    return NextResponse.json(
+      { error: 'Authentication required' },
+      { status: 401 }
+    );
   }
 
   const requestId = request.headers.get('x-request-id') || 'unknown';
@@ -49,7 +54,9 @@ async function handlePOST(request: NextRequest) {
 
     const { data: photos, error } = await (supabase as any)
       .from('photos')
-      .select('id, original_filename, storage_path, preview_path, watermark_path')
+      .select(
+        'id, original_filename, storage_path, preview_path, watermark_path'
+      )
       .in('id', photoIds);
 
     if (error) {
@@ -67,13 +74,19 @@ async function handlePOST(request: NextRequest) {
       }
       const key = firstPhoto.watermark_path || firstPhoto.preview_path;
       if (!key) {
-        return NextResponse.json({ error: 'No valid path for photo' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'No valid path for photo' },
+          { status: 404 }
+        );
       }
       try {
         const url = await signedUrlForKey(key, 300);
         return NextResponse.json({ urls: [url] });
       } catch (e) {
-        return NextResponse.json({ error: 'Failed to generate signed URL' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Failed to generate signed URL' },
+          { status: 400 }
+        );
       }
     }
 
@@ -90,7 +103,10 @@ async function handlePOST(request: NextRequest) {
     archive.pipe(stream);
 
     // Append files by downloading from Supabase storage
-    const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+    const ORIGINAL_BUCKET =
+      process.env['STORAGE_BUCKET_ORIGINAL'] ||
+      process.env['STORAGE_BUCKET'] ||
+      'photo-private';
     const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
     for (const p of photos) {
       const preferredKey = (p as any).watermark_path || (p as any).preview_path;
@@ -98,17 +114,27 @@ async function handlePOST(request: NextRequest) {
       const filename = p.original_filename || `${p.id}.jpg`;
 
       // Decide bucket per key. Previews/watermarks -> PREVIEW bucket; originals -> ORIGINAL bucket
-      let bucketForKey = /(^|\/)previews\//.test(preferredKey) || /watermark/i.test(preferredKey)
-        ? PREVIEW_BUCKET
-        : ORIGINAL_BUCKET;
+      let bucketForKey =
+        /(^|\/)previews\//.test(preferredKey) || /watermark/i.test(preferredKey)
+          ? PREVIEW_BUCKET
+          : ORIGINAL_BUCKET;
 
-      let downloadRes = await (supabase as any).storage.from(bucketForKey).download(preferredKey);
+      let downloadRes = await (supabase as any).storage
+        .from(bucketForKey)
+        .download(preferredKey);
       // Fallback to the other bucket on 404 in case of misplaced asset
-      if (downloadRes.error && ((downloadRes.error as any).status === 404)) {
-        const altBucket = bucketForKey === ORIGINAL_BUCKET ? PREVIEW_BUCKET : ORIGINAL_BUCKET;
-        const alt = await (supabase as any).storage.from(altBucket).download(preferredKey);
+      if (downloadRes.error && (downloadRes.error as any).status === 404) {
+        const altBucket =
+          bucketForKey === ORIGINAL_BUCKET ? PREVIEW_BUCKET : ORIGINAL_BUCKET;
+        const alt = await (supabase as any).storage
+          .from(altBucket)
+          .download(preferredKey);
         if (!alt.error && alt.data) {
-          SecurityLogger.logSecurityEvent('download_fallback_bucket', { requestId, from: bucketForKey, to: altBucket, key: preferredKey }, 'warning');
+          SecurityLogger.logSecurityEvent(
+            'download_fallback_bucket',
+            { requestId, from: bucketForKey, to: altBucket, key: preferredKey },
+            'warning'
+          );
           bucketForKey = altBucket;
           downloadRes = alt;
         }
@@ -118,7 +144,11 @@ async function handlePOST(request: NextRequest) {
         // skip failed file but keep going
         SecurityLogger.logSecurityEvent(
           'download_zip_file_error',
-          { requestId, photoId: p.id, error: downloadRes.error?.message || 'missing' },
+          {
+            requestId,
+            photoId: p.id,
+            error: downloadRes.error?.message || 'missing',
+          },
           'warning'
         );
         continue;
@@ -158,5 +188,3 @@ async function handlePOST(request: NextRequest) {
 }
 
 export const POST = withAuth(handlePOST);
-
-

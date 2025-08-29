@@ -4,8 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 
 interface QRPerformanceData {
@@ -44,18 +53,21 @@ interface CacheStats {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function QRPerformanceDashboard() {
-  const [performanceData, setPerformanceData] = useState<QRPerformanceData | null>(null);
+  const [performanceData, setPerformanceData] =
+    useState<QRPerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   useEffect(() => {
     fetchPerformanceData();
-    
+
     // Set up auto-refresh every 30 seconds
     const interval = setInterval(fetchPerformanceData, 30000);
     setRefreshInterval(interval);
-    
+
     return () => {
       if (interval) {
         clearInterval(interval);
@@ -70,12 +82,14 @@ export function QRPerformanceDashboard() {
       if (!response.ok) {
         throw new Error('Failed to fetch performance data');
       }
-      
+
       const data = await response.json();
       setPerformanceData(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch performance data');
+      setError(
+        err instanceof Error ? err.message : 'Failed to fetch performance data'
+      );
     } finally {
       setLoading(false);
     }
@@ -90,18 +104,20 @@ export function QRPerformanceDashboard() {
         },
         body: JSON.stringify({
           action: 'invalidate-cache',
-          pattern: pattern || 'qr:'
+          pattern: pattern || 'qr:',
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to invalidate cache');
       }
-      
+
       // Refresh data after invalidation
       fetchPerformanceData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to invalidate cache');
+      setError(
+        err instanceof Error ? err.message : 'Failed to invalidate cache'
+      );
     }
   };
 
@@ -113,14 +129,14 @@ export function QRPerformanceDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'reset-stats'
+          action: 'reset-stats',
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to reset stats');
       }
-      
+
       // Refresh data after reset
       fetchPerformanceData();
     } catch (err) {
@@ -130,7 +146,7 @@ export function QRPerformanceDashboard() {
 
   if (loading && !performanceData) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex h-64 items-center justify-center">
         <div className="text-lg">Loading QR performance data...</div>
       </div>
     );
@@ -138,17 +154,19 @@ export function QRPerformanceDashboard() {
 
   if (error) {
     return (
-      <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+      <div className="rounded border border-red-400 bg-red-100 p-4 text-red-700">
         <h3 className="font-bold">Error</h3>
         <p>{error}</p>
-        <Button onClick={fetchPerformanceData} className="mt-2">Retry</Button>
+        <Button onClick={fetchPerformanceData} className="mt-2">
+          Retry
+        </Button>
       </div>
     );
   }
 
   if (!performanceData) {
     return (
-      <div className="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+      <div className="rounded border border-yellow-400 bg-yellow-100 p-4 text-yellow-700">
         <h3 className="font-bold">No Data</h3>
         <p>Unable to load QR performance data.</p>
       </div>
@@ -158,14 +176,14 @@ export function QRPerformanceDashboard() {
   const statusColors = {
     healthy: 'bg-green-500',
     degraded: 'bg-yellow-500',
-    unhealthy: 'bg-red-500'
+    unhealthy: 'bg-red-500',
   };
 
   const componentStatusColors = {
     operational: 'bg-green-500',
     healthy: 'bg-green-500',
     degraded: 'bg-yellow-500',
-    unhealthy: 'bg-red-500'
+    unhealthy: 'bg-red-500',
   };
 
   // Data for charts
@@ -181,7 +199,7 @@ export function QRPerformanceDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">QR Performance Dashboard</h2>
         <div className="flex space-x-2">
           <Button onClick={fetchPerformanceData} variant="outline">
@@ -197,16 +215,20 @@ export function QRPerformanceDashboard() {
       </div>
 
       {/* Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${statusColors[performanceData.status]}`}></div>
+              <div
+                className={`mr-2 h-3 w-3 rounded-full ${statusColors[performanceData.status]}`}
+              ></div>
               System Status
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold capitalize">{performanceData.status}</div>
+            <div className="text-2xl font-bold capitalize">
+              {performanceData.status}
+            </div>
             <p className="text-sm text-gray-500">Overall system health</p>
           </CardContent>
         </Card>
@@ -216,7 +238,9 @@ export function QRPerformanceDashboard() {
             <CardTitle>Cache Hit Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{performanceData.cache.hitRate}%</div>
+            <div className="text-2xl font-bold">
+              {performanceData.cache.hitRate}%
+            </div>
             <p className="text-sm text-gray-500">Efficiency metric</p>
           </CardContent>
         </Card>
@@ -226,7 +250,9 @@ export function QRPerformanceDashboard() {
             <CardTitle>Cache Entries</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{performanceData.cache.entries}</div>
+            <div className="text-2xl font-bold">
+              {performanceData.cache.entries}
+            </div>
             <p className="text-sm text-gray-500">Active cache items</p>
           </CardContent>
         </Card>
@@ -236,7 +262,9 @@ export function QRPerformanceDashboard() {
             <CardTitle>Generation Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{performanceData.cache.avgGenerationTimeMs}ms</div>
+            <div className="text-2xl font-bold">
+              {performanceData.cache.avgGenerationTimeMs}ms
+            </div>
             <p className="text-sm text-gray-500">Avg QR generation</p>
           </CardContent>
         </Card>
@@ -248,21 +276,34 @@ export function QRPerformanceDashboard() {
           <CardTitle>Component Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(performanceData.components).map(([component, status]) => (
-              <div key={component} className="flex items-center justify-between p-3 border rounded">
-                <span className="font-medium capitalize">{component.replace(/([A-Z])/g, ' $1')}</span>
-                <Badge className={componentStatusColors[status as keyof typeof componentStatusColors]}>
-                  {status}
-                </Badge>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {Object.entries(performanceData.components).map(
+              ([component, status]) => (
+                <div
+                  key={component}
+                  className="flex items-center justify-between rounded border p-3"
+                >
+                  <span className="font-medium capitalize">
+                    {component.replace(/([A-Z])/g, ' $1')}
+                  </span>
+                  <Badge
+                    className={
+                      componentStatusColors[
+                        status as keyof typeof componentStatusColors
+                      ]
+                    }
+                  >
+                    {status}
+                  </Badge>
+                </div>
+              )
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Cache Performance</CardTitle>
@@ -298,10 +339,15 @@ export function QRPerformanceDashboard() {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {requestDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -318,9 +364,9 @@ export function QRPerformanceDashboard() {
           <CardTitle>Detailed Metrics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <h4 className="font-medium mb-2">Cache Metrics</h4>
+              <h4 className="mb-2 font-medium">Cache Metrics</h4>
               <ul className="space-y-1 text-sm">
                 <li>Memory Usage: {performanceData.cache.memoryUsageMB} MB</li>
                 <li>Cache Efficiency: {performanceData.cache.efficiency}%</li>
@@ -328,7 +374,7 @@ export function QRPerformanceDashboard() {
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-2">Request Metrics</h4>
+              <h4 className="mb-2 font-medium">Request Metrics</h4>
               <ul className="space-y-1 text-sm">
                 <li>Total Requests: {performanceData.metrics.totalRequests}</li>
                 <li>Hits: {performanceData.metrics.totalHits}</li>
@@ -336,7 +382,7 @@ export function QRPerformanceDashboard() {
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-2">System Metrics</h4>
+              <h4 className="mb-2 font-medium">System Metrics</h4>
               <ul className="space-y-1 text-sm">
                 <li>Uptime: {performanceData.timestamp}</li>
               </ul>
@@ -352,9 +398,11 @@ export function QRPerformanceDashboard() {
             <CardTitle className="text-red-600">Issues Detected</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-1">
+            <ul className="list-disc space-y-1 pl-5">
               {performanceData.issues.map((issue, index) => (
-                <li key={index} className="text-red-600">{issue}</li>
+                <li key={index} className="text-red-600">
+                  {issue}
+                </li>
               ))}
             </ul>
           </CardContent>

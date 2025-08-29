@@ -3,10 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
-import { 
-  ProductCatalog,
-  ProductFilters 
-} from '@/lib/types/products';
+import { ProductCatalog, ProductFilters } from '@/lib/types/products';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +17,7 @@ export async function GET(request: NextRequest) {
     const filters: ProductFilters = {
       is_active: !include_inactive,
       is_featured: featured_only || undefined,
-      category_ids: category_id ? [category_id] : undefined
+      category_ids: category_id ? [category_id] : undefined,
     };
 
     // Fetch product categories
@@ -36,7 +33,10 @@ export async function GET(request: NextRequest) {
     const { data: categories, error: categoriesError } = await categoriesQuery;
 
     if (categoriesError) {
-      console.error('[Products API] Error fetching categories:', categoriesError);
+      console.error(
+        '[Products API] Error fetching categories:',
+        categoriesError
+      );
       return NextResponse.json(
         { success: false, error: 'Error al cargar categorías' },
         { status: 500 }
@@ -46,10 +46,12 @@ export async function GET(request: NextRequest) {
     // Fetch photo products
     let productsQuery = supabase
       .from('photo_products')
-      .select(`
+      .select(
+        `
         *,
         category:product_categories(*)
-      `)
+      `
+      )
       .order('sort_order', { ascending: true });
 
     // Apply filters
@@ -76,13 +78,15 @@ export async function GET(request: NextRequest) {
     // Fetch combo packages
     let combosQuery = supabase
       .from('combo_packages')
-      .select(`
+      .select(
+        `
         *,
         items:combo_package_items(
           *,
           product:photo_products(*)
         )
-      `)
+      `
+      )
       .order('sort_order', { ascending: true });
 
     if (filters.is_featured !== undefined) {
@@ -107,16 +111,21 @@ export async function GET(request: NextRequest) {
     if (event_id) {
       const { data: pricingData, error: pricingError } = await supabase
         .from('event_product_pricing')
-        .select(`
+        .select(
+          `
           *,
           product:photo_products(*),
           combo:combo_packages(*)
-        `)
+        `
+        )
         .eq('event_id', event_id)
         .eq('is_active', true);
 
       if (pricingError) {
-        console.error('[Products API] Error fetching event pricing:', pricingError);
+        console.error(
+          '[Products API] Error fetching event pricing:',
+          pricingError
+        );
         // Don't fail the request, just log the error
       } else {
         event_pricing = pricingData;
@@ -127,14 +136,13 @@ export async function GET(request: NextRequest) {
       categories: categories || [],
       products: products || [],
       combos: combos || [],
-      event_pricing: event_pricing || undefined
+      event_pricing: event_pricing || undefined,
     };
 
     return NextResponse.json({
       success: true,
-      data: catalog
+      data: catalog,
     });
-
   } catch (error) {
     console.error('[Products API] Unexpected error:', error);
     return NextResponse.json(
@@ -147,31 +155,37 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { 
-      name, 
-      description, 
-      category_id, 
-      type, 
-      width_cm, 
-      height_cm, 
-      finish, 
-      paper_quality, 
+    const {
+      name,
+      description,
+      category_id,
+      type,
+      width_cm,
+      height_cm,
+      finish,
+      paper_quality,
       base_price,
       image_url,
-      is_featured 
+      is_featured,
     } = body;
 
     // Validation
     if (!name || !category_id || !type || !base_price) {
       return NextResponse.json(
-        { success: false, error: 'Campos requeridos: name, category_id, type, base_price' },
+        {
+          success: false,
+          error: 'Campos requeridos: name, category_id, type, base_price',
+        },
         { status: 400 }
       );
     }
 
     if (type !== 'digital' && (!width_cm || !height_cm)) {
       return NextResponse.json(
-        { success: false, error: 'Productos físicos requieren width_cm y height_cm' },
+        {
+          success: false,
+          error: 'Productos físicos requieren width_cm y height_cm',
+        },
         { status: 400 }
       );
     }
@@ -202,12 +216,14 @@ export async function POST(request: NextRequest) {
         image_url,
         is_featured: is_featured || false,
         sort_order,
-        is_active: true
+        is_active: true,
       })
-      .select(`
+      .select(
+        `
         *,
         category:product_categories(*)
-      `)
+      `
+      )
       .single();
 
     if (error) {
@@ -220,9 +236,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: product
+      data: product,
     });
-
   } catch (error) {
     console.error('[Products API] Unexpected error creating product:', error);
     return NextResponse.json(

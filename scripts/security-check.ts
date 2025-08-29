@@ -39,35 +39,35 @@ class SecurityAuditor {
     await this.checkTokenSecurity();
     await this.checkDatabaseConstraints();
     await this.checkRateLimitingConfig();
-    
+
     this.printResults();
   }
 
   private async checkEnvironmentVariables(): Promise<void> {
     const requiredVars = [
       'NEXT_PUBLIC_SUPABASE_URL',
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY', 
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'SUPABASE_SERVICE_ROLE_KEY',
       'MP_WEBHOOK_SECRET',
       'UPSTASH_REDIS_REST_URL',
-      'UPSTASH_REDIS_REST_TOKEN'
+      'UPSTASH_REDIS_REST_TOKEN',
     ];
 
     const sensitiveVars = [
       'SUPABASE_SERVICE_ROLE_KEY',
-      'MP_WEBHOOK_SECRET', 
-      'UPSTASH_REDIS_REST_TOKEN'
+      'MP_WEBHOOK_SECRET',
+      'UPSTASH_REDIS_REST_TOKEN',
     ];
 
     for (const varName of requiredVars) {
       const value = process.env[varName];
-      
+
       if (!value) {
         this.addResult({
           name: `Variable de entorno: ${varName}`,
           status: 'FAIL',
           message: 'Variable requerida no encontrada',
-          critical: true
+          critical: true,
         });
         continue;
       }
@@ -78,26 +78,29 @@ class SecurityAuditor {
             name: `Variable de entorno: ${varName}`,
             status: 'WARN',
             message: 'Valor muy corto para variable sensible',
-            critical: false
+            critical: false,
           });
         } else {
           this.addResult({
             name: `Variable de entorno: ${varName}`,
             status: 'PASS',
             message: 'Variable configurada correctamente',
-            critical: true
+            critical: true,
           });
         }
       }
     }
 
     // Verificar que no sea development en producción
-    if (process.env.NODE_ENV === 'development' && process.env.VERCEL_ENV === 'production') {
+    if (
+      process.env.NODE_ENV === 'development' &&
+      process.env.VERCEL_ENV === 'production'
+    ) {
       this.addResult({
         name: 'Modo de desarrollo',
         status: 'FAIL',
         message: 'NODE_ENV=development en producción',
-        critical: true
+        critical: true,
       });
     }
   }
@@ -114,14 +117,14 @@ class SecurityAuditor {
           name: 'Conexión Supabase',
           status: 'FAIL',
           message: `Error de conexión: ${error.message}`,
-          critical: true
+          critical: true,
         });
       } else {
         this.addResult({
           name: 'Conexión Supabase',
           status: 'PASS',
           message: 'Conexión exitosa',
-          critical: true
+          critical: true,
         });
       }
     } catch (error) {
@@ -129,7 +132,7 @@ class SecurityAuditor {
         name: 'Conexión Supabase',
         status: 'FAIL',
         message: `Error: ${error}`,
-        critical: true
+        critical: true,
       });
     }
   }
@@ -138,10 +141,10 @@ class SecurityAuditor {
     const criticalTables = [
       'events',
       'subjects',
-      'photos', 
+      'photos',
       'photo_assignments',
       'orders',
-      'order_items'
+      'order_items',
     ];
 
     try {
@@ -163,21 +166,21 @@ class SecurityAuditor {
               name: `RLS: ${table}`,
               status: 'PASS',
               message: 'Acceso anónimo bloqueado correctamente',
-              critical: true
+              critical: true,
             });
           } else if (data && data.length > 0) {
             this.addResult({
               name: `RLS: ${table}`,
               status: 'FAIL',
               message: 'Acceso anónimo NO bloqueado - RLS falla',
-              critical: true
+              critical: true,
             });
           } else if (error) {
             this.addResult({
               name: `RLS: ${table}`,
               status: 'PASS',
               message: 'Acceso anónimo bloqueado (con error)',
-              critical: true
+              critical: true,
             });
           }
         } catch (err) {
@@ -185,7 +188,7 @@ class SecurityAuditor {
             name: `RLS: ${table}`,
             status: 'WARN',
             message: 'No se pudo verificar RLS',
-            critical: false
+            critical: false,
           });
         }
       }
@@ -194,7 +197,7 @@ class SecurityAuditor {
         name: 'RLS Policies',
         status: 'FAIL',
         message: `Error verificando RLS: ${error}`,
-        critical: true
+        critical: true,
       });
     }
   }
@@ -202,40 +205,41 @@ class SecurityAuditor {
   private async checkBucketConfiguration(): Promise<void> {
     try {
       // Intentar listar buckets
-      const { data: buckets, error } = await this.supabase.storage.listBuckets();
-      
+      const { data: buckets, error } =
+        await this.supabase.storage.listBuckets();
+
       if (error) {
         this.addResult({
           name: 'Storage Buckets',
           status: 'FAIL',
           message: `Error accediendo storage: ${error.message}`,
-          critical: true
+          critical: true,
         });
         return;
       }
 
-      const photosBucket = buckets?.find(b => b.name === 'photo-private');
-      
+      const photosBucket = buckets?.find((b) => b.name === 'photo-private');
+
       if (!photosBucket) {
         this.addResult({
           name: 'Bucket photo-private',
           status: 'FAIL',
           message: 'Bucket photo-private no encontrado',
-          critical: true
+          critical: true,
         });
       } else if (photosBucket.public) {
         this.addResult({
           name: 'Bucket photos-private',
           status: 'FAIL',
           message: 'Bucket debe ser PRIVADO, no público',
-          critical: true
+          critical: true,
         });
       } else {
         this.addResult({
           name: 'Bucket photos-private',
           status: 'PASS',
           message: 'Bucket privado configurado correctamente',
-          critical: true
+          critical: true,
         });
       }
 
@@ -244,13 +248,13 @@ class SecurityAuditor {
         const { data: signedUrlData } = await this.supabase.storage
           .from('photo-private')
           .createSignedUrl('test/nonexistent.jpg', 60);
-        
+
         if (signedUrlData?.signedUrl) {
           this.addResult({
             name: 'URLs Firmadas',
             status: 'PASS',
             message: 'Generación de URLs firmadas funciona',
-            critical: true
+            critical: true,
           });
         }
       } catch (err) {
@@ -258,7 +262,7 @@ class SecurityAuditor {
           name: 'URLs Firmadas',
           status: 'WARN',
           message: 'No se pudo verificar URLs firmadas',
-          critical: false
+          critical: false,
         });
       }
     } catch (error) {
@@ -266,7 +270,7 @@ class SecurityAuditor {
         name: 'Storage Configuration',
         status: 'FAIL',
         message: `Error: ${error}`,
-        critical: true
+        critical: true,
       });
     }
   }
@@ -283,17 +287,17 @@ class SecurityAuditor {
           name: 'Tokens - Muestras',
           status: 'WARN',
           message: 'No hay tokens para validar',
-          critical: false
+          critical: false,
         });
         return;
       }
 
       let passCount = 0;
-      let totalCount = subjects.length;
+      const totalCount = subjects.length;
 
       subjects.forEach((subject, index) => {
         const token = subject.token;
-        let issues: string[] = [];
+        const issues: string[] = [];
 
         // Verificar longitud
         if (token.length < 20) {
@@ -322,12 +326,13 @@ class SecurityAuditor {
           const expiresAt = new Date(subject.expires_at);
           const now = new Date();
           const createdAt = new Date(subject.created_at);
-          
+
           if (expiresAt <= createdAt) {
             issues.push('Expira antes de creación');
           }
 
-          const daysDiff = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+          const daysDiff =
+            (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
           if (daysDiff > 365) {
             issues.push('Expira en más de 1 año');
           }
@@ -345,21 +350,21 @@ class SecurityAuditor {
           name: 'Seguridad de Tokens',
           status: 'PASS',
           message: `${passCount}/${totalCount} tokens seguros`,
-          critical: true
+          critical: true,
         });
       } else if (passRate >= 0.7) {
         this.addResult({
           name: 'Seguridad de Tokens',
           status: 'WARN',
           message: `Solo ${passCount}/${totalCount} tokens seguros`,
-          critical: false
+          critical: false,
         });
       } else {
         this.addResult({
           name: 'Seguridad de Tokens',
           status: 'FAIL',
           message: `Solo ${passCount}/${totalCount} tokens seguros`,
-          critical: true
+          critical: true,
         });
       }
     } catch (error) {
@@ -367,7 +372,7 @@ class SecurityAuditor {
         name: 'Seguridad de Tokens',
         status: 'FAIL',
         message: `Error verificando tokens: ${error}`,
-        critical: true
+        critical: true,
       });
     }
   }
@@ -386,7 +391,7 @@ class SecurityAuditor {
               id: testEventId,
               name: 'Test Event',
               school: 'Test School',
-              date: '2024-01-01'
+              date: '2024-01-01',
             });
 
             // Insertar primer subject
@@ -395,28 +400,35 @@ class SecurityAuditor {
               type: 'student',
               first_name: 'Test1',
               token: testToken,
-              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              expires_at: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
             });
 
             // Intentar insertar duplicado
             const { error } = await this.supabase.from('subjects').insert({
               event_id: testEventId,
               type: 'student',
-              first_name: 'Test2', 
+              first_name: 'Test2',
               token: testToken,
-              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              expires_at: new Date(
+                Date.now() + 30 * 24 * 60 * 60 * 1000
+              ).toISOString(),
             });
 
             // Cleanup
-            await this.supabase.from('subjects').delete().eq('token', testToken);
+            await this.supabase
+              .from('subjects')
+              .delete()
+              .eq('token', testToken);
             await this.supabase.from('events').delete().eq('id', testEventId);
 
             return error?.code === '23505'; // Unique constraint violation
           } catch {
             return false;
           }
-        }
-      }
+        },
+      },
     ];
 
     for (const constraint of constraints) {
@@ -425,15 +437,17 @@ class SecurityAuditor {
         this.addResult({
           name: constraint.name,
           status: passed ? 'PASS' : 'FAIL',
-          message: passed ? 'Constraint funciona correctamente' : 'Constraint no configurado',
-          critical: true
+          message: passed
+            ? 'Constraint funciona correctamente'
+            : 'Constraint no configurado',
+          critical: true,
         });
       } catch (error) {
         this.addResult({
           name: constraint.name,
           status: 'WARN',
           message: 'No se pudo verificar constraint',
-          critical: false
+          critical: false,
         });
       }
     }
@@ -449,16 +463,16 @@ class SecurityAuditor {
         name: 'Rate Limiting - Redis',
         status: 'WARN',
         message: 'Variables Redis no configuradas (usando memoria)',
-        critical: false
+        critical: false,
       });
     } else {
       try {
         // Test básico de conectividad Redis
         const testResponse = await fetch(`${redisUrl}/get/test-key`, {
           headers: {
-            'Authorization': `Bearer ${redisToken}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${redisToken}`,
+            'Content-Type': 'application/json',
+          },
         });
 
         if (testResponse.ok || testResponse.status === 404) {
@@ -466,14 +480,14 @@ class SecurityAuditor {
             name: 'Rate Limiting - Redis',
             status: 'PASS',
             message: 'Conexión Redis funciona',
-            critical: false
+            critical: false,
           });
         } else {
           this.addResult({
             name: 'Rate Limiting - Redis',
             status: 'WARN',
             message: 'Problema conectando a Redis',
-            critical: false
+            critical: false,
           });
         }
       } catch {
@@ -481,7 +495,7 @@ class SecurityAuditor {
           name: 'Rate Limiting - Redis',
           status: 'WARN',
           message: 'No se pudo verificar Redis',
-          critical: false
+          critical: false,
         });
       }
     }
@@ -491,7 +505,7 @@ class SecurityAuditor {
       name: 'Rate Limiting - Middleware',
       status: 'PASS', // Asumimos que está configurado si middleware.ts existe
       message: 'Middleware configurado (verificar manualmente)',
-      critical: false
+      critical: false,
     });
   }
 
@@ -502,30 +516,34 @@ class SecurityAuditor {
   private printResults(): void {
     console.log('\n📊 Resultados de Auditoría de Seguridad\n');
 
-    const passed = this.results.filter(r => r.status === 'PASS').length;
-    const failed = this.results.filter(r => r.status === 'FAIL').length;
-    const warnings = this.results.filter(r => r.status === 'WARN').length;
-    const criticalFailures = this.results.filter(r => r.status === 'FAIL' && r.critical).length;
+    const passed = this.results.filter((r) => r.status === 'PASS').length;
+    const failed = this.results.filter((r) => r.status === 'FAIL').length;
+    const warnings = this.results.filter((r) => r.status === 'WARN').length;
+    const criticalFailures = this.results.filter(
+      (r) => r.status === 'FAIL' && r.critical
+    ).length;
 
     // Agrupar por estado
     const groups = {
-      'CRÍTICOS FALLIDOS': this.results.filter(r => r.status === 'FAIL' && r.critical),
-      'FALLIDOS': this.results.filter(r => r.status === 'FAIL' && !r.critical),
-      'ADVERTENCIAS': this.results.filter(r => r.status === 'WARN'),
-      'EXITOSOS': this.results.filter(r => r.status === 'PASS')
+      'CRÍTICOS FALLIDOS': this.results.filter(
+        (r) => r.status === 'FAIL' && r.critical
+      ),
+      FALLIDOS: this.results.filter((r) => r.status === 'FAIL' && !r.critical),
+      ADVERTENCIAS: this.results.filter((r) => r.status === 'WARN'),
+      EXITOSOS: this.results.filter((r) => r.status === 'PASS'),
     };
 
     Object.entries(groups).forEach(([groupName, checks]) => {
       if (checks.length > 0) {
         const icon = {
           'CRÍTICOS FALLIDOS': '🔴',
-          'FALLIDOS': '❌',
-          'ADVERTENCIAS': '⚠️',
-          'EXITOSOS': '✅'
+          FALLIDOS: '❌',
+          ADVERTENCIAS: '⚠️',
+          EXITOSOS: '✅',
         }[groupName];
 
         console.log(`${icon} ${groupName} (${checks.length})`);
-        checks.forEach(check => {
+        checks.forEach((check) => {
           console.log(`  • ${check.name}: ${check.message}`);
         });
         console.log('');

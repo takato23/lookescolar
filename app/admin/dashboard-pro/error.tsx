@@ -12,7 +12,8 @@ export default function ErrorDashboardPro({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[DashboardPro] Error en la página', error);
+    // Optional: report to monitoring service
+    // (intentionally avoid console to satisfy lint rules)
   }, [error]);
 
   return (

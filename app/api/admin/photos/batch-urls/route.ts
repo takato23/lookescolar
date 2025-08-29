@@ -9,7 +9,7 @@ import { logger } from '@/lib/utils/logger';
 export const POST = RateLimitMiddleware.withRateLimit(
   withAuth(async (req: NextRequest) => {
     const requestId = crypto.randomUUID();
-    
+
     try {
       let body;
       try {
@@ -25,7 +25,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
         photoIds,
         usePreview = false,
         expiryMinutes = 60,
-        concurrencyLimit = 10
+        concurrencyLimit = 10,
       } = body;
 
       logger.info('Batch URL generation request', {
@@ -45,29 +45,44 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       if (photoIds.length === 0) {
-        return NextResponse.json(
-          { success: true, urls: {}, errors: [] }
-        );
+        return NextResponse.json({ success: true, urls: {}, errors: [] });
       }
 
       if (photoIds.length > 1000) {
         return NextResponse.json(
-          { success: false, error: 'Cannot process more than 1000 photos at once' },
+          {
+            success: false,
+            error: 'Cannot process more than 1000 photos at once',
+          },
           { status: 400 }
         );
       }
 
       // Validate expiry and concurrency parameters
-      if (typeof expiryMinutes !== 'number' || expiryMinutes < 1 || expiryMinutes > 1440) {
+      if (
+        typeof expiryMinutes !== 'number' ||
+        expiryMinutes < 1 ||
+        expiryMinutes > 1440
+      ) {
         return NextResponse.json(
-          { success: false, error: 'Expiry minutes must be between 1 and 1440' },
+          {
+            success: false,
+            error: 'Expiry minutes must be between 1 and 1440',
+          },
           { status: 400 }
         );
       }
 
-      if (typeof concurrencyLimit !== 'number' || concurrencyLimit < 1 || concurrencyLimit > 50) {
+      if (
+        typeof concurrencyLimit !== 'number' ||
+        concurrencyLimit < 1 ||
+        concurrencyLimit > 50
+      ) {
         return NextResponse.json(
-          { success: false, error: 'Concurrency limit must be between 1 and 50' },
+          {
+            success: false,
+            error: 'Concurrency limit must be between 1 and 50',
+          },
           { status: 400 }
         );
       }
@@ -100,9 +115,9 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       // Check for missing photos
-      const foundPhotoIds = new Set(photos.map(p => p.id));
-      const missingPhotoIds = photoIds.filter(id => !foundPhotoIds.has(id));
-      
+      const foundPhotoIds = new Set(photos.map((p) => p.id));
+      const missingPhotoIds = photoIds.filter((id) => !foundPhotoIds.has(id));
+
       if (missingPhotoIds.length > 0) {
         logger.warn('Some photos not found in batch URL request', {
           requestId,
@@ -112,7 +127,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       // Prepare batch requests
-      const urlRequests = photos.map(photo => ({
+      const urlRequests = photos.map((photo) => ({
         photoId: photo.id,
         storagePath: photo.storage_path,
         previewPath: photo.preview_path,
@@ -130,8 +145,8 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Convert results to map for easier frontend consumption
       const urlMap: Record<string, string> = {};
       const expiryMap: Record<string, string> = {};
-      
-      result.urls.forEach(url => {
+
+      result.urls.forEach((url) => {
         urlMap[url.photoId] = url.signedUrl;
         expiryMap[url.photoId] = url.expiresAt;
       });
@@ -139,7 +154,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Add missing photo IDs as errors
       const allErrors = [
         ...result.errors,
-        ...missingPhotoIds.map(id => `Photo not found: ${id}`)
+        ...missingPhotoIds.map((id) => `Photo not found: ${id}`),
       ];
 
       logger.info('Batch URL generation completed', {
@@ -160,9 +175,8 @@ export const POST = RateLimitMiddleware.withRateLimit(
           successful: result.urls.length,
           failed: allErrors.length,
           missing: missingPhotoIds.length,
-        }
+        },
       });
-
     } catch (error) {
       logger.error('Unexpected error in batch URL generation', {
         requestId,

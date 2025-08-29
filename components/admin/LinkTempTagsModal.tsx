@@ -2,18 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Link2, 
-  Users, 
+import {
+  Link2,
+  Users,
   Tag,
   ArrowRight,
   Check,
   AlertTriangle,
   Loader2,
-  X
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -53,7 +58,7 @@ export function LinkTempTagsModal({
   onClose,
   eventId,
   eventName,
-  onLinked
+  onLinked,
 }: LinkTempTagsModalProps) {
   const [tempTags, setTempTags] = useState<TempTag[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -74,12 +79,12 @@ export function LinkTempTagsModal({
     try {
       const [tempTagsResponse, studentsResponse] = await Promise.all([
         fetch(`/api/admin/temp-tags?eventId=${eventId}`),
-        fetch(`/api/admin/subjects?event_id=${eventId}`)
+        fetch(`/api/admin/subjects?event_id=${eventId}`),
       ]);
 
       const [tempTagsData, studentsData] = await Promise.all([
         tempTagsResponse.json(),
-        studentsResponse.json()
+        studentsResponse.json(),
       ]);
 
       const fetchedTempTags = tempTagsData.tempTags || [];
@@ -89,15 +94,17 @@ export function LinkTempTagsModal({
       setStudents(fetchedStudents);
 
       // Generate suggested linking rules
-      const suggestions = generateLinkingSuggestions(fetchedTempTags, fetchedStudents);
+      const suggestions = generateLinkingSuggestions(
+        fetchedTempTags,
+        fetchedStudents
+      );
       setSuggestedRules(suggestions);
-      
+
       // Auto-select high confidence suggestions
       const highConfidenceKeys = suggestions
-        .filter(rule => rule.confidence === 'high')
-        .map(rule => `${rule.tempName}:${rule.studentId}`);
+        .filter((rule) => rule.confidence === 'high')
+        .map((rule) => `${rule.tempName}:${rule.studentId}`);
       setSelectedRules(new Set(highConfidenceKeys));
-
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Error al cargar datos');
@@ -106,33 +113,39 @@ export function LinkTempTagsModal({
     }
   };
 
-  const generateLinkingSuggestions = (tempTags: TempTag[], students: Student[]): LinkingRule[] => {
+  const generateLinkingSuggestions = (
+    tempTags: TempTag[],
+    students: Student[]
+  ): LinkingRule[] => {
     const suggestions: LinkingRule[] = [];
-    const uniqueTempNames = [...new Set(tempTags.map(tag => tag.temp_name))];
+    const uniqueTempNames = [...new Set(tempTags.map((tag) => tag.temp_name))];
 
     for (const tempName of uniqueTempNames) {
-      const tempTag = tempTags.find(tag => tag.temp_name === tempName);
+      const tempTag = tempTags.find((tag) => tag.temp_name === tempName);
       if (!tempTag) continue;
 
       // Find matching students by name similarity
-      const matches = students.map(student => {
-        const nameScore = calculateNameSimilarity(tempName, student.name);
-        const emailScore = tempTag.temp_email && student.email 
-          ? calculateEmailSimilarity(tempTag.temp_email, student.email)
-          : 0;
-        
-        const totalScore = Math.max(nameScore, emailScore);
-        let confidence: 'high' | 'medium' | 'low' = 'low';
-        
-        if (totalScore >= 0.9) confidence = 'high';
-        else if (totalScore >= 0.7) confidence = 'medium';
+      const matches = students
+        .map((student) => {
+          const nameScore = calculateNameSimilarity(tempName, student.name);
+          const emailScore =
+            tempTag.temp_email && student.email
+              ? calculateEmailSimilarity(tempTag.temp_email, student.email)
+              : 0;
 
-        return {
-          student,
-          score: totalScore,
-          confidence
-        };
-      }).filter(match => match.score >= 0.6)
+          const totalScore = Math.max(nameScore, emailScore);
+          let confidence: 'high' | 'medium' | 'low' = 'low';
+
+          if (totalScore >= 0.9) confidence = 'high';
+          else if (totalScore >= 0.7) confidence = 'medium';
+
+          return {
+            student,
+            score: totalScore,
+            confidence,
+          };
+        })
+        .filter((match) => match.score >= 0.6)
         .sort((a, b) => b.score - a.score);
 
       // Take the best match
@@ -143,7 +156,7 @@ export function LinkTempTagsModal({
           tempEmail: tempTag.temp_email,
           studentId: bestMatch.student.id,
           studentName: bestMatch.student.name,
-          confidence: bestMatch.confidence
+          confidence: bestMatch.confidence,
         });
       }
     }
@@ -164,10 +177,10 @@ export function LinkTempTagsModal({
     // Simple word overlap
     const words1 = clean1.split(/\s+/);
     const words2 = clean2.split(/\s+/);
-    const intersection = words1.filter(word => words2.includes(word));
-    
+    const intersection = words1.filter((word) => words2.includes(word));
+
     if (intersection.length === 0) return 0;
-    
+
     return intersection.length / Math.max(words1.length, words2.length);
   };
 
@@ -180,18 +193,18 @@ export function LinkTempTagsModal({
   const toggleRule = (rule: LinkingRule) => {
     const key = `${rule.tempName}:${rule.studentId}`;
     const newSelected = new Set(selectedRules);
-    
+
     if (newSelected.has(key)) {
       newSelected.delete(key);
     } else {
       newSelected.add(key);
     }
-    
+
     setSelectedRules(newSelected);
   };
 
   const handleLink = async () => {
-    const rulesToLink = suggestedRules.filter(rule => 
+    const rulesToLink = suggestedRules.filter((rule) =>
       selectedRules.has(`${rule.tempName}:${rule.studentId}`)
     );
 
@@ -207,7 +220,7 @@ export function LinkTempTagsModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           eventId,
-          linkingRules: rulesToLink
+          linkingRules: rulesToLink,
         }),
       });
 
@@ -222,16 +235,17 @@ export function LinkTempTagsModal({
       toast.success(
         `✅ ${successfulLinks} vinculaciones exitosas${failedLinks > 0 ? `, ${failedLinks} fallidas` : ''}`,
         {
-          description: `Se vincularon ${results.reduce((acc: number, r: any) => acc + r.linkedPhotosCount, 0)} fotos`
+          description: `Se vincularon ${results.reduce((acc: number, r: any) => acc + r.linkedPhotosCount, 0)} fotos`,
         }
       );
 
       onLinked?.();
       onClose();
-
     } catch (error) {
       console.error('Error linking temp tags:', error);
-      toast.error(error instanceof Error ? error.message : 'Error al vincular etiquetas');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al vincular etiquetas'
+      );
     } finally {
       setLinking(false);
     }
@@ -239,38 +253,42 @@ export function LinkTempTagsModal({
 
   const getConfidenceColor = (confidence: LinkingRule['confidence']) => {
     switch (confidence) {
-      case 'high': return 'bg-green-50 text-green-700 border-green-200';
-      case 'medium': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 'low': return 'bg-red-50 text-red-700 border-red-200';
+      case 'high':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'medium':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      case 'low':
+        return 'bg-red-50 text-red-700 border-red-200';
     }
   };
 
   const getConfidenceIcon = (confidence: LinkingRule['confidence']) => {
     switch (confidence) {
-      case 'high': return <Check className="w-3 h-3" />;
-      case 'medium': return <AlertTriangle className="w-3 h-3" />;
-      case 'low': return <X className="w-3 h-3" />;
+      case 'high':
+        return <Check className="h-3 w-3" />;
+      case 'medium':
+        return <AlertTriangle className="h-3 w-3" />;
+      case 'low':
+        return <X className="h-3 w-3" />;
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Link2 className="w-5 h-5" />
+            <Link2 className="h-5 w-5" />
             Vincular Etiquetas Temporales
           </DialogTitle>
           {eventName && (
-            <p className="text-sm text-muted-foreground">
-              Evento: {eventName}
-            </p>
+            <p className="text-muted-foreground text-sm">Evento: {eventName}</p>
           )}
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin mr-2" />
+            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
             <span>Cargando datos...</span>
           </div>
         ) : (
@@ -279,81 +297,91 @@ export function LinkTempTagsModal({
             <div className="grid grid-cols-2 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <Tag className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+                  <Tag className="mx-auto mb-2 h-6 w-6 text-orange-600" />
                   <div className="font-semibold">{tempTags.length}</div>
-                  <div className="text-xs text-muted-foreground">Etiquetas temporales</div>
+                  <div className="text-muted-foreground text-xs">
+                    Etiquetas temporales
+                  </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <Users className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <Users className="mx-auto mb-2 h-6 w-6 text-blue-600" />
                   <div className="font-semibold">{students.length}</div>
-                  <div className="text-xs text-muted-foreground">Estudiantes oficiales</div>
+                  <div className="text-muted-foreground text-xs">
+                    Estudiantes oficiales
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Suggestions */}
             {suggestedRules.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Link2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <div className="text-muted-foreground py-8 text-center">
+                <Link2 className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p>No se encontraron coincidencias automáticas</p>
-                <p className="text-xs">Verifica que los nombres sean similares</p>
+                <p className="text-xs">
+                  Verifica que los nombres sean similares
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                <h4 className="font-medium flex items-center gap-2">
-                  <ArrowRight className="w-4 h-4" />
+                <h4 className="flex items-center gap-2 font-medium">
+                  <ArrowRight className="h-4 w-4" />
                   Vinculaciones Sugeridas ({suggestedRules.length})
                 </h4>
-                
-                <div className="space-y-2 max-h-60 overflow-y-auto">
+
+                <div className="max-h-60 space-y-2 overflow-y-auto">
                   {suggestedRules.map((rule, index) => {
                     const key = `${rule.tempName}:${rule.studentId}`;
                     const isSelected = selectedRules.has(key);
-                    
+
                     return (
-                      <Card 
+                      <Card
                         key={index}
                         className={`cursor-pointer transition-all ${
-                          isSelected ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:bg-gray-50'
+                          isSelected
+                            ? 'bg-blue-50 ring-2 ring-blue-500'
+                            : 'hover:bg-gray-50'
                         }`}
                         onClick={() => toggleRule(rule)}
                       >
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
+                            <div className="flex flex-1 items-center gap-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-medium text-sm">
+                                  <span className="text-sm font-medium">
                                     {rule.tempName}
                                   </span>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                                  <span className="font-medium text-sm text-blue-700">
+                                  <ArrowRight className="text-muted-foreground h-3 w-3" />
+                                  <span className="text-sm font-medium text-blue-700">
                                     {rule.studentName}
                                   </span>
                                 </div>
                                 {rule.tempEmail && (
-                                  <div className="text-xs text-muted-foreground mt-1">
+                                  <div className="text-muted-foreground mt-1 text-xs">
                                     {rule.tempEmail}
                                   </div>
                                 )}
                               </div>
-                              
-                              <Badge 
-                                variant="outline" 
+
+                              <Badge
+                                variant="outline"
                                 className={`text-xs ${getConfidenceColor(rule.confidence)}`}
                               >
                                 {getConfidenceIcon(rule.confidence)}
-                                <span className="ml-1 capitalize">{rule.confidence}</span>
+                                <span className="ml-1 capitalize">
+                                  {rule.confidence}
+                                </span>
                               </Badge>
                             </div>
-                            
+
                             <div className="ml-3">
                               {isSelected ? (
-                                <Check className="w-4 h-4 text-blue-600" />
+                                <Check className="h-4 w-4 text-blue-600" />
                               ) : (
-                                <div className="w-4 h-4 rounded border-2 border-gray-300" />
+                                <div className="h-4 w-4 rounded border-2 border-gray-300" />
                               )}
                             </div>
                           </div>
@@ -366,19 +394,19 @@ export function LinkTempTagsModal({
             )}
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex justify-end gap-2 border-t pt-4">
               <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onClick={handleLink}
                 disabled={selectedRules.size === 0 || linking}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {linking ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Link2 className="w-4 h-4 mr-2" />
+                  <Link2 className="mr-2 h-4 w-4" />
                 )}
                 Vincular ({selectedRules.size})
               </Button>
@@ -389,4 +417,3 @@ export function LinkTempTagsModal({
     </Dialog>
   );
 }
-

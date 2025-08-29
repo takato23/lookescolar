@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createMocks } from 'node-mocks-http';
 import { POST } from '@/app/api/gallery/checkout/route';
-import { createTestClient, setupTestData, cleanupTestData, setupPublicTestData } from '../test-utils';
+import {
+  createTestClient,
+  setupTestData,
+  cleanupTestData,
+  setupPublicTestData,
+} from '../test-utils';
 
 describe('/api/gallery/checkout', () => {
   let testData: any;
@@ -28,21 +33,21 @@ describe('/api/gallery/checkout', () => {
           contactInfo: {
             name: 'Public Customer',
             email: 'customer@public.com',
-            phone: '1234567890'
+            phone: '1234567890',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
+              priceType: 'base',
             },
             {
               photoId: publicData.publicPhotoIds[1],
               quantity: 2,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -68,16 +73,16 @@ describe('/api/gallery/checkout', () => {
           eventId: 'invalid-uuid',
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -90,7 +95,7 @@ describe('/api/gallery/checkout', () => {
 
     it('should reject non-existent event', async () => {
       const nonExistentEventId = crypto.randomUUID();
-      
+
       const { req } = createMocks({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -98,16 +103,16 @@ describe('/api/gallery/checkout', () => {
           eventId: nonExistentEventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -131,16 +136,16 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -164,16 +169,16 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -191,28 +196,30 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: publicData.privatePhotoId, // Photo with public_visible = false
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
       const data = await response.json();
 
       expect(response.status).toBe(403);
-      expect(data.error).toBe('Some photos are not publicly available for this event');
+      expect(data.error).toBe(
+        'Some photos are not publicly available for this event'
+      );
     });
 
     it('should reject when customer already has pending order for event', async () => {
       const customerEmail = 'customer@public.com';
-      
+
       // Create a pending public order first
       await createTestClient().from('orders').insert({
         id: crypto.randomUUID(),
@@ -222,7 +229,7 @@ describe('/api/gallery/checkout', () => {
         status: 'pending',
         is_public_order: true,
         created_by: 'public_checkout',
-        total_amount_cents: 1000
+        total_amount_cents: 1000,
       });
 
       const { req } = createMocks({
@@ -232,16 +239,16 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: customerEmail
+            email: customerEmail,
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -253,7 +260,7 @@ describe('/api/gallery/checkout', () => {
 
     it('should reject invalid photo IDs', async () => {
       const invalidPhotoId = crypto.randomUUID();
-      
+
       const { req } = createMocks({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -261,16 +268,16 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: invalidPhotoId, // Non-existent photo
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -288,50 +295,52 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: testData.photoIds[0], // Photo from different event
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
       const data = await response.json();
 
       expect(response.status).toBe(403);
-      expect(data.error).toBe('Some photos are not publicly available for this event');
+      expect(data.error).toBe(
+        'Some photos are not publicly available for this event'
+      );
     });
 
     it('should respect rate limiting', async () => {
       const requests = [];
-      
+
       // Make 6 requests quickly (limit is 5/min)
       for (let i = 0; i < 6; i++) {
         const { req } = createMocks({
           method: 'POST',
-          headers: { 
+          headers: {
             'content-type': 'application/json',
-            'x-forwarded-for': '192.168.1.200' // Same IP for all
+            'x-forwarded-for': '192.168.1.200', // Same IP for all
           },
           body: {
             eventId: publicData.eventId,
             contactInfo: {
               name: 'Public Customer',
-              email: `customer${i}@public.com`
+              email: `customer${i}@public.com`,
             },
             items: [
               {
                 photoId: publicData.publicPhotoIds[0],
                 quantity: 1,
-                priceType: 'base'
-              }
-            ]
-          }
+                priceType: 'base',
+              },
+            ],
+          },
         });
 
         requests.push(POST(req));
@@ -339,9 +348,9 @@ describe('/api/gallery/checkout', () => {
 
       const responses = await Promise.all(requests);
       const lastResponse = responses[responses.length - 1];
-      
+
       expect(lastResponse!.status).toBe(429);
-      
+
       const data = await lastResponse!.json();
       expect(data.error).toContain('Rate limit exceeded');
     });
@@ -354,21 +363,21 @@ describe('/api/gallery/checkout', () => {
           eventId: publicData.eventId,
           contactInfo: {
             name: 'Public Customer',
-            email: 'customer@public.com'
+            email: 'customer@public.com',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 3,
-              priceType: 'base'
+              priceType: 'base',
             },
             {
               photoId: publicData.publicPhotoIds[1],
               quantity: 2,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -390,23 +399,23 @@ describe('/api/gallery/checkout', () => {
           contactInfo: {
             name: 'Public Customer',
             email: 'customer@public.com',
-            phone: '1234567890'
+            phone: '1234567890',
           },
           items: [
             {
               photoId: publicData.publicPhotoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      
+
       // Verify order was created correctly in database
       const supabase = createTestClient();
       const { data: order } = await supabase

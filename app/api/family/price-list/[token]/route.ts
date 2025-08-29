@@ -15,14 +15,14 @@ export async function GET(
 
     // Resolver token a evento (compatible con múltiples sistemas)
     let eventId: string | undefined;
-    
+
     // Intentar con sistema de códigos primero
     const { data: codeData } = await supabase
       .from('codes')
       .select('event_id')
       .eq('token', token)
       .single();
-      
+
     if (codeData) {
       eventId = codeData.event_id;
     } else {
@@ -32,7 +32,7 @@ export async function GET(
         .select('student_id, students:student_id ( event_id )')
         .eq('token', token)
         .single();
-        
+
       if (studentTokenRow) {
         eventId = (studentTokenRow?.students as any)?.event_id;
       } else {
@@ -42,11 +42,11 @@ export async function GET(
           .select('subject_id, subjects:subject_id ( event_id )')
           .eq('token', token)
           .single();
-          
+
         eventId = (tokenRow?.subjects as any)?.event_id;
       }
     }
-    
+
     if (!eventId) {
       return NextResponse.json(
         { error: 'Evento no encontrado para el token' },
@@ -58,9 +58,7 @@ export async function GET(
     let priceList: any = null;
     const { data: existingPriceList } = await supabase
       .from('price_lists')
-      .select(
-        `id, price_list_items ( id, name, type, price_cents )`
-      )
+      .select(`id, price_list_items ( id, name, type, price_cents )`)
       .eq('event_id', eventId)
       .single();
 
@@ -73,7 +71,7 @@ export async function GET(
         .insert({
           event_id: eventId,
           name: 'Lista de Precios Básica',
-          active: true
+          active: true,
         })
         .select('id')
         .single();
@@ -82,17 +80,19 @@ export async function GET(
         // Crear items de precios por defecto
         const { data: priceItems } = await supabase
           .from('price_list_items')
-          .insert([{
-            price_list_id: newPriceList.id,
-            name: 'Foto Individual',
-            type: 'base',
-            price_cents: 1000
-          }])
+          .insert([
+            {
+              price_list_id: newPriceList.id,
+              name: 'Foto Individual',
+              type: 'base',
+              price_cents: 1000,
+            },
+          ])
           .select('id, name, type, price_cents');
 
         priceList = {
           id: newPriceList.id,
-          price_list_items: priceItems || []
+          price_list_items: priceItems || [],
         };
       }
     }
@@ -114,5 +114,3 @@ export async function GET(
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

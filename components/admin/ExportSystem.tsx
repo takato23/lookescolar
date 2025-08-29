@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Download, FileText, Table, X, CheckCircle2, RefreshCw } from 'lucide-react';
+import {
+  Download,
+  FileText,
+  Table,
+  X,
+  CheckCircle2,
+  RefreshCw,
+} from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,24 +26,51 @@ interface ExportSystemProps {
   onExport?: (options: ExportOptions) => void;
 }
 
-export function ExportSystem({ events = [], className, onExport }: ExportSystemProps) {
+export function ExportSystem({
+  events = [],
+  className,
+  onExport,
+}: ExportSystemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [exportOptions, setExportOptions] = useState<ExportOptions>({
     format: 'pdf',
     template: 'summary',
     dateRange: {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
-      end: new Date().toISOString().split('T')[0] || ''
+      start:
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0] || '',
+      end: new Date().toISOString().split('T')[0] || '',
     },
-    fields: ['school', 'date', 'status', 'photos', 'revenue']
+    fields: ['school', 'date', 'status', 'photos', 'revenue'],
   });
   const [isExporting, setIsExporting] = useState(false);
 
   const formatOptions = [
-    { id: 'pdf', name: 'PDF Report', icon: FileText, description: 'Reporte profesional con gráficos' },
-    { id: 'csv', name: 'CSV Data', icon: Table, description: 'Datos para Excel y análisis' },
-    { id: 'excel', name: 'Excel', icon: Table, description: 'Archivo Excel con formato' },
-    { id: 'json', name: 'JSON', icon: FileText, description: 'Datos estructurados' }
+    {
+      id: 'pdf',
+      name: 'PDF Report',
+      icon: FileText,
+      description: 'Reporte profesional con gráficos',
+    },
+    {
+      id: 'csv',
+      name: 'CSV Data',
+      icon: Table,
+      description: 'Datos para Excel y análisis',
+    },
+    {
+      id: 'excel',
+      name: 'Excel',
+      icon: Table,
+      description: 'Archivo Excel con formato',
+    },
+    {
+      id: 'json',
+      name: 'JSON',
+      icon: FileText,
+      description: 'Datos estructurados',
+    },
   ];
 
   const availableFields = [
@@ -45,16 +79,16 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
     { id: 'status', name: 'Estado' },
     { id: 'photos', name: 'Fotos' },
     { id: 'revenue', name: 'Ingresos' },
-    { id: 'clients', name: 'Clientes' }
+    { id: 'clients', name: 'Clientes' },
   ];
 
   const handleExport = async () => {
     setIsExporting(true);
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate export
-      
-      const filteredEvents = events.filter(event => {
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate export
+
+      const filteredEvents = events.filter((event) => {
         const eventDate = new Date(event.date);
         const startDate = new Date(exportOptions.dateRange.start);
         const endDate = new Date(exportOptions.dateRange.end);
@@ -79,29 +113,40 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
   };
 
   const generateCSV = (filteredEvents: any[]) => {
-    const headers = exportOptions.fields.map(field => 
-      availableFields.find(f => f.id === field)?.name || field
+    const headers = exportOptions.fields.map(
+      (field) => availableFields.find((f) => f.id === field)?.name || field
     );
-    
-    const rows = filteredEvents.map(event => 
-      exportOptions.fields.map(field => {
+
+    const rows = filteredEvents.map((event) =>
+      exportOptions.fields.map((field) => {
         switch (field) {
-          case 'school': return event.school || '';
-          case 'date': return new Date(event.date).toLocaleDateString();
-          case 'status': return event.active ? 'Activo' : 'Borrador';
-          case 'photos': return event.stats?.totalPhotos || 0;
-          case 'revenue': return event.stats?.revenue || 0;
-          case 'clients': return event.stats?.totalSubjects || 0;
-          default: return '';
+          case 'school':
+            return event.school || '';
+          case 'date':
+            return new Date(event.date).toLocaleDateString();
+          case 'status':
+            return event.active ? 'Activo' : 'Borrador';
+          case 'photos':
+            return event.stats?.totalPhotos || 0;
+          case 'revenue':
+            return event.stats?.revenue || 0;
+          case 'clients':
+            return event.stats?.totalSubjects || 0;
+          default:
+            return '';
         }
       })
     );
 
     const csvContent = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .map((row) => row.map((cell) => `"${cell}"`).join(','))
       .join('\n');
 
-    downloadFile(csvContent, `eventos-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+    downloadFile(
+      csvContent,
+      `eventos-${new Date().toISOString().split('T')[0]}.csv`,
+      'text/csv'
+    );
   };
 
   const generateJSON = (filteredEvents: any[]) => {
@@ -109,26 +154,36 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
       metadata: {
         exportDate: new Date().toISOString(),
         totalEvents: filteredEvents.length,
-        dateRange: exportOptions.dateRange
+        dateRange: exportOptions.dateRange,
       },
-      events: filteredEvents.map(event => ({
+      events: filteredEvents.map((event) => ({
         school: event.school,
         date: event.date,
         status: event.active ? 'active' : 'draft',
         photos: event.stats?.totalPhotos || 0,
         revenue: event.stats?.revenue || 0,
-        clients: event.stats?.totalSubjects || 0
-      }))
+        clients: event.stats?.totalSubjects || 0,
+      })),
     };
 
     const jsonContent = JSON.stringify(exportData, null, 2);
-    downloadFile(jsonContent, `eventos-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+    downloadFile(
+      jsonContent,
+      `eventos-${new Date().toISOString().split('T')[0]}.json`,
+      'application/json'
+    );
   };
 
   const generatePDF = (filteredEvents: any[]) => {
-    const totalRevenue = filteredEvents.reduce((sum, event) => sum + (event.stats?.revenue || 0), 0);
-    const totalPhotos = filteredEvents.reduce((sum, event) => sum + (event.stats?.totalPhotos || 0), 0);
-    
+    const totalRevenue = filteredEvents.reduce(
+      (sum, event) => sum + (event.stats?.revenue || 0),
+      0
+    );
+    const totalPhotos = filteredEvents.reduce(
+      (sum, event) => sum + (event.stats?.totalPhotos || 0),
+      0
+    );
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -170,38 +225,68 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
         <table>
           <thead>
             <tr>
-              ${exportOptions.fields.map(field => 
-                `<th>${availableFields.find(f => f.id === field)?.name || field}</th>`
-              ).join('')}
+              ${exportOptions.fields
+                .map(
+                  (field) =>
+                    `<th>${availableFields.find((f) => f.id === field)?.name || field}</th>`
+                )
+                .join('')}
             </tr>
           </thead>
           <tbody>
-            ${filteredEvents.map(event => `
+            ${filteredEvents
+              .map(
+                (event) => `
               <tr>
-                ${exportOptions.fields.map(field => {
-                  let value = '';
-                  switch (field) {
-                    case 'school': value = event.school || ''; break;
-                    case 'date': value = new Date(event.date).toLocaleDateString(); break;
-                    case 'status': value = event.active ? 'Activo' : 'Borrador'; break;
-                    case 'photos': value = (event.stats?.totalPhotos || 0).toString(); break;
-                    case 'revenue': value = '$' + (event.stats?.revenue || 0).toLocaleString(); break;
-                    case 'clients': value = (event.stats?.totalSubjects || 0).toString(); break;
-                  }
-                  return `<td>${value}</td>`;
-                }).join('')}
+                ${exportOptions.fields
+                  .map((field) => {
+                    let value = '';
+                    switch (field) {
+                      case 'school':
+                        value = event.school || '';
+                        break;
+                      case 'date':
+                        value = new Date(event.date).toLocaleDateString();
+                        break;
+                      case 'status':
+                        value = event.active ? 'Activo' : 'Borrador';
+                        break;
+                      case 'photos':
+                        value = (event.stats?.totalPhotos || 0).toString();
+                        break;
+                      case 'revenue':
+                        value =
+                          '$' + (event.stats?.revenue || 0).toLocaleString();
+                        break;
+                      case 'clients':
+                        value = (event.stats?.totalSubjects || 0).toString();
+                        break;
+                    }
+                    return `<td>${value}</td>`;
+                  })
+                  .join('')}
               </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
           </tbody>
         </table>
       </body>
       </html>
     `;
-    
-    downloadFile(htmlContent, `reporte-eventos-${new Date().toISOString().split('T')[0]}.html`, 'text/html');
+
+    downloadFile(
+      htmlContent,
+      `reporte-eventos-${new Date().toISOString().split('T')[0]}.html`,
+      'text/html'
+    );
   };
 
-  const downloadFile = (content: string, filename: string, mimeType: string) => {
+  const downloadFile = (
+    content: string,
+    filename: string,
+    mimeType: string
+  ) => {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -214,11 +299,11 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
   };
 
   const handleFieldToggle = (fieldId: string) => {
-    setExportOptions(prev => ({
+    setExportOptions((prev) => ({
       ...prev,
       fields: prev.fields.includes(fieldId)
-        ? prev.fields.filter(f => f !== fieldId)
-        : [...prev.fields, fieldId]
+        ? prev.fields.filter((f) => f !== fieldId)
+        : [...prev.fields, fieldId],
     }));
   };
 
@@ -226,19 +311,21 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        className={cn("neural-glass-card", className)}
+        className={cn('neural-glass-card', className)}
         variant="outline"
       >
-        <Download className="h-4 w-4 mr-2" />
+        <Download className="mr-2 h-4 w-4" />
         Exportar
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="neural-glass-card bg-white/95 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl w-full max-w-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="neural-glass-card w-full max-w-2xl rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
-              <h2 className="text-xl font-bold text-gray-900">Exportar Datos</h2>
+            <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                Exportar Datos
+              </h2>
               <Button
                 size="sm"
                 variant="ghost"
@@ -250,29 +337,40 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="space-y-6 p-6">
               {/* Format Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Formato</label>
+                <label className="mb-3 block text-sm font-medium text-gray-700">
+                  Formato
+                </label>
                 <div className="grid grid-cols-2 gap-3">
                   {formatOptions.map((format) => {
                     const Icon = format.icon;
                     return (
                       <button
                         key={format.id}
-                        onClick={() => setExportOptions(prev => ({ ...prev, format: format.id as any }))}
+                        onClick={() =>
+                          setExportOptions((prev) => ({
+                            ...prev,
+                            format: format.id as any,
+                          }))
+                        }
                         className={cn(
-                          "p-3 border-2 rounded-lg text-left transition-all hover:border-blue-400",
-                          exportOptions.format === format.id 
-                            ? "border-blue-500 bg-blue-50" 
-                            : "border-gray-200"
+                          'rounded-lg border-2 p-3 text-left transition-all hover:border-blue-400',
+                          exportOptions.format === format.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200'
                         )}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="h-5 w-5 text-blue-600" />
                           <div>
-                            <h4 className="font-medium text-gray-900">{format.name}</h4>
-                            <p className="text-xs text-gray-600">{format.description}</p>
+                            <h4 className="font-medium text-gray-900">
+                              {format.name}
+                            </h4>
+                            <p className="text-xs text-gray-600">
+                              {format.description}
+                            </p>
                           </div>
                         </div>
                       </button>
@@ -283,24 +381,30 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
 
               {/* Date Range */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rango de fechas</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Rango de fechas
+                </label>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
                     type="date"
                     value={exportOptions.dateRange.start}
-                    onChange={(e) => setExportOptions(prev => ({
-                      ...prev,
-                      dateRange: { ...prev.dateRange, start: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setExportOptions((prev) => ({
+                        ...prev,
+                        dateRange: { ...prev.dateRange, start: e.target.value },
+                      }))
+                    }
                     className="neural-glass-card"
                   />
                   <Input
                     type="date"
                     value={exportOptions.dateRange.end}
-                    onChange={(e) => setExportOptions(prev => ({
-                      ...prev,
-                      dateRange: { ...prev.dateRange, end: e.target.value }
-                    }))}
+                    onChange={(e) =>
+                      setExportOptions((prev) => ({
+                        ...prev,
+                        dateRange: { ...prev.dateRange, end: e.target.value },
+                      }))
+                    }
                     className="neural-glass-card"
                   />
                 </div>
@@ -308,24 +412,31 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
 
               {/* Field Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Campos a incluir</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Campos a incluir
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   {availableFields.map((field) => (
-                    <label key={field.id} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded">
+                    <label
+                      key={field.id}
+                      className="flex items-center gap-2 rounded p-2 hover:bg-gray-50"
+                    >
                       <input
                         type="checkbox"
                         checked={exportOptions.fields.includes(field.id)}
                         onChange={() => handleFieldToggle(field.id)}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">{field.name}</span>
+                      <span className="text-sm text-gray-700">
+                        {field.name}
+                      </span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200/50">
+              <div className="flex justify-end gap-3 border-t border-gray-200/50 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsOpen(false)}
@@ -340,12 +451,12 @@ export function ExportSystem({ events = [], className, onExport }: ExportSystemP
                 >
                   {isExporting ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                       Exportando...
                     </>
                   ) : (
                     <>
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="mr-2 h-4 w-4" />
                       Exportar
                     </>
                   )}

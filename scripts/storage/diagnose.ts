@@ -12,7 +12,9 @@ async function main() {
     process.exit(1);
   }
   if (!url || !key) {
-    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+    console.error(
+      'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY'
+    );
     process.exit(1);
   }
 
@@ -33,7 +35,9 @@ async function main() {
 
   const missing: string[] = [];
   for (const key of keys) {
-    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(key, 60);
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(key, 60);
     if (error || !data?.signedUrl) {
       missing.push(key);
     }
@@ -53,5 +57,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-
-

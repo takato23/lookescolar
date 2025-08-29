@@ -23,7 +23,7 @@ export const colors = {
     900: 'hsl(210, 100%, 20%)',
     950: 'hsl(210, 100%, 10%)',
   },
-  
+
   // Semantic colors
   semantic: {
     success: 'hsl(142, 76%, 36%)',
@@ -31,7 +31,7 @@ export const colors = {
     error: 'hsl(0, 84%, 60%)',
     info: 'hsl(210, 100%, 60%)',
   },
-  
+
   // Neutral grays with proper contrast
   neutral: {
     0: 'hsl(0, 0%, 100%)',
@@ -47,20 +47,20 @@ export const colors = {
     900: 'hsl(210, 24%, 10%)',
     1000: 'hsl(0, 0%, 0%)',
   },
-  
+
   // Age-appropriate theming colors
   kindergarten: {
     primary: 'hsl(45, 100%, 70%)', // Warm yellow
     secondary: 'hsl(120, 60%, 70%)', // Gentle green
     accent: 'hsl(300, 60%, 80%)', // Soft purple
   },
-  
+
   elementary: {
     primary: 'hsl(210, 80%, 60%)', // Friendly blue
     secondary: 'hsl(25, 80%, 65%)', // Warm orange
     accent: 'hsl(330, 70%, 70%)', // Playful pink
   },
-  
+
   secondary: {
     primary: 'hsl(220, 70%, 50%)', // Professional blue
     secondary: 'hsl(150, 60%, 45%)', // Mature green
@@ -90,7 +90,7 @@ export const typography = {
       'monospace',
     ],
   },
-  
+
   fontSize: {
     xs: ['12px', { lineHeight: '16px', letterSpacing: '0.05em' }],
     sm: ['14px', { lineHeight: '20px', letterSpacing: '0.025em' }],
@@ -103,7 +103,7 @@ export const typography = {
     '5xl': ['48px', { lineHeight: '56px', letterSpacing: '-0.1em' }],
     '6xl': ['60px', { lineHeight: '72px', letterSpacing: '-0.1em' }],
   },
-  
+
   fontWeight: {
     thin: '100',
     light: '300',
@@ -121,38 +121,38 @@ export const spacing = {
   px: '1px',
   0: '0',
   0.5: scale(0.0625), // 0.5px
-  1: scale(0.125),    // 1px  
+  1: scale(0.125), // 1px
   1.5: scale(0.1875), // 1.5px
-  2: scale(0.25),     // 2px
+  2: scale(0.25), // 2px
   2.5: scale(0.3125), // 2.5px
-  3: scale(0.375),    // 3px
+  3: scale(0.375), // 3px
   3.5: scale(0.4375), // 3.5px
-  4: scale(0.5),      // 4px
-  5: scale(0.625),    // 5px
-  6: scale(0.75),     // 6px
-  7: scale(0.875),    // 7px
-  8: scale(1),        // 8px - base unit
-  9: scale(1.125),    // 9px
-  10: scale(1.25),    // 10px
-  11: scale(1.375),   // 11px
-  12: scale(1.5),     // 12px
-  14: scale(1.75),    // 14px
-  16: scale(2),       // 16px
-  20: scale(2.5),     // 20px
-  24: scale(3),       // 24px
-  28: scale(3.5),     // 28px
-  32: scale(4),       // 32px
-  36: scale(4.5),     // 36px
-  40: scale(5),       // 40px
-  44: scale(5.5),     // 44px
-  48: scale(6),       // 48px
-  52: scale(6.5),     // 52px
-  56: scale(7),       // 56px
-  60: scale(7.5),     // 60px
-  64: scale(8),       // 64px
-  72: scale(9),       // 72px
-  80: scale(10),      // 80px
-  96: scale(12),      // 96px
+  4: scale(0.5), // 4px
+  5: scale(0.625), // 5px
+  6: scale(0.75), // 6px
+  7: scale(0.875), // 7px
+  8: scale(1), // 8px - base unit
+  9: scale(1.125), // 9px
+  10: scale(1.25), // 10px
+  11: scale(1.375), // 11px
+  12: scale(1.5), // 12px
+  14: scale(1.75), // 14px
+  16: scale(2), // 16px
+  20: scale(2.5), // 20px
+  24: scale(3), // 24px
+  28: scale(3.5), // 28px
+  32: scale(4), // 32px
+  36: scale(4.5), // 36px
+  40: scale(5), // 40px
+  44: scale(5.5), // 44px
+  48: scale(6), // 48px
+  52: scale(6.5), // 52px
+  56: scale(7), // 56px
+  60: scale(7.5), // 60px
+  64: scale(8), // 64px
+  72: scale(9), // 72px
+  80: scale(10), // 80px
+  96: scale(12), // 96px
 } as const;
 
 // Apple-style elevation system
@@ -164,16 +164,20 @@ export const elevation = {
     boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
   },
   small: {
-    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    boxShadow:
+      '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
   },
   medium: {
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    boxShadow:
+      '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
   },
   large: {
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    boxShadow:
+      '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
   },
   xl: {
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    boxShadow:
+      '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
   },
   '2xl': {
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -201,7 +205,7 @@ export const animation = {
     slow: '300ms',
     slower: '500ms',
   },
-  
+
   easing: {
     linear: 'linear',
     in: 'cubic-bezier(0.4, 0, 1, 1)',

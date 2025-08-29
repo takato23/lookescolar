@@ -113,6 +113,7 @@ export interface OrderWithDetails {
   enhanced_status?: 'pending_overdue' | 'delivery_overdue' | string;
   mp_payment_id: string | null;
   mp_status: string | null;
+  mp_preference_id?: string | null;
   notes: string | null;
   admin_notes: string | null;
   created_at: string;

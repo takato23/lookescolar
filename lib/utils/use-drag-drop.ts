@@ -7,7 +7,10 @@ interface DragDropResult<T> {
   handleDragStart: (item: T) => void;
   handleDragOver: (item: T) => void;
   handleDragLeave: () => void;
-  handleDrop: (targetItem: T, onDrop: (draggedItem: T, targetItem: T) => void) => void;
+  handleDrop: (
+    targetItem: T,
+    onDrop: (draggedItem: T, targetItem: T) => void
+  ) => void;
   handleDragEnd: () => void;
 }
 
@@ -29,12 +32,15 @@ export function useDragDrop<T>(): DragDropResult<T> {
     setDragOverItem(null);
   }, []);
 
-  const handleDrop = useCallback((targetItem: T, onDrop: (draggedItem: T, targetItem: T) => void) => {
-    if (draggedItem && draggedItem !== targetItem) {
-      onDrop(draggedItem, targetItem);
-    }
-    setDragOverItem(null);
-  }, [draggedItem]);
+  const handleDrop = useCallback(
+    (targetItem: T, onDrop: (draggedItem: T, targetItem: T) => void) => {
+      if (draggedItem && draggedItem !== targetItem) {
+        onDrop(draggedItem, targetItem);
+      }
+      setDragOverItem(null);
+    },
+    [draggedItem]
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggedItem(null);
@@ -50,6 +56,6 @@ export function useDragDrop<T>(): DragDropResult<T> {
     handleDragOver,
     handleDragLeave,
     handleDrop,
-    handleDragEnd
+    handleDragEnd,
   };
 }

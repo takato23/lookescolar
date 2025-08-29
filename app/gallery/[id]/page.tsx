@@ -13,57 +13,59 @@ export default function GalleryPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if this is a direct gallery access attempt
-    if (id) {
-      const checkAccess = async () => {
-        try {
-          // First, check if this is a valid eventId (UUID format)
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          
-          if (uuidRegex.test(id)) {
-            // This looks like an eventId, check if public gallery is enabled
-            const response = await fetch(`/api/admin/events/${id}`);
-            if (response.ok) {
-              const eventData = await response.json();
-              // For now, redirect to a more appropriate page or show access form
-              setError('Para acceder a esta galería necesitas un enlace especial de la escuela.');
-              setLoading(false);
-              return;
-            }
-          }
-          
-          // If not a UUID, try to validate as a family token
-          if (id.length >= 20) {
-            const response = await fetch(`/api/family/validate-token/${id}`);
-            if (response.ok) {
-              // It's a valid token, redirect to family gallery
-              router.replace(`/f/${id}`);
-              return;
-            }
-          }
-          
-          // Neither valid eventId nor token
-          setError('Esta galería no existe o no está disponible públicamente.');
-        } catch (err) {
-          console.error('Error validating access:', err);
-          setError('Error verificando acceso a la galería.');
-        }
-        
-        setLoading(false);
-      };
+    if (!id) return;
 
-      checkAccess();
-    }
+    const checkAccess = async () => {
+      try {
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+        if (uuidRegex.test(id)) {
+          // This is an eventId: redirect to public gallery
+          const res = await fetch(`/api/public/gallery/event/${id}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.redirect) {
+              router.replace(json.redirect);
+              return;
+            }
+          }
+          // Fallback: redirect directly to public gallery
+          router.replace(`/gallery/${id}/public`);
+          return;
+        }
+
+        // If not a UUID, try to validate as a family token
+        if (id.length >= 20) {
+          const response = await fetch(`/api/family/validate-token/${id}`);
+          if (response.ok) {
+            // It's a valid token, redirect to family gallery
+            router.replace(`/f/${id}`);
+            return;
+          }
+        }
+
+        setError('Esta galería no existe o no está disponible públicamente.');
+      } catch (err) {
+        console.error('Error validating access:', err);
+        setError('Error verificando acceso a la galería.');
+      }
+      setLoading(false);
+    };
+
+    checkAccess();
   }, [id, router]);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
-        <div className="text-center space-y-4">
+        <div className="space-y-4 text-center">
           <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-purple-500 border-t-transparent"></div>
           <div>
             <p className="text-lg font-medium text-gray-700">Cargando...</p>
-            <p className="text-sm text-gray-500 mt-1">Verificando acceso a la galería</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Verificando acceso a la galería
+            </p>
           </div>
         </div>
       </div>
@@ -72,38 +74,45 @@ export default function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-2xl bg-white p-8 shadow-xl">
           <div className="text-center">
-            <AlertCircleIcon className="mx-auto h-16 w-16 text-orange-500 mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            <AlertCircleIcon className="mx-auto mb-4 h-16 w-16 text-orange-500" />
+            <h1 className="mb-4 text-2xl font-bold text-gray-900">
               Galería no disponible
             </h1>
-            
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-              <p className="text-orange-800 font-medium mb-2">
+
+            <div className="mb-6 rounded-lg border border-orange-200 bg-orange-50 p-4">
+              <p className="mb-2 font-medium text-orange-800">
                 {error || 'No se puede acceder a esta galería directamente.'}
               </p>
-              <p className="text-orange-700 text-sm">
-                Las galerías familiares requieren un enlace especial proporcionado por la escuela.
+              <p className="text-sm text-orange-700">
+                Las galerías familiares requieren un enlace especial
+                proporcionado por la escuela.
               </p>
             </div>
 
             <div className="space-y-4">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 mb-2">¿Cómo acceder a tu galería?</h3>
-                <ul className="text-sm text-gray-600 space-y-2 text-left">
+              <div className="rounded-lg bg-gray-50 p-4">
+                <h3 className="mb-2 font-semibold text-gray-900">
+                  ¿Cómo acceder a tu galería?
+                </h3>
+                <ul className="space-y-2 text-left text-sm text-gray-600">
                   <li className="flex items-start gap-2">
-                    <span className="text-purple-500 font-bold">1.</span>
-                    <span>Usa el enlace que te envió la escuela por WhatsApp o email</span>
+                    <span className="font-bold text-purple-500">1.</span>
+                    <span>
+                      Usa el enlace que te envió la escuela por WhatsApp o email
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-purple-500 font-bold">2.</span>
+                    <span className="font-bold text-purple-500">2.</span>
                     <span>Escanea el código QR si tienes uno</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-purple-500 font-bold">3.</span>
-                    <span>Contacta con la escuela si no recibiste el enlace</span>
+                    <span className="font-bold text-purple-500">3.</span>
+                    <span>
+                      Contacta con la escuela si no recibiste el enlace
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -111,14 +120,14 @@ export default function GalleryPage() {
               <div className="flex gap-4">
                 <button
                   onClick={() => router.back()}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-600 transition-colors hover:bg-gray-200"
                 >
                   <ArrowLeftIcon className="h-4 w-4" />
                   Volver
                 </button>
                 <button
                   onClick={() => router.push('/')}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  className="flex-1 rounded-lg bg-purple-600 px-4 py-2 text-white transition-colors hover:bg-purple-700"
                 >
                   Ir al inicio
                 </button>

@@ -6,7 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Accordion,
@@ -87,7 +93,7 @@ export default function MobileOptimizedNavigation({
     const childrenMap = new Map<string, MobileNavItem[]>();
 
     // First pass: create maps
-    items.forEach(item => {
+    items.forEach((item) => {
       itemMap.set(item.id, item);
       if (!childrenMap.has(item.parent_id || 'root')) {
         childrenMap.set(item.parent_id || 'root', []);
@@ -96,7 +102,7 @@ export default function MobileOptimizedNavigation({
     });
 
     // Sort children by name
-    childrenMap.forEach(children => {
+    childrenMap.forEach((children) => {
       children.sort((a, b) => a.name.localeCompare(b.name));
     });
 
@@ -105,30 +111,31 @@ export default function MobileOptimizedNavigation({
 
   // Get current level items
   const currentLevelItems = useMemo(() => {
-    const parentId = currentPath.length > 0 ? currentPath[currentPath.length - 1] : 'root';
+    const parentId =
+      currentPath.length > 0 ? currentPath[currentPath.length - 1] : 'root';
     const children = hierarchy.childrenMap.get(parentId) || [];
-    
+
     // Apply filters
     let filtered = children;
-    
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = children.filter(item =>
+      filtered = children.filter((item) =>
         item.name.toLowerCase().includes(term)
       );
     }
-    
+
     if (filterType) {
-      filtered = filtered.filter(item => item.type === filterType);
+      filtered = filtered.filter((item) => item.type === filterType);
     }
-    
+
     return filtered;
   }, [hierarchy, currentPath, searchTerm, filterType]);
 
   // Breadcrumb navigation
   const breadcrumbs = useMemo(() => {
     const crumbs = [{ name: eventName, path: [] }];
-    
+
     currentPath.forEach((itemId, index) => {
       const item = hierarchy.itemMap.get(itemId);
       if (item) {
@@ -138,23 +145,26 @@ export default function MobileOptimizedNavigation({
         });
       }
     });
-    
+
     return crumbs;
   }, [eventName, currentPath, hierarchy]);
 
   // Handle navigation
-  const handleNavigate = useCallback((itemId: string) => {
-    const item = hierarchy.itemMap.get(itemId);
-    if (!item) return;
+  const handleNavigate = useCallback(
+    (itemId: string) => {
+      const item = hierarchy.itemMap.get(itemId);
+      if (!item) return;
 
-    if (item.type === 'student') {
-      // Navigate to student detail
-      onItemAction?.('view', item);
-    } else {
-      // Navigate deeper into hierarchy
-      onNavigate([...currentPath, itemId]);
-    }
-  }, [currentPath, onNavigate, onItemAction, hierarchy]);
+      if (item.type === 'student') {
+        // Navigate to student detail
+        onItemAction?.('view', item);
+      } else {
+        // Navigate deeper into hierarchy
+        onNavigate([...currentPath, itemId]);
+      }
+    },
+    [currentPath, onNavigate, onItemAction, hierarchy]
+  );
 
   const handleGoBack = useCallback(() => {
     if (currentPath.length > 0) {
@@ -165,13 +175,16 @@ export default function MobileOptimizedNavigation({
   // Quick stats for current level
   const levelStats = useMemo(() => {
     const totalItems = currentLevelItems.length;
-    const totalStudents = currentLevelItems.reduce((sum, item) => 
-      sum + (item.student_count || (item.type === 'student' ? 1 : 0)), 0
+    const totalStudents = currentLevelItems.reduce(
+      (sum, item) =>
+        sum + (item.student_count || (item.type === 'student' ? 1 : 0)),
+      0
     );
-    const totalPhotos = currentLevelItems.reduce((sum, item) => 
-      sum + (item.photo_count || 0), 0
+    const totalPhotos = currentLevelItems.reduce(
+      (sum, item) => sum + (item.photo_count || 0),
+      0
     );
-    
+
     return {
       totalItems,
       totalStudents,
@@ -182,51 +195,49 @@ export default function MobileOptimizedNavigation({
   // Item Card Component (Mobile Optimized)
   const ItemCard = ({ item }: { item: MobileNavItem }) => {
     const isInteractive = item.type !== 'student';
-    
+
     return (
-      <Card 
-        className={`
-          ${isInteractive ? 'cursor-pointer hover:shadow-md' : ''}
-          transition-all duration-200 relative
-        `}
+      <Card
+        className={` ${isInteractive ? 'cursor-pointer hover:shadow-md' : ''} relative transition-all duration-200`}
         onClick={() => isInteractive && handleNavigate(item.id)}
       >
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               {/* Icon based on type */}
               <div className="shrink-0">
                 {item.type === 'level' && (
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
                     <GraduationCap className="h-4 w-4 text-blue-600" />
                   </div>
                 )}
                 {item.type === 'course' && (
-                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-100">
                     <BookOpen className="h-4 w-4 text-purple-600" />
                   </div>
                 )}
                 {item.type === 'student' && (
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
                     <Users className="h-4 w-4 text-green-600" />
                   </div>
                 )}
               </div>
-              
+
               {/* Content */}
               <div className="min-w-0 flex-1">
-                <h4 className="font-medium truncate">{item.name}</h4>
-                
+                <h4 className="truncate font-medium">{item.name}</h4>
+
                 {/* Stats */}
-                <div className="flex items-center gap-3 mt-1">
-                  {item.student_count !== undefined && item.student_count > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      <span>{item.student_count}</span>
-                    </div>
-                  )}
+                <div className="mt-1 flex items-center gap-3">
+                  {item.student_count !== undefined &&
+                    item.student_count > 0 && (
+                      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                        <Users className="h-3 w-3" />
+                        <span>{item.student_count}</span>
+                      </div>
+                    )}
                   {item.photo_count !== undefined && item.photo_count > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-1 text-xs">
                       <Camera className="h-3 w-3" />
                       <span>{item.photo_count}</span>
                     </div>
@@ -239,13 +250,13 @@ export default function MobileOptimizedNavigation({
                 </div>
               </div>
             </div>
-            
+
             {/* Actions */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               {isInteractive && (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground h-4 w-4" />
               )}
-              
+
               {enableActions && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -254,29 +265,37 @@ export default function MobileOptimizedNavigation({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onItemAction?.('view', item)}>
-                      <Eye className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem
+                      onClick={() => onItemAction?.('view', item)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
                       Ver
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onItemAction?.('edit', item)}>
-                      <Edit className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem
+                      onClick={() => onItemAction?.('edit', item)}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
                       Editar
                     </DropdownMenuItem>
                     {item.type === 'course' && (
-                      <DropdownMenuItem onClick={() => onItemAction?.('manage-students', item)}>
-                        <Users className="h-4 w-4 mr-2" />
+                      <DropdownMenuItem
+                        onClick={() => onItemAction?.('manage-students', item)}
+                      >
+                        <Users className="mr-2 h-4 w-4" />
                         Gestionar Estudiantes
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => onItemAction?.('export', item)}>
-                      <Download className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem
+                      onClick={() => onItemAction?.('export', item)}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
                       Exportar
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => onItemAction?.('delete', item)}
                       className="text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Eliminar
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -292,36 +311,38 @@ export default function MobileOptimizedNavigation({
   // List Item Component (Compact)
   const ListItem = ({ item }: { item: MobileNavItem }) => {
     const isInteractive = item.type !== 'student';
-    
+
     return (
-      <div 
-        className={`
-          p-3 border-b last:border-b-0 flex items-center justify-between
-          ${isInteractive ? 'cursor-pointer hover:bg-muted/50' : ''}
-          transition-colors
-        `}
+      <div
+        className={`flex items-center justify-between border-b p-3 last:border-b-0 ${isInteractive ? 'hover:bg-muted/50 cursor-pointer' : ''} transition-colors`}
         onClick={() => isInteractive && handleNavigate(item.id)}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {/* Icon */}
           <div className="shrink-0">
-            {item.type === 'level' && <GraduationCap className="h-4 w-4 text-blue-600" />}
-            {item.type === 'course' && <BookOpen className="h-4 w-4 text-purple-600" />}
-            {item.type === 'student' && <Users className="h-4 w-4 text-green-600" />}
+            {item.type === 'level' && (
+              <GraduationCap className="h-4 w-4 text-blue-600" />
+            )}
+            {item.type === 'course' && (
+              <BookOpen className="h-4 w-4 text-purple-600" />
+            )}
+            {item.type === 'student' && (
+              <Users className="h-4 w-4 text-green-600" />
+            )}
           </div>
-          
+
           {/* Content */}
           <div className="min-w-0 flex-1">
-            <span className="font-medium truncate block">{item.name}</span>
+            <span className="block truncate font-medium">{item.name}</span>
             {(item.student_count || item.photo_count) && (
-              <div className="flex items-center gap-2 mt-1">
+              <div className="mt-1 flex items-center gap-2">
                 {item.student_count !== undefined && item.student_count > 0 && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {item.student_count} estudiantes
                   </span>
                 )}
                 {item.photo_count !== undefined && item.photo_count > 0 && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {item.photo_count} fotos
                   </span>
                 )}
@@ -329,16 +350,16 @@ export default function MobileOptimizedNavigation({
             )}
           </div>
         </div>
-        
+
         {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           {!item.active && (
             <Badge variant="secondary" className="text-xs">
               Inactivo
             </Badge>
           )}
           {isInteractive && (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
           )}
         </div>
       </div>
@@ -356,17 +377,20 @@ export default function MobileOptimizedNavigation({
             </Button>
           )}
           <div>
-            <h2 className="text-lg font-semibold truncate">
+            <h2 className="truncate text-lg font-semibold">
               {breadcrumbs[breadcrumbs.length - 1]?.name}
             </h2>
             {breadcrumbs.length > 1 && (
-              <p className="text-sm text-muted-foreground truncate">
-                {breadcrumbs.slice(0, -1).map(b => b.name).join(' / ')}
+              <p className="text-muted-foreground truncate text-sm">
+                {breadcrumbs
+                  .slice(0, -1)
+                  .map((b) => b.name)
+                  .join(' / ')}
               </p>
             )}
           </div>
         </div>
-        
+
         <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="sm">
@@ -377,21 +401,21 @@ export default function MobileOptimizedNavigation({
             <SheetHeader>
               <SheetTitle>Opciones</SheetTitle>
             </SheetHeader>
-            <div className="space-y-4 mt-6">
+            <div className="mt-6 space-y-4">
               <Button className="w-full justify-start">
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Agregar Nuevo
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="mr-2 h-4 w-4" />
                 Importar Datos
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Exportar
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                <Settings className="h-4 w-4 mr-2" />
+                <Settings className="mr-2 h-4 w-4" />
                 Configuración
               </Button>
             </div>
@@ -404,24 +428,31 @@ export default function MobileOptimizedNavigation({
         <Card>
           <CardContent className="p-3 text-center">
             <div className="text-lg font-bold">{levelStats.totalItems}</div>
-            <div className="text-xs text-muted-foreground">
-              {currentPath.length === 0 ? 'Niveles' : 
-               currentPath.length === 1 ? 'Cursos' : 'Estudiantes'}
+            <div className="text-muted-foreground text-xs">
+              {currentPath.length === 0
+                ? 'Niveles'
+                : currentPath.length === 1
+                  ? 'Cursos'
+                  : 'Estudiantes'}
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-3 text-center">
-            <div className="text-lg font-bold text-blue-600">{levelStats.totalStudents}</div>
-            <div className="text-xs text-muted-foreground">Estudiantes</div>
+            <div className="text-lg font-bold text-blue-600">
+              {levelStats.totalStudents}
+            </div>
+            <div className="text-muted-foreground text-xs">Estudiantes</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-3 text-center">
-            <div className="text-lg font-bold text-orange-600">{levelStats.totalPhotos}</div>
-            <div className="text-xs text-muted-foreground">Fotos</div>
+            <div className="text-lg font-bold text-orange-600">
+              {levelStats.totalPhotos}
+            </div>
+            <div className="text-muted-foreground text-xs">Fotos</div>
           </CardContent>
         </Card>
       </div>
@@ -429,7 +460,7 @@ export default function MobileOptimizedNavigation({
       {/* Search and Filters (Mobile Optimized) */}
       <div className="space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Buscar..."
             value={searchTerm}
@@ -437,16 +468,19 @@ export default function MobileOptimizedNavigation({
             className="pl-9"
           />
         </div>
-        
+
         <div className="flex gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="flex-1">
-                <Filter className="h-4 w-4 mr-2" />
-                {filterType ? (
-                  filterType === 'level' ? 'Niveles' :
-                  filterType === 'course' ? 'Cursos' : 'Estudiantes'
-                ) : 'Todos'}
+                <Filter className="mr-2 h-4 w-4" />
+                {filterType
+                  ? filterType === 'level'
+                    ? 'Niveles'
+                    : filterType === 'course'
+                      ? 'Cursos'
+                      : 'Estudiantes'
+                  : 'Todos'}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-40">
@@ -464,8 +498,8 @@ export default function MobileOptimizedNavigation({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <div className="flex border rounded-md">
+
+          <div className="flex rounded-md border">
             <Button
               variant={viewMode === 'cards' ? 'default' : 'ghost'}
               size="sm"
@@ -483,7 +517,7 @@ export default function MobileOptimizedNavigation({
               <List className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <Button variant="outline" size="sm" disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
@@ -495,14 +529,14 @@ export default function MobileOptimizedNavigation({
         {currentLevelItems.length > 0 ? (
           viewMode === 'cards' ? (
             <div className="space-y-3">
-              {currentLevelItems.map(item => (
+              {currentLevelItems.map((item) => (
                 <ItemCard key={item.id} item={item} />
               ))}
             </div>
           ) : (
             <Card>
               <CardContent className="p-0">
-                {currentLevelItems.map(item => (
+                {currentLevelItems.map((item) => (
                   <ListItem key={item.id} item={item} />
                 ))}
               </CardContent>
@@ -510,13 +544,15 @@ export default function MobileOptimizedNavigation({
           )
         ) : (
           <Card>
-            <CardContent className="text-center py-8">
+            <CardContent className="py-8 text-center">
               <div className="text-muted-foreground mb-4">
-                {searchTerm ? 'No se encontraron resultados' : 'No hay elementos disponibles'}
+                {searchTerm
+                  ? 'No se encontraron resultados'
+                  : 'No hay elementos disponibles'}
               </div>
               {!searchTerm && enableActions && (
                 <Button size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Agregar Nuevo
                 </Button>
               )}
@@ -527,7 +563,7 @@ export default function MobileOptimizedNavigation({
 
       {/* Load More (for large datasets) */}
       {currentLevelItems.length >= 50 && (
-        <div className="text-center pt-4">
+        <div className="pt-4 text-center">
           <Button variant="outline" size="sm">
             Cargar Más
           </Button>
@@ -536,7 +572,7 @@ export default function MobileOptimizedNavigation({
 
       {/* Quick Action FAB (Mobile) */}
       <div className="fixed bottom-6 right-6 md:hidden">
-        <Button size="lg" className="rounded-full w-14 h-14 shadow-lg">
+        <Button size="lg" className="h-14 w-14 rounded-full shadow-lg">
           <Plus className="h-6 w-6" />
         </Button>
       </div>

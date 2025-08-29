@@ -50,7 +50,7 @@ interface EnhancedQROptions extends QRGenerationOptions {
 export class QREnhancedService {
   private cache: Map<string, QRCacheEntry> = new Map();
   private analytics: Map<string, QRAnalytics> = new Map();
-  
+
   /**
    * Generate QR with enhanced features
    */
@@ -65,7 +65,7 @@ export class QREnhancedService {
     cacheKey: string;
   }> {
     const cacheKey = this.generateCacheKey(subjectId, options);
-    
+
     // Check cache first
     const cached = this.getFromCache(cacheKey);
     if (cached && !this.isCacheExpired(cached)) {
@@ -79,8 +79,12 @@ export class QREnhancedService {
     }
 
     // Generate new QR
-    const result = await qrService.generateQRForSubject(subjectId, subjectName, options);
-    
+    const result = await qrService.generateQRForSubject(
+      subjectId,
+      subjectName,
+      options
+    );
+
     // Store in cache
     const cacheEntry: QRCacheEntry = {
       qrCode: result.dataUrl,
@@ -88,19 +92,21 @@ export class QREnhancedService {
       format: options.format || 'png',
       size: options.size || 200,
       createdAt: new Date(),
-      expiresAt: new Date(Date.now() + (options.cacheDuration || 24) * 60 * 60 * 1000),
+      expiresAt: new Date(
+        Date.now() + (options.cacheDuration || 24) * 60 * 60 * 1000
+      ),
       accessCount: 1,
     };
-    
+
     this.cache.set(cacheKey, cacheEntry);
-    
+
     // Initialize analytics
     if (options.enableAnalytics !== false) {
       this.initializeAnalytics(subjectId, result.token);
     }
 
     return {
-      dataUrl: result.dataUrl, 
+      dataUrl: result.dataUrl,
       format: options.format || 'png',
       analytics: this.getAnalytics(subjectId),
       cacheKey,
@@ -111,29 +117,35 @@ export class QREnhancedService {
    * Get QR analytics
    */
   getAnalytics(qrCodeId: string): QRAnalytics {
-    return this.analytics.get(qrCodeId) || {
-      qrCodeId,
-      eventId: '',
-      totalScans: 0,
-      uniqueScans: 0,
-      lastScanAt: null,
-      avgScanInterval: 0,
-      deviceTypes: {},
-      scanLocations: [],
-    };
+    return (
+      this.analytics.get(qrCodeId) || {
+        qrCodeId,
+        eventId: '',
+        totalScans: 0,
+        uniqueScans: 0,
+        lastScanAt: null,
+        avgScanInterval: 0,
+        deviceTypes: {},
+        scanLocations: [],
+      }
+    );
   }
 
   /**
    * Track QR scan
    */
-  trackScan(qrCodeId: string, deviceInfo: { type: string; ip: string; location?: string }) {
+  trackScan(
+    qrCodeId: string,
+    deviceInfo: { type: string; ip: string; location?: string }
+  ) {
     const analytics = this.getAnalytics(qrCodeId);
     analytics.totalScans++;
     analytics.lastScanAt = new Date();
-    
+
     // Track device types
-    analytics.deviceTypes[deviceInfo.type] = (analytics.deviceTypes[deviceInfo.type] || 0) + 1;
-    
+    analytics.deviceTypes[deviceInfo.type] =
+      (analytics.deviceTypes[deviceInfo.type] || 0) + 1;
+
     // Track locations
     analytics.scanLocations.push({
       ip: deviceInfo.ip,
@@ -144,7 +156,10 @@ export class QREnhancedService {
     this.analytics.set(qrCodeId, analytics);
   }
 
-  private generateCacheKey(subjectId: string, options: EnhancedQROptions): string {
+  private generateCacheKey(
+    subjectId: string,
+    options: EnhancedQROptions
+  ): string {
     const optionsStr = JSON.stringify(options);
     return `qr_${subjectId}_${Buffer.from(optionsStr).toString('base64')}`;
   }
@@ -190,8 +205,11 @@ export class QREnhancedService {
     return {
       totalEntries: this.cache.size,
       hitRate: 0, // Would track in production
-      avgAccessCount: Array.from(this.cache.values())
-        .reduce((sum, entry) => sum + entry.accessCount, 0) / this.cache.size,
+      avgAccessCount:
+        Array.from(this.cache.values()).reduce(
+          (sum, entry) => sum + entry.accessCount,
+          0
+        ) / this.cache.size,
     };
   }
 }

@@ -45,7 +45,7 @@ export function PhotoGalleryResponsive({
   const [loadedPhotos, setLoadedPhotos] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
-  
+
   // Drag and drop functionality
   const {
     draggedItem: draggedPhoto,
@@ -55,7 +55,7 @@ export function PhotoGalleryResponsive({
     handleDragOver,
     handleDragLeave,
     handleDrop,
-    handleDragEnd
+    handleDragEnd,
   } = useDragDrop<Photo>();
 
   // Handle photo selection
@@ -87,19 +87,22 @@ export function PhotoGalleryResponsive({
   );
 
   // Handle photo reordering
-  const handlePhotoReorder = useCallback((draggedPhoto: Photo, targetPhoto: Photo) => {
-    // This would typically involve updating the photos array order
-    // and calling an API to persist the new order
-    console.log(`Moving ${draggedPhoto.id} to position of ${targetPhoto.id}`);
-    
-    // In a real implementation, you would:
-    // 1. Update the local state to reflect the new order
-    // 2. Call an API to persist the new order in the database
-    // 3. Show a success message
-    
-    // For now, we'll just show a toast notification
-    // toast.success(`Moved ${draggedPhoto.alt} to new position`);
-  }, []);
+  const handlePhotoReorder = useCallback(
+    (draggedPhoto: Photo, targetPhoto: Photo) => {
+      // This would typically involve updating the photos array order
+      // and calling an API to persist the new order
+      console.log(`Moving ${draggedPhoto.id} to position of ${targetPhoto.id}`);
+
+      // In a real implementation, you would:
+      // 1. Update the local state to reflect the new order
+      // 2. Call an API to persist the new order in the database
+      // 3. Show a success message
+
+      // For now, we'll just show a toast notification
+      // toast.success(`Moved ${draggedPhoto.alt} to new position`);
+    },
+    []
+  );
 
   // Modal navigation
   const openModal = (photo: Photo) => {
@@ -225,8 +228,9 @@ export function PhotoGalleryResponsive({
                   'focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2',
                   isSelected &&
                     'shadow-lg ring-2 ring-primary-600 ring-offset-2',
-                  isDragged && 'opacity-50 scale-95',
-                  isDragOver && 'ring-2 ring-blue-500 ring-offset-2 scale-105 z-10'
+                  isDragged && 'scale-95 opacity-50',
+                  isDragOver &&
+                    'z-10 scale-105 ring-2 ring-blue-500 ring-offset-2'
                 )}
                 data-photo-id={photo.id}
                 ref={(el) => {
@@ -295,8 +299,8 @@ export function PhotoGalleryResponsive({
 
                 {/* Drag and Drop Indicator */}
                 {isDragOver && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-blue-500 bg-opacity-20 rounded-lg z-20">
-                    <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                  <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-blue-500 bg-opacity-20">
+                    <div className="rounded-full bg-blue-500 px-3 py-1 text-sm font-medium text-white">
                       Soltar aquí
                     </div>
                   </div>
@@ -360,19 +364,19 @@ export function PhotoGalleryResponsive({
 
       {/* Modal - Mobile Optimized */}
       {modalPhoto && enableModal && (
-        <div className="fixed inset-0 z-50 bg-black/98">
+        <div className="bg-black/98 fixed inset-0 z-50">
           {/* Mobile Modal Header */}
-          <div className="absolute top-0 left-0 right-0 z-60 bg-gradient-to-b from-black/80 to-transparent p-4 pt-8">
+          <div className="z-60 absolute left-0 right-0 top-0 bg-gradient-to-b from-black/80 to-transparent p-4 pt-8">
             <div className="flex items-center justify-between">
               <Button
                 variant="glass"
                 size="lg"
                 icon={<X className="h-6 w-6" />}
                 onClick={closeModal}
-                className="mobile-touch-target bg-black/40 text-white border-white/20"
+                className="mobile-touch-target border-white/20 bg-black/40 text-white"
                 aria-label="Cerrar vista ampliada"
               />
-              <div className="text-white text-center">
+              <div className="text-center text-white">
                 <p className="text-sm font-medium">
                   {currentModalIndex + 1} de {photos.length}
                 </p>
@@ -382,7 +386,7 @@ export function PhotoGalleryResponsive({
           </div>
 
           {/* Modal Image Container - Full screen on mobile */}
-          <div className="flex items-center justify-center h-full w-full px-4 py-16 md:py-8">
+          <div className="flex h-full w-full items-center justify-center px-4 py-16 md:py-8">
             <div className="relative max-h-full max-w-full">
               <Image
                 src={modalPhoto.src}
@@ -398,13 +402,13 @@ export function PhotoGalleryResponsive({
           {/* Touch Navigation Areas - Mobile */}
           <button
             onClick={() => navigateModal('prev')}
-            className="absolute left-0 top-16 bottom-16 w-1/3 z-50 opacity-0 active:opacity-20 active:bg-white/10 transition-opacity md:hidden"
+            className="absolute bottom-16 left-0 top-16 z-50 w-1/3 opacity-0 transition-opacity active:bg-white/10 active:opacity-20 md:hidden"
             aria-label="Foto anterior"
           />
-          
+
           <button
             onClick={() => navigateModal('next')}
-            className="absolute right-0 top-16 bottom-16 w-1/3 z-50 opacity-0 active:opacity-20 active:bg-white/10 transition-opacity md:hidden"
+            className="absolute bottom-16 right-0 top-16 z-50 w-1/3 opacity-0 transition-opacity active:bg-white/10 active:opacity-20 md:hidden"
             aria-label="Foto siguiente"
           />
 
@@ -414,7 +418,7 @@ export function PhotoGalleryResponsive({
             size="lg"
             icon={<ChevronLeft className="h-6 w-6" />}
             onClick={() => navigateModal('prev')}
-            className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-60 mobile-touch-target bg-black/40 text-white border-white/20"
+            className="z-60 mobile-touch-target absolute left-4 top-1/2 hidden -translate-y-1/2 border-white/20 bg-black/40 text-white md:block"
             aria-label="Foto anterior"
           />
 
@@ -423,34 +427,34 @@ export function PhotoGalleryResponsive({
             size="lg"
             icon={<ChevronRight className="h-6 w-6" />}
             onClick={() => navigateModal('next')}
-            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-60 mobile-touch-target bg-black/40 text-white border-white/20"
+            className="z-60 mobile-touch-target absolute right-4 top-1/2 hidden -translate-y-1/2 border-white/20 bg-black/40 text-white md:block"
             aria-label="Foto siguiente"
           />
 
           {/* Mobile Photo Info */}
-          <div className="absolute bottom-0 left-0 right-0 z-60 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8">
+          <div className="z-60 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-8">
             <div className="text-center">
-              <p className="text-white text-sm mb-2">{modalPhoto.alt}</p>
+              <p className="mb-2 text-sm text-white">{modalPhoto.alt}</p>
               <div className="flex items-center justify-center space-x-4">
                 <Button
                   variant="glass"
                   size="sm"
                   icon={<Heart className="h-4 w-4" />}
-                  className="bg-black/40 text-white border-white/20"
+                  className="border-white/20 bg-black/40 text-white"
                   aria-label="Me gusta"
                 />
                 <Button
                   variant="glass"
                   size="sm"
                   icon={<Download className="h-4 w-4" />}
-                  className="bg-black/40 text-white border-white/20"
+                  className="border-white/20 bg-black/40 text-white"
                   aria-label="Descargar"
                 />
                 <Button
                   variant="glass"
                   size="sm"
                   icon={<Share2 className="h-4 w-4" />}
-                  className="bg-black/40 text-white border-white/20"
+                  className="border-white/20 bg-black/40 text-white"
                   aria-label="Compartir"
                 />
               </div>
@@ -458,14 +462,14 @@ export function PhotoGalleryResponsive({
           </div>
 
           {/* Swipe indicators for mobile */}
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex space-x-2 md:hidden">
+          <div className="absolute bottom-20 left-1/2 flex -translate-x-1/2 space-x-2 md:hidden">
             {photos.map((_, index) => (
               <div
                 key={index}
                 className={clsx(
-                  'w-2 h-2 rounded-full transition-all duration-200',
+                  'h-2 w-2 rounded-full transition-all duration-200',
                   index === currentModalIndex
-                    ? 'bg-white scale-125'
+                    ? 'scale-125 bg-white'
                     : 'bg-white/40'
                 )}
               />

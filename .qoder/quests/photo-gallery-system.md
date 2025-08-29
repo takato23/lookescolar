@@ -300,19 +300,23 @@ graph TD
 
 ## Performance & Scale
 
-### MVP Performance Targets
+### Performance Targets
 - **Monthly Volume**: 5,000+ photos efficiently processed
 - **Upload Batches**: 100 photos per batch with progress tracking
 - **Grid Rendering**: Virtualized scrolling for 1000+ photos
 - **Folder Navigation**: <200ms switching with cached structures
+- **Preview Generation**: <30 seconds per photo background processing
+- **API Response**: <200ms for folder/asset queries
 - **Deduplication**: Instant checksum-based duplicate detection
 
-### Scaling Strategies
+### Scaling Architecture
 - **Virtualized Grid**: Only render visible photos (react-window)
-- **Paginated Loading**: Load 50-100 assets per page
-- **Checksum Index**: Fast duplicate detection via database index
-- **Preview CDN**: Serve public previews via CDN
+- **Lazy Loading**: Load folder contents on demand
+- **Background Processing**: Preview generation in worker queues
+- **Checksum Indexing**: Fast duplicate detection via database index
+- **CDN Distribution**: Serve public previews via edge locations
 - **Rate Limit Handling**: Exponential backoff with 429 retries
+- **Database Optimization**: Proper indexing for hierarchical queries
 
 ## Mobile Responsiveness
 
@@ -359,34 +363,263 @@ GET    /api/admin/templates              # List school templates
 POST   /api/admin/folders/from-template  # Apply template to create structure
 ```
 
-## MVP Implementation Priority
+## 🚀 Implementation Status
 
-### Phase 1: Core Infrastructure
-- [ ] Database schema: folders, assets, albums, access_tokens
-- [ ] RLS policies: private originals, public previews
-- [ ] Basic folder CRUD API
-- [ ] Asset upload with checksum deduplication
+### ✅ Phase 1: Core Infrastructure (Completed)
+The LookEscolar system already has the foundation we need:
+- **Database Schema**: folders (event_folders), photos, events, gallery_shares tables exist
+- **RLS Policies**: Row-level security for multi-tenant access
+- **Storage Buckets**: Configured for originals (private) and previews (public)
+- **Upload Pipeline**: Existing photo upload with optimization and watermarking
+- **Base Components**: UnifiedPhotoSystem, folder navigation, bulk operations
 
-### Phase 2: UI Foundation
-- [ ] Three-panel layout with virtualized grid
-- [ ] Folder tree navigation
-- [ ] Mouse-first selection model
-- [ ] Drag & drop upload to folders
+### 🔄 Phase 2: MVP Enhancements (In Progress)
+**New Implementation Approach**: Enhance existing system for MVP folder-first design
 
-### Phase 3: Preview System
-- [ ] 35KB WebP preview generation
-- [ ] Watermark overlay (school + event name)
-- [ ] Public preview bucket with CDN
-- [ ] Preview URL generation
+#### Folder-First API Enhancement
+```typescript
+// NEW: /api/admin/folders (enhanced)
+GET    /api/admin/folders                 # Hierarchical folder tree  
+POST   /api/admin/folders                 # Create folder with templates
+PUT    /api/admin/folders/{id}            # Update folder metadata
+DELETE /api/admin/folders/{id}            # Delete folder + assets
 
-### Phase 4: Album Generation
-- [ ] Album creation from folder/selection
-- [ ] Access token generation with expiration
-- [ ] Public gallery at /a/:token
-- [ ] Integration with existing checkout
+// ENHANCED: Upload to folder
+POST   /api/admin/photos/upload-to-folder # Direct folder upload
+POST   /api/admin/photos/bulk-move        # Move assets between folders
+```
 
-### Phase 5: Template System
-- [ ] School folder templates
-- [ ] Template application API
-- [ ] Bulk folder creation
-- [ ] Event metadata linking
+#### Three-Panel Layout Component
+```typescript
+// NEW: Enhanced PhotoAdmin component
+interface FolderFirstInterface {
+  leftPanel: FolderTree;    // Hierarchical navigation
+  centerPanel: PhotoGrid;   // Virtualized with drag&drop
+  rightPanel: Inspector;    // Asset metadata + bulk ops
+}
+```
+
+#### Album Generation System
+```typescript
+// NEW: Token-based album access
+POST   /api/admin/albums/from-folder     # Create album from folder
+GET    /a/{token}                        # Public album access (SSR)
+GET    /api/public/albums/{token}        # Album API for families
+```
+
+### Phase 1: Core Infrastructure (Week 1)
+**Database & Storage Setup**
+- [ ] Create Supabase buckets: `originals` (private), `previews` (public)
+- [ ] Run migration: `20240315000000_photo_gallery_mvp.sql`
+- [ ] Apply RLS policies with proper admin/public access
+- [ ] Create storage key structure: `{bucket}/{env}/folder-{id}/{yyyy}/{mm}/`
+- [ ] Test bucket permissions and signed URL generation
+
+**API Foundation**
+- [ ] Implement `/api/upload-init` - presigned URL generation
+- [ ] Implement `/api/upload-complete` - asset persistence with deduplication
+- [ ] Implement `/api/process-preview` - background preview generation
+- [ ] Implement `/api/admin/folders` - CRUD operations
+- [ ] Add 429 retry logic with exponential backoff
+
+### Phase 2: UI Foundation (Week 2)
+**Component Architecture**
+- [ ] Build `PhotoAdmin` - 3-panel responsive layout
+- [ ] Build `FolderTree` - hierarchical navigation with lazy loading
+- [ ] Build `PhotoGrid` - virtualized grid with react-window
+- [ ] Build `UploadDropzone` - drag & drop with progress tracking
+- [ ] Implement mouse-first selection (Shift/Ctrl + click)
+
+**State Management**
+- [ ] Create `useApiCache` hook with 429 handling
+- [ ] Implement checksum calculation with Web Workers
+- [ ] Add keyboard shortcuts (Ctrl+A, Escape, Delete)
+- [ ] Context menus for folders and assets
+
+### Phase 3: Preview Processing (Week 3)
+**Image Processing Pipeline**
+- [ ] Sharp processor: resize to 1600px max, WebP compression
+- [ ] Watermark overlay: SVG-based with school + event name
+- [ ] Target 35KB output with quality adaptation
+- [ ] Background processing queue with status updates
+- [ ] Error handling and retry mechanisms
+
+**Storage Integration**
+- [ ] Preview bucket uploads with proper content-type
+- [ ] CDN configuration for public preview access
+- [ ] Signed URL generation for preview display
+- [ ] Asset status tracking (queued → processing → ready → error)
+
+### Phase 4: Album System (Week 4)
+**Public Gallery Creation**
+- [ ] Album creation from folder or asset selection
+- [ ] Token generation with 30-day expiration
+- [ ] Public route `/a/:token` with SSR/ISR
+- [ ] Asset filtering by album membership via RLS
+- [ ] Pagination for large albums (50 assets per page)
+
+**Family Interface**
+- [ ] Public album viewer with responsive grid
+- [ ] Asset preview modal with navigation
+- [ ] Integration with existing checkout system
+- [ ] Token validation and expiry handling
+
+### Phase 5: School Templates (Week 5)
+**Template System**
+- [ ] Predefined school structures (Jardín, Primario, Secundario)
+- [ ] Template application API with batch folder creation
+- [ ] Event metadata linking for watermark context
+- [ ] Bulk operations: move, delete, tag assets
+
+**Admin Features**
+- [ ] Inspector panel with asset metadata
+- [ ] Bulk selection and operations
+- [ ] Folder management: create, rename, delete
+- [ ] Album management dashboard
+
+## Technical Implementation Details
+
+### Database Schema Implementation
+```sql
+-- Core tables with proper indexing
+CREATE INDEX idx_assets_folder_checksum ON assets(folder_id, checksum);
+CREATE INDEX idx_assets_status ON assets(status) WHERE status != 'ready';
+CREATE INDEX idx_access_tokens_active ON access_tokens(expires_at) WHERE expires_at > NOW();
+```
+
+### API Rate Limiting Strategy
+```typescript
+// Implement in fetchWithRetry utility
+const retryDelays = {
+  429: (headers) => parseInt(headers.get('Retry-After')) * 1000 || 1000,
+  default: (attempt) => Math.min(1000 * Math.pow(2, attempt), 10000)
+};
+```
+
+### Performance Optimization
+- **Virtualized Scrolling**: react-window for 1000+ photos
+- **Checksum Deduplication**: SHA-256 at folder level
+- **Background Processing**: Preview generation in worker threads
+- **CDN Caching**: 1-hour cache for public previews
+- **Database Indexing**: Optimized queries for folder traversal
+
+### Security Implementation
+- **RLS Policies**: Row-level security for multi-tenant isolation
+- **Signed URLs**: Time-limited access to storage buckets
+- **Token Expiration**: 30-day album access with renewal
+- **Input Validation**: Zod schemas for all API endpoints
+- **CORS Configuration**: Restricted origins for API access
+
+## Testing Strategy
+
+### Unit Tests (Vitest)
+```bash
+# Test utilities and core functions
+npm run test:unit -- --coverage
+
+# Key test areas:
+# - Checksum calculation accuracy
+# - Storage key generation
+# - API response handling
+# - Rate limit retry logic
+```
+
+### Integration Tests
+```bash
+# Test API endpoints end-to-end
+npm run test:integration
+
+# Scenarios:
+# - Upload workflow (init → upload → complete)
+# - Preview processing pipeline
+# - Album creation and token access
+# - Folder CRUD operations
+```
+
+### E2E Tests (Playwright)
+```bash
+# Full user workflows
+npm run test:e2e
+
+# Critical paths:
+# - Upload 50 photos → verify previews
+# - Create album → generate token → public access
+# - Folder navigation and selection
+# - Mobile responsiveness
+```
+
+## Deployment Plan
+
+### Environment Setup
+```bash
+# Production environment variables
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+STORAGE_BUCKET_ORIGINALS=photo-originals
+STORAGE_BUCKET_PREVIEW=photo-previews
+NODE_ENV=production
+```
+
+### Database Migration
+```bash
+# Apply schema and policies
+supabase db push --linked
+supabase db seed
+```
+
+### Storage Configuration
+```bash
+# Create buckets with proper permissions
+supabase storage bucket create originals --public false
+supabase storage bucket create previews --public true
+```
+
+### Build and Deploy
+```bash
+# Build optimized bundle
+npm run build
+
+# Deploy to production
+npm run deploy
+
+# Verify deployment
+npm run health:check
+```
+
+## Monitoring and Maintenance
+
+### Key Metrics
+- **Upload Success Rate**: Target >95%
+- **Preview Processing Time**: Target <30s per photo
+- **API Response Time**: Target <200ms
+- **Storage Usage**: Monitor against Supabase limits
+- **Error Rates**: Alert on >1% failure rate
+
+### Operational Tasks
+- **Weekly**: Review storage usage and cleanup
+- **Monthly**: Archive expired tokens and albums
+- **Quarterly**: Performance optimization review
+- **On-demand**: Scale preview processing workers
+
+## Success Criteria
+
+### Functional Requirements
+- ✅ Upload 100 photos in single batch
+- ✅ Generate 35KB watermarked previews
+- ✅ Create public albums with token access
+- ✅ Navigate folder hierarchy smoothly
+- ✅ Deduplicate files by checksum
+
+### Performance Requirements
+- ✅ Grid loads 1000+ photos without lag
+- ✅ Upload completes in <5 minutes
+- ✅ Preview generation <1 minute per photo
+- ✅ Folder switching <200ms
+- ✅ Mobile responsive on 3G networks
+
+### Scalability Requirements
+- ✅ Handle 5,000+ photos per month
+- ✅ Support 10 concurrent admin users
+- ✅ Graceful degradation under load
+- ✅ Horizontal scaling capability

@@ -1,6 +1,6 @@
 /**
  * @fileoverview Integration Tests for Complete QR Workflow
- * 
+ *
  * Tests the complete QR workflow including:
  * 1. QR code generation for student identification
  * 2. QR code detection in uploaded photos
@@ -10,7 +10,7 @@
  * 6. Database state verification
  * 7. Error scenarios and edge cases
  * 8. Family access to QR codes
- * 
+ *
  * Security: Tests rate limiting, token validation, duplicate prevention
  * Performance: Tests batch operations with 50+ photos
  */
@@ -94,7 +94,7 @@ describe('QR Integration Tests', () => {
   describe('Batch QR Generation API', () => {
     it('should handle valid batch request', async () => {
       const { POST } = await import('@/app/api/qr/batch/route');
-      
+
       const mockRequest = {
         json: vi.fn().mockResolvedValue({
           subjects: [
@@ -126,7 +126,7 @@ describe('QR Integration Tests', () => {
 
     it('should handle validation errors', async () => {
       const { POST } = await import('@/app/api/qr/batch/route');
-      
+
       const mockRequest = {
         json: vi.fn().mockResolvedValue({
           subjects: [], // Empty subjects array
@@ -146,7 +146,7 @@ describe('QR Integration Tests', () => {
 
     it('should handle empty subjects request', async () => {
       const { POST } = await import('@/app/api/qr/batch/route');
-      
+
       const mockRequest = {
         json: vi.fn().mockResolvedValue({
           subjects: [],
@@ -166,7 +166,7 @@ describe('QR Integration Tests', () => {
 
     it('should handle too many subjects', async () => {
       const { POST } = await import('@/app/api/qr/batch/route');
-      
+
       const subjects = Array.from({ length: 101 }, (_, i) => ({
         id: `student-${i}`,
         name: `Student ${i}`,
@@ -194,7 +194,7 @@ describe('QR Integration Tests', () => {
   describe('QR Analytics API', () => {
     it('should get QR metrics for specific QR code', async () => {
       const { GET } = await import('@/app/api/qr/analytics/route');
-      
+
       const mockRequest = {
         nextUrl: {
           searchParams: {
@@ -229,7 +229,7 @@ describe('QR Integration Tests', () => {
 
     it('should get event metrics', async () => {
       const { GET } = await import('@/app/api/qr/analytics/route');
-      
+
       const mockRequest = {
         nextUrl: {
           searchParams: {
@@ -258,7 +258,7 @@ describe('QR Integration Tests', () => {
 
     it('should record scan event', async () => {
       const { POST } = await import('@/app/api/qr/analytics/route');
-      
+
       const mockRequest = {
         json: vi.fn().mockResolvedValue({
           qrCodeId: 'qr-1',
@@ -283,7 +283,7 @@ describe('QR Integration Tests', () => {
 
     it('should handle missing identifier', async () => {
       const { GET } = await import('@/app/api/qr/analytics/route');
-      
+
       const mockRequest = {
         nextUrl: {
           searchParams: {
@@ -304,7 +304,7 @@ describe('QR Integration Tests', () => {
   describe('QR Health Check API', () => {
     it('should return healthy status', async () => {
       const { GET } = await import('@/app/api/qr/health/route');
-      
+
       const mockRequest = {} as NextRequest;
       const response = await GET(mockRequest);
       const data = await response.json();
@@ -321,7 +321,7 @@ describe('QR Integration Tests', () => {
 
     it('should return system configuration', async () => {
       const { POST } = await import('@/app/api/qr/health/route');
-      
+
       const mockRequest = {} as NextRequest;
       const response = await POST(mockRequest);
       const data = await response.json();
@@ -341,12 +341,10 @@ describe('QR Integration Tests', () => {
     it('should complete full QR generation and validation cycle', async () => {
       // Step 1: Generate QR codes in batch
       const { POST: batchPost } = await import('@/app/api/qr/batch/route');
-      
+
       const batchRequest = {
         json: vi.fn().mockResolvedValue({
-          subjects: [
-            { id: 'student-1', name: 'John Doe', eventId: 'event-1' },
-          ],
+          subjects: [{ id: 'student-1', name: 'John Doe', eventId: 'event-1' }],
           options: { format: 'png', enableAnalytics: true },
         }),
         ip: '192.168.1.1',
@@ -360,8 +358,10 @@ describe('QR Integration Tests', () => {
       expect(batchData.success).toBe(true);
 
       // Step 2: Record a scan event
-      const { POST: analyticsPost } = await import('@/app/api/qr/analytics/route');
-      
+      const { POST: analyticsPost } = await import(
+        '@/app/api/qr/analytics/route'
+      );
+
       const scanRequest = {
         json: vi.fn().mockResolvedValue({
           qrCodeId: 'student-1',
@@ -380,12 +380,14 @@ describe('QR Integration Tests', () => {
       expect(scanData.success).toBe(true);
 
       // Step 3: Get analytics
-      const { GET: analyticsGet } = await import('@/app/api/qr/analytics/route');
-      
+      const { GET: analyticsGet } = await import(
+        '@/app/api/qr/analytics/route'
+      );
+
       const analyticsRequest = {
         nextUrl: {
           searchParams: {
-            get: vi.fn((key: string) => key === 'eventId' ? 'event-1' : null),
+            get: vi.fn((key: string) => (key === 'eventId' ? 'event-1' : null)),
           },
         },
       } as unknown as NextRequest;
@@ -399,7 +401,7 @@ describe('QR Integration Tests', () => {
 
       // Step 4: Check system health
       const { GET: healthGet } = await import('@/app/api/qr/health/route');
-      
+
       const healthRequest = {} as NextRequest;
       const healthResponse = await healthGet(healthRequest);
       const healthData = await healthResponse.json();
@@ -410,11 +412,13 @@ describe('QR Integration Tests', () => {
 
     it('should handle errors gracefully throughout workflow', async () => {
       // Mock service failures
-      vi.mocked(require('@/lib/services/qr-enhanced.service').qrEnhancedService.generateEnhancedQR)
-        .mockRejectedValue(new Error('Service unavailable'));
+      vi.mocked(
+        require('@/lib/services/qr-enhanced.service').qrEnhancedService
+          .generateEnhancedQR
+      ).mockRejectedValue(new Error('Service unavailable'));
 
       const { POST } = await import('@/app/api/qr/batch/route');
-      
+
       const mockRequest = {
         json: vi.fn().mockResolvedValue({
           subjects: [{ id: 'student-1', name: 'Test', eventId: 'event-1' }],
@@ -436,7 +440,7 @@ describe('QR Integration Tests', () => {
   describe('Security Integration', () => {
     it('should record audit events during operations', async () => {
       const { POST } = await import('@/app/api/qr/batch/route');
-      
+
       const mockRequest = {
         json: vi.fn().mockResolvedValue({
           subjects: [{ id: 'student-1', name: 'Test', eventId: 'event-1' }],
@@ -449,16 +453,23 @@ describe('QR Integration Tests', () => {
       await POST(mockRequest);
 
       // Verify audit events were recorded
-      const { qrSecurityService } = await import('@/lib/security/qr-security.service');
+      const { qrSecurityService } = await import(
+        '@/lib/security/qr-security.service'
+      );
       expect(qrSecurityService.recordAuditEvent).toHaveBeenCalled();
     });
 
     it('should handle security validation', async () => {
-      const { qrSecurityService } = await import('@/lib/security/qr-security.service');
-      
+      const { qrSecurityService } = await import(
+        '@/lib/security/qr-security.service'
+      );
+
       const signature = qrSecurityService.generateSignature('test-data');
-      const verification = qrSecurityService.verifySignature('test-data', signature);
-      
+      const verification = qrSecurityService.verifySignature(
+        'test-data',
+        signature
+      );
+
       expect(verification.valid).toBe(true);
       expect(verification.securityLevel).toBe('high');
     });

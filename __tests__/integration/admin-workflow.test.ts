@@ -25,7 +25,7 @@ describe('Admin Workflow Integration Tests', () => {
         name: 'Test Event - Admin Workflow',
         description: 'Test event for admin workflow testing',
         date: new Date().toISOString(),
-        status: 'active'
+        status: 'active',
       })
       .select('id')
       .single();
@@ -46,7 +46,7 @@ describe('Admin Workflow Integration Tests', () => {
         section: 'A',
         description: 'Test course for workflow testing',
         sort_order: 0,
-        active: true
+        active: true,
       })
       .select('id')
       .single();
@@ -68,7 +68,7 @@ describe('Admin Workflow Integration Tests', () => {
         section: 'A',
         student_number: 'TEST001',
         qr_code: 'STU-TEST-001',
-        active: true
+        active: true,
       })
       .select('id')
       .single();
@@ -94,7 +94,7 @@ describe('Admin Workflow Integration Tests', () => {
         photo_type: 'individual',
         processing_status: 'completed',
         detected_qr_codes: '[]',
-        approved: false
+        approved: false,
       })
       .select('id')
       .single();
@@ -108,9 +108,18 @@ describe('Admin Workflow Integration Tests', () => {
 
   afterAll(async () => {
     // Cleanup test data
-    await supabaseAdmin.from('photo_students').delete().eq('photo_id', testPhotoId);
-    await supabaseAdmin.from('photo_courses').delete().eq('photo_id', testPhotoId);
-    await supabaseAdmin.from('student_tokens').delete().eq('student_id', testStudentId);
+    await supabaseAdmin
+      .from('photo_students')
+      .delete()
+      .eq('photo_id', testPhotoId);
+    await supabaseAdmin
+      .from('photo_courses')
+      .delete()
+      .eq('photo_id', testPhotoId);
+    await supabaseAdmin
+      .from('student_tokens')
+      .delete()
+      .eq('student_id', testStudentId);
     await supabaseAdmin.from('photos').delete().eq('id', testPhotoId);
     await supabaseAdmin.from('students').delete().eq('id', testStudentId);
     await supabaseAdmin.from('courses').delete().eq('id', testCourseId);
@@ -119,16 +128,19 @@ describe('Admin Workflow Integration Tests', () => {
 
   describe('Bulk Photo Upload API', () => {
     it('should handle bulk photo upload request validation', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/bulk-upload`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: 'invalid-uuid',
-          photos: []
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/bulk-upload`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: 'invalid-uuid',
+            photos: [],
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -136,40 +148,46 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should validate photo array constraints', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/bulk-upload`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: testEventId,
-          photos: [] // Empty array should fail
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/bulk-upload`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: testEventId,
+            photos: [], // Empty array should fail
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
       expect(data.error).toBe('Validation failed');
       expect(data.details).toContainEqual({
         path: 'photos',
-        message: 'At least one photo required'
+        message: 'At least one photo required',
       });
     });
   });
 
   describe('Photo Classification API', () => {
     it('should classify photo to course successfully', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-course`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photoIds: [testPhotoId],
-          courseId: testCourseId,
-          photoType: 'group'
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-course`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photoIds: [testPhotoId],
+            courseId: testCourseId,
+            photoType: 'group',
+          }),
+        }
+      );
 
       if (response.status === 401) {
         // Expected if not authenticated - test the validation logic
@@ -184,17 +202,20 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should classify photo to student successfully', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-student`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photoIds: [testPhotoId],
-          studentId: testStudentId,
-          confidenceScore: 0.95
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-student`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photoIds: [testPhotoId],
+            studentId: testStudentId,
+            confidenceScore: 0.95,
+          }),
+        }
+      );
 
       if (response.status === 401) {
         // Expected if not authenticated - test the validation logic
@@ -209,16 +230,19 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should validate course classification payload', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-course`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photoIds: [], // Empty array should fail
-          courseId: testCourseId
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-course`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photoIds: [], // Empty array should fail
+            courseId: testCourseId,
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -226,16 +250,19 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should validate student classification payload', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-student`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photoIds: ['invalid-uuid'], // Invalid UUID should fail
-          studentId: testStudentId
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=to-student`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photoIds: ['invalid-uuid'], // Invalid UUID should fail
+            studentId: testStudentId,
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -243,15 +270,18 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should handle invalid action parameter', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=invalid`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          photoIds: [testPhotoId]
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/classify?action=invalid`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            photoIds: [testPhotoId],
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -261,34 +291,42 @@ describe('Admin Workflow Integration Tests', () => {
 
   describe('QR Detection API', () => {
     it('should validate QR detection payload', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/qr-detect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          // Missing both photoIds and eventId should fail
-          autoMatch: true
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/qr-detect`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            // Missing both photoIds and eventId should fail
+            autoMatch: true,
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
-      expect(data.error).toContain('Either photoIds or eventId must be provided');
+      expect(data.error).toContain(
+        'Either photoIds or eventId must be provided'
+      );
     });
 
     it('should accept valid QR detection request', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/qr-detect`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: testEventId,
-          autoMatch: true,
-          updateExisting: false
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/photos/qr-detect`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: testEventId,
+            autoMatch: true,
+            updateExisting: false,
+          }),
+        }
+      );
 
       if (response.status === 401) {
         // Expected if not authenticated
@@ -307,17 +345,20 @@ describe('Admin Workflow Integration Tests', () => {
 
   describe('Batch Course Management API', () => {
     it('should validate batch course creation payload', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?operation=courses`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: 'invalid-uuid',
-          operation: 'create',
-          courses: []
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?operation=courses`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: 'invalid-uuid',
+            operation: 'create',
+            courses: [],
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -325,23 +366,26 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should validate batch student creation payload', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?operation=students`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: testEventId,
-          operation: 'create',
-          students: [
-            {
-              name: '', // Empty name should fail
-              generateQrCode: true,
-              generateToken: true
-            }
-          ]
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?operation=students`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: testEventId,
+            operation: 'create',
+            students: [
+              {
+                name: '', // Empty name should fail
+                generateQrCode: true,
+                generateToken: true,
+              },
+            ],
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -349,17 +393,20 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should validate CSV import payload', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?operation=import-csv`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          eventId: testEventId,
-          type: 'invalid-type', // Invalid type should fail
-          csvData: 'test,data'
-        })
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?operation=import-csv`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            eventId: testEventId,
+            type: 'invalid-type', // Invalid type should fail
+            csvData: 'test,data',
+          }),
+        }
+      );
 
       expect(response.status).toBe(400);
       const data = await response.json();
@@ -367,7 +414,9 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should handle CSV template request', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?action=csv-template&type=courses`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?action=csv-template&type=courses`
+      );
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -378,7 +427,9 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should handle statistics request', async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?action=statistics&eventId=${testEventId}`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/courses/batch?action=statistics&eventId=${testEventId}`
+      );
 
       if (response.status === 401) {
         // Expected if not authenticated
@@ -397,12 +448,14 @@ describe('Admin Workflow Integration Tests', () => {
 
   describe('Database Functions', () => {
     it('should test classify_photos_to_course function', async () => {
-      const { data, error } = await supabaseAdmin
-        .rpc('classify_photos_to_course', {
+      const { data, error } = await supabaseAdmin.rpc(
+        'classify_photos_to_course',
+        {
           photo_ids: [testPhotoId],
           course_id: testCourseId,
-          photo_type: 'group'
-        });
+          photo_type: 'group',
+        }
+      );
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
@@ -410,12 +463,14 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should test classify_photos_to_student function', async () => {
-      const { data, error } = await supabaseAdmin
-        .rpc('classify_photos_to_student', {
+      const { data, error } = await supabaseAdmin.rpc(
+        'classify_photos_to_student',
+        {
           photo_ids: [testPhotoId],
           student_id: testStudentId,
-          confidence_score: 0.95
-        });
+          confidence_score: 0.95,
+        }
+      );
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
@@ -423,16 +478,18 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should test batch_generate_student_tokens function', async () => {
-      const { data, error } = await supabaseAdmin
-        .rpc('batch_generate_student_tokens', {
+      const { data, error } = await supabaseAdmin.rpc(
+        'batch_generate_student_tokens',
+        {
           event_id: testEventId,
-          regenerate_existing: false
-        });
+          regenerate_existing: false,
+        }
+      );
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
       expect(Array.isArray(data)).toBe(true);
-      
+
       if (data.length > 0) {
         expect(data[0]).toHaveProperty('student_id');
         expect(data[0]).toHaveProperty('student_name');
@@ -442,15 +499,17 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should test get_event_classification_stats function', async () => {
-      const { data, error } = await supabaseAdmin
-        .rpc('get_event_classification_stats', {
-          event_id: testEventId
-        });
+      const { data, error } = await supabaseAdmin.rpc(
+        'get_event_classification_stats',
+        {
+          event_id: testEventId,
+        }
+      );
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
       expect(typeof data).toBe('object');
-      
+
       if (data) {
         expect(data).toHaveProperty('photos');
         expect(data).toHaveProperty('courses');
@@ -461,11 +520,13 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should test bulk_update_photo_types function', async () => {
-      const { data, error } = await supabaseAdmin
-        .rpc('bulk_update_photo_types', {
+      const { data, error } = await supabaseAdmin.rpc(
+        'bulk_update_photo_types',
+        {
           photo_ids: [testPhotoId],
-          new_photo_type: 'activity'
-        });
+          new_photo_type: 'activity',
+        }
+      );
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
@@ -473,11 +534,13 @@ describe('Admin Workflow Integration Tests', () => {
     });
 
     it('should test remove_photo_classifications function', async () => {
-      const { data, error } = await supabaseAdmin
-        .rpc('remove_photo_classifications', {
+      const { data, error } = await supabaseAdmin.rpc(
+        'remove_photo_classifications',
+        {
           photo_ids: [testPhotoId],
-          classification_type: 'all'
-        });
+          classification_type: 'all',
+        }
+      );
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
@@ -522,15 +585,17 @@ describe('Admin Workflow Integration Tests', () => {
       // This test would verify that when an event is deleted,
       // all related data (courses, students, photos, etc.) are properly cleaned up
       // For now, we just verify the relationships exist
-      
+
       const { data: relatedData } = await supabaseAdmin
         .from('events')
-        .select(`
+        .select(
+          `
           id,
           courses!inner(id),
           students!inner(id),
           photos!inner(id)
-        `)
+        `
+        )
         .eq('id', testEventId)
         .single();
 
@@ -546,20 +611,20 @@ describe('Workflow Component Integration', () => {
   it('should validate photo classification workflow state', () => {
     // This would test the React components, but since we're in a Node.js environment
     // we'll focus on the API and database integration
-    
+
     const mockWorkflowData = {
       event: {
         id: testEventId,
         name: 'Test Event',
-        status: 'active'
+        status: 'active',
       },
       courses: [{ id: testCourseId, name: 'Test Course' }],
       students: [{ id: testStudentId, name: 'Test Student' }],
       stats: {
         photos: { total: 1, unclassified: 0 },
         courses: { total: 1 },
-        students: { total: 1 }
-      }
+        students: { total: 1 },
+      },
     };
 
     expect(mockWorkflowData.event.id).toBe(testEventId);

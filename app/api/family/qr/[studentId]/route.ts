@@ -11,9 +11,10 @@ const studentIdSchema = z.string().uuid('Invalid student ID');
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { studentId: string } }
+  { params }: { params: Promise<{ studentId: string }> }
 ) {
   const requestId = crypto.randomUUID();
+  const { studentId: studentIdParam } = await params;
 
   try {
     // Extract family token from headers
@@ -27,7 +28,7 @@ export async function GET(
       );
     }
 
-    const studentIdValidation = studentIdSchema.safeParse(params.studentId);
+    const studentIdValidation = studentIdSchema.safeParse(studentIdParam);
     if (!studentIdValidation.success) {
       return NextResponse.json(
         {
@@ -43,17 +44,19 @@ export async function GET(
 
     // Verify family token and access to student
     const supabase = createServerSupabaseServiceClient();
-    
+
     const { data: subject, error: subjectError } = await supabase
       .from('subjects')
-      .select(`
+      .select(
+        `
         id, 
         name, 
         access_token, 
         event_id,
         qr_code,
         metadata
-      `)
+      `
+      )
       .eq('id', studentId)
       .single();
 
@@ -90,7 +93,7 @@ export async function GET(
 
     // Get QR code details
     const qrCodeData = await qrService.getQRCode(subject.qr_code);
-    
+
     if (!qrCodeData) {
       return NextResponse.json({
         success: true,
@@ -100,10 +103,14 @@ export async function GET(
     }
 
     // Generate QR code image for display
-    const qrResult = await qrService.generateQRForSubject(studentId, subject.name, {
-      size: 200,
-      errorCorrectionLevel: 'M',
-    });
+    const qrResult = await qrService.generateQRForSubject(
+      studentId,
+      subject.name,
+      {
+        size: 200,
+        errorCorrectionLevel: 'M',
+      }
+    );
 
     const responseData = {
       qrCodeId: qrCodeData.id,
@@ -127,11 +134,10 @@ export async function GET(
       success: true,
       data: responseData,
     });
-
   } catch (error) {
     logger.error('Family QR API error', {
       requestId,
-      studentId: params.studentId?.substring(0, 8) + '***',
+      studentId: studentIdParam?.substring(0, 8) + '***',
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });

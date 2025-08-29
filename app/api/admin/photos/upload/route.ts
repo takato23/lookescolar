@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  createServerSupabaseClient,
   createServerSupabaseServiceClient,
 } from '@/lib/supabase/server';
+import { z } from 'zod';
 import { processImageBatch, validateImage } from '@/lib/services/watermark';
 import { uploadToStorage } from '@/lib/services/storage';
-import { qrDetectionService } from '@/lib/services/qr-detection.service';
+// Lazy import QR detection only when needed
+let qrDetectionService: any;
+async function getQrService() {
+  if (!qrDetectionService) {
+    qrDetectionService = (await import('@/lib/services/qr-detection.service')).qrDetectionService;
+  }
+  return qrDetectionService;
+}
 import {
   AuthMiddleware,
   SecurityLogger,
@@ -17,7 +24,25 @@ import {
   SECURITY_CONSTANTS,
 } from '@/lib/security/validation';
 import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
-import sharp from 'sharp';
+
+// Configure runtime for server-side processing
+export const runtime = 'nodejs';
+export const maxDuration = 30;
+
+// Dynamic import for Sharp to prevent bundling issues
+let sharp: any;
+
+async function getSharp() {
+  if (!sharp) {
+    try {
+      sharp = (await import('sharp')).default;
+    } catch (error) {
+      console.error('Failed to load Sharp:', error);
+      throw new Error('Image processing unavailable');
+    }
+  }
+  return sharp;
+}
 
 // Usar el wrapper de autenticación y rate limiting
 export const POST = RateLimitMiddleware.withRateLimit(
@@ -59,31 +84,38 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       // Obtener datos del formulario
-      const formData = await request.formData();
+      // En tests, algunos entornos no envían correctamente multipart; si no hay formData, devolver error
+      const formData = await request.formData().catch(() => null as any);
+      if (!formData) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid form data' },
+          { status: 400 }
+        );
+      }
       const eventId = formData.get('eventId') as string;
       const files = formData.getAll('files') as File[];
 
-      // Validaciones de entrada
+      // Validaciones de entrada (short-circuit antes de cualquier operación pesada)
       if (!eventId) {
         return NextResponse.json(
-          { error: 'Event ID is required' },
+          { success: false, error: 'Event ID is required' },
           { status: 400 }
         );
       }
 
-      // Validar formato UUID del eventId
-      try {
-        new URL(`urn:uuid:${eventId}`);
-      } catch {
+      // Validar formato UUID del eventId usando zod para fallo temprano
+      const idSchema = z.string().uuid();
+      const idCheck = idSchema.safeParse(eventId);
+      if (!idCheck.success) {
         return NextResponse.json(
-          { error: 'Invalid event ID format' },
+          { success: false, error: 'Invalid event ID format' },
           { status: 400 }
         );
       }
 
       if (!files || files.length === 0) {
         return NextResponse.json(
-          { error: 'No files received' },
+          { success: false, error: 'No files received' },
           { status: 400 }
         );
       }
@@ -91,13 +123,13 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Límite de archivos por request según constantes de seguridad
       if (files.length > 20) {
         return NextResponse.json(
-          { error: 'Maximum 20 files per request' },
+          { success: false, error: 'Maximum 20 files per request' },
           { status: 400 }
         );
       }
 
-      // Verificar que el evento existe y pertenece al usuario
-      const supabase = await createServerSupabaseClient();
+      // Verificar que el evento existe (usar service client para evitar dependencia de sesión)
+      const supabase = await createServerSupabaseServiceClient();
       const { data: eventData, error: eventError } = await supabase
         .from('events')
         .select('id, name, created_by')
@@ -114,7 +146,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           },
           'warn'
         );
-        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
       }
 
       // Verificar que el usuario tiene acceso al evento
@@ -242,7 +274,9 @@ export const POST = RateLimitMiddleware.withRateLimit(
               .eq('id', eventId)
               .single();
             if (evInfo?.name || evInfo?.school_name) {
-              wmLabel = `${evInfo.school_name || ''}${evInfo.school_name && evInfo.name ? ' · ' : ''}${evInfo.name || ''}`.trim() || wmLabel;
+              wmLabel =
+                `${evInfo.school_name || ''}${evInfo.school_name && evInfo.name ? ' · ' : ''}${evInfo.name || ''}`.trim() ||
+                wmLabel;
             }
           } catch {}
 
@@ -253,7 +287,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
               targetSizeKB: 35, // Aggressive compression for free tier
               maxDimension: 500, // Reduced dimensions for better compression
               watermarkText: wmLabel,
-              enableOriginalStorage: false // NEVER store originals
+              enableOriginalStorage: false, // NEVER store originals
             }
           );
 
@@ -264,7 +298,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
             height: optimizedResult.finalDimensions.height,
             actualSizeKB: optimizedResult.actualSizeKB,
             compressionLevel: optimizedResult.compressionLevel,
-            originalSize: imageBuffer.file.size
+            originalSize: imageBuffer.file.size,
           });
         } catch (error: any) {
           processingErrors.push({
@@ -307,15 +341,17 @@ export const POST = RateLimitMiddleware.withRateLimit(
           const uniqueFilename = `${timestamp}-${randomSuffix}-${originalName.replace(/\.[^/.]+$/, '')}.${fileExtension}`;
 
           // Upload to preview bucket (NO original storage)
+          // Store in uploads folder to match admin API expectations
           const containerPrefix = `events/${eventId}`;
-          const previewPath = `${containerPrefix}/previews/${uniqueFilename}`;
-          const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
+          const previewPath = `${containerPrefix}/uploads/${uniqueFilename}`;
+          const PREVIEW_BUCKET =
+            process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
           const { error: uploadError } = await serviceClient.storage
             .from(PREVIEW_BUCKET)
             .upload(previewPath, processed.buffer, {
               contentType: 'image/webp',
-              cacheControl: '3600',
+              cacheControl: '86400', // 24h cache for public previews
               upsert: false,
             });
 
@@ -326,9 +362,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
           // Detect QR codes in the original image
           let detectedQRCode = null;
           let detectedStudentId = null;
-          
+
           try {
-            const qrResults = await qrDetectionService.detectQRCodesInImage(
+            const qrSvc = await getQrService();
+            const qrResults = await qrSvc.detectQRCodesInImage(
               imageBuffers[i].buffer,
               eventId,
               {
@@ -355,12 +392,16 @@ export const POST = RateLimitMiddleware.withRateLimit(
             }
           } catch (qrError: any) {
             // QR detection failure shouldn't block photo upload
-            SecurityLogger.logSecurityEvent('qr_detection_failed', {
-              requestId,
-              filename: originalName,
-              error: qrError.message,
-              eventId,
-            }, 'warn');
+            SecurityLogger.logSecurityEvent(
+              'qr_detection_failed',
+              {
+                requestId,
+                filename: originalName,
+                error: qrError.message,
+                eventId,
+              },
+              'warn'
+            );
           }
 
           // Guardar en base de datos (only preview path, no original storage)
@@ -383,8 +424,12 @@ export const POST = RateLimitMiddleware.withRateLimit(
                 freetier_optimized: true,
                 compression_level: processed.compressionLevel,
                 original_size: processed.originalSize,
-                optimization_ratio: Math.round((processed.originalSize - processed.actualSizeKB * 1024) / processed.originalSize * 100)
-              }
+                optimization_ratio: Math.round(
+                  ((processed.originalSize - processed.actualSizeKB * 1024) /
+                    processed.originalSize) *
+                    100
+                ),
+              },
             })
             .select()
             .single();
@@ -443,9 +488,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
 
       return NextResponse.json({
         success: results.length > 0,
-        message: results.length > 0 
-          ? `Successfully uploaded ${results.length} photos` 
-          : 'No photos were successfully uploaded',
+        message:
+          results.length > 0
+            ? `Successfully uploaded ${results.length} photos`
+            : 'No photos were successfully uploaded',
         results,
         errors: uploadErrors,
         statistics: {
@@ -477,3 +523,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
     }
   })
 );
+
+// Provide a small JSON response for GET to avoid test JSON parse errors on 405/HTML
+export async function GET() {
+  return NextResponse.json({
+    success: false,
+    error: 'Method not allowed',
+  }, { status: 405 });
+}

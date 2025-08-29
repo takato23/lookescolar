@@ -19,13 +19,13 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 });
 
 async function applyFixes() {
   console.log('🔧 Applying critical schema fixes...\n');
-  
+
   const fixes = [
     {
       name: 'Add events.active column',
@@ -38,12 +38,16 @@ async function applyFixes() {
       },
       apply: async () => {
         // Since we can't alter tables directly, we'll note this needs manual fixing
-        console.log('⚠️  Please add this column manually in Supabase Dashboard:');
+        console.log(
+          '⚠️  Please add this column manually in Supabase Dashboard:'
+        );
         console.log('   Table: events');
         console.log('   Column: active (boolean, default: true)');
-        console.log('   SQL: ALTER TABLE events ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;');
+        console.log(
+          '   SQL: ALTER TABLE events ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true;'
+        );
         return false;
-      }
+      },
     },
     {
       name: 'Add events.school column',
@@ -55,13 +59,19 @@ async function applyFixes() {
         return !error || !error.message.includes('school');
       },
       apply: async () => {
-        console.log('⚠️  Please add this column manually in Supabase Dashboard:');
+        console.log(
+          '⚠️  Please add this column manually in Supabase Dashboard:'
+        );
         console.log('   Table: events');
         console.log('   Column: school (text)');
-        console.log('   SQL: ALTER TABLE events ADD COLUMN IF NOT EXISTS school TEXT;');
-        console.log('   Then copy data: UPDATE events SET school = location WHERE school IS NULL;');
+        console.log(
+          '   SQL: ALTER TABLE events ADD COLUMN IF NOT EXISTS school TEXT;'
+        );
+        console.log(
+          '   Then copy data: UPDATE events SET school = location WHERE school IS NULL;'
+        );
         return false;
-      }
+      },
     },
     {
       name: 'Create payments table',
@@ -73,7 +83,9 @@ async function applyFixes() {
         return !error;
       },
       apply: async () => {
-        console.log('⚠️  Please create this table manually in Supabase Dashboard:');
+        console.log(
+          '⚠️  Please create this table manually in Supabase Dashboard:'
+        );
         console.log(`
 CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -91,7 +103,7 @@ CREATE INDEX idx_payments_mp_payment_id ON payments(mp_payment_id);
 CREATE INDEX idx_payments_order_id ON payments(order_id);
         `);
         return false;
-      }
+      },
     },
     {
       name: 'Create photo_subjects table',
@@ -103,7 +115,9 @@ CREATE INDEX idx_payments_order_id ON payments(order_id);
         return !error;
       },
       apply: async () => {
-        console.log('⚠️  Please create this table manually in Supabase Dashboard:');
+        console.log(
+          '⚠️  Please create this table manually in Supabase Dashboard:'
+        );
         console.log(`
 CREATE TABLE IF NOT EXISTS photo_subjects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -118,18 +132,18 @@ CREATE INDEX idx_photo_subjects_photo ON photo_subjects(photo_id);
 CREATE INDEX idx_photo_subjects_subject ON photo_subjects(subject_id);
         `);
         return false;
-      }
-    }
+      },
+    },
   ];
-  
+
   console.log('📋 Checking current schema status...\n');
-  
+
   let manualFixesNeeded = false;
-  
+
   for (const fix of fixes) {
     process.stdout.write(`Checking ${fix.name}... `);
     const isOk = await fix.check();
-    
+
     if (isOk) {
       console.log('✅ OK');
     } else {
@@ -140,16 +154,20 @@ CREATE INDEX idx_photo_subjects_subject ON photo_subjects(subject_id);
       }
     }
   }
-  
+
   if (manualFixesNeeded) {
     console.log('\n' + '='.repeat(60));
     console.log('📝 MANUAL STEPS REQUIRED:');
     console.log('='.repeat(60));
-    console.log('\n1. Go to your Supabase Dashboard: https://supabase.com/dashboard');
+    console.log(
+      '\n1. Go to your Supabase Dashboard: https://supabase.com/dashboard'
+    );
     console.log('2. Navigate to the SQL Editor');
     console.log('3. Copy and run each SQL command shown above');
     console.log('4. After applying all fixes, restart your development server');
-    console.log('\n⚠️  The application will not work properly until these fixes are applied!');
+    console.log(
+      '\n⚠️  The application will not work properly until these fixes are applied!'
+    );
   } else {
     console.log('\n✅ All schema checks passed!');
   }

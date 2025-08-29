@@ -22,23 +22,23 @@ export interface PhotoProduct {
   name: string;
   description?: string;
   type: ProductType;
-  
+
   // Physical specifications
   width_cm?: number;
   height_cm?: number;
   finish?: FinishType;
   paper_quality?: PaperQuality;
-  
+
   // Pricing
   base_price: number; // in cents
   cost_price?: number; // in cents
-  
+
   // Display
   image_url?: string;
   sort_order: number;
   is_active: boolean;
   is_featured: boolean;
-  
+
   // Relations
   category?: ProductCategory;
   metadata?: Record<string, any>;
@@ -50,17 +50,17 @@ export interface ComboPackage {
   id: string;
   name: string;
   description?: string;
-  
+
   // Configuration
   min_photos: number;
   max_photos?: number;
   allows_duplicates: boolean;
-  
+
   // Pricing
   pricing_type: PricingType;
   base_price: number; // in cents
   price_per_photo?: number; // in cents
-  
+
   // Display
   image_url?: string;
   badge_text?: string;
@@ -68,7 +68,7 @@ export interface ComboPackage {
   sort_order: number;
   is_active: boolean;
   is_featured: boolean;
-  
+
   // Relations
   items?: ComboPackageItem[];
   metadata?: Record<string, any>;
@@ -83,7 +83,7 @@ export interface ComboPackageItem {
   quantity: number;
   is_required: boolean;
   additional_price?: number; // in cents
-  
+
   // Relations
   product?: PhotoProduct;
   created_at: string;
@@ -96,7 +96,7 @@ export interface EventProductPricing {
   combo_id?: string;
   override_price: number; // in cents
   is_active: boolean;
-  
+
   // Relations
   product?: PhotoProduct;
   combo?: ComboPackage;
@@ -110,7 +110,7 @@ export interface EnhancedCartItem {
   photo_id: string;
   product_id?: string;
   combo_id?: string;
-  
+
   // Product details
   product_name: string;
   product_specs: {
@@ -121,16 +121,16 @@ export interface EnhancedCartItem {
     paper_quality?: PaperQuality;
     is_digital?: boolean;
   };
-  
+
   // Pricing and quantity
   quantity: number;
   unit_price: number; // in cents
   subtotal: number; // in cents
-  
+
   // Display
   filename?: string;
   watermark_url?: string;
-  
+
   // Metadata
   metadata?: {
     event_id?: string;
@@ -213,11 +213,11 @@ export interface ProductCartState {
   selection: ProductSelection;
   pricing: PriceCalculation;
   recommendations: ProductRecommendation[];
-  
+
   // Validation
   is_valid: boolean;
   validation_errors: string[];
-  
+
   // Session
   event_id?: string;
   token?: string;
@@ -310,9 +310,11 @@ export const PRODUCT_CONSTANTS = {
 
 // Helper functions for type validation
 export function isPhysicalProduct(product: PhotoProduct): boolean {
-  return product.type === 'print' && 
-         product.width_cm !== undefined && 
-         product.height_cm !== undefined;
+  return (
+    product.type === 'print' &&
+    product.width_cm !== undefined &&
+    product.height_cm !== undefined
+  );
 }
 
 export function isDigitalProduct(product: PhotoProduct): boolean {
@@ -332,7 +334,7 @@ export function formatProductSize(product: PhotoProduct): string {
 
 export function formatProductSpecs(product: PhotoProduct): string {
   const parts: string[] = [];
-  
+
   if (isPhysicalProduct(product)) {
     parts.push(formatProductSize(product));
     if (product.finish) {
@@ -344,6 +346,6 @@ export function formatProductSpecs(product: PhotoProduct): string {
   } else {
     parts.push('Digital');
   }
-  
+
   return parts.join(' • ');
 }

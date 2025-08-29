@@ -5,11 +5,20 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { ShoppingCartIcon, HeartIcon, CheckCircleIcon, ZoomInIcon, AlertCircleIcon } from 'lucide-react';
+import {
+  ShoppingCartIcon,
+  HeartIcon,
+  CheckCircleIcon,
+  ZoomInIcon,
+  AlertCircleIcon,
+} from 'lucide-react';
 import { useUnifiedCartStore } from '@/lib/stores/unified-cart-store';
 import { EmptyState } from '@/components/public/EmptyState';
 import { PhotoModal } from '@/components/public/PhotoModal';
-import { CartButton, ShoppingCart as FamilyCartDrawer } from '@/components/family/ShoppingCart';
+import {
+  CartButton,
+  ShoppingCart as FamilyCartDrawer,
+} from '@/components/family/ShoppingCart';
 import { StickyCTA } from '@/components/public/StickyCTA';
 import type { GalleryContextData } from '@/lib/gallery-context';
 import { debugMigration } from '@/lib/feature-flags';
@@ -67,8 +76,9 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const [zoomIndex, setZoomIndex] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  
-  const { addItem, getTotalItems, openCart, items, clearCart, setContext } = useUnifiedCartStore();
+
+  const { addItem, getTotalItems, openCart, items, clearCart, setContext } =
+    useUnifiedCartStore();
 
   const BLUR_DATA_URL =
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==';
@@ -76,11 +86,14 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
   const token = context.token!; // Ya sabemos que es contexto familiar
 
   useEffect(() => {
-    debugMigration('FamilyGallery mounting', { token: token.slice(0, 8) + '...', eventId: context.eventId });
-    
+    debugMigration('FamilyGallery mounting', {
+      token: token.slice(0, 8) + '...',
+      eventId: context.eventId,
+    });
+
     // Configurar contexto en el cart store unificado
     setContext(context);
-    
+
     if (token) {
       const already = localStorage.getItem(`selection_submitted:${token}`);
       setSubmitted(already === '1');
@@ -91,9 +104,14 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
 
   const loadGallery = async (targetPage: number) => {
     try {
-      debugMigration('Loading family gallery', { targetPage, token: token.slice(0, 8) + '...' });
-      
-      const response = await fetch(`/api/family/gallery-simple/${token}?page=${targetPage}&limit=60`);
+      debugMigration('Loading family gallery', {
+        targetPage,
+        token: token.slice(0, 8) + '...',
+      });
+
+      const response = await fetch(
+        `/api/family/gallery-simple/${token}?page=${targetPage}&limit=60`
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -104,8 +122,10 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
 
       const data = await response.json();
       const newPhotos = (data.photos || []) as Photo[];
-      setPhotos((prev) => (targetPage === 1 ? newPhotos : [...prev, ...newPhotos]));
-      setHasMore(Boolean(data.pagination?.has_more ?? (newPhotos.length >= 60)));
+      setPhotos((prev) =>
+        targetPage === 1 ? newPhotos : [...prev, ...newPhotos]
+      );
+      setHasMore(Boolean(data.pagination?.has_more ?? newPhotos.length >= 60));
       setPage(targetPage);
       setSubject(data.subject);
 
@@ -120,9 +140,11 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
       if (savedSelection) {
         setSelectedPhotos(new Set(JSON.parse(savedSelection)));
       }
-      
-      debugMigration('Family gallery loaded', { photoCount: newPhotos.length, hasMore: data.pagination?.has_more });
-      
+
+      debugMigration('Family gallery loaded', {
+        photoCount: newPhotos.length,
+        hasMore: data.pagination?.has_more,
+      });
     } catch (err) {
       console.error('Error:', err);
       setError('Error cargando la galería');
@@ -188,7 +210,11 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
         setSending(false);
         return;
       }
-      const result = await submitSelection({ token, selectedPhotoIds: ids, package: pkg });
+      const result = await submitSelection({
+        token,
+        selectedPhotoIds: ids,
+        package: pkg,
+      });
       if (result.ok) {
         localStorage.setItem(`selection_submitted:${token}`, '1');
         setSubmitted(true);
@@ -204,11 +230,15 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="space-y-4 text-center">
           <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
           <div>
-            <p className="text-lg font-medium text-gray-700">Cargando tu galería...</p>
-            <p className="text-sm text-gray-500 mt-1">Esto puede tomar unos segundos</p>
+            <p className="text-lg font-medium text-gray-700">
+              Cargando tu galería...
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              Esto puede tomar unos segundos
+            </p>
           </div>
         </div>
       </div>
@@ -218,23 +248,27 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="rounded-xl bg-white p-8 shadow-xl max-w-md w-full">
+        <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
           <div className="flex items-start space-x-3">
-            <AlertCircleIcon className="h-6 w-6 text-red-500 mt-1 flex-shrink-0" />
+            <AlertCircleIcon className="mt-1 h-6 w-6 flex-shrink-0 text-red-500" />
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">No pudimos cargar tu galería</h2>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                <p className="text-sm font-medium text-gray-700">Posibles soluciones:</p>
-                <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+              <h2 className="mb-2 text-xl font-bold text-gray-900">
+                No pudimos cargar tu galería
+              </h2>
+              <p className="mb-4 text-gray-600">{error}</p>
+              <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+                <p className="text-sm font-medium text-gray-700">
+                  Posibles soluciones:
+                </p>
+                <ul className="list-inside list-disc space-y-1 text-sm text-gray-600">
                   <li>Verifica que el enlace sea correcto</li>
                   <li>Asegúrate de usar el QR o código proporcionado</li>
                   <li>Contacta con el fotógrafo si el problema persiste</li>
                 </ul>
               </div>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 transition-colors"
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
               >
                 Intentar de nuevo
               </button>
@@ -245,38 +279,50 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
     );
   }
 
-  const priceText = pkg ? (pkg === 'Combo A' ? '$' + 1000 : pkg === 'Combo B' ? '$' + 1800 : 'sin precio online') : 'sin precio online';
+  const priceText = pkg
+    ? pkg === 'Combo A'
+      ? '$' + 1000
+      : pkg === 'Combo B'
+        ? '$' + 1800
+        : 'sin precio online'
+    : 'sin precio online';
 
   return (
     <div className="space-y-6">
-      <div aria-live="polite" className="sr-only">{submitted ? '¡Listo! Recibimos tu selección.' : ''}</div>
-      
+      <div aria-live="polite" className="sr-only">
+        {submitted ? '¡Listo! Recibimos tu selección.' : ''}
+      </div>
+
       {/* Family Header */}
-      <div className="bg-white/90 backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-lg">
+      <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur-sm">
         {/* Main Header Row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">🖼️ Tus Fotos</h1>
             {subject?.event && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="mt-1 text-sm text-gray-600">
                 {subject.event.name} • {subject.event.school_name}
               </p>
             )}
           </div>
           <CartButton />
         </div>
-        
+
         {/* Status Row */}
         <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-gray-600">{photos.length} fotos disponibles</span>
+              <div className="h-2 w-2 rounded-full bg-green-500"></div>
+              <span className="text-gray-600">
+                {photos.length} fotos disponibles
+              </span>
             </div>
             {selectedPhotos.size > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full">
+              <div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1">
                 <ShoppingCartIcon className="h-4 w-4 text-blue-600" />
-                <span className="font-medium text-blue-600">{selectedPhotos.size} seleccionadas para comprar</span>
+                <span className="font-medium text-blue-600">
+                  {selectedPhotos.size} seleccionadas para comprar
+                </span>
               </div>
             )}
             {favorites.size > 0 && (
@@ -286,9 +332,9 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
               </div>
             )}
           </div>
-          
+
           {/* Instructions */}
-          <div className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+          <div className="rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-500">
             💡 Tip: ❤️ para favoritos • ✅ para comprar • 🔍 para ampliar
           </div>
         </div>
@@ -298,15 +344,18 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
         <div className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 p-1">
           <div className="rounded-lg bg-white p-6">
             <div className="flex items-start space-x-3">
-              <CheckCircleIcon className="h-8 w-8 text-green-500 flex-shrink-0" />
+              <CheckCircleIcon className="h-8 w-8 flex-shrink-0 text-green-500" />
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-gray-900 mb-1">¡Selección enviada con éxito!</h2>
-                <p className="text-gray-600 mb-4">
-                  Hemos recibido tu selección de fotos. El fotógrafo se pondrá en contacto contigo pronto.
+                <h2 className="mb-1 text-xl font-bold text-gray-900">
+                  ¡Selección enviada con éxito!
+                </h2>
+                <p className="mb-4 text-gray-600">
+                  Hemos recibido tu selección de fotos. El fotógrafo se pondrá
+                  en contacto contigo pronto.
                 </p>
-                <button 
-                  onClick={() => setSubmitted(false)} 
-                  className="rounded-lg bg-blue-600 px-6 py-2 text-white font-medium hover:bg-blue-700 transition-colors"
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="rounded-lg bg-blue-600 px-6 py-2 font-medium text-white transition-colors hover:bg-blue-700"
                 >
                   Ver galería nuevamente
                 </button>
@@ -324,10 +373,10 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
           {photos.map((photo, idx) => (
             <div
               key={photo.id}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-xl group relative overflow-hidden transition-all duration-300 transform hover:scale-105"
+              className="group relative transform overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl"
             >
               {/* Image Container */}
-              <div className="aspect-square relative bg-gray-100 rounded-t-2xl overflow-hidden">
+              <div className="relative aspect-square overflow-hidden rounded-t-2xl bg-gray-100">
                 <Image
                   src={photo.preview_url}
                   alt={photo.filename}
@@ -339,27 +388,27 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
                   placeholder="blur"
                   blurDataURL={BLUR_DATA_URL}
                 />
-                
+
                 {/* Zoom button on hover */}
                 <button
                   onClick={() => setZoomIndex(idx)}
-                  className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/30 transition-colors opacity-0 group-hover:opacity-100"
+                  className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-colors hover:bg-black/30 group-hover:opacity-100"
                   aria-label="Ver foto en tamaño completo"
                 >
                   <ZoomInIcon className="h-8 w-8 text-white drop-shadow-lg" />
                 </button>
 
                 {/* Watermark Badge */}
-                <div className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded-full shadow-lg">
+                <div className="absolute left-3 top-3 rounded-full bg-blue-600 px-2 py-1 text-xs font-medium text-white shadow-lg">
                   MUESTRA
                 </div>
 
                 {/* Selection Indicator */}
-                <div className="absolute top-3 right-3 z-10">
-                  <div 
-                    className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-lg ${
-                      selectedPhotos.has(photo.id) 
-                        ? 'bg-blue-600 text-white' 
+                <div className="absolute right-3 top-3 z-10">
+                  <div
+                    className={`flex h-6 w-6 transform cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 ${
+                      selectedPhotos.has(photo.id)
+                        ? 'bg-blue-600 text-white'
                         : 'bg-white/90 text-gray-600 backdrop-blur-sm'
                     }`}
                     onClick={(e) => {
@@ -384,32 +433,36 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
               </div>
 
               {/* Photo Info */}
-              <div className="bg-white p-3 rounded-b-2xl">
+              <div className="rounded-b-2xl bg-white p-3">
                 <div className="flex items-center justify-between">
                   {/* Photo filename */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-800">
                       {photo.filename}
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="mt-1 text-xs text-gray-600">
                       {Math.round(photo.size / 1024)} KB
                     </p>
                   </div>
-                  
+
                   {/* Action Buttons */}
-                  <div className="flex gap-2 ml-2">
+                  <div className="ml-2 flex gap-2">
                     {/* Favorite Button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleFavorite(photo.id);
                       }}
-                      className={`rounded-full p-1.5 transition-all transform hover:scale-110 ${
+                      className={`transform rounded-full p-1.5 transition-all hover:scale-110 ${
                         favorites.has(photo.id)
                           ? 'bg-red-500 text-white shadow-lg'
                           : 'bg-gray-100 text-gray-600 hover:bg-red-50'
                       }`}
-                      aria-label={favorites.has(photo.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                      aria-label={
+                        favorites.has(photo.id)
+                          ? 'Quitar de favoritos'
+                          : 'Agregar a favoritos'
+                      }
                     >
                       <HeartIcon
                         className="h-4 w-4"
@@ -432,12 +485,16 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
                           });
                         }
                       }}
-                      className={`rounded-full p-1.5 transition-all transform hover:scale-110 ${
+                      className={`transform rounded-full p-1.5 transition-all hover:scale-110 ${
                         selectedPhotos.has(photo.id)
                           ? 'bg-blue-600 text-white shadow-lg'
                           : 'bg-gray-100 text-gray-600 hover:bg-blue-50'
                       }`}
-                      aria-label={selectedPhotos.has(photo.id) ? 'Quitar de la selección' : 'Agregar a la selección'}
+                      aria-label={
+                        selectedPhotos.has(photo.id)
+                          ? 'Quitar de la selección'
+                          : 'Agregar a la selección'
+                      }
                     >
                       <ShoppingCartIcon className="h-4 w-4" />
                     </button>
@@ -448,27 +505,30 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
           ))}
         </div>
       )}
-      
+
       {/* Loading more indicator */}
       {isLoadingMore && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="animate-pulse bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="aspect-square bg-gray-200 rounded-t-2xl" />
+            <div
+              key={i}
+              className="animate-pulse overflow-hidden rounded-2xl bg-white shadow-lg"
+            >
+              <div className="aspect-square rounded-t-2xl bg-gray-200" />
               <div className="p-3">
-                <div className="h-4 bg-gray-200 rounded mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+                <div className="mb-2 h-4 rounded bg-gray-200" />
+                <div className="h-3 w-1/2 rounded bg-gray-200" />
               </div>
             </div>
           ))}
         </div>
       )}
-      
+
       {/* Infinite scroll trigger */}
       {hasMore && (
         <div
           ref={sentinelRef}
-          className="h-20 flex items-center justify-center"
+          className="flex h-20 items-center justify-center"
         >
           {isLoadingMore && (
             <div className="flex items-center space-x-2 text-gray-500">
@@ -501,7 +561,11 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
               body: JSON.stringify({
                 token,
                 contactInfo: { name: 'Cliente', email: 'cliente@example.com' },
-                items: items.map((it) => ({ photoId: it.photoId, quantity: it.quantity, priceType: 'base' })),
+                items: items.map((it) => ({
+                  photoId: it.photoId,
+                  quantity: it.quantity,
+                  priceType: 'base',
+                })),
               }),
             });
             if (!response.ok) {
@@ -524,12 +588,18 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
           photo={{
             id: photos[zoomIndex].id,
             preview_url: photos[zoomIndex].preview_url,
-            filename: photos[zoomIndex].filename
+            filename: photos[zoomIndex].filename,
           }}
           isOpen={true}
           onClose={() => setZoomIndex(null)}
-          onPrev={() => setZoomIndex((i) => (i === null || i === 0 ? i : i - 1))}
-          onNext={() => setZoomIndex((i) => (i === null || i === photos.length - 1 ? i : i + 1))}
+          onPrev={() =>
+            setZoomIndex((i) => (i === null || i === 0 ? i : i - 1))
+          }
+          onNext={() =>
+            setZoomIndex((i) =>
+              i === null || i === photos.length - 1 ? i : i + 1
+            )
+          }
           hasNext={zoomIndex < photos.length - 1}
           hasPrev={zoomIndex > 0}
           currentIndex={zoomIndex + 1}

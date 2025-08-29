@@ -20,8 +20,11 @@ export type OrderStatus = (typeof MP_STATUS_MAPPING)[MPStatus];
 // Configuración del cliente MP con reintentos
 const getMPClient = () => {
   const accessToken = process.env.MP_ACCESS_TOKEN;
-  console.log('[MP Client] Initializing with token:', accessToken ? 'SET' : 'NOT SET');
-  
+  console.log(
+    '[MP Client] Initializing with token:',
+    accessToken ? 'SET' : 'NOT SET'
+  );
+
   if (!accessToken) {
     throw new Error('MP_ACCESS_TOKEN no configurado');
   }
@@ -32,11 +35,11 @@ const getMPClient = () => {
       timeout: 15000, // Increase timeout to 15s
       idempotencyKey: crypto.randomBytes(16).toString('hex'),
       integratorId: undefined, // Explicitly set to undefined
-      corporationId: undefined, // Explicitly set to undefined 
+      corporationId: undefined, // Explicitly set to undefined
       platformId: undefined, // Explicitly set to undefined
     },
   });
-  
+
   console.log('[MP Client] Client created successfully');
   return config;
 };
@@ -68,7 +71,10 @@ export const createPaymentPreference = async (
     const preference = new Preference(client);
     console.log('[MP] Preference instance created');
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      'http://localhost:3000';
     console.log('[MP] Base URL for callbacks:', baseUrl);
 
     // Validate base URL format
@@ -88,15 +94,22 @@ export const createPaymentPreference = async (
       // auto_return: 'approved', // Temporarily disabled for debugging
     };
 
-    console.log('[MP] Sending preference data:', JSON.stringify(preferenceData, null, 2));
-    
+    console.log(
+      '[MP] Sending preference data:',
+      JSON.stringify(preferenceData, null, 2)
+    );
+
     const startTime = Date.now();
     console.log('[MP] Making API call to Mercado Pago...');
     const result = await preference.create({ body: preferenceData });
     const duration = Date.now() - startTime;
-    
+
     console.log('[MP] API call completed successfully in', duration + 'ms');
-    console.log('[MP] Response summary:', { id: result.id, hasInitPoint: !!result.init_point, hasSandboxInitPoint: !!result.sandbox_init_point });
+    console.log('[MP] Response summary:', {
+      id: result.id,
+      hasInitPoint: !!result.init_point,
+      hasSandboxInitPoint: !!result.sandbox_init_point,
+    });
 
     if (!result.id || !result.init_point || !result.sandbox_init_point) {
       throw new Error('Respuesta incompleta de MercadoPago');
@@ -108,17 +121,14 @@ export const createPaymentPreference = async (
       sandbox_init_point: result.sandbox_init_point,
     };
   } catch (error: any) {
-    console.error(
-      `Error creando preferencia MP (intento ${retryCount + 1}):`,
-      {
-        message: error.message,
-        status: error.status,
-        statusCode: error.statusCode,
-        cause: error.cause,
-        response: error.response?.data || error.response,
-        stack: error.stack?.split('\n').slice(0, 3).join('\n'),
-      }
-    );
+    console.error(`Error creando preferencia MP (intento ${retryCount + 1}):`, {
+      message: error.message,
+      status: error.status,
+      statusCode: error.statusCode,
+      cause: error.cause,
+      response: error.response?.data || error.response,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
 
     // Retry logic for transient errors
     if (retryCount < MAX_RETRIES) {
@@ -129,10 +139,10 @@ export const createPaymentPreference = async (
     }
 
     // Provide more specific error message
-    const errorMessage = error.message?.includes('parse URL') 
+    const errorMessage = error.message?.includes('parse URL')
       ? `Mercado Pago API error: ${error.message}. Check URL configuration and credentials.`
       : error.message || 'Error desconocido al crear preferencia de pago';
-    
+
     throw new Error(`Error al crear preferencia de pago: ${errorMessage}`);
   }
 };

@@ -10,9 +10,9 @@ const path = require('path');
 
 const imageDirs = [
   'public/images/icons',
-  'public/images/logos', 
+  'public/images/logos',
   'public/images/decorative',
-  'public/images/mockups'
+  'public/images/mockups',
 ];
 
 const placeholderFiles = [
@@ -23,13 +23,13 @@ const placeholderFiles = [
   'public/images/icons/publish.png',
   'public/images/icons/settings.png',
   'public/images/logos/lookescolar-main.png',
-  'public/images/logos/lookescolar-mini.png'
+  'public/images/logos/lookescolar-mini.png',
 ];
 
 console.log('🎨 Configurando estructura de imágenes...\n');
 
 // Crear directorios
-imageDirs.forEach(dir => {
+imageDirs.forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
     console.log(`✅ Creado: ${dir}`);

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { distributionService, DistributionMethod } from '@/lib/services/distribution.service';
-import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
+import {
+  distributionService,
+  DistributionMethod,
+} from '@/lib/services/distribution.service';
+import {
+  SecurityLogger,
+  generateRequestId,
+} from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
 
 // ============================================================
@@ -10,17 +16,21 @@ import { z } from 'zod';
 
 const DistributionRequestSchema = z.object({
   method: z.enum(['email', 'whatsapp', 'sms', 'print', 'direct']),
-  token_type: z.enum(['student_access', 'family_access']).default('family_access'),
+  token_type: z
+    .enum(['student_access', 'family_access'])
+    .default('family_access'),
   template_id: z.string().optional(),
   custom_message: z.string().max(500).optional(),
   auto_send: z.boolean().default(true),
   dry_run: z.boolean().default(false),
   schedule_at: z.string().datetime().optional(),
-  notification_preferences: z.object({
-    send_confirmation: z.boolean().default(true),
-    track_opens: z.boolean().default(true),
-    send_reminders: z.boolean().default(true)
-  }).optional()
+  notification_preferences: z
+    .object({
+      send_confirmation: z.boolean().default(true),
+      track_opens: z.boolean().default(true),
+      send_reminders: z.boolean().default(true),
+    })
+    .optional(),
 });
 
 const BulkDistributionSchema = z.object({
@@ -29,14 +39,14 @@ const BulkDistributionSchema = z.object({
   template_id: z.string().optional(),
   custom_message: z.string().max(500).optional(),
   schedule_at: z.string().datetime().optional(),
-  dry_run: z.boolean().default(false)
+  dry_run: z.boolean().default(false),
 });
 
 const ExpiryWarningsSchema = z.object({
   days_before_expiry: z.number().min(1).max(30).default(7),
   auto_rotate_critical: z.boolean().default(true),
   notification_method: z.enum(['email', 'whatsapp', 'sms']).default('email'),
-  dry_run: z.boolean().default(false)
+  dry_run: z.boolean().default(false),
 });
 
 // ============================================================
@@ -51,20 +61,21 @@ export async function GET(
     const { id: eventId } = await params;
     const requestId = generateRequestId();
     const { searchParams } = new URL(request.url);
-    
+
     const includeStats = searchParams.get('include_stats') === 'true';
     const includeLogs = searchParams.get('include_logs') === 'true';
     const dateFrom = searchParams.get('date_from');
     const dateTo = searchParams.get('date_to');
 
-    console.log(`[${requestId}] Getting distribution data for event:`, { 
+    console.log(`[${requestId}] Getting distribution data for event:`, {
       eventId: `${eventId.substring(0, 8)}***`,
       includeStats,
-      includeLogs
+      includeLogs,
     });
 
     // Validate event ID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(eventId)) {
       return NextResponse.json(
         { error: 'ID de evento inválido' },
@@ -96,15 +107,16 @@ export async function GET(
         name: event.name,
         school_name: event.school_name,
         date: event.date,
-        status: event.status
-      }
+        status: event.status,
+      },
     };
 
     // Get distribution statistics if requested
     if (includeStats) {
       let statsQuery = supabase
         .from('token_distribution_log')
-        .select(`
+        .select(
+          `
           distribution_method,
           status,
           distributed_at,
@@ -113,7 +125,8 @@ export async function GET(
             event_id,
             type
           )
-        `)
+        `
+        )
         .eq('enhanced_tokens.event_id', eventId);
 
       if (dateFrom) {
@@ -135,40 +148,57 @@ export async function GET(
         last_distribution: null as string | null,
         date_range: {
           from: dateFrom || null,
-          to: dateTo || null
-        }
+          to: dateTo || null,
+        },
       };
 
       if (distributionLogs) {
         // Group by method
-        stats.by_method = distributionLogs.reduce((acc, log) => {
-          acc[log.distribution_method] = (acc[log.distribution_method] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+        stats.by_method = distributionLogs.reduce(
+          (acc, log) => {
+            acc[log.distribution_method] =
+              (acc[log.distribution_method] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        );
 
         // Group by status
-        stats.by_status = distributionLogs.reduce((acc, log) => {
-          acc[log.status] = (acc[log.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+        stats.by_status = distributionLogs.reduce(
+          (acc, log) => {
+            acc[log.status] = (acc[log.status] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        );
 
         // Group by token type
-        stats.by_token_type = distributionLogs.reduce((acc, log) => {
-          const tokenType = (log as any).enhanced_tokens?.type || 'unknown';
-          acc[tokenType] = (acc[tokenType] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+        stats.by_token_type = distributionLogs.reduce(
+          (acc, log) => {
+            const tokenType = (log as any).enhanced_tokens?.type || 'unknown';
+            acc[tokenType] = (acc[tokenType] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        );
 
         // Calculate success rate
-        const successfulDeliveries = (stats.by_status['sent'] || 0) + 
-                                   (stats.by_status['delivered'] || 0) + 
-                                   (stats.by_status['opened'] || 0);
-        stats.success_rate = stats.total_distributions > 0 ? 
-          Math.round((successfulDeliveries / stats.total_distributions) * 100) : 0;
+        const successfulDeliveries =
+          (stats.by_status['sent'] || 0) +
+          (stats.by_status['delivered'] || 0) +
+          (stats.by_status['opened'] || 0);
+        stats.success_rate =
+          stats.total_distributions > 0
+            ? Math.round(
+                (successfulDeliveries / stats.total_distributions) * 100
+              )
+            : 0;
 
         // Get last distribution date
-        const lastLog = distributionLogs.sort((a, b) => 
-          new Date(b.distributed_at).getTime() - new Date(a.distributed_at).getTime()
+        const lastLog = distributionLogs.sort(
+          (a, b) =>
+            new Date(b.distributed_at).getTime() -
+            new Date(a.distributed_at).getTime()
         )[0];
         stats.last_distribution = lastLog?.distributed_at || null;
       }
@@ -180,7 +210,8 @@ export async function GET(
     if (includeLogs) {
       let logsQuery = supabase
         .from('token_distribution_log')
-        .select(`
+        .select(
+          `
           id,
           distribution_method,
           recipient_contact,
@@ -196,7 +227,8 @@ export async function GET(
             student_ids,
             event_id
           )
-        `)
+        `
+        )
         .eq('enhanced_tokens.event_id', eventId)
         .order('distributed_at', { ascending: false });
 
@@ -212,7 +244,7 @@ export async function GET(
 
       const { data: logs } = await logsQuery;
 
-      response.distribution_logs = (logs || []).map(log => ({
+      response.distribution_logs = (logs || []).map((log) => ({
         id: log.id,
         method: log.distribution_method,
         recipient: log.recipient_contact,
@@ -223,8 +255,8 @@ export async function GET(
         token_id: (log as any).enhanced_tokens?.id,
         metadata: {
           dry_run: log.metadata?.dry_run || false,
-          request_id: log.metadata?.request_id
-        }
+          request_id: log.metadata?.request_id,
+        },
       }));
     }
 
@@ -238,12 +270,19 @@ export async function GET(
       const now = new Date();
       response.token_summary = {
         total_tokens: tokenSummary.length,
-        active_tokens: tokenSummary.filter(t => t.is_active && new Date(t.expires_at) > now).length,
-        expired_tokens: tokenSummary.filter(t => new Date(t.expires_at) <= now).length,
-        by_type: tokenSummary.reduce((acc, token) => {
-          acc[token.type] = (acc[token.type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
+        active_tokens: tokenSummary.filter(
+          (t) => t.is_active && new Date(t.expires_at) > now
+        ).length,
+        expired_tokens: tokenSummary.filter(
+          (t) => new Date(t.expires_at) <= now
+        ).length,
+        by_type: tokenSummary.reduce(
+          (acc, token) => {
+            acc[token.type] = (acc[token.type] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
       };
     }
 
@@ -255,7 +294,7 @@ export async function GET(
         eventName: event.name,
         includeStats,
         includeLogs,
-        dateRange: { dateFrom, dateTo }
+        dateRange: { dateFrom, dateTo },
       },
       'info'
     );
@@ -264,19 +303,18 @@ export async function GET(
       eventId: `${eventId.substring(0, 8)}***`,
       includeStats,
       includeLogs,
-      tokenCount: response.token_summary?.total_tokens || 0
+      tokenCount: response.token_summary?.total_tokens || 0,
     });
 
     return NextResponse.json(response, {
-      headers: { 'X-Request-Id': requestId }
+      headers: { 'X-Request-Id': requestId },
     });
-
   } catch (error) {
     console.error('Error getting distribution data:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -294,13 +332,14 @@ export async function POST(
   try {
     const { id: eventId } = await params;
     const requestId = generateRequestId();
-    
-    console.log(`[${requestId}] Distribution request for event:`, { 
-      eventId: `${eventId.substring(0, 8)}***` 
+
+    console.log(`[${requestId}] Distribution request for event:`, {
+      eventId: `${eventId.substring(0, 8)}***`,
     });
 
     // Validate event ID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(eventId)) {
       return NextResponse.json(
         { error: 'ID de evento inválido' },
@@ -310,12 +349,12 @@ export async function POST(
 
     const body = await request.json();
     const validationResult = DistributionRequestSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Datos de solicitud inválidos',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         },
         { status: 400 }
       );
@@ -329,7 +368,7 @@ export async function POST(
       auto_send,
       dry_run,
       schedule_at,
-      notification_preferences
+      notification_preferences,
     } = validationResult.data;
 
     const supabase = await createServerSupabaseServiceClient();
@@ -367,12 +406,12 @@ export async function POST(
 
       // TODO: Implement scheduled job system
       console.log(`[${requestId}] Scheduled distribution for:`, scheduledDate);
-      
+
       return NextResponse.json({
         success: true,
         message: 'Distribución programada exitosamente',
         scheduled_at: schedule_at,
-        request_id: requestId
+        request_id: requestId,
       });
     }
 
@@ -380,21 +419,22 @@ export async function POST(
       method,
       tokenType: token_type,
       autoSend: auto_send,
-      dryRun: dry_run
+      dryRun: dry_run,
     });
 
     // Generate and distribute tokens
-    const distributionResult = await distributionService.generateEventDistribution(
-      eventId,
-      method as DistributionMethod,
-      {
-        token_type,
-        custom_message,
-        template_id,
-        dry_run,
-        auto_send
-      }
-    );
+    const distributionResult =
+      await distributionService.generateEventDistribution(
+        eventId,
+        method as DistributionMethod,
+        {
+          token_type,
+          custom_message,
+          template_id,
+          dry_run,
+          auto_send,
+        }
+      );
 
     SecurityLogger.logSecurityEvent(
       'event_distribution_generated',
@@ -407,7 +447,7 @@ export async function POST(
         tokensGenerated: distributionResult.tokens_generated,
         distributionsSent: distributionResult.distributions_sent,
         dryRun: dry_run,
-        autoSend: auto_send
+        autoSend: auto_send,
       },
       'info'
     );
@@ -415,36 +455,38 @@ export async function POST(
     console.log(`[${requestId}] Event distribution completed:`, {
       eventId: `${eventId.substring(0, 8)}***`,
       tokensGenerated: distributionResult.tokens_generated,
-      distributionsSent: distributionResult.distributions_sent
+      distributionsSent: distributionResult.distributions_sent,
     });
 
-    return NextResponse.json({
-      success: true,
-      event: {
-        id: event.id,
-        name: event.name,
-        school_name: event.school_name
+    return NextResponse.json(
+      {
+        success: true,
+        event: {
+          id: event.id,
+          name: event.name,
+          school_name: event.school_name,
+        },
+        results: {
+          tokens_generated: distributionResult.tokens_generated,
+          distributions_sent: distributionResult.distributions_sent,
+          method,
+          token_type,
+          dry_run,
+        },
+        summary: distributionResult.summary,
+        request_id: requestId,
+        generated_at: new Date().toISOString(),
       },
-      results: {
-        tokens_generated: distributionResult.tokens_generated,
-        distributions_sent: distributionResult.distributions_sent,
-        method,
-        token_type,
-        dry_run
-      },
-      summary: distributionResult.summary,
-      request_id: requestId,
-      generated_at: new Date().toISOString()
-    }, {
-      headers: { 'X-Request-Id': requestId }
-    });
-
+      {
+        headers: { 'X-Request-Id': requestId },
+      }
+    );
   } catch (error) {
     console.error('Error generating distribution:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -462,19 +504,19 @@ export async function PUT(
   try {
     const { id: eventId } = await params;
     const requestId = generateRequestId();
-    
-    console.log(`[${requestId}] Bulk distribution request for event:`, { 
-      eventId: `${eventId.substring(0, 8)}***` 
+
+    console.log(`[${requestId}] Bulk distribution request for event:`, {
+      eventId: `${eventId.substring(0, 8)}***`,
     });
 
     const body = await request.json();
     const validationResult = BulkDistributionSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Datos de solicitud inválidos',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         },
         { status: 400 }
       );
@@ -486,7 +528,7 @@ export async function PUT(
       template_id,
       custom_message,
       schedule_at,
-      dry_run
+      dry_run,
     } = validationResult.data;
 
     const supabase = await createServerSupabaseServiceClient();
@@ -520,14 +562,14 @@ export async function PUT(
         success: true,
         message: 'Distribución programada exitosamente',
         scheduled_at: schedule_at,
-        token_count: token_ids.length
+        token_count: token_ids.length,
       });
     }
 
     console.log(`[${requestId}] Distributing existing tokens:`, {
       tokenCount: token_ids.length,
       method,
-      dryRun: dry_run
+      dryRun: dry_run,
     });
 
     // Distribute tokens
@@ -536,7 +578,7 @@ export async function PUT(
       method: method as DistributionMethod,
       template_id,
       custom_message,
-      dry_run
+      dry_run,
     });
 
     SecurityLogger.logSecurityEvent(
@@ -548,7 +590,7 @@ export async function PUT(
         tokenCount: token_ids.length,
         successful: distributionResult.successful,
         failed: distributionResult.failed,
-        dryRun: dry_run
+        dryRun: dry_run,
       },
       'info'
     );
@@ -557,38 +599,40 @@ export async function PUT(
       eventId: `${eventId.substring(0, 8)}***`,
       totalRequested: distributionResult.total_requested,
       successful: distributionResult.successful,
-      failed: distributionResult.failed
+      failed: distributionResult.failed,
     });
 
-    return NextResponse.json({
-      success: true,
-      results: {
-        total_requested: distributionResult.total_requested,
-        successful: distributionResult.successful,
-        failed: distributionResult.failed,
-        skipped: distributionResult.skipped,
-        method,
-        dry_run
+    return NextResponse.json(
+      {
+        success: true,
+        results: {
+          total_requested: distributionResult.total_requested,
+          successful: distributionResult.successful,
+          failed: distributionResult.failed,
+          skipped: distributionResult.skipped,
+          method,
+          dry_run,
+        },
+        distribution_logs: distributionResult.distribution_logs.map((log) => ({
+          token_id: log.token_id,
+          recipient: log.recipient,
+          status: log.status,
+          message: log.message,
+        })),
+        errors: distributionResult.errors,
+        request_id: requestId,
+        distributed_at: new Date().toISOString(),
       },
-      distribution_logs: distributionResult.distribution_logs.map(log => ({
-        token_id: log.token_id,
-        recipient: log.recipient,
-        status: log.status,
-        message: log.message
-      })),
-      errors: distributionResult.errors,
-      request_id: requestId,
-      distributed_at: new Date().toISOString()
-    }, {
-      headers: { 'X-Request-Id': requestId }
-    });
-
+      {
+        headers: { 'X-Request-Id': requestId },
+      }
+    );
   } catch (error) {
     console.error('Error in bulk distribution:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -606,19 +650,19 @@ export async function PATCH(
   try {
     const { id: eventId } = await params;
     const requestId = generateRequestId();
-    
-    console.log(`[${requestId}] Expiry warnings request for event:`, { 
-      eventId: `${eventId.substring(0, 8)}***` 
+
+    console.log(`[${requestId}] Expiry warnings request for event:`, {
+      eventId: `${eventId.substring(0, 8)}***`,
     });
 
     const body = await request.json();
     const validationResult = ExpiryWarningsSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Datos de solicitud inválidos',
-          details: validationResult.error.errors
+          details: validationResult.error.errors,
         },
         { status: 400 }
       );
@@ -628,11 +672,12 @@ export async function PATCH(
       days_before_expiry,
       auto_rotate_critical,
       notification_method,
-      dry_run
+      dry_run,
     } = validationResult.data;
 
     // Send expiry warnings
-    const warningsResult = await distributionService.sendExpiryWarnings(days_before_expiry);
+    const warningsResult =
+      await distributionService.sendExpiryWarnings(days_before_expiry);
 
     SecurityLogger.logSecurityEvent(
       'expiry_warnings_sent',
@@ -643,7 +688,7 @@ export async function PATCH(
         warningsSent: warningsResult.warnings_sent,
         tokensRotated: warningsResult.tokens_rotated,
         errorsCount: warningsResult.errors.length,
-        dryRun: dry_run
+        dryRun: dry_run,
       },
       'info'
     );
@@ -651,32 +696,34 @@ export async function PATCH(
     console.log(`[${requestId}] Expiry warnings completed:`, {
       eventId: `${eventId.substring(0, 8)}***`,
       warningsSent: warningsResult.warnings_sent,
-      tokensRotated: warningsResult.tokens_rotated
+      tokensRotated: warningsResult.tokens_rotated,
     });
 
-    return NextResponse.json({
-      success: true,
-      results: {
-        warnings_sent: warningsResult.warnings_sent,
-        tokens_rotated: warningsResult.tokens_rotated,
-        days_before_expiry,
-        notification_method,
-        auto_rotate_critical,
-        dry_run
+    return NextResponse.json(
+      {
+        success: true,
+        results: {
+          warnings_sent: warningsResult.warnings_sent,
+          tokens_rotated: warningsResult.tokens_rotated,
+          days_before_expiry,
+          notification_method,
+          auto_rotate_critical,
+          dry_run,
+        },
+        errors: warningsResult.errors,
+        request_id: requestId,
+        processed_at: new Date().toISOString(),
       },
-      errors: warningsResult.errors,
-      request_id: requestId,
-      processed_at: new Date().toISOString()
-    }, {
-      headers: { 'X-Request-Id': requestId }
-    });
-
+      {
+        headers: { 'X-Request-Id': requestId },
+      }
+    );
   } catch (error) {
     console.error('Error sending expiry warnings:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

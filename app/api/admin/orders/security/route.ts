@@ -10,9 +10,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const url = new URL(request.url);
-    const period = (url.searchParams.get('period') as 'day' | 'week' | 'month') || 'day';
+    const period =
+      (url.searchParams.get('period') as 'day' | 'week' | 'month') || 'day';
 
-    console.log(`[Security API] Generating security report for period: ${period}`);
+    console.log(
+      `[Security API] Generating security report for period: ${period}`
+    );
 
     // Generate security report
     const report = await orderSecurityService.generateSecurityReport(period);
@@ -32,13 +35,12 @@ export async function GET(request: NextRequest) {
         security_level: 'admin_only',
       },
     });
-
   } catch (error) {
     console.error('[Security API] Failed to generate security report:', error);
     return NextResponse.json(
       {
         error: 'Failed to generate security report',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -75,13 +77,12 @@ export async function POST(request: NextRequest) {
         trigger_method: 'manual_api_request',
       },
     });
-
   } catch (error) {
     console.error('[Security API] Security analysis failed:', error);
     return NextResponse.json(
       {
         error: 'Security analysis failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

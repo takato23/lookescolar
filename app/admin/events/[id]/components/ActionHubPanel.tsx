@@ -1,51 +1,72 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { 
-  Upload, Users, Eye, QrCode, Settings, Package, Camera,
-  Zap, Clock, ArrowRight, Play, Star, ChevronRight, Brain
+import { memo } from 'react';
+import { MotionDiv } from '@/lib/dynamic-imports';
+import {
+  Upload,
+  Users,
+  Eye,
+  QrCode,
+  Settings,
+  Package,
+  Camera,
+  Zap,
+  Clock,
+  Star,
+  ChevronRight,
+  Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { WorkflowAction, EventPhase, WorkflowPriority } from '@/lib/stores/event-workflow-store';
+import {
+  WorkflowAction,
+  EventPhase,
+  WorkflowPriority,
+} from '@/lib/stores/event-workflow-store';
 import { useRouter } from 'next/navigation';
+
+type ActionClickHandler = (arg: WorkflowAction) => void;
 
 interface ActionHubPanelProps {
   nextActions: WorkflowAction[];
   currentPhase: EventPhase;
   eventId: string;
-  onActionClick: (action: WorkflowAction) => void;
+  onActionClick: ActionClickHandler;
 }
 
-export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionClick }: ActionHubPanelProps) {
+export const ActionHubPanel = memo(function ActionHubPanel({
+  nextActions,
+  eventId,
+  onActionClick,
+}: ActionHubPanelProps) {
   const router = useRouter();
-  
+
   const priorityConfig = {
     [WorkflowPriority.CRITICAL]: {
       color: 'red',
       label: 'Crítico',
-      icon: '🚨'
+      icon: '🚨',
     },
     [WorkflowPriority.HIGH]: {
-      color: 'orange', 
+      color: 'orange',
       label: 'Alto',
-      icon: '⚡'
+      icon: '⚡',
     },
     [WorkflowPriority.MEDIUM]: {
       color: 'blue',
-      label: 'Medio', 
-      icon: '📋'
+      label: 'Medio',
+      icon: '📋',
     },
     [WorkflowPriority.LOW]: {
       color: 'gray',
       label: 'Bajo',
-      icon: '📝'
+      icon: '📝',
     },
     [WorkflowPriority.OPTIONAL]: {
       color: 'gray',
       label: 'Opcional',
-      icon: '💡'
-    }
+      icon: '💡',
+    },
   };
 
   const iconMap = {
@@ -55,17 +76,17 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
     organize: Users,
     review: Eye,
     export: Package,
-    notify: Zap
+    notify: Zap,
   };
 
   const quickActions = [
     {
-      id: 'event-library',
-      title: 'Biblioteca de Fotos',
+      id: 'event-photos',
+      title: 'Gestión de Fotos',
       icon: Upload,
       color: 'blue',
-      href: `/admin/events/${eventId}/library`,
-      description: 'Nueva interfaz con organización por carpetas'
+      href: `/admin/photos?event_id=${eventId}`,
+      description: 'Sistema unificado de gestión de fotos sin saltos',
     },
     {
       id: 'view-gallery',
@@ -73,7 +94,7 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
       icon: Eye,
       color: 'purple',
       href: `/gallery/${eventId}`,
-      description: 'Vista previa de la galería familiar'
+      description: 'Vista previa de la galería familiar',
     },
     {
       id: 'photos-mgmt-classic',
@@ -81,7 +102,7 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
       icon: Camera,
       color: 'gray',
       href: `/admin/photos?eventId=${eventId}`,
-      description: 'Interfaz tradicional de fotos'
+      description: 'Interfaz tradicional de fotos',
     },
     {
       id: 'qr-codes',
@@ -89,28 +110,28 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
       icon: QrCode,
       color: 'amber',
       href: `/admin/events/${eventId}/qr`,
-      description: 'Generar accesos familiares'
+      description: 'Generar accesos familiares',
     },
     {
       id: 'orders',
-      title: 'Ver Pedidos', 
+      title: 'Ver Pedidos',
       icon: Package,
       color: 'green',
       href: `/admin/orders?event=${eventId}`,
-      description: 'Gestionar compras y entregas'
-    }
+      description: 'Gestionar compras y entregas',
+    },
   ];
 
   return (
-    <motion.div
+    <MotionDiv
       className="glass-action-hub"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-lg font-semibold">
           <Zap className="h-5 w-5 text-blue-500" />
           Centro de Acción
         </h3>
@@ -121,18 +142,18 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
 
       {/* Priority Actions */}
       {nextActions.length > 0 && (
-        <div className="space-y-3 mb-6">
-          <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+        <div className="mb-6 space-y-3">
+          <h4 className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
             <Star className="h-4 w-4" />
             Acciones Prioritarias
           </h4>
-          
+
           {nextActions.slice(0, 3).map((action, index) => {
             const ActionIcon = iconMap[action.type] || Settings;
             const priorityInfo = priorityConfig[action.priority];
-            
+
             return (
-              <motion.div
+              <MotionDiv
                 key={action.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -140,32 +161,38 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
               >
                 <Button
                   variant="ghost"
-                  className="w-full h-auto p-4 justify-start glass-fab hover:scale-[1.02] transition-all"
+                  className="glass-fab h-auto w-full justify-start p-4 transition-all hover:scale-[1.02]"
                   onClick={() => onActionClick(action)}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className={`p-2 rounded-lg bg-${action.color}-500/10 flex-shrink-0`}>
-                      <ActionIcon className={`h-4 w-4 text-${action.color}-500`} />
+                  <div className="flex w-full items-center gap-3">
+                    <div
+                      className={`rounded-lg p-2 bg-${action.color}-500/10 flex-shrink-0`}
+                    >
+                      <ActionIcon
+                        className={`h-4 w-4 text-${action.color}-500`}
+                      />
                     </div>
-                    
+
                     <div className="flex-1 text-left">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-sm">{action.title}</span>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs glass-label-ios26 border-${priorityInfo.color}-300 text-${priorityInfo.color}-700`}
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {action.title}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`glass-label-ios26 text-xs border-${priorityInfo.color}-300 text-${priorityInfo.color}-700`}
                         >
                           {priorityInfo.icon} {priorityInfo.label}
                         </Badge>
                       </div>
-                      
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
                         {action.description}
                       </p>
-                      
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
+
+                      <div className="mt-1 flex items-center gap-2">
+                        <Clock className="text-muted-foreground h-3 w-3" />
+                        <span className="text-muted-foreground text-xs">
                           ~{action.estimatedTime} min
                         </span>
                         {action.automatable && (
@@ -175,11 +202,11 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
                         )}
                       </div>
                     </div>
-                    
-                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+
+                    <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                   </div>
                 </Button>
-              </motion.div>
+              </MotionDiv>
             );
           })}
         </div>
@@ -187,11 +214,13 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
 
       {/* Quick Actions Grid */}
       <div className="space-y-3">
-        <h4 className="text-sm font-medium text-muted-foreground">Acciones Rápidas</h4>
-        
+        <h4 className="text-muted-foreground text-sm font-medium">
+          Acciones Rápidas
+        </h4>
+
         <div className="grid grid-cols-2 gap-3">
           {quickActions.map((action, index) => (
-            <motion.div
+            <MotionDiv
               key={action.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -199,21 +228,21 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
             >
               <Button
                 variant="outline"
-                className="h-auto w-full p-3 flex-col gap-2 glass-fab hover:scale-105 transition-transform"
+                className="glass-fab h-auto w-full flex-col gap-2 p-3 transition-transform hover:scale-105"
                 onClick={() => router.push(action.href)}
               >
                 <action.icon className={`h-5 w-5 text-${action.color}-500`} />
                 <span className="text-xs font-medium">{action.title}</span>
               </Button>
-            </motion.div>
+            </MotionDiv>
           ))}
         </div>
       </div>
 
       {/* AI Suggestions Teaser */}
-      {nextActions.some(action => action.aiSuggestion) && (
-        <motion.div
-          className="mt-6 p-3 rounded-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-300/20"
+      {nextActions.some((action) => action.aiSuggestion) && (
+        <MotionDiv
+          className="mt-6 rounded-xl border border-purple-300/20 bg-gradient-to-r from-purple-500/10 to-blue-500/10 p-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
@@ -224,11 +253,11 @@ export function ActionHubPanel({ nextActions, currentPhase, eventId, onActionCli
               IA puede automatizar esta acción
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {nextActions.find(action => action.aiSuggestion)?.aiSuggestion}
+          <p className="text-muted-foreground mt-1 text-xs">
+            {nextActions.find((action) => action.aiSuggestion)?.aiSuggestion}
           </p>
-        </motion.div>
+        </MotionDiv>
       )}
-    </motion.div>
+    </MotionDiv>
   );
-}
+});

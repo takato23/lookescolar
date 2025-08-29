@@ -35,7 +35,10 @@ class WatermarkService {
     fontWeight: 'bold',
   };
 
-  private readonly DEFAULT_PROCESSING_OPTIONS: Omit<ProcessingOptions, 'watermark'> = {
+  private readonly DEFAULT_PROCESSING_OPTIONS: Omit<
+    ProcessingOptions,
+    'watermark'
+  > = {
     maxWidth: 800,
     maxHeight: 600,
     quality: 70,
@@ -53,16 +56,18 @@ class WatermarkService {
     photoId: string,
     originalImageBuffer: Buffer,
     options?: Partial<ProcessingOptions>
-  ): Promise<ServiceResult<{
-    previewBuffer: Buffer;
-    previewPath: string;
-    metadata: {
-      width: number;
-      height: number;
-      format: string;
-      size: number;
-    };
-  }>> {
+  ): Promise<
+    ServiceResult<{
+      previewBuffer: Buffer;
+      previewPath: string;
+      metadata: {
+        width: number;
+        height: number;
+        format: string;
+        size: number;
+      };
+    }>
+  > {
     try {
       const processingOptions: ProcessingOptions = {
         ...this.DEFAULT_PROCESSING_OPTIONS,
@@ -78,18 +83,19 @@ class WatermarkService {
 
       // Get original image metadata
       const originalMetadata = await sharp(originalImageBuffer).metadata();
-      
+
       if (!originalMetadata.width || !originalMetadata.height) {
         return { success: false, error: 'Could not read image dimensions' };
       }
 
       // Calculate preview dimensions while maintaining aspect ratio
-      const { width: previewWidth, height: previewHeight } = this.calculatePreviewDimensions(
-        originalMetadata.width,
-        originalMetadata.height,
-        processingOptions.maxWidth,
-        processingOptions.maxHeight
-      );
+      const { width: previewWidth, height: previewHeight } =
+        this.calculatePreviewDimensions(
+          originalMetadata.width,
+          originalMetadata.height,
+          processingOptions.maxWidth,
+          processingOptions.maxHeight
+        );
 
       // Create the watermark SVG
       const watermarkSvg = this.createWatermarkSvg(
@@ -104,32 +110,39 @@ class WatermarkService {
           fit: 'inside',
           withoutEnlargement: true,
         })
-        .composite([{
-          input: Buffer.from(watermarkSvg),
-          gravity: 'center',
-        }]);
+        .composite([
+          {
+            input: Buffer.from(watermarkSvg),
+            gravity: 'center',
+          },
+        ]);
 
       // Apply format-specific options
       let processedImage: sharp.Sharp;
       switch (processingOptions.format) {
         case 'jpeg':
-          processedImage = sharpInstance.jpeg({ 
+          processedImage = sharpInstance.jpeg({
             quality: processingOptions.quality,
             progressive: true,
           });
           break;
         case 'webp':
-          processedImage = sharpInstance.webp({ 
+          processedImage = sharpInstance.webp({
             quality: processingOptions.quality,
           });
           break;
         case 'png':
-          processedImage = sharpInstance.png({ 
-            compressionLevel: Math.floor((100 - processingOptions.quality) / 10),
+          processedImage = sharpInstance.png({
+            compressionLevel: Math.floor(
+              (100 - processingOptions.quality) / 10
+            ),
           });
           break;
         default:
-          return { success: false, error: `Unsupported format: ${processingOptions.format}` };
+          return {
+            success: false,
+            error: `Unsupported format: ${processingOptions.format}`,
+          };
       }
 
       const previewBuffer = await processedImage.toBuffer();
@@ -145,7 +158,10 @@ class WatermarkService {
         previewSize: previewBuffer.length,
         originalDimensions: `${originalMetadata.width}x${originalMetadata.height}`,
         previewDimensions: `${finalMetadata.width}x${finalMetadata.height}`,
-        compressionRatio: Math.round((previewBuffer.length / originalImageBuffer.length) * 100) / 100,
+        compressionRatio:
+          Math.round(
+            (previewBuffer.length / originalImageBuffer.length) * 100
+          ) / 100,
       });
 
       return {
@@ -161,7 +177,6 @@ class WatermarkService {
           },
         },
       };
-
     } catch (error) {
       logger.error('Failed to generate watermarked preview', {
         photoId,
@@ -170,7 +185,8 @@ class WatermarkService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate preview',
+        error:
+          error instanceof Error ? error.message : 'Failed to generate preview',
       };
     }
   }
@@ -192,7 +208,7 @@ class WatermarkService {
         .from('photos')
         .upload(previewPath, previewBuffer, {
           contentType: `image/${metadata.format}`,
-          cacheControl: '3600', // 1 hour cache
+          cacheControl: '86400', // 24h cache for watermarked previews
           upsert: true,
         });
 
@@ -232,7 +248,7 @@ class WatermarkService {
 
         // Try to cleanup uploaded file
         await supabase.storage.from('photos').remove([previewPath]);
-        
+
         return { success: false, error: updateError.message };
       }
 
@@ -254,7 +270,6 @@ class WatermarkService {
         success: true,
         data: { previewUrl },
       };
-
     } catch (error) {
       logger.error('Unexpected error in uploadAndSavePreview', {
         photoId,
@@ -264,7 +279,8 @@ class WatermarkService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to upload preview',
+        error:
+          error instanceof Error ? error.message : 'Failed to upload preview',
       };
     }
   }
@@ -286,7 +302,10 @@ class WatermarkService {
         .download(storagePath);
 
       if (downloadError || !imageData) {
-        return { success: false, error: downloadError?.message || 'Failed to download original image' };
+        return {
+          success: false,
+          error: downloadError?.message || 'Failed to download original image',
+        };
       }
 
       const originalImageBuffer = Buffer.from(await imageData.arrayBuffer());
@@ -321,7 +340,6 @@ class WatermarkService {
           previewPath: previewResult.data.previewPath,
         },
       };
-
     } catch (error) {
       logger.error('Unexpected error in processPhotoPreview', {
         photoId,
@@ -331,7 +349,10 @@ class WatermarkService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to process photo preview',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to process photo preview',
       };
     }
   }
@@ -437,7 +458,9 @@ class WatermarkService {
   /**
    * Clean up old preview files for a photo
    */
-  async cleanupOldPreviews(photoId: string): Promise<ServiceResult<{ deletedCount: number }>> {
+  async cleanupOldPreviews(
+    photoId: string
+  ): Promise<ServiceResult<{ deletedCount: number }>> {
     try {
       const supabase = await this.getSupabase();
 
@@ -459,7 +482,9 @@ class WatermarkService {
       }
 
       // Keep the newest file, delete the rest
-      const filesToDelete = files.slice(1).map(file => `previews/${photoId}/${file.name}`);
+      const filesToDelete = files
+        .slice(1)
+        .map((file) => `previews/${photoId}/${file.name}`);
 
       const { error: deleteError } = await supabase.storage
         .from('photos')
@@ -482,7 +507,6 @@ class WatermarkService {
         success: true,
         data: { deletedCount: filesToDelete.length },
       };
-
     } catch (error) {
       logger.error('Unexpected error in cleanupOldPreviews', {
         photoId,
@@ -491,7 +515,8 @@ class WatermarkService {
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to cleanup previews',
+        error:
+          error instanceof Error ? error.message : 'Failed to cleanup previews',
       };
     }
   }

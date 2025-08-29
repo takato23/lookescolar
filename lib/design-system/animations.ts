@@ -312,12 +312,17 @@ export const gestureConfigs = {
 };
 
 // Utility function to get age-appropriate animation
-export const getAgeAnimation = (ageGroup: 'kindergarten' | 'elementary' | 'secondary') => {
+export const getAgeAnimation = (
+  ageGroup: 'kindergarten' | 'elementary' | 'secondary'
+) => {
   return ageVariants[ageGroup];
 };
 
 // Utility function for staggered list animations
-export const createStaggeredAnimation = (itemCount: number, baseDelay: number = 0.05) => {
+export const createStaggeredAnimation = (
+  itemCount: number,
+  baseDelay: number = 0.05
+) => {
   return {
     animate: {
       transition: {
@@ -347,13 +352,17 @@ export const animationPresets = {
     hover: { scale: 1.02, transition: subtleSpring },
     tap: { scale: 0.98, transition: { ...subtleSpring, duration: 0.1 } },
   },
-  
+
   // Playful interactions for younger age groups
   playful: {
     hover: { scale: 1.08, rotate: 1, transition: bouncySpring },
-    tap: { scale: 0.92, rotate: -1, transition: { ...bouncySpring, duration: 0.15 } },
+    tap: {
+      scale: 0.92,
+      rotate: -1,
+      transition: { ...bouncySpring, duration: 0.15 },
+    },
   },
-  
+
   // Elegant interactions for refined contexts
   elegant: {
     hover: { y: -2, scale: 1.01, transition: smoothEasing },

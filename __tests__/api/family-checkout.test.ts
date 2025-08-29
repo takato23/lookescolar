@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createMocks } from 'node-mocks-http';
 import { POST } from '@/app/api/family/checkout/route';
-import { createTestClient, setupTestData, cleanupTestData } from '../test-utils';
+import {
+  createTestClient,
+  setupTestData,
+  cleanupTestData,
+} from '../test-utils';
 
 describe('/api/family/checkout', () => {
   let testData: any;
@@ -26,21 +30,21 @@ describe('/api/family/checkout', () => {
           contactInfo: {
             name: 'Test Parent',
             email: 'parent@test.com',
-            phone: '1234567890'
+            phone: '1234567890',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 1,
-              priceType: 'base'
+              priceType: 'base',
             },
             {
-              photoId: testData.photoIds[1], 
+              photoId: testData.photoIds[1],
               quantity: 2,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -65,16 +69,16 @@ describe('/api/family/checkout', () => {
           token: 'invalid_token_too_short',
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -93,16 +97,16 @@ describe('/api/family/checkout', () => {
           token: testData.expiredToken,
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -120,16 +124,16 @@ describe('/api/family/checkout', () => {
           token: testData.validToken,
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
           items: [
             {
               photoId: testData.otherSubjectPhotoId, // Photo from different subject
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -146,7 +150,7 @@ describe('/api/family/checkout', () => {
         subject_id: testData.subjectId,
         contact_name: 'Previous Order',
         contact_email: 'previous@test.com',
-        status: 'pending'
+        status: 'pending',
       });
 
       const { req } = createMocks({
@@ -156,16 +160,16 @@ describe('/api/family/checkout', () => {
           token: testData.validToken,
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -183,10 +187,10 @@ describe('/api/family/checkout', () => {
           token: testData.validToken,
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
-          items: [] // Empty cart
-        }
+          items: [], // Empty cart
+        },
       });
 
       const response = await POST(req);
@@ -205,16 +209,16 @@ describe('/api/family/checkout', () => {
           token: testData.validToken,
           contactInfo: {
             name: 'A', // Too short
-            email: 'invalid-email' // Invalid email
+            email: 'invalid-email', // Invalid email
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 1,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -222,8 +226,14 @@ describe('/api/family/checkout', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Invalid checkout data');
-      expect(data.details.some((detail: string) => detail.includes('Nombre requerido'))).toBe(true);
-      expect(data.details.some((detail: string) => detail.includes('Email inválido'))).toBe(true);
+      expect(
+        data.details.some((detail: string) =>
+          detail.includes('Nombre requerido')
+        )
+      ).toBe(true);
+      expect(
+        data.details.some((detail: string) => detail.includes('Email inválido'))
+      ).toBe(true);
     });
 
     it('should reject invalid price type', async () => {
@@ -234,16 +244,16 @@ describe('/api/family/checkout', () => {
           token: testData.validToken,
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 1,
-              priceType: 'nonexistent_type'
-            }
-          ]
-        }
+              priceType: 'nonexistent_type',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);
@@ -255,29 +265,29 @@ describe('/api/family/checkout', () => {
 
     it('should respect rate limiting', async () => {
       const requests = [];
-      
+
       // Make 6 requests quickly (limit is 5/min)
       for (let i = 0; i < 6; i++) {
         const { req } = createMocks({
           method: 'POST',
-          headers: { 
+          headers: {
             'content-type': 'application/json',
-            'x-forwarded-for': '192.168.1.100' // Same IP for all
+            'x-forwarded-for': '192.168.1.100', // Same IP for all
           },
           body: {
             token: testData.validToken,
             contactInfo: {
               name: 'Test Parent',
-              email: `parent${i}@test.com`
+              email: `parent${i}@test.com`,
             },
             items: [
               {
                 photoId: testData.photoIds[0],
                 quantity: 1,
-                priceType: 'base'
-              }
-            ]
-          }
+                priceType: 'base',
+              },
+            ],
+          },
         });
 
         requests.push(POST(req));
@@ -285,7 +295,7 @@ describe('/api/family/checkout', () => {
 
       const responses = await Promise.all(requests);
       // Verificar que al menos una request fue rate limited
-      const rateLimitedResponse = responses.find(r => r.status === 429);
+      const rateLimitedResponse = responses.find((r) => r.status === 429);
       expect(rateLimitedResponse).toBeDefined();
       if (rateLimitedResponse) {
         expect(rateLimitedResponse.status).toBe(429);
@@ -302,21 +312,21 @@ describe('/api/family/checkout', () => {
           token: testData.validToken,
           contactInfo: {
             name: 'Test Parent',
-            email: 'parent@test.com'
+            email: 'parent@test.com',
           },
           items: [
             {
               photoId: testData.photoIds[0],
               quantity: 2,
-              priceType: 'base' 
+              priceType: 'base',
             },
             {
               photoId: testData.photoIds[1],
               quantity: 3,
-              priceType: 'base'
-            }
-          ]
-        }
+              priceType: 'base',
+            },
+          ],
+        },
       });
 
       const response = await POST(req);

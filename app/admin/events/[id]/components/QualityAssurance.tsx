@@ -2,16 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  AlertTriangle, 
-  CheckCircle2, 
-  Info, 
-  X, 
-  Eye,
-  RefreshCw,
-  AlertCircle,
-  Clock
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, X, RefreshCw, AlertCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,20 +19,22 @@ interface QualityIssue {
   autoFixable?: boolean;
 }
 
+type IssueIdHandler = (id: string) => void;
+
 interface QualityAssuranceProps {
   eventId?: string;
   issues?: QualityIssue[];
   onRefresh?: () => void;
-  onResolveIssue?: (issueId: string) => void;
-  onDismissIssue?: (issueId: string) => void;
+  onResolveIssue?: IssueIdHandler;
+  onDismissIssue?: IssueIdHandler;
 }
 
-export function QualityAssurance({ 
-  eventId, 
+export function QualityAssurance({
+  eventId,
   issues = [],
   onRefresh,
   onResolveIssue,
-  onDismissIssue 
+  onDismissIssue,
 }: QualityAssuranceProps) {
   const [loading, setLoading] = useState(false);
   const [localIssues, setLocalIssues] = useState<QualityIssue[]>(issues);
@@ -61,25 +54,12 @@ export function QualityAssurance({
 
   const handleResolve = (issueId: string) => {
     onResolveIssue?.(issueId);
-    setLocalIssues(prev => prev.filter(issue => issue.id !== issueId));
+    setLocalIssues((prev) => prev.filter((issue) => issue.id !== issueId));
   };
 
   const handleDismiss = (issueId: string) => {
     onDismissIssue?.(issueId);
-    setLocalIssues(prev => prev.filter(issue => issue.id !== issueId));
-  };
-
-  const getIssueIcon = (type: QualityIssue['type']) => {
-    switch (type) {
-      case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />;
-      case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-      case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      default:
-        return <Info className="h-5 w-5 text-gray-500" />;
-    }
+    setLocalIssues((prev) => prev.filter((issue) => issue.id !== issueId));
   };
 
   const getSeverityColor = (severity: QualityIssue['severity']) => {
@@ -97,9 +77,13 @@ export function QualityAssurance({
     }
   };
 
-  const criticalIssues = localIssues.filter(issue => issue.severity === 'critical');
-  const highIssues = localIssues.filter(issue => issue.severity === 'high');
-  const otherIssues = localIssues.filter(issue => !['critical', 'high'].includes(issue.severity));
+  const criticalIssues = localIssues.filter(
+    (issue) => issue.severity === 'critical'
+  );
+  const highIssues = localIssues.filter((issue) => issue.severity === 'high');
+  const otherIssues = localIssues.filter(
+    (issue) => !['critical', 'high'].includes(issue.severity)
+  );
 
   return (
     <Card className="glass-work-island">
@@ -111,7 +95,8 @@ export function QualityAssurance({
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
-              {localIssues.length} {localIssues.length === 1 ? 'problema' : 'problemas'}
+              {localIssues.length}{' '}
+              {localIssues.length === 1 ? 'problema' : 'problemas'}
             </Badge>
             <Button
               variant="ghost"
@@ -120,18 +105,20 @@ export function QualityAssurance({
               disabled={loading}
               className="h-8 w-8 p-0"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+              />
             </Button>
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {localIssues.length === 0 ? (
-          <div className="text-center py-8">
-            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
+          <div className="py-8 text-center">
+            <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
             <p className="text-lg font-medium text-green-700">¡Excelente!</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No se detectaron problemas de calidad
             </p>
           </div>
@@ -140,7 +127,7 @@ export function QualityAssurance({
             {/* Critical Issues */}
             {criticalIssues.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-red-700 flex items-center gap-2">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-red-700">
                   <AlertCircle className="h-4 w-4" />
                   Problemas Críticos ({criticalIssues.length})
                 </h4>
@@ -158,7 +145,7 @@ export function QualityAssurance({
             {/* High Priority Issues */}
             {highIssues.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-orange-700 flex items-center gap-2">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-orange-700">
                   <AlertTriangle className="h-4 w-4" />
                   Alta Prioridad ({highIssues.length})
                 </h4>
@@ -176,7 +163,7 @@ export function QualityAssurance({
             {/* Other Issues */}
             {otherIssues.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   <Info className="h-4 w-4" />
                   Otros ({otherIssues.length})
                 </h4>
@@ -209,37 +196,45 @@ function IssueCard({ issue, onResolve, onDismiss }: IssueCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="glass-label-ios26 p-3 border border-gray-200 rounded-lg"
+      className="glass-label-ios26 rounded-lg border border-gray-200 p-3"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 flex-1">
+        <div className="flex flex-1 items-start gap-3">
           <div className="mt-0.5">
-            {issue.type === 'error' && <AlertCircle className="h-4 w-4 text-red-500" />}
-            {issue.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
-            {issue.type === 'info' && <Info className="h-4 w-4 text-blue-500" />}
+            {issue.type === 'error' && (
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            )}
+            {issue.type === 'warning' && (
+              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            )}
+            {issue.type === 'info' && (
+              <Info className="h-4 w-4 text-blue-500" />
+            )}
           </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
               <p className="text-sm font-medium">{issue.title}</p>
-              <Badge 
-                variant="outline" 
-                className={`text-xs px-2 py-0.5 ${getSeverityColor(issue.severity)}`}
+              <Badge
+                variant="outline"
+                className={`px-2 py-0.5 text-xs ${getSeverityColor(issue.severity)}`}
               >
                 {issue.severity}
               </Badge>
             </div>
-            
-            <p className="text-xs text-muted-foreground mb-2">
+
+            <p className="text-muted-foreground mb-2 text-xs">
               {issue.description}
             </p>
-            
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+
+            <div className="text-muted-foreground flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {new Date(issue.timestamp).toLocaleDateString()}
               </span>
-              <span className="capitalize">{issue.category?.replace('_', ' ') || 'general'}</span>
+              <span className="capitalize">
+                {issue.category?.replace('_', ' ') || 'general'}
+              </span>
               {issue.actionRequired && (
                 <Badge variant="destructive" className="text-xs">
                   Acción requerida
@@ -248,14 +243,14 @@ function IssueCard({ issue, onResolve, onDismiss }: IssueCardProps) {
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-1">
           {issue.autoFixable && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onResolve(issue.id)}
-              className="h-7 px-2 text-xs text-green-600 hover:text-green-700 hover:bg-green-50"
+              className="h-7 px-2 text-xs text-green-600 hover:bg-green-50 hover:text-green-700"
             >
               Resolver
             </Button>

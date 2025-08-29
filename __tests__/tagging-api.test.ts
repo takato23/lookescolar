@@ -9,7 +9,7 @@ describe('Tagging API', () => {
 
   beforeAll(async () => {
     supabase = createTestClient();
-    
+
     // Crear evento de prueba
     const { data: event, error: eventError } = await supabase
       .from('events')
@@ -17,7 +17,7 @@ describe('Tagging API', () => {
         name: 'Test Tagging Event',
         school: 'Test School',
         date: '2024-01-15',
-        active: true
+        active: true,
       })
       .select()
       .single();
@@ -32,7 +32,7 @@ describe('Tagging API', () => {
         event_id: testEventId,
         type: 'student',
         first_name: 'Test',
-        last_name: 'Student'
+        last_name: 'Student',
       })
       .select()
       .single();
@@ -45,13 +45,13 @@ describe('Tagging API', () => {
       {
         event_id: testEventId,
         storage_path: 'test/photo1.jpg',
-        approved: true
+        approved: true,
       },
       {
         event_id: testEventId,
         storage_path: 'test/photo2.jpg',
-        approved: true
-      }
+        approved: true,
+      },
     ];
 
     const { data: createdPhotos, error: photosError } = await supabase
@@ -60,7 +60,7 @@ describe('Tagging API', () => {
       .select();
 
     if (photosError) throw photosError;
-    testPhotoIds = createdPhotos.map(p => p.id);
+    testPhotoIds = createdPhotos.map((p) => p.id);
   });
 
   afterAll(async () => {
@@ -72,16 +72,19 @@ describe('Tagging API', () => {
 
   describe('GET /api/admin/tagging', () => {
     it('should return tagging data for an event', async () => {
-      const response = await fetch(`http://localhost:3000/api/admin/tagging?eventId=${testEventId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/admin/tagging?eventId=${testEventId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.data).toHaveProperty('stats');
       expect(data.data).toHaveProperty('untaggedPhotos');
@@ -123,13 +126,13 @@ describe('Tagging API', () => {
         body: JSON.stringify({
           photoIds: testPhotoIds,
           subjectId: testSubjectId,
-          eventId: testEventId
-        })
+          eventId: testEventId,
+        }),
       });
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.message).toContain('2 fotos asignadas correctamente');
       expect(data.data).toHaveLength(2);
@@ -140,7 +143,7 @@ describe('Tagging API', () => {
         .select('subject_id')
         .in('id', testPhotoIds);
 
-      photos?.forEach(photo => {
+      photos?.forEach((photo) => {
         expect(photo.subject_id).toBe(testSubjectId);
       });
     });
@@ -154,8 +157,8 @@ describe('Tagging API', () => {
         body: JSON.stringify({
           photoIds: ['00000000-0000-0000-0000-000000000000'],
           subjectId: testSubjectId,
-          eventId: testEventId
-        })
+          eventId: testEventId,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -172,8 +175,8 @@ describe('Tagging API', () => {
         body: JSON.stringify({
           photoIds: testPhotoIds,
           subjectId: '00000000-0000-0000-0000-000000000000',
-          eventId: testEventId
-        })
+          eventId: testEventId,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -190,8 +193,8 @@ describe('Tagging API', () => {
         body: JSON.stringify({
           photoIds: 'invalid', // Should be array
           subjectId: testSubjectId,
-          eventId: testEventId
-        })
+          eventId: testEventId,
+        }),
       });
 
       expect(response.status).toBe(400);
@@ -216,13 +219,13 @@ describe('Tagging API', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          photoIds: testPhotoIds
-        })
+          photoIds: testPhotoIds,
+        }),
       });
 
       expect(response.status).toBe(200);
       const data = await response.json();
-      
+
       expect(data.success).toBe(true);
       expect(data.message).toContain('2 fotos sin asignar');
 
@@ -232,7 +235,7 @@ describe('Tagging API', () => {
         .select('subject_id')
         .in('id', testPhotoIds);
 
-      photos?.forEach(photo => {
+      photos?.forEach((photo) => {
         expect(photo.subject_id).toBeNull();
       });
     });
@@ -244,8 +247,8 @@ describe('Tagging API', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          photoIds: 'invalid' // Should be array
-        })
+          photoIds: 'invalid', // Should be array
+        }),
       });
 
       expect(response.status).toBe(400);

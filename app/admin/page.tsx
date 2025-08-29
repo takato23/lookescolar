@@ -14,17 +14,8 @@ import { formatPrice, formatNumber } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { useState, useEffect } from 'react';
-import {
-  Calendar,
-  Camera,
-  Users,
-  DollarSign,
-  Package,
-  TrendingUp,
-  Zap,
-  Star,
-  RefreshCw,
-} from 'lucide-react';
+import { Calendar, Camera, Users, DollarSign, Package, TrendingUp, Zap, Star, RefreshCw } from 'lucide-react';
+import { QuickActions } from '@/components/admin/dashboard/QuickActions';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -70,11 +61,11 @@ export default function AdminDashboard() {
         pullDistance={pullDistance}
       />
 
-      <div className="container mx-auto space-y-6 lg:space-y-8 p-6">
+      <div className="container mx-auto space-y-6 p-6 lg:space-y-8">
         {/* Header with Liquid Glass Gradient */}
         <div className="relative mb-6 animate-fade-in sm:mb-8 lg:mb-12">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
-          <div className="relative liquid-card p-8">
+          <div className="liquid-card relative p-8">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="liquid-title mb-2 text-2xl sm:mb-3 sm:text-3xl md:text-4xl lg:text-5xl">
@@ -102,7 +93,7 @@ export default function AdminDashboard() {
                   <button
                     onClick={refreshAll}
                     disabled={isLoading}
-                    className="liquid-button hidden items-center gap-2 md:flex px-4 py-2"
+                    className="liquid-button hidden items-center gap-2 px-4 py-2 md:flex"
                     aria-label="Actualizar dashboard"
                   >
                     <RefreshCw
@@ -132,7 +123,7 @@ export default function AdminDashboard() {
 
         {/* Error notification */}
         {error && (
-          <div className="liquid-card border-red-200 bg-red-50/50 dark:bg-red-900/20 p-4">
+          <div className="liquid-card border-red-200 bg-red-50/50 p-4 dark:bg-red-900/20">
             <div className="flex items-center gap-3">
               <div className="rounded-full bg-red-100 p-2 dark:bg-red-900/50">
                 <RefreshCw className="h-4 w-4 text-red-600" />
@@ -147,7 +138,7 @@ export default function AdminDashboard() {
               </div>
               <button
                 onClick={refreshAll}
-                className="liquid-button text-red-600 hover:bg-red-100 px-3 py-1 text-sm"
+                className="liquid-button px-3 py-1 text-sm text-red-600 hover:bg-red-100"
               >
                 Reintentar
               </button>
@@ -157,83 +148,15 @@ export default function AdminDashboard() {
 
         {/* Quick Actions - Mobile First (solo visible en mobile) */}
         <div className="block lg:hidden">
-          <Card
-            variant="glass"
-            className="noise animate-slide-up overflow-hidden"
-          >
+          <Card variant="glass" className="noise animate-slide-up overflow-hidden">
             <CardHeader gradient>
               <CardTitle as="h2" className="flex items-center gap-3">
                 <Zap className="h-6 w-6 text-accent-500" />
                 Acciones Principales
               </CardTitle>
             </CardHeader>
-
             <CardContent padding="lg">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Create Event Action - Mobile */}
-                <button
-                  onClick={() => router.push('/admin/events/new')}
-                  className="group relative flex flex-col items-center justify-center rounded-xl border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100 p-4 transition-all duration-300 hover:scale-105 hover:border-primary-400 hover:shadow-xl dark:border-primary-700 dark:from-primary-900/40 dark:to-primary-800/30"
-                >
-                  <div className="mb-2 rounded-xl bg-primary-500/10 p-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary-500/20">
-                    <Calendar className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <h3 className="mb-1 text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Crear Evento
-                  </h3>
-                  <p className="text-center text-xs text-neutral-600 dark:text-neutral-400">
-                    Nueva sesión
-                  </p>
-                </button>
-
-                {/* Upload Photos Action - Mobile */}
-                <button
-                  onClick={() => router.push('/admin/photos')}
-                  className="group relative flex flex-col items-center justify-center rounded-xl border border-secondary-200 bg-gradient-to-br from-secondary-50 to-secondary-100 p-4 transition-all duration-300 hover:scale-105 hover:border-secondary-400 hover:shadow-xl dark:border-secondary-700 dark:from-secondary-900/40 dark:to-secondary-800/30"
-                >
-                  <div className="mb-2 rounded-xl bg-secondary-500/10 p-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-secondary-500/20">
-                    <Camera className="h-6 w-6 text-secondary-600 dark:text-secondary-400" />
-                  </div>
-                  <h3 className="mb-1 text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Subir Fotos
-                  </h3>
-                  <p className="text-center text-xs text-neutral-600 dark:text-neutral-400">
-                    Con watermark
-                  </p>
-                </button>
-
-                {/* Tagging Action - Mobile */}
-                <button
-                  onClick={() => router.push('/admin/tagging')}
-                  className="group relative flex flex-col items-center justify-center rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100 p-4 transition-all duration-300 hover:scale-105 hover:border-amber-400 hover:shadow-xl dark:border-amber-700 dark:from-amber-900/40 dark:to-amber-800/30"
-                >
-                  <div className="mb-2 rounded-xl bg-amber-500/20 p-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-amber-500/30">
-                    <Users className="h-6 w-6 text-amber-700 dark:text-amber-400" />
-                  </div>
-                  <h3 className="mb-1 text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Asignar Fotos
-                  </h3>
-                  <p className="text-center text-xs text-neutral-600 dark:text-neutral-400">
-                    Vincular QR
-                  </p>
-                </button>
-
-                {/* Orders Action - Mobile */}
-                <button
-                  onClick={() => router.push('/admin/orders')}
-                  className="group relative flex flex-col items-center justify-center rounded-xl border border-green-200 bg-gradient-to-br from-green-50 to-green-100 p-4 transition-all duration-300 hover:scale-105 hover:border-green-400 hover:shadow-xl dark:border-green-700 dark:from-green-900/40 dark:to-green-800/30"
-                >
-                  <div className="mb-2 rounded-xl bg-green-500/10 p-3 transition-all duration-300 group-hover:scale-110 group-hover:bg-green-500/20">
-                    <Package className="h-6 w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <h3 className="mb-1 text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                    Ver Pedidos
-                  </h3>
-                  <p className="text-center text-xs text-neutral-600 dark:text-neutral-400">
-                    Gestionar ventas
-                  </p>
-                </button>
-              </div>
+              <QuickActions variant="mobile" />
             </CardContent>
           </Card>
         </div>
@@ -315,18 +238,7 @@ export default function AdminDashboard() {
                   onClick={() => router.push('/admin/orders')}
                 />
               </SimpleTooltip>
-              <SimpleTooltip text="Flujo rápido de trabajo" side="top">
-                <StatsCard
-                  title="Flujo rápido"
-                  value="4 pasos"
-                  description="Generar, subir, agrupar, publicar"
-                  trend={'neutral'}
-                  trendValue={'Atajo' }
-                  icon={<Zap className="h-5 w-5" />}
-                  className="cursor-pointer hover:scale-105"
-                  onClick={() => router.push('/admin/quick-flow')}
-                />
-              </SimpleTooltip>
+              {/* Quick Flow se mantiene como atajo en Acciones, no en métricas */}
             </>
           ) : (
             // Error state
@@ -350,71 +262,7 @@ export default function AdminDashboard() {
           </CardHeader>
 
           <CardContent padding="lg">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Create Event Action - Mejorado */}
-              <button
-                onClick={() => router.push('/admin/events/new')}
-                className="group relative flex flex-col items-center justify-center rounded-2xl border border-primary-200 bg-gradient-to-br from-primary-50 to-primary-100 p-6 transition-all duration-300 hover:scale-105 hover:border-primary-400 hover:shadow-xl dark:border-primary-700 dark:from-primary-900/40 dark:to-primary-800/30"
-              >
-                <div className="mb-4 rounded-2xl bg-primary-500/10 p-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-primary-500/20">
-                  <Calendar className="h-8 w-8 text-primary-600 dark:text-primary-400" />
-                </div>
-                <h3 className="mb-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                  Crear Evento
-                </h3>
-                <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-                  Nueva sesión fotográfica
-                </p>
-              </button>
-
-              {/* Upload Photos Action - Unificado y mejorado */}
-              <button
-                onClick={() => router.push('/admin/photos')}
-                className="group relative flex flex-col items-center justify-center rounded-2xl border border-secondary-200 bg-gradient-to-br from-secondary-50 to-secondary-100 p-6 transition-all duration-300 hover:scale-105 hover:border-secondary-400 hover:shadow-xl dark:border-secondary-700 dark:from-secondary-900/40 dark:to-secondary-800/30"
-              >
-                <div className="mb-4 rounded-2xl bg-secondary-500/10 p-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-secondary-500/20">
-                  <Camera className="h-8 w-8 text-secondary-600 dark:text-secondary-400" />
-                </div>
-                <h3 className="mb-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                  Subir Fotos
-                </h3>
-                <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-                  Procesar con watermark
-                </p>
-              </button>
-
-              {/* Tagging Action - Nuevo */}
-              <button
-                onClick={() => router.push('/admin/tagging')}
-                className="group relative flex flex-col items-center justify-center rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100 p-6 transition-all duration-300 hover:scale-105 hover:border-amber-400 hover:shadow-xl dark:border-amber-700 dark:from-amber-900/40 dark:to-amber-800/30"
-              >
-                <div className="mb-4 rounded-2xl bg-amber-500/20 p-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-amber-500/30">
-                  <Users className="h-8 w-8 text-amber-700 dark:text-amber-400" />
-                </div>
-                <h3 className="mb-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                  Asignar Fotos
-                </h3>
-                <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-                  Vincular con QR codes
-                </p>
-              </button>
-
-              {/* Orders Action - Mejorado */}
-              <button
-                onClick={() => router.push('/admin/orders')}
-                className="group relative flex flex-col items-center justify-center rounded-2xl border border-green-200 bg-gradient-to-br from-green-50 to-green-100 p-6 transition-all duration-300 hover:scale-105 hover:border-green-400 hover:shadow-xl dark:border-green-700 dark:from-green-900/40 dark:to-green-800/30"
-              >
-                <div className="mb-4 rounded-2xl bg-green-500/10 p-4 transition-all duration-300 group-hover:scale-110 group-hover:bg-green-500/20">
-                  <Package className="h-8 w-8 text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="mb-2 text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                  Ver Pedidos
-                </h3>
-                <p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-                  Gestionar ventas
-                </p>
-              </button>
-            </div>
+            <QuickActions variant="desktop" />
           </CardContent>
         </Card>
 

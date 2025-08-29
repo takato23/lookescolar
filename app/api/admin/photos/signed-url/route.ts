@@ -33,7 +33,12 @@ export async function POST(request: NextRequest) {
         return { key, url, success: true };
       } catch (error) {
         console.warn(`Failed to generate signed URL for key: ${key}`, error);
-        return { key, url: null, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        return {
+          key,
+          url: null,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
       }
     });
 
@@ -44,20 +49,22 @@ export async function POST(request: NextRequest) {
       {
         requestId,
         count: results.length,
-        successful: results.filter(r => r.success).length,
+        successful: results.filter((r) => r.success).length,
       },
       'info'
     );
 
-    return NextResponse.json({
-      success: true,
-      signed_urls: results,
-    }, {
-      headers: {
-        'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+    return NextResponse.json(
+      {
+        success: true,
+        signed_urls: results,
       },
-    });
-
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=300',
+        },
+      }
+    );
   } catch (error: any) {
     SecurityLogger.logSecurityEvent(
       'signed_url_generation_error',

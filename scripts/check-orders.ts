@@ -10,28 +10,28 @@ const supabase = createClient(
 
 async function checkOrders() {
   console.log('Checking order data...\n');
-  
+
   try {
     // Get all orders
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('*')
       .limit(5);
-    
+
     if (ordersError) {
       console.log('❌ Error fetching orders:', ordersError.message);
       return;
     }
-    
+
     console.log(`📊 Found ${orders.length} orders`);
     if (orders.length > 0) {
       console.log('Sample order:', orders[0]);
     }
-    
+
     // Get order IDs
-    const orderIds = orders.map(order => order.id);
+    const orderIds = orders.map((order) => order.id);
     console.log('\nOrder IDs:', orderIds);
-    
+
     // Test the order_details_with_audit view
     if (orderIds.length > 0) {
       console.log('\nTesting order_details_with_audit view...');
@@ -40,7 +40,7 @@ async function checkOrders() {
         .select('*')
         .eq('id', orderIds[0])
         .single();
-      
+
       if (detailsError) {
         console.log('❌ Error fetching order details:', detailsError.message);
       } else {
@@ -49,11 +49,10 @@ async function checkOrders() {
           id: orderDetails.id,
           status: orderDetails.status,
           contact_name: orderDetails.contact_name,
-          total_cents: orderDetails.total_cents
+          total_cents: orderDetails.total_cents,
         });
       }
     }
-    
   } catch (error) {
     console.error('Unexpected error:', error);
   }

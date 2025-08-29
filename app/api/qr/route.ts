@@ -10,7 +10,11 @@ export async function GET(request: NextRequest) {
     }
 
     const url = `${request.nextUrl.origin}/f/${token}`;
-    const png = await QRCode.toBuffer(url, { type: 'png', margin: 1, width: 512 });
+    const png = await QRCode.toBuffer(url, {
+      type: 'png',
+      margin: 1,
+      width: 512,
+    });
 
     return new NextResponse(png, {
       status: 200,
@@ -24,5 +28,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

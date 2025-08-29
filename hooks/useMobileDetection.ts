@@ -42,19 +42,20 @@ export function useMobileDetection(): MobileDetection {
       const width = window.innerWidth;
       const height = window.innerHeight;
       const userAgent = navigator.userAgent.toLowerCase();
-      
+
       // Device detection
       const isIOS = /ipad|iphone|ipod/.test(userAgent);
       const isAndroid = /android/.test(userAgent);
       const isMobile = isIOS || isAndroid || /mobile/.test(userAgent);
-      
+
       // Screen size detection
       const isMobileView = width < BREAKPOINTS.mobile;
-      const isTablet = width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet;
+      const isTablet =
+        width >= BREAKPOINTS.mobile && width < BREAKPOINTS.tablet;
       const isDesktop = width >= BREAKPOINTS.desktop;
-      
+
       // Touch detection
-      const isTouchDevice = 
+      const isTouchDevice =
         'ontouchstart' in window ||
         navigator.maxTouchPoints > 0 ||
         window.matchMedia('(pointer: coarse)').matches;
@@ -107,7 +108,7 @@ export function useViewportSize() {
     const updateSize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      
+
       setSize({
         width,
         height,
@@ -136,7 +137,7 @@ export function useTouchGestures() {
 
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
-      setTouches(prev => ({
+      setTouches((prev) => ({
         ...prev,
         isTouch: true,
         touchCount: e.touches.length,
@@ -145,7 +146,7 @@ export function useTouchGestures() {
 
     const handleTouchEnd = (e: TouchEvent) => {
       const now = Date.now();
-      setTouches(prev => ({
+      setTouches((prev) => ({
         ...prev,
         touchCount: e.touches.length,
         lastTap: now,

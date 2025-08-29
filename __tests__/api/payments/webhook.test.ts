@@ -20,7 +20,9 @@ vi.mock('@upstash/redis', () => ({
   },
 }));
 
-const { verifyWebhookSignature, processWebhookNotification } = await import('@/lib/mercadopago/mercadopago.service');
+const { verifyWebhookSignature, processWebhookNotification } = await import(
+  '@/lib/mercadopago/mercadopago.service'
+);
 
 describe('Webhook API Route', () => {
   beforeEach(() => {

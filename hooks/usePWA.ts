@@ -24,19 +24,19 @@ export function usePWA() {
 
   useEffect(() => {
     // Verificar si está instalado como PWA
-    const isInstalled = 
+    const isInstalled =
       window.matchMedia('(display-mode: standalone)').matches ||
       window.matchMedia('(display-mode: fullscreen)').matches ||
       (window.navigator as any).standalone === true;
 
-    setPWAState(prev => ({ ...prev, isInstalled }));
+    setPWAState((prev) => ({ ...prev, isInstalled }));
 
     // Detectar prompt de instalación
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       const installPrompt = e as PWAInstallPrompt;
-      
-      setPWAState(prev => ({
+
+      setPWAState((prev) => ({
         ...prev,
         isInstallable: true,
         installPrompt,
@@ -46,7 +46,7 @@ export function usePWA() {
     // Detectar instalación exitosa
     const handleAppInstalled = () => {
       console.log('PWA was installed');
-      setPWAState(prev => ({
+      setPWAState((prev) => ({
         ...prev,
         isInstalled: true,
         isInstallable: false,
@@ -56,11 +56,11 @@ export function usePWA() {
 
     // Detectar cambios de conexión
     const handleOnline = () => {
-      setPWAState(prev => ({ ...prev, isOnline: true }));
+      setPWAState((prev) => ({ ...prev, isOnline: true }));
     };
 
     const handleOffline = () => {
-      setPWAState(prev => ({ ...prev, isOnline: false }));
+      setPWAState((prev) => ({ ...prev, isOnline: false }));
     };
 
     // Registrar eventos
@@ -70,7 +70,10 @@ export function usePWA() {
     window.addEventListener('offline', handleOffline);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt
+      );
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
@@ -85,10 +88,10 @@ export function usePWA() {
     try {
       await pwaState.installPrompt.prompt();
       const choiceResult = await pwaState.installPrompt.userChoice;
-      
+
       if (choiceResult.outcome === 'accepted') {
         console.log('User accepted the install prompt');
-        setPWAState(prev => ({
+        setPWAState((prev) => ({
           ...prev,
           isInstallable: false,
           installPrompt: null,

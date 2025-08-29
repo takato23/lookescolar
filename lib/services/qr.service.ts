@@ -4,7 +4,10 @@ import { TokenService } from './token.service';
 import { logger } from '@/lib/utils/logger';
 import { qrSignatureService } from '@/lib/security/qr-signatures';
 import { securityAuditService } from '@/lib/security/qr-audit.service';
-import { qrCacheService, QRCacheEntry } from '@/lib/cache/qr-enhanced-cache.service';
+import {
+  qrCacheService,
+  QRCacheEntry,
+} from '@/lib/cache/qr-enhanced-cache.service';
 import 'server-only';
 
 const supabase = createClient(
@@ -76,7 +79,7 @@ export interface QRResult {
 export class QRService {
   private readonly QR_PREFIX_STUDENT = 'LKSTUDENT_';
   private readonly QR_PREFIX_FAMILY = 'LKFAMILY_';
-  
+
   private defaultOptions: QRGenerationOptions = {
     size: 200,
     errorCorrectionLevel: 'M',
@@ -108,9 +111,9 @@ export class QRService {
             type: 'photo_view',
             value: 1,
             unit: 'hit',
-          }
+          },
         });
-        
+
         return {
           dataUrl: cachedQR.dataUrl,
           token: cachedQR.token,
@@ -120,7 +123,7 @@ export class QRService {
       }
 
       const startTime = Date.now();
-      
+
       // Generar o obtener token existente
       const tokenResult =
         await TokenService.prototype.generateTokenForSubject(subjectId);
@@ -130,14 +133,17 @@ export class QRService {
         subjectId,
         token: tokenResult.token,
         timestamp: Date.now(),
-        userId: userId || 'system'
+        userId: userId || 'system',
       };
 
       // Aplicar firma digital si está configurada
       let portalUrl = TokenService.generatePortalUrl(tokenResult.token);
       if (qrSignatureService.isConfigured()) {
-        const signedData = await qrSignatureService.signQRData(JSON.stringify(qrData));
-        const secureToken = await qrSignatureService.generateSecureToken(qrData);
+        const signedData = await qrSignatureService.signQRData(
+          JSON.stringify(qrData)
+        );
+        const secureToken =
+          await qrSignatureService.generateSecureToken(qrData);
         portalUrl = TokenService.generatePortalUrl(secureToken);
       }
 
@@ -154,19 +160,22 @@ export class QRService {
 
       // Generar QR como data URL
       const dataUrl = await QRCode.toDataURL(portalUrl, qrOptions);
-      
+
       // Record generation time
       const generationTime = Date.now() - startTime;
       qrCacheService.recordGenerationTime(generationTime);
 
       // Cache the result
-      const qrResult: Omit<QRCacheEntry, 'generatedAt' | 'expiresAt' | 'accessCount' | 'lastAccessed'> = {
+      const qrResult: Omit<
+        QRCacheEntry,
+        'generatedAt' | 'expiresAt' | 'accessCount' | 'lastAccessed'
+      > = {
         dataUrl,
         token: tokenResult.token,
         portalUrl,
         subjectName,
       };
-      
+
       await qrCacheService.setQR(subjectId, qrResult);
 
       // Log de auditoría
@@ -179,8 +188,8 @@ export class QRService {
           size: qrOptions.width,
           subjectName,
           signatureEnabled: qrSignatureService.isConfigured(),
-          generationTimeMs: generationTime
-        }
+          generationTimeMs: generationTime,
+        },
       });
 
       logger.info('qr_generated', {
@@ -197,7 +206,7 @@ export class QRService {
         },
         performance: {
           totalTime: generationTime,
-        }
+        },
       });
 
       return {
@@ -384,7 +393,13 @@ export class QRService {
         .update({
           qr_code: qrData.id,
           metadata: {
-            ...((await supabase.from('subjects').select('metadata').eq('id', studentId).single()).data?.metadata || {}),
+            ...((
+              await supabase
+                .from('subjects')
+                .select('metadata')
+                .eq('id', studentId)
+                .single()
+            ).data?.metadata || {}),
             qr_token: token,
             qr_code_value: codeValue,
             qr_type: 'student_identification',
@@ -429,9 +444,7 @@ export class QRService {
   /**
    * Generate QR codes for multiple students in batch
    */
-  async generateBatchStudentQRCodes(
-    request: BatchStudentQRRequest
-  ): Promise<
+  async generateBatchStudentQRCodes(request: BatchStudentQRRequest): Promise<
     Array<{
       studentId: string;
       qrCode: string;
@@ -507,7 +520,10 @@ export class QRService {
   /**
    * Validate and decode student QR code data
    */
-  async validateStudentQRCode(qrCodeValue: string, eventId?: string): Promise<StudentQRData | null> {
+  async validateStudentQRCode(
+    qrCodeValue: string,
+    eventId?: string
+  ): Promise<StudentQRData | null> {
     try {
       // Check if QR code follows student identification format
       if (!qrCodeValue.startsWith(this.QR_PREFIX_STUDENT)) {
@@ -520,7 +536,8 @@ export class QRService {
       // Look up QR code in database
       let query = supabase
         .from('codes')
-        .select(`
+        .select(
+          `
           id,
           event_id,
           course_id,
@@ -529,7 +546,8 @@ export class QRService {
           title,
           is_published,
           created_at
-        `)
+        `
+        )
         .eq('token', token)
         .eq('is_published', true);
 
@@ -586,7 +604,8 @@ export class QRService {
     try {
       const { data, error } = await supabase
         .from('codes')
-        .select(`
+        .select(
+          `
           id,
           event_id,
           course_id,
@@ -595,14 +614,17 @@ export class QRService {
           title,
           is_published,
           created_at
-        `)
+        `
+        )
         .eq('event_id', eventId)
         .eq('is_published', true)
         .like('code_value', `${this.QR_PREFIX_STUDENT}%`)
         .order('created_at', { ascending: false });
 
       if (error) {
-        throw new Error(`Failed to get event student QR codes: ${error.message}`);
+        throw new Error(
+          `Failed to get event student QR codes: ${error.message}`
+        );
       }
 
       if (!data || data.length === 0) {
@@ -669,7 +691,9 @@ export class QRService {
         .like('code_value', `${this.QR_PREFIX_STUDENT}%`);
 
       if (codesError) {
-        throw new Error(`Failed to get student QR codes: ${codesError.message}`);
+        throw new Error(
+          `Failed to get student QR codes: ${codesError.message}`
+        );
       }
 
       // Get students with QR codes
@@ -694,10 +718,14 @@ export class QRService {
       }
 
       const totalStudentCodes = codes?.length || 0;
-      const activeStudentCodes = codes?.filter(c => c.is_published).length || 0;
-      const detectedStudentCodes = new Set(photosWithQR?.map(p => p.code_id)).size;
-      const studentsWithCodes = studentsWithQR?.filter(s => s.qr_code).length || 0;
-      const studentsWithoutCodes = (studentsWithQR?.length || 0) - studentsWithCodes;
+      const activeStudentCodes =
+        codes?.filter((c) => c.is_published).length || 0;
+      const detectedStudentCodes = new Set(photosWithQR?.map((p) => p.code_id))
+        .size;
+      const studentsWithCodes =
+        studentsWithQR?.filter((s) => s.qr_code).length || 0;
+      const studentsWithoutCodes =
+        (studentsWithQR?.length || 0) - studentsWithCodes;
 
       return {
         totalStudentCodes,
@@ -722,7 +750,7 @@ export class QRService {
     // Generate a cryptographically secure random token
     const bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
-    
+
     // Convert to base64url format (URL-safe)
     return Buffer.from(bytes)
       .toString('base64')

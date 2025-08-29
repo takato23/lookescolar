@@ -45,36 +45,49 @@ export async function GET(request: NextRequest) {
       );
       checks.qrGeneration = !!testResult.dataUrl;
     } catch (error) {
-      results.errors.push(`QR Generation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.errors.push(
+        `QR Generation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       checks.qrGeneration = false;
     }
 
     // Test QR validation
     try {
       const testQRData = 'LKSTUDENT_test123';
-      const validationResult = await qrService.validateStudentQRCode(testQRData);
+      const validationResult =
+        await qrService.validateStudentQRCode(testQRData);
       checks.qrValidation = true; // Will be null for non-existent test data, but service is working
     } catch (error) {
-      results.errors.push(`QR Validation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.errors.push(
+        `QR Validation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       checks.qrValidation = false;
     }
 
     // Test analytics service
     try {
-      const testMetrics = await qrAnalyticsService.getQRMetrics('health-check-test');
+      const testMetrics =
+        await qrAnalyticsService.getQRMetrics('health-check-test');
       checks.analytics = true; // Service responds even with no data
     } catch (error) {
-      results.errors.push(`Analytics: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.errors.push(
+        `Analytics: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       checks.analytics = false;
     }
 
     // Test security service
     try {
       const testSignature = qrSecurityService.generateSignature('test-data');
-      const verificationResult = qrSecurityService.verifySignature('test-data', testSignature);
+      const verificationResult = qrSecurityService.verifySignature(
+        'test-data',
+        testSignature
+      );
       checks.security = verificationResult.valid;
     } catch (error) {
-      results.errors.push(`Security: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.errors.push(
+        `Security: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       checks.security = false;
     }
 
@@ -84,14 +97,16 @@ export async function GET(request: NextRequest) {
       checks.cache = true;
       results.performance.cacheHitRate = cacheStats.hitRate || 0;
     } catch (error) {
-      results.errors.push(`Cache: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      results.errors.push(
+        `Cache: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       checks.cache = false;
     }
 
     // Calculate overall status
-    const allChecksPass = Object.values(checks).every(check => check);
-    const someChecksPass = Object.values(checks).some(check => check);
-    
+    const allChecksPass = Object.values(checks).every((check) => check);
+    const someChecksPass = Object.values(checks).some((check) => check);
+
     if (allChecksPass) {
       results.status = 'healthy';
     } else if (someChecksPass) {
@@ -111,8 +126,12 @@ export async function GET(request: NextRequest) {
       activeQRCodes: 450,
     };
 
-    const statusCode = results.status === 'healthy' ? 200 : 
-                      results.status === 'degraded' ? 206 : 503;
+    const statusCode =
+      results.status === 'healthy'
+        ? 200
+        : results.status === 'degraded'
+          ? 206
+          : 503;
 
     logger.info('QR system health check completed', {
       status: results.status,
@@ -122,7 +141,6 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(results, { status: statusCode });
-
   } catch (error) {
     logger.error('QR health check failed', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -131,7 +149,9 @@ export async function GET(request: NextRequest) {
 
     results.status = 'unhealthy';
     results.performance.responseTime = Date.now() - startTime;
-    results.errors.push(`Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    results.errors.push(
+      `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
 
     return NextResponse.json(results, { status: 503 });
   }
@@ -143,7 +163,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const config = qrService.getQRConfig();
-    
+
     const enhancedConfig = {
       ...config,
       features: {
@@ -175,7 +195,6 @@ export async function POST(request: NextRequest) {
       version: '2.0',
       timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     logger.error('Get QR config failed', { error });
 

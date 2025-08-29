@@ -1,6 +1,6 @@
 /**
  * Apple-Grade Protected Image Component
- * 
+ *
  * Prevents image theft with multiple anti-download protections:
  * - Context menu blocking
  * - Drag and drop prevention
@@ -53,14 +53,14 @@ export function ProtectedImage({
   enableDragBlock = true,
   enableKeyboardBlock = true,
   enableTouchBlock = true,
-  watermarkText = 'MUESTRA'
+  watermarkText = 'MUESTRA',
 }: ProtectedImageProps) {
   const imageRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    
+
     if (!imageRef.current) return;
 
     const element = imageRef.current;
@@ -86,17 +86,17 @@ export function ProtectedImage({
     // Prevent keyboard shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!enableKeyboardBlock) return;
-      
+
       // Block common download/save shortcuts
       if (
-        (e.ctrlKey || e.metaKey) && 
+        (e.ctrlKey || e.metaKey) &&
         (e.key === 's' || e.key === 'S' || e.key === 'c' || e.key === 'C')
       ) {
         e.preventDefault();
         showAntiTheftMessage();
         return false;
       }
-      
+
       // Block Print Screen
       if (e.key === 'PrintScreen') {
         e.preventDefault();
@@ -125,15 +125,15 @@ export function ProtectedImage({
     if (enableContextMenuBlock) {
       element.addEventListener('contextmenu', handleContextMenu);
     }
-    
+
     if (enableDragBlock) {
       element.addEventListener('dragstart', handleDragStart);
     }
-    
+
     if (enableKeyboardBlock) {
       document.addEventListener('keydown', handleKeyDown);
     }
-    
+
     if (enableTouchBlock) {
       element.addEventListener('touchstart', handleTouchStart);
       element.addEventListener('touchmove', handleTouchMove);
@@ -144,15 +144,15 @@ export function ProtectedImage({
       if (enableContextMenuBlock) {
         element.removeEventListener('contextmenu', handleContextMenu);
       }
-      
+
       if (enableDragBlock) {
         element.removeEventListener('dragstart', handleDragStart);
       }
-      
+
       if (enableKeyboardBlock) {
         document.removeEventListener('keydown', handleKeyDown);
       }
-      
+
       if (enableTouchBlock) {
         element.removeEventListener('touchstart', handleTouchStart);
         element.removeEventListener('touchmove', handleTouchMove);
@@ -162,14 +162,16 @@ export function ProtectedImage({
     enableContextMenuBlock,
     enableDragBlock,
     enableKeyboardBlock,
-    enableTouchBlock
+    enableTouchBlock,
   ]);
 
   const showAntiTheftMessage = () => {
     // In a real implementation, you might want to show a toast or modal
     // For now, we'll just log to console
-    console.log('🚫 Descarga de imagen bloqueada - Esta es una muestra protegida');
-    
+    console.log(
+      '🚫 Descarga de imagen bloqueada - Esta es una muestra protegida'
+    );
+
     // You could also show a toast notification:
     // toast.error('Esta imagen está protegida. Por favor, compre la versión física.');
   };
@@ -219,44 +221,44 @@ export function ProtectedImage({
         sizes={sizes}
         onLoad={onLoad}
         onError={onError}
-        className="select-none pointer-events-none"
+        className="pointer-events-none select-none"
         draggable={false}
       />
-      
+
       {/* Overlay protection layer */}
-      <div 
-        className="absolute inset-0 pointer-events-auto"
+      <div
+        className="pointer-events-auto absolute inset-0"
         style={{
           background: 'transparent',
-          cursor: 'not-allowed'
+          cursor: 'not-allowed',
         }}
         title="Imagen protegida - Compre la versión física"
       />
-      
+
       {/* Watermark overlay */}
-      <div 
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+      <div
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
         style={{
-          background: 'transparent'
+          background: 'transparent',
         }}
       >
-        <div 
-          className="text-white/20 text-2xl md:text-4xl font-bold transform rotate-12 select-none"
+        <div
+          className="rotate-12 transform select-none text-2xl font-bold text-white/20 md:text-4xl"
           style={{
             textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
             fontFamily: 'Arial, sans-serif',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
           }}
         >
           {watermarkText}
         </div>
       </div>
-      
+
       {/* Anti-theft instructions */}
-      <div 
-        className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded pointer-events-none select-none"
+      <div
+        className="pointer-events-none absolute bottom-2 left-2 select-none rounded bg-black/50 px-2 py-1 text-xs text-white"
         style={{
-          backdropFilter: 'blur(4px)'
+          backdropFilter: 'blur(4px)',
         }}
       >
         Muestra protegida

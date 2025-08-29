@@ -4,7 +4,12 @@ import { orderWorkflowService } from '@/lib/services/order-workflow.service';
 
 // Validation schema for workflow trigger request
 const WorkflowTriggerSchema = z.object({
-  action: z.enum(['trigger_status_change', 'trigger_order_created', 'process_overdue', 'test_workflow']),
+  action: z.enum([
+    'trigger_status_change',
+    'trigger_order_created',
+    'process_overdue',
+    'test_workflow',
+  ]),
   order_id: z.string().uuid().optional(),
   status: z.string().optional(),
   previous_status: z.string().optional(),
@@ -27,13 +32,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'Invalid workflow parameters',
-          details: validation.error.issues
+          details: validation.error.issues,
         },
         { status: 400 }
       );
     }
 
-    const { action, order_id, status, previous_status, workflow_id } = validation.data;
+    const { action, order_id, status, previous_status, workflow_id } =
+      validation.data;
 
     console.log(`[Workflow API] Processing action: ${action}`, {
       order_id,
@@ -53,21 +59,31 @@ export async function POST(request: NextRequest) {
           );
         }
         await orderWorkflowService.triggerOrderCreated(order_id);
-        result = { message: 'Order created workflows triggered successfully', order_id };
+        result = {
+          message: 'Order created workflows triggered successfully',
+          order_id,
+        };
         break;
 
       case 'trigger_status_change':
         if (!order_id || !status || !previous_status) {
           return NextResponse.json(
-            { error: 'order_id, status, and previous_status are required for trigger_status_change' },
+            {
+              error:
+                'order_id, status, and previous_status are required for trigger_status_change',
+            },
             { status: 400 }
           );
         }
-        await orderWorkflowService.triggerStatusChanged(order_id, status, previous_status);
-        result = { 
-          message: 'Status change workflows triggered successfully', 
-          order_id, 
-          status_change: `${previous_status} → ${status}` 
+        await orderWorkflowService.triggerStatusChanged(
+          order_id,
+          status,
+          previous_status
+        );
+        result = {
+          message: 'Status change workflows triggered successfully',
+          order_id,
+          status_change: `${previous_status} → ${status}`,
         };
         break;
 
@@ -99,9 +115,12 @@ export async function POST(request: NextRequest) {
           },
           trigger_event: 'order_created',
         };
-        
+
         await orderWorkflowService.executeWorkflows(testContext);
-        result = { message: 'Test workflow executed successfully', test_context: testContext };
+        result = {
+          message: 'Test workflow executed successfully',
+          test_context: testContext,
+        };
         break;
 
       default:
@@ -127,18 +146,17 @@ export async function POST(request: NextRequest) {
         request_id: `req_${Date.now()}`,
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Workflow API] Workflow execution failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Workflow execution failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -158,13 +176,13 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Workflow API] GET request with action: ${action}`);
 
-    let response: any = {
+    const response: any = {
       workflow_service: 'active',
       supported_actions: [
         'trigger_order_created',
-        'trigger_status_change', 
+        'trigger_status_change',
         'process_overdue',
-        'test_workflow'
+        'test_workflow',
       ],
     };
 
@@ -223,18 +241,17 @@ export async function GET(request: NextRequest) {
         api_version: '1.0',
       },
     });
-
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Workflow API] GET request failed:', {
       error: error instanceof Error ? error.message : 'Unknown error',
-      duration
+      duration,
     });
 
     return NextResponse.json(
       {
         error: 'Failed to retrieve workflow information',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

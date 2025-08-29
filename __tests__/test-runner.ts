@@ -1,6 +1,6 @@
 /**
  * COMPREHENSIVE TEST RUNNER
- * 
+ *
  * Enhanced test runner for LookEscolar system with:
  * - Test suite orchestration
  * - Coverage reporting
@@ -47,7 +47,7 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 30000,
     parallel: false,
     requirements: ['database', 'admin-auth'],
-    description: 'Test-driven development tests for the 5 critical endpoints'
+    description: 'Test-driven development tests for the 5 critical endpoints',
   },
   {
     name: 'Enhanced Security',
@@ -55,7 +55,8 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 30000,
     parallel: false,
     requirements: ['database', 'rate-limiting'],
-    description: 'Comprehensive security testing including authentication, rate limiting, and input validation'
+    description:
+      'Comprehensive security testing including authentication, rate limiting, and input validation',
   },
   {
     name: 'Performance Comprehensive',
@@ -63,7 +64,8 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 45000,
     parallel: false,
     requirements: ['database', 'admin-auth'],
-    description: 'Performance testing for API response times, photo processing, and scalability'
+    description:
+      'Performance testing for API response times, photo processing, and scalability',
   },
   {
     name: 'Integration Workflows',
@@ -71,7 +73,8 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 60000,
     parallel: false,
     requirements: ['database', 'admin-auth', 'storage'],
-    description: 'End-to-end workflow testing covering admin, family, and public user journeys'
+    description:
+      'End-to-end workflow testing covering admin, family, and public user journeys',
   },
   {
     name: 'API Critical Endpoints',
@@ -79,7 +82,7 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 20000,
     parallel: true,
     requirements: ['database'],
-    description: 'API endpoint testing for core functionality'
+    description: 'API endpoint testing for core functionality',
   },
   {
     name: 'V1 Flow',
@@ -87,7 +90,8 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 60000,
     parallel: false,
     requirements: ['database'],
-    description: 'Flujo V1 con 7 pasos (anchor, group, publish, gallery, selection, export, unpublish)'
+    description:
+      'Flujo V1 con 7 pasos (anchor, group, publish, gallery, selection, export, unpublish)',
   },
   {
     name: 'Security Validation',
@@ -95,7 +99,7 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 20000,
     parallel: true,
     requirements: ['database'],
-    description: 'Security validation and threat prevention'
+    description: 'Security validation and threat prevention',
   },
   {
     name: 'Component Tests',
@@ -103,7 +107,7 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 15000,
     parallel: true,
     requirements: [],
-    description: 'React component unit tests'
+    description: 'React component unit tests',
   },
   {
     name: 'Utility Functions',
@@ -111,8 +115,8 @@ const TEST_SUITES: TestSuite[] = [
     timeout: 10000,
     parallel: true,
     requirements: [],
-    description: 'Utility function unit tests'
-  }
+    description: 'Utility function unit tests',
+  },
 ];
 
 const DEFAULT_CONFIG: TestRunnerConfig = {
@@ -121,7 +125,7 @@ const DEFAULT_CONFIG: TestRunnerConfig = {
   parallel: false,
   verbose: true,
   environment: 'test',
-  outputDir: './test-reports'
+  outputDir: './test-reports',
 };
 
 class TestRunner {
@@ -142,7 +146,7 @@ class TestRunner {
 
   private log(message: string, level: 'info' | 'warn' | 'error' = 'info') {
     if (!this.config.verbose && level === 'info') return;
-    
+
     const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
     const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '📋';
     console.log(`[${timestamp}] ${prefix} ${message}`);
@@ -150,10 +154,10 @@ class TestRunner {
 
   private async checkRequirements(requirements: string[]): Promise<boolean> {
     const checks: Record<string, () => Promise<boolean>> = {
-      'database': this.checkDatabase,
+      database: this.checkDatabase,
       'admin-auth': this.checkAdminAuth,
       'rate-limiting': this.checkRateLimiting,
-      'storage': this.checkStorage
+      storage: this.checkStorage,
     };
 
     for (const req of requirements) {
@@ -173,10 +177,13 @@ class TestRunner {
     if (process.env.SKIP_DB_CHECK === '1') return true;
     try {
       const { createClient } = await import('@supabase/supabase-js');
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+      const url =
+        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!url || !key) return false;
-      const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+      const supabase = createClient(url, key, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
       const { error } = await supabase.from('events').select('id').limit(1);
       return !error;
     } catch {
@@ -197,20 +204,23 @@ class TestRunner {
     return !!(process.env.STORAGE_BUCKET || process.env.SUPABASE_URL);
   }
 
-  private buildVitestCommand(suite: TestSuite, options: Partial<{ coverage: boolean; parallel: boolean }> = {}): string {
+  private buildVitestCommand(
+    suite: TestSuite,
+    options: Partial<{ coverage: boolean; parallel: boolean }> = {}
+  ): string {
     const parts = ['npx vitest run'];
-    
+
     // Add pattern
     parts.push(suite.pattern);
-    
+
     // Add timeout
     parts.push(`--testTimeout=${suite.timeout}`);
-    
+
     // Add coverage if requested
     if (options.coverage ?? this.config.coverage) {
       parts.push('--coverage');
     }
-    
+
     // Reporter (evitar flags de paralelismo incompatibles con Vitest 2.x)
     parts.push('--reporter=verbose');
 
@@ -218,22 +228,28 @@ class TestRunner {
     if (suite.pattern.includes('tests/integration/')) {
       parts.push('--environment=node');
     }
-    
+
     // Add environment variables
     const envVars = [
       'NODE_ENV=test',
       'CI=true',
-      `TEST_SUITE=${suite.name.replace(/\s+/g, '_').toUpperCase()}`
+      `TEST_SUITE=${suite.name.replace(/\s+/g, '_').toUpperCase()}`,
     ];
-    
+
     return `${envVars.join(' ')} ${parts.join(' ')}`;
   }
 
-  private parseTestOutput(output: string): { passed: number; failed: number; skipped: number } {
+  private parseTestOutput(output: string): {
+    passed: number;
+    failed: number;
+    skipped: number;
+  } {
     const counts = { passed: 0, failed: 0, skipped: 0 };
 
     // Prefer explicit summary lines like: "Tests 7 skipped (7)"
-    const summaryMatches = output.matchAll(/\bTests\s+(\d+)\s+(passed|failed|skipped)\b/gi);
+    const summaryMatches = output.matchAll(
+      /\bTests\s+(\d+)\s+(passed|failed|skipped)\b/gi
+    );
     for (const match of summaryMatches) {
       const n = parseInt(match[1]);
       const kind = match[2].toLowerCase() as 'passed' | 'failed' | 'skipped';
@@ -255,13 +271,15 @@ class TestRunner {
 
   private extractCoverage(output: string): number | undefined {
     const lines = output.split('\n');
-    const coverageLine = lines.find(line => line.includes('All files') && line.includes('%'));
-    
+    const coverageLine = lines.find(
+      (line) => line.includes('All files') && line.includes('%')
+    );
+
     if (coverageLine) {
       const match = coverageLine.match(/(\d+\.?\d*)\s*%/);
       return match ? parseFloat(match[1]) : undefined;
     }
-    
+
     return undefined;
   }
 
@@ -270,12 +288,12 @@ class TestRunner {
     this.log(`   Description: ${suite.description}`);
     this.log(`   Pattern: ${suite.pattern}`);
     this.log(`   Timeout: ${suite.timeout}ms`);
-    
+
     // Check requirements
     if (suite.requirements && suite.requirements.length > 0) {
       this.log(`   Checking requirements: ${suite.requirements.join(', ')}`);
       const requirementsMet = await this.checkRequirements(suite.requirements);
-      
+
       if (!requirementsMet) {
         this.log(`   ⚠️ Requirements not met, skipping suite`, 'warn');
         return {
@@ -283,7 +301,7 @@ class TestRunner {
           passed: 0,
           failed: 0,
           skipped: 1,
-          duration: 0
+          duration: 0,
         };
       }
     }
@@ -308,11 +326,10 @@ class TestRunner {
         timeout: suite.timeout + 5000, // Add buffer to vitest timeout
         env,
       });
-      
     } catch (error: any) {
       exitCode = error.status || 1;
       output = error.stdout || error.message || '';
-      
+
       if (error.signal === 'SIGTERM') {
         this.log(`   ⏱️ Test suite timed out after ${suite.timeout}ms`, 'warn');
       }
@@ -323,9 +340,15 @@ class TestRunner {
     const coverage = this.extractCoverage(output);
 
     // Diagnóstico si Vitest no encuentra tests
-    if (/No tests? found/i.test(output) || (/Test Files\s+0/i.test(output) && /Tests\s+0/i.test(output))) {
+    if (
+      /No tests? found/i.test(output) ||
+      (/Test Files\s+0/i.test(output) && /Tests\s+0/i.test(output))
+    ) {
       try {
-        const firstLine = fs.readFileSync(path.resolve(suite.pattern), 'utf-8').split(/\r?\n/)[0] || '';
+        const firstLine =
+          fs
+            .readFileSync(path.resolve(suite.pattern), 'utf-8')
+            .split(/\r?\n/)[0] || '';
         // Intentar leer include del config
         const vitestConfigPath = path.resolve('vitest.config.ts');
         let includeLine = '';
@@ -342,22 +365,28 @@ class TestRunner {
       suite: suite.name,
       ...testCounts,
       duration,
-      coverage
+      coverage,
     };
 
     // Log results
     const status = exitCode === 0 ? '✅' : '❌';
     this.log(`   ${status} Completed in ${duration}ms`);
-    this.log(`   Results: ${result.passed} passed, ${result.failed} failed, ${result.skipped} skipped`);
-    
+    this.log(
+      `   Results: ${result.passed} passed, ${result.failed} failed, ${result.skipped} skipped`
+    );
+
     if (coverage !== undefined) {
       this.log(`   Coverage: ${coverage.toFixed(1)}%`);
     }
 
     // Save detailed output
-    const outputFile = suite.name === 'V1 Flow'
-      ? path.join(this.config.outputDir, 'v1-flow.runner.log')
-      : path.join(this.config.outputDir, `${suite.name.replace(/\s+/g, '-').toLowerCase()}.log`);
+    const outputFile =
+      suite.name === 'V1 Flow'
+        ? path.join(this.config.outputDir, 'v1-flow.runner.log')
+        : path.join(
+            this.config.outputDir,
+            `${suite.name.replace(/\s+/g, '-').toLowerCase()}.log`
+          );
     fs.writeFileSync(outputFile, output);
 
     return result;
@@ -369,13 +398,15 @@ class TestRunner {
         passed: acc.passed + result.passed,
         failed: acc.failed + result.failed,
         skipped: acc.skipped + result.skipped,
-        duration: acc.duration + result.duration
+        duration: acc.duration + result.duration,
       }),
       { passed: 0, failed: 0, skipped: 0, duration: 0 }
     );
 
-    const totalTests = totalResults.passed + totalResults.failed + totalResults.skipped;
-    const successRate = totalTests > 0 ? (totalResults.passed / totalTests * 100) : 0;
+    const totalTests =
+      totalResults.passed + totalResults.failed + totalResults.skipped;
+    const successRate =
+      totalTests > 0 ? (totalResults.passed / totalTests) * 100 : 0;
     const overallDuration = Date.now() - this.startTime;
 
     const report = {
@@ -384,7 +415,7 @@ class TestRunner {
       configuration: {
         coverage: this.config.coverage,
         parallel: this.config.parallel,
-        suites_run: this.results.length
+        suites_run: this.results.length,
       },
       summary: {
         total_tests: totalTests,
@@ -392,26 +423,27 @@ class TestRunner {
         failed: totalResults.failed,
         skipped: totalResults.skipped,
         success_rate: parseFloat(successRate.toFixed(1)),
-        duration_ms: overallDuration
+        duration_ms: overallDuration,
       },
-      suites: this.results.map(result => ({
+      suites: this.results.map((result) => ({
         name: result.suite,
         status: result.failed === 0 ? 'PASSED' : 'FAILED',
         tests: {
           passed: result.passed,
           failed: result.failed,
           skipped: result.skipped,
-          total: result.passed + result.failed + result.skipped
+          total: result.passed + result.failed + result.skipped,
         },
         duration_ms: result.duration,
-        coverage_percent: result.coverage
+        coverage_percent: result.coverage,
       })),
       coverage: {
-        average: this.results
-          .filter(r => r.coverage !== undefined)
-          .reduce((sum, r) => sum + (r.coverage || 0), 0) / 
-          this.results.filter(r => r.coverage !== undefined).length || 0
-      }
+        average:
+          this.results
+            .filter((r) => r.coverage !== undefined)
+            .reduce((sum, r) => sum + (r.coverage || 0), 0) /
+            this.results.filter((r) => r.coverage !== undefined).length || 0,
+      },
     };
 
     // Write JSON report
@@ -428,7 +460,7 @@ class TestRunner {
 
   private generateMarkdownSummary(report: any): string {
     const { summary, suites, coverage } = report;
-    
+
     return `# LookEscolar Test Report
 
 ## Summary
@@ -442,7 +474,9 @@ class TestRunner {
 
 ## Test Suites
 
-${suites.map((suite: any) => `
+${suites
+  .map(
+    (suite: any) => `
 ### ${suite.name} ${suite.status === 'PASSED' ? '✅' : '❌'}
 
 - **Status**: ${suite.status}
@@ -452,7 +486,9 @@ ${suites.map((suite: any) => `
 
 ${suite.tests.failed > 0 ? `⚠️ ${suite.tests.failed} test(s) failed` : ''}
 ${suite.tests.skipped > 0 ? `⚠️ ${suite.tests.skipped} test(s) skipped` : ''}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Recommendations
 
@@ -493,7 +529,9 @@ ${summary.duration_ms > 300000 ? '- ⚡ Optimize test performance (current: ' + 
 
     // Final summary
     this.log('\n🏁 Test Run Complete');
-    this.log(`Total Duration: ${((Date.now() - this.startTime) / 1000).toFixed(1)}s`);
+    this.log(
+      `Total Duration: ${((Date.now() - this.startTime) / 1000).toFixed(1)}s`
+    );
     this.log(`Success Rate: ${report.summary.success_rate}%`);
     this.log(`Reports saved to: ${this.config.outputDir}`);
 
@@ -508,7 +546,7 @@ ${summary.duration_ms > 300000 ? '- ⚡ Optimize test performance (current: ' + 
   }
 
   public async runSuiteByName(suiteName: string): Promise<TestResult | null> {
-    const suite = this.config.suites.find(s => 
+    const suite = this.config.suites.find((s) =>
       s.name.toLowerCase().includes(suiteName.toLowerCase())
     );
 
@@ -529,13 +567,15 @@ ${summary.duration_ms > 300000 ? '- ⚡ Optimize test performance (current: ' + 
 // CLI interface
 if (require.main === module) {
   const args = process.argv.slice(2);
-  const suiteName = args.find(arg => !arg.startsWith('--'));
-  
+  const suiteName = args.find((arg) => !arg.startsWith('--'));
+
   const config: Partial<TestRunnerConfig> = {
     coverage: !args.includes('--no-coverage'),
     parallel: args.includes('--parallel'),
     verbose: !args.includes('--quiet'),
-    environment: (args.find(arg => arg.startsWith('--env='))?.split('=')[1] as any) || 'test'
+    environment:
+      (args.find((arg) => arg.startsWith('--env='))?.split('=')[1] as any) ||
+      'test',
   };
 
   const runner = new TestRunner(config);

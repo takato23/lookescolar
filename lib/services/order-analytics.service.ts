@@ -42,11 +42,14 @@ export interface OrderMetrics {
     };
   };
   status_breakdown: {
-    by_status: Record<string, {
-      count: number;
-      percentage: number;
-      revenue_cents: number;
-    }>;
+    by_status: Record<
+      string,
+      {
+        count: number;
+        percentage: number;
+        revenue_cents: number;
+      }
+    >;
     processing_times: {
       average_hours: number;
       median_hours: number;
@@ -115,24 +118,25 @@ export class OrderAnalyticsService {
    */
   async getOrderMetrics(filters: AnalyticsFilters = {}): Promise<OrderMetrics> {
     const startTime = Date.now();
-    
+
     try {
       const {
         start_date = this.getDateDaysAgo(30),
         end_date = new Date().toISOString(),
         event_id,
         status,
-        include_forecasting = true
+        include_forecasting = true,
       } = filters;
 
       // Execute all analytics queries in parallel
-      const [overview, trends, statusBreakdown, performance, alerts] = await Promise.all([
-        this.getOverviewMetrics(start_date, end_date, event_id, status),
-        this.getTrendMetrics(start_date, end_date, event_id, status),
-        this.getStatusBreakdown(start_date, end_date, event_id, status),
-        this.getPerformanceMetrics(start_date, end_date, event_id, status),
-        this.getAlerts()
-      ]);
+      const [overview, trends, statusBreakdown, performance, alerts] =
+        await Promise.all([
+          this.getOverviewMetrics(start_date, end_date, event_id, status),
+          this.getTrendMetrics(start_date, end_date, event_id, status),
+          this.getStatusBreakdown(start_date, end_date, event_id, status),
+          this.getPerformanceMetrics(start_date, end_date, event_id, status),
+          this.getAlerts(),
+        ]);
 
       let forecasting = {
         next_30_days: {
@@ -158,10 +162,11 @@ export class OrderAnalyticsService {
         forecasting,
         alerts,
       };
-
     } catch (error) {
       console.error('[Order Analytics] Failed to get metrics:', error);
-      throw new Error(`Analytics calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Analytics calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -192,36 +197,51 @@ export class OrderAnalyticsService {
     if (error) throw error;
 
     const totalOrders = orders?.length || 0;
-    const totalRevenue = orders?.reduce((sum, order) => {
-      return sum + (order.status === 'approved' || order.status === 'delivered' ? order.total_cents : 0);
-    }, 0) || 0;
+    const totalRevenue =
+      orders?.reduce((sum, order) => {
+        return (
+          sum +
+          (order.status === 'approved' || order.status === 'delivered'
+            ? order.total_cents
+            : 0)
+        );
+      }, 0) || 0;
 
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
     // Today's metrics
     const today = new Date().toISOString().split('T')[0];
-    const todayOrders = orders?.filter(order => 
-      order.created_at.startsWith(today)
-    ).length || 0;
-    
-    const todayRevenue = orders?.filter(order => 
-      order.created_at.startsWith(today) && 
-      (order.status === 'approved' || order.status === 'delivered')
-    ).reduce((sum, order) => sum + order.total_cents, 0) || 0;
+    const todayOrders =
+      orders?.filter((order) => order.created_at.startsWith(today)).length || 0;
+
+    const todayRevenue =
+      orders
+        ?.filter(
+          (order) =>
+            order.created_at.startsWith(today) &&
+            (order.status === 'approved' || order.status === 'delivered')
+        )
+        .reduce((sum, order) => sum + order.total_cents, 0) || 0;
 
     // Pending and overdue orders
-    const pendingOrders = orders?.filter(order => order.status === 'pending').length || 0;
-    
+    const pendingOrders =
+      orders?.filter((order) => order.status === 'pending').length || 0;
+
     // Calculate overdue orders (pending for more than 24 hours)
-    const overdueOrders = orders?.filter(order => {
-      if (order.status !== 'pending') return false;
-      const hoursSinceCreated = (Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60);
-      return hoursSinceCreated > 24;
-    }).length || 0;
+    const overdueOrders =
+      orders?.filter((order) => {
+        if (order.status !== 'pending') return false;
+        const hoursSinceCreated =
+          (Date.now() - new Date(order.created_at).getTime()) /
+          (1000 * 60 * 60);
+        return hoursSinceCreated > 24;
+      }).length || 0;
 
     // Simple conversion rate calculation (delivered / total)
-    const deliveredOrders = orders?.filter(order => order.status === 'delivered').length || 0;
-    const conversionRate = totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : 0;
+    const deliveredOrders =
+      orders?.filter((order) => order.status === 'delivered').length || 0;
+    const conversionRate =
+      totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : 0;
 
     return {
       total_orders: totalOrders,
@@ -245,16 +265,16 @@ export class OrderAnalyticsService {
     status?: string[]
   ): Promise<OrderMetrics['trends']> {
     // Get daily aggregated data
-    let query = this.supabase.rpc('get_daily_order_stats', {
+    const query = this.supabase.rpc('get_daily_order_stats', {
       start_date: startDate,
       end_date: endDate,
       event_filter: eventId || null,
-      status_filter: status || null
+      status_filter: status || null,
     });
 
     // Fallback if RPC doesn't exist - use regular query
     const { data: dailyData, error: dailyError } = await query;
-    
+
     let dailyOrders = [];
     if (dailyError) {
       // Fallback: Manual aggregation
@@ -268,11 +288,19 @@ export class OrderAnalyticsService {
       dailyOrders = Object.entries(grouped).map(([date, dayOrders]) => ({
         date,
         orders_count: dayOrders.length,
-        revenue_cents: dayOrders.reduce((sum, order) => 
-          sum + (order.status === 'approved' || order.status === 'delivered' ? order.total_cents : 0), 0
+        revenue_cents: dayOrders.reduce(
+          (sum, order) =>
+            sum +
+            (order.status === 'approved' || order.status === 'delivered'
+              ? order.total_cents
+              : 0),
+          0
         ),
-        average_value_cents: dayOrders.length > 0 ? 
-          dayOrders.reduce((sum, order) => sum + order.total_cents, 0) / dayOrders.length : 0
+        average_value_cents:
+          dayOrders.length > 0
+            ? dayOrders.reduce((sum, order) => sum + order.total_cents, 0) /
+              dayOrders.length
+            : 0,
       }));
     } else {
       dailyOrders = dailyData || [];
@@ -281,48 +309,87 @@ export class OrderAnalyticsService {
     // Calculate weekly and monthly summaries
     const now = new Date();
     const currentWeekStart = this.getWeekStart(now);
-    const previousWeekStart = this.getWeekStart(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
-    
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousWeekStart = this.getWeekStart(
+      new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    );
 
-    const currentWeekOrders = dailyOrders.filter(day => new Date(day.date) >= currentWeekStart);
-    const previousWeekOrders = dailyOrders.filter(day => {
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      1
+    );
+
+    const currentWeekOrders = dailyOrders.filter(
+      (day) => new Date(day.date) >= currentWeekStart
+    );
+    const previousWeekOrders = dailyOrders.filter((day) => {
       const date = new Date(day.date);
       return date >= previousWeekStart && date < currentWeekStart;
     });
 
-    const currentMonthOrders = dailyOrders.filter(day => new Date(day.date) >= currentMonthStart);
-    const previousMonthOrders = dailyOrders.filter(day => {
+    const currentMonthOrders = dailyOrders.filter(
+      (day) => new Date(day.date) >= currentMonthStart
+    );
+    const previousMonthOrders = dailyOrders.filter((day) => {
       const date = new Date(day.date);
       return date >= previousMonthStart && date < currentMonthStart;
     });
 
     const currentWeekStats = {
       orders: currentWeekOrders.reduce((sum, day) => sum + day.orders_count, 0),
-      revenue_cents: currentWeekOrders.reduce((sum, day) => sum + day.revenue_cents, 0)
+      revenue_cents: currentWeekOrders.reduce(
+        (sum, day) => sum + day.revenue_cents,
+        0
+      ),
     };
 
     const previousWeekStats = {
-      orders: previousWeekOrders.reduce((sum, day) => sum + day.orders_count, 0),
-      revenue_cents: previousWeekOrders.reduce((sum, day) => sum + day.revenue_cents, 0)
+      orders: previousWeekOrders.reduce(
+        (sum, day) => sum + day.orders_count,
+        0
+      ),
+      revenue_cents: previousWeekOrders.reduce(
+        (sum, day) => sum + day.revenue_cents,
+        0
+      ),
     };
 
     const currentMonthStats = {
-      orders: currentMonthOrders.reduce((sum, day) => sum + day.orders_count, 0),
-      revenue_cents: currentMonthOrders.reduce((sum, day) => sum + day.revenue_cents, 0)
+      orders: currentMonthOrders.reduce(
+        (sum, day) => sum + day.orders_count,
+        0
+      ),
+      revenue_cents: currentMonthOrders.reduce(
+        (sum, day) => sum + day.revenue_cents,
+        0
+      ),
     };
 
     const previousMonthStats = {
-      orders: previousMonthOrders.reduce((sum, day) => sum + day.orders_count, 0),
-      revenue_cents: previousMonthOrders.reduce((sum, day) => sum + day.revenue_cents, 0)
+      orders: previousMonthOrders.reduce(
+        (sum, day) => sum + day.orders_count,
+        0
+      ),
+      revenue_cents: previousMonthOrders.reduce(
+        (sum, day) => sum + day.revenue_cents,
+        0
+      ),
     };
 
-    const weeklyGrowthRate = previousWeekStats.orders > 0 ?
-      ((currentWeekStats.orders - previousWeekStats.orders) / previousWeekStats.orders) * 100 : 0;
+    const weeklyGrowthRate =
+      previousWeekStats.orders > 0
+        ? ((currentWeekStats.orders - previousWeekStats.orders) /
+            previousWeekStats.orders) *
+          100
+        : 0;
 
-    const monthlyGrowthRate = previousMonthStats.orders > 0 ?
-      ((currentMonthStats.orders - previousMonthStats.orders) / previousMonthStats.orders) * 100 : 0;
+    const monthlyGrowthRate =
+      previousMonthStats.orders > 0
+        ? ((currentMonthStats.orders - previousMonthStats.orders) /
+            previousMonthStats.orders) *
+          100
+        : 0;
 
     return {
       daily_orders: dailyOrders,
@@ -361,45 +428,62 @@ export class OrderAnalyticsService {
     if (error) throw error;
 
     const totalOrders = orders?.length || 0;
-    const statusCounts: Record<string, { count: number; revenue_cents: number }> = {};
+    const statusCounts: Record<
+      string,
+      { count: number; revenue_cents: number }
+    > = {};
     const processingTimes: number[] = [];
 
-    orders?.forEach(order => {
+    orders?.forEach((order) => {
       // Count by status
       if (!statusCounts[order.status]) {
         statusCounts[order.status] = { count: 0, revenue_cents: 0 };
       }
       statusCounts[order.status].count++;
-      
+
       if (order.status === 'approved' || order.status === 'delivered') {
         statusCounts[order.status].revenue_cents += order.total_cents;
       }
 
       // Calculate processing time for completed orders
       if (order.status === 'delivered' && order.last_status_change) {
-        const processingHours = (new Date(order.last_status_change).getTime() - 
-                               new Date(order.created_at).getTime()) / (1000 * 60 * 60);
+        const processingHours =
+          (new Date(order.last_status_change).getTime() -
+            new Date(order.created_at).getTime()) /
+          (1000 * 60 * 60);
         processingTimes.push(processingHours);
       }
     });
 
     // Calculate processing time statistics
-    const avgProcessingTime = processingTimes.length > 0 ?
-      processingTimes.reduce((sum, time) => sum + time, 0) / processingTimes.length : 0;
+    const avgProcessingTime =
+      processingTimes.length > 0
+        ? processingTimes.reduce((sum, time) => sum + time, 0) /
+          processingTimes.length
+        : 0;
 
     const sortedTimes = processingTimes.sort((a, b) => a - b);
-    const medianProcessingTime = sortedTimes.length > 0 ?
-      sortedTimes[Math.floor(sortedTimes.length / 2)] : 0;
+    const medianProcessingTime =
+      sortedTimes.length > 0
+        ? sortedTimes[Math.floor(sortedTimes.length / 2)]
+        : 0;
 
     const fastestTime = sortedTimes.length > 0 ? sortedTimes[0] : 0;
-    const slowestTime = sortedTimes.length > 0 ? sortedTimes[sortedTimes.length - 1] : 0;
+    const slowestTime =
+      sortedTimes.length > 0 ? sortedTimes[sortedTimes.length - 1] : 0;
 
     // Convert counts to include percentages
-    const byStatus: Record<string, { count: number; percentage: number; revenue_cents: number }> = {};
+    const byStatus: Record<
+      string,
+      { count: number; percentage: number; revenue_cents: number }
+    > = {};
     Object.entries(statusCounts).forEach(([status, data]) => {
       byStatus[status] = {
         count: data.count,
-        percentage: totalOrders > 0 ? Math.round((data.count / totalOrders) * 10000) / 100 : 0,
+        percentage:
+          totalOrders > 0
+            ? Math.round((data.count / totalOrders) * 10000) / 100
+            : 0,
         revenue_cents: data.revenue_cents,
       };
     });
@@ -427,18 +511,20 @@ export class OrderAnalyticsService {
     // Get event performance data
     const { data: eventData } = await this.supabase
       .from('orders')
-      .select(`
+      .select(
+        `
         total_cents,
         created_at,
         events(id, name, school)
-      `)
+      `
+      )
       .gte('created_at', startDate)
       .lte('created_at', endDate)
       .not('events', 'is', null);
 
     // Group by events
     const eventGroups: Record<string, any[]> = {};
-    eventData?.forEach(order => {
+    eventData?.forEach((order) => {
       const event = (order as any).events;
       if (event) {
         const key = event.id;
@@ -450,14 +536,18 @@ export class OrderAnalyticsService {
     const topEvents = Object.entries(eventGroups)
       .map(([eventId, orders]) => {
         const event = orders[0].event;
-        const revenue = orders.reduce((sum, order) => sum + order.total_cents, 0);
+        const revenue = orders.reduce(
+          (sum, order) => sum + order.total_cents,
+          0
+        );
         return {
           event_id: eventId,
           event_name: event.name,
           school_name: event.school,
           orders_count: orders.length,
           revenue_cents: revenue,
-          average_order_value_cents: orders.length > 0 ? Math.round(revenue / orders.length) : 0,
+          average_order_value_cents:
+            orders.length > 0 ? Math.round(revenue / orders.length) : 0,
         };
       })
       .sort((a, b) => b.revenue_cents - a.revenue_cents)
@@ -465,23 +555,29 @@ export class OrderAnalyticsService {
 
     // Calculate peak hours
     const hourCounts: Record<number, number> = {};
-    eventData?.forEach(order => {
+    eventData?.forEach((order) => {
       const hour = new Date(order.created_at).getHours();
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
 
-    const totalOrdersForHours = Object.values(hourCounts).reduce((sum, count) => sum + count, 0);
+    const totalOrdersForHours = Object.values(hourCounts).reduce(
+      (sum, count) => sum + count,
+      0
+    );
     const peakHours = Object.entries(hourCounts)
       .map(([hour, count]) => ({
         hour: parseInt(hour),
         orders_count: count,
-        percentage: totalOrdersForHours > 0 ? Math.round((count / totalOrdersForHours) * 10000) / 100 : 0,
+        percentage:
+          totalOrdersForHours > 0
+            ? Math.round((count / totalOrdersForHours) * 10000) / 100
+            : 0,
       }))
       .sort((a, b) => b.orders_count - a.orders_count);
 
     // Geographical distribution by school
     const schoolGroups: Record<string, any[]> = {};
-    eventData?.forEach(order => {
+    eventData?.forEach((order) => {
       const event = (order as any).events;
       if (event?.school) {
         const school = event.school;
@@ -494,7 +590,10 @@ export class OrderAnalyticsService {
       .map(([school, orders]) => ({
         school,
         orders_count: orders.length,
-        revenue_cents: orders.reduce((sum, order) => sum + order.total_cents, 0),
+        revenue_cents: orders.reduce(
+          (sum, order) => sum + order.total_cents,
+          0
+        ),
       }))
       .sort((a, b) => b.orders_count - a.orders_count)
       .slice(0, 20);
@@ -532,8 +631,11 @@ export class OrderAnalyticsService {
     }
 
     // Calculate monthly averages for seasonal trends
-    const monthlyData: Record<number, { orders: number; revenue: number; count: number }> = {};
-    historicalData.forEach(order => {
+    const monthlyData: Record<
+      number,
+      { orders: number; revenue: number; count: number }
+    > = {};
+    historicalData.forEach((order) => {
       const month = new Date(order.created_at).getMonth();
       if (!monthlyData[month]) {
         monthlyData[month] = { orders: 0, revenue: 0, count: 0 };
@@ -549,22 +651,32 @@ export class OrderAnalyticsService {
       const data = monthlyData[month];
       return {
         month: month + 1,
-        average_orders: data ? Math.round(data.orders / Math.max(data.count / 30, 1)) : 0,
-        average_revenue_cents: data ? Math.round(data.revenue / Math.max(data.count / 30, 1)) : 0,
+        average_orders: data
+          ? Math.round(data.orders / Math.max(data.count / 30, 1))
+          : 0,
+        average_revenue_cents: data
+          ? Math.round(data.revenue / Math.max(data.count / 30, 1))
+          : 0,
       };
     });
 
     // Simple 30-day prediction based on recent trend
-    const recentOrders = historicalData.filter(order => {
+    const recentOrders = historicalData.filter((order) => {
       const orderDate = new Date(order.created_at);
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       return orderDate >= thirtyDaysAgo;
     });
 
     const avgDailyOrders = recentOrders.length / 30;
-    const avgDailyRevenue = recentOrders.reduce((sum, order) => {
-      return sum + (order.status === 'approved' || order.status === 'delivered' ? order.total_cents : 0);
-    }, 0) / 30;
+    const avgDailyRevenue =
+      recentOrders.reduce((sum, order) => {
+        return (
+          sum +
+          (order.status === 'approved' || order.status === 'delivered'
+            ? order.total_cents
+            : 0)
+        );
+      }, 0) / 30;
 
     return {
       next_30_days: {
@@ -588,7 +700,10 @@ export class OrderAnalyticsService {
       .from('orders')
       .select('id, created_at')
       .eq('status', 'pending')
-      .lt('created_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
+      .lt(
+        'created_at',
+        new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+      );
 
     if (overdueOrders && overdueOrders.length > 0) {
       alerts.push({
@@ -605,7 +720,10 @@ export class OrderAnalyticsService {
       .from('orders')
       .select('id')
       .eq('status', 'failed')
-      .gte('created_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
+      .gte(
+        'created_at',
+        new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+      );
 
     if (failedOrders && failedOrders.length > 0) {
       alerts.push({
@@ -621,9 +739,13 @@ export class OrderAnalyticsService {
     const { data: todayOrders } = await this.supabase
       .from('orders')
       .select('id')
-      .gte('created_at', new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString());
+      .gte(
+        'created_at',
+        new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
+      );
 
-    if (todayOrders && todayOrders.length > 50) { // Threshold for high volume
+    if (todayOrders && todayOrders.length > 50) {
+      // Threshold for high volume
       alerts.push({
         type: 'info',
         title: 'High Order Volume',

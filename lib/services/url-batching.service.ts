@@ -52,7 +52,7 @@ class UrlBatchingService {
     const {
       requests,
       concurrencyLimit = this.MAX_CONCURRENT_REQUESTS,
-      expiryMinutes = this.DEFAULT_EXPIRY_MINUTES
+      expiryMinutes = this.DEFAULT_EXPIRY_MINUTES,
     } = options;
 
     const results: UrlResponse[] = [];
@@ -66,16 +66,20 @@ class UrlBatchingService {
       return {
         success: false,
         urls: [],
-        errors: ['Cannot process more than 1000 URLs at once']
+        errors: ['Cannot process more than 1000 URLs at once'],
       };
     }
 
     try {
       // Split requests into batches to avoid overwhelming the system
       const batches = this.splitIntoBatches(requests, this.BATCH_SIZE);
-      
+
       for (const batch of batches) {
-        const batchResults = await this.processBatch(batch, concurrencyLimit, expiryMinutes);
+        const batchResults = await this.processBatch(
+          batch,
+          concurrencyLimit,
+          expiryMinutes
+        );
         results.push(...batchResults.urls);
         errors.push(...batchResults.errors);
       }
@@ -90,9 +94,8 @@ class UrlBatchingService {
       return {
         success: errors.length === 0,
         urls: results,
-        errors
+        errors,
       };
-
     } catch (error) {
       logger.error('Failed to batch generate URLs', {
         requestCount: requests.length,
@@ -102,7 +105,9 @@ class UrlBatchingService {
       return {
         success: false,
         urls: results,
-        errors: [`Batch processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        errors: [
+          `Batch processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        ],
       };
     }
   }
@@ -119,8 +124,11 @@ class UrlBatchingService {
     const errors: string[] = [];
 
     // Separate cached and uncached requests
-    const { cached, uncached } = this.separateCachedRequests(requests, expiryMinutes);
-    
+    const { cached, uncached } = this.separateCachedRequests(
+      requests,
+      expiryMinutes
+    );
+
     // Add cached results
     urls.push(...cached);
 
@@ -132,7 +140,7 @@ class UrlBatchingService {
 
     // Process uncached requests with concurrency limiting
     const semaphore = new Semaphore(concurrencyLimit);
-    
+
     const promises = uncached.map(async (request) => {
       return semaphore.acquire(async () => {
         try {
@@ -149,12 +157,16 @@ class UrlBatchingService {
               path,
               error: error.message,
             });
-            errors.push(`Failed to generate URL for photo ${request.photoId}: ${error.message}`);
+            errors.push(
+              `Failed to generate URL for photo ${request.photoId}: ${error.message}`
+            );
             return null;
           }
 
           if (!signedUrlData) {
-            errors.push(`No signed URL data returned for photo ${request.photoId}`);
+            errors.push(
+              `No signed URL data returned for photo ${request.photoId}`
+            );
             return null;
           }
 
@@ -169,22 +181,23 @@ class UrlBatchingService {
           this.cacheUrl(request, signedUrlData.signedUrl, expiresAt);
 
           return result;
-
         } catch (error) {
           logger.warn('Error generating signed URL', {
             photoId: request.photoId,
             error: error instanceof Error ? error.message : 'Unknown error',
           });
-          errors.push(`Error generating URL for photo ${request.photoId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(
+            `Error generating URL for photo ${request.photoId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
           return null;
         }
       });
     });
 
     const results = await Promise.all(promises);
-    
+
     // Filter out null results and add to urls
-    results.forEach(result => {
+    results.forEach((result) => {
       if (result) {
         urls.push(result);
       }
@@ -203,7 +216,7 @@ class UrlBatchingService {
     const cached: UrlResponse[] = [];
     const uncached: UrlRequest[] = [];
 
-    requests.forEach(request => {
+    requests.forEach((request) => {
       const cacheKey = this.getCacheKey(request);
       const cachedEntry = this.cache.get(cacheKey);
 
@@ -225,8 +238,8 @@ class UrlBatchingService {
    * Select the appropriate path (preview or original)
    */
   private selectPath(request: UrlRequest): string {
-    return request.usePreview && request.previewPath 
-      ? request.previewPath 
+    return request.usePreview && request.previewPath
+      ? request.previewPath
       : request.storagePath;
   }
 
@@ -241,7 +254,11 @@ class UrlBatchingService {
   /**
    * Cache a URL result
    */
-  private cacheUrl(request: UrlRequest, signedUrl: string, expiresAt: Date): void {
+  private cacheUrl(
+    request: UrlRequest,
+    signedUrl: string,
+    expiresAt: Date
+  ): void {
     const cacheKey = this.getCacheKey(request);
     this.cache.set(cacheKey, {
       signedUrl,
@@ -252,11 +269,14 @@ class UrlBatchingService {
   /**
    * Check if cache entry is still valid
    */
-  private isCacheValid(entry: CacheEntry, requestedExpiryMinutes: number): boolean {
+  private isCacheValid(
+    entry: CacheEntry,
+    requestedExpiryMinutes: number
+  ): boolean {
     const now = new Date();
     const timeUntilExpiry = entry.expiresAt.getTime() - now.getTime();
     const requiredMinutes = requestedExpiryMinutes * 60 * 1000;
-    
+
     // Cache is valid if it has at least the requested expiry time remaining
     return timeUntilExpiry >= requiredMinutes;
   }
@@ -277,7 +297,7 @@ class UrlBatchingService {
    */
   private getCacheHitCount(requests: UrlRequest[]): number {
     let hits = 0;
-    requests.forEach(request => {
+    requests.forEach((request) => {
       const cacheKey = this.getCacheKey(request);
       if (this.cache.has(cacheKey)) {
         hits++;
@@ -325,7 +345,11 @@ class UrlBatchingService {
     entries: Array<{ key: string; expiresAt: string; isExpired: boolean }>;
   } {
     const now = new Date();
-    const entries: Array<{ key: string; expiresAt: string; isExpired: boolean }> = [];
+    const entries: Array<{
+      key: string;
+      expiresAt: string;
+      isExpired: boolean;
+    }> = [];
 
     this.cache.forEach((entry, key) => {
       entries.push({

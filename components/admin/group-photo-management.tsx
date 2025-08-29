@@ -31,12 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Camera,
   Upload,
@@ -117,7 +112,8 @@ export default function GroupPhotoManagement({
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedPhotoDetails, setSelectedPhotoDetails] = useState<GroupPhoto | null>(null);
+  const [selectedPhotoDetails, setSelectedPhotoDetails] =
+    useState<GroupPhoto | null>(null);
 
   // Upload state
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -130,8 +126,11 @@ export default function GroupPhotoManagement({
     setError(null);
 
     try {
-      const url = new URL(`/api/admin/events/${eventId}/photos/group`, window.location.origin);
-      
+      const url = new URL(
+        `/api/admin/events/${eventId}/photos/group`,
+        window.location.origin
+      );
+
       if (selectedCourse) {
         url.searchParams.set('course_id', selectedCourse);
       }
@@ -171,10 +170,11 @@ export default function GroupPhotoManagement({
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(photo =>
-        photo.filename.toLowerCase().includes(term) ||
-        photo.course_name.toLowerCase().includes(term) ||
-        (photo.level_name && photo.level_name.toLowerCase().includes(term))
+      filtered = filtered.filter(
+        (photo) =>
+          photo.filename.toLowerCase().includes(term) ||
+          photo.course_name.toLowerCase().includes(term) ||
+          (photo.level_name && photo.level_name.toLowerCase().includes(term))
       );
     }
 
@@ -182,25 +182,31 @@ export default function GroupPhotoManagement({
   }, [photos, searchTerm]);
 
   // Selection handlers
-  const handlePhotoToggle = useCallback((photoId: string, selected: boolean) => {
-    setSelectedPhotos(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(photoId);
-      } else {
-        newSet.delete(photoId);
-      }
-      return newSet;
-    });
-  }, []);
+  const handlePhotoToggle = useCallback(
+    (photoId: string, selected: boolean) => {
+      setSelectedPhotos((prev) => {
+        const newSet = new Set(prev);
+        if (selected) {
+          newSet.add(photoId);
+        } else {
+          newSet.delete(photoId);
+        }
+        return newSet;
+      });
+    },
+    []
+  );
 
-  const handleSelectAll = useCallback((selected: boolean) => {
-    if (selected) {
-      setSelectedPhotos(new Set(filteredPhotos.map(p => p.id)));
-    } else {
-      setSelectedPhotos(new Set());
-    }
-  }, [filteredPhotos]);
+  const handleSelectAll = useCallback(
+    (selected: boolean) => {
+      if (selected) {
+        setSelectedPhotos(new Set(filteredPhotos.map((p) => p.id)));
+      } else {
+        setSelectedPhotos(new Set());
+      }
+    },
+    [filteredPhotos]
+  );
 
   // Upload handler
   const handleUpload = async () => {
@@ -217,14 +223,19 @@ export default function GroupPhotoManagement({
       formData.append('course_id', selectedCourse);
       formData.append('photo_type', 'group');
 
-      const response = await fetch(`/api/admin/events/${eventId}/photos/group/upload`, {
-        method: 'POST',
-        body: formData,
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percentCompleted);
-        },
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/photos/group/upload`,
+        {
+          method: 'POST',
+          body: formData,
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setUploadProgress(percentCompleted);
+          },
+        }
+      );
 
       if (response.ok) {
         setUploadDialogOpen(false);
@@ -247,14 +258,17 @@ export default function GroupPhotoManagement({
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/photos/group/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action,
-          photo_ids: Array.from(selectedPhotos),
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/photos/group/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action,
+            photo_ids: Array.from(selectedPhotos),
+          }),
+        }
+      );
 
       if (response.ok) {
         setSelectedPhotos(new Set());
@@ -272,12 +286,12 @@ export default function GroupPhotoManagement({
   // Photo Card Component
   const PhotoCard = ({ photo }: { photo: GroupPhoto }) => {
     const selected = selectedPhotos.has(photo.id);
-    
+
     return (
-      <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 group">
+      <Card className="group overflow-hidden transition-all duration-200 hover:shadow-lg">
         <div className="relative">
           {/* Photo Preview */}
-          <div className="aspect-[4/3] relative bg-muted">
+          <div className="bg-muted relative aspect-[4/3]">
             <Image
               src={photo.preview_url}
               alt={photo.filename}
@@ -285,33 +299,41 @@ export default function GroupPhotoManagement({
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
-            
+
             {/* Overlay with selection checkbox */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors">
-              <div className="absolute top-2 left-2">
+            <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20">
+              <div className="absolute left-2 top-2">
                 <Checkbox
                   checked={selected}
-                  onCheckedChange={(checked) => handlePhotoToggle(photo.id, !!checked)}
-                  className="bg-white border-white"
+                  onCheckedChange={(checked) =>
+                    handlePhotoToggle(photo.id, !!checked)
+                  }
+                  className="border-white bg-white"
                   aria-label={`Select photo ${photo.filename}`}
                 />
               </div>
-              
-              <div className="absolute top-2 right-2 flex gap-1">
-                <Badge variant={photo.approved ? 'default' : 'secondary'} className="text-xs">
+
+              <div className="absolute right-2 top-2 flex gap-1">
+                <Badge
+                  variant={photo.approved ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
                   {photo.approved ? 'Aprobada' : 'Pendiente'}
                 </Badge>
-                <Badge variant="outline" className="text-xs bg-white/90">
-                  {photo.photo_type === 'group' ? 'Grupal' : 
-                   photo.photo_type === 'activity' ? 'Actividad' : 'Evento'}
+                <Badge variant="outline" className="bg-white/90 text-xs">
+                  {photo.photo_type === 'group'
+                    ? 'Grupal'
+                    : photo.photo_type === 'activity'
+                      ? 'Actividad'
+                      : 'Evento'}
                 </Badge>
               </div>
 
               {/* Quick actions on hover */}
-              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
                 <div className="flex gap-1">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="secondary"
                     onClick={() => setSelectedPhotoDetails(photo)}
                   >
@@ -324,25 +346,27 @@ export default function GroupPhotoManagement({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSelectedPhotoDetails(photo)}>
-                        <Eye className="h-4 w-4 mr-2" />
+                      <DropdownMenuItem
+                        onClick={() => setSelectedPhotoDetails(photo)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
                         Ver Detalles
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit className="mr-2 h-4 w-4" />
                         Editar
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Download className="h-4 w-4 mr-2" />
+                        <Download className="mr-2 h-4 w-4" />
                         Descargar
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem>
-                        <Share2 className="h-4 w-4 mr-2" />
+                        <Share2 className="mr-2 h-4 w-4" />
                         Compartir
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="mr-2 h-4 w-4" />
                         Eliminar
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -357,15 +381,15 @@ export default function GroupPhotoManagement({
           <div className="space-y-2">
             {/* File info */}
             <div>
-              <h4 className="font-medium text-sm truncate">{photo.filename}</h4>
-              <p className="text-xs text-muted-foreground">
+              <h4 className="truncate text-sm font-medium">{photo.filename}</h4>
+              <p className="text-muted-foreground text-xs">
                 {(photo.file_size_bytes / (1024 * 1024)).toFixed(1)} MB
               </p>
             </div>
 
             {/* Course info */}
             <div className="flex items-center gap-2 text-xs">
-              <BookOpen className="h-3 w-3 text-muted-foreground shrink-0" />
+              <BookOpen className="text-muted-foreground h-3 w-3 shrink-0" />
               <span className="truncate">{photo.course_name}</span>
               {photo.level_name && (
                 <Badge variant="outline" className="text-xs">
@@ -375,16 +399,21 @@ export default function GroupPhotoManagement({
             </div>
 
             {/* Date */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs">
               <Calendar className="h-3 w-3 shrink-0" />
-              <span>{new Date(photo.created_at).toLocaleDateString('es-AR')}</span>
+              <span>
+                {new Date(photo.created_at).toLocaleDateString('es-AR')}
+              </span>
             </div>
 
             {/* Tagged info */}
             {photo.tagged_at && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2 text-xs">
                 <Tag className="h-3 w-3 shrink-0" />
-                <span>Etiquetada: {new Date(photo.tagged_at).toLocaleDateString('es-AR')}</span>
+                <span>
+                  Etiquetada:{' '}
+                  {new Date(photo.tagged_at).toLocaleDateString('es-AR')}
+                </span>
               </div>
             )}
           </div>
@@ -395,38 +424,52 @@ export default function GroupPhotoManagement({
 
   // Course stats
   const courseStats = useMemo(() => {
-    const activeCourses = courses.filter(c => c.active);
-    const totalGroupPhotos = courses.reduce((sum, c) => sum + (c.group_photo_count || 0), 0);
-    const coursesWithPhotos = courses.filter(c => (c.group_photo_count || 0) > 0).length;
-    
+    const activeCourses = courses.filter((c) => c.active);
+    const totalGroupPhotos = courses.reduce(
+      (sum, c) => sum + (c.group_photo_count || 0),
+      0
+    );
+    const coursesWithPhotos = courses.filter(
+      (c) => (c.group_photo_count || 0) > 0
+    ).length;
+
     return {
       total: activeCourses.length,
       withPhotos: coursesWithPhotos,
       totalPhotos: totalGroupPhotos,
-      completionRate: activeCourses.length > 0 ? Math.round((coursesWithPhotos / activeCourses.length) * 100) : 0,
+      completionRate:
+        activeCourses.length > 0
+          ? Math.round((coursesWithPhotos / activeCourses.length) * 100)
+          : 0,
     };
   }, [courses]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h2 className="text-2xl font-bold">Fotos Grupales</h2>
           <p className="text-muted-foreground">
             {eventName} - {filteredPhotos.length} fotos encontradas
           </p>
         </div>
-        
+
         <div className="flex gap-2">
-          <Button onClick={loadGroupPhotos} variant="outline" disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          <Button
+            onClick={loadGroupPhotos}
+            variant="outline"
+            disabled={loading}
+          >
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+            />
             Actualizar
           </Button>
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
             <DialogTrigger asChild>
               <Button disabled={!selectedCourse}>
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="mr-2 h-4 w-4" />
                 Subir Fotos
               </Button>
             </DialogTrigger>
@@ -444,15 +487,19 @@ export default function GroupPhotoManagement({
                     type="file"
                     multiple
                     accept="image/*"
-                    onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                    onChange={(e) =>
+                      setUploadFiles(Array.from(e.target.files || []))
+                    }
                   />
                   {uploadFiles.length > 0 && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {uploadFiles.length} archivo{uploadFiles.length !== 1 ? 's' : ''} seleccionado{uploadFiles.length !== 1 ? 's' : ''}
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {uploadFiles.length} archivo
+                      {uploadFiles.length !== 1 ? 's' : ''} seleccionado
+                      {uploadFiles.length !== 1 ? 's' : ''}
                     </p>
                   )}
                 </div>
-                
+
                 {uploading && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -464,12 +511,17 @@ export default function GroupPhotoManagement({
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setUploadDialogOpen(false)}
+                >
                   Cancelar
                 </Button>
-                <Button 
-                  onClick={handleUpload} 
-                  disabled={uploading || uploadFiles.length === 0 || !selectedCourse}
+                <Button
+                  onClick={handleUpload}
+                  disabled={
+                    uploading || uploadFiles.length === 0 || !selectedCourse
+                  }
                 >
                   Subir Fotos
                 </Button>
@@ -480,12 +532,12 @@ export default function GroupPhotoManagement({
       </div>
 
       {/* Course Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Cursos Totales</p>
+                <p className="text-muted-foreground text-sm">Cursos Totales</p>
                 <p className="text-2xl font-bold">{courseStats.total}</p>
               </div>
               <BookOpen className="h-8 w-8 text-blue-500 opacity-50" />
@@ -497,7 +549,7 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Con Fotos</p>
+                <p className="text-muted-foreground text-sm">Con Fotos</p>
                 <p className="text-2xl font-bold">{courseStats.withPhotos}</p>
               </div>
               <Camera className="h-8 w-8 text-green-500 opacity-50" />
@@ -509,7 +561,7 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Fotos</p>
+                <p className="text-muted-foreground text-sm">Total Fotos</p>
                 <p className="text-2xl font-bold">{courseStats.totalPhotos}</p>
               </div>
               <ImageIcon className="h-8 w-8 text-orange-500 opacity-50" />
@@ -521,8 +573,10 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Completado</p>
-                <p className="text-2xl font-bold">{courseStats.completionRate}%</p>
+                <p className="text-muted-foreground text-sm">Completado</p>
+                <p className="text-2xl font-bold">
+                  {courseStats.completionRate}%
+                </p>
               </div>
               <CheckCircle className="h-8 w-8 text-purple-500 opacity-50" />
             </div>
@@ -531,10 +585,10 @@ export default function GroupPhotoManagement({
       </div>
 
       {/* Course Selection and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
-          <Select 
-            value={selectedCourse || ''} 
+          <Select
+            value={selectedCourse || ''}
             onValueChange={(value) => onCourseChange?.(value || null)}
           >
             <SelectTrigger className="w-full sm:w-64">
@@ -542,28 +596,32 @@ export default function GroupPhotoManagement({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Todos los cursos</SelectItem>
-              {courses.map(course => (
+              {courses.map((course) => (
                 <SelectItem key={course.id} value={course.id}>
                   {course.name} {course.level_name && `(${course.level_name})`}
-                  {course.group_photo_count !== undefined && ` - ${course.group_photo_count} fotos`}
+                  {course.group_photo_count !== undefined &&
+                    ` - ${course.group_photo_count} fotos`}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="flex gap-2 flex-wrap">
+
+        <div className="flex flex-wrap gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Buscar fotos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-48"
+              className="w-48 pl-9"
             />
           </div>
-          
-          <Select value={filterType || ''} onValueChange={(value) => setFilterType(value || null)}>
+
+          <Select
+            value={filterType || ''}
+            onValueChange={(value) => setFilterType(value || null)}
+          >
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
@@ -574,11 +632,11 @@ export default function GroupPhotoManagement({
               <SelectItem value="event">Evento</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="mr-2 h-4 w-4" />
                 Más Filtros
               </Button>
             </DropdownMenuTrigger>
@@ -594,7 +652,7 @@ export default function GroupPhotoManagement({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           <div className="flex gap-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
@@ -616,32 +674,45 @@ export default function GroupPhotoManagement({
 
       {/* Bulk Actions */}
       {selectedPhotos.size > 0 && (
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+        <div className="bg-muted/50 flex items-center justify-between rounded-lg p-4">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">
-              {selectedPhotos.size} foto{selectedPhotos.size !== 1 ? 's' : ''} seleccionada{selectedPhotos.size !== 1 ? 's' : ''}
+              {selectedPhotos.size} foto{selectedPhotos.size !== 1 ? 's' : ''}{' '}
+              seleccionada{selectedPhotos.size !== 1 ? 's' : ''}
             </span>
-            <Button size="sm" variant="outline" onClick={() => handleSelectAll(false)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleSelectAll(false)}
+            >
               Deseleccionar
             </Button>
           </div>
-          
+
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => handleBulkAction('approve')}>
-              <CheckCircle className="h-4 w-4 mr-2" />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkAction('approve')}
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
               Aprobar
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handleBulkAction('download')}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkAction('download')}
+            >
+              <Download className="mr-2 h-4 w-4" />
               Descargar
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => handleBulkAction('delete')}
               className="text-destructive hover:text-destructive"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className="mr-2 h-4 w-4" />
               Eliminar
             </Button>
           </div>
@@ -653,10 +724,12 @@ export default function GroupPhotoManagement({
         <Card className="border-destructive">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-destructive" />
+              <AlertTriangle className="text-destructive h-6 w-6" />
               <div>
-                <p className="font-medium text-destructive">Error al cargar las fotos</p>
-                <p className="text-sm text-muted-foreground">{error}</p>
+                <p className="text-destructive font-medium">
+                  Error al cargar las fotos
+                </p>
+                <p className="text-muted-foreground text-sm">{error}</p>
               </div>
             </div>
           </CardContent>
@@ -666,31 +739,34 @@ export default function GroupPhotoManagement({
       {!error && (
         <>
           {filteredPhotos.length > 0 ? (
-            <div className={
-              viewMode === 'grid' 
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
-                : "space-y-4"
-            }>
-              {filteredPhotos.map(photo => (
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                  : 'space-y-4'
+              }
+            >
+              {filteredPhotos.map((photo) => (
                 <PhotoCard key={photo.id} photo={photo} />
               ))}
             </div>
           ) : (
             <Card>
-              <CardContent className="text-center py-12">
-                <Camera className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-medium mb-2">No hay fotos grupales</h3>
+              <CardContent className="py-12 text-center">
+                <Camera className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="mb-2 text-lg font-medium">
+                  No hay fotos grupales
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  {selectedCourse 
-                    ? 'Este curso no tiene fotos grupales aún.' 
-                    : searchTerm 
+                  {selectedCourse
+                    ? 'Este curso no tiene fotos grupales aún.'
+                    : searchTerm
                       ? 'No se encontraron fotos con esos criterios.'
-                      : 'Comience subiendo las primeras fotos grupales.'
-                  }
+                      : 'Comience subiendo las primeras fotos grupales.'}
                 </p>
                 {selectedCourse && (
                   <Button onClick={() => setUploadDialogOpen(true)}>
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Upload className="mr-2 h-4 w-4" />
                     Subir Fotos
                   </Button>
                 )}
@@ -701,14 +777,17 @@ export default function GroupPhotoManagement({
       )}
 
       {/* Photo Details Dialog */}
-      <Dialog open={!!selectedPhotoDetails} onOpenChange={(open) => !open && setSelectedPhotoDetails(null)}>
+      <Dialog
+        open={!!selectedPhotoDetails}
+        onOpenChange={(open) => !open && setSelectedPhotoDetails(null)}
+      >
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Detalles de la Foto</DialogTitle>
           </DialogHeader>
           {selectedPhotoDetails && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="aspect-[4/3] relative bg-muted rounded-lg overflow-hidden">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <div className="bg-muted relative aspect-[4/3] overflow-hidden rounded-lg">
                 <Image
                   src={selectedPhotoDetails.preview_url}
                   alt={selectedPhotoDetails.filename}
@@ -718,34 +797,53 @@ export default function GroupPhotoManagement({
               </div>
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-medium mb-2">Información del Archivo</h4>
+                  <h4 className="mb-2 font-medium">Información del Archivo</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Nombre:</span>
-                      <span className="font-mono">{selectedPhotoDetails.filename}</span>
+                      <span className="font-mono">
+                        {selectedPhotoDetails.filename}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tamaño:</span>
-                      <span>{(selectedPhotoDetails.file_size_bytes / (1024 * 1024)).toFixed(1)} MB</span>
+                      <span>
+                        {(
+                          selectedPhotoDetails.file_size_bytes /
+                          (1024 * 1024)
+                        ).toFixed(1)}{' '}
+                        MB
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tipo:</span>
                       <Badge variant="outline">
-                        {selectedPhotoDetails.photo_type === 'group' ? 'Grupal' : 
-                         selectedPhotoDetails.photo_type === 'activity' ? 'Actividad' : 'Evento'}
+                        {selectedPhotoDetails.photo_type === 'group'
+                          ? 'Grupal'
+                          : selectedPhotoDetails.photo_type === 'activity'
+                            ? 'Actividad'
+                            : 'Evento'}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Estado:</span>
-                      <Badge variant={selectedPhotoDetails.approved ? 'default' : 'secondary'}>
-                        {selectedPhotoDetails.approved ? 'Aprobada' : 'Pendiente'}
+                      <Badge
+                        variant={
+                          selectedPhotoDetails.approved
+                            ? 'default'
+                            : 'secondary'
+                        }
+                      >
+                        {selectedPhotoDetails.approved
+                          ? 'Aprobada'
+                          : 'Pendiente'}
                       </Badge>
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium mb-2">Información del Curso</h4>
+                  <h4 className="mb-2 font-medium">Información del Curso</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Curso:</span>
@@ -759,34 +857,44 @@ export default function GroupPhotoManagement({
                     )}
                   </div>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium mb-2">Fechas</h4>
+                  <h4 className="mb-2 font-medium">Fechas</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subida:</span>
-                      <span>{new Date(selectedPhotoDetails.created_at).toLocaleString('es-AR')}</span>
+                      <span>
+                        {new Date(
+                          selectedPhotoDetails.created_at
+                        ).toLocaleString('es-AR')}
+                      </span>
                     </div>
                     {selectedPhotoDetails.tagged_at && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Etiquetada:</span>
-                        <span>{new Date(selectedPhotoDetails.tagged_at).toLocaleString('es-AR')}</span>
+                        <span className="text-muted-foreground">
+                          Etiquetada:
+                        </span>
+                        <span>
+                          {new Date(
+                            selectedPhotoDetails.tagged_at
+                          ).toLocaleString('es-AR')}
+                        </span>
                       </div>
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2 pt-4">
                   <Button className="flex-1">
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="mr-2 h-4 w-4" />
                     Descargar
                   </Button>
                   <Button variant="outline">
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="mr-2 h-4 w-4" />
                     Editar
                   </Button>
                   <Button variant="outline">
-                    <Share2 className="h-4 w-4 mr-2" />
+                    <Share2 className="mr-2 h-4 w-4" />
                     Compartir
                   </Button>
                 </div>

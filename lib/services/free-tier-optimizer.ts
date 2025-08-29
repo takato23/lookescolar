@@ -1,9 +1,9 @@
 /**
  * Apple-Grade Free Tier Optimization Service
- * 
+ *
  * Enhanced for 1000 students × 20 photos = 20,000 photos
  * Apple-grade performance: Stay within 1GB Supabase free tier limit
- * 
+ *
  * Strategy:
  * - Intelligent 30-50KB per preview image (20,000 × 40KB avg = 800MB)
  * - No original storage (process and discard)
@@ -12,7 +12,20 @@
  * - Apple-style progressive loading optimization
  */
 
-import sharp from 'sharp';
+// Dynamic import for Sharp to prevent bundling issues
+let sharp: any;
+
+async function getSharp() {
+  if (!sharp) {
+    try {
+      sharp = (await import('sharp')).default;
+    } catch (error) {
+      console.error('Failed to load Sharp:', error);
+      throw new Error('Image processing unavailable');
+    }
+  }
+  return sharp;
+}
 
 interface FreeTierProcessingOptions {
   targetSizeKB: number;
@@ -54,11 +67,16 @@ export class FreeTierOptimizer {
     inputBuffer: Buffer,
     options: Partial<FreeTierProcessingOptions> = {}
   ): Promise<OptimizedResult> {
-    const config = { ...this.DEFAULT_OPTIONS, ...options, enableOriginalStorage: false }; // Force disable original storage
+    const config = {
+      ...this.DEFAULT_OPTIONS,
+      ...options,
+      enableOriginalStorage: false,
+    }; // Force disable original storage
     const targetBytes = config.targetSizeKB * 1024;
+    const sharpInstance = await getSharp();
 
     // Get original metadata
-    const metadata = await sharp(inputBuffer).metadata();
+    const metadata = await sharpInstance(inputBuffer).metadata();
     if (!metadata.width || !metadata.height) {
       throw new Error('Invalid image metadata');
     }
@@ -71,13 +89,59 @@ export class FreeTierOptimizer {
     const targetHeight = Math.round(originalHeight * scale);
 
     // Ultra-aggressive compression strategy for photography business
+    // More compression levels for better targeting of 35KB
     const compressionLevels = [
+      { quality: 40, dimensions: { w: targetWidth, h: targetHeight } },
       { quality: 35, dimensions: { w: targetWidth, h: targetHeight } },
-      { quality: 30, dimensions: { w: Math.round(targetWidth * 0.9), h: Math.round(targetHeight * 0.9) } },
-      { quality: 25, dimensions: { w: Math.round(targetWidth * 0.8), h: Math.round(targetHeight * 0.8) } },
-      { quality: 20, dimensions: { w: Math.round(targetWidth * 0.7), h: Math.round(targetHeight * 0.7) } },
-      { quality: 15, dimensions: { w: Math.round(targetWidth * 0.6), h: Math.round(targetHeight * 0.6) } },
-      { quality: 12, dimensions: { w: Math.round(targetWidth * 0.5), h: Math.round(targetHeight * 0.5) } },
+      {
+        quality: 30,
+        dimensions: {
+          w: Math.round(targetWidth * 0.9),
+          h: Math.round(targetHeight * 0.9),
+        },
+      },
+      {
+        quality: 25,
+        dimensions: {
+          w: Math.round(targetWidth * 0.8),
+          h: Math.round(targetHeight * 0.8),
+        },
+      },
+      {
+        quality: 20,
+        dimensions: {
+          w: Math.round(targetWidth * 0.7),
+          h: Math.round(targetHeight * 0.7),
+        },
+      },
+      {
+        quality: 15,
+        dimensions: {
+          w: Math.round(targetWidth * 0.6),
+          h: Math.round(targetHeight * 0.6),
+        },
+      },
+      {
+        quality: 12,
+        dimensions: {
+          w: Math.round(targetWidth * 0.5),
+          h: Math.round(targetHeight * 0.5),
+        },
+      },
+      {
+        quality: 10,
+        dimensions: {
+          w: Math.round(targetWidth * 0.4),
+          h: Math.round(targetHeight * 0.4),
+        },
+      },
+      {
+        quality: 8,
+        dimensions: {
+          w: Math.round(targetWidth * 0.3),
+          h: Math.round(targetHeight * 0.3),
+        },
+      },
     ];
 
     let processedBuffer: Buffer;
@@ -87,7 +151,9 @@ export class FreeTierOptimizer {
     // Try each compression level until target size is achieved
     for (let i = 0; i < compressionLevels.length; i++) {
       const level = compressionLevels[i];
-      
+
+      if (!level) continue; // Safety check
+
       try {
         // Create watermark SVG for current dimensions
         const watermarkSvg = this.createOptimizedWatermark(
@@ -96,27 +162,40 @@ export class FreeTierOptimizer {
           config.watermarkText
         );
 
-        processedBuffer = await sharp(inputBuffer)
+        processedBuffer = await sharpInstance(inputBuffer)
           .resize(level.dimensions.w, level.dimensions.h, {
             fit: 'inside',
             withoutEnlargement: true,
           })
-          .composite([{
-            input: Buffer.from(watermarkSvg),
-            gravity: 'center',
-            blend: 'over'
-          }])
-          .webp({ 
+          .composite([
+            {
+              input: Buffer.from(watermarkSvg),
+              gravity: 'center',
+              blend: 'over',
+            },
+          ])
+          .webp({
             quality: level.quality,
             effort: 6, // Maximum compression effort
           })
           .toBuffer();
 
-        finalDimensions = level.dimensions;
+        finalDimensions = {
+          width: level.dimensions.w,
+          height: level.dimensions.h,
+        };
         usedCompressionLevel = i;
+
+        const actualSizeKB = Math.round(processedBuffer.length / 1024);
+        console.log(
+          `[FreeTierOptimizer] Level ${i}: ${level.dimensions.w}×${level.dimensions.h}px, quality ${level.quality}, size: ${actualSizeKB}KB`
+        );
 
         // Check if target size is achieved
         if (processedBuffer.length <= targetBytes) {
+          console.log(
+            `[FreeTierOptimizer] ✅ Target achieved at level ${i}: ${actualSizeKB}KB`
+          );
           break;
         }
       } catch (error) {
@@ -127,11 +206,22 @@ export class FreeTierOptimizer {
       }
     }
 
+    const finalSizeKB = Math.round(processedBuffer!.length / 1024);
+    console.log(
+      `[FreeTierOptimizer] Final result: ${finalSizeKB}KB (target: ${config.targetSizeKB}KB), compression level: ${usedCompressionLevel}`
+    );
+
+    if (finalSizeKB > config.targetSizeKB) {
+      console.warn(
+        `[FreeTierOptimizer] ⚠️ Failed to reach target size: ${finalSizeKB}KB > ${config.targetSizeKB}KB`
+      );
+    }
+
     return {
       processedBuffer: processedBuffer!,
       finalDimensions,
       compressionLevel: usedCompressionLevel,
-      actualSizeKB: Math.round(processedBuffer!.length / 1024),
+      actualSizeKB: finalSizeKB,
     };
   }
 
@@ -143,24 +233,26 @@ export class FreeTierOptimizer {
     targetWidth: number,
     targetHeight: number
   ): Promise<{ blurDataURL: string; avgColor: string }> {
+    const sharpInstance = await getSharp();
+
     // Generate tiny blur version (10x6 pixels) for ultra-fast loading
-    const blurBuffer = await sharp(inputBuffer)
+    const blurBuffer = await sharpInstance(inputBuffer)
       .resize(10, 6, { fit: 'cover' })
       .blur(1)
       .webp({ quality: 20 })
       .toBuffer();
-    
+
     const blurDataURL = `data:image/webp;base64,${blurBuffer.toString('base64')}`;
-    
+
     // Extract dominant color for instant background
-    const { dominant } = await sharp(inputBuffer)
+    const stats = await sharpInstance(inputBuffer)
       .resize(1, 1)
       .raw()
       .toBuffer({ resolveWithObject: true });
-    
-    const [r, g, b] = Array.from(dominant.data);
+
+    const [r, g, b] = Array.from(stats.data);
     const avgColor = `rgb(${r}, ${g}, ${b})`;
-    
+
     return { blurDataURL, avgColor };
   }
   private static createOptimizedWatermark(
@@ -172,19 +264,19 @@ export class FreeTierOptimizer {
     const fontSize = Math.max(14, Math.floor(Math.min(width, height) / 20));
     const opacity = 0.45; // More visible to deter theft
     const spacing = fontSize * 3; // Closer spacing for better coverage
-    
+
     // Create diagonal grid pattern to cover entire image
     const diagonalElements: string[] = [];
-    
+
     // Calculate how many watermarks we need diagonally
     const diagonal = Math.sqrt(width * width + height * height);
     const numWatermarks = Math.ceil(diagonal / spacing) + 2; // Extra coverage
-    
+
     for (let i = 0; i < numWatermarks; i++) {
       for (let j = 0; j < numWatermarks; j++) {
-        const x = (i * spacing) - (width * 0.3); // Start well before image
-        const y = (j * spacing) - (height * 0.3); // Start well before image
-        
+        const x = i * spacing - width * 0.3; // Start well before image
+        const y = j * spacing - height * 0.3; // Start well before image
+
         diagonalElements.push(`
           <text x="${x}" y="${y}" 
             font-family="Arial, sans-serif" 
@@ -201,7 +293,7 @@ export class FreeTierOptimizer {
         `);
       }
     }
-    
+
     return `
       <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
         <defs>
@@ -228,7 +320,7 @@ export class FreeTierOptimizer {
         ${diagonalElements.join('')}
         
         <!-- Central prominent watermark -->
-        <text x="${width/2}" y="${height/2}" 
+        <text x="${width / 2}" y="${height / 2}" 
           font-family="Arial, sans-serif" 
           font-size="${fontSize * 1.8}" 
           font-weight="bold"
@@ -239,12 +331,12 @@ export class FreeTierOptimizer {
           stroke-opacity="0.5"
           text-anchor="middle" 
           dominant-baseline="middle"
-          transform="rotate(-35 ${width/2} ${height/2})">
+          transform="rotate(-35 ${width / 2} ${height / 2})">
           MUESTRA - NO VÁLIDA PARA VENTA
         </text>
         
         <!-- Bottom watermark with pricing info -->
-        <text x="${width/2}" y="${height - 20}" 
+        <text x="${width / 2}" y="${height - 20}" 
           font-family="Arial, sans-serif" 
           font-size="${fontSize * 0.9}" 
           font-weight="bold"
@@ -278,13 +370,19 @@ export class FreeTierOptimizer {
     const fitsInFreeTier = estimatedStorageGB <= 1;
 
     const recommendations: string[] = [];
-    
+
     if (!fitsInFreeTier) {
-      recommendations.push(`Reduce target size to ${Math.ceil(1024 * 1024 / totalPhotos)}KB per photo`);
-      recommendations.push('Consider storing only student photos, not group photos');
+      recommendations.push(
+        `Reduce target size to ${Math.ceil((1024 * 1024) / totalPhotos)}KB per photo`
+      );
+      recommendations.push(
+        'Consider storing only student photos, not group photos'
+      );
       recommendations.push('Implement photo cleanup after delivery');
     } else {
-      recommendations.push('Current optimization targets are suitable for free tier');
+      recommendations.push(
+        'Current optimization targets are suitable for free tier'
+      );
       recommendations.push('Monitor storage usage with provided metrics');
     }
 
@@ -307,7 +405,9 @@ export class FreeTierOptimizer {
     return {
       targetSizeKB: this.DEFAULT_OPTIONS.targetSizeKB,
       maxDimension: this.DEFAULT_OPTIONS.maxDimension,
-      estimatedPhotosForFreeTier: Math.floor(1024 * 1024 / this.DEFAULT_OPTIONS.targetSizeKB),
+      estimatedPhotosForFreeTier: Math.floor(
+        (1024 * 1024) / this.DEFAULT_OPTIONS.targetSizeKB
+      ),
     };
   }
 }
@@ -328,7 +428,9 @@ export class StorageMonitor {
 
       const estimatedBytes = (count || 0) * 50 * 1024; // 50KB average
       const estimatedStorageUsed = this.formatBytes(estimatedBytes);
-      const percentageOfFreeTier = Math.round((estimatedBytes / (1024 * 1024 * 1024)) * 100);
+      const percentageOfFreeTier = Math.round(
+        (estimatedBytes / (1024 * 1024 * 1024)) * 100
+      );
 
       return {
         photosCount: count || 0,

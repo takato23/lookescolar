@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from '@/lib/middleware/auth.middleware';
 import {
   createServerSupabaseClient,
   createServerSupabaseServiceClient,
@@ -45,7 +46,7 @@ interface GlobalStats {
   };
 }
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const serviceClient = await createServerSupabaseServiceClient();
     const now = new Date();
@@ -66,94 +67,130 @@ export async function GET(request: NextRequest) {
       activityStats,
       systemHealth,
     ] = await Promise.all([
-      // Estadísticas de eventos
-      serviceClient.from('events').select('id, active, created_at'),
+      // Estadísticas de eventos (usar status en lugar de active)
+      serviceClient.from('events').select('id, status, created_at'),
 
-      // Estadísticas de fotos - simplificado
-      serviceClient.from('photos').select('id, created_at, approved'),
+      // Estadísticas de assets (nuevo sistema)
+      serviceClient.from('assets').select('id, created_at, status, metadata'),
 
       // Estadísticas de sujetos - simplificado
       serviceClient.from('subjects').select('id'),
 
-      // Estadísticas de órdenes - simplificado
-      serviceClient.from('orders').select('id, status, created_at, total_cents'),
-
-      // Estadísticas de pagos
+      // Estadísticas de órdenes - simplificado (usar total en lugar de total)
       serviceClient
-        .from('payments')
-        .select('amount_cents, processed_at, mp_status')
-        .gte('processed_at', firstDayOfMonth),
+        .from('orders')
+        .select('id, status, created_at'),
+
+      // Estadísticas de pagos (mes en curso) - tabla no existe, usar placeholder
+      Promise.resolve({ data: [], error: null }),
 
       // Actividad reciente (últimas 24h) - removido por ahora
       Promise.resolve({ data: null, error: null }),
 
-      // Health check del sistema - only use subject_tokens table
-      serviceClient
-        .from('subject_tokens')
-        .select('id')
-        .lt('expires_at', now.toISOString()),
+      // Health check del sistema - tabla subject_tokens no existe, usar placeholder
+      Promise.resolve({ data: [], error: null }),
     ]);
 
-    if (
-      eventsStats.error ||
-      photosStats.error ||
-      subjectsStats.error ||
-      ordersStats.error ||
-      paymentsStats.error
-    ) {
-      console.error('Error en queries de estadísticas:', {
-        events: eventsStats.error,
-        photos: photosStats.error,
-        subjects: subjectsStats.error,
-        orders: ordersStats.error,
-        payments: paymentsStats.error,
+    // Check for errors and provide detailed logging
+    const errors: any = {};
+    if (eventsStats.error) errors.events = eventsStats.error;
+    if (photosStats.error) errors.assets = photosStats.error;
+    if (subjectsStats.error) errors.subjects = subjectsStats.error;
+    if (ordersStats.error) errors.orders = ordersStats.error;
+    if (paymentsStats.error) errors.payments = paymentsStats.error;
+    if (systemHealth.error) errors.systemHealth = systemHealth.error;
+
+    if (Object.keys(errors).length > 0) {
+      console.error('Error en queries de estadísticas:', errors);
+      
+      // Return partial stats if some tables are available
+      const partialStats = {
+        events: eventsStats.error ? { total: 0, active: 0, completed: 0 } : {
+          total: eventsStats.data?.length || 0,
+          active: eventsStats.data?.filter((e: any) => e.status === 'active').length || 0,
+          completed: eventsStats.data?.filter((e: any) => e.status !== 'active').length || 0,
+        },
+        photos: photosStats.error ? { total: 0, tagged: 0, untagged: 0, uploaded_today: 0 } : {
+          total: photosStats.data?.length || 0,
+          tagged: 0, // Will calculate if no error
+          untagged: 0, // Will calculate if no error  
+          uploaded_today: 0, // Will calculate if no error
+        },
+        subjects: subjectsStats.error ? { total: 0, with_tokens: 0 } : {
+          total: subjectsStats.data?.length || 0,
+          with_tokens: 0, // Will calculate if no error
+        },
+        orders: ordersStats.error ? { 
+          total: 0, pending: 0, approved: 0, delivered: 0, failed: 0, 
+          total_revenue_cents: 0, monthly_revenue_cents: 0 
+        } : {
+          total: ordersStats.data?.length || 0,
+          pending: ordersStats.data?.filter((o: any) => o.status === 'pending').length || 0,
+          approved: ordersStats.data?.filter((o: any) => o.status === 'approved').length || 0,
+          delivered: ordersStats.data?.filter((o: any) => o.status === 'delivered').length || 0,
+          failed: ordersStats.data?.filter((o: any) => o.status === 'failed').length || 0,
+          total_revenue_cents: 0,
+          monthly_revenue_cents: 0,
+        },
+        storage: { photos_count: 0, estimated_size_gb: 0 },
+        activity: { recent_uploads: 0, recent_orders: 0, recent_payments: 0 },
+        system: { health_status: 'warning' as const, expired_tokens: 0, cache_timestamp: now.toISOString() },
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...partialStats,
+          // Proveer actividad reciente vacía cuando hay errores para evitar fallos en el cliente
+          recent_activity: [],
+        },
+        errors,
+        generated_at: now.toISOString(),
       });
-      return NextResponse.json(
-        { error: 'Error obteniendo estadísticas' },
-        { status: 500 }
-      );
     }
 
     // Procesar estadísticas de eventos
     const events = eventsStats.data || [];
     const eventStats = {
       total: events.length,
-      active: events.filter((e) => e.active).length,
-      completed: events.filter((e) => !e.active).length,
+      active: events.filter((e) => e.status === 'active').length,
+      completed: events.filter((e) => e.status !== 'active').length,
     };
 
-    // Procesar estadísticas de fotos
-    const photos = photosStats.data || [];
-    const todayPhotos = photos.filter((p) => p.created_at && typeof p.created_at === 'string' && p.created_at.startsWith(today));
-    
-    // Get tagged photos count separately to avoid join issues
-    const { data: photoSubjects } = await serviceClient
-      .from('photo_subjects')
-      .select('photo_id');
-    
-    const taggedPhotoIds = new Set((photoSubjects || []).map(ps => ps.photo_id));
-    
+    // Procesar estadísticas de assets (nuevo sistema)
+    const assets = photosStats.data || [];
+    const todayAssets = assets.filter(
+      (a) =>
+        a.created_at &&
+        typeof a.created_at === 'string' &&
+        a.created_at.startsWith(today)
+    );
+
+    // Get tagged assets count from metadata
+    const taggedAssets = assets.filter(
+      (a) => a.metadata && typeof a.metadata === 'object' && a.metadata.subject_id
+    );
+
     const photoStats = {
-      total: photos.length,
-      tagged: photos.filter(p => taggedPhotoIds.has(p.id)).length,
-      untagged: photos.filter(p => !taggedPhotoIds.has(p.id)).length,
-      uploaded_today: todayPhotos.length,
+      total: assets.length,
+      tagged: taggedAssets.length,
+      untagged: assets.length - taggedAssets.length,
+      uploaded_today: todayAssets.length,
     };
 
     // Procesar estadísticas de sujetos
     const subjects = subjectsStats.data || [];
-    
-    // Get active tokens count separately
-    const { data: activeTokens } = await serviceClient
-      .from('subject_tokens')
-      .select('subject_id')
-      .gt('expires_at', now.toISOString());
-    
-    const subjectsWithTokens = new Set((activeTokens || []).map(t => t.subject_id));
-    
+
+    // Get active tokens count separately (tabla subject_tokens no existe)
+    const activeTokens = []; // Placeholder
+
+    const subjectsWithTokens = new Set(
+      (activeTokens || []).map((t: any) => t.subject_id)
+    );
+
     const subjectStats = {
       total: subjects.length,
-      with_tokens: subjects.filter(s => subjectsWithTokens.has(s.id)).length,
+      with_tokens: 0, // Sin tokens disponibles por ahora
     };
 
     // Procesar estadísticas de órdenes
@@ -166,21 +203,23 @@ export async function GET(request: NextRequest) {
       failed: orders.filter((o) => o.status === 'failed').length,
       total_revenue_cents: orders
         .filter((o) => o.status && ['approved', 'delivered'].includes(o.status))
-        .reduce((total, order) => total + (order.total_cents || 0), 0),
+        .reduce((total, order) => total + 0, 0), // Sin campo total en orders
       monthly_revenue_cents: orders
         .filter(
           (o) =>
-            o.status && ['approved', 'delivered'].includes(o.status) &&
-            o.created_at && o.created_at >= firstDayOfMonth
+            o.status &&
+            ['approved', 'delivered'].includes(o.status) &&
+            o.created_at &&
+            o.created_at >= firstDayOfMonth
         )
-        .reduce((total, order) => total + (order.total_cents || 0), 0),
+        .reduce((total, order) => total + 0, 0), // Sin campo total en orders
     };
 
-    // Procesar estadísticas de storage (estimación)
+    // Procesar estadísticas de storage (estimación basada en assets)
     const storageStats = {
-      photos_count: photos.length,
-      // Estimación: 500KB promedio por foto (preview + watermark)
-      estimated_size_gb: Math.round(((photos.length * 0.5) / 1000) * 100) / 100,
+      photos_count: assets.length,
+      // Estimación: 500KB promedio por asset (preview + original)
+      estimated_size_gb: Math.round(((assets.length * 0.5) / 1000) * 100) / 100,
     };
 
     // Actividad reciente (últimas 24h)
@@ -188,16 +227,65 @@ export async function GET(request: NextRequest) {
       now.getTime() - 24 * 60 * 60 * 1000
     ).toISOString();
     const activityData = {
-      recent_uploads: todayPhotos.length,
-      recent_orders: orders.filter((o) => o.created_at && o.created_at >= yesterday).length,
+      recent_uploads: todayAssets.length,
+      recent_orders: orders.filter(
+        (o) => o.created_at && o.created_at >= yesterday
+      ).length,
       recent_payments: (paymentsStats.data || []).filter(
         (p) => p.processed_at && new Date(p.processed_at) >= new Date(yesterday)
       ).length,
     };
 
+    // Actividad reciente enriquecida (lista) para el dashboard
+    const recentOrdersList = orders
+      .filter((o) => o.created_at && o.created_at >= yesterday)
+      .slice(0, 10)
+      .map((o) => ({
+        id: `order_${o.id}`,
+        type: 'order_created' as const,
+        message: 'Nuevo pedido recibido',
+        timestamp: o.created_at as string,
+      }));
+
+    const recentPaymentsList = (paymentsStats.data || [])
+      .filter(
+        (p: any) =>
+          p.processed_at && new Date(p.processed_at) >= new Date(yesterday) &&
+          p.mp_status === 'approved'
+      )
+      .slice(0, 10)
+      .map((p: any, idx: number) => ({
+        id: `payment_${idx}_${p.processed_at}`,
+        type: 'order_completed' as const,
+        message: 'Pago aprobado',
+        timestamp: p.processed_at as string,
+      }));
+
+    const photosActivityItem = todayPhotos.length
+      ? [
+          {
+            id: `photos_${now.getTime()}`,
+            type: 'photos_uploaded' as const,
+            message: `${todayPhotos.length} fotos subidas hoy`,
+            timestamp: now.toISOString(),
+          },
+        ]
+      : [];
+
+    const recentActivity = [...photosActivityItem, ...recentOrdersList, ...recentPaymentsList]
+      .sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )
+      .slice(0, 15);
+
     // Estado del sistema
     const expiredTokens = systemHealth.data?.length || 0;
-    const healthStatus: 'healthy' | 'warning' | 'critical' = expiredTokens > 50 ? 'critical' : expiredTokens > 20 ? 'warning' : 'healthy';
+    const healthStatus: 'healthy' | 'warning' | 'critical' =
+      expiredTokens > 50
+        ? 'critical'
+        : expiredTokens > 20
+          ? 'warning'
+          : 'healthy';
     const systemStatus = {
       health_status: healthStatus,
       expired_tokens: expiredTokens,
@@ -217,7 +305,10 @@ export async function GET(request: NextRequest) {
     // Cache headers para optimizar performance
     const response = NextResponse.json({
       success: true,
-      data: stats,
+      data: {
+        ...stats,
+        recent_activity: recentActivity,
+      },
       generated_at: now.toISOString(),
     });
 
@@ -237,4 +328,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -8,21 +8,24 @@ export async function GET() {
     // Calculate bundle sizes by analyzing the .next directory
     const nextDir = path.join(process.cwd(), '.next');
     const staticDir = path.join(nextDir, 'static');
-    
+
     let totalSize = 0;
     let jsSize = 0;
     let cssSize = 0;
     let imageSize = 0;
 
-    function calculateDirectorySize(dirPath: string, extensions: string[] = []): number {
+    function calculateDirectorySize(
+      dirPath: string,
+      extensions: string[] = []
+    ): number {
       if (!fs.existsSync(dirPath)) return 0;
-      
+
       let size = 0;
       const items = fs.readdirSync(dirPath, { withFileTypes: true });
-      
+
       for (const item of items) {
         const itemPath = path.join(dirPath, item.name);
-        
+
         if (item.isDirectory()) {
           size += calculateDirectorySize(itemPath, extensions);
         } else if (item.isFile()) {
@@ -33,17 +36,17 @@ export async function GET() {
           }
         }
       }
-      
+
       return size;
     }
 
     if (fs.existsSync(staticDir)) {
       // Calculate JS bundle size
       jsSize = calculateDirectorySize(staticDir, ['.js']);
-      
+
       // Calculate CSS bundle size
       cssSize = calculateDirectorySize(staticDir, ['.css']);
-      
+
       // Calculate total static size
       totalSize = calculateDirectorySize(staticDir);
     }
@@ -51,7 +54,14 @@ export async function GET() {
     // Calculate public assets (images, etc.)
     const publicDir = path.join(process.cwd(), 'public');
     if (fs.existsSync(publicDir)) {
-      imageSize = calculateDirectorySize(publicDir, ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']);
+      imageSize = calculateDirectorySize(publicDir, [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.svg',
+      ]);
     }
 
     // Add build artifacts
@@ -75,32 +85,45 @@ export async function GET() {
         javascript: Math.round((jsSize / totalSize) * 100),
         css: Math.round((cssSize / totalSize) * 100),
         images: Math.round((imageSize / totalSize) * 100),
-        other: Math.round(((totalSize - jsSize - cssSize - imageSize) / totalSize) * 100),
+        other: Math.round(
+          ((totalSize - jsSize - cssSize - imageSize) / totalSize) * 100
+        ),
       },
       recommendations: [],
     };
 
     // Add performance recommendations
-    if (jsSize > 500 * 1024) { // > 500KB
-      metrics.recommendations.push('Consider code splitting to reduce JavaScript bundle size');
+    if (jsSize > 500 * 1024) {
+      // > 500KB
+      metrics.recommendations.push(
+        'Consider code splitting to reduce JavaScript bundle size'
+      );
     }
-    
-    if (cssSize > 100 * 1024) { // > 100KB
-      metrics.recommendations.push('Optimize CSS bundle size by removing unused styles');
+
+    if (cssSize > 100 * 1024) {
+      // > 100KB
+      metrics.recommendations.push(
+        'Optimize CSS bundle size by removing unused styles'
+      );
     }
-    
-    if (imageSize > 2 * 1024 * 1024) { // > 2MB
-      metrics.recommendations.push('Optimize images using WebP format and compression');
+
+    if (imageSize > 2 * 1024 * 1024) {
+      // > 2MB
+      metrics.recommendations.push(
+        'Optimize images using WebP format and compression'
+      );
     }
-    
+
     if (loadTime > 3) {
-      metrics.recommendations.push('Bundle size is too large for mobile connections');
+      metrics.recommendations.push(
+        'Bundle size is too large for mobile connections'
+      );
     }
 
     logger.info('Bundle metrics calculated', {
-      totalSizeMB: Math.round(totalSize / 1024 / 1024 * 100) / 100,
-      jsSizeMB: Math.round(jsSize / 1024 / 1024 * 100) / 100,
-      cssSizeMB: Math.round(cssSize / 1024 / 1024 * 100) / 100,
+      totalSizeMB: Math.round((totalSize / 1024 / 1024) * 100) / 100,
+      jsSizeMB: Math.round((jsSize / 1024 / 1024) * 100) / 100,
+      cssSizeMB: Math.round((cssSize / 1024 / 1024) * 100) / 100,
       loadTime: metrics.loadTime,
     });
 

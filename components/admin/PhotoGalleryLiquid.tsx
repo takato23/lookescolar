@@ -1,16 +1,22 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FolderIcon, 
-  ImageIcon, 
-  UploadIcon, 
-  DownloadIcon, 
-  TrashIcon, 
-  GridIcon, 
-  ListIcon, 
-  CheckIcon, 
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FolderIcon,
+  ImageIcon,
+  UploadIcon,
+  DownloadIcon,
+  TrashIcon,
+  GridIcon,
+  ListIcon,
+  CheckIcon,
   XIcon,
   SearchIcon,
   MoreVerticalIcon,
@@ -23,16 +29,16 @@ import {
   QrCode,
   Zap,
   Sun,
-  Moon
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { buildPhotosUrl } from "@/lib/utils/photos-url-builder";
-import QRScannerModal, { type StudentInfo } from "./QRScannerModal";
-import TaggingModal from "./TaggingModal";
-import { PhotoModal as GalleryPhotoModal } from "@/components/gallery/PhotoModal";
-import { SimpleTooltip } from "@/components/ui/tooltip";
+  Moon,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { buildPhotosUrl } from '@/lib/utils/photos-url-builder';
+import QRScannerModal, { type StudentInfo } from './QRScannerModal';
+import TaggingModal from './TaggingModal';
+import { PhotoModal as GalleryPhotoModal } from '@/components/gallery/PhotoModal';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 // Using CSS liquid glass styles instead of liquid-glass-react library
 
 // Theme Context
@@ -86,14 +92,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div className={theme === 'dark' ? 'dark' : ''}>
-        {children}
-      </div>
+      <div className={theme === 'dark' ? 'dark' : ''}>{children}</div>
     </ThemeContext.Provider>
   );
 };
@@ -169,52 +173,54 @@ const LiquidPhotoCard: React.FC<{
   viewMode: 'grid' | 'list';
   handleDragStart?: (photoId: string, e: React.DragEvent) => void;
   handleDragEnd?: () => void;
-}> = ({ 
-  photo, 
-  isSelected, 
-  onSelect, 
-  onOpenPreview, 
-  onApprove, 
-  onTag, 
-  onDelete, 
-  onDownload, 
-  onMove, 
+}> = ({
+  photo,
+  isSelected,
+  onSelect,
+  onOpenPreview,
+  onApprove,
+  onTag,
+  onDelete,
+  onDownload,
+  onMove,
   viewMode,
   handleDragStart,
-  handleDragEnd 
+  handleDragEnd,
 }) => {
   const { theme } = useTheme();
-  const [imageLoadState, setImageLoadState] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [imageLoadState, setImageLoadState] = useState<
+    'loading' | 'loaded' | 'error'
+  >('loading');
   const [isDragging, setIsDragging] = useState(false);
 
-  const statusColor = photo.approved 
-    ? 'bg-emerald-500' 
-    : photo.tagged 
-      ? 'bg-blue-500' 
+  const statusColor = photo.approved
+    ? 'bg-emerald-500'
+    : photo.tagged
+      ? 'bg-blue-500'
       : 'bg-amber-500';
 
-  const statusText = photo.approved 
-    ? 'Aprobada' 
-    : photo.tagged 
-      ? 'Etiquetada' 
+  const statusText = photo.approved
+    ? 'Aprobada'
+    : photo.tagged
+      ? 'Etiquetada'
       : 'Pendiente';
 
-  const statusTooltip = photo.approved 
-    ? 'Foto aprobada - Lista para venta y descarga' 
-    : photo.tagged 
-      ? 'Foto etiquetada - Asignada a un estudiante pero pendiente de aprobación' 
+  const statusTooltip = photo.approved
+    ? 'Foto aprobada - Lista para venta y descarga'
+    : photo.tagged
+      ? 'Foto etiquetada - Asignada a un estudiante pero pendiente de aprobación'
       : 'Foto pendiente - Sin asignar estudiante ni aprobar';
 
   if (viewMode === 'list') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg cursor-pointer transform hover:scale-[1.02] transition-all duration-300 group">
-        <div className="p-4 flex items-center space-x-4">
-          <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden">
+      <div className="group transform cursor-pointer rounded-xl bg-white shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg dark:bg-gray-800">
+        <div className="flex items-center space-x-4 p-4">
+          <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-700">
             {photo.preview_url ? (
               <img
                 src={photo.preview_url}
                 alt={photo.original_filename}
-                className="w-full h-full object-cover rounded-xl"
+                className="h-full w-full rounded-xl object-cover"
                 onLoad={() => {
                   console.log('Image loaded:', photo.original_filename);
                   setImageLoadState('loaded');
@@ -223,21 +229,25 @@ const LiquidPhotoCard: React.FC<{
                   console.log('Image error:', photo.original_filename, e);
                   setImageLoadState('error');
                 }}
-                style={{ display: imageLoadState === 'error' ? 'none' : 'block' }}
+                style={{
+                  display: imageLoadState === 'error' ? 'none' : 'block',
+                }}
               />
             ) : null}
             {(!photo.preview_url || imageLoadState === 'error') && (
               <ImageIcon size={24} className="text-white/70" />
             )}
           </div>
-          
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm truncate text-gray-800 dark:text-gray-200">
+
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
               {photo.original_filename}
             </h3>
-            <div className="flex items-center space-x-2 mt-1">
+            <div className="mt-1 flex items-center space-x-2">
               <SimpleTooltip text={statusTooltip} side="top">
-                <span className={`px-2 py-1 text-xs font-medium rounded-full text-white ${statusColor}`}>
+                <span
+                  className={`rounded-full px-2 py-1 text-xs font-medium text-white ${statusColor}`}
+                >
                   {statusText}
                 </span>
               </SimpleTooltip>
@@ -248,14 +258,14 @@ const LiquidPhotoCard: React.FC<{
           </div>
 
           {/* Action Buttons - aparecen en hover */}
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex items-center gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <SimpleTooltip text="Mover a carpeta" side="top">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onMove(photo.id);
                 }}
-                className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                className="flex h-8 w-8 transform items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-green-600"
               >
                 <MoveIcon size={14} />
               </button>
@@ -266,7 +276,7 @@ const LiquidPhotoCard: React.FC<{
                   e.stopPropagation();
                   onDownload();
                 }}
-                className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                className="flex h-8 w-8 transform items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-blue-600"
               >
                 <DownloadIcon size={14} />
               </button>
@@ -277,7 +287,7 @@ const LiquidPhotoCard: React.FC<{
                   e.stopPropagation();
                   onDelete();
                 }}
-                className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                className="flex h-8 w-8 transform items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-600"
               >
                 <TrashIcon size={14} />
               </button>
@@ -285,20 +295,18 @@ const LiquidPhotoCard: React.FC<{
           </div>
 
           {/* Simple Checkbox */}
-          <div 
-            className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-sm ${
-              isSelected 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+          <div
+            className={`flex h-6 w-6 transform cursor-pointer items-center justify-center rounded-full shadow-sm transition-all hover:scale-110 ${
+              isSelected
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
             }`}
             onClick={(e) => {
               e.stopPropagation();
               onSelect(photo.id);
             }}
           >
-            {isSelected && (
-              <CheckIcon size={14} />
-            )}
+            {isSelected && <CheckIcon size={14} />}
           </div>
         </div>
       </div>
@@ -306,8 +314,8 @@ const LiquidPhotoCard: React.FC<{
   }
 
   return (
-    <div 
-      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl cursor-pointer transform hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden"
+    <div
+      className="transform cursor-pointer overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 dark:bg-gray-800"
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest('[data-checkbox]')) {
@@ -320,62 +328,64 @@ const LiquidPhotoCard: React.FC<{
       <div className="overflow-hidden">
         <div className="relative aspect-square">
           {/* Simple Checkbox */}
-          <div className="absolute top-3 left-3 z-10">
-            <div 
-              className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transform hover:scale-110 transition-all shadow-lg ${
-                isSelected 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white/90 dark:bg-gray-800/90 text-gray-600 dark:text-gray-300 backdrop-blur-sm'
+          <div className="absolute left-3 top-3 z-10">
+            <div
+              className={`flex h-6 w-6 transform cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 ${
+                isSelected
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white/90 text-gray-600 backdrop-blur-sm dark:bg-gray-800/90 dark:text-gray-300'
               }`}
               onClick={(e) => {
                 e.stopPropagation();
                 onSelect(photo.id);
               }}
             >
-              {isSelected && (
-                <CheckIcon size={14} />
-              )}
+              {isSelected && <CheckIcon size={14} />}
             </div>
           </div>
 
           {/* Status Badge with Better Contrast */}
-          <div className="absolute top-3 right-3 z-10">
+          <div className="absolute right-3 top-3 z-10">
             <SimpleTooltip text={statusTooltip} side="left">
-              <div className={`px-2 py-1 text-white text-xs font-medium ${statusColor} rounded-full shadow-lg`}>
+              <div
+                className={`px-2 py-1 text-xs font-medium text-white ${statusColor} rounded-full shadow-lg`}
+              >
                 {statusText}
               </div>
             </SimpleTooltip>
           </div>
 
           {/* Photo Content */}
-          <div className="w-full h-full flex items-center justify-center relative group">
+          <div className="group relative flex h-full w-full items-center justify-center">
             {photo.preview_url ? (
               <img
                 src={photo.preview_url}
                 alt={photo.original_filename}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 onLoad={() => setImageLoadState('loaded')}
                 onError={() => setImageLoadState('error')}
-                style={{ display: imageLoadState === 'error' ? 'none' : 'block' }}
+                style={{
+                  display: imageLoadState === 'error' ? 'none' : 'block',
+                }}
               />
             ) : null}
             {(!photo.preview_url || imageLoadState === 'error') && (
-              <div className="liquid-card transform hover:scale-105 transition-transform duration-300">
-                <div className="w-16 h-16 flex items-center justify-center p-4">
-                  <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
+              <div className="liquid-card transform transition-transform duration-300 hover:scale-105">
+                <div className="flex h-16 w-16 items-center justify-center p-4">
+                  <ImageIcon className="h-full w-full text-white/80 drop-shadow-lg" />
                 </div>
               </div>
             )}
-            
+
             {/* Action Buttons - aparecen en hover */}
-            <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
               <SimpleTooltip text="Mover a carpeta" side="left">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onMove(photo.id);
                   }}
-                  className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                  className="flex h-8 w-8 transform items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-green-600"
                 >
                   <MoveIcon size={14} />
                 </button>
@@ -386,7 +396,7 @@ const LiquidPhotoCard: React.FC<{
                     e.stopPropagation();
                     onDownload();
                   }}
-                  className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                  className="flex h-8 w-8 transform items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-blue-600"
                 >
                   <DownloadIcon size={14} />
                 </button>
@@ -397,7 +407,7 @@ const LiquidPhotoCard: React.FC<{
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-all duration-200"
+                  className="flex h-8 w-8 transform items-center justify-center rounded-full bg-red-500 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-600"
                 >
                   <TrashIcon size={14} />
                 </button>
@@ -407,16 +417,14 @@ const LiquidPhotoCard: React.FC<{
         </div>
 
         {/* Photo Info with Better Contrast */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-b-2xl">
+        <div className="rounded-b-2xl bg-white/90 backdrop-blur-sm dark:bg-gray-800/90">
           <div className="p-3">
-            <div className="font-medium text-sm mb-1 truncate text-gray-800 dark:text-gray-200">
+            <div className="mb-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
               {photo.original_filename}
             </div>
             <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
               <span>{Math.round(photo.file_size / 1024)} KB</span>
-              <span>
-                {new Date(photo.created_at).toLocaleDateString()}
-              </span>
+              <span>{new Date(photo.created_at).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -448,19 +456,27 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   const [photos, setPhotos] = useState<PhotoItem[]>(initialPhotos);
   const [events, setEvents] = useState<FolderItem[]>(initialEvents);
   // Use external selectedPhotos if provided, otherwise use internal state
-  const [internalSelectedPhotos, setInternalSelectedPhotos] = useState<string[]>([]);
+  const [internalSelectedPhotos, setInternalSelectedPhotos] = useState<
+    string[]
+  >([]);
   const selectedPhotos = externalSelectedPhotos || internalSelectedPhotos;
   const setSelectedPhotos = onPhotosSelected || setInternalSelectedPhotos;
-  const [selectedEvent, setSelectedEvent] = useState<string | null>(externalSelectedEvent);
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(
+    externalSelectedEvent
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending' | 'tagged'>('all');
+  const [filterStatus, setFilterStatus] = useState<
+    'all' | 'approved' | 'pending' | 'tagged'
+  >('all');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   // QR Tagging Mode State
   const [isQRTagMode, setIsQRTagMode] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
-  const [currentStudent, setCurrentStudent] = useState<StudentInfo | null>(null);
+  const [currentStudent, setCurrentStudent] = useState<StudentInfo | null>(
+    null
+  );
   const [isAssigningPhotos, setIsAssigningPhotos] = useState(false);
 
   // Manual Tagging State
@@ -468,14 +484,16 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   const [taggingPhoto, setTaggingPhoto] = useState<PhotoItem | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewIndex, setPreviewIndex] = useState<number>(0);
-  
+
   // Move Modal State
   const [showMoveModal, setShowMoveModal] = useState(false);
-  const [availableFolders, setAvailableFolders] = useState<Array<{id: string, name: string, eventName?: string}>>([]);
+  const [availableFolders, setAvailableFolders] = useState<
+    Array<{ id: string; name: string; eventName?: string }>
+  >([]);
 
   // Codes state for move operations
   const [codes, setCodes] = useState<CodeRow[]>([]);
-  
+
   // Filter options
   const filterOptions = [
     { value: 'all' as const, label: 'Todas' },
@@ -486,13 +504,17 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
   // Update photos when initialPhotos changes
   useEffect(() => {
-    console.log('PhotoGalleryLiquid: initialPhotos changed', initialPhotos.length, initialPhotos);
+    console.log(
+      'PhotoGalleryLiquid: initialPhotos changed',
+      initialPhotos.length,
+      initialPhotos
+    );
     setPhotos(initialPhotos);
-    
+
     // Clear selection when photos change
     if (selectedPhotos.length > 0) {
-      const validSelectedPhotos = selectedPhotos.filter(id => 
-        initialPhotos.some(photo => photo.id === id)
+      const validSelectedPhotos = selectedPhotos.filter((id) =>
+        initialPhotos.some((photo) => photo.id === id)
       );
       if (validSelectedPhotos.length !== selectedPhotos.length) {
         setSelectedPhotos(validSelectedPhotos);
@@ -512,9 +534,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
   // Filtered photos
   const filteredPhotos = useMemo(() => {
-    const filtered = photos.filter(photo => {
+    const filtered = photos.filter((photo) => {
       // Search filter
-      if (searchQuery && !photo.original_filename.toLowerCase().includes(searchQuery.toLowerCase())) {
+      if (
+        searchQuery &&
+        !photo.original_filename
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
+      ) {
         return false;
       }
 
@@ -525,35 +552,47 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
       return true;
     });
-    console.log('PhotoGalleryLiquid: filteredPhotos', filtered.length, filtered);
+    console.log(
+      'PhotoGalleryLiquid: filteredPhotos',
+      filtered.length,
+      filtered
+    );
     return filtered;
   }, [photos, searchQuery, filterStatus]);
 
   // Selection handlers
   const handlePhotoSelect = (photoId: string) => {
-    setSelectedPhotos((prev: string[]) => 
-      prev.includes(photoId) 
+    setSelectedPhotos((prev: string[]) =>
+      prev.includes(photoId)
         ? prev.filter((id: string) => id !== photoId)
         : [...prev, photoId]
     );
   };
 
   const toggleSelectAll = () => {
-    const allVisibleSelected = filteredPhotos.length > 0 && 
-      filteredPhotos.every(photo => selectedPhotos.includes(photo.id));
-    
+    const allVisibleSelected =
+      filteredPhotos.length > 0 &&
+      filteredPhotos.every((photo) => selectedPhotos.includes(photo.id));
+
     if (allVisibleSelected) {
       // Deselect all visible
-      setSelectedPhotos((prev: string[]) => prev.filter((id: string) => !filteredPhotos.some(photo => photo.id === id)));
+      setSelectedPhotos((prev: string[]) =>
+        prev.filter(
+          (id: string) => !filteredPhotos.some((photo) => photo.id === id)
+        )
+      );
     } else {
       // Select all visible
-      const visibleIds = filteredPhotos.map(photo => photo.id);
-      setSelectedPhotos((prev: string[]) => Array.from(new Set([...prev, ...visibleIds])));
+      const visibleIds = filteredPhotos.map((photo) => photo.id);
+      setSelectedPhotos((prev: string[]) =>
+        Array.from(new Set([...prev, ...visibleIds]))
+      );
     }
   };
 
-  const allVisibleSelected = filteredPhotos.length > 0 && 
-    filteredPhotos.every(photo => selectedPhotos.includes(photo.id));
+  const allVisibleSelected =
+    filteredPhotos.length > 0 &&
+    filteredPhotos.every((photo) => selectedPhotos.includes(photo.id));
   const hasSelection = selectedPhotos.length > 0;
   const selectedCount = selectedPhotos.length;
 
@@ -561,7 +600,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   const handleFabAction = () => {
     if (hasSelection) {
       console.log('Process selected photos:', selectedPhotos);
-      toast.success(`Procesando ${selectedCount} foto${selectedCount === 1 ? '' : 's'}`);
+      toast.success(
+        `Procesando ${selectedCount} foto${selectedCount === 1 ? '' : 's'}`
+      );
     } else {
       console.log('Upload new photos');
       fileInputRef.current?.click();
@@ -569,14 +610,16 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   };
 
   const handleApprove = async (photoId: string) => {
-    const photo = photos.find(p => p.id === photoId);
+    const photo = photos.find((p) => p.id === photoId);
     if (!photo || !onPhotoApprove) return;
 
     try {
       await onPhotoApprove([photoId], !photo.approved);
-      setPhotos(prev => prev.map(p => 
-        p.id === photoId ? { ...p, approved: !p.approved } : p
-      ));
+      setPhotos((prev) =>
+        prev.map((p) =>
+          p.id === photoId ? { ...p, approved: !p.approved } : p
+        )
+      );
       toast.success(photo.approved ? 'Foto desaprobada' : 'Foto aprobada');
     } catch (error) {
       toast.error('Error al cambiar el estado de aprobación');
@@ -594,26 +637,32 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
       // Obtener carpetas (subjects) y eventos
       const [subjectsResponse, eventsResponse] = await Promise.all([
         fetch('/api/admin/subjects'),
-        fetch('/api/admin/events')
+        fetch('/api/admin/events'),
       ]);
-      
+
       const subjectsData = await subjectsResponse.json();
       const eventsData = await eventsResponse.json();
-      
-      const subjects = Array.isArray(subjectsData) ? subjectsData : (subjectsData.data || []);
-      const events = Array.isArray(eventsData) ? eventsData : (eventsData.data || []);
-      
+
+      const subjects = Array.isArray(subjectsData)
+        ? subjectsData
+        : subjectsData.data || [];
+      const events = Array.isArray(eventsData)
+        ? eventsData
+        : eventsData.data || [];
+
       // Crear mapa de eventos para obtener nombres
-      const eventMap = new Map(events.map((event: any) => [event.id, event.name || event.school]));
-      
+      const eventMap = new Map(
+        events.map((event: any) => [event.id, event.name || event.school])
+      );
+
       // Combinar subjects con información de eventos
       const folders = subjects.map((subject: any) => ({
         id: subject.id,
         name: subject.name || 'Sin nombre',
         eventName: eventMap.get(subject.event_id) || 'Evento desconocido',
-        type: 'subject'
+        type: 'subject',
       }));
-      
+
       setAvailableFolders(folders);
     } catch (error) {
       console.error('Error loading folders:', error);
@@ -624,16 +673,16 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   // Handle move photos to folder
   const handleMovePhotos = async (folderId: string) => {
     if (selectedPhotos.length === 0) return;
-    
+
     try {
-      const promises = selectedPhotos.map(photoId => 
+      const promises = selectedPhotos.map((photoId) =>
         fetch(`/api/admin/photos/${photoId}/move`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codeId: folderId })
+          body: JSON.stringify({ codeId: folderId }),
         })
       );
-      
+
       await Promise.all(promises);
       setSelectedPhotos([]);
       setShowMoveModal(false);
@@ -645,7 +694,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   };
 
   const handleDownloadPhoto = async (photoId: string) => {
-    const photo = photos.find(p => p.id === photoId);
+    const photo = photos.find((p) => p.id === photoId);
     if (!photo?.preview_url) return;
 
     try {
@@ -666,40 +715,47 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   };
 
   return (
-    <div className={`liquid-glass-app ${compact ? 'min-h-0' : 'min-h-screen'} ${theme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : compact ? 'bg-transparent' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'} transition-colors duration-500 ${compact ? '' : 'overflow-hidden'}`}>
-      
+    <div
+      className={`liquid-glass-app ${compact ? 'min-h-0' : 'min-h-screen'} ${theme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : compact ? 'bg-transparent' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'} transition-colors duration-500 ${compact ? '' : 'overflow-hidden'}`}
+    >
       {!hideHeader && (
         <>
           {/* Desktop Layout */}
           <div className="hidden lg:block">
-            <div className="max-w-7xl mx-auto min-h-screen">
-              
+            <div className="mx-auto min-h-screen max-w-7xl">
               {/* Header with Liquid Glass */}
-              <div className="liquid-card w-full sticky top-0 z-40">
+              <div className="liquid-card sticky top-0 z-40 w-full">
                 <div className="flex items-center justify-between p-6">
                   <div className="flex items-center space-x-4">
                     <div className="liquid-button">
-                      <div className="w-8 h-8 flex items-center justify-center p-2">
-                        <FolderIcon className={`w-full h-full drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-200' : 'text-white'
-                        }`} />
+                      <div className="flex h-8 w-8 items-center justify-center p-2">
+                        <FolderIcon
+                          className={`h-full w-full drop-shadow-sm ${
+                            theme === 'dark' ? 'text-slate-200' : 'text-white'
+                          }`}
+                        />
                       </div>
                     </div>
-                    <h1 className={`text-2xl font-bold drop-shadow-sm ${
-                      theme === 'dark' ? 'text-slate-100' : 'text-white'
-                    }`}>
+                    <h1
+                      className={`text-2xl font-bold drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-100' : 'text-white'
+                      }`}
+                    >
                       Galería de Fotos ({filteredPhotos.length})
                     </h1>
                   </div>
-                  
+
                   {/* Theme Toggle */}
-                  <div 
-                    className="liquid-button cursor-pointer transform hover:scale-110 transition-transform duration-200"
+                  <div
+                    className="liquid-button transform cursor-pointer transition-transform duration-200 hover:scale-110"
                     onClick={toggleTheme}
                   >
-                    <div className="w-10 h-10 flex items-center justify-center p-2">
+                    <div className="flex h-10 w-10 items-center justify-center p-2">
                       {theme === 'dark' ? (
-                        <Sun size={20} className="text-yellow-300 drop-shadow-md animate-pulse" />
+                        <Sun
+                          size={20}
+                          className="animate-pulse text-yellow-300 drop-shadow-md"
+                        />
                       ) : (
                         <Moon size={20} className="text-white drop-shadow-md" />
                       )}
@@ -709,22 +765,26 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               </div>
 
               {/* Search and Filters */}
-              <div className="p-6 space-y-4">
-                
+              <div className="space-y-4 p-6">
                 {/* Search Bar */}
-                <div className="liquid-card w-full relative">
+                <div className="liquid-card relative w-full">
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none z-10">
-                      <SearchIcon size={20} className={theme === 'dark' ? 'text-slate-300' : 'text-white/80'} />
+                    <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-6">
+                      <SearchIcon
+                        size={20}
+                        className={
+                          theme === 'dark' ? 'text-slate-300' : 'text-white/80'
+                        }
+                      />
                     </div>
                     <input
                       type="text"
                       placeholder="Buscar fotos por nombre..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className={`w-full pl-14 pr-6 py-4 bg-transparent focus:outline-none transition-all ${
-                        theme === 'dark' 
-                          ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500' 
+                      className={`w-full bg-transparent py-4 pl-14 pr-6 transition-all focus:outline-none ${
+                        theme === 'dark'
+                          ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500'
                           : 'text-white placeholder-white/70 focus:placeholder-white/50'
                       }`}
                     />
@@ -736,39 +796,57 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   <div className="liquid-card inline-flex">
                     <div className="flex items-center space-x-1 p-2">
                       {filterOptions.map((filter) => (
-                        <div 
+                        <div
                           key={filter.value}
-                          data-displacement={filterStatus === filter.value ? 12 : 8}
-                          data-blur={filterStatus === filter.value ? 0.03 : 0.02}
-                          data-saturation={filterStatus === filter.value ? 110 : 100}
-                          data-aberration={filterStatus === filter.value ? 0.5 : 0.2}
+                          data-displacement={
+                            filterStatus === filter.value ? 12 : 8
+                          }
+                          data-blur={
+                            filterStatus === filter.value ? 0.03 : 0.02
+                          }
+                          data-saturation={
+                            filterStatus === filter.value ? 110 : 100
+                          }
+                          data-aberration={
+                            filterStatus === filter.value ? 0.5 : 0.2
+                          }
                           data-elasticity={0.3}
                           data-radius={999}
                           data-light={theme === 'light'}
                           onClick={() => setFilterStatus(filter.value)}
-                          className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+                          className="transform cursor-pointer transition-transform duration-200 hover:scale-105"
                         >
-                          <div className={`px-4 py-2 text-sm font-medium transition-all ${
-                            filterStatus === filter.value
-                              ? (theme === 'dark' ? 'text-slate-100 drop-shadow-md font-semibold' : 'text-white drop-shadow-md font-semibold')
-                              : (theme === 'dark' ? 'text-slate-300 hover:text-slate-100' : 'text-white/90 hover:text-white')
-                          }`}>
+                          <div
+                            className={`px-4 py-2 text-sm font-medium transition-all ${
+                              filterStatus === filter.value
+                                ? theme === 'dark'
+                                  ? 'font-semibold text-slate-100 drop-shadow-md'
+                                  : 'font-semibold text-white drop-shadow-md'
+                                : theme === 'dark'
+                                  ? 'text-slate-300 hover:text-slate-100'
+                                  : 'text-white/90 hover:text-white'
+                            }`}
+                          >
                             {filter.label}
                           </div>
                         </div>
                       ))}
                       <div className="ml-2 flex items-center space-x-2">
-                        <div 
+                        <div
                           data-displacement={8}
                           data-blur={0.02}
                           data-saturation={105}
                           data-elasticity={0.3}
                           data-radius={8}
                           data-light={theme === 'light'}
-                          onClick={() => toast.info('Controla la vista desde los controles superiores')}
-                          className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
+                          onClick={() =>
+                            toast.info(
+                              'Controla la vista desde los controles superiores'
+                            )
+                          }
+                          className="transform cursor-pointer transition-transform duration-200 hover:scale-110"
                         >
-                          <div className="p-2 text-white/80 hover:text-white transition-colors">
+                          <div className="p-2 text-white/80 transition-colors hover:text-white">
                             <GridIcon size={18} />
                           </div>
                         </div>
@@ -779,7 +857,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
                 {/* Select All Toggle */}
                 <div className="flex items-center justify-center">
-                  <div 
+                  <div
                     data-displacement={15}
                     data-blur={0.04}
                     data-saturation={110}
@@ -788,10 +866,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     data-radius={16}
                     data-light={theme === 'light'}
                     onClick={toggleSelectAll}
-                    className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+                    className="transform cursor-pointer transition-transform duration-200 hover:scale-105"
                   >
                     <div className="flex items-center space-x-3 p-3">
-                      <div 
+                      <div
                         data-displacement={allVisibleSelected ? 12 : 8}
                         data-blur={0.03}
                         data-saturation={allVisibleSelected ? 115 : 105}
@@ -800,31 +878,42 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         data-radius={6}
                         data-light={!allVisibleSelected}
                       >
-                        <div className={`w-6 h-6 flex items-center justify-center transition-all ${
-                          allVisibleSelected
-                            ? 'text-purple-600'
-                            : (theme === 'dark' ? 'border-2 border-slate-300' : 'border-2 border-white/50')
-                        }`}>
-                          {allVisibleSelected && <CheckIcon size={14} className="drop-shadow-sm" />}
+                        <div
+                          className={`flex h-6 w-6 items-center justify-center transition-all ${
+                            allVisibleSelected
+                              ? 'text-purple-600'
+                              : theme === 'dark'
+                                ? 'border-2 border-slate-300'
+                                : 'border-2 border-white/50'
+                          }`}
+                        >
+                          {allVisibleSelected && (
+                            <CheckIcon size={14} className="drop-shadow-sm" />
+                          )}
                         </div>
                       </div>
-                      <span className={`font-medium drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-200' : 'text-white'
-                      }`}>Seleccionar todas</span>
+                      <span
+                        className={`font-medium drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                        }`}
+                      >
+                        Seleccionar todas
+                      </span>
                     </div>
                   </div>
                 </div>
-
               </div>
 
               {/* Photos Grid */}
               <div className="px-6 pb-24 pt-2">
                 {filteredPhotos.length > 0 ? (
-                  <div className={`grid gap-6 ${
-                    viewMode === 'grid' 
-                      ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6' 
-                      : 'grid-cols-1 max-w-4xl mx-auto'
-                  }`}>
+                  <div
+                    className={`grid gap-6 ${
+                      viewMode === 'grid'
+                        ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                        : 'mx-auto max-w-4xl grid-cols-1'
+                    }`}
+                  >
                     <AnimatePresence>
                       {filteredPhotos.map((photo, idx) => (
                         <LiquidPhotoCard
@@ -841,10 +930,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           onDownload={() => handleDownloadPhoto(photo.id)}
                           onMove={() => {}}
                           onDelete={async () => {
-                            if (confirm('¿Estás seguro de eliminar esta foto?')) {
+                            if (
+                              confirm('¿Estás seguro de eliminar esta foto?')
+                            ) {
                               try {
                                 await onPhotoDelete?.([photo.id]);
-                                setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                                setPhotos((prev) =>
+                                  prev.filter((p) => p.id !== photo.id)
+                                );
                                 toast.success('Foto eliminada');
                               } catch (error) {
                                 toast.error('Error al eliminar la foto');
@@ -857,7 +950,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     data-displacement={20}
                     data-blur={0.06}
                     data-saturation={105}
@@ -868,7 +961,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     className="text-center"
                   >
                     <div className="p-12">
-                      <div 
+                      <div
                         data-displacement={15}
                         data-blur={0.04}
                         data-saturation={105}
@@ -876,22 +969,27 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         data-elasticity={0.3}
                         data-radius={999}
                         data-light={theme === 'light'}
-                        className="inline-block mb-4"
+                        className="mb-4 inline-block"
                       >
-                        <div className="w-20 h-20 flex items-center justify-center p-5">
-                          <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
+                        <div className="flex h-20 w-20 items-center justify-center p-5">
+                          <ImageIcon className="h-full w-full text-white/80 drop-shadow-lg" />
                         </div>
                       </div>
-                      <h3 className={`text-xl font-semibold mb-2 drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-200' : 'text-white'
-                      }`}>No se encontraron fotos</h3>
-                      <p className={`drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-400' : 'text-white/80'
-                      }`}>
-                        {searchQuery ? 
-                          `No hay fotos que coincidan con "${searchQuery}".` :
-                          'No hay fotos disponibles con los filtros seleccionados.'
-                        }
+                      <h3
+                        className={`mb-2 text-xl font-semibold drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                        }`}
+                      >
+                        No se encontraron fotos
+                      </h3>
+                      <p
+                        className={`drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-white/80'
+                        }`}
+                      >
+                        {searchQuery
+                          ? `No hay fotos que coincidan con "${searchQuery}".`
+                          : 'No hay fotos disponibles con los filtros seleccionados.'}
                       </p>
                     </div>
                   </div>
@@ -901,11 +999,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
           </div>
 
           {/* Mobile Layout */}
-          <div className="lg:hidden min-h-screen">
-            <div className="p-4 space-y-4">
-              
+          <div className="min-h-screen lg:hidden">
+            <div className="space-y-4 p-4">
               {/* Mobile Header */}
-              <div 
+              <div
                 data-displacement={15}
                 data-blur={0.04}
                 data-saturation={105}
@@ -917,7 +1014,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               >
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center space-x-3">
-                    <div 
+                    <div
                       data-displacement={8}
                       data-blur={0.02}
                       data-saturation={100}
@@ -925,19 +1022,25 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       data-radius={8}
                       data-light={theme === 'light'}
                     >
-                      <div className="w-8 h-8 flex items-center justify-center p-2">
-                        <FolderIcon className={`w-full h-full drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-200' : 'text-white'
-                        }`} />
+                      <div className="flex h-8 w-8 items-center justify-center p-2">
+                        <FolderIcon
+                          className={`h-full w-full drop-shadow-sm ${
+                            theme === 'dark' ? 'text-slate-200' : 'text-white'
+                          }`}
+                        />
                       </div>
                     </div>
-                    <h1 className={`text-lg font-semibold drop-shadow-sm ${
-                      theme === 'dark' ? 'text-slate-100' : 'text-white'
-                    }`}>Fotos ({filteredPhotos.length})</h1>
+                    <h1
+                      className={`text-lg font-semibold drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-100' : 'text-white'
+                      }`}
+                    >
+                      Fotos ({filteredPhotos.length})
+                    </h1>
                   </div>
-                  
+
                   {/* Theme Toggle */}
-                  <div 
+                  <div
                     data-displacement={12}
                     data-blur={0.03}
                     data-saturation={110}
@@ -946,11 +1049,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     data-radius={8}
                     data-light={theme === 'light'}
                     onClick={toggleTheme}
-                    className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
+                    className="transform cursor-pointer transition-transform duration-200 hover:scale-110"
                   >
-                    <div className="w-8 h-8 flex items-center justify-center p-2">
+                    <div className="flex h-8 w-8 items-center justify-center p-2">
                       {theme === 'dark' ? (
-                        <Sun size={16} className="text-yellow-300 drop-shadow-md animate-pulse" />
+                        <Sun
+                          size={16}
+                          className="animate-pulse text-yellow-300 drop-shadow-md"
+                        />
                       ) : (
                         <Moon size={16} className="text-white drop-shadow-md" />
                       )}
@@ -960,7 +1066,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               </div>
 
               {/* Mobile Search */}
-              <div 
+              <div
                 data-displacement={12}
                 data-blur={0.04}
                 data-saturation={105}
@@ -968,29 +1074,34 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 data-elasticity={0.2}
                 data-radius={999}
                 data-light={theme === 'light'}
-                className="w-full relative"
+                className="relative w-full"
               >
-                                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
-                      <SearchIcon size={16} className={theme === 'dark' ? 'text-slate-300' : 'text-white/80'} />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Buscar fotos..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className={`w-full pl-12 pr-4 py-3 bg-transparent focus:outline-none transition-all text-sm ${
-                        theme === 'dark' 
-                          ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500' 
-                          : 'text-white placeholder-white/70 focus:placeholder-white/50'
-                      }`}
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-4">
+                    <SearchIcon
+                      size={16}
+                      className={
+                        theme === 'dark' ? 'text-slate-300' : 'text-white/80'
+                      }
                     />
                   </div>
+                  <input
+                    type="text"
+                    placeholder="Buscar fotos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full bg-transparent py-3 pl-12 pr-4 text-sm transition-all focus:outline-none ${
+                      theme === 'dark'
+                        ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500'
+                        : 'text-white placeholder-white/70 focus:placeholder-white/50'
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Mobile Filter Pills */}
               <div className="flex items-center justify-center">
-                <div 
+                <div
                   data-displacement={15}
                   data-blur={0.03}
                   data-saturation={105}
@@ -1002,39 +1113,55 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 >
                   <div className="flex items-center space-x-1 p-2">
                     {filterOptions.map((filter) => (
-                      <div 
+                      <div
                         key={filter.value}
-                        data-displacement={filterStatus === filter.value ? 10 : 6}
+                        data-displacement={
+                          filterStatus === filter.value ? 10 : 6
+                        }
                         data-blur={0.02}
-                        data-saturation={filterStatus === filter.value ? 110 : 100}
-                        data-aberration={filterStatus === filter.value ? 0.4 : 0.2}
+                        data-saturation={
+                          filterStatus === filter.value ? 110 : 100
+                        }
+                        data-aberration={
+                          filterStatus === filter.value ? 0.4 : 0.2
+                        }
                         data-elasticity={0.3}
                         data-radius={999}
                         data-light={theme === 'light'}
                         onClick={() => setFilterStatus(filter.value)}
-                        className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+                        className="transform cursor-pointer transition-transform duration-200 hover:scale-105"
                       >
-                        <div className={`px-3 py-2 text-xs font-medium transition-all ${
-                          filterStatus === filter.value
-                            ? (theme === 'dark' ? 'text-slate-100 drop-shadow-md font-semibold' : 'text-white drop-shadow-md font-semibold')
-                            : (theme === 'dark' ? 'text-slate-300 hover:text-slate-100' : 'text-white/90 hover:text-white')
-                        }`}>
+                        <div
+                          className={`px-3 py-2 text-xs font-medium transition-all ${
+                            filterStatus === filter.value
+                              ? theme === 'dark'
+                                ? 'font-semibold text-slate-100 drop-shadow-md'
+                                : 'font-semibold text-white drop-shadow-md'
+                              : theme === 'dark'
+                                ? 'text-slate-300 hover:text-slate-100'
+                                : 'text-white/90 hover:text-white'
+                          }`}
+                        >
                           {filter.label}
                         </div>
                       </div>
                     ))}
                     <div className="ml-2">
-                      <div 
+                      <div
                         data-displacement={6}
                         data-blur={0.02}
                         data-saturation={105}
                         data-elasticity={0.3}
                         data-radius={8}
                         data-light={theme === 'light'}
-                        onClick={() => toast.info('Controla la vista desde los controles superiores')}
-                        className="cursor-pointer transform hover:scale-110 transition-transform duration-200"
+                        onClick={() =>
+                          toast.info(
+                            'Controla la vista desde los controles superiores'
+                          )
+                        }
+                        className="transform cursor-pointer transition-transform duration-200 hover:scale-110"
                       >
-                        <div className="p-2 text-white/80 hover:text-white transition-colors">
+                        <div className="p-2 text-white/80 transition-colors hover:text-white">
                           <GridIcon size={14} />
                         </div>
                       </div>
@@ -1045,7 +1172,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
               {/* Mobile Select All */}
               <div className="flex items-center justify-center">
-                <div 
+                <div
                   data-displacement={12}
                   data-blur={0.03}
                   data-saturation={110}
@@ -1054,10 +1181,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   data-radius={16}
                   data-light={theme === 'light'}
                   onClick={toggleSelectAll}
-                  className="cursor-pointer transform hover:scale-105 transition-transform duration-200"
+                  className="transform cursor-pointer transition-transform duration-200 hover:scale-105"
                 >
                   <div className="flex items-center space-x-3 p-3">
-                    <div 
+                    <div
                       data-displacement={allVisibleSelected ? 8 : 6}
                       data-blur={0.02}
                       data-saturation={allVisibleSelected ? 115 : 105}
@@ -1066,17 +1193,27 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       data-radius={6}
                       data-light={!allVisibleSelected}
                     >
-                      <div className={`w-5 h-5 flex items-center justify-center transition-all ${
-                        allVisibleSelected
-                          ? 'text-purple-600'
-                          : (theme === 'dark' ? 'border-2 border-slate-300' : 'border-2 border-white/50')
-                      }`}>
-                        {allVisibleSelected && <CheckIcon size={12} className="drop-shadow-sm" />}
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center transition-all ${
+                          allVisibleSelected
+                            ? 'text-purple-600'
+                            : theme === 'dark'
+                              ? 'border-2 border-slate-300'
+                              : 'border-2 border-white/50'
+                        }`}
+                      >
+                        {allVisibleSelected && (
+                          <CheckIcon size={12} className="drop-shadow-sm" />
+                        )}
                       </div>
                     </div>
-                    <span className={`text-sm font-medium drop-shadow-sm ${
-                      theme === 'dark' ? 'text-slate-200' : 'text-white'
-                    }`}>Seleccionar todas</span>
+                    <span
+                      className={`text-sm font-medium drop-shadow-sm ${
+                        theme === 'dark' ? 'text-slate-200' : 'text-white'
+                      }`}
+                    >
+                      Seleccionar todas
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1084,11 +1221,11 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               {/* Mobile Photos Grid */}
               <div className="pb-20">
                 {filteredPhotos.length > 0 ? (
-                  <div className={`grid gap-3 ${
-                    viewMode === 'grid' 
-                      ? 'grid-cols-2' 
-                      : 'grid-cols-1'
-                  }`}>
+                  <div
+                    className={`grid gap-3 ${
+                      viewMode === 'grid' ? 'grid-cols-2' : 'grid-cols-1'
+                    }`}
+                  >
                     <AnimatePresence>
                       {filteredPhotos.map((photo, idx) => (
                         <LiquidPhotoCard
@@ -1105,10 +1242,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           onDownload={() => handleDownloadPhoto(photo.id)}
                           onMove={() => {}}
                           onDelete={async () => {
-                            if (confirm('¿Estás seguro de eliminar esta foto?')) {
+                            if (
+                              confirm('¿Estás seguro de eliminar esta foto?')
+                            ) {
                               try {
                                 await onPhotoDelete?.([photo.id]);
-                                setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                                setPhotos((prev) =>
+                                  prev.filter((p) => p.id !== photo.id)
+                                );
                                 toast.success('Foto eliminada');
                               } catch (error) {
                                 toast.error('Error al eliminar la foto');
@@ -1121,7 +1262,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     data-displacement={15}
                     data-blur={0.05}
                     data-saturation={105}
@@ -1132,7 +1273,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     className="text-center"
                   >
                     <div className="p-8">
-                      <div 
+                      <div
                         data-displacement={12}
                         data-blur={0.03}
                         data-saturation={105}
@@ -1140,22 +1281,27 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         data-elasticity={0.3}
                         data-radius={999}
                         data-light={theme === 'light'}
-                        className="inline-block mb-4"
+                        className="mb-4 inline-block"
                       >
-                        <div className="w-16 h-16 flex items-center justify-center p-4">
-                          <ImageIcon className="w-full h-full text-white/80 drop-shadow-lg" />
+                        <div className="flex h-16 w-16 items-center justify-center p-4">
+                          <ImageIcon className="h-full w-full text-white/80 drop-shadow-lg" />
                         </div>
                       </div>
-                      <h3 className={`font-medium mb-2 drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-200' : 'text-white'
-                      }`}>No se encontraron fotos</h3>
-                      <p className={`text-sm drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-400' : 'text-white/80'
-                      }`}>
-                        {searchQuery ? 
-                          `No hay fotos que coincidan con "${searchQuery}".` :
-                          'No hay fotos disponibles con los filtros seleccionados.'
-                        }
+                      <h3
+                        className={`mb-2 font-medium drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                        }`}
+                      >
+                        No se encontraron fotos
+                      </h3>
+                      <p
+                        className={`text-sm drop-shadow-sm ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-white/80'
+                        }`}
+                      >
+                        {searchQuery
+                          ? `No hay fotos que coincidan con "${searchQuery}".`
+                          : 'No hay fotos disponibles con los filtros seleccionados.'}
                       </p>
                     </div>
                   </div>
@@ -1170,11 +1316,13 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
       {hideHeader && (
         <div className="p-4">
           {filteredPhotos.length > 0 ? (
-            <div className={`grid gap-3 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6' 
-                : 'grid-cols-1 max-w-4xl mx-auto'
-            }`}>
+            <div
+              className={`grid gap-3 ${
+                viewMode === 'grid'
+                  ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+                  : 'mx-auto max-w-4xl grid-cols-1'
+              }`}
+            >
               <AnimatePresence>
                 {filteredPhotos.map((photo, idx) => (
                   <LiquidPhotoCard
@@ -1194,7 +1342,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       if (confirm('¿Estás seguro de eliminar esta foto?')) {
                         try {
                           await onPhotoDelete?.([photo.id]);
-                          setPhotos(prev => prev.filter(p => p.id !== photo.id));
+                          setPhotos((prev) =>
+                            prev.filter((p) => p.id !== photo.id)
+                          );
                           toast.success('Foto eliminada');
                         } catch (error) {
                           toast.error('Error al eliminar la foto');
@@ -1207,19 +1357,18 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               </AnimatePresence>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 inline-block">
-                <div className="w-16 h-16 flex items-center justify-center p-4 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full">
-                  <ImageIcon className="w-full h-full text-gray-400" />
+            <div className="py-12 text-center">
+              <div className="inline-block rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-800">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 p-4 dark:bg-gray-700">
+                  <ImageIcon className="h-full w-full text-gray-400" />
                 </div>
-                <h3 className="font-medium mb-2 text-gray-800 dark:text-gray-200">
+                <h3 className="mb-2 font-medium text-gray-800 dark:text-gray-200">
                   No se encontraron fotos
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {searchQuery ? 
-                    `No hay fotos que coincidan con "${searchQuery}".` :
-                    'No hay fotos disponibles con los filtros seleccionados.'
-                  }
+                  {searchQuery
+                    ? `No hay fotos que coincidan con "${searchQuery}".`
+                    : 'No hay fotos disponibles con los filtros seleccionados.'}
                 </p>
               </div>
             </div>
@@ -1229,7 +1378,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
       {/* Simple Liquid Glass FAB */}
       <div className="fixed bottom-6 right-6 z-50">
-        <div 
+        <div
           data-displacement={hasSelection ? 25 : 20}
           data-blur={0.08}
           data-saturation={hasSelection ? 110 : 105}
@@ -1238,20 +1387,20 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
           data-radius={999}
           data-light={false}
           onClick={handleFabAction}
-          className="cursor-pointer transform hover:scale-110 active:scale-95 transition-all duration-300 w-16 h-16 flex items-center justify-center shadow-2xl"
+          className="flex h-16 w-16 transform cursor-pointer items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95"
           style={{
-            background: hasSelection 
-              ? 'linear-gradient(135deg, #10b981, #059669, #047857)' 
+            background: hasSelection
+              ? 'linear-gradient(135deg, #10b981, #059669, #047857)'
               : 'linear-gradient(135deg, #3b82f6, #2563eb, #1d4ed8)',
             boxShadow: hasSelection
               ? `0 20px 40px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)`
-              : `0 20px 40px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)`
+              : `0 20px 40px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)`,
           }}
         >
-          <div className="text-white relative z-10">
+          <div className="relative z-10 text-white">
             {hasSelection ? (
-              <div className="flex flex-col items-center justify-center animate-pulse">
-                <div 
+              <div className="flex animate-pulse flex-col items-center justify-center">
+                <div
                   data-displacement={8}
                   data-blur={0.02}
                   data-saturation={105}
@@ -1261,10 +1410,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   data-light={true}
                   className="mb-1"
                 >
-                  <CheckIcon size={18} className="drop-shadow-lg text-white" />
+                  <CheckIcon size={18} className="text-white drop-shadow-lg" />
                 </div>
                 {selectedCount > 0 && (
-                  <div 
+                  <div
                     data-displacement={6}
                     data-blur={0.02}
                     data-saturation={105}
@@ -1273,14 +1422,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     data-radius={999}
                     data-light={false}
                   >
-                    <span className="text-xs font-bold px-1.5 py-0.5 bg-white/20 rounded-full backdrop-blur-sm">
+                    <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs font-bold backdrop-blur-sm">
                       {selectedCount > 99 ? '99+' : selectedCount}
                     </span>
                   </div>
                 )}
               </div>
             ) : (
-              <div 
+              <div
                 data-displacement={8}
                 data-blur={0.02}
                 data-saturation={105}
@@ -1293,13 +1442,15 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               </div>
             )}
           </div>
-          
+
           {/* Animated glow effect */}
-          <div className={`absolute inset-0 rounded-full opacity-0 hover:opacity-100 transition-opacity duration-300 -z-10 ${
-            hasSelection 
-              ? 'bg-gradient-to-br from-emerald-300/30 to-emerald-600/30' 
-              : 'bg-gradient-to-br from-blue-300/30 to-blue-600/30'
-          } blur-xl scale-150 animate-pulse`} />
+          <div
+            className={`absolute inset-0 -z-10 rounded-full opacity-0 transition-opacity duration-300 hover:opacity-100 ${
+              hasSelection
+                ? 'bg-gradient-to-br from-emerald-300/30 to-emerald-600/30'
+                : 'bg-gradient-to-br from-blue-300/30 to-blue-600/30'
+            } scale-150 animate-pulse blur-xl`}
+          />
         </div>
       </div>
 
@@ -1316,7 +1467,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
             setIsUploading(true);
             try {
               await onPhotoUpload(files, selectedEvent);
-              toast.success(`${files.length} foto${files.length === 1 ? '' : 's'} subida${files.length === 1 ? '' : 's'}`);
+              toast.success(
+                `${files.length} foto${files.length === 1 ? '' : 's'} subida${files.length === 1 ? '' : 's'}`
+              );
             } catch (error) {
               toast.error('Error al subir las fotos');
             } finally {
@@ -1341,20 +1494,23 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
       {/* Floating Selection Bar */}
       {selectedPhotos.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="bg-white dark:bg-gray-900 shadow-2xl rounded-full px-6 py-3 border border-gray-200 dark:border-gray-700 flex items-center gap-4"
+            className="flex items-center gap-4 rounded-full border border-gray-200 bg-white px-6 py-3 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
           >
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-              <CheckSquareIcon className="w-4 h-4" />
-              <span>{selectedPhotos.length} seleccionada{selectedPhotos.length !== 1 ? 's' : ''}</span>
+              <CheckSquareIcon className="h-4 w-4" />
+              <span>
+                {selectedPhotos.length} seleccionada
+                {selectedPhotos.length !== 1 ? 's' : ''}
+              </span>
             </div>
-            
+
             <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -1365,10 +1521,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 }}
                 className="h-8 px-3 text-xs"
               >
-                <MoveIcon className="w-3 h-3 mr-1" />
+                <MoveIcon className="mr-1 h-3 w-3" />
                 Mover
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1382,12 +1538,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     toast.error('Error al aprobar fotos');
                   }
                 }}
-                className="h-8 px-3 text-xs text-green-700 border-green-300 hover:bg-green-50"
+                className="h-8 border-green-300 px-3 text-xs text-green-700 hover:bg-green-50"
               >
-                <CheckIcon className="w-3 h-3 mr-1" />
+                <CheckIcon className="mr-1 h-3 w-3" />
                 Aprobar
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1395,18 +1551,20 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   try {
                     await onPhotoApprove?.(selectedPhotos, false);
                     setSelectedPhotos([]);
-                    toast.success(`${selectedPhotos.length} fotos marcadas como pendientes`);
+                    toast.success(
+                      `${selectedPhotos.length} fotos marcadas como pendientes`
+                    );
                     onRefresh?.();
                   } catch (error) {
                     toast.error('Error al cambiar estado');
                   }
                 }}
-                className="h-8 px-3 text-xs text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+                className="h-8 border-yellow-300 px-3 text-xs text-yellow-700 hover:bg-yellow-50"
               >
-                <XIcon className="w-3 h-3 mr-1" />
+                <XIcon className="mr-1 h-3 w-3" />
                 Rechazar
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1416,41 +1574,47 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 }}
                 className="h-8 px-3 text-xs"
               >
-                <TagIcon className="w-3 h-3 mr-1" />
+                <TagIcon className="mr-1 h-3 w-3" />
                 Asignar
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  if (confirm(`¿Eliminar ${selectedPhotos.length} fotos seleccionadas?`)) {
+                  if (
+                    confirm(
+                      `¿Eliminar ${selectedPhotos.length} fotos seleccionadas?`
+                    )
+                  ) {
                     try {
                       await onPhotoDelete?.(selectedPhotos);
                       setSelectedPhotos([]);
-                      toast.success(`${selectedPhotos.length} fotos eliminadas`);
+                      toast.success(
+                        `${selectedPhotos.length} fotos eliminadas`
+                      );
                       onRefresh?.();
                     } catch (error) {
                       toast.error('Error al eliminar fotos');
                     }
                   }
                 }}
-                className="h-8 px-3 text-xs text-red-700 border-red-300 hover:bg-red-50"
+                className="h-8 border-red-300 px-3 text-xs text-red-700 hover:bg-red-50"
               >
-                <TrashIcon className="w-3 h-3 mr-1" />
+                <TrashIcon className="mr-1 h-3 w-3" />
                 Eliminar
               </Button>
             </div>
-            
+
             <div className="h-4 w-px bg-gray-300 dark:bg-gray-600"></div>
-            
+
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedPhotos([])}
               className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
             >
-              <XIcon className="w-4 h-4" />
+              <XIcon className="h-4 w-4" />
             </Button>
           </motion.div>
         </div>
@@ -1458,17 +1622,32 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
       {isPreviewOpen && filteredPhotos.length > 0 && (
         <GalleryPhotoModal
-          photo={filteredPhotos[previewIndex] ? {
-            id: filteredPhotos[previewIndex].id,
-            storage_path: filteredPhotos[previewIndex].watermark_path || filteredPhotos[previewIndex].preview_path || filteredPhotos[previewIndex].storage_path,
-            width: filteredPhotos[previewIndex].width || null,
-            height: filteredPhotos[previewIndex].height || null,
-            created_at: filteredPhotos[previewIndex].created_at,
-          } : null}
+          photo={
+            filteredPhotos[previewIndex]
+              ? {
+                  id: filteredPhotos[previewIndex].id,
+                  storage_path:
+                    filteredPhotos[previewIndex].watermark_path ||
+                    filteredPhotos[previewIndex].preview_path ||
+                    filteredPhotos[previewIndex].storage_path,
+                  width: filteredPhotos[previewIndex].width || null,
+                  height: filteredPhotos[previewIndex].height || null,
+                  created_at: filteredPhotos[previewIndex].created_at,
+                }
+              : null
+          }
           isOpen={isPreviewOpen}
           onClose={() => setIsPreviewOpen(false)}
-          onPrevious={() => setPreviewIndex(prev => prev > 0 ? prev - 1 : filteredPhotos.length - 1)}
-          onNext={() => setPreviewIndex(prev => prev < filteredPhotos.length - 1 ? prev + 1 : 0)}
+          onPrevious={() =>
+            setPreviewIndex((prev) =>
+              prev > 0 ? prev - 1 : filteredPhotos.length - 1
+            )
+          }
+          onNext={() =>
+            setPreviewIndex((prev) =>
+              prev < filteredPhotos.length - 1 ? prev + 1 : 0
+            )
+          }
           currentIndex={previewIndex}
           totalPhotos={filteredPhotos.length}
         />
@@ -1488,20 +1667,21 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
       {/* Move Photos Modal */}
       {showMoveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="mx-4 max-h-[80vh] w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
+            <div className="border-b border-gray-200 p-6 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Mover {selectedPhotos.length} foto{selectedPhotos.length !== 1 ? 's' : ''}
+                Mover {selectedPhotos.length} foto
+                {selectedPhotos.length !== 1 ? 's' : ''}
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Selecciona una carpeta de destino
               </p>
             </div>
-            
-            <div className="p-6 max-h-96 overflow-y-auto">
+
+            <div className="max-h-96 overflow-y-auto p-6">
               {availableFolders.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FolderIcon className="mx-auto h-8 w-8 mb-2 opacity-50" />
+                <div className="py-8 text-center text-gray-500">
+                  <FolderIcon className="mx-auto mb-2 h-8 w-8 opacity-50" />
                   <p className="text-sm">No hay carpetas disponibles</p>
                   <p className="text-xs">Crea carpetas desde el sidebar</p>
                 </div>
@@ -1510,29 +1690,37 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   {/* Option to move to "Sin carpeta" */}
                   <button
                     onClick={() => handleMovePhotos('null')}
-                    className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-colors"
+                    className="w-full rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-orange-300 hover:bg-orange-50"
                   >
                     <div className="flex items-center gap-3">
-                      <FolderIcon className="w-5 h-5 text-orange-600" />
+                      <FolderIcon className="h-5 w-5 text-orange-600" />
                       <div>
-                        <div className="font-medium text-gray-900">Sin carpeta</div>
-                        <div className="text-xs text-gray-500">Mover a fotos no organizadas</div>
+                        <div className="font-medium text-gray-900">
+                          Sin carpeta
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Mover a fotos no organizadas
+                        </div>
                       </div>
                     </div>
                   </button>
-                  
+
                   {availableFolders.map((folder) => (
                     <button
                       key={folder.id}
                       onClick={() => handleMovePhotos(folder.id)}
-                      className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                      className="w-full rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
                     >
                       <div className="flex items-center gap-3">
-                        <FolderIcon className="w-5 h-5 text-blue-600" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 truncate">{folder.name}</div>
+                        <FolderIcon className="h-5 w-5 text-blue-600" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium text-gray-900">
+                            {folder.name}
+                          </div>
                           {folder.eventName && (
-                            <div className="text-xs text-gray-500 truncate">{folder.eventName}</div>
+                            <div className="truncate text-xs text-gray-500">
+                              {folder.eventName}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1541,8 +1729,8 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                 </div>
               )}
             </div>
-            
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+
+            <div className="flex justify-end gap-3 border-t border-gray-200 p-6 dark:border-gray-700">
               <Button
                 variant="outline"
                 onClick={() => setShowMoveModal(false)}
@@ -1559,7 +1747,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 };
 
 // Wrapper with ThemeProvider
-const PhotoGalleryLiquidWrapper: React.FC<PhotoGalleryLiquidProps> = (props) => {
+const PhotoGalleryLiquidWrapper: React.FC<PhotoGalleryLiquidProps> = (
+  props
+) => {
   return (
     <ThemeProvider>
       <PhotoGalleryLiquid {...props} />

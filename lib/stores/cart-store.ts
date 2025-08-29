@@ -12,7 +12,7 @@ export interface CartItem {
 interface CartStore {
   items: CartItem[];
   isOpen: boolean;
-  
+
   // Actions
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
   removeItem: (photoId: string) => void;
@@ -21,7 +21,7 @@ interface CartStore {
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
-  
+
   // Computed
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -33,11 +33,13 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-      
+
       addItem: (item) =>
         set((state) => {
-          const existingItem = state.items.find((i) => i.photoId === item.photoId);
-          
+          const existingItem = state.items.find(
+            (i) => i.photoId === item.photoId
+          );
+
           if (existingItem) {
             // Increment quantity if item already exists
             return {
@@ -48,18 +50,18 @@ export const useCartStore = create<CartStore>()(
               ),
             };
           }
-          
+
           // Add new item with quantity 1
           return {
             items: [...state.items, { ...item, quantity: 1 }],
           };
         }),
-      
+
       removeItem: (photoId) =>
         set((state) => ({
           items: state.items.filter((item) => item.photoId !== photoId),
         })),
-      
+
       updateQuantity: (photoId, quantity) =>
         set((state) => {
           if (quantity <= 0) {
@@ -68,27 +70,27 @@ export const useCartStore = create<CartStore>()(
               items: state.items.filter((item) => item.photoId !== photoId),
             };
           }
-          
+
           return {
             items: state.items.map((item) =>
               item.photoId === photoId ? { ...item, quantity } : item
             ),
           };
         }),
-      
+
       clearCart: () => set({ items: [] }),
-      
+
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
-      
+
       openCart: () => set({ isOpen: true }),
-      
+
       closeCart: () => set({ isOpen: false }),
-      
+
       getTotalItems: () => {
         const state = get();
         return state.items.reduce((total, item) => total + item.quantity, 0);
       },
-      
+
       getTotalPrice: () => {
         const state = get();
         return state.items.reduce(
@@ -96,7 +98,7 @@ export const useCartStore = create<CartStore>()(
           0
         );
       },
-      
+
       getItemsCount: () => {
         const state = get();
         return state.items.length;

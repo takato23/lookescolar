@@ -1,6 +1,6 @@
 /**
  * Enhanced QR Code Caching Service
- * 
+ *
  * Implements intelligent caching strategies for QR codes with multi-level caching,
  * performance monitoring, and adaptive TTL management.
  */
@@ -63,10 +63,16 @@ class EnhancedQRCacheService {
 
     this.config = {
       defaultTTL: parseInt(process.env.QR_CACHE_TTL || '3600000', 10), // 1 hour default
-      maxMemoryEntries: parseInt(process.env.QR_CACHE_MAX_ENTRIES || '1000', 10),
+      maxMemoryEntries: parseInt(
+        process.env.QR_CACHE_MAX_ENTRIES || '1000',
+        10
+      ),
       enableRedis: process.env.UPSTASH_REDIS_REST_URL !== undefined,
       adaptiveTTL: process.env.QR_CACHE_ADAPTIVE_TTL === 'true',
-      prefetchThreshold: parseInt(process.env.QR_CACHE_PREFETCH_THRESHOLD || '80', 10),
+      prefetchThreshold: parseInt(
+        process.env.QR_CACHE_PREFETCH_THRESHOLD || '80',
+        10
+      ),
     };
 
     // Initialize Redis if available
@@ -76,22 +82,26 @@ class EnhancedQRCacheService {
           url: process.env.UPSTASH_REDIS_REST_URL!,
           token: process.env.UPSTASH_REDIS_REST_TOKEN!,
         });
-        logger.info('qr_cache_redis_initialized', { 
-          message: 'Redis cache initialized for QR codes' 
+        logger.info('qr_cache_redis_initialized', {
+          message: 'Redis cache initialized for QR codes',
         });
       } catch (error) {
-        logger.warn('qr_cache_redis_init_failed', { 
+        logger.warn('qr_cache_redis_init_failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
-          message: 'Failed to initialize Redis cache, falling back to memory-only caching'
+          message:
+            'Failed to initialize Redis cache, falling back to memory-only caching',
         });
         this.redis = null;
       }
     }
 
     // Set up cleanup interval
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredEntries();
-    }, 5 * 60 * 1000); // Every 5 minutes
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupExpiredEntries();
+      },
+      5 * 60 * 1000
+    ); // Every 5 minutes
   }
 
   static getInstance(): EnhancedQRCacheService {
@@ -127,7 +137,7 @@ class EnhancedQRCacheService {
         logger.warn('qr_cache_redis_get_failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           subjectId,
-          message: 'Failed to get QR from Redis cache'
+          message: 'Failed to get QR from Redis cache',
         });
       }
     }
@@ -142,12 +152,15 @@ class EnhancedQRCacheService {
    */
   async setQR(
     subjectId: string,
-    qrData: Omit<QRCacheEntry, 'generatedAt' | 'expiresAt' | 'accessCount' | 'lastAccessed'>,
+    qrData: Omit<
+      QRCacheEntry,
+      'generatedAt' | 'expiresAt' | 'accessCount' | 'lastAccessed'
+    >,
     ttl?: number
   ): Promise<void> {
     const cacheKey = this.getCacheKey(subjectId);
     const now = Date.now();
-    
+
     const entry: QRCacheEntry = {
       ...qrData,
       generatedAt: now,
@@ -158,7 +171,7 @@ class EnhancedQRCacheService {
 
     // Store in memory cache
     this.memoryCache.set(cacheKey, entry);
-    
+
     // Store in Redis if available
     if (this.redis) {
       try {
@@ -169,7 +182,7 @@ class EnhancedQRCacheService {
         logger.warn('qr_cache_redis_set_failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           subjectId,
-          message: 'Failed to set QR in Redis cache'
+          message: 'Failed to set QR in Redis cache',
         });
       }
     }
@@ -187,7 +200,7 @@ class EnhancedQRCacheService {
         type: 'photo_view',
         value: 1,
         unit: 'entries',
-      }
+      },
     });
   }
 
@@ -196,10 +209,10 @@ class EnhancedQRCacheService {
    */
   async invalidateQR(subjectId: string): Promise<void> {
     const cacheKey = this.getCacheKey(subjectId);
-    
+
     // Remove from memory cache
     this.memoryCache.delete(cacheKey);
-    
+
     // Remove from Redis if available
     if (this.redis) {
       try {
@@ -208,7 +221,7 @@ class EnhancedQRCacheService {
         logger.warn('qr_cache_redis_invalidate_failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           subjectId,
-          message: 'Failed to invalidate QR in Redis cache'
+          message: 'Failed to invalidate QR in Redis cache',
         });
       }
     }
@@ -220,7 +233,7 @@ class EnhancedQRCacheService {
         type: 'photo_view',
         value: 1,
         unit: 'entries',
-      }
+      },
     });
   }
 
@@ -229,7 +242,7 @@ class EnhancedQRCacheService {
    */
   async invalidateByPattern(pattern: string): Promise<number> {
     let removed = 0;
-    
+
     // Invalidate memory cache entries
     for (const key of this.memoryCache.keys()) {
       if (key.includes(pattern)) {
@@ -237,7 +250,7 @@ class EnhancedQRCacheService {
         removed++;
       }
     }
-    
+
     // Invalidate Redis cache entries
     if (this.redis) {
       try {
@@ -252,7 +265,7 @@ class EnhancedQRCacheService {
         logger.warn('qr_cache_redis_invalidate_pattern_failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
           pattern,
-          message: 'Failed to invalidate QR cache entries by pattern in Redis'
+          message: 'Failed to invalidate QR cache entries by pattern in Redis',
         });
       }
     }
@@ -264,7 +277,7 @@ class EnhancedQRCacheService {
         type: 'photo_view',
         value: removed,
         unit: 'entries',
-      }
+      },
     });
 
     return removed;
@@ -275,11 +288,13 @@ class EnhancedQRCacheService {
    */
   getStats(): QRCacheStats {
     const totalRequests = this.stats.hits + this.stats.misses;
-    const hitRate = totalRequests > 0 ? (this.stats.hits / totalRequests) * 100 : 0;
-    const avgGenerationTime = this.stats.generationCount > 0 
-      ? this.stats.generationTimeSum / this.stats.generationCount 
-      : 0;
-    
+    const hitRate =
+      totalRequests > 0 ? (this.stats.hits / totalRequests) * 100 : 0;
+    const avgGenerationTime =
+      this.stats.generationCount > 0
+        ? this.stats.generationTimeSum / this.stats.generationCount
+        : 0;
+
     // Calculate memory usage (rough estimate)
     let memoryUsage = 0;
     for (const entry of this.memoryCache.values()) {
@@ -293,7 +308,7 @@ class EnhancedQRCacheService {
       totalAccesses += entry.accessCount;
       totalEntries++;
     }
-    const cacheEfficiency = totalEntries > 0 ? (totalAccesses / totalEntries) : 0;
+    const cacheEfficiency = totalEntries > 0 ? totalAccesses / totalEntries : 0;
 
     return {
       totalEntries: this.memoryCache.size,
@@ -324,14 +339,14 @@ class EnhancedQRCacheService {
         type: 'photo_view',
         value: subjectIds.length,
         unit: 'subjects',
-      }
+      },
     });
 
     // In a real implementation, this would fetch and cache QR data for multiple subjects
     // This is a placeholder for the actual implementation
     logger.debug('qr_cache_preload_completed', {
       subjectCount: subjectIds.length,
-      message: 'QR cache preloading completed'
+      message: 'QR cache preloading completed',
     });
   }
 
@@ -357,7 +372,7 @@ class EnhancedQRCacheService {
         type: 'photo_view',
         value: memoryRemoved,
         unit: 'entries',
-      }
+      },
     });
   }
 
@@ -366,9 +381,10 @@ class EnhancedQRCacheService {
    */
   private evictLeastRecentlyUsed(): void {
     // Convert to array and sort by last accessed time
-    const entries = Array.from(this.memoryCache.entries())
-      .sort(([, a], [, b]) => a.lastAccessed - b.lastAccessed);
-    
+    const entries = Array.from(this.memoryCache.entries()).sort(
+      ([, a], [, b]) => a.lastAccessed - b.lastAccessed
+    );
+
     // Remove oldest entries to make space
     const toRemove = Math.max(1, Math.floor(this.memoryCache.size * 0.1)); // Remove 10%
     for (let i = 0; i < toRemove; i++) {
@@ -385,14 +401,17 @@ class EnhancedQRCacheService {
         type: 'photo_view',
         value: toRemove,
         unit: 'entries',
-      }
+      },
     });
   }
 
   /**
    * Update entry access statistics
    */
-  private updateEntryAccess(entry: QRCacheEntry, cacheKey: string): QRCacheEntry {
+  private updateEntryAccess(
+    entry: QRCacheEntry,
+    cacheKey: string
+  ): QRCacheEntry {
     const now = Date.now();
     const updatedEntry = {
       ...entry,
@@ -402,20 +421,22 @@ class EnhancedQRCacheService {
 
     // Update in memory cache
     this.memoryCache.set(cacheKey, updatedEntry);
-    
+
     // Update in Redis if available
     if (this.redis) {
       // Update access count but don't change expiration
-      this.redis.hset(cacheKey, {
-        accessCount: updatedEntry.accessCount,
-        lastAccessed: updatedEntry.lastAccessed,
-      }).catch(error => {
-        logger.warn('qr_cache_redis_access_update_failed', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          cacheKey,
-          message: 'Failed to update access count in Redis'
+      this.redis
+        .hset(cacheKey, {
+          accessCount: updatedEntry.accessCount,
+          lastAccessed: updatedEntry.lastAccessed,
+        })
+        .catch((error) => {
+          logger.warn('qr_cache_redis_access_update_failed', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            cacheKey,
+            message: 'Failed to update access count in Redis',
+          });
         });
-      });
     }
 
     this.stats.hits++;
@@ -437,7 +458,7 @@ class EnhancedQRCacheService {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
-    
+
     logger.info('qr_cache_service_stopped');
   }
 }

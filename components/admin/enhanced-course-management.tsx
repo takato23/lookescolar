@@ -105,11 +105,15 @@ export default function EnhancedCourseManagement({
   enableBulkOperations = true,
 }: EnhancedCourseManagementProps) {
   // State
-  const [selectedCourses, setSelectedCourses] = useState<Set<string>>(new Set());
+  const [selectedCourses, setSelectedCourses] = useState<Set<string>>(
+    new Set()
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState<string | null>(null);
   const [filterActive, setFilterActive] = useState<boolean | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'students' | 'photos' | 'created_at'>('sort_order');
+  const [sortBy, setSortBy] = useState<
+    'name' | 'students' | 'photos' | 'created_at'
+  >('sort_order');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [loading, setLoading] = useState(false);
@@ -137,28 +141,29 @@ export default function EnhancedCourseManagement({
     // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(course =>
-        course.name.toLowerCase().includes(term) ||
-        (course.grade && course.grade.toLowerCase().includes(term)) ||
-        (course.section && course.section.toLowerCase().includes(term)) ||
-        (course.level_name && course.level_name.toLowerCase().includes(term))
+      filtered = filtered.filter(
+        (course) =>
+          course.name.toLowerCase().includes(term) ||
+          (course.grade && course.grade.toLowerCase().includes(term)) ||
+          (course.section && course.section.toLowerCase().includes(term)) ||
+          (course.level_name && course.level_name.toLowerCase().includes(term))
       );
     }
 
     // Apply level filter
     if (filterLevel) {
-      filtered = filtered.filter(course => course.level_id === filterLevel);
+      filtered = filtered.filter((course) => course.level_id === filterLevel);
     }
 
     // Apply active filter
     if (filterActive !== null) {
-      filtered = filtered.filter(course => course.active === filterActive);
+      filtered = filtered.filter((course) => course.active === filterActive);
     }
 
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (sortBy) {
         case 'name':
           aValue = a.name.toLowerCase();
@@ -190,25 +195,31 @@ export default function EnhancedCourseManagement({
   }, [courses, searchTerm, filterLevel, filterActive, sortBy, sortOrder]);
 
   // Selection handlers
-  const handleCourseToggle = useCallback((courseId: string, selected: boolean) => {
-    setSelectedCourses(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(courseId);
-      } else {
-        newSet.delete(courseId);
-      }
-      return newSet;
-    });
-  }, []);
+  const handleCourseToggle = useCallback(
+    (courseId: string, selected: boolean) => {
+      setSelectedCourses((prev) => {
+        const newSet = new Set(prev);
+        if (selected) {
+          newSet.add(courseId);
+        } else {
+          newSet.delete(courseId);
+        }
+        return newSet;
+      });
+    },
+    []
+  );
 
-  const handleSelectAll = useCallback((selected: boolean) => {
-    if (selected) {
-      setSelectedCourses(new Set(filteredCourses.map(c => c.id)));
-    } else {
-      setSelectedCourses(new Set());
-    }
-  }, [filteredCourses]);
+  const handleSelectAll = useCallback(
+    (selected: boolean) => {
+      if (selected) {
+        setSelectedCourses(new Set(filteredCourses.map((c) => c.id)));
+      } else {
+        setSelectedCourses(new Set());
+      }
+    },
+    [filteredCourses]
+  );
 
   // CRUD operations
   const handleCreateCourse = async () => {
@@ -243,14 +254,17 @@ export default function EnhancedCourseManagement({
 
   const handleEditCourse = async () => {
     if (!editingCourse) return;
-    
+
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/courses/${editingCourse.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(courseForm),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/${editingCourse.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(courseForm),
+        }
+      );
 
       if (response.ok) {
         setEditingCourse(null);
@@ -270,14 +284,17 @@ export default function EnhancedCourseManagement({
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/courses/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: selectedBulkAction,
-          course_ids: Array.from(selectedCourses),
-        }),
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/courses/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: selectedBulkAction,
+            course_ids: Array.from(selectedCourses),
+          }),
+        }
+      );
 
       if (response.ok) {
         setBulkActionDialogOpen(false);
@@ -310,35 +327,39 @@ export default function EnhancedCourseManagement({
   // Course Card Component
   const CourseCard = ({ course }: { course: Course }) => {
     const selected = selectedCourses.has(course.id);
-    
+
     return (
-      <Card className="hover:shadow-lg transition-all duration-200 group">
+      <Card className="group transition-all duration-200 hover:shadow-lg">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               {enableBulkOperations && (
                 <Checkbox
                   checked={selected}
-                  onCheckedChange={(checked) => handleCourseToggle(course.id, !!checked)}
+                  onCheckedChange={(checked) =>
+                    handleCourseToggle(course.id, !!checked)
+                  }
                   aria-label={`Select ${course.name}`}
                 />
               )}
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-lg truncate">{course.name}</CardTitle>
+                <CardTitle className="truncate text-lg">
+                  {course.name}
+                </CardTitle>
                 {(course.grade || course.section) && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {course.grade} {course.section && `- ${course.section}`}
                   </p>
                 )}
                 {course.level_name && (
                   <Badge variant="outline" className="mt-1">
-                    <GraduationCap className="h-3 w-3 mr-1" />
+                    <GraduationCap className="mr-1 h-3 w-3" />
                     {course.level_name}
                   </Badge>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               <Badge variant={course.active ? 'default' : 'secondary'}>
                 {course.active ? 'Activo' : 'Inactivo'}
               </Badge>
@@ -350,24 +371,24 @@ export default function EnhancedCourseManagement({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onCourseSelect?.(course)}>
-                    <Users className="h-4 w-4 mr-2" />
+                    <Users className="mr-2 h-4 w-4" />
                     Ver Estudiantes
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => openEditDialog(course)}>
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="mr-2 h-4 w-4" />
                     Editar
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className="mr-2 h-4 w-4" />
                     Duplicar
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="mr-2 h-4 w-4" />
                     Exportar
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Eliminar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -377,57 +398,57 @@ export default function EnhancedCourseManagement({
         </CardHeader>
         <CardContent className="pt-0">
           {course.description && (
-            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">
               {course.description}
             </p>
           )}
-          
+
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="mb-4 grid grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="mb-1 flex items-center justify-center gap-1">
                 <Users className="h-4 w-4 text-blue-500" />
                 <span className="text-lg font-bold text-blue-700">
                   {course.student_count || 0}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Estudiantes</p>
+              <p className="text-muted-foreground text-xs">Estudiantes</p>
             </div>
-            
+
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="mb-1 flex items-center justify-center gap-1">
                 <Camera className="h-4 w-4 text-orange-500" />
                 <span className="text-lg font-bold text-orange-700">
                   {course.photo_count || 0}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Fotos</p>
+              <p className="text-muted-foreground text-xs">Fotos</p>
             </div>
-            
+
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 mb-1">
+              <div className="mb-1 flex items-center justify-center gap-1">
                 <BookOpen className="h-4 w-4 text-green-500" />
                 <span className="text-lg font-bold text-green-700">
                   {course.group_photo_count || 0}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">Grupales</p>
+              <p className="text-muted-foreground text-xs">Grupales</p>
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1"
               onClick={() => onCourseSelect?.(course)}
             >
-              <Users className="h-3 w-3 mr-1" />
+              <Users className="mr-1 h-3 w-3" />
               Ver Estudiantes
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => openEditDialog(course)}
             >
@@ -436,7 +457,7 @@ export default function EnhancedCourseManagement({
           </div>
 
           {/* Footer */}
-          <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-3 border-t pt-3 text-xs">
             Creado: {new Date(course.created_at).toLocaleDateString('es-AR')}
           </div>
         </CardContent>
@@ -447,23 +468,25 @@ export default function EnhancedCourseManagement({
   return (
     <div className="space-y-6">
       {/* Header and Controls */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+      <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Cursos</h2>
           <p className="text-muted-foreground">
             {eventName} - {filteredCourses.length} cursos encontrados
           </p>
         </div>
-        
+
         <div className="flex gap-2">
           <Button onClick={onRefresh} variant="outline" disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+            />
             Actualizar
           </Button>
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Nuevo Curso
               </Button>
             </DialogTrigger>
@@ -476,20 +499,32 @@ export default function EnhancedCourseManagement({
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Nombre del Curso</label>
+                  <label className="text-sm font-medium">
+                    Nombre del Curso
+                  </label>
                   <Input
                     value={courseForm.name}
-                    onChange={(e) => setCourseForm(prev => ({...prev, name: e.target.value}))}
+                    onChange={(e) =>
+                      setCourseForm((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                     placeholder="ej. 1º A, Sala Verde"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Grado</label>
                     <Input
                       value={courseForm.grade}
-                      onChange={(e) => setCourseForm(prev => ({...prev, grade: e.target.value}))}
+                      onChange={(e) =>
+                        setCourseForm((prev) => ({
+                          ...prev,
+                          grade: e.target.value,
+                        }))
+                      }
                       placeholder="ej. 1º, 2º"
                     />
                   </div>
@@ -497,25 +532,34 @@ export default function EnhancedCourseManagement({
                     <label className="text-sm font-medium">Sección</label>
                     <Input
                       value={courseForm.section}
-                      onChange={(e) => setCourseForm(prev => ({...prev, section: e.target.value}))}
+                      onChange={(e) =>
+                        setCourseForm((prev) => ({
+                          ...prev,
+                          section: e.target.value,
+                        }))
+                      }
                       placeholder="ej. A, B, Verde"
                     />
                   </div>
                 </div>
-                
+
                 {levels.length > 0 && (
                   <div>
-                    <label className="text-sm font-medium">Nivel Educativo</label>
+                    <label className="text-sm font-medium">
+                      Nivel Educativo
+                    </label>
                     <Select
                       value={courseForm.level_id}
-                      onValueChange={(value) => setCourseForm(prev => ({...prev, level_id: value}))}
+                      onValueChange={(value) =>
+                        setCourseForm((prev) => ({ ...prev, level_id: value }))
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar nivel" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="">Sin nivel</SelectItem>
-                        {levels.map(level => (
+                        {levels.map((level) => (
                           <SelectItem key={level.id} value={level.id}>
                             {level.name}
                           </SelectItem>
@@ -524,23 +568,28 @@ export default function EnhancedCourseManagement({
                     </Select>
                   </div>
                 )}
-                
+
                 <div>
                   <label className="text-sm font-medium">Descripción</label>
                   <Textarea
                     value={courseForm.description}
-                    onChange={(e) => setCourseForm(prev => ({...prev, description: e.target.value}))}
+                    onChange={(e) =>
+                      setCourseForm((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                     placeholder="Descripción opcional del curso"
                     rows={3}
                   />
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="active"
                     checked={courseForm.active}
-                    onCheckedChange={(checked) => 
-                      setCourseForm(prev => ({...prev, active: !!checked}))
+                    onCheckedChange={(checked) =>
+                      setCourseForm((prev) => ({ ...prev, active: !!checked }))
                     }
                   />
                   <label htmlFor="active" className="text-sm font-medium">
@@ -549,10 +598,16 @@ export default function EnhancedCourseManagement({
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setCreateDialogOpen(false)}
+                >
                   Cancelar
                 </Button>
-                <Button onClick={handleCreateCourse} disabled={loading || !courseForm.name}>
+                <Button
+                  onClick={handleCreateCourse}
+                  disabled={loading || !courseForm.name}
+                >
                   Crear Curso
                 </Button>
               </DialogFooter>
@@ -562,9 +617,9 @@ export default function EnhancedCourseManagement({
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Buscar cursos..."
             value={searchTerm}
@@ -572,26 +627,29 @@ export default function EnhancedCourseManagement({
             className="pl-9"
           />
         </div>
-        
+
         <div className="flex gap-2">
-          <Select value={filterLevel || ''} onValueChange={(value) => setFilterLevel(value || null)}>
+          <Select
+            value={filterLevel || ''}
+            onValueChange={(value) => setFilterLevel(value || null)}
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Todos los niveles" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Todos los niveles</SelectItem>
-              {levels.map(level => (
+              {levels.map((level) => (
                 <SelectItem key={level.id} value={level.id}>
                   {level.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="mr-2 h-4 w-4" />
                 Filtros
               </Button>
             </DropdownMenuTrigger>
@@ -607,12 +665,12 @@ export default function EnhancedCourseManagement({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
                 Ordenar
-                <ChevronDown className="h-4 w-4 ml-2" />
+                <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -635,46 +693,59 @@ export default function EnhancedCourseManagement({
 
       {/* Bulk Actions */}
       {enableBulkOperations && selectedCourses.size > 0 && (
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+        <div className="bg-muted/50 flex items-center justify-between rounded-lg p-4">
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">
-              {selectedCourses.size} curso{selectedCourses.size !== 1 ? 's' : ''} seleccionado{selectedCourses.size !== 1 ? 's' : ''}
+              {selectedCourses.size} curso
+              {selectedCourses.size !== 1 ? 's' : ''} seleccionado
+              {selectedCourses.size !== 1 ? 's' : ''}
             </span>
-            <Button size="sm" variant="outline" onClick={() => handleSelectAll(false)}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleSelectAll(false)}
+            >
               Deseleccionar
             </Button>
           </div>
-          
+
           <div className="flex gap-2">
             <Button size="sm" variant="outline">
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="mr-2 h-4 w-4" />
               Exportar
             </Button>
             <Button size="sm" variant="outline">
-              <Archive className="h-4 w-4 mr-2" />
+              <Archive className="mr-2 h-4 w-4" />
               Archivar
             </Button>
-            <Dialog open={bulkActionDialogOpen} onOpenChange={setBulkActionDialogOpen}>
+            <Dialog
+              open={bulkActionDialogOpen}
+              onOpenChange={setBulkActionDialogOpen}
+            >
               <DialogTrigger asChild>
-                <Button size="sm">
-                  Acciones en Lote
-                </Button>
+                <Button size="sm">Acciones en Lote</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Acción en Lote</DialogTitle>
                   <DialogDescription>
-                    Seleccione la acción a realizar en {selectedCourses.size} curso{selectedCourses.size !== 1 ? 's' : ''}.
+                    Seleccione la acción a realizar en {selectedCourses.size}{' '}
+                    curso{selectedCourses.size !== 1 ? 's' : ''}.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <Select value={selectedBulkAction} onValueChange={setSelectedBulkAction}>
+                  <Select
+                    value={selectedBulkAction}
+                    onValueChange={setSelectedBulkAction}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar acción" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="activate">Activar cursos</SelectItem>
-                      <SelectItem value="deactivate">Desactivar cursos</SelectItem>
+                      <SelectItem value="deactivate">
+                        Desactivar cursos
+                      </SelectItem>
                       <SelectItem value="archive">Archivar cursos</SelectItem>
                       <SelectItem value="export">Exportar datos</SelectItem>
                       <SelectItem value="delete">Eliminar cursos</SelectItem>
@@ -682,13 +753,20 @@ export default function EnhancedCourseManagement({
                   </Select>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setBulkActionDialogOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setBulkActionDialogOpen(false)}
+                  >
                     Cancelar
                   </Button>
-                  <Button 
-                    onClick={handleBulkAction} 
+                  <Button
+                    onClick={handleBulkAction}
                     disabled={loading || !selectedBulkAction}
-                    variant={selectedBulkAction === 'delete' ? 'destructive' : 'default'}
+                    variant={
+                      selectedBulkAction === 'delete'
+                        ? 'destructive'
+                        : 'default'
+                    }
                   >
                     Ejecutar Acción
                   </Button>
@@ -701,22 +779,24 @@ export default function EnhancedCourseManagement({
 
       {/* Course Grid */}
       {filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredCourses.map(course => (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredCourses.map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
         </div>
       ) : (
         <Card>
-          <CardContent className="text-center py-12">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No hay cursos</h3>
+          <CardContent className="py-12 text-center">
+            <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-medium">No hay cursos</h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'No se encontraron cursos con esos criterios.' : 'Comience agregando su primer curso.'}
+              {searchTerm
+                ? 'No se encontraron cursos con esos criterios.'
+                : 'Comience agregando su primer curso.'}
             </p>
             {!searchTerm && (
               <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Crear Primer Curso
               </Button>
             )}
@@ -725,7 +805,10 @@ export default function EnhancedCourseManagement({
       )}
 
       {/* Edit Course Dialog */}
-      <Dialog open={!!editingCourse} onOpenChange={(open) => !open && setEditingCourse(null)}>
+      <Dialog
+        open={!!editingCourse}
+        onOpenChange={(open) => !open && setEditingCourse(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Curso</DialogTitle>
@@ -738,17 +821,24 @@ export default function EnhancedCourseManagement({
               <label className="text-sm font-medium">Nombre del Curso</label>
               <Input
                 value={courseForm.name}
-                onChange={(e) => setCourseForm(prev => ({...prev, name: e.target.value}))}
+                onChange={(e) =>
+                  setCourseForm((prev) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="ej. 1º A, Sala Verde"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Grado</label>
                 <Input
                   value={courseForm.grade}
-                  onChange={(e) => setCourseForm(prev => ({...prev, grade: e.target.value}))}
+                  onChange={(e) =>
+                    setCourseForm((prev) => ({
+                      ...prev,
+                      grade: e.target.value,
+                    }))
+                  }
                   placeholder="ej. 1º, 2º"
                 />
               </div>
@@ -756,25 +846,32 @@ export default function EnhancedCourseManagement({
                 <label className="text-sm font-medium">Sección</label>
                 <Input
                   value={courseForm.section}
-                  onChange={(e) => setCourseForm(prev => ({...prev, section: e.target.value}))}
+                  onChange={(e) =>
+                    setCourseForm((prev) => ({
+                      ...prev,
+                      section: e.target.value,
+                    }))
+                  }
                   placeholder="ej. A, B, Verde"
                 />
               </div>
             </div>
-            
+
             {levels.length > 0 && (
               <div>
                 <label className="text-sm font-medium">Nivel Educativo</label>
                 <Select
                   value={courseForm.level_id}
-                  onValueChange={(value) => setCourseForm(prev => ({...prev, level_id: value}))}
+                  onValueChange={(value) =>
+                    setCourseForm((prev) => ({ ...prev, level_id: value }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar nivel" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Sin nivel</SelectItem>
-                    {levels.map(level => (
+                    {levels.map((level) => (
                       <SelectItem key={level.id} value={level.id}>
                         {level.name}
                       </SelectItem>
@@ -783,23 +880,28 @@ export default function EnhancedCourseManagement({
                 </Select>
               </div>
             )}
-            
+
             <div>
               <label className="text-sm font-medium">Descripción</label>
               <Textarea
                 value={courseForm.description}
-                onChange={(e) => setCourseForm(prev => ({...prev, description: e.target.value}))}
+                onChange={(e) =>
+                  setCourseForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 placeholder="Descripción opcional del curso"
                 rows={3}
               />
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="edit-active"
                 checked={courseForm.active}
-                onCheckedChange={(checked) => 
-                  setCourseForm(prev => ({...prev, active: !!checked}))
+                onCheckedChange={(checked) =>
+                  setCourseForm((prev) => ({ ...prev, active: !!checked }))
                 }
               />
               <label htmlFor="edit-active" className="text-sm font-medium">
@@ -811,7 +913,10 @@ export default function EnhancedCourseManagement({
             <Button variant="outline" onClick={() => setEditingCourse(null)}>
               Cancelar
             </Button>
-            <Button onClick={handleEditCourse} disabled={loading || !courseForm.name}>
+            <Button
+              onClick={handleEditCourse}
+              disabled={loading || !courseForm.name}
+            >
               Guardar Cambios
             </Button>
           </DialogFooter>

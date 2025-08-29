@@ -27,7 +27,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
         );
       }
 
-      SecurityLogger.logResourceAccess('events_list_robust', authContext, request);
+      SecurityLogger.logResourceAccess(
+        'events_list_robust',
+        authContext,
+        request
+      );
 
       const serviceClient = await createServerSupabaseServiceClient();
       const { searchParams } = new URL(request.url);
@@ -36,12 +40,14 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       // Query tolerante a esquemas diferentes
       let events: any[] = [];
-      
+
       try {
         // Intentar con esquema nuevo primero
         const { data: newSchemaEvents, error: newError } = await serviceClient
           .from('events')
-          .select('id, name, location, date, status, price_per_photo, created_at, updated_at')
+          .select(
+            'id, name, location, date, status, price_per_photo, created_at, updated_at'
+          )
           .order('created_at', { ascending: false });
 
         if (!newError && newSchemaEvents) {
@@ -95,9 +101,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       // Aplicar filtros después de normalizar
       if (status === 'active') {
-        events = events.filter(e => e.active);
+        events = events.filter((e) => e.active);
       } else if (status === 'inactive') {
-        events = events.filter(e => !e.active);
+        events = events.filter((e) => !e.active);
       }
 
       // Agregar estadísticas si se solicitan
@@ -105,21 +111,30 @@ export const GET = RateLimitMiddleware.withRateLimit(
         const eventsWithStats = await Promise.all(
           events.map(async (event) => {
             try {
-              // Stats básicas tolerantes a esquema
-              const [subjectsCount, photosCount, ordersCount] = await Promise.all([
-                serviceClient
-                  .from('subjects')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('event_id', event.id),
-                serviceClient
-                  .from('photos')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('event_id', event.id),
-                serviceClient
-                  .from('orders')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('event_id', event.id),
-              ]);
+              // Stats básicas tolerantes a esquema (usando nuevo sistema assets)
+              const [subjectsCount, photosCount, ordersCount] =
+                await Promise.all([
+                  serviceClient
+                    .from('subjects')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('event_id', event.id),
+                  // Usar UnifiedPhotoService para conteo correcto
+                  (async () => {
+                    try {
+                      const { UnifiedPhotoService } = await import('@/lib/services/unified-photo.service');
+                      const photoService = new UnifiedPhotoService(serviceClient);
+                      const count = await photoService.getEventPhotoCount(event.id);
+                      return { count };
+                    } catch (error) {
+                      console.warn('Error getting photo count for event:', event.id, error);
+                      return { count: 0 };
+                    }
+                  })(),
+                  serviceClient
+                    .from('orders')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('event_id', event.id),
+                ]);
 
               return {
                 ...event,
@@ -130,7 +145,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
                 },
               };
             } catch (statsError) {
-              console.warn('Error getting stats for event:', event.id, statsError);
+              console.warn(
+                'Error getting stats for event:',
+                event.id,
+                statsError
+              );
               return {
                 ...event,
                 stats: {
@@ -146,7 +165,13 @@ export const GET = RateLimitMiddleware.withRateLimit(
       }
 
       const duration = Date.now() - startTime;
-      logDevRequest(requestId, 'GET', '/api/admin/events-robust', duration, 200);
+      logDevRequest(
+        requestId,
+        'GET',
+        '/api/admin/events-robust',
+        duration,
+        200
+      );
 
       SecurityLogger.logSecurityEvent('events_list_robust_success', {
         requestId,
@@ -158,7 +183,13 @@ export const GET = RateLimitMiddleware.withRateLimit(
       return createSuccessResponse(events, undefined, requestId);
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      logDevRequest(requestId, 'GET', '/api/admin/events-robust', duration, 'error');
+      logDevRequest(
+        requestId,
+        'GET',
+        '/api/admin/events-robust',
+        duration,
+        'error'
+      );
 
       SecurityLogger.logSecurityEvent(
         'events_list_robust_error',
@@ -195,7 +226,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
         );
       }
 
-      SecurityLogger.logResourceAccess('event_create_robust', authContext, request);
+      SecurityLogger.logResourceAccess(
+        'event_create_robust',
+        authContext,
+        request
+      );
 
       const body = await request.json();
       const { name, location, date } = body;
@@ -251,7 +286,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
             .select()
             .single();
         } catch (legacyError) {
-          console.error('Both insert attempts failed:', { newSchemaError, legacyError });
+          console.error('Both insert attempts failed:', {
+            newSchemaError,
+            legacyError,
+          });
           return createErrorResponse(
             'Error creando evento',
             'Schema compatibility issue',
@@ -271,7 +309,13 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       const duration = Date.now() - startTime;
-      logDevRequest(requestId, 'POST', '/api/admin/events-robust', duration, 201);
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/admin/events-robust',
+        duration,
+        201
+      );
 
       SecurityLogger.logSecurityEvent('event_created_robust', {
         requestId,
@@ -285,11 +329,16 @@ export const POST = RateLimitMiddleware.withRateLimit(
       const normalizedEvent = {
         id: insertResult.data.id,
         name: insertResult.data.name || name,
-        location: insertResult.data.location || insertResult.data.school || location,
-        school: insertResult.data.school || insertResult.data.location || location,
+        location:
+          insertResult.data.location || insertResult.data.school || location,
+        school:
+          insertResult.data.school || insertResult.data.location || location,
         date: insertResult.data.date || date,
-        status: insertResult.data.status || (insertResult.data.active ? 'active' : 'inactive'),
-        active: insertResult.data.active ?? (insertResult.data.status === 'active'),
+        status:
+          insertResult.data.status ||
+          (insertResult.data.active ? 'active' : 'inactive'),
+        active:
+          insertResult.data.active ?? insertResult.data.status === 'active',
         price_per_photo: insertResult.data.price_per_photo || 0,
         created_at: insertResult.data.created_at,
         updated_at: insertResult.data.updated_at,
@@ -298,7 +347,13 @@ export const POST = RateLimitMiddleware.withRateLimit(
       return createSuccessResponse(normalizedEvent, undefined, requestId);
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      logDevRequest(requestId, 'POST', '/api/admin/events-robust', duration, 'error');
+      logDevRequest(
+        requestId,
+        'POST',
+        '/api/admin/events-robust',
+        duration,
+        'error'
+      );
 
       SecurityLogger.logSecurityEvent(
         'event_create_robust_error',

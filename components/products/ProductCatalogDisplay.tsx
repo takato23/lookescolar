@@ -2,39 +2,56 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { 
-  Package, 
-  Star, 
-  ShoppingCart, 
-  Filter, 
-  Search, 
-  Grid3X3, 
+import {
+  Package,
+  Star,
+  ShoppingCart,
+  Filter,
+  Search,
+  Grid3X3,
   List,
   Crown,
   Download,
   Sparkles,
   Camera,
-  Award
+  Award,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { 
-  ProductCategory, 
-  PhotoProduct, 
-  ComboPackage, 
+import {
+  ProductCategory,
+  PhotoProduct,
+  ComboPackage,
   ProductFilters,
   formatProductSize,
   formatProductSpecs,
-  isPhysicalProduct 
+  isPhysicalProduct,
 } from '@/lib/types/products';
 import { formatProductPrice } from '@/lib/services/product-pricing';
 
@@ -57,17 +74,20 @@ export function ProductCatalogDisplay({
   onComboSelect,
   selectedPhotos = [],
   eventId,
-  className = ''
+  className = '',
 }: ProductCatalogDisplayProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState<'popularity' | 'price_low' | 'price_high' | 'name'>('popularity');
+  const [sortBy, setSortBy] = useState<
+    'popularity' | 'price_low' | 'price_high' | 'name'
+  >('popularity');
   const [filters, setFilters] = useState<ProductFilters>({
-    is_active: true
+    is_active: true,
   });
-  
-  const [filteredProducts, setFilteredProducts] = useState<PhotoProduct[]>(products);
+
+  const [filteredProducts, setFilteredProducts] =
+    useState<PhotoProduct[]>(products);
   const [filteredCombos, setFilteredCombos] = useState<ComboPackage[]>(combos);
 
   // Apply filters and search
@@ -78,61 +98,70 @@ export function ProductCatalogDisplay({
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered_products = filtered_products.filter(product =>
-        product.name.toLowerCase().includes(query) ||
-        product.description?.toLowerCase().includes(query)
+      filtered_products = filtered_products.filter(
+        (product) =>
+          product.name.toLowerCase().includes(query) ||
+          product.description?.toLowerCase().includes(query)
       );
-      filtered_combos = filtered_combos.filter(combo =>
-        combo.name.toLowerCase().includes(query) ||
-        combo.description?.toLowerCase().includes(query)
+      filtered_combos = filtered_combos.filter(
+        (combo) =>
+          combo.name.toLowerCase().includes(query) ||
+          combo.description?.toLowerCase().includes(query)
       );
     }
 
     // Category filter
     if (selectedCategory !== 'all') {
-      filtered_products = filtered_products.filter(product =>
-        product.category_id === selectedCategory
+      filtered_products = filtered_products.filter(
+        (product) => product.category_id === selectedCategory
       );
     }
 
     // Additional filters
     if (filters.types?.length) {
-      filtered_products = filtered_products.filter(product =>
+      filtered_products = filtered_products.filter((product) =>
         filters.types!.includes(product.type)
       );
     }
 
     if (filters.finishes?.length) {
-      filtered_products = filtered_products.filter(product =>
-        product.finish && filters.finishes!.includes(product.finish)
+      filtered_products = filtered_products.filter(
+        (product) =>
+          product.finish && filters.finishes!.includes(product.finish)
       );
     }
 
     if (filters.paper_qualities?.length) {
-      filtered_products = filtered_products.filter(product =>
-        product.paper_quality && filters.paper_qualities!.includes(product.paper_quality)
+      filtered_products = filtered_products.filter(
+        (product) =>
+          product.paper_quality &&
+          filters.paper_qualities!.includes(product.paper_quality)
       );
     }
 
     if (filters.price_range) {
-      filtered_products = filtered_products.filter(product => {
+      filtered_products = filtered_products.filter((product) => {
         const price = product.base_price;
-        return (!filters.price_range!.min || price >= filters.price_range!.min) &&
-               (!filters.price_range!.max || price <= filters.price_range!.max);
+        return (
+          (!filters.price_range!.min || price >= filters.price_range!.min) &&
+          (!filters.price_range!.max || price <= filters.price_range!.max)
+        );
       });
-      filtered_combos = filtered_combos.filter(combo => {
+      filtered_combos = filtered_combos.filter((combo) => {
         const price = combo.base_price;
-        return (!filters.price_range!.min || price >= filters.price_range!.min) &&
-               (!filters.price_range!.max || price <= filters.price_range!.max);
+        return (
+          (!filters.price_range!.min || price >= filters.price_range!.min) &&
+          (!filters.price_range!.max || price <= filters.price_range!.max)
+        );
       });
     }
 
     if (filters.is_featured !== undefined) {
-      filtered_products = filtered_products.filter(product =>
-        product.is_featured === filters.is_featured
+      filtered_products = filtered_products.filter(
+        (product) => product.is_featured === filters.is_featured
       );
-      filtered_combos = filtered_combos.filter(combo =>
-        combo.is_featured === filters.is_featured
+      filtered_combos = filtered_combos.filter(
+        (combo) => combo.is_featured === filters.is_featured
       );
     }
 
@@ -177,18 +206,21 @@ export function ProductCatalogDisplay({
   };
 
   const getCategoryIcon = (name: string) => {
-    if (name.toLowerCase().includes('premium')) return <Crown className="h-4 w-4" />;
-    if (name.toLowerCase().includes('digital')) return <Download className="h-4 w-4" />;
-    if (name.toLowerCase().includes('combo')) return <Package className="h-4 w-4" />;
+    if (name.toLowerCase().includes('premium'))
+      return <Crown className="h-4 w-4" />;
+    if (name.toLowerCase().includes('digital'))
+      return <Download className="h-4 w-4" />;
+    if (name.toLowerCase().includes('combo'))
+      return <Package className="h-4 w-4" />;
     return <Camera className="h-4 w-4" />;
   };
 
   const FilterPanel = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="font-semibold mb-3">Tipo de Producto</h3>
+        <h3 className="mb-3 font-semibold">Tipo de Producto</h3>
         <div className="space-y-2">
-          {['print', 'digital', 'package', 'combo'].map(type => (
+          {['print', 'digital', 'package', 'combo'].map((type) => (
             <div key={type} className="flex items-center space-x-2">
               <Checkbox
                 id={`type-${type}`}
@@ -199,7 +231,7 @@ export function ProductCatalogDisplay({
                     ...filters,
                     types: checked
                       ? [...types, type as any]
-                      : types.filter(t => t !== type)
+                      : types.filter((t) => t !== type),
                   });
                 }}
               />
@@ -215,9 +247,9 @@ export function ProductCatalogDisplay({
       </div>
 
       <div>
-        <h3 className="font-semibold mb-3">Acabado</h3>
+        <h3 className="mb-3 font-semibold">Acabado</h3>
         <div className="space-y-2">
-          {['glossy', 'matte', 'canvas', 'metallic'].map(finish => (
+          {['glossy', 'matte', 'canvas', 'metallic'].map((finish) => (
             <div key={finish} className="flex items-center space-x-2">
               <Checkbox
                 id={`finish-${finish}`}
@@ -228,11 +260,14 @@ export function ProductCatalogDisplay({
                     ...filters,
                     finishes: checked
                       ? [...finishes, finish as any]
-                      : finishes.filter(f => f !== finish)
+                      : finishes.filter((f) => f !== finish),
                   });
                 }}
               />
-              <Label htmlFor={`finish-${finish}`} className="text-sm capitalize">
+              <Label
+                htmlFor={`finish-${finish}`}
+                className="text-sm capitalize"
+              >
                 {finish}
               </Label>
             </div>
@@ -241,14 +276,17 @@ export function ProductCatalogDisplay({
       </div>
 
       <div>
-        <h3 className="font-semibold mb-3">Rango de Precio</h3>
+        <h3 className="mb-3 font-semibold">Rango de Precio</h3>
         <div className="space-y-3">
           <Slider
-            value={[filters.price_range?.min || 0, filters.price_range?.max || 10000]}
+            value={[
+              filters.price_range?.min || 0,
+              filters.price_range?.max || 10000,
+            ]}
             onValueChange={([min, max]) => {
               setFilters({
                 ...filters,
-                price_range: { min, max }
+                price_range: { min, max },
               });
             }}
             max={10000}
@@ -270,7 +308,7 @@ export function ProductCatalogDisplay({
             onCheckedChange={(checked) => {
               setFilters({
                 ...filters,
-                is_featured: checked || undefined
+                is_featured: checked || undefined,
               });
             }}
           />
@@ -283,7 +321,7 @@ export function ProductCatalogDisplay({
   );
 
   const ProductCard = ({ product }: { product: PhotoProduct }) => (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200 hover:border-purple-300">
+    <Card className="group border-gray-200 transition-all duration-300 hover:border-purple-300 hover:shadow-lg">
       <CardHeader className="pb-3">
         <div className="relative">
           {product.image_url ? (
@@ -292,39 +330,39 @@ export function ProductCatalogDisplay({
               alt={product.name}
               width={300}
               height={200}
-              className="w-full h-48 object-cover rounded-lg bg-gray-100"
+              className="h-48 w-full rounded-lg bg-gray-100 object-cover"
             />
           ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+            <div className="flex h-48 w-full items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-pink-100">
               {getProductIcon(product.type)}
               <span className="ml-2 text-gray-600">{product.name}</span>
             </div>
           )}
-          
+
           {product.is_featured && (
-            <Badge className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-black">
-              <Award className="h-3 w-3 mr-1" />
+            <Badge className="absolute right-2 top-2 bg-gradient-to-r from-yellow-400 to-orange-400 text-black">
+              <Award className="mr-1 h-3 w-3" />
               Destacado
             </Badge>
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent className="pb-3">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">
+            <h3 className="font-semibold text-gray-900 transition-colors group-hover:text-purple-700">
               {product.name}
             </h3>
             {getProductIcon(product.type)}
           </div>
-          
+
           {product.description && (
-            <p className="text-sm text-gray-600 line-clamp-2">
+            <p className="line-clamp-2 text-sm text-gray-600">
               {product.description}
             </p>
           )}
-          
+
           <div className="space-y-1">
             {isPhysicalProduct(product) && (
               <div className="text-sm text-gray-500">
@@ -337,9 +375,9 @@ export function ProductCatalogDisplay({
           </div>
         </div>
       </CardContent>
-      
-      <CardFooter className="pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between w-full">
+
+      <CardFooter className="border-t border-gray-100 pt-3">
+        <div className="flex w-full items-center justify-between">
           <div className="text-lg font-bold text-gray-900">
             {formatProductPrice(product.base_price)}
           </div>
@@ -348,7 +386,7 @@ export function ProductCatalogDisplay({
             size="sm"
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
-            <ShoppingCart className="h-4 w-4 mr-1" />
+            <ShoppingCart className="mr-1 h-4 w-4" />
             Seleccionar
           </Button>
         </div>
@@ -357,19 +395,25 @@ export function ProductCatalogDisplay({
   );
 
   const ComboCard = ({ combo }: { combo: ComboPackage }) => (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-gray-200 hover:border-purple-300 relative overflow-hidden">
+    <Card className="group relative overflow-hidden border-gray-200 transition-all duration-300 hover:border-purple-300 hover:shadow-lg">
       {combo.badge_text && (
-        <div className={`absolute top-0 right-0 z-10 px-3 py-1 text-xs font-bold text-white transform rotate-12 translate-x-2 -translate-y-1 ${
-          combo.badge_color === 'blue' ? 'bg-blue-500' :
-          combo.badge_color === 'green' ? 'bg-green-500' :
-          combo.badge_color === 'purple' ? 'bg-purple-500' :
-          combo.badge_color === 'orange' ? 'bg-orange-500' :
-          'bg-blue-500'
-        }`}>
+        <div
+          className={`absolute right-0 top-0 z-10 -translate-y-1 translate-x-2 rotate-12 transform px-3 py-1 text-xs font-bold text-white ${
+            combo.badge_color === 'blue'
+              ? 'bg-blue-500'
+              : combo.badge_color === 'green'
+                ? 'bg-green-500'
+                : combo.badge_color === 'purple'
+                  ? 'bg-purple-500'
+                  : combo.badge_color === 'orange'
+                    ? 'bg-orange-500'
+                    : 'bg-blue-500'
+          }`}
+        >
           {combo.badge_text}
         </div>
       )}
-      
+
       <CardHeader className="pb-3">
         <div className="relative">
           {combo.image_url ? (
@@ -378,49 +422,51 @@ export function ProductCatalogDisplay({
               alt={combo.name}
               width={300}
               height={200}
-              className="w-full h-48 object-cover rounded-lg bg-gray-100"
+              className="h-48 w-full rounded-lg bg-gray-100 object-cover"
             />
           ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-purple-100 via-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
-              <Package className="h-8 w-8 text-purple-500 mr-2" />
-              <span className="text-gray-700 font-medium">{combo.name}</span>
+            <div className="flex h-48 w-full items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 via-pink-100 to-purple-100">
+              <Package className="mr-2 h-8 w-8 text-purple-500" />
+              <span className="font-medium text-gray-700">{combo.name}</span>
             </div>
           )}
-          
+
           {combo.is_featured && (
-            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-              <Sparkles className="h-3 w-3 mr-1" />
+            <Badge className="absolute left-2 top-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+              <Sparkles className="mr-1 h-3 w-3" />
               Destacado
             </Badge>
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent className="pb-3">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">
+            <h3 className="font-semibold text-gray-900 transition-colors group-hover:text-purple-700">
               {combo.name}
             </h3>
             <Package className="h-4 w-4 text-purple-500" />
           </div>
-          
+
           {combo.description && (
-            <p className="text-sm text-gray-600 line-clamp-2">
+            <p className="line-clamp-2 text-sm text-gray-600">
               {combo.description}
             </p>
           )}
-          
+
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Fotos:</span>
               <span className="font-medium">
                 {combo.min_photos}
-                {combo.max_photos && combo.max_photos !== combo.min_photos && ` - ${combo.max_photos}`}
+                {combo.max_photos &&
+                  combo.max_photos !== combo.min_photos &&
+                  ` - ${combo.max_photos}`}
                 {!combo.max_photos && '+'}
               </span>
             </div>
-            
+
             {combo.pricing_type === 'per_photo' && combo.price_per_photo && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">Por foto adicional:</span>
@@ -429,18 +475,18 @@ export function ProductCatalogDisplay({
                 </span>
               </div>
             )}
-            
+
             {combo.allows_duplicates && (
-              <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+              <div className="rounded bg-green-50 px-2 py-1 text-xs text-green-600">
                 ✓ Permite repetir fotos
               </div>
             )}
           </div>
         </div>
       </CardContent>
-      
-      <CardFooter className="pt-3 border-t border-gray-100">
-        <div className="flex items-center justify-between w-full">
+
+      <CardFooter className="border-t border-gray-100 pt-3">
+        <div className="flex w-full items-center justify-between">
           <div className="space-y-1">
             <div className="text-lg font-bold text-gray-900">
               {formatProductPrice(combo.base_price)}
@@ -454,7 +500,7 @@ export function ProductCatalogDisplay({
             size="sm"
             className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
-            <Package className="h-4 w-4 mr-1" />
+            <Package className="mr-1 h-4 w-4" />
             Seleccionar
           </Button>
         </div>
@@ -466,15 +512,18 @@ export function ProductCatalogDisplay({
     <div className={`space-y-6 ${className}`}>
       {/* Header and Controls */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Catálogo de Productos</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Catálogo de Productos
+            </h2>
             <p className="text-gray-600">
               Elige los productos perfectos para tus fotos
-              {selectedPhotos.length > 0 && ` (${selectedPhotos.length} fotos seleccionadas)`}
+              {selectedPhotos.length > 0 &&
+                ` (${selectedPhotos.length} fotos seleccionadas)`}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
@@ -494,10 +543,10 @@ export function ProductCatalogDisplay({
         </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
               <Input
                 placeholder="Buscar productos..."
                 value={searchQuery}
@@ -506,14 +555,14 @@ export function ProductCatalogDisplay({
               />
             </div>
           </div>
-          
+
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Todas las categorías" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas las categorías</SelectItem>
-              {categories.map(category => (
+              {categories.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   <div className="flex items-center space-x-2">
                     {getCategoryIcon(category.name)}
@@ -523,8 +572,11 @@ export function ProductCatalogDisplay({
               ))}
             </SelectContent>
           </Select>
-          
-          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+
+          <Select
+            value={sortBy}
+            onValueChange={(value: any) => setSortBy(value)}
+          >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue />
             </SelectTrigger>
@@ -535,11 +587,11 @@ export function ProductCatalogDisplay({
               <SelectItem value="name">Nombre</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="default">
-                <Filter className="h-4 w-4 mr-2" />
+                <Filter className="mr-2 h-4 w-4" />
                 Filtros
               </Button>
             </SheetTrigger>
@@ -562,23 +614,27 @@ export function ProductCatalogDisplay({
           <TabsTrigger value="products">Productos</TabsTrigger>
           <TabsTrigger value="combos">Combos</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="all" className="space-y-8">
           {/* Featured Combos */}
-          {filteredCombos.filter(combo => combo.is_featured).length > 0 && (
+          {filteredCombos.filter((combo) => combo.is_featured).length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center">
-                <Sparkles className="h-5 w-5 mr-2 text-purple-500" />
+              <h3 className="mb-4 flex items-center text-lg font-semibold">
+                <Sparkles className="mr-2 h-5 w-5 text-purple-500" />
                 Combos Destacados
               </h3>
-              <div className={`grid gap-6 ${
-                viewMode === 'grid' 
-                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-                  : 'grid-cols-1'
-              }`}>
+              <div
+                className={`grid gap-6 ${
+                  viewMode === 'grid'
+                    ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                    : 'grid-cols-1'
+                }`}
+              >
                 {filteredCombos
-                  .filter(combo => combo.is_featured)
-                  .map(combo => <ComboCard key={combo.id} combo={combo} />)}
+                  .filter((combo) => combo.is_featured)
+                  .map((combo) => (
+                    <ComboCard key={combo.id} combo={combo} />
+                  ))}
               </div>
             </div>
           )}
@@ -587,41 +643,47 @@ export function ProductCatalogDisplay({
 
           {/* All Products */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Camera className="h-5 w-5 mr-2 text-purple-500" />
+            <h3 className="mb-4 flex items-center text-lg font-semibold">
+              <Camera className="mr-2 h-5 w-5 text-purple-500" />
               Productos Individuales
             </h3>
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-                : 'grid-cols-1 md:grid-cols-2'
-            }`}>
-              {filteredProducts.map(product => (
+            <div
+              className={`grid gap-6 ${
+                viewMode === 'grid'
+                  ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                  : 'grid-cols-1 md:grid-cols-2'
+              }`}
+            >
+              {filteredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </div>
         </TabsContent>
-        
+
         <TabsContent value="products">
-          <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1 md:grid-cols-2'
-          }`}>
-            {filteredProducts.map(product => (
+          <div
+            className={`grid gap-6 ${
+              viewMode === 'grid'
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                : 'grid-cols-1 md:grid-cols-2'
+            }`}
+          >
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="combos">
-          <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-              : 'grid-cols-1'
-          }`}>
-            {filteredCombos.map(combo => (
+          <div
+            className={`grid gap-6 ${
+              viewMode === 'grid'
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+                : 'grid-cols-1'
+            }`}
+          >
+            {filteredCombos.map((combo) => (
               <ComboCard key={combo.id} combo={combo} />
             ))}
           </div>
@@ -630,12 +692,12 @@ export function ProductCatalogDisplay({
 
       {/* Empty State */}
       {filteredProducts.length === 0 && filteredCombos.length === 0 && (
-        <div className="text-center py-12">
-          <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="py-12 text-center">
+          <Package className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+          <h3 className="mb-2 text-lg font-semibold text-gray-900">
             No se encontraron productos
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="mb-6 text-gray-600">
             Intenta ajustar los filtros o el término de búsqueda
           </p>
           <Button

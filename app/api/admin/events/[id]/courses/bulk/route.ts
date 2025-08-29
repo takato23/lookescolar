@@ -4,98 +4,121 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const bulkActionSchema = z.object({
-  action: z.enum(['activate', 'deactivate', 'archive', 'export', 'delete', 'duplicate']),
+  action: z.enum([
+    'activate',
+    'deactivate',
+    'archive',
+    'export',
+    'delete',
+    'duplicate',
+  ]),
   course_ids: z.array(z.string()).min(1, 'At least one course ID is required'),
-  options: z.object({
-    level_id: z.string().optional(),
-    active: z.boolean().optional(),
-  }).optional(),
+  options: z
+    .object({
+      level_id: z.string().optional(),
+      active: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 // POST /api/admin/events/[id]/courses/bulk
-export const POST = withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
-  try {
-    const eventId = params.id;
-    const body = await req.json();
+export const POST = withAuth(
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
+    try {
+      const eventId = params.id;
+      const body = await req.json();
 
-    // Validate input
-    const validatedData = bulkActionSchema.parse(body);
-    const { action, course_ids, options = {} } = validatedData;
+      // Validate input
+      const validatedData = bulkActionSchema.parse(body);
+      const { action, course_ids, options = {} } = validatedData;
 
-    const supabase = await createServerSupabaseServiceClient();
+      const supabase = await createServerSupabaseServiceClient();
 
-    // Verify all courses exist and belong to this event
-    const { data: courses, error: coursesError } = await supabase
-      .from('courses')
-      .select('id, name, active, student_count:students!left(count)')
-      .eq('event_id', eventId)
-      .in('id', course_ids);
+      // Verify all courses exist and belong to this event
+      const { data: courses, error: coursesError } = await supabase
+        .from('courses')
+        .select('id, name, active, student_count:students!left(count)')
+        .eq('event_id', eventId)
+        .in('id', course_ids);
 
-    if (coursesError) {
-      throw new Error(`Failed to verify courses: ${coursesError.message}`);
-    }
+      if (coursesError) {
+        throw new Error(`Failed to verify courses: ${coursesError.message}`);
+      }
 
-    if (courses.length !== course_ids.length) {
-      return NextResponse.json(
-        { error: 'Some courses not found or do not belong to this event' },
-        { status: 400 }
-      );
-    }
-
-    let result: any = { success: true, affected_courses: courses.length };
-
-    switch (action) {
-      case 'activate':
-        result = await handleActivateDeactivate(supabase, course_ids, true);
-        break;
-
-      case 'deactivate':
-        result = await handleActivateDeactivate(supabase, course_ids, false);
-        break;
-
-      case 'archive':
-        result = await handleArchive(supabase, course_ids);
-        break;
-
-      case 'export':
-        result = await handleExport(supabase, eventId, course_ids);
-        break;
-
-      case 'delete':
-        result = await handleDelete(supabase, course_ids);
-        break;
-
-      case 'duplicate':
-        result = await handleDuplicate(supabase, eventId, course_ids, options);
-        break;
-
-      default:
+      if (courses.length !== course_ids.length) {
         return NextResponse.json(
-          { error: 'Invalid action' },
+          { error: 'Some courses not found or do not belong to this event' },
           { status: 400 }
         );
-    }
+      }
 
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Error in POST /api/admin/events/[id]/courses/bulk:', error);
-    
-    if (error instanceof z.ZodError) {
+      let result: any = { success: true, affected_courses: courses.length };
+
+      switch (action) {
+        case 'activate':
+          result = await handleActivateDeactivate(supabase, course_ids, true);
+          break;
+
+        case 'deactivate':
+          result = await handleActivateDeactivate(supabase, course_ids, false);
+          break;
+
+        case 'archive':
+          result = await handleArchive(supabase, course_ids);
+          break;
+
+        case 'export':
+          result = await handleExport(supabase, eventId, course_ids);
+          break;
+
+        case 'delete':
+          result = await handleDelete(supabase, course_ids);
+          break;
+
+        case 'duplicate':
+          result = await handleDuplicate(
+            supabase,
+            eventId,
+            course_ids,
+            options
+          );
+          break;
+
+        default:
+          return NextResponse.json(
+            { error: 'Invalid action' },
+            { status: 400 }
+          );
+      }
+
+      return NextResponse.json(result);
+    } catch (error) {
+      console.error(
+        'Error in POST /api/admin/events/[id]/courses/bulk:',
+        error
+      );
+
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Validation error', details: error.errors },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
+        { error: 'Internal server error' },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-});
+);
 
 // Handle activate/deactivate
-async function handleActivateDeactivate(supabase: any, course_ids: string[], active: boolean) {
+async function handleActivateDeactivate(
+  supabase: any,
+  course_ids: string[],
+  active: boolean
+) {
   const { error } = await supabase
     .from('courses')
     .update({
@@ -105,7 +128,9 @@ async function handleActivateDeactivate(supabase: any, course_ids: string[], act
     .in('id', course_ids);
 
   if (error) {
-    throw new Error(`Failed to ${active ? 'activate' : 'deactivate'} courses: ${error.message}`);
+    throw new Error(
+      `Failed to ${active ? 'activate' : 'deactivate'} courses: ${error.message}`
+    );
   }
 
   return {
@@ -139,11 +164,16 @@ async function handleArchive(supabase: any, course_ids: string[]) {
 }
 
 // Handle export
-async function handleExport(supabase: any, eventId: string, course_ids: string[]) {
+async function handleExport(
+  supabase: any,
+  eventId: string,
+  course_ids: string[]
+) {
   // Get detailed course data for export
   const { data: courses, error } = await supabase
     .from('courses')
-    .select(`
+    .select(
+      `
       *,
       event_levels!left (
         id,
@@ -163,7 +193,8 @@ async function handleExport(supabase: any, eventId: string, course_ids: string[]
         active,
         created_at
       )
-    `)
+    `
+    )
     .eq('event_id', eventId)
     .in('id', course_ids)
     .order('sort_order', { ascending: true });
@@ -173,7 +204,7 @@ async function handleExport(supabase: any, eventId: string, course_ids: string[]
   }
 
   // Format data for export
-  const exportData = courses.map(course => ({
+  const exportData = courses.map((course) => ({
     course_id: course.id,
     course_name: course.name,
     grade: course.grade,
@@ -184,20 +215,21 @@ async function handleExport(supabase: any, eventId: string, course_ids: string[]
     active: course.active,
     student_count: course.students?.length || 0,
     created_at: course.created_at,
-    students: course.students?.map((student: any) => ({
-      student_id: student.id,
-      name: student.name,
-      grade: student.grade,
-      section: student.section,
-      email: student.email,
-      phone: student.phone,
-      parent_name: student.parent_name,
-      parent_email: student.parent_email,
-      parent_phone: student.parent_phone,
-      qr_code: student.qr_code,
-      active: student.active,
-      created_at: student.created_at,
-    })) || [],
+    students:
+      course.students?.map((student: any) => ({
+        student_id: student.id,
+        name: student.name,
+        grade: student.grade,
+        section: student.section,
+        email: student.email,
+        phone: student.phone,
+        parent_name: student.parent_name,
+        parent_email: student.parent_email,
+        parent_phone: student.parent_phone,
+        qr_code: student.qr_code,
+        active: student.active,
+        created_at: student.created_at,
+      })) || [],
   }));
 
   return {
@@ -213,11 +245,13 @@ async function handleDelete(supabase: any, course_ids: string[]) {
   // First check if courses have students
   const { data: coursesWithStudents } = await supabase
     .from('courses')
-    .select(`
+    .select(
+      `
       id,
       name,
       students!left (count)
-    `)
+    `
+    )
     .in('id', course_ids);
 
   const coursesWithStudentData = coursesWithStudents?.filter(
@@ -226,9 +260,9 @@ async function handleDelete(supabase: any, course_ids: string[]) {
 
   if (coursesWithStudentData && coursesWithStudentData.length > 0) {
     return NextResponse.json(
-      { 
-        error: 'Cannot delete courses with students', 
-        details: `Courses with students: ${coursesWithStudentData.map((c: any) => c.name).join(', ')}` 
+      {
+        error: 'Cannot delete courses with students',
+        details: `Courses with students: ${coursesWithStudentData.map((c: any) => c.name).join(', ')}`,
       },
       { status: 400 }
     );
@@ -252,7 +286,12 @@ async function handleDelete(supabase: any, course_ids: string[]) {
 }
 
 // Handle duplicate
-async function handleDuplicate(supabase: any, eventId: string, course_ids: string[], options: any) {
+async function handleDuplicate(
+  supabase: any,
+  eventId: string,
+  course_ids: string[],
+  options: any
+) {
   const { data: courses, error: fetchError } = await supabase
     .from('courses')
     .select('*')
@@ -260,7 +299,9 @@ async function handleDuplicate(supabase: any, eventId: string, course_ids: strin
     .in('id', course_ids);
 
   if (fetchError) {
-    throw new Error(`Failed to fetch courses for duplication: ${fetchError.message}`);
+    throw new Error(
+      `Failed to fetch courses for duplication: ${fetchError.message}`
+    );
   }
 
   const duplicatedCourses = [];

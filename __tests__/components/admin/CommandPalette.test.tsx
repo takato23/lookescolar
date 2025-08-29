@@ -7,7 +7,9 @@ describe('CommandPalette', () => {
     const onClose = () => {};
     render(<CommandPalette isOpen={true} onClose={onClose} />);
 
-    expect(screen.getByRole('dialog', { name: /paleta de comandos/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('dialog', { name: /paleta de comandos/i })
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/buscar comandos/i)).toBeInTheDocument();
   });
 
@@ -21,7 +23,3 @@ describe('CommandPalette', () => {
     expect(screen.getByText(/Eventos/i)).toBeInTheDocument();
   });
 });
-
-
-
-

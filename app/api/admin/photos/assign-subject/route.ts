@@ -19,10 +19,10 @@ async function handlePOST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    
+
     // Check if it's a single assignment or batch
     const isBatch = 'items' in body;
-    
+
     if (isBatch) {
       const parsed = batchAssignSchema.safeParse(body);
       if (!parsed.success) {
@@ -34,11 +34,11 @@ async function handlePOST(request: NextRequest) {
 
       const supabase = await createServerSupabaseServiceClient();
       const { items } = parsed.data;
-      
+
       // Process batch assignments
       const assignments = [];
       const errors = [];
-      
+
       for (const item of items) {
         try {
           // Check if assignment already exists
@@ -63,7 +63,11 @@ async function handlePOST(request: NextRequest) {
               .single();
 
             if (error) {
-              errors.push({ photoId: item.photoId, subjectId: item.subjectId, error: error.message });
+              errors.push({
+                photoId: item.photoId,
+                subjectId: item.subjectId,
+                error: error.message,
+              });
             } else {
               assignments.push(data);
             }
@@ -72,10 +76,10 @@ async function handlePOST(request: NextRequest) {
             assignments.push(existing);
           }
         } catch (err) {
-          errors.push({ 
-            photoId: item.photoId, 
-            subjectId: item.subjectId, 
-            error: err instanceof Error ? err.message : 'Unknown error' 
+          errors.push({
+            photoId: item.photoId,
+            subjectId: item.subjectId,
+            error: err instanceof Error ? err.message : 'Unknown error',
           });
         }
       }
@@ -151,7 +155,10 @@ async function handlePOST(request: NextRequest) {
           'error'
         );
         return NextResponse.json(
-          { error: 'Failed to assign photo to subject', details: error.message },
+          {
+            error: 'Failed to assign photo to subject',
+            details: error.message,
+          },
           { status: 500 }
         );
       }
@@ -196,7 +203,7 @@ async function handleDELETE(request: NextRequest) {
   try {
     const body = await request.json();
     const parsed = assignSchema.safeParse(body);
-    
+
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid request data', details: parsed.error.issues },

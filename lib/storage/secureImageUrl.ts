@@ -6,13 +6,13 @@ import { SecurityLogger } from '@/lib/middleware/auth.middleware';
  * Prioriza watermark_path > preview_path, bloquea storage_path directo
  */
 export async function getSecureImageUrl(
-  photoId: string, 
+  photoId: string,
   expiresSec = 900,
   allowPreviewFallback = true
 ): Promise<string | null> {
   const sb = await createServerSupabaseServiceClient();
   const requestId = `sec_${Math.random().toString(36).slice(2)}`;
-  
+
   try {
     // Obtener paths de la foto
     const { data: photo, error } = await sb
@@ -33,7 +33,11 @@ export async function getSecureImageUrl(
     // PRIORIDAD 1: watermark_path (máxima seguridad)
     if (photo.watermark_path) {
       try {
-        const url = await createSignedUrlSafe(photo.watermark_path, expiresSec, requestId);
+        const url = await createSignedUrlSafe(
+          photo.watermark_path,
+          expiresSec,
+          requestId
+        );
         if (url) {
           SecurityLogger.logSecurityEvent(
             'secure_image_watermark_served',
@@ -50,7 +54,11 @@ export async function getSecureImageUrl(
     // PRIORIDAD 2: preview_path (solo si se permite fallback)
     if (allowPreviewFallback && photo.preview_path) {
       try {
-        const url = await createSignedUrlSafe(photo.preview_path, expiresSec, requestId);
+        const url = await createSignedUrlSafe(
+          photo.preview_path,
+          expiresSec,
+          requestId
+        );
         if (url) {
           SecurityLogger.logSecurityEvent(
             'secure_image_preview_served',
@@ -67,12 +75,12 @@ export async function getSecureImageUrl(
     // NUNCA servir storage_path (original) directamente
     SecurityLogger.logSecurityEvent(
       'secure_image_no_safe_path',
-      { 
-        requestId, 
-        photoId, 
+      {
+        requestId,
+        photoId,
         hasWatermark: !!photo.watermark_path,
         hasPreview: !!photo.preview_path,
-        allowPreviewFallback 
+        allowPreviewFallback,
       },
       'error'
     );
@@ -92,12 +100,15 @@ export async function getSecureImageUrl(
  * Crea signed URL de manera segura, detectando bucket automáticamente
  */
 async function createSignedUrlSafe(
-  key: string, 
-  expiresSec: number, 
+  key: string,
+  expiresSec: number,
   requestId: string
 ): Promise<string | null> {
   const sb = await createServerSupabaseServiceClient();
-  const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
+  const ORIGINAL_BUCKET =
+    process.env['STORAGE_BUCKET_ORIGINAL'] ||
+    process.env['STORAGE_BUCKET'] ||
+    'photo-private';
   const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
 
   // SEGURIDAD: Bloquear cualquier intento de acceder a originales directamente
@@ -111,11 +122,14 @@ async function createSignedUrlSafe(
   }
 
   // Detectar bucket correcto
-  const bucket = /(^|\/)previews\//.test(key) || /watermark/i.test(key) 
-    ? PREVIEW_BUCKET 
-    : ORIGINAL_BUCKET;
+  const bucket =
+    /(^|\/)previews\//.test(key) || /watermark/i.test(key)
+      ? PREVIEW_BUCKET
+      : ORIGINAL_BUCKET;
 
-  const { data, error } = await sb.storage.from(bucket).createSignedUrl(key, expiresSec);
+  const { data, error } = await sb.storage
+    .from(bucket)
+    .createSignedUrl(key, expiresSec);
 
   if (error || !data?.signedUrl) {
     return null;
@@ -131,7 +145,7 @@ function isOriginalPath(key: string): boolean {
   // Paths que indican originales (sin procesar)
   const originalPatterns = [
     /^events\/[^/]+\/[^/]+\.(jpg|jpeg|png)$/i, // events/eventId/photo.jpg
-    /^uploads\/[^/]+\.(jpg|jpeg|png)$/i,       // uploads/photo.jpg
+    /^uploads\/[^/]+\.(jpg|jpeg|png)$/i, // uploads/photo.jpg
     /^photos\/[^/]+\/[^/]+\.(jpg|jpeg|png)$/i, // photos/eventId/photo.jpg
   ];
 
@@ -145,12 +159,12 @@ function isOriginalPath(key: string): boolean {
   ];
 
   // Si coincide con patrón seguro, permitir
-  if (safePatterns.some(pattern => pattern.test(key))) {
+  if (safePatterns.some((pattern) => pattern.test(key))) {
     return false;
   }
 
   // Si coincide con patrón original, bloquear
-  if (originalPatterns.some(pattern => pattern.test(key))) {
+  if (originalPatterns.some((pattern) => pattern.test(key))) {
     return true;
   }
 
@@ -168,13 +182,19 @@ function maskPath(path: string): string {
 /**
  * Función de conveniencia para obtener URL de watermark específicamente
  */
-export async function getWatermarkUrl(photoId: string, expiresSec = 900): Promise<string | null> {
+export async function getWatermarkUrl(
+  photoId: string,
+  expiresSec = 900
+): Promise<string | null> {
   return await getSecureImageUrl(photoId, expiresSec, false); // Solo watermark, no preview
 }
 
 /**
  * Función de conveniencia para obtener URL con fallback a preview
  */
-export async function getImageUrlWithFallback(photoId: string, expiresSec = 900): Promise<string | null> {
+export async function getImageUrlWithFallback(
+  photoId: string,
+  expiresSec = 900
+): Promise<string | null> {
   return await getSecureImageUrl(photoId, expiresSec, true); // Watermark preferido, preview como fallback
 }

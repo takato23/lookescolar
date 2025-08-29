@@ -19,15 +19,21 @@ export function detectGalleryContext(params: {
   searchParams?: URLSearchParams;
 }): GalleryContextData {
   const { eventId, token, searchParams } = params;
-  
-  debugMigration('Detecting gallery context', { eventId, hasToken: !!token, searchParams: searchParams?.toString() });
-  
+
+  debugMigration('Detecting gallery context', {
+    eventId,
+    hasToken: !!token,
+    searchParams: searchParams?.toString(),
+  });
+
   // Si viene con token, es contexto familiar
   const tokenFromQuery = searchParams?.get('token') || token;
-  
+
   if (tokenFromQuery && tokenFromQuery.length >= 20) {
-    debugMigration('Detected family context', { tokenLength: tokenFromQuery.length });
-    
+    debugMigration('Detected family context', {
+      tokenLength: tokenFromQuery.length,
+    });
+
     return {
       context: 'family',
       eventId: eventId || 'unknown',
@@ -35,16 +41,17 @@ export function detectGalleryContext(params: {
       isLegacyRedirect: searchParams?.get('from') === 'legacy',
     };
   }
-  
+
   // UUID validation para eventId público
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   if (!eventId || !uuidRegex.test(eventId)) {
     throw new Error('Invalid eventId format for public gallery');
   }
-  
+
   debugMigration('Detected public context', { eventId });
-  
+
   return {
     context: 'public',
     eventId,
@@ -52,30 +59,41 @@ export function detectGalleryContext(params: {
 }
 
 // Helper para construir URLs de redirección
-export function buildLegacyRedirectUrl(fromPath: string, toPath: string): string {
+export function buildLegacyRedirectUrl(
+  fromPath: string,
+  toPath: string
+): string {
   const url = new URL(toPath, window.location.origin);
   url.searchParams.set('from', 'legacy');
-  
-  debugMigration('Building legacy redirect', { fromPath, toPath, finalUrl: url.toString() });
-  
+
+  debugMigration('Building legacy redirect', {
+    fromPath,
+    toPath,
+    finalUrl: url.toString(),
+  });
+
   return url.toString();
 }
 
 // Mapeo de token familiar a eventId
-export async function resolveEventIdFromToken(token: string): Promise<string | null> {
+export async function resolveEventIdFromToken(
+  token: string
+): Promise<string | null> {
   try {
-    debugMigration('Resolving eventId from token', { tokenLength: token.length });
-    
+    debugMigration('Resolving eventId from token', {
+      tokenLength: token.length,
+    });
+
     const response = await fetch(`/api/family/resolve-event?token=${token}`);
-    
+
     if (!response.ok) {
       debugMigration('Failed to resolve eventId', { status: response.status });
       return null;
     }
-    
+
     const data = await response.json();
     debugMigration('Resolved eventId successfully', { eventId: data.eventId });
-    
+
     return data.eventId || null;
   } catch (error) {
     debugMigration('Error resolving eventId', error);
@@ -84,19 +102,25 @@ export async function resolveEventIdFromToken(token: string): Promise<string | n
 }
 
 // Validar que el token corresponde al evento
-export async function validateTokenForEvent(token: string, eventId: string): Promise<boolean> {
+export async function validateTokenForEvent(
+  token: string,
+  eventId: string
+): Promise<boolean> {
   try {
-    debugMigration('Validating token for event', { tokenLength: token.length, eventId });
-    
+    debugMigration('Validating token for event', {
+      tokenLength: token.length,
+      eventId,
+    });
+
     const response = await fetch(`/api/family/validate-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token, eventId }),
     });
-    
+
     const isValid = response.ok;
     debugMigration('Token validation result', { isValid });
-    
+
     return isValid;
   } catch (error) {
     debugMigration('Error validating token', error);
@@ -113,7 +137,7 @@ export function useGalleryContext(
   searchParams?: URLSearchParams
 ): GalleryContextData | null {
   const [context, setContext] = useState<GalleryContextData | null>(null);
-  
+
   useEffect(() => {
     try {
       const detected = detectGalleryContext({ eventId, token, searchParams });
@@ -123,6 +147,6 @@ export function useGalleryContext(
       setContext(null);
     }
   }, [eventId, token, searchParams]);
-  
+
   return context;
 }

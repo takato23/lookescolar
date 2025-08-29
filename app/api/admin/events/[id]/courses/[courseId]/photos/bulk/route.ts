@@ -4,46 +4,61 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const bulkCoursePhotoActionSchema = z.object({
-  action: z.enum(['approve', 'reject', 'delete', 'download', 'remove_from_course', 'change_type']),
+  action: z.enum([
+    'approve',
+    'reject',
+    'delete',
+    'download',
+    'remove_from_course',
+    'change_type',
+  ]),
   photo_ids: z.array(z.string()).min(1, 'At least one photo ID is required'),
-  options: z.object({
-    photo_type: z.enum(['group', 'activity', 'event']).optional(),
-    approved: z.boolean().optional(),
-  }).optional(),
+  options: z
+    .object({
+      photo_type: z.enum(['group', 'activity', 'event']).optional(),
+      approved: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 // POST /api/admin/events/[id]/courses/[courseId]/photos/bulk
-export const POST = withAuth(async (req: NextRequest, { params }: { params: { id: string; courseId: string } }) => {
-  try {
-    const eventId = params.id;
-    const courseId = params.courseId;
-    const body = await req.json();
+export const POST = withAuth(
+  async (
+    req: NextRequest,
+    { params }: { params: { id: string; courseId: string } }
+  ) => {
+    try {
+      const eventId = params.id;
+      const courseId = params.courseId;
+      const body = await req.json();
 
-    // Validate input
-    const validatedData = bulkCoursePhotoActionSchema.parse(body);
-    const { action, photo_ids, options = {} } = validatedData;
+      // Validate input
+      const validatedData = bulkCoursePhotoActionSchema.parse(body);
+      const { action, photo_ids, options = {} } = validatedData;
 
-    const supabase = await createServerSupabaseServiceClient();
+      const supabase = await createServerSupabaseServiceClient();
 
-    // Verify course exists and belongs to event
-    const { data: course, error: courseError } = await supabase
-      .from('courses')
-      .select('id, name, event_id')
-      .eq('id', courseId)
-      .eq('event_id', eventId)
-      .single();
+      // Verify course exists and belongs to event
+      const { data: course, error: courseError } = await supabase
+        .from('courses')
+        .select('id, name, event_id')
+        .eq('id', courseId)
+        .eq('event_id', eventId)
+        .single();
 
-    if (courseError || !course) {
-      return NextResponse.json(
-        { error: 'Course not found or does not belong to this event' },
-        { status: 404 }
-      );
-    }
+      if (courseError || !course) {
+        return NextResponse.json(
+          { error: 'Course not found or does not belong to this event' },
+          { status: 404 }
+        );
+      }
 
-    // Verify all photos exist and belong to this course
-    const { data: photoAssociations, error: associationsError } = await supabase
-      .from('photo_courses')
-      .select(`
+      // Verify all photos exist and belong to this course
+      const { data: photoAssociations, error: associationsError } =
+        await supabase
+          .from('photo_courses')
+          .select(
+            `
         id,
         photo_id,
         course_id,
@@ -54,83 +69,107 @@ export const POST = withAuth(async (req: NextRequest, { params }: { params: { id
           approved,
           event_id
         )
-      `)
-      .eq('course_id', courseId)
-      .in('photo_id', photo_ids);
+      `
+          )
+          .eq('course_id', courseId)
+          .in('photo_id', photo_ids);
 
-    if (associationsError) {
-      throw new Error(`Failed to verify photos: ${associationsError.message}`);
-    }
+      if (associationsError) {
+        throw new Error(
+          `Failed to verify photos: ${associationsError.message}`
+        );
+      }
 
-    if (photoAssociations.length !== photo_ids.length) {
-      return NextResponse.json(
-        { error: 'Some photos not found or do not belong to this course' },
-        { status: 400 }
-      );
-    }
-
-    let result: any = { success: true, affected_photos: photoAssociations.length };
-
-    switch (action) {
-      case 'approve':
-        result = await handleCourseApproveReject(supabase, photo_ids, true);
-        break;
-
-      case 'reject':
-        result = await handleCourseApproveReject(supabase, photo_ids, false);
-        break;
-
-      case 'delete':
-        result = await handleCourseDelete(supabase, photoAssociations);
-        break;
-
-      case 'download':
-        result = await handleCourseDownload(supabase, photoAssociations);
-        break;
-
-      case 'remove_from_course':
-        result = await handleRemoveFromCourse(supabase, courseId, photo_ids, course.name);
-        break;
-
-      case 'change_type':
-        if (!options.photo_type) {
-          return NextResponse.json(
-            { error: 'photo_type is required for change_type action' },
-            { status: 400 }
-          );
-        }
-        result = await handleChangePhotoType(supabase, courseId, photo_ids, options.photo_type);
-        break;
-
-      default:
+      if (photoAssociations.length !== photo_ids.length) {
         return NextResponse.json(
-          { error: 'Invalid action' },
+          { error: 'Some photos not found or do not belong to this course' },
           { status: 400 }
         );
-    }
+      }
 
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Error in POST /api/admin/events/[id]/courses/[courseId]/photos/bulk:', error);
-    
-    if (error instanceof z.ZodError) {
+      let result: any = {
+        success: true,
+        affected_photos: photoAssociations.length,
+      };
+
+      switch (action) {
+        case 'approve':
+          result = await handleCourseApproveReject(supabase, photo_ids, true);
+          break;
+
+        case 'reject':
+          result = await handleCourseApproveReject(supabase, photo_ids, false);
+          break;
+
+        case 'delete':
+          result = await handleCourseDelete(supabase, photoAssociations);
+          break;
+
+        case 'download':
+          result = await handleCourseDownload(supabase, photoAssociations);
+          break;
+
+        case 'remove_from_course':
+          result = await handleRemoveFromCourse(
+            supabase,
+            courseId,
+            photo_ids,
+            course.name
+          );
+          break;
+
+        case 'change_type':
+          if (!options.photo_type) {
+            return NextResponse.json(
+              { error: 'photo_type is required for change_type action' },
+              { status: 400 }
+            );
+          }
+          result = await handleChangePhotoType(
+            supabase,
+            courseId,
+            photo_ids,
+            options.photo_type
+          );
+          break;
+
+        default:
+          return NextResponse.json(
+            { error: 'Invalid action' },
+            { status: 400 }
+          );
+      }
+
+      return NextResponse.json(result);
+    } catch (error) {
+      console.error(
+        'Error in POST /api/admin/events/[id]/courses/[courseId]/photos/bulk:',
+        error
+      );
+
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Validation error', details: error.errors },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
+        { error: 'Internal server error' },
+        { status: 500 }
       );
     }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-});
+);
 
 // Handle approve/reject for course photos
-async function handleCourseApproveReject(supabase: any, photo_ids: string[], approved: boolean) {
+async function handleCourseApproveReject(
+  supabase: any,
+  photo_ids: string[],
+  approved: boolean
+) {
   const { error } = await supabase
-    .from('photos')
+    .from('assets')
     .update({
       approved,
       updated_at: new Date().toISOString(),
@@ -138,7 +177,9 @@ async function handleCourseApproveReject(supabase: any, photo_ids: string[], app
     .in('id', photo_ids);
 
   if (error) {
-    throw new Error(`Failed to ${approved ? 'approve' : 'reject'} photos: ${error.message}`);
+    throw new Error(
+      `Failed to ${approved ? 'approve' : 'reject'} photos: ${error.message}`
+    );
   }
 
   return {
@@ -151,10 +192,8 @@ async function handleCourseApproveReject(supabase: any, photo_ids: string[], app
 // Handle delete for course photos
 async function handleCourseDelete(supabase: any, photoAssociations: any[]) {
   // Delete photos from storage first
-  const storageDeletePromises = photoAssociations.map(association => 
-    supabase.storage
-      .from('photos')
-      .remove([association.photo.storage_path])
+  const storageDeletePromises = photoAssociations.map((association) =>
+    supabase.storage.from('assets').remove([association.photo.storage_path])
   );
 
   await Promise.allSettled(storageDeletePromises);
@@ -163,17 +202,26 @@ async function handleCourseDelete(supabase: any, photoAssociations: any[]) {
   const { error: associationError } = await supabase
     .from('photo_courses')
     .delete()
-    .in('id', photoAssociations.map(a => a.id));
+    .in(
+      'id',
+      photoAssociations.map((a) => a.id)
+    );
 
   if (associationError) {
-    console.warn('Warning: Failed to delete photo-course associations:', associationError);
+    console.warn(
+      'Warning: Failed to delete photo-course associations:',
+      associationError
+    );
   }
 
   // Delete from photos table
   const { error: photoError } = await supabase
-    .from('photos')
+    .from('assets')
     .delete()
-    .in('id', photoAssociations.map(a => a.photo.id));
+    .in(
+      'id',
+      photoAssociations.map((a) => a.photo.id)
+    );
 
   if (photoError) {
     throw new Error(`Failed to delete photos: ${photoError.message}`);
@@ -191,7 +239,7 @@ async function handleCourseDownload(supabase: any, photoAssociations: any[]) {
   const downloadUrls = await Promise.all(
     photoAssociations.map(async (association) => {
       const { data } = await supabase.storage
-        .from('photos')
+        .from('assets')
         .createSignedUrl(association.photo.storage_path, 3600); // 1 hour expiry
 
       return {
@@ -212,7 +260,12 @@ async function handleCourseDownload(supabase: any, photoAssociations: any[]) {
 }
 
 // Handle remove from course (keep photo, remove association)
-async function handleRemoveFromCourse(supabase: any, courseId: string, photo_ids: string[], courseName: string) {
+async function handleRemoveFromCourse(
+  supabase: any,
+  courseId: string,
+  photo_ids: string[],
+  courseName: string
+) {
   // Remove photo-course associations
   const { error: deleteError } = await supabase
     .from('photo_courses')
@@ -221,7 +274,9 @@ async function handleRemoveFromCourse(supabase: any, courseId: string, photo_ids
     .in('photo_id', photo_ids);
 
   if (deleteError) {
-    throw new Error(`Failed to remove photo associations: ${deleteError.message}`);
+    throw new Error(
+      `Failed to remove photo associations: ${deleteError.message}`
+    );
   }
 
   // Clear course_id from photos if no other associations exist
@@ -233,7 +288,7 @@ async function handleRemoveFromCourse(supabase: any, courseId: string, photo_ids
 
     if (count === 0) {
       await supabase
-        .from('photos')
+        .from('assets')
         .update({
           course_id: null,
           photo_type: 'individual',
@@ -252,7 +307,12 @@ async function handleRemoveFromCourse(supabase: any, courseId: string, photo_ids
 }
 
 // Handle change photo type for course photos
-async function handleChangePhotoType(supabase: any, courseId: string, photo_ids: string[], photo_type: string) {
+async function handleChangePhotoType(
+  supabase: any,
+  courseId: string,
+  photo_ids: string[],
+  photo_type: string
+) {
   // Update photo_courses associations
   const { error: associationError } = await supabase
     .from('photo_courses')
@@ -261,12 +321,14 @@ async function handleChangePhotoType(supabase: any, courseId: string, photo_ids:
     .in('photo_id', photo_ids);
 
   if (associationError) {
-    throw new Error(`Failed to update photo type in associations: ${associationError.message}`);
+    throw new Error(
+      `Failed to update photo type in associations: ${associationError.message}`
+    );
   }
 
   // Update photos table
   const { error: photoError } = await supabase
-    .from('photos')
+    .from('assets')
     .update({
       photo_type,
       updated_at: new Date().toISOString(),
@@ -274,7 +336,10 @@ async function handleChangePhotoType(supabase: any, courseId: string, photo_ids:
     .in('id', photo_ids);
 
   if (photoError) {
-    console.warn('Warning: Failed to update photo type in photos table:', photoError);
+    console.warn(
+      'Warning: Failed to update photo type in photos table:',
+      photoError
+    );
   }
 
   return {

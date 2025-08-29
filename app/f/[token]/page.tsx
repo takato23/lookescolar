@@ -1,36 +1,17 @@
-// Enhanced Family Portal with improved token system
-import SimpleGalleryPage from './simple-page';
-import EnhancedFamilyGallery from './enhanced-page';
-import TokenRedirect from './redirect';
-import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { featureFlags, debugMigration } from '@/lib/feature-flags';
+/**
+ * Redirección automática de /f/[token] a /store-unified/[token]
+ * Para mantener consistencia y unificar todas las tiendas
+ */
 
-export default async function FamilyPortal() {
-  try {
-    await createServerSupabaseServiceClient();
-  } catch {}
+import { redirect } from 'next/navigation';
 
-  debugMigration('FamilyPortal page rendered', { 
-    familyInGalleryRoute: featureFlags.FAMILY_IN_GALLERY_ROUTE,
-    unifiedGalleryEnabled: featureFlags.UNIFIED_GALLERY_ENABLED 
-  });
-
-  // Check if enhanced family access is available
-  const useEnhancedSystem = process.env.NEXT_PUBLIC_ENHANCED_FAMILY_ACCESS === 'true';
-
-  if (useEnhancedSystem) {
-    debugMigration('Using EnhancedFamilyGallery system');
-    return <EnhancedFamilyGallery />;
-  }
-
-  // Si la redirección a galería unificada está habilitada, usar TokenRedirect
-  if (featureFlags.FAMILY_IN_GALLERY_ROUTE && featureFlags.UNIFIED_GALLERY_ENABLED) {
-    debugMigration('Using TokenRedirect for family gallery');
-    return <TokenRedirect />;
-  }
-
-  // Fallback al sistema legacy
-  debugMigration('Using legacy SimpleGalleryPage');
-  return <SimpleGalleryPage />;
+interface PageProps {
+  params: Promise<{ token: string }>;
 }
- 
+
+export default async function LegacyFamilyPage({ params }: PageProps) {
+  const { token } = await params;
+  
+  // Redirigir automáticamente a la nueva ruta unificada
+  redirect(`/store-unified/${token}`);
+}

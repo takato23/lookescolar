@@ -1,6 +1,6 @@
 /**
  * Batch QR Processing Service
- * 
+ *
  * Handles batch processing of QR codes for events, including generation,
  * validation, and analytics collection.
  */
@@ -107,7 +107,7 @@ export class QRBatchProcessingService {
   async generateBatchQRCodes(request: BatchQRRequest): Promise<BatchQRResult> {
     const startTime = Date.now();
     const batchId = `batch_qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
       logger.info('batch_qr_generation_started', {
         batchId,
@@ -132,7 +132,7 @@ export class QRBatchProcessingService {
       const batchSize = 10;
       for (let i = 0; i < request.students.length; i += batchSize) {
         const batch = request.students.slice(i, i + batchSize);
-        
+
         const batchPromises = batch.map(async (student) => {
           try {
             const qrResult = await qrService.generateQRForSubject(
@@ -141,7 +141,7 @@ export class QRBatchProcessingService {
               request.options,
               request.userId
             );
-            
+
             successfullyProcessed++;
             return {
               studentId: student.id,
@@ -156,7 +156,7 @@ export class QRBatchProcessingService {
               studentName: student.name,
               error: error instanceof Error ? error.message : 'Unknown error',
             });
-            
+
             return {
               studentId: student.id,
               studentName: student.name,
@@ -170,7 +170,7 @@ export class QRBatchProcessingService {
       }
 
       const processingTimeMs = Date.now() - startTime;
-      
+
       const batchResult: BatchQRResult = {
         eventId: request.eventId,
         totalRequested: request.students.length,
@@ -198,7 +198,7 @@ export class QRBatchProcessingService {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       throw error;
     }
   }
@@ -206,10 +206,12 @@ export class QRBatchProcessingService {
   /**
    * Validate QR codes in batch
    */
-  async validateBatchQRCodes(request: BatchValidationRequest): Promise<BatchValidationResult> {
+  async validateBatchQRCodes(
+    request: BatchValidationRequest
+  ): Promise<BatchValidationResult> {
     const startTime = Date.now();
     const batchId = `batch_validation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
       logger.info('batch_qr_validation_started', {
         batchId,
@@ -225,7 +227,7 @@ export class QRBatchProcessingService {
       const batchSize = 20;
       for (let i = 0; i < request.qrCodes.length; i += batchSize) {
         const batch = request.qrCodes.slice(i, i + batchSize);
-        
+
         const batchPromises = batch.map(async (qrCode) => {
           try {
             // Validate QR code
@@ -234,13 +236,15 @@ export class QRBatchProcessingService {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 qrCode,
-                eventId: request.validateAgainstEvent ? request.eventId : undefined,
+                eventId: request.validateAgainstEvent
+                  ? request.eventId
+                  : undefined,
               }),
             });
 
             if (response.ok) {
               const validationResult = await response.json();
-              
+
               if (validationResult.success && validationResult.valid) {
                 validCodes++;
                 return {
@@ -271,7 +275,7 @@ export class QRBatchProcessingService {
               qrCode: qrCode.substring(0, 20),
               error: error instanceof Error ? error.message : 'Unknown error',
             });
-            
+
             return {
               qrCode,
               isValid: false,
@@ -285,7 +289,7 @@ export class QRBatchProcessingService {
       }
 
       const processingTimeMs = Date.now() - startTime;
-      
+
       const validationResult: BatchValidationResult = {
         eventId: request.eventId,
         totalRequested: request.qrCodes.length,
@@ -313,7 +317,7 @@ export class QRBatchProcessingService {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       throw error;
     }
   }
@@ -321,10 +325,12 @@ export class QRBatchProcessingService {
   /**
    * Get analytics for all QR codes in an event
    */
-  async getBatchAnalytics(request: BatchAnalyticsRequest): Promise<BatchAnalyticsResult> {
+  async getBatchAnalytics(
+    request: BatchAnalyticsRequest
+  ): Promise<BatchAnalyticsResult> {
     const startTime = Date.now();
     const batchId = `batch_analytics_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
       logger.info('batch_qr_analytics_started', {
         batchId,
@@ -360,7 +366,9 @@ export class QRBatchProcessingService {
       }
 
       // Get analytics for all QR codes
-      const metrics = await qrAnalyticsService.getEventQRMetrics(request.eventId);
+      const metrics = await qrAnalyticsService.getEventQRMetrics(
+        request.eventId
+      );
 
       // Aggregate metrics
       let totalScans = 0;
@@ -373,7 +381,7 @@ export class QRBatchProcessingService {
       const deviceCounts: Record<string, number> = {};
       const errorCounts: Record<string, number> = {};
 
-      Object.values(metrics).forEach(qrMetrics => {
+      Object.values(metrics).forEach((qrMetrics) => {
         totalScans += qrMetrics.totalScans;
         uniqueScans += qrMetrics.uniqueScans;
         successCount += qrMetrics.successRate * qrMetrics.totalScans;
@@ -382,7 +390,8 @@ export class QRBatchProcessingService {
 
         // Aggregate time-based metrics
         Object.entries(qrMetrics.scansByHour).forEach(([hour, count]) => {
-          scansByHour[parseInt(hour)] = (scansByHour[parseInt(hour)] || 0) + count;
+          scansByHour[parseInt(hour)] =
+            (scansByHour[parseInt(hour)] || 0) + count;
         });
 
         Object.entries(qrMetrics.scansByDay).forEach(([day, count]) => {
@@ -390,8 +399,9 @@ export class QRBatchProcessingService {
         });
 
         // Aggregate device metrics
-        qrMetrics.popularDevices.forEach(deviceInfo => {
-          deviceCounts[deviceInfo.device] = (deviceCounts[deviceInfo.device] || 0) + deviceInfo.count;
+        qrMetrics.popularDevices.forEach((deviceInfo) => {
+          deviceCounts[deviceInfo.device] =
+            (deviceCounts[deviceInfo.device] || 0) + deviceInfo.count;
         });
 
         // Aggregate error metrics
@@ -442,7 +452,7 @@ export class QRBatchProcessingService {
         error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       throw error;
     }
   }
@@ -450,12 +460,16 @@ export class QRBatchProcessingService {
   /**
    * Export QR codes for an event
    */
-  async exportEventQRCodes(eventId: string, format: 'json' | 'csv' = 'json'): Promise<string> {
+  async exportEventQRCodes(
+    eventId: string,
+    format: 'json' | 'csv' = 'json'
+  ): Promise<string> {
     try {
       // Get all QR codes for this event
       const { data: qrCodes, error: qrError } = await supabase
         .from('codes')
-        .select(`
+        .select(
+          `
           id,
           code_value,
           title,
@@ -464,7 +478,8 @@ export class QRBatchProcessingService {
             id,
             name
           )
-        `)
+        `
+        )
         .eq('event_id', eventId);
 
       if (qrError) {
@@ -473,17 +488,23 @@ export class QRBatchProcessingService {
 
       if (format === 'csv') {
         // Convert to CSV format
-        const headers = ['QR Code ID', 'Code Value', 'Student Name', 'Created At'];
-        const rows = qrCodes?.map(qr => [
-          qr.id,
-          qr.code_value,
-          (qr.subjects as any)?.name || 'Unknown',
-          qr.created_at,
-        ]) || [];
+        const headers = [
+          'QR Code ID',
+          'Code Value',
+          'Student Name',
+          'Created At',
+        ];
+        const rows =
+          qrCodes?.map((qr) => [
+            qr.id,
+            qr.code_value,
+            (qr.subjects as any)?.name || 'Unknown',
+            qr.created_at,
+          ]) || [];
 
         const csvContent = [
           headers.join(','),
-          ...rows.map(row => row.map(field => `"${field}"`).join(','))
+          ...rows.map((row) => row.map((field) => `"${field}"`).join(',')),
         ].join('\n');
 
         return csvContent;
@@ -497,7 +518,7 @@ export class QRBatchProcessingService {
         format,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       throw error;
     }
   }
@@ -505,7 +526,11 @@ export class QRBatchProcessingService {
   /**
    * Import QR codes from file
    */
-  async importQRCodes(eventId: string, qrData: any[], userId?: string): Promise<{
+  async importQRCodes(
+    eventId: string,
+    qrData: any[],
+    userId?: string
+  ): Promise<{
     totalImported: number;
     totalFailed: number;
     results: Array<{
@@ -528,7 +553,7 @@ export class QRBatchProcessingService {
       const batchSize = 20;
       for (let i = 0; i < qrData.length; i += batchSize) {
         const batch = qrData.slice(i, i + batchSize);
-        
+
         const batchPromises = batch.map(async (qrItem) => {
           try {
             // Insert QR code into database
@@ -601,7 +626,7 @@ export class QRBatchProcessingService {
         userId,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       throw error;
     }
   }

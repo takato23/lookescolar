@@ -15,11 +15,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
   describe('QR Decode Endpoint', () => {
     test('should decode valid QR code format', async () => {
       const validQR = `STUDENT:${mockStudentId}:John Doe:${mockEventId}`;
-      const request = new NextRequest('http://localhost:3000/api/admin/qr/decode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCode: validQR }),
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/qr/decode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: validQR }),
+        }
+      );
 
       const response = await QRDecode(request);
       const data = await response.json();
@@ -33,11 +36,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
 
     test('should reject invalid QR code format', async () => {
       const invalidQR = 'INVALID:FORMAT:HERE';
-      const request = new NextRequest('http://localhost:3000/api/admin/qr/decode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCode: invalidQR }),
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/qr/decode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: invalidQR }),
+        }
+      );
 
       const response = await QRDecode(request);
       const data = await response.json();
@@ -48,11 +54,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
     });
 
     test('should reject empty QR code', async () => {
-      const request = new NextRequest('http://localhost:3000/api/admin/qr/decode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCode: '' }),
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/qr/decode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: '' }),
+        }
+      );
 
       const response = await QRDecode(request);
       const data = await response.json();
@@ -63,11 +72,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
 
     test('should validate UUID format in QR code', async () => {
       const invalidUuidQR = 'STUDENT:invalid-uuid:John Doe:also-invalid-uuid';
-      const request = new NextRequest('http://localhost:3000/api/admin/qr/decode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCode: invalidUuidQR }),
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/qr/decode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: invalidUuidQR }),
+        }
+      );
 
       const response = await QRDecode(request);
       const data = await response.json();
@@ -80,11 +92,16 @@ describe('QR Tagging Workflow API Endpoints', () => {
 
   describe('Student Lookup Endpoint', () => {
     test('should return student details with valid UUID', async () => {
-      const request = new NextRequest(`http://localhost:3000/api/admin/students/${mockStudentId}`, {
-        method: 'GET',
-      });
+      const request = new NextRequest(
+        `http://localhost:3000/api/admin/students/${mockStudentId}`,
+        {
+          method: 'GET',
+        }
+      );
 
-      const response = await StudentLookup(request, { params: { id: mockStudentId } });
+      const response = await StudentLookup(request, {
+        params: { id: mockStudentId },
+      });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -98,11 +115,16 @@ describe('QR Tagging Workflow API Endpoints', () => {
 
     test('should reject invalid UUID format', async () => {
       const invalidId = 'invalid-uuid-format';
-      const request = new NextRequest(`http://localhost:3000/api/admin/students/${invalidId}`, {
-        method: 'GET',
-      });
+      const request = new NextRequest(
+        `http://localhost:3000/api/admin/students/${invalidId}`,
+        {
+          method: 'GET',
+        }
+      );
 
-      const response = await StudentLookup(request, { params: { id: invalidId } });
+      const response = await StudentLookup(request, {
+        params: { id: invalidId },
+      });
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -120,11 +142,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
           studentId: mockStudentId,
         };
 
-        const request = new NextRequest('http://localhost:3000/api/admin/tagging/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(qrTaggingPayload),
-        });
+        const request = new NextRequest(
+          'http://localhost:3000/api/admin/tagging/batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(qrTaggingPayload),
+          }
+        );
 
         const response = await BatchTagging(request);
         const data = await response.json();
@@ -142,11 +167,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
           studentId: mockStudentId,
         };
 
-        const request = new NextRequest('http://localhost:3000/api/admin/tagging/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invalidPayload),
-        });
+        const request = new NextRequest(
+          'http://localhost:3000/api/admin/tagging/batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(invalidPayload),
+          }
+        );
 
         const response = await BatchTagging(request);
         const data = await response.json();
@@ -156,8 +184,9 @@ describe('QR Tagging Workflow API Endpoints', () => {
       });
 
       test('should enforce photo limit for QR tagging', async () => {
-        const tooManyPhotos = Array.from({ length: 60 }, (_, i) => 
-          `photo${i}-4567-8901-2345-678901234567`
+        const tooManyPhotos = Array.from(
+          { length: 60 },
+          (_, i) => `photo${i}-4567-8901-2345-678901234567`
         );
 
         const invalidPayload = {
@@ -166,11 +195,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
           studentId: mockStudentId,
         };
 
-        const request = new NextRequest('http://localhost:3000/api/admin/tagging/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invalidPayload),
-        });
+        const request = new NextRequest(
+          'http://localhost:3000/api/admin/tagging/batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(invalidPayload),
+          }
+        );
 
         const response = await BatchTagging(request);
         const data = await response.json();
@@ -190,11 +222,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
           ],
         };
 
-        const request = new NextRequest('http://localhost:3000/api/admin/tagging/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(standardPayload),
-        });
+        const request = new NextRequest(
+          'http://localhost:3000/api/admin/tagging/batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(standardPayload),
+          }
+        );
 
         const response = await BatchTagging(request);
         const data = await response.json();
@@ -215,11 +250,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
           assignments: tooManyAssignments,
         };
 
-        const request = new NextRequest('http://localhost:3000/api/admin/tagging/batch', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invalidPayload),
-        });
+        const request = new NextRequest(
+          'http://localhost:3000/api/admin/tagging/batch',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(invalidPayload),
+          }
+        );
 
         const response = await BatchTagging(request);
         const data = await response.json();
@@ -234,11 +272,14 @@ describe('QR Tagging Workflow API Endpoints', () => {
     test('should handle complete QR tagging workflow', async () => {
       // Step 1: Decode QR
       const validQR = `STUDENT:${mockStudentId}:Jane Smith:${mockEventId}`;
-      const qrRequest = new NextRequest('http://localhost:3000/api/admin/qr/decode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ qrCode: validQR }),
-      });
+      const qrRequest = new NextRequest(
+        'http://localhost:3000/api/admin/qr/decode',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: validQR }),
+        }
+      );
 
       const qrResponse = await QRDecode(qrRequest);
       const qrData = await qrResponse.json();
@@ -247,15 +288,18 @@ describe('QR Tagging Workflow API Endpoints', () => {
       expect(qrData.success).toBe(true);
 
       // Step 2: Use student ID from QR decode for batch tagging
-      const tagRequest = new NextRequest('http://localhost:3000/api/admin/tagging/batch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: mockEventId,
-          photoIds: mockPhotoIds,
-          studentId: qrData.student.id,
-        }),
-      });
+      const tagRequest = new NextRequest(
+        'http://localhost:3000/api/admin/tagging/batch',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventId: mockEventId,
+            photoIds: mockPhotoIds,
+            studentId: qrData.student.id,
+          }),
+        }
+      );
 
       const tagResponse = await BatchTagging(tagRequest);
       const tagData = await tagResponse.json();
@@ -265,11 +309,16 @@ describe('QR Tagging Workflow API Endpoints', () => {
       expect(tagData.data.workflowType).toBe('qr_tagging');
 
       // Step 3: Verify student lookup includes updated stats
-      const lookupRequest = new NextRequest(`http://localhost:3000/api/admin/students/${mockStudentId}`, {
-        method: 'GET',
-      });
+      const lookupRequest = new NextRequest(
+        `http://localhost:3000/api/admin/students/${mockStudentId}`,
+        {
+          method: 'GET',
+        }
+      );
 
-      const lookupResponse = await StudentLookup(lookupRequest, { params: { id: mockStudentId } });
+      const lookupResponse = await StudentLookup(lookupRequest, {
+        params: { id: mockStudentId },
+      });
       const lookupData = await lookupResponse.json();
 
       expect(lookupResponse.status).toBe(200);

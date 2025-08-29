@@ -6,29 +6,33 @@ import { z } from 'zod';
 const bulkActionSchema = z.object({
   action: z.enum(['export', 'qr', 'tokens', 'email', 'archive', 'delete']),
   item_ids: z.array(z.string()).min(1, 'At least one student ID is required'),
-  email_options: z.object({
-    sendEmails: z.boolean().optional(),
-    customMessage: z.string().optional(),
-    includeQR: z.boolean().optional(),
-  }).optional(),
+  email_options: z
+    .object({
+      sendEmails: z.boolean().optional(),
+      customMessage: z.string().optional(),
+      includeQR: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 // POST /api/admin/events/[id]/students/bulk
-export const POST = withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
-  try {
-    const eventId = params.id;
-    const body = await req.json();
+export const POST = withAuth(
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
+    try {
+      const eventId = params.id;
+      const body = await req.json();
 
-    // Validate input
-    const validatedData = bulkActionSchema.parse(body);
-    const { action, item_ids: studentIds, email_options } = validatedData;
+      // Validate input
+      const validatedData = bulkActionSchema.parse(body);
+      const { action, item_ids: studentIds, email_options } = validatedData;
 
-    const supabase = await createServerSupabaseServiceClient();
+      const supabase = await createServerSupabaseServiceClient();
 
-    // Verify all students belong to this event
-    const { data: students, error: studentsError } = await supabase
-      .from('students')
-      .select(`
+      // Verify all students belong to this event
+      const { data: students, error: studentsError } = await supabase
+        .from('students')
+        .select(
+          `
         id,
         name,
         email,
@@ -41,67 +45,79 @@ export const POST = withAuth(async (req: NextRequest, { params }: { params: { id
           token,
           expires_at
         )
-      `)
-      .eq('event_id', eventId)
-      .in('id', studentIds);
+      `
+        )
+        .eq('event_id', eventId)
+        .in('id', studentIds);
 
-    if (studentsError || !students) {
-      console.error('Error fetching students:', studentsError);
+      if (studentsError || !students) {
+        console.error('Error fetching students:', studentsError);
+        return NextResponse.json(
+          {
+            error: 'Failed to fetch students',
+            details: studentsError?.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      if (students.length !== studentIds.length) {
+        return NextResponse.json(
+          { error: 'Some students not found or do not belong to this event' },
+          { status: 400 }
+        );
+      }
+
+      // Execute the requested action
+      switch (action) {
+        case 'qr':
+          return await generateQRCodes(supabase, students, eventId);
+
+        case 'tokens':
+          return await generateTokens(supabase, students);
+
+        case 'email':
+          return await sendEmails(supabase, students, email_options || {});
+
+        case 'archive':
+          return await archiveStudents(supabase, studentIds);
+
+        case 'delete':
+          return await deleteStudents(supabase, studentIds, eventId);
+
+        default:
+          return NextResponse.json(
+            { error: 'Unsupported action' },
+            { status: 400 }
+          );
+      }
+    } catch (error) {
+      console.error(
+        'Error in POST /api/admin/events/[id]/students/bulk:',
+        error
+      );
+
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Validation error', details: error.errors },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: 'Failed to fetch students', details: studentsError?.message },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (students.length !== studentIds.length) {
-      return NextResponse.json(
-        { error: 'Some students not found or do not belong to this event' },
-        { status: 400 }
-      );
-    }
-
-    // Execute the requested action
-    switch (action) {
-      case 'qr':
-        return await generateQRCodes(supabase, students, eventId);
-      
-      case 'tokens':
-        return await generateTokens(supabase, students);
-      
-      case 'email':
-        return await sendEmails(supabase, students, email_options || {});
-      
-      case 'archive':
-        return await archiveStudents(supabase, studentIds);
-      
-      case 'delete':
-        return await deleteStudents(supabase, studentIds, eventId);
-      
-      default:
-        return NextResponse.json(
-          { error: 'Unsupported action' },
-          { status: 400 }
-        );
-    }
-  } catch (error) {
-    console.error('Error in POST /api/admin/events/[id]/students/bulk:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-});
+);
 
 // Generate QR codes for students who don't have them
-async function generateQRCodes(supabase: any, students: any[], eventId: string) {
+async function generateQRCodes(
+  supabase: any,
+  students: any[],
+  eventId: string
+) {
   const results = {
     success_count: 0,
     error_count: 0,
@@ -164,8 +180,8 @@ async function generateTokens(supabase: any, students: any[]) {
   for (const student of students) {
     try {
       // Check if student already has an active token
-      const activeToken = student.student_tokens?.find((t: any) => 
-        new Date(t.expires_at) > new Date()
+      const activeToken = student.student_tokens?.find(
+        (t: any) => new Date(t.expires_at) > new Date()
       );
 
       if (activeToken) {
@@ -177,13 +193,11 @@ async function generateTokens(supabase: any, students: any[]) {
       const token = generateSecureToken();
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
-      const { error } = await supabase
-        .from('student_tokens')
-        .insert({
-          student_id: student.id,
-          token,
-          expires_at: expiresAt.toISOString(),
-        });
+      const { error } = await supabase.from('student_tokens').insert({
+        student_id: student.id,
+        token,
+        expires_at: expiresAt.toISOString(),
+      });
 
       if (error) {
         results.errors.push({
@@ -240,8 +254,8 @@ async function sendEmails(supabase: any, students: any[], emailOptions: any) {
       }
 
       // Get or create active token
-      let activeToken = student.student_tokens?.find((t: any) => 
-        new Date(t.expires_at) > new Date()
+      let activeToken = student.student_tokens?.find(
+        (t: any) => new Date(t.expires_at) > new Date()
       );
 
       if (!activeToken) {
@@ -291,7 +305,6 @@ async function sendEmails(supabase: any, students: any[], emailOptions: any) {
         simulated: true, // Remove this when actual email sending is implemented
       });
       results.success_count++;
-
     } catch (error) {
       results.errors.push({
         student_id: student.id,
@@ -304,7 +317,8 @@ async function sendEmails(supabase: any, students: any[], emailOptions: any) {
 
   return NextResponse.json({
     ...results,
-    notice: 'Email sending is simulated. Implement actual email service integration.',
+    notice:
+      'Email sending is simulated. Implement actual email service integration.',
   });
 }
 
@@ -313,7 +327,7 @@ async function archiveStudents(supabase: any, studentIds: string[]) {
   try {
     const { error } = await supabase
       .from('students')
-      .update({ 
+      .update({
         active: false,
         updated_at: new Date().toISOString(),
       })
@@ -340,7 +354,11 @@ async function archiveStudents(supabase: any, studentIds: string[]) {
 }
 
 // Delete students permanently
-async function deleteStudents(supabase: any, studentIds: string[], eventId: string) {
+async function deleteStudents(
+  supabase: any,
+  studentIds: string[],
+  eventId: string
+) {
   try {
     // Check for dependencies (photo assignments, tokens, etc.)
     const { data: photoAssignments } = await supabase
@@ -353,19 +371,22 @@ async function deleteStudents(supabase: any, studentIds: string[], eventId: stri
       .select('id, subjects!inner(id)')
       .in('subjects.id', studentIds);
 
-    if ((photoAssignments && photoAssignments.length > 0) || (orders && orders.length > 0)) {
-      return NextResponse.json({
-        error: 'Cannot delete students with associated data',
-        details: `Students have ${photoAssignments?.length || 0} photo assignments and ${orders?.length || 0} orders`,
-        suggestion: 'Consider archiving instead of deleting',
-      }, { status: 400 });
+    if (
+      (photoAssignments && photoAssignments.length > 0) ||
+      (orders && orders.length > 0)
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Cannot delete students with associated data',
+          details: `Students have ${photoAssignments?.length || 0} photo assignments and ${orders?.length || 0} orders`,
+          suggestion: 'Consider archiving instead of deleting',
+        },
+        { status: 400 }
+      );
     }
 
     // Delete student tokens first (foreign key constraint)
-    await supabase
-      .from('student_tokens')
-      .delete()
-      .in('student_id', studentIds);
+    await supabase.from('student_tokens').delete().in('student_id', studentIds);
 
     // Delete students
     const { error } = await supabase
@@ -394,18 +415,22 @@ async function deleteStudents(supabase: any, studentIds: string[], eventId: stri
 }
 
 // Utility functions
-async function generateStudentQRCode(eventId: string, studentName: string): Promise<string> {
+async function generateStudentQRCode(
+  eventId: string,
+  studentName: string
+): Promise<string> {
   const prefix = 'STU';
   const eventShort = eventId.substring(0, 8);
   const nameShort = studentName.substring(0, 3).toUpperCase();
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   const timestamp = Date.now().toString(36).toUpperCase();
-  
+
   return `${prefix}-${eventShort}-${nameShort}-${random}-${timestamp}`;
 }
 
 function generateSecureToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < 32; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));

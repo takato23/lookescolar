@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
   } catch (error) {
     logger.error('QR validation API error', {
       requestId,

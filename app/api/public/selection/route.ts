@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       eventId = codeRow.event_id as string;
       // Validar que las fotos pertenezcan al mismo code_id
       const { data: photos } = await supabase
-        .from('photos')
+        .from('assets')
         .select('id, code_id')
         .in('id', selectedPhotoIds)
         .eq('code_id', codeRow.id);

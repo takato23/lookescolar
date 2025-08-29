@@ -6,7 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Camera, CameraOff, RotateCcw, CheckCircle, XCircle, Scan } from 'lucide-react';
+import {
+  Camera,
+  CameraOff,
+  RotateCcw,
+  CheckCircle,
+  XCircle,
+  Scan,
+} from 'lucide-react';
 
 interface QRScannerProps {
   onQRDetected: (qrData: any) => void;
@@ -22,7 +29,11 @@ interface DetectedQR {
   timestamp: number;
 }
 
-export default function QRScanner({ onQRDetected, eventId, className }: QRScannerProps) {
+export default function QRScanner({
+  onQRDetected,
+  eventId,
+  className,
+}: QRScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -34,7 +45,10 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
   const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if QR scanning is supported
-  const isSupported = typeof navigator !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+  const isSupported =
+    typeof navigator !== 'undefined' &&
+    navigator.mediaDevices &&
+    navigator.mediaDevices.getUserMedia;
 
   useEffect(() => {
     return () => {
@@ -66,7 +80,9 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
     } catch (err: any) {
       console.error('Camera permission denied:', err);
       if (err.name === 'NotAllowedError') {
-        setError('Camera permission denied. Please allow camera access and try again.');
+        setError(
+          'Camera permission denied. Please allow camera access and try again.'
+        );
       } else if (err.name === 'NotFoundError') {
         setError('No camera found. Please check your device has a camera.');
       } else {
@@ -108,7 +124,7 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
 
     // Stop the video stream
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
 
@@ -139,10 +155,14 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
     try {
       // Get image data from canvas
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      
+
       // Try to detect QR code using jsQR
-      const jsQR = await import('jsqr').then(m => m.default);
-      const qrCodeResult = jsQR(imageData.data, imageData.width, imageData.height);
+      const jsQR = await import('jsqr').then((m) => m.default);
+      const qrCodeResult = jsQR(
+        imageData.data,
+        imageData.width,
+        imageData.height
+      );
 
       if (qrCodeResult && qrCodeResult.data) {
         await handleQRDetection(qrCodeResult.data);
@@ -156,7 +176,7 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
   const handleQRDetection = async (qrValue: string) => {
     // Check if we've already detected this QR recently (within 5 seconds)
     const recentDetection = detectedQRs.find(
-      qr => qr.qrCode === qrValue && Date.now() - qr.timestamp < 5000
+      (qr) => qr.qrCode === qrValue && Date.now() - qr.timestamp < 5000
     );
 
     if (recentDetection) {
@@ -187,10 +207,10 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
           timestamp: Date.now(),
         };
 
-        setDetectedQRs(prev => [detectedQR, ...prev.slice(0, 4)]); // Keep last 5 detections
-        
+        setDetectedQRs((prev) => [detectedQR, ...prev.slice(0, 4)]); // Keep last 5 detections
+
         toast.success(`QR code detected: ${data.data.studentName}`);
-        
+
         // Call the callback with the detected QR data
         onQRDetected(data.data);
 
@@ -217,10 +237,10 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
     return (
       <Card className={className}>
         <CardContent className="p-6 text-center">
-          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
           <p className="text-muted-foreground">
-            QR scanning is not supported in this browser.
-            Please use a modern browser with camera support.
+            QR scanning is not supported in this browser. Please use a modern
+            browser with camera support.
           </p>
         </CardContent>
       </Card>
@@ -232,7 +252,7 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Scan className="w-5 h-5" />
+            <Scan className="h-5 w-5" />
             QR Code Scanner
           </CardTitle>
         </CardHeader>
@@ -251,24 +271,23 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
               playsInline
               muted
             />
-            <canvas
-              ref={canvasRef}
-              className="hidden"
-            />
-            
+            <canvas ref={canvasRef} className="hidden" />
+
             {!isScanning && hasPermission !== false && (
-              <div className="aspect-video bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+              <div className="flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-100">
                 <div className="text-center">
-                  <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-muted-foreground">Click Start Scanning to begin</p>
+                  <Camera className="mx-auto mb-2 h-12 w-12 text-gray-400" />
+                  <p className="text-muted-foreground">
+                    Click Start Scanning to begin
+                  </p>
                 </div>
               </div>
             )}
 
             {isScanning && isProcessing && (
-              <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                <div className="bg-white p-4 rounded-lg text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-50">
+                <div className="rounded-lg bg-white p-4 text-center">
+                  <div className="border-primary mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-b-2"></div>
                   <p className="text-sm">Processing QR code...</p>
                 </div>
               </div>
@@ -278,19 +297,23 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
           <div className="flex gap-2">
             {!isScanning ? (
               <Button onClick={startScanning} className="flex-1">
-                <Camera className="w-4 h-4 mr-2" />
+                <Camera className="mr-2 h-4 w-4" />
                 Start Scanning
               </Button>
             ) : (
-              <Button onClick={stopScanning} variant="destructive" className="flex-1">
-                <CameraOff className="w-4 h-4 mr-2" />
+              <Button
+                onClick={stopScanning}
+                variant="danger"
+                className="flex-1"
+              >
+                <CameraOff className="mr-2 h-4 w-4" />
                 Stop Scanning
               </Button>
             )}
-            
+
             {detectedQRs.length > 0 && (
               <Button onClick={clearDetectedQRs} variant="outline">
-                <RotateCcw className="w-4 h-4 mr-2" />
+                <RotateCcw className="mr-2 h-4 w-4" />
                 Clear
               </Button>
             )}
@@ -299,16 +322,16 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
           {/* Recent detections */}
           {detectedQRs.length > 0 && (
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Recent Detections:</h4>
+              <h4 className="text-sm font-semibold">Recent Detections:</h4>
               <div className="space-y-1">
                 {detectedQRs.map((detection, index) => (
                   <div
                     key={`${detection.qrCode}-${detection.timestamp}`}
-                    className="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded"
+                    className="flex items-center justify-between rounded border border-green-200 bg-green-50 p-2"
                   >
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="font-medium text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium">
                         {detection.studentName || 'Unknown Student'}
                       </span>
                     </div>
@@ -321,7 +344,7 @@ export default function QRScanner({ onQRDetected, eventId, className }: QRScanne
             </div>
           )}
 
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             <p>• Point your camera at a student's QR code</p>
             <p>• Make sure the QR code is well-lit and in focus</p>
             <p>• The scanner will automatically detect and validate QR codes</p>

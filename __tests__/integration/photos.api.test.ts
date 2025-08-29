@@ -28,7 +28,7 @@ vi.mock('@/lib/utils/logger', () => ({
 // Mock Supabase client
 const mockSupabaseClient = {
   from: vi.fn(),
-  storage: { 
+  storage: {
     from: vi.fn().mockReturnValue({
       createSignedUrl: vi.fn(),
     }),
@@ -50,7 +50,9 @@ const mockFrom = {
 };
 
 vi.mock('@/lib/supabase/server', () => ({
-  createServerSupabaseServiceClient: vi.fn().mockResolvedValue(mockSupabaseClient),
+  createServerSupabaseServiceClient: vi
+    .fn()
+    .mockResolvedValue(mockSupabaseClient),
 }));
 
 beforeEach(() => {
@@ -94,15 +96,28 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
   describe('GET /admin/events/{eventId}/photos', () => {
     it('should fetch photos for an event successfully', async () => {
       const photos = [mockPhoto];
-      
+
       // Mock event exists check
       mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: photos, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, count: vi.fn().mockResolvedValue({ count: 1, error: null }) });
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          count: vi.fn().mockResolvedValue({ count: 1, error: null }),
+        });
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(200);
@@ -113,15 +128,31 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
 
     it('should filter photos by folder when folderId provided', async () => {
       const photos = [mockPhoto];
-      
-      mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockFolder, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: photos, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, count: vi.fn().mockResolvedValue({ count: 1, error: null }) });
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos?folderId=${mockFolderId}`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      mockSupabaseClient.from
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockFolder, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          count: vi.fn().mockResolvedValue({ count: 1, error: null }),
+        });
+
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos?folderId=${mockFolderId}`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(200);
@@ -131,14 +162,27 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
 
     it('should handle pagination parameters correctly', async () => {
       const photos = [mockPhoto];
-      
-      mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: photos, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, count: vi.fn().mockResolvedValue({ count: 100, error: null }) });
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos?page=2&limit=20`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      mockSupabaseClient.from
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          count: vi.fn().mockResolvedValue({ count: 100, error: null }),
+        });
+
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos?page=2&limit=20`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(200);
@@ -153,11 +197,20 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
     it('should include signed URLs when requested', async () => {
       const photos = [mockPhoto];
       const signedUrl = 'https://signed-url.example.com/photo.jpg';
-      
+
       mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: photos, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, count: vi.fn().mockResolvedValue({ count: 1, error: null }) });
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          count: vi.fn().mockResolvedValue({ count: 1, error: null }),
+        });
 
       // Mock signed URL generation
       mockSupabaseClient.storage.from().createSignedUrl.mockResolvedValue({
@@ -165,8 +218,12 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
         error: null,
       });
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos?includeSignedUrls=true`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos?includeSignedUrls=true`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(200);
@@ -181,8 +238,12 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
         single: vi.fn().mockResolvedValue({ data: null, error }),
       });
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(404);
@@ -192,11 +253,24 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
 
     it('should handle invalid folder', async () => {
       mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: null, error: new Error('Folder not found') }) });
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({
+            data: null,
+            error: new Error('Folder not found'),
+          }),
+        });
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos?folderId=invalid-folder`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos?folderId=invalid-folder`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(404);
@@ -205,14 +279,29 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
     });
 
     it('should validate folder belongs to event', async () => {
-      const differentEventFolder = { ...mockFolder, event_id: 'different-event' };
-      
-      mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }) })
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ data: differentEventFolder, error: null }) });
+      const differentEventFolder = {
+        ...mockFolder,
+        event_id: 'different-event',
+      };
 
-      const request = new NextRequest(`http://localhost/admin/events/${mockEventId}/photos?folderId=${mockFolderId}`);
-      const response = await photosGET(request, { params: { id: mockEventId } });
+      mockSupabaseClient.from
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({ data: mockEvent, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi
+            .fn()
+            .mockResolvedValue({ data: differentEventFolder, error: null }),
+        });
+
+      const request = new NextRequest(
+        `http://localhost/admin/events/${mockEventId}/photos?folderId=${mockFolderId}`
+      );
+      const response = await photosGET(request, {
+        params: { id: mockEventId },
+      });
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
@@ -231,24 +320,37 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
       ];
 
       mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ 
-          data: { id: targetFolderId, event_id: mockEventId, name: 'Target Folder' }, 
-          error: null 
-        }) })
-        .mockReturnValueOnce({ ...mockFrom, select: vi.fn().mockResolvedValue({ data: photos, error: null }) })
-        .mockReturnValueOnce({ 
-          ...mockFrom, 
-          select: vi.fn().mockResolvedValue({ 
-            data: photos.map(p => ({ ...p, folder_id: targetFolderId })), 
-            error: null 
-          }) 
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({
+            data: {
+              id: targetFolderId,
+              event_id: mockEventId,
+              name: 'Target Folder',
+            },
+            error: null,
+          }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          select: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          select: vi.fn().mockResolvedValue({
+            data: photos.map((p) => ({ ...p, folder_id: targetFolderId })),
+            error: null,
+          }),
         });
 
-      const request = new NextRequest('http://localhost/admin/photos/batch-move', {
-        method: 'PATCH',
-        body: JSON.stringify({ photoIds, folderId: targetFolderId }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/batch-move',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoIds, folderId: targetFolderId }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await batchMovePATCH(request);
       const responseData = await response.json();
@@ -260,45 +362,58 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
     });
 
     it('should validate photo IDs array is not empty', async () => {
-      const request = new NextRequest('http://localhost/admin/photos/batch-move', {
-        method: 'PATCH',
-        body: JSON.stringify({ photoIds: [], folderId: 'folder-123' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/batch-move',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoIds: [], folderId: 'folder-123' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await batchMovePATCH(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
       expect(responseData.success).toBe(false);
-      expect(responseData.error).toBe('Photo IDs array is required and must not be empty');
+      expect(responseData.error).toBe(
+        'Photo IDs array is required and must not be empty'
+      );
     });
 
     it('should limit batch size to 100 photos', async () => {
       const photoIds = Array.from({ length: 101 }, (_, i) => `photo-${i}`);
 
-      const request = new NextRequest('http://localhost/admin/photos/batch-move', {
-        method: 'PATCH',
-        body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/batch-move',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await batchMovePATCH(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
       expect(responseData.success).toBe(false);
-      expect(responseData.error).toBe('Cannot move more than 100 photos at once');
+      expect(responseData.error).toBe(
+        'Cannot move more than 100 photos at once'
+      );
     });
 
     it('should validate UUID format for photo IDs', async () => {
       const photoIds = ['invalid-uuid', 'another-invalid'];
 
-      const request = new NextRequest('http://localhost/admin/photos/batch-move', {
-        method: 'PATCH',
-        body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/batch-move',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await batchMovePATCH(request);
       const responseData = await response.json();
@@ -310,19 +425,32 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
 
     it('should handle missing photos gracefully', async () => {
       const photoIds = [mockPhoto.id, 'non-existent-photo'];
-      
-      mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ 
-          data: { id: 'folder-123', event_id: mockEventId, name: 'Target Folder' }, 
-          error: null 
-        }) })
-        .mockReturnValueOnce({ ...mockFrom, select: vi.fn().mockResolvedValue({ data: [mockPhoto], error: null }) });
 
-      const request = new NextRequest('http://localhost/admin/photos/batch-move', {
-        method: 'PATCH',
-        body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      mockSupabaseClient.from
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({
+            data: {
+              id: 'folder-123',
+              event_id: mockEventId,
+              name: 'Target Folder',
+            },
+            error: null,
+          }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          select: vi.fn().mockResolvedValue({ data: [mockPhoto], error: null }),
+        });
+
+      const request = new NextRequest(
+        'http://localhost/admin/photos/batch-move',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await batchMovePATCH(request);
       const responseData = await response.json();
@@ -341,24 +469,39 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
       ];
 
       mockSupabaseClient.from
-        .mockReturnValueOnce({ ...mockFrom, single: vi.fn().mockResolvedValue({ 
-          data: { id: 'folder-123', event_id: mockEventId, name: 'Target Folder' }, 
-          error: null 
-        }) })
-        .mockReturnValueOnce({ ...mockFrom, select: vi.fn().mockResolvedValue({ data: photos, error: null }) });
+        .mockReturnValueOnce({
+          ...mockFrom,
+          single: vi.fn().mockResolvedValue({
+            data: {
+              id: 'folder-123',
+              event_id: mockEventId,
+              name: 'Target Folder',
+            },
+            error: null,
+          }),
+        })
+        .mockReturnValueOnce({
+          ...mockFrom,
+          select: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        });
 
-      const request = new NextRequest('http://localhost/admin/photos/batch-move', {
-        method: 'PATCH',
-        body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/batch-move',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ photoIds, folderId: 'folder-123' }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await batchMovePATCH(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
       expect(responseData.success).toBe(false);
-      expect(responseData.error).toBe('All photos must belong to the same event');
+      expect(responseData.error).toBe(
+        'All photos must belong to the same event'
+      );
     });
   });
 
@@ -366,7 +509,7 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
     it('should generate signed URLs for photos successfully', async () => {
       const photoIds = [mockPhoto.id];
       const signedUrl = 'https://signed-url.example.com/photo.jpg';
-      
+
       mockSupabaseClient.from.mockReturnValueOnce({
         ...mockFrom,
         select: vi.fn().mockResolvedValue({ data: [mockPhoto], error: null }),
@@ -377,11 +520,14 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
         error: null,
       });
 
-      const request = new NextRequest('http://localhost/admin/photos/sign-urls', {
-        method: 'POST',
-        body: JSON.stringify({ photoIds, expiresIn: 3600 }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/sign-urls',
+        {
+          method: 'POST',
+          body: JSON.stringify({ photoIds, expiresIn: 3600 }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await signUrlsPOST(request);
       const responseData = await response.json();
@@ -394,81 +540,107 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
     });
 
     it('should validate photo IDs array is not empty', async () => {
-      const request = new NextRequest('http://localhost/admin/photos/sign-urls', {
-        method: 'POST',
-        body: JSON.stringify({ photoIds: [] }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/sign-urls',
+        {
+          method: 'POST',
+          body: JSON.stringify({ photoIds: [] }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await signUrlsPOST(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
       expect(responseData.success).toBe(false);
-      expect(responseData.error).toBe('Photo IDs array is required and must not be empty');
+      expect(responseData.error).toBe(
+        'Photo IDs array is required and must not be empty'
+      );
     });
 
     it('should limit batch size to 50 photos', async () => {
       const photoIds = Array.from({ length: 51 }, (_, i) => `photo-${i}`);
 
-      const request = new NextRequest('http://localhost/admin/photos/sign-urls', {
-        method: 'POST',
-        body: JSON.stringify({ photoIds }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/sign-urls',
+        {
+          method: 'POST',
+          body: JSON.stringify({ photoIds }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await signUrlsPOST(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
       expect(responseData.success).toBe(false);
-      expect(responseData.error).toBe('Cannot generate URLs for more than 50 photos at once');
+      expect(responseData.error).toBe(
+        'Cannot generate URLs for more than 50 photos at once'
+      );
     });
 
     it('should validate expiration time range', async () => {
       const photoIds = [mockPhoto.id];
 
-      const request = new NextRequest('http://localhost/admin/photos/sign-urls', {
-        method: 'POST',
-        body: JSON.stringify({ photoIds, expiresIn: 30 }), // Too short
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/sign-urls',
+        {
+          method: 'POST',
+          body: JSON.stringify({ photoIds, expiresIn: 30 }), // Too short
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await signUrlsPOST(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(400);
       expect(responseData.success).toBe(false);
-      expect(responseData.error).toBe('Expires in must be between 60 and 86400 seconds');
+      expect(responseData.error).toBe(
+        'Expires in must be between 60 and 86400 seconds'
+      );
     });
 
     it('should handle photos without storage paths', async () => {
       const photoIds = [mockPhoto.id];
-      const photoWithoutPath = { ...mockPhoto, storage_path: null, preview_path: null };
-      
+      const photoWithoutPath = {
+        ...mockPhoto,
+        storage_path: null,
+        preview_path: null,
+      };
+
       mockSupabaseClient.from.mockReturnValueOnce({
         ...mockFrom,
-        select: vi.fn().mockResolvedValue({ data: [photoWithoutPath], error: null }),
+        select: vi
+          .fn()
+          .mockResolvedValue({ data: [photoWithoutPath], error: null }),
       });
 
-      const request = new NextRequest('http://localhost/admin/photos/sign-urls', {
-        method: 'POST',
-        body: JSON.stringify({ photoIds }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/sign-urls',
+        {
+          method: 'POST',
+          body: JSON.stringify({ photoIds }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await signUrlsPOST(request);
       const responseData = await response.json();
 
       expect(response.status).toBe(200);
       expect(responseData.success).toBe(true);
-      expect(responseData.errors[mockPhoto.id]).toBe('No storage path available');
+      expect(responseData.errors[mockPhoto.id]).toBe(
+        'No storage path available'
+      );
       expect(responseData.summary.failed).toBe(1);
     });
 
     it('should handle signed URL generation errors', async () => {
       const photoIds = [mockPhoto.id];
-      
+
       mockSupabaseClient.from.mockReturnValueOnce({
         ...mockFrom,
         select: vi.fn().mockResolvedValue({ data: [mockPhoto], error: null }),
@@ -479,11 +651,14 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
         error: new Error('Storage error'),
       });
 
-      const request = new NextRequest('http://localhost/admin/photos/sign-urls', {
-        method: 'POST',
-        body: JSON.stringify({ photoIds }),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const request = new NextRequest(
+        'http://localhost/admin/photos/sign-urls',
+        {
+          method: 'POST',
+          body: JSON.stringify({ photoIds }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
 
       const response = await signUrlsPOST(request);
       const responseData = await response.json();

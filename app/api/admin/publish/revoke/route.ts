@@ -24,7 +24,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (codeErr || !code) {
-      return NextResponse.json({ error: 'Código no encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Código no encontrado' },
+        { status: 404 }
+      );
     }
 
     const token = generateHexToken(16);
@@ -35,7 +38,10 @@ export async function POST(request: NextRequest) {
 
     if (updErr) {
       console.error('[Service] Error revocando token:', updErr);
-      return NextResponse.json({ error: 'No se pudo revocar token' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'No se pudo revocar token' },
+        { status: 500 }
+      );
     }
 
     const url = absoluteUrl(`/f/${token}`);
@@ -45,5 +51,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
-
-

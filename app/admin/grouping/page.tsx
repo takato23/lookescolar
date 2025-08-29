@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -20,10 +20,20 @@ export default function GroupingPage() {
   const [error, setError] = useState<string | null>(null);
   const [dryRun, setDryRun] = useState(true);
 
-  const [_codes, _setCodes] = useState<Array<{ id: string; code_value: string; is_published: boolean; has_anchor: boolean; count: number }>>([]);
+  const [_codes, _setCodes] = useState<
+    Array<{
+      id: string;
+      code_value: string;
+      is_published: boolean;
+      has_anchor: boolean;
+      count: number;
+    }>
+  >([]);
   const [sourceCodeValue, setSourceCodeValue] = useState('');
   const [destCodeId, setDestCodeId] = useState('');
-  const [_photosSample, _setPhotosSample] = useState<Array<{ id: string; original_filename: string }>>([]);
+  const [_photosSample, _setPhotosSample] = useState<
+    Array<{ id: string; original_filename: string }>
+  >([]);
   const [showUnassigned, setShowUnassigned] = useState(false);
 
   useEffect(() => {
@@ -43,7 +53,7 @@ export default function GroupingPage() {
       const res = await fetch('/api/admin/group', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId, dryRun })
+        body: JSON.stringify({ eventId, dryRun }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -62,51 +72,75 @@ export default function GroupingPage() {
     <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Agrupar (por QR)</h1>
-        <p className="text-muted-foreground">Agrupa de ancla a ancla. Ajustes manuales por arrastre</p>
+        <p className="text-muted-foreground">
+          Agrupa de ancla a ancla. Ajustes manuales por arrastre
+        </p>
       </div>
 
-      <div className="rounded-lg border bg-card p-6">
+      <div className="bg-card rounded-lg border p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label htmlFor="event" className="text-sm text-muted-foreground">ID de evento</label>
-            <Input id="event" value={eventId} onChange={(e) => setEventId(e.target.value)} placeholder="UUID del evento" />
+            <label htmlFor="event" className="text-muted-foreground text-sm">
+              ID de evento
+            </label>
+            <Input
+              id="event"
+              value={eventId}
+              onChange={(e) => setEventId(e.target.value)}
+              placeholder="UUID del evento"
+            />
           </div>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />
+          <label className="text-muted-foreground flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={dryRun}
+              onChange={(e) => setDryRun(e.target.checked)}
+            />
             Dry run
           </label>
-          <Button onClick={runDetection} disabled={!eventId || loading} aria-label="Detectar anclas (QR)">
+          <Button
+            onClick={runDetection}
+            disabled={!eventId || loading}
+            aria-label="Detectar anclas (QR)"
+          >
             {loading ? 'Agrupando…' : 'Agrupar ahora'}
           </Button>
         </div>
-        <div className="mt-4 text-sm text-muted-foreground">
-          Si hay anchors sin code, verificar que el código exista en Códigos o crearlo.
+        <div className="text-muted-foreground mt-4 text-sm">
+          Si hay anchors sin code, verificar que el código exista en Códigos o
+          crearlo.
         </div>
       </div>
 
       {error && (
-        <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
       )}
 
       {result && (
-        <div className="mt-4 rounded-lg border bg-card p-6">
+        <div className="bg-card mt-4 rounded-lg border p-6">
           <h2 className="mb-2 text-xl font-semibold">Resumen</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-md bg-muted p-3">
+            <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">{result.assigned ?? 0}</div>
-              <div className="text-xs text-muted-foreground">Asignadas</div>
+              <div className="text-muted-foreground text-xs">Asignadas</div>
             </div>
-            <div className="rounded-md bg-muted p-3">
+            <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">{result.untouched ?? 0}</div>
-              <div className="text-xs text-muted-foreground">Sin cambios</div>
+              <div className="text-muted-foreground text-xs">Sin cambios</div>
             </div>
-            <div className="rounded-md bg-muted p-3">
+            <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">{result.unassigned ?? 0}</div>
-              <div className="text-xs text-muted-foreground">No asignadas</div>
+              <div className="text-muted-foreground text-xs">No asignadas</div>
             </div>
-            <div className="rounded-md bg-muted p-3">
-              <div className="text-2xl font-bold">{result.anchors_unmatched?.length ?? 0}</div>
-              <div className="text-xs text-muted-foreground">Anclas sin code</div>
+            <div className="bg-muted rounded-md p-3">
+              <div className="text-2xl font-bold">
+                {result.anchors_unmatched?.length ?? 0}
+              </div>
+              <div className="text-muted-foreground text-xs">
+                Anclas sin code
+              </div>
             </div>
           </div>
 
@@ -146,7 +180,7 @@ export default function GroupingPage() {
       )}
 
       {showUnassigned && (
-        <div className="mt-6 rounded-lg border bg-card p-6">
+        <div className="bg-card mt-6 rounded-lg border p-6">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="font-semibold">Sin asignar</h3>
             <button
@@ -157,29 +191,49 @@ export default function GroupingPage() {
               Cerrar
             </button>
           </div>
-          <p className="text-sm text-muted-foreground">Usa los filtros de fotos para ver únicamente las no asignadas.</p>
+          <p className="text-muted-foreground text-sm">
+            Usa los filtros de fotos para ver únicamente las no asignadas.
+          </p>
         </div>
       )}
 
-      <div className="mt-8 rounded-lg border bg-card p-6">
+      <div className="bg-card mt-8 rounded-lg border p-6">
         <h2 className="mb-2 text-xl font-semibold">Corrección manual</h2>
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
-            <label className="text-sm text-muted-foreground">Código origen</label>
-            <Input value={sourceCodeValue} onChange={(e) => setSourceCodeValue(e.target.value)} placeholder="SV-027" />
+            <label className="text-muted-foreground text-sm">
+              Código origen
+            </label>
+            <Input
+              value={sourceCodeValue}
+              onChange={(e) => setSourceCodeValue(e.target.value)}
+              placeholder="SV-027"
+            />
           </div>
           <div>
-            <label className="text-sm text-muted-foreground">Destino codeId</label>
-            <Input value={destCodeId} onChange={(e) => setDestCodeId(e.target.value)} placeholder="uuid code destino" />
+            <label className="text-muted-foreground text-sm">
+              Destino codeId
+            </label>
+            <Input
+              value={destCodeId}
+              onChange={(e) => setDestCodeId(e.target.value)}
+              placeholder="uuid code destino"
+            />
           </div>
           <div className="flex items-end">
-            <Button disabled={!sourceCodeValue || !destCodeId} aria-label="Mover selección">Mover selección</Button>
+            <Button
+              disabled={!sourceCodeValue || !destCodeId}
+              aria-label="Mover selección"
+            >
+              Mover selección
+            </Button>
           </div>
         </div>
-        <div className="text-sm text-muted-foreground">MVP: la selección y vista de thumbnails se agregará en la próxima tarea.</div>
+        <div className="text-muted-foreground text-sm">
+          MVP: la selección y vista de thumbnails se agregará en la próxima
+          tarea.
+        </div>
       </div>
     </div>
   );
 }
-
-
