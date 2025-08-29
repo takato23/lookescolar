@@ -14,13 +14,15 @@ const PhotoQuerySchema = z.object({
   tagged: z.coerce.boolean().optional(),
   date_from: z.string().optional(),
   date_to: z.string().optional(),
-  sort_by: z.enum(['created_at', 'filename', 'file_size', 'updated_at']).default('created_at'),
+  sort_by: z
+    .enum(['created_at', 'filename', 'file_size', 'updated_at'])
+    .default('created_at'),
   sort_order: z.enum(['asc', 'desc']).default('desc'),
 });
 
 /**
  * Unified Photos API - Handles all photo queries with advanced filtering
- * 
+ *
  * This endpoint replaces multiple fragmented photo APIs and provides:
  * - Cursor-based pagination for performance
  * - Advanced filtering and search
@@ -30,27 +32,29 @@ const PhotoQuerySchema = z.object({
  */
 export async function GET(request: NextRequest) {
   const startTime = Date.now(); // For performance tracking
-  
+
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Validate and parse query parameters
     const params = PhotoQuerySchema.parse(Object.fromEntries(searchParams));
-    
+
     // Create Supabase client
     const supabase = await createClient();
-    
+
     // Check admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     // In development, allow bypass without session to access real data
     if (!user && process.env.NODE_ENV === 'development') {
-      console.log('Development mode: bypassing auth for photos unified API (GET)');
-    } else if (!user || authError) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+      console.log(
+        'Development mode: bypassing auth for photos unified API (GET)'
       );
+    } else if (!user || authError) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify admin role - use user metadata instead of profiles table (only in production)
@@ -69,7 +73,7 @@ export async function GET(request: NextRequest) {
     // Performance optimizations: Use selective fields to reduce payload
     const baseFields = [
       'id',
-      'original_filename', 
+      'original_filename',
       'storage_path',
       'preview_path',
       'watermark_path',
@@ -80,13 +84,13 @@ export async function GET(request: NextRequest) {
       'updated_at',
       'approved',
       'event_id',
-      'folder_id'
+      'folder_id',
     ];
 
     // Only fetch related data if needed (reduces query complexity)
     const needsEventData = params.event_id || params.search;
     const needsStudentData = params.student_id || params.tagged !== undefined;
-    
+
     let selectFields = baseFields.join(', ');
     if (needsEventData) {
       selectFields += `, events:event_id (id, name, school)`;
@@ -110,7 +114,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (params.student_id) {
-      query = query.filter('photo_students.student_id', 'eq', params.student_id);
+      query = query.filter(
+        'photo_students.student_id',
+        'eq',
+        params.student_id
+      );
     }
 
     if (params.approved !== undefined) {
@@ -131,7 +139,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Apply sorting
-    const sortColumn = params.sort_by === 'filename' ? 'original_filename' : params.sort_by;
+    const sortColumn =
+      params.sort_by === 'filename' ? 'original_filename' : params.sort_by;
     query = query.order(sortColumn, { ascending: params.sort_order === 'asc' });
 
     // Apply pagination
@@ -150,50 +159,52 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform the data to include computed fields
-    const transformedPhotos = photos?.map(photo => {
-      // Determine the best available image URL
-      let thumbnail_url = null;
-      let preview_url = null;
+    const transformedPhotos =
+      photos?.map((photo) => {
+        // Determine the best available image URL
+        let thumbnail_url = null;
+        let preview_url = null;
 
-      if (photo.preview_path) {
-        // Use preview path for thumbnail (smaller size)
-        thumbnail_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.preview_path)}&size=300`;
-        preview_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.preview_path)}&size=800`;
-      } else if (photo.watermark_path) {
-        // Fallback to watermark path
-        thumbnail_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.watermark_path)}&size=300`;
-        preview_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.watermark_path)}&size=800`;
-      }
-
-      // Flatten student data
-      const students = photo.photo_students?.map(ps => ps.students).filter(Boolean) || [];
-
-      // Check if photo is tagged (has students assigned)
-      const tagged = students.length > 0;
-
-      return {
-        id: photo.id,
-        original_filename: photo.original_filename,
-        storage_path: photo.storage_path,
-        thumbnail_url,
-        preview_url,
-        file_size: photo.file_size,
-        width: photo.width,
-        height: photo.height,
-        created_at: photo.created_at,
-        updated_at: photo.updated_at,
-        approved: photo.approved,
-        tagged,
-        event_id: photo.event_id,
-        folder_id: photo.folder_id,
-        event: photo.events,
-        folder: photo.folders,
-        students,
-        metadata: {
-          // Add any metadata fields if available
+        if (photo.preview_path) {
+          // Use preview path for thumbnail (smaller size)
+          thumbnail_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.preview_path)}&size=300`;
+          preview_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.preview_path)}&size=800`;
+        } else if (photo.watermark_path) {
+          // Fallback to watermark path
+          thumbnail_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.watermark_path)}&size=300`;
+          preview_url = `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.watermark_path)}&size=800`;
         }
-      };
-    }) || [];
+
+        // Flatten student data
+        const students =
+          photo.photo_students?.map((ps) => ps.students).filter(Boolean) || [];
+
+        // Check if photo is tagged (has students assigned)
+        const tagged = students.length > 0;
+
+        return {
+          id: photo.id,
+          original_filename: photo.original_filename,
+          storage_path: photo.storage_path,
+          thumbnail_url,
+          preview_url,
+          file_size: photo.file_size,
+          width: photo.width,
+          height: photo.height,
+          created_at: photo.created_at,
+          updated_at: photo.updated_at,
+          approved: photo.approved,
+          tagged,
+          event_id: photo.event_id,
+          folder_id: photo.folder_id,
+          event: photo.events,
+          folder: photo.folders,
+          students,
+          metadata: {
+            // Add any metadata fields if available
+          },
+        };
+      }) || [];
 
     // Calculate pagination info
     const totalPhotos = count || 0;
@@ -233,29 +244,34 @@ export async function GET(request: NextRequest) {
         query_time: `${queryTime}ms`,
         total_results: totalPhotos,
         page_size: transformedPhotos.length,
-      }
+      },
     };
 
     // Create response with performance optimizations
     const responseObj = NextResponse.json(response);
-    
+
     // Add caching headers for performance
-    responseObj.headers.set('Cache-Control', 'private, max-age=30, stale-while-revalidate=60');
-    responseObj.headers.set('ETag', `"photos-${params.page}-${params.limit}-${JSON.stringify(params).slice(0, 50)}"`);
-    
+    responseObj.headers.set(
+      'Cache-Control',
+      'private, max-age=30, stale-while-revalidate=60'
+    );
+    responseObj.headers.set(
+      'ETag',
+      `"photos-${params.page}-${params.limit}-${JSON.stringify(params).slice(0, 50)}"`
+    );
+
     // Enable compression for large responses
     if (transformedPhotos.length > 20) {
       responseObj.headers.set('Content-Encoding', 'gzip');
     }
 
     return responseObj;
-
   } catch (error) {
     console.error('Unified photos API error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid query parameters',
           details: error.errors,
         },
@@ -264,9 +280,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -282,18 +298,20 @@ export async function POST(request: NextRequest) {
 
     // Create Supabase client
     const supabase = await createClient();
-    
+
     // Check admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
     // In development, allow bypass without session to access real data
     if (!user && process.env.NODE_ENV === 'development') {
-      console.log('Development mode: bypassing auth for photos unified API (POST)');
-    } else if (!user || authError) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+      console.log(
+        'Development mode: bypassing auth for photos unified API (POST)'
       );
+    } else if (!user || authError) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify admin role - use user metadata instead of profiles table (only in production)
@@ -335,10 +353,7 @@ export async function POST(request: NextRequest) {
 
       case 'delete':
         // Note: This is a soft delete. For hard delete, would need to remove storage files too
-        result = await supabase
-          .from('photos')
-          .delete()
-          .in('id', photoIds);
+        result = await supabase.from('photos').delete().in('id', photoIds);
         break;
 
       case 'download':
@@ -351,11 +366,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           success: true,
           action: 'download',
-          photos: photos?.map(photo => ({
-            id: photo.id,
-            filename: photo.original_filename,
-            download_url: `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.storage_path)}&download=true`
-          })) || []
+          photos:
+            photos?.map((photo) => ({
+              id: photo.id,
+              filename: photo.original_filename,
+              download_url: `/api/admin/storage/signed-url?path=${encodeURIComponent(photo.storage_path)}&download=true`,
+            })) || [],
         });
 
       default:
@@ -377,15 +393,14 @@ export async function POST(request: NextRequest) {
       success: true,
       action,
       affected_count: photoIds.length,
-      message: `Successfully ${action}ed ${photoIds.length} photos`
+      message: `Successfully ${action}ed ${photoIds.length} photos`,
     });
-
   } catch (error) {
     console.error('Bulk operation error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
@@ -394,29 +409,29 @@ export async function POST(request: NextRequest) {
 
 /**
  * Performance Notes:
- * 
+ *
  * Database Optimization:
  * - Uses cursor-based pagination for large datasets
  * - Proper indexing on filtered columns (event_id, folder_id, created_at)
  * - Count queries are cached when possible
  * - Selective field loading to minimize data transfer
- * 
+ *
  * Memory Management:
  * - Limit max page size to prevent memory overflow
  * - Transform data efficiently without multiple loops
  * - Use streaming for very large responses (future enhancement)
- * 
+ *
  * Caching Strategy:
  * - Query results cached at React Query level
  * - Signed URLs cached with appropriate TTL
  * - Metadata cached separately from photo data
- * 
+ *
  * Security:
  * - All queries use RLS where applicable
  * - Admin authentication verified on every request
  * - Input validation with Zod schemas
  * - SQL injection prevention through parameterized queries
- * 
+ *
  * Monitoring:
  * - Query performance metrics included in response
  * - Error logging for debugging and monitoring

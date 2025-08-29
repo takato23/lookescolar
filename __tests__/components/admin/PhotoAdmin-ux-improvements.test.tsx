@@ -1,13 +1,13 @@
 /**
  * PhotoAdmin UX Improvements Test
- * 
+ *
  * Tests the comprehensive UX improvements to ensure:
  * 1. Clear Cache button is always visible (not production-only)
  * 2. Enhanced drag & drop with custom drag image and visual feedback
  * 3. Improved drop zone highlighting with folder icons
  * 4. Immediate feedback with contextual toast messages
  * 5. Regular clicks toggle selection (checkbox-like behavior)
- * 6. Ctrl/Cmd+Click works for power users  
+ * 6. Ctrl/Cmd+Click works for power users
  * 7. Shift+Click provides range selection
  * 8. ESC clears all selections
  * 9. Visual feedback is clear and intuitive
@@ -119,21 +119,23 @@ describe('PhotoAdmin UX Improvements', () => {
       if (url.includes('/api/admin/folders')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            folders: mockFolders,
-          }),
+          json: () =>
+            Promise.resolve({
+              success: true,
+              folders: mockFolders,
+            }),
         });
       }
       if (url.includes('/api/admin/assets')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            assets: mockAssets,
-            count: mockAssets.length,
-            hasMore: false,
-          }),
+          json: () =>
+            Promise.resolve({
+              success: true,
+              assets: mockAssets,
+              count: mockAssets.length,
+              hasMore: false,
+            }),
         });
       }
       return Promise.reject(new Error(`Unhandled URL: ${url}`));
@@ -155,7 +157,7 @@ describe('PhotoAdmin UX Improvements', () => {
   describe('Selection Behavior', () => {
     it('should show checkbox-style selection indicators', async () => {
       renderPhotoAdmin();
-      
+
       // Wait for data to load
       await waitFor(() => {
         expect(screen.getByText('Test Folder')).toBeInTheDocument();
@@ -172,18 +174,20 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should toggle selection on regular click (checkbox-like behavior)', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
       expect(firstPhoto).toBeInTheDocument();
 
       if (firstPhoto) {
         // First click should select
         fireEvent.click(firstPhoto);
-        
+
         // Should show selection count
         await waitFor(() => {
           expect(screen.getByText(/1 photo.*selected/i)).toBeInTheDocument();
@@ -191,7 +195,7 @@ describe('PhotoAdmin UX Improvements', () => {
 
         // Second click should deselect
         fireEvent.click(firstPhoto);
-        
+
         // Selection should be cleared
         await waitFor(() => {
           expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
@@ -201,26 +205,30 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should allow multiple selections without modifier keys', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
         expect(screen.getByText('photo2.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      const secondPhoto = screen.getByText('photo2.jpg').closest('[class*="cursor-pointer"]');
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+      const secondPhoto = screen
+        .getByText('photo2.jpg')
+        .closest('[class*="cursor-pointer"]');
 
       if (firstPhoto && secondPhoto) {
         // Select first photo
         fireEvent.click(firstPhoto);
-        
+
         await waitFor(() => {
           expect(screen.getByText(/1 photo.*selected/i)).toBeInTheDocument();
         });
 
         // Select second photo - should NOT clear first selection
         fireEvent.click(secondPhoto);
-        
+
         await waitFor(() => {
           expect(screen.getByText(/2 photo.*selected/i)).toBeInTheDocument();
         });
@@ -229,28 +237,36 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should show bulk actions toolbar when photos are selected', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (firstPhoto) {
         fireEvent.click(firstPhoto);
-        
+
         // Bulk actions should appear
         await waitFor(() => {
-          expect(screen.getByRole('button', { name: /move/i })).toBeInTheDocument();
-          expect(screen.getByRole('button', { name: /download/i })).toBeInTheDocument();
-          expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
+          expect(
+            screen.getByRole('button', { name: /move/i })
+          ).toBeInTheDocument();
+          expect(
+            screen.getByRole('button', { name: /download/i })
+          ).toBeInTheDocument();
+          expect(
+            screen.getByRole('button', { name: /delete/i })
+          ).toBeInTheDocument();
         });
       }
     });
 
     it('should provide clear selection tips for users', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
@@ -261,23 +277,25 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should support keyboard shortcuts', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (firstPhoto) {
         fireEvent.click(firstPhoto);
-        
+
         await waitFor(() => {
           expect(screen.getByText(/1 photo.*selected/i)).toBeInTheDocument();
         });
 
         // ESC should clear selection
         fireEvent.keyDown(window, { key: 'Escape' });
-        
+
         await waitFor(() => {
           expect(screen.queryByText(/selected/i)).not.toBeInTheDocument();
         });
@@ -286,16 +304,18 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should show enhanced visual feedback for selected items', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (firstPhoto) {
         fireEvent.click(firstPhoto);
-        
+
         // Should have blue border and background when selected
         await waitFor(() => {
           expect(firstPhoto).toHaveClass('border-blue-500', 'bg-blue-50');
@@ -305,26 +325,30 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should handle range selection with Shift+Click', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
         expect(screen.getByText('photo3.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      const thirdPhoto = screen.getByText('photo3.jpg').closest('[class*="cursor-pointer"]');
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+      const thirdPhoto = screen
+        .getByText('photo3.jpg')
+        .closest('[class*="cursor-pointer"]');
 
       if (firstPhoto && thirdPhoto) {
         // First click to set anchor
         fireEvent.click(firstPhoto);
-        
+
         await waitFor(() => {
           expect(screen.getByText(/1 photo.*selected/i)).toBeInTheDocument();
         });
 
         // Shift+Click should select range
         fireEvent.click(thirdPhoto, { shiftKey: true });
-        
+
         await waitFor(() => {
           expect(screen.getByText(/3 photo.*selected/i)).toBeInTheDocument();
         });
@@ -335,16 +359,18 @@ describe('PhotoAdmin UX Improvements', () => {
   describe('Clear Cache Button Availability', () => {
     it('should show Clear Cache button in all environments', async () => {
       renderPhotoAdmin();
-      
+
       // Wait for component to render
       await waitFor(() => {
         expect(screen.getByText('Test Folder')).toBeInTheDocument();
       });
 
       // Clear Cache button should be visible regardless of environment
-      const clearCacheButton = screen.queryByTitle('Clear cache and refresh data');
+      const clearCacheButton = screen.queryByTitle(
+        'Clear cache and refresh data'
+      );
       expect(clearCacheButton).toBeInTheDocument();
-      
+
       // Button should be clickable
       if (clearCacheButton) {
         expect(clearCacheButton).not.toBeDisabled();
@@ -353,14 +379,16 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should display refresh icon in Clear Cache button', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test Folder')).toBeInTheDocument();
       });
 
-      const clearCacheButton = screen.queryByTitle('Clear cache and refresh data');
+      const clearCacheButton = screen.queryByTitle(
+        'Clear cache and refresh data'
+      );
       expect(clearCacheButton).toBeInTheDocument();
-      
+
       // Should contain refresh icon (RefreshCw component)
       if (clearCacheButton) {
         expect(clearCacheButton.querySelector('svg')).toBeInTheDocument();
@@ -371,26 +399,34 @@ describe('PhotoAdmin UX Improvements', () => {
   describe('Enhanced Drag & Drop Experience', () => {
     it('should show enhanced visual feedback on folder hover during drag', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test Folder')).toBeInTheDocument();
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const folderElement = screen.getByText('Test Folder').closest('[class*="flex items-center"]');
-      const photoElement = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const folderElement = screen
+        .getByText('Test Folder')
+        .closest('[class*="flex items-center"]');
+      const photoElement = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (folderElement && photoElement) {
         // Start drag operation
         fireEvent.dragStart(photoElement);
-        
+
         // Simulate drag over folder
         fireEvent.dragOver(folderElement);
-        
+
         // Should show enhanced visual feedback
         await waitFor(() => {
           // Check for enhanced drop zone styling
-          expect(folderElement).toHaveClass('bg-blue-50', 'ring-2', 'ring-blue-400');
+          expect(folderElement).toHaveClass(
+            'bg-blue-50',
+            'ring-2',
+            'ring-blue-400'
+          );
           expect(folderElement).toHaveClass('scale-105', 'transform');
         });
       }
@@ -398,21 +434,25 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should display custom drag overlay with real image preview', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const photoElement = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const photoElement = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (photoElement) {
         // Start drag operation
         fireEvent.dragStart(photoElement);
-        
+
         // Should show enhanced drag overlay
         await waitFor(() => {
           // Look for drag overlay container
-          const dragOverlay = document.querySelector('[data-testid*="drag"], [class*="drag-overlay"]');
+          const dragOverlay = document.querySelector(
+            '[data-testid*="drag"], [class*="drag-overlay"]'
+          );
           expect(dragOverlay).toBeInTheDocument();
         });
       }
@@ -429,22 +469,26 @@ describe('PhotoAdmin UX Improvements', () => {
       }));
 
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test Folder')).toBeInTheDocument();
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const folderElement = screen.getByText('Test Folder').closest('[class*="flex items-center"]');
-      const photoElement = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const folderElement = screen
+        .getByText('Test Folder')
+        .closest('[class*="flex items-center"]');
+      const photoElement = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (folderElement && photoElement) {
         // Simulate complete drag and drop
         fireEvent.dragStart(photoElement);
         fireEvent.dragOver(folderElement);
         fireEvent.drop(folderElement);
         fireEvent.dragEnd(photoElement);
-        
+
         // Should show immediate feedback toast
         await waitFor(() => {
           // Toast should be called with moving message
@@ -457,27 +501,33 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should show folder icon change when dragging over', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('Test Folder')).toBeInTheDocument();
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const folderElement = screen.getByText('Test Folder').closest('[class*="flex items-center"]');
-      const photoElement = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const folderElement = screen
+        .getByText('Test Folder')
+        .closest('[class*="flex items-center"]');
+      const photoElement = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (folderElement && photoElement) {
         // Initially should have closed folder icon
         const initialIcon = folderElement.querySelector('svg');
         expect(initialIcon).toBeInTheDocument();
-        
+
         // Start drag and hover over folder
         fireEvent.dragStart(photoElement);
         fireEvent.dragEnter(folderElement);
-        
+
         // Should change to open folder icon (blue color indicates active state)
         await waitFor(() => {
-          const activeIcon = folderElement.querySelector('svg[class*="text-blue-600"]');
+          const activeIcon = folderElement.querySelector(
+            'svg[class*="text-blue-600"]'
+          );
           expect(activeIcon).toBeInTheDocument();
         });
       }
@@ -485,31 +535,37 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should handle multiple photo selection drag feedback', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
         expect(screen.getByText('photo2.jpg')).toBeInTheDocument();
       });
 
-      const photo1 = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      const photo2 = screen.getByText('photo2.jpg').closest('[class*="cursor-pointer"]');
-      
+      const photo1 = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+      const photo2 = screen
+        .getByText('photo2.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (photo1 && photo2) {
         // Select multiple photos
         fireEvent.click(photo1);
         fireEvent.click(photo2);
-        
+
         await waitFor(() => {
           expect(screen.getByText(/2 photo.*selected/i)).toBeInTheDocument();
         });
 
         // Start drag on one of the selected photos
         fireEvent.dragStart(photo1);
-        
+
         // Should show count badge for multiple selections
         await waitFor(() => {
           // Look for count indicator in drag overlay
-          const countBadge = document.querySelector('[class*="bg-blue-600"][class*="rounded-full"]');
+          const countBadge = document.querySelector(
+            '[class*="bg-blue-600"][class*="rounded-full"]'
+          );
           expect(countBadge).toBeInTheDocument();
           if (countBadge) {
             expect(countBadge).toHaveTextContent('2');
@@ -522,13 +578,15 @@ describe('PhotoAdmin UX Improvements', () => {
   describe('Mobile Experience', () => {
     it('should have touch-friendly targets', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const photoContainer = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const photoContainer = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (photoContainer) {
         // Should have touch-manipulation class for better mobile interaction
         expect(photoContainer).toHaveClass('touch-manipulation');
@@ -539,7 +597,7 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should show mobile-specific help text', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
@@ -551,20 +609,24 @@ describe('PhotoAdmin UX Improvements', () => {
 
     it('should have responsive bulk actions', async () => {
       renderPhotoAdmin();
-      
+
       await waitFor(() => {
         expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
       });
 
-      const firstPhoto = screen.getByText('photo1.jpg').closest('[class*="cursor-pointer"]');
-      
+      const firstPhoto = screen
+        .getByText('photo1.jpg')
+        .closest('[class*="cursor-pointer"]');
+
       if (firstPhoto) {
         fireEvent.click(firstPhoto);
-        
+
         await waitFor(() => {
-          const bulkToolbar = screen.getByText(/1 photo.*selected/i).closest('[class*="bg-blue-50"]');
+          const bulkToolbar = screen
+            .getByText(/1 photo.*selected/i)
+            .closest('[class*="bg-blue-50"]');
           expect(bulkToolbar).toBeInTheDocument();
-          
+
           // Should have responsive classes
           if (bulkToolbar) {
             expect(bulkToolbar).toHaveClass('px-4', 'sm:px-6');

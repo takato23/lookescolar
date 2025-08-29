@@ -24,31 +24,47 @@ async function testSimpleStats() {
     const { data: events, error: eventsError } = await supabase
       .from('events')
       .select('id, status, created_at');
-    console.log(eventsError ? `❌ Error: ${eventsError.message}` : `✅ Events: ${events?.length || 0}`);
+    console.log(
+      eventsError
+        ? `❌ Error: ${eventsError.message}`
+        : `✅ Events: ${events?.length || 0}`
+    );
 
     console.log('\n2. Testing assets...');
     const { data: assets, error: assetsError } = await supabase
       .from('assets')
       .select('id, created_at, status, metadata');
-    console.log(assetsError ? `❌ Error: ${assetsError.message}` : `✅ Assets: ${assets?.length || 0}`);
+    console.log(
+      assetsError
+        ? `❌ Error: ${assetsError.message}`
+        : `✅ Assets: ${assets?.length || 0}`
+    );
 
     console.log('\n3. Testing subjects...');
     const { data: subjects, error: subjectsError } = await supabase
       .from('subjects')
       .select('id');
-    console.log(subjectsError ? `❌ Error: ${subjectsError.message}` : `✅ Subjects: ${subjects?.length || 0}`);
+    console.log(
+      subjectsError
+        ? `❌ Error: ${subjectsError.message}`
+        : `✅ Subjects: ${subjects?.length || 0}`
+    );
 
     console.log('\n4. Testing orders...');
     const { data: orders, error: ordersError } = await supabase
       .from('orders')
       .select('id, status, created_at');
-    console.log(ordersError ? `❌ Error: ${ordersError.message}` : `✅ Orders: ${orders?.length || 0}`);
+    console.log(
+      ordersError
+        ? `❌ Error: ${ordersError.message}`
+        : `✅ Orders: ${orders?.length || 0}`
+    );
 
     // Test processing logic
     if (assets && !assetsError) {
       console.log('\n5. Testing assets processing...');
       const today = new Date().toISOString().split('T')[0];
-      
+
       const todayAssets = assets.filter(
         (a) =>
           a.created_at &&
@@ -57,7 +73,8 @@ async function testSimpleStats() {
       );
 
       const taggedAssets = assets.filter(
-        (a) => a.metadata && typeof a.metadata === 'object' && a.metadata.subject_id
+        (a) =>
+          a.metadata && typeof a.metadata === 'object' && a.metadata.subject_id
       );
 
       const photoStats = {
@@ -69,13 +86,9 @@ async function testSimpleStats() {
 
       console.log('📊 Photo stats:', photoStats);
     }
-
   } catch (error) {
     console.error('❌ Unexpected error:', error);
   }
 }
 
 testSimpleStats().catch(console.error);
-
-
-

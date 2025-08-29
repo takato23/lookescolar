@@ -1,11 +1,11 @@
 'use client';
 
-import React, { 
-  useState, 
-  useEffect, 
-  useCallback, 
+import React, {
+  useState,
+  useEffect,
+  useCallback,
   useMemo,
-  useRef 
+  useRef,
 } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -170,14 +170,16 @@ const useInfinitePhotos = (filter: PhotoFilter) => {
       if (filter.event_id) params.set('event_id', filter.event_id);
       if (filter.folder_id) params.set('folder_id', filter.folder_id);
       if (filter.student_id) params.set('student_id', filter.student_id);
-      if (filter.approved !== undefined) params.set('approved', filter.approved.toString());
-      if (filter.tagged !== undefined) params.set('tagged', filter.tagged.toString());
+      if (filter.approved !== undefined)
+        params.set('approved', filter.approved.toString());
+      if (filter.tagged !== undefined)
+        params.set('tagged', filter.tagged.toString());
       if (filter.date_from) params.set('date_from', filter.date_from);
       if (filter.date_to) params.set('date_to', filter.date_to);
 
       const response = await fetch(`/api/admin/photos/unified?${params}`);
       if (!response.ok) throw new Error('Failed to fetch photos');
-      
+
       const data = await response.json();
       return {
         photos: data.photos || [],
@@ -222,7 +224,11 @@ const useFolders = (eventId?: string) => {
 };
 
 // Responsive columns calculation
-const useResponsiveColumns = (containerWidth: number, itemWidth: number, gap: number) => {
+const useResponsiveColumns = (
+  containerWidth: number,
+  itemWidth: number,
+  gap: number
+) => {
   return useMemo(() => {
     if (containerWidth <= 0) return 1;
     return Math.max(1, Math.floor((containerWidth + gap) / (itemWidth + gap)));
@@ -279,7 +285,10 @@ export function UnifiedPhotoSystem({
   const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
 
   // Debounce search
-  const debouncedFilter = useDebounce(filter, PERFORMANCE_CONFIG.DEBOUNCE_DELAY);
+  const debouncedFilter = useDebounce(
+    filter,
+    PERFORMANCE_CONFIG.DEBOUNCE_DELAY
+  );
 
   // Data hooks
   const {
@@ -297,7 +306,7 @@ export function UnifiedPhotoSystem({
 
   // Flatten photos from all pages
   const photos = useMemo(() => {
-    return photosData?.pages?.flatMap(page => page.photos) || [];
+    return photosData?.pages?.flatMap((page) => page.photos) || [];
   }, [photosData]);
 
   const totalPhotos = useMemo(() => {
@@ -309,9 +318,14 @@ export function UnifiedPhotoSystem({
   const [containerWidth, setContainerWidth] = useState(0);
 
   // Calculate responsive columns
-  const itemWidth = PERFORMANCE_CONFIG.THUMBNAIL_SIZES[filter.grid_size] || 
-                   PERFORMANCE_CONFIG.THUMBNAIL_SIZES.medium;
-  const columns = useResponsiveColumns(containerWidth, itemWidth, PERFORMANCE_CONFIG.GRID_GAP);
+  const itemWidth =
+    PERFORMANCE_CONFIG.THUMBNAIL_SIZES[filter.grid_size] ||
+    PERFORMANCE_CONFIG.THUMBNAIL_SIZES.medium;
+  const columns = useResponsiveColumns(
+    containerWidth,
+    itemWidth,
+    PERFORMANCE_CONFIG.GRID_GAP
+  );
 
   // Resize observer for container
   useEffect(() => {
@@ -337,24 +351,27 @@ export function UnifiedPhotoSystem({
 
   // Event handlers
   const handleFilterChange = useCallback((updates: Partial<PhotoFilter>) => {
-    setFilter(prev => ({ ...prev, ...updates }));
+    setFilter((prev) => ({ ...prev, ...updates }));
     setSelection(new Set()); // Clear selection on filter change
   }, []);
 
-  const handlePhotoSelect = useCallback((photoId: string, selected: boolean) => {
-    setSelection(prev => {
-      const newSelection = new Set(prev);
-      if (selected) {
-        newSelection.add(photoId);
-      } else {
-        newSelection.delete(photoId);
-      }
-      return newSelection;
-    });
-  }, []);
+  const handlePhotoSelect = useCallback(
+    (photoId: string, selected: boolean) => {
+      setSelection((prev) => {
+        const newSelection = new Set(prev);
+        if (selected) {
+          newSelection.add(photoId);
+        } else {
+          newSelection.delete(photoId);
+        }
+        return newSelection;
+      });
+    },
+    []
+  );
 
   const handleSelectAll = useCallback(() => {
-    const allIds = photos.map(p => p.id);
+    const allIds = photos.map((p) => p.id);
     setSelection(new Set(allIds));
   }, [photos]);
 
@@ -362,35 +379,38 @@ export function UnifiedPhotoSystem({
     setSelection(new Set());
   }, []);
 
-  const handleBulkAction = useCallback(async (action: string) => {
-    if (selection.size === 0) {
-      toast.warning('No photos selected');
-      return;
-    }
+  const handleBulkAction = useCallback(
+    async (action: string) => {
+      if (selection.size === 0) {
+        toast.warning('No photos selected');
+        return;
+      }
 
-    try {
-      const response = await fetch('/api/admin/photos/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action,
-          photoIds: Array.from(selection),
-          filter: debouncedFilter,
-        }),
-      });
+      try {
+        const response = await fetch('/api/admin/photos/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action,
+            photoIds: Array.from(selection),
+            filter: debouncedFilter,
+          }),
+        });
 
-      if (!response.ok) throw new Error('Bulk action failed');
+        if (!response.ok) throw new Error('Bulk action failed');
 
-      toast.success(`${action} applied to ${selection.size} photos`);
-      setSelection(new Set());
-      
-      // Refetch data
-      // queryClient.invalidateQueries(['photos']);
-    } catch (error) {
-      console.error('Bulk action error:', error);
-      toast.error(`Failed to ${action} photos`);
-    }
-  }, [selection, debouncedFilter]);
+        toast.success(`${action} applied to ${selection.size} photos`);
+        setSelection(new Set());
+
+        // Refetch data
+        // queryClient.invalidateQueries(['photos']);
+      } catch (error) {
+        console.error('Bulk action error:', error);
+        toast.error(`Failed to ${action} photos`);
+      }
+    },
+    [selection, debouncedFilter]
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -403,17 +423,17 @@ export function UnifiedPhotoSystem({
             break;
           case 'f':
             e.preventDefault();
-            setShowFilters(prev => !prev);
+            setShowFilters((prev) => !prev);
             break;
           case 'u':
             if (enableUpload) {
               e.preventDefault();
-              setShowUpload(prev => !prev);
+              setShowUpload((prev) => !prev);
             }
             break;
         }
       }
-      
+
       if (e.key === 'Escape') {
         setPreviewPhoto(null);
         setShowUpload(false);
@@ -450,9 +470,7 @@ export function UnifiedPhotoSystem({
           <p className="mb-4 text-sm text-gray-600">
             {error instanceof Error ? error.message : 'Something went wrong'}
           </p>
-          <Button onClick={() => window.location.reload()}>
-            Try Again
-          </Button>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
         </Card>
       </div>
     );
@@ -471,9 +489,7 @@ export function UnifiedPhotoSystem({
               </Badge>
             )}
             {selection.size > 0 && (
-              <Badge variant="default">
-                {selection.size} selected
-              </Badge>
+              <Badge variant="default">{selection.size} selected</Badge>
             )}
           </div>
 
@@ -544,9 +560,9 @@ export function UnifiedPhotoSystem({
           <Select
             value={filter.event_id || 'all'}
             onValueChange={(value) =>
-              handleFilterChange({ 
+              handleFilterChange({
                 event_id: value === 'all' ? undefined : value,
-                folder_id: undefined // Reset folder when changing event
+                folder_id: undefined, // Reset folder when changing event
               })
             }
           >
@@ -568,8 +584,8 @@ export function UnifiedPhotoSystem({
             <Select
               value={filter.folder_id || 'all'}
               onValueChange={(value) =>
-                handleFilterChange({ 
-                  folder_id: value === 'all' ? undefined : value 
+                handleFilterChange({
+                  folder_id: value === 'all' ? undefined : value,
                 })
               }
             >
@@ -659,7 +675,9 @@ export function UnifiedPhotoSystem({
                     id="approved-filter"
                     checked={filter.approved === true}
                     onCheckedChange={(checked) =>
-                      handleFilterChange({ approved: checked ? true : undefined })
+                      handleFilterChange({
+                        approved: checked ? true : undefined,
+                      })
                     }
                   />
                   <Label htmlFor="approved-filter" className="text-sm">
@@ -686,13 +704,15 @@ export function UnifiedPhotoSystem({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setFilter({
-                      search: '',
-                      sort_by: 'created_at',
-                      sort_order: 'desc',
-                      view_mode: filter.view_mode,
-                      grid_size: filter.grid_size,
-                    })}
+                    onClick={() =>
+                      setFilter({
+                        search: '',
+                        sort_by: 'created_at',
+                        sort_order: 'desc',
+                        view_mode: filter.view_mode,
+                        grid_size: filter.grid_size,
+                      })
+                    }
                   >
                     Reset
                   </Button>
@@ -755,18 +775,10 @@ export function UnifiedPhotoSystem({
               </div>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-              >
+              <Button variant="outline" size="sm" onClick={handleSelectAll}>
                 Select All ({photos.length})
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearSelection}
-              >
+              <Button variant="ghost" size="sm" onClick={handleClearSelection}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -846,12 +858,16 @@ export function UnifiedPhotoSystem({
           photo={previewPhoto}
           onClose={() => setPreviewPhoto(null)}
           onNext={() => {
-            const currentIndex = photos.findIndex(p => p.id === previewPhoto.id);
+            const currentIndex = photos.findIndex(
+              (p) => p.id === previewPhoto.id
+            );
             const nextPhoto = photos[currentIndex + 1];
             if (nextPhoto) setPreviewPhoto(nextPhoto);
           }}
           onPrevious={() => {
-            const currentIndex = photos.findIndex(p => p.id === previewPhoto.id);
+            const currentIndex = photos.findIndex(
+              (p) => p.id === previewPhoto.id
+            );
             const prevPhoto = photos[currentIndex - 1];
             if (prevPhoto) setPreviewPhoto(prevPhoto);
           }}
@@ -1013,19 +1029,15 @@ function PhotoCard({
       {/* Status Badges */}
       <div className="absolute right-2 top-2 z-10 flex gap-1">
         {photo.approved && (
-          <Badge className="bg-green-500/90 text-xs text-white">
-            ✓
-          </Badge>
+          <Badge className="bg-green-500/90 text-xs text-white">✓</Badge>
         )}
         {photo.tagged && (
-          <Badge className="bg-blue-500/90 text-xs text-white">
-            T
-          </Badge>
+          <Badge className="bg-blue-500/90 text-xs text-white">T</Badge>
         )}
       </div>
 
       {/* Image */}
-      <div 
+      <div
         className="relative overflow-hidden bg-gray-100"
         style={{ height: width * 0.75 }} // 4:3 aspect ratio
       >
@@ -1054,7 +1066,7 @@ function PhotoCard({
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
-        
+
         {/* Quick Actions */}
         <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
           <Button
@@ -1112,7 +1124,7 @@ function PhotoListItem({
   onPreview: () => void;
 }) {
   return (
-    <Card 
+    <Card
       className={cn(
         'flex items-center gap-4 p-4 transition-all hover:shadow-md',
         selected && 'bg-blue-50 ring-1 ring-blue-200'
@@ -1134,7 +1146,7 @@ function PhotoListItem({
       </button>
 
       {/* Thumbnail */}
-      <div 
+      <div
         className="h-16 w-16 flex-shrink-0 cursor-pointer overflow-hidden rounded-lg bg-gray-100"
         onClick={onPreview}
       >
@@ -1162,7 +1174,9 @@ function PhotoListItem({
               <span>{new Date(photo.created_at).toLocaleDateString()}</span>
               <span>{Math.round(photo.file_size / 1024)} KB</span>
               {photo.width && photo.height && (
-                <span>{photo.width} × {photo.height}</span>
+                <span>
+                  {photo.width} × {photo.height}
+                </span>
               )}
             </div>
             {photo.event && (
@@ -1172,10 +1186,13 @@ function PhotoListItem({
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             {photo.approved && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <Badge
+                variant="secondary"
+                className="bg-green-100 text-green-800"
+              >
                 Approved
               </Badge>
             )}
@@ -1184,11 +1201,7 @@ function PhotoListItem({
                 Tagged
               </Badge>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onPreview}
-            >
+            <Button variant="ghost" size="sm" onClick={onPreview}>
               <Eye className="h-4 w-4" />
             </Button>
           </div>
@@ -1255,7 +1268,9 @@ function PhotoPreviewModal({
             <span>{new Date(photo.created_at).toLocaleDateString()}</span>
             <span>{Math.round(photo.file_size / 1024)} KB</span>
             {photo.width && photo.height && (
-              <span>{photo.width} × {photo.height}</span>
+              <span>
+                {photo.width} × {photo.height}
+              </span>
             )}
           </div>
         </div>
@@ -1286,7 +1301,9 @@ function UploadModal({
         <CardContent className="p-6">
           <div className="text-center">
             <Upload className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <p className="text-gray-600">Upload functionality will be implemented here</p>
+            <p className="text-gray-600">
+              Upload functionality will be implemented here
+            </p>
             <p className="mt-2 text-sm text-gray-500">
               Event: {eventId || 'None'} | Folder: {folderId || 'None'}
             </p>

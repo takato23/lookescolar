@@ -91,19 +91,24 @@ function FolderNode({
   const isExpanded = folder.expanded;
   const indentWidth = level * 16;
 
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      onFolderSelect(folder.id);
+    },
+    [folder.id, onFolderSelect]
+  );
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    onFolderSelect(folder.id);
-  }, [folder.id, onFolderSelect]);
-
-  const handleToggle = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (hasChildren) {
-      onToggleExpand(folder.id);
-    }
-  }, [folder.id, hasChildren, onToggleExpand]);
+  const handleToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (hasChildren) {
+        onToggleExpand(folder.id);
+      }
+    },
+    [folder.id, hasChildren, onToggleExpand]
+  );
 
   const getFolderIcon = () => {
     if (folder.event_id && folder.events) {
@@ -119,7 +124,7 @@ function FolderNode({
     <div>
       <div
         className={cn(
-          'flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors',
+          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100',
           isSelected && 'bg-blue-100 text-blue-900'
         )}
         style={{ marginLeft: indentWidth }}
@@ -150,10 +155,12 @@ function FolderNode({
         {getFolderIcon()}
 
         {/* Folder Name */}
-        <span className={cn(
-          'flex-1 text-sm font-medium truncate',
-          isSelected && 'text-blue-900'
-        )}>
+        <span
+          className={cn(
+            'flex-1 truncate text-sm font-medium',
+            isSelected && 'text-blue-900'
+          )}
+        >
           {folder.name}
         </span>
 
@@ -174,20 +181,26 @@ function FolderNode({
         {/* Actions Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+            >
               <MoreHorizontal className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              onCreateSubfolder(folder.id);
-            }}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onCreateSubfolder(folder.id);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Create Subfolder
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
                 onDeleteFolder(folder.id);
@@ -228,13 +241,19 @@ export function FolderTree({
   onFolderSelect,
   className,
 }: FolderTreeProps) {
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  const [folderChildren, setFolderChildren] = useState<Map<string, Folder[]>>(new Map());
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
+    new Set()
+  );
+  const [folderChildren, setFolderChildren] = useState<Map<string, Folder[]>>(
+    new Map()
+  );
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(null);
+  const [newFolderParentId, setNewFolderParentId] = useState<string | null>(
+    null
+  );
   const [isCreating, setIsCreating] = useState(false);
-  
+
   // Delete folder state
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null);
@@ -250,9 +269,11 @@ export function FolderTree({
     try {
       const response = await fetch(`/api/admin/folders?parentId=${folderId}`);
       if (!response.ok) throw new Error('Failed to load folder children');
-      
+
       const data = await response.json();
-      setFolderChildren(prev => new Map(prev).set(folderId, data.folders || []));
+      setFolderChildren((prev) =>
+        new Map(prev).set(folderId, data.folders || [])
+      );
     } catch (error) {
       console.error('Error loading folder children:', error);
       toast.error('Failed to load folder children');
@@ -260,24 +281,27 @@ export function FolderTree({
   }, []);
 
   // Toggle folder expansion
-  const handleToggleExpand = useCallback(async (folderId: string) => {
-    const isExpanded = expandedFolders.has(folderId);
-    
-    setExpandedFolders(prev => {
-      const newSet = new Set(prev);
-      if (isExpanded) {
-        newSet.delete(folderId);
-      } else {
-        newSet.add(folderId);
-      }
-      return newSet;
-    });
+  const handleToggleExpand = useCallback(
+    async (folderId: string) => {
+      const isExpanded = expandedFolders.has(folderId);
 
-    // Load children if expanding and not already loaded
-    if (!isExpanded && !folderChildren.has(folderId)) {
-      await loadFolderChildren(folderId);
-    }
-  }, [expandedFolders, folderChildren, loadFolderChildren]);
+      setExpandedFolders((prev) => {
+        const newSet = new Set(prev);
+        if (isExpanded) {
+          newSet.delete(folderId);
+        } else {
+          newSet.add(folderId);
+        }
+        return newSet;
+      });
+
+      // Load children if expanding and not already loaded
+      if (!isExpanded && !folderChildren.has(folderId)) {
+        await loadFolderChildren(folderId);
+      }
+    },
+    [expandedFolders, folderChildren, loadFolderChildren]
+  );
 
   // Create subfolder
   const handleCreateSubfolder = useCallback((parentId: string) => {
@@ -324,13 +348,14 @@ export function FolderTree({
       // Refresh folder tree
       if (newFolderParentId) {
         await loadFolderChildren(newFolderParentId);
-        setExpandedFolders(prev => new Set(prev).add(newFolderParentId));
+        setExpandedFolders((prev) => new Set(prev).add(newFolderParentId));
       }
       // For root folders, the parent query will refresh automatically
-
     } catch (error) {
       console.error('Error creating folder:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create folder');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create folder'
+      );
     } finally {
       setIsCreating(false);
     }
@@ -341,47 +366,56 @@ export function FolderTree({
     try {
       const response = await fetch(`/api/admin/folders/${folder.id}`);
       if (!response.ok) throw new Error('Failed to load folder details');
-      
+
       const data = await response.json();
       const folderDetails = data.folder;
-      
+
       // Count photos and subfolders
       const photoCount = folderDetails.photo_count || 0;
       const subfolderCount = folderDetails.child_folder_count || 0;
       const hasSubfolders = subfolderCount > 0;
-      
+
       setDeleteFolderInfo({
         photoCount,
         subfolderCount,
-        hasSubfolders
+        hasSubfolders,
       });
     } catch (error) {
       console.error('Error loading folder details:', error);
-      setDeleteFolderInfo({ photoCount: 0, subfolderCount: 0, hasSubfolders: false });
+      setDeleteFolderInfo({
+        photoCount: 0,
+        subfolderCount: 0,
+        hasSubfolders: false,
+      });
     }
   }, []);
 
   // Show delete confirmation
-  const handleDeleteFolder = useCallback(async (folderId: string) => {
-    const folder = [...folders, ...Array.from(folderChildren.values()).flat()]
-      .find(f => f.id === folderId);
-    
-    if (!folder) {
-      toast.error('Folder not found');
-      return;
-    }
+  const handleDeleteFolder = useCallback(
+    async (folderId: string) => {
+      const folder = [
+        ...folders,
+        ...Array.from(folderChildren.values()).flat(),
+      ].find((f) => f.id === folderId);
 
-    // Check if it's a system folder that shouldn't be deleted
-    const systemFolderNames = ['General', 'Uncategorized', 'Root', 'System'];
-    if (systemFolderNames.includes(folder.name)) {
-      toast.error('System folders cannot be deleted');
-      return;
-    }
+      if (!folder) {
+        toast.error('Folder not found');
+        return;
+      }
 
-    setFolderToDelete(folder);
-    await loadFolderDetailsForDeletion(folder);
-    setShowDeleteDialog(true);
-  }, [folders, folderChildren, loadFolderDetailsForDeletion]);
+      // Check if it's a system folder that shouldn't be deleted
+      const systemFolderNames = ['General', 'Uncategorized', 'Root', 'System'];
+      if (systemFolderNames.includes(folder.name)) {
+        toast.error('System folders cannot be deleted');
+        return;
+      }
+
+      setFolderToDelete(folder);
+      await loadFolderDetailsForDeletion(folder);
+      setShowDeleteDialog(true);
+    },
+    [folders, folderChildren, loadFolderDetailsForDeletion]
+  );
 
   // Confirm folder deletion
   const handleConfirmDelete = useCallback(async () => {
@@ -391,13 +425,16 @@ export function FolderTree({
     try {
       // For folders with content, move contents to parent or root
       const moveContentsTo = folderToDelete.parent_id || null;
-      const queryParams = moveContentsTo 
+      const queryParams = moveContentsTo
         ? `?moveContentsTo=${moveContentsTo}`
         : '?moveContentsTo=null';
-      
-      const response = await fetch(`/api/admin/folders/${folderToDelete.id}${queryParams}`, {
-        method: 'DELETE',
-      });
+
+      const response = await fetch(
+        `/api/admin/folders/${folderToDelete.id}${queryParams}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -405,7 +442,7 @@ export function FolderTree({
       }
 
       toast.success(`Folder "${folderToDelete.name}" deleted successfully`);
-      
+
       // Clear selection if deleted folder was selected
       if (folderToDelete.id === selectedFolderId) {
         onFolderSelect(null);
@@ -417,17 +454,27 @@ export function FolderTree({
       setDeleteFolderInfo(null);
 
       // Refresh the parent folder's children if it was a subfolder
-      if (folderToDelete.parent_id && folderChildren.has(folderToDelete.parent_id)) {
+      if (
+        folderToDelete.parent_id &&
+        folderChildren.has(folderToDelete.parent_id)
+      ) {
         await loadFolderChildren(folderToDelete.parent_id);
       }
-
     } catch (error) {
       console.error('Error deleting folder:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete folder');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to delete folder'
+      );
     } finally {
       setIsDeleting(false);
     }
-  }, [folderToDelete, selectedFolderId, onFolderSelect, folderChildren, loadFolderChildren]);
+  }, [
+    folderToDelete,
+    selectedFolderId,
+    onFolderSelect,
+    folderChildren,
+    loadFolderChildren,
+  ]);
 
   // Cancel folder deletion
   const handleCancelDelete = useCallback(() => {
@@ -438,7 +485,7 @@ export function FolderTree({
 
   // Enhance folders with expansion and children data
   const enhancedFolders = React.useMemo(() => {
-    return folders.map(folder => ({
+    return folders.map((folder) => ({
       ...folder,
       expanded: expandedFolders.has(folder.id),
       children: folderChildren.get(folder.id) || [],
@@ -450,7 +497,7 @@ export function FolderTree({
       {/* Root/All Photos Option */}
       <div
         className={cn(
-          'flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors',
+          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100',
           selectedFolderId === null && 'bg-blue-100 text-blue-900'
         )}
         onClick={() => onFolderSelect(null)}
@@ -490,14 +537,10 @@ export function FolderTree({
 
       {/* Empty State */}
       {folders.length === 0 && (
-        <div className="text-center py-8">
-          <Folder className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-sm text-gray-500 mb-4">No folders yet</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCreateRootFolder}
-          >
+        <div className="py-8 text-center">
+          <Folder className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+          <p className="mb-4 text-sm text-gray-500">No folders yet</p>
+          <Button variant="outline" size="sm" onClick={handleCreateRootFolder}>
             <Plus className="mr-2 h-4 w-4" />
             Create First Folder
           </Button>
@@ -512,7 +555,7 @@ export function FolderTree({
               Create {newFolderParentId ? 'Sub' : ''}Folder
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-4">
             <Input
               placeholder="Folder name"
@@ -547,7 +590,10 @@ export function FolderTree({
       </Dialog>
 
       {/* Delete Folder Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={() => !isDeleting && handleCancelDelete()}>
+      <Dialog
+        open={showDeleteDialog}
+        onOpenChange={() => !isDeleting && handleCancelDelete()}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
@@ -555,44 +601,48 @@ export function FolderTree({
               Delete Folder?
             </DialogTitle>
           </DialogHeader>
-          
-          <div className="py-4 space-y-3">
+
+          <div className="space-y-3 py-4">
             <p className="text-sm text-gray-600">
               Are you sure you want to delete the folder{' '}
               <span className="font-semibold text-gray-900">
                 "{folderToDelete?.name}"
-              </span>?
+              </span>
+              ?
             </p>
-            
+
             {deleteFolderInfo && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 space-y-2">
+              <div className="space-y-2 rounded-md border border-yellow-200 bg-yellow-50 p-3">
                 <div className="flex items-center gap-2 text-yellow-800">
                   <AlertTriangle className="h-4 w-4" />
-                  <span className="font-medium text-sm">Folder Contents</span>
+                  <span className="text-sm font-medium">Folder Contents</span>
                 </div>
-                
+
                 {deleteFolderInfo.photoCount > 0 && (
                   <p className="text-sm text-yellow-700">
-                    📸 <strong>{deleteFolderInfo.photoCount}</strong> photos will be moved to the parent folder
+                    📸 <strong>{deleteFolderInfo.photoCount}</strong> photos
+                    will be moved to the parent folder
                   </p>
                 )}
-                
+
                 {deleteFolderInfo.subfolderCount > 0 && (
                   <p className="text-sm text-yellow-700">
-                    📁 <strong>{deleteFolderInfo.subfolderCount}</strong> subfolders will be moved to the parent folder
+                    📁 <strong>{deleteFolderInfo.subfolderCount}</strong>{' '}
+                    subfolders will be moved to the parent folder
                   </p>
                 )}
-                
-                {deleteFolderInfo.photoCount === 0 && deleteFolderInfo.subfolderCount === 0 && (
-                  <p className="text-sm text-yellow-700">
-                    This folder is empty and can be safely deleted.
-                  </p>
-                )}
+
+                {deleteFolderInfo.photoCount === 0 &&
+                  deleteFolderInfo.subfolderCount === 0 && (
+                    <p className="text-sm text-yellow-700">
+                      This folder is empty and can be safely deleted.
+                    </p>
+                  )}
               </div>
             )}
-            
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-sm text-red-700 font-medium">
+
+            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+              <p className="text-sm font-medium text-red-700">
                 ⚠️ This action cannot be undone
               </p>
             </div>

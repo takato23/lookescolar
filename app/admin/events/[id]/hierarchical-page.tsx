@@ -7,7 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import HierarchicalNavigation from '@/components/admin/hierarchical-navigation';
-import { ArrowLeft, RefreshCw, Home, Eye, Settings, AlertCircle, TrendingUp, Users, BookOpen, Camera, DollarSign, Calendar, MapPin, ShoppingCart } from 'lucide-react';
+import {
+  ArrowLeft,
+  RefreshCw,
+  Home,
+  Eye,
+  Settings,
+  AlertCircle,
+  TrendingUp,
+  Users,
+  BookOpen,
+  Camera,
+  DollarSign,
+  Calendar,
+  MapPin,
+  ShoppingCart,
+} from 'lucide-react';
 
 export default function HierarchicalEventPage() {
   const params = useParams();

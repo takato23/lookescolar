@@ -1,6 +1,6 @@
 /**
  * Touch Gestures Components
- * 
+ *
  * Enhanced mobile experience with swipe, pinch, and touch gestures
  * Optimized for gallery browsing and photo selection
  */
@@ -27,10 +27,14 @@ export function Swipeable({
   onSwipeUp,
   onSwipeDown,
   threshold = 50,
-  className
+  className,
 }: SwipeableProps) {
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
-  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(
+    null
+  );
+  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(
+    null
+  );
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -94,11 +98,11 @@ interface PinchZoomProps {
   className?: string;
 }
 
-export function PinchZoom({ 
-  children, 
-  minScale = 0.5, 
+export function PinchZoom({
+  children,
+  minScale = 0.5,
   maxScale = 3,
-  className 
+  className,
 }: PinchZoomProps) {
   const [scale, setScale] = useState(1);
   const [lastScale, setLastScale] = useState(1);
@@ -108,41 +112,50 @@ export function PinchZoom({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      setIsDragging(true);
-      setLastTranslate(translate);
-    }
-  }, [translate]);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-
-    if (e.touches.length === 2) {
-      // Pinch zoom
-      const touch1 = e.touches[0];
-      const touch2 = e.touches[1];
-      const distance = Math.sqrt(
-        Math.pow(touch2.clientX - touch1.clientX, 2) +
-        Math.pow(touch2.clientY - touch1.clientY, 2)
-      );
-
-      if (lastScale) {
-        const newScale = Math.min(Math.max(distance / 100, minScale), maxScale);
-        setScale(newScale);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 1) {
+        setIsDragging(true);
+        setLastTranslate(translate);
       }
-    } else if (e.touches.length === 1 && isDragging && scale > 1) {
-      // Pan when zoomed
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - e.changedTouches[0].clientX;
-      const deltaY = touch.clientY - e.changedTouches[0].clientY;
-      
-      setTranslate({
-        x: lastTranslate.x + deltaX,
-        y: lastTranslate.y + deltaY,
-      });
-    }
-  }, [isDragging, lastScale, minScale, maxScale, scale, lastTranslate]);
+    },
+    [translate]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      e.preventDefault();
+
+      if (e.touches.length === 2) {
+        // Pinch zoom
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+
+        if (lastScale) {
+          const newScale = Math.min(
+            Math.max(distance / 100, minScale),
+            maxScale
+          );
+          setScale(newScale);
+        }
+      } else if (e.touches.length === 1 && isDragging && scale > 1) {
+        // Pan when zoomed
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - e.changedTouches[0].clientX;
+        const deltaY = touch.clientY - e.changedTouches[0].clientY;
+
+        setTranslate({
+          x: lastTranslate.x + deltaX,
+          y: lastTranslate.y + deltaY,
+        });
+      }
+    },
+    [isDragging, lastScale, minScale, maxScale, scale, lastTranslate]
+  );
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
@@ -160,7 +173,7 @@ export function PinchZoom({
   return (
     <div
       ref={containerRef}
-      className={cn('overflow-hidden touch-none', className)}
+      className={cn('touch-none overflow-hidden', className)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -186,11 +199,11 @@ interface PullToRefreshProps {
   className?: string;
 }
 
-export function PullToRefresh({ 
-  children, 
-  onRefresh, 
+export function PullToRefresh({
+  children,
+  onRefresh,
   threshold = 80,
-  className 
+  className,
 }: PullToRefreshProps) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -231,8 +244,8 @@ export function PullToRefresh({
     <div className={className}>
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
-        <div 
-          className="fixed top-0 left-0 right-0 z-50 bg-primary text-white text-center py-2 transition-all duration-300"
+        <div
+          className="bg-primary fixed left-0 right-0 top-0 z-50 py-2 text-center text-white transition-all duration-300"
           style={{
             transform: `translateY(${Math.min(pullDistance - threshold, 0)}px)`,
             opacity: pullProgress,
@@ -240,7 +253,7 @@ export function PullToRefresh({
         >
           {isRefreshing ? (
             <div className="flex items-center justify-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
               <span>Actualizando...</span>
             </div>
           ) : pullProgress >= 1 ? (
@@ -274,11 +287,11 @@ interface LongPressProps {
   className?: string;
 }
 
-export function LongPress({ 
-  children, 
-  onLongPress, 
+export function LongPress({
+  children,
+  onLongPress,
   delay = 500,
-  className 
+  className,
 }: LongPressProps) {
   const [isPressed, setIsPressed] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -333,11 +346,11 @@ interface SwipeCarouselProps {
   className?: string;
 }
 
-export function SwipeCarousel({ 
-  items, 
-  currentIndex, 
+export function SwipeCarousel({
+  items,
+  currentIndex,
   onIndexChange,
-  className 
+  className,
 }: SwipeCarouselProps) {
   const handleSwipeLeft = () => {
     if (currentIndex < items.length - 1) {
@@ -357,11 +370,11 @@ export function SwipeCarousel({
       onSwipeRight={handleSwipeRight}
       className={cn('relative overflow-hidden', className)}
     >
-      <div 
+      <div
         className="flex transition-transform duration-300 ease-out"
-        style={{ 
+        style={{
           transform: `translateX(-${currentIndex * 100}%)`,
-          width: `${items.length * 100}%`
+          width: `${items.length * 100}%`,
         }}
       >
         {items.map((item, index) => (
@@ -372,13 +385,13 @@ export function SwipeCarousel({
       </div>
 
       {/* Indicators */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 transform space-x-2">
         {items.map((_, index) => (
           <button
             key={index}
             onClick={() => onIndexChange(index)}
             className={cn(
-              'w-2 h-2 rounded-full transition-all duration-200',
+              'h-2 w-2 rounded-full transition-all duration-200',
               index === currentIndex ? 'bg-white' : 'bg-white/50'
             )}
           />

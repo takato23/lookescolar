@@ -10,7 +10,9 @@ export const GET = withAuth(
   ) => {
     try {
       // Support Next.js async params
-      const resolved = (params as any)?.then ? await (params as Promise<{ id: string }>) : (params as { id: string });
+      const resolved = (params as any)?.then
+        ? await (params as Promise<{ id: string }>)
+        : (params as { id: string });
       const eventId = resolved.id;
       const supabase = await createServerSupabaseServiceClient();
 
@@ -31,42 +33,102 @@ export const GET = withAuth(
         pendingOrdersRes,
         revenueCentsRes,
       ] = await Promise.all([
-        supabase.from('event_levels').select('id', { count: 'planned', head: true }).eq('event_id', eventId).eq('active', true),
-        supabase.from('courses').select('id', { count: 'planned', head: true }).eq('event_id', eventId),
-        supabase.from('courses').select('id', { count: 'planned', head: true }).eq('event_id', eventId).eq('active', true),
-        supabase.from('students').select('id', { count: 'planned', head: true }).eq('event_id', eventId),
-        supabase.from('students').select('id', { count: 'planned', head: true }).eq('event_id', eventId).eq('active', true),
-        supabase.from('students').select('id', { count: 'planned', head: true }).eq('event_id', eventId).not('course_id', 'is', null),
+        supabase
+          .from('event_levels')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId)
+          .eq('active', true),
+        supabase
+          .from('courses')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId),
+        supabase
+          .from('courses')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId)
+          .eq('active', true),
+        supabase
+          .from('students')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId),
+        supabase
+          .from('students')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId)
+          .eq('active', true),
+        supabase
+          .from('students')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId)
+          .not('course_id', 'is', null),
         // Assets counts via folders (nuevo sistema)
         (async () => {
-          const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+          const { data: folders } = await supabase
+            .from('folders')
+            .select('id')
+            .eq('event_id', eventId);
           if (!folders?.length) return { count: 0 };
-          const folderIds = folders.map(f => f.id);
-          return supabase.from('assets').select('id', { count: 'planned', head: true }).in('folder_id', folderIds);
+          const folderIds = folders.map((f) => f.id);
+          return supabase
+            .from('assets')
+            .select('id', { count: 'planned', head: true })
+            .in('folder_id', folderIds);
         })(),
         (async () => {
-          const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+          const { data: folders } = await supabase
+            .from('folders')
+            .select('id')
+            .eq('event_id', eventId);
           if (!folders?.length) return { count: 0 };
-          const folderIds = folders.map(f => f.id);
-          return supabase.from('assets').select('id', { count: 'planned', head: true }).in('folder_id', folderIds).eq('status', 'ready');
+          const folderIds = folders.map((f) => f.id);
+          return supabase
+            .from('assets')
+            .select('id', { count: 'planned', head: true })
+            .in('folder_id', folderIds)
+            .eq('status', 'ready');
         })(),
         // Untagged approximated by missing subject_id in metadata
         (async () => {
-          const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+          const { data: folders } = await supabase
+            .from('folders')
+            .select('id')
+            .eq('event_id', eventId);
           if (!folders?.length) return { count: 0 };
-          const folderIds = folders.map(f => f.id);
-          return supabase.from('assets').select('id', { count: 'planned', head: true }).in('folder_id', folderIds).or('metadata->subject_id.is.null,metadata.is.null');
+          const folderIds = folders.map((f) => f.id);
+          return supabase
+            .from('assets')
+            .select('id', { count: 'planned', head: true })
+            .in('folder_id', folderIds)
+            .or('metadata->subject_id.is.null,metadata.is.null');
         })(),
         // Processing by status column
         (async () => {
-          const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+          const { data: folders } = await supabase
+            .from('folders')
+            .select('id')
+            .eq('event_id', eventId);
           if (!folders?.length) return { count: 0 };
-          const folderIds = folders.map(f => f.id);
-          return supabase.from('assets').select('id', { count: 'planned', head: true }).in('folder_id', folderIds).eq('status', 'processing');
+          const folderIds = folders.map((f) => f.id);
+          return supabase
+            .from('assets')
+            .select('id', { count: 'planned', head: true })
+            .in('folder_id', folderIds)
+            .eq('status', 'processing');
         })(),
-        supabase.from('orders').select('id', { count: 'planned', head: true }).eq('event_id', eventId),
-        supabase.from('orders').select('id', { count: 'planned', head: true }).eq('event_id', eventId).in('status', ['paid', 'completed']),
-        supabase.from('orders').select('id', { count: 'planned', head: true }).eq('event_id', eventId).in('status', ['pending', 'processing']),
+        supabase
+          .from('orders')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId),
+        supabase
+          .from('orders')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId)
+          .in('status', ['paid', 'completed']),
+        supabase
+          .from('orders')
+          .select('id', { count: 'planned', head: true })
+          .eq('event_id', eventId)
+          .in('status', ['pending', 'processing']),
         // Revenue placeholder (orders table doesn't have amount fields)
         Promise.resolve({ data: [{ revenue_cents: 0 }] }),
       ]);
@@ -78,7 +140,10 @@ export const GET = withAuth(
       const totalStudents = totalStudentsRes.count || 0;
       const activeStudents = activeStudentsRes.count || 0;
       const studentsWithCourse = studentsWithCourseRes.count || 0;
-      const studentsWithoutCourse = Math.max(0, totalStudents - studentsWithCourse);
+      const studentsWithoutCourse = Math.max(
+        0,
+        totalStudents - studentsWithCourse
+      );
       const totalPhotos = totalPhotosRes.count || 0;
       const approvedPhotos = approvedPhotosRes.count || 0;
       const untaggedPhotos = untaggedPhotosRes.count || 0;
@@ -86,7 +151,9 @@ export const GET = withAuth(
       const totalOrders = totalOrdersRes.count || 0;
       const paidOrders = paidOrdersRes.count || 0;
       const pendingOrders = pendingOrdersRes.count || 0;
-      const totalRevenueCents = Array.isArray(revenueCentsRes.data) ? (revenueCentsRes.data[0]?.revenue_cents ?? 0) : 0;
+      const totalRevenueCents = Array.isArray(revenueCentsRes.data)
+        ? (revenueCentsRes.data[0]?.revenue_cents ?? 0)
+        : 0;
 
       // Calculate additional metrics
       const avgPhotosPerStudent =
@@ -120,9 +187,12 @@ export const GET = withAuth(
 
         // Recent assets (via folders)
         (async () => {
-          const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+          const { data: folders } = await supabase
+            .from('folders')
+            .select('id')
+            .eq('event_id', eventId);
           if (!folders?.length) return { count: 0 };
-          const folderIds = folders.map(f => f.id);
+          const folderIds = folders.map((f) => f.id);
           return supabase
             .from('assets')
             .select('id', { count: 'exact' })
@@ -212,7 +282,11 @@ export const GET = withAuth(
 
       return NextResponse.json(
         { stats },
-        { headers: { 'Cache-Control': 'private, max-age=10, stale-while-revalidate=30' } }
+        {
+          headers: {
+            'Cache-Control': 'private, max-age=10, stale-while-revalidate=30',
+          },
+        }
       );
     } catch (error) {
       console.error('Error in GET /api/admin/events/[id]/stats:', error);

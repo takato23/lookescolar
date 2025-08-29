@@ -21,16 +21,29 @@ async function checkDatabaseStructure() {
   try {
     // 1. Check events table structure by trying different common columns
     console.log('1. 📅 Events table structure:');
-    const eventColumns = ['id', 'name', 'date', 'created_at', 'location', 'description'];
+    const eventColumns = [
+      'id',
+      'name',
+      'date',
+      'created_at',
+      'location',
+      'description',
+    ];
     let eventQuery = 'id, name';
-    
-    for (const col of ['date', 'created_at', 'location', 'description', 'school']) {
+
+    for (const col of [
+      'date',
+      'created_at',
+      'location',
+      'description',
+      'school',
+    ]) {
       try {
         const testQuery = await supabase
           .from('events')
           .select(`id, ${col}`)
           .limit(1);
-        
+
         if (!testQuery.error) {
           eventQuery += `, ${col}`;
         }
@@ -50,7 +63,7 @@ async function checkDatabaseStructure() {
       console.log(`✅ Found ${events?.length || 0} events:`);
       events?.forEach((event, i) => {
         console.log(`   ${i + 1}. "${event.name}" (${event.id})`);
-        Object.keys(event).forEach(key => {
+        Object.keys(event).forEach((key) => {
           if (key !== 'id' && key !== 'name') {
             console.log(`      ${key}: ${event[key]}`);
           }
@@ -67,11 +80,16 @@ async function checkDatabaseStructure() {
         .limit(10);
 
       if (eventFoldersError) {
-        console.log('❌ event_folders table does not exist or error:', eventFoldersError.message);
+        console.log(
+          '❌ event_folders table does not exist or error:',
+          eventFoldersError.message
+        );
       } else {
         console.log(`✅ Found ${eventFolders?.length || 0} event_folders:`);
         eventFolders?.forEach((folder, i) => {
-          console.log(`   ${i + 1}. "${folder.name}" (Event: ${folder.event_id})`);
+          console.log(
+            `   ${i + 1}. "${folder.name}" (Event: ${folder.event_id})`
+          );
         });
       }
     } catch (e) {
@@ -91,7 +109,9 @@ async function checkDatabaseStructure() {
       } else {
         console.log(`✅ Found ${photos?.length || 0} photos in photos table:`);
         photos?.slice(0, 5).forEach((photo, i) => {
-          console.log(`   ${i + 1}. "${photo.filename}" (Event: ${photo.event_id}, Folder: ${photo.folder_id})`);
+          console.log(
+            `   ${i + 1}. "${photo.filename}" (Event: ${photo.event_id}, Folder: ${photo.folder_id})`
+          );
         });
       }
     } catch (e) {
@@ -100,19 +120,29 @@ async function checkDatabaseStructure() {
 
     // 4. Check available tables
     console.log('\n4. 📋 Available tables:');
-    const tableNames = ['events', 'folders', 'event_folders', 'photos', 'assets', 'subjects', 'students'];
-    
+    const tableNames = [
+      'events',
+      'folders',
+      'event_folders',
+      'photos',
+      'assets',
+      'subjects',
+      'students',
+    ];
+
     for (const tableName of tableNames) {
       try {
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
           .limit(1);
-        
+
         if (error) {
           console.log(`   ❌ ${tableName}: ${error.message}`);
         } else {
-          console.log(`   ✅ ${tableName}: exists (${data?.length || 0} sample records)`);
+          console.log(
+            `   ✅ ${tableName}: exists (${data?.length || 0} sample records)`
+          );
           if (data && data.length > 0) {
             const columns = Object.keys(data[0]).slice(0, 5);
             console.log(`      Columns: ${columns.join(', ')}`);
@@ -122,13 +152,9 @@ async function checkDatabaseStructure() {
         console.log(`   ❌ ${tableName}: exception`);
       }
     }
-
   } catch (err) {
     console.error('❌ Check failed:', err);
   }
 }
 
 checkDatabaseStructure().catch(console.error);
-
-
-

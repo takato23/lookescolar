@@ -9,16 +9,24 @@ const querySchema = z.object({
     .string()
     .optional()
     .default('1h')
-    .transform(val => {
+    .transform((val) => {
       switch (val) {
-        case '15m': return 15 * 60 * 1000;
-        case '1h': return 60 * 60 * 1000;
-        case '24h': return 24 * 60 * 60 * 1000;
-        case '7d': return 7 * 24 * 60 * 60 * 1000;
-        default: return 60 * 60 * 1000; // Default to 1 hour
+        case '15m':
+          return 15 * 60 * 1000;
+        case '1h':
+          return 60 * 60 * 1000;
+        case '24h':
+          return 24 * 60 * 60 * 1000;
+        case '7d':
+          return 7 * 24 * 60 * 60 * 1000;
+        default:
+          return 60 * 60 * 1000; // Default to 1 hour
       }
     }),
-  action: z.enum(['report', 'stats', 'cleanup', 'database-stats']).optional().default('report'),
+  action: z
+    .enum(['report', 'stats', 'cleanup', 'database-stats'])
+    .optional()
+    .default('report'),
 });
 
 async function handleGET(request: NextRequest): Promise<NextResponse> {
@@ -41,7 +49,7 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
         result = {
           performance: publishPerformanceMonitor.getStats(timeRange),
           timeRangeMs: timeRange,
-          generatedAt: new Date().toISOString()
+          generatedAt: new Date().toISOString(),
         };
         break;
 
@@ -50,7 +58,7 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
         result = {
           message: `Cleaned up ${removedCount} old metrics`,
           removedCount,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         break;
 
@@ -64,7 +72,7 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
           ...publishPerformanceMonitor.generateReport(timeRange),
           timeRangeMs: timeRange,
           timeRangeLabel: getTimeRangeLabel(timeRange),
-          generatedAt: new Date().toISOString()
+          generatedAt: new Date().toISOString(),
         };
         break;
     }
@@ -75,30 +83,29 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
       headers: {
         'X-Response-Time': `${executionTime}ms`,
         'Cache-Control': 'public, max-age=30', // Cache for 30 seconds
-      }
+      },
     });
-
   } catch (error) {
     const executionTime = Date.now() - requestStart;
     console.error('[API] Performance monitoring error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid query parameters',
-          details: error.errors.map(e => ({
+          details: error.errors.map((e) => ({
             field: e.path.join('.'),
             message: e.message,
-          }))
+          })),
         },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
@@ -110,8 +117,9 @@ async function getDatabasePerformanceStats() {
     const supabase = await createServerSupabaseServiceClient();
 
     // Get database performance metrics
-    const { data: dbStats, error } = await supabase
-      .rpc('get_folder_publish_stats');
+    const { data: dbStats, error } = await supabase.rpc(
+      'get_folder_publish_stats'
+    );
 
     if (error) {
       throw error;
@@ -144,7 +152,7 @@ async function getDatabasePerformanceStats() {
 
 function getTimeRangeLabel(timeRangeMs: number): string {
   const hours = timeRangeMs / (60 * 60 * 1000);
-  
+
   if (hours < 1) {
     return `${Math.round(timeRangeMs / (60 * 1000))} minutes`;
   } else if (hours < 24) {
@@ -165,43 +173,39 @@ async function handlePOST(request: NextRequest): Promise<NextResponse> {
 
     switch (action) {
       case 'cleanup':
-        const olderThanMs = body.olderThanMs || (24 * 60 * 60 * 1000); // 24 hours
+        const olderThanMs = body.olderThanMs || 24 * 60 * 60 * 1000; // 24 hours
         const removedCount = publishPerformanceMonitor.cleanup(olderThanMs);
         result = {
           message: `Cleaned up ${removedCount} metrics older than ${olderThanMs}ms`,
           removedCount,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         break;
 
       case 'optimize-database':
         // Trigger database optimization
         const supabase = await createServerSupabaseServiceClient();
-        
+
         // Run ANALYZE on key tables
         await supabase.rpc('analyze_folder_tables');
-        
+
         result = {
           message: 'Database optimization triggered',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
         break;
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
     return NextResponse.json(result);
-
   } catch (error) {
     console.error('[API] Performance monitoring POST error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

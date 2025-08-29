@@ -204,15 +204,17 @@ export default function NewEventPage() {
                   <Label htmlFor="theme">Tema Visual</Label>
                   <div className="relative">
                     <Palette className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                    <Select 
-                      value={formData.theme} 
-                      onValueChange={(value) => setFormData({ ...formData, theme: value })}
+                    <Select
+                      value={formData.theme}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, theme: value })
+                      }
                     >
                       <SelectTrigger className="pl-10">
                         <SelectValue placeholder="Selecciona un tema" />
                       </SelectTrigger>
                       <SelectContent>
-                        {GalleryThemeService.getThemeOptions().map(option => (
+                        {GalleryThemeService.getThemeOptions().map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
@@ -220,8 +222,9 @@ export default function NewEventPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Define el estilo visual de la galería y tienda para este evento
+                  <p className="text-muted-foreground text-sm">
+                    Define el estilo visual de la galería y tienda para este
+                    evento
                   </p>
                 </div>
 

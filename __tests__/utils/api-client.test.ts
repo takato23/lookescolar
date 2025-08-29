@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getApiBaseUrl, createApiUrl, apiFetch, uploadFiles } from '@/lib/utils/api-client';
+import {
+  getApiBaseUrl,
+  createApiUrl,
+  apiFetch,
+  uploadFiles,
+} from '@/lib/utils/api-client';
 
 // Mock window.location
 const mockLocation = {
@@ -50,10 +55,10 @@ describe('API Client Utils', () => {
       // Simulate SSR by removing window
       const originalWindow = global.window;
       delete (global as any).window;
-      
+
       process.env.NEXT_PUBLIC_APP_URL = 'https://production.app';
       expect(getApiBaseUrl()).toBe('https://production.app');
-      
+
       // Restore window
       global.window = originalWindow;
     });
@@ -62,9 +67,9 @@ describe('API Client Utils', () => {
       // Simulate SSR by removing window
       const originalWindow = global.window;
       delete (global as any).window;
-      
+
       expect(getApiBaseUrl()).toBe('http://localhost:3000');
-      
+
       // Restore window
       global.window = originalWindow;
     });
@@ -115,7 +120,7 @@ describe('API Client Utils', () => {
       (global.fetch as any).mockResolvedValue(mockResponse);
 
       await apiFetch('https://api.external.com/data');
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'https://api.external.com/data',
         expect.objectContaining({
@@ -131,7 +136,7 @@ describe('API Client Utils', () => {
       (global.fetch as any).mockResolvedValue(mockResponse);
 
       await apiFetch('/api/admin/photos');
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3001/api/admin/photos',
         expect.objectContaining({
@@ -148,17 +153,17 @@ describe('API Client Utils', () => {
 
       await apiFetch('/api/test', {
         headers: {
-          'Authorization': 'Bearer token123',
+          Authorization: 'Bearer token123',
           'Custom-Header': 'value',
         },
       });
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3001/api/test',
         expect.objectContaining({
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer token123',
+            Authorization: 'Bearer token123',
             'Custom-Header': 'value',
           },
         })
@@ -177,11 +182,14 @@ describe('API Client Utils', () => {
       (global.fetch as any).mockResolvedValue(mockResponse);
 
       const formData = new FormData();
-      formData.append('files', new File(['content'], 'test.jpg', { type: 'image/jpeg' }));
+      formData.append(
+        'files',
+        new File(['content'], 'test.jpg', { type: 'image/jpeg' })
+      );
       formData.append('eventId', 'event123');
 
       await uploadFiles('/api/admin/photos/upload', formData);
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3001/api/admin/photos/upload',
         expect.objectContaining({
@@ -202,7 +210,7 @@ describe('API Client Utils', () => {
 
       const formData = new FormData();
       await uploadFiles('/api/upload', formData);
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/upload',
         expect.objectContaining({
@@ -218,16 +226,16 @@ describe('API Client Utils', () => {
 
       const formData = new FormData();
       await uploadFiles('/api/upload', formData, {
-        headers: { 'Authorization': 'Bearer token' },
+        headers: { Authorization: 'Bearer token' },
       });
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3001/api/upload',
         expect.objectContaining({
           method: 'POST',
           body: formData,
           headers: {
-            'Authorization': 'Bearer token',
+            Authorization: 'Bearer token',
           },
         })
       );
@@ -241,7 +249,10 @@ describe('API Client Utils', () => {
 
     it('should work with user accessing admin on port 3001', async () => {
       mockLocation.origin = 'http://localhost:3001';
-      const mockResponse = { ok: true, json: vi.fn().mockResolvedValue({ success: true }) };
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ success: true }),
+      };
       (global.fetch as any).mockResolvedValue(mockResponse);
 
       // This simulates the exact scenario user reported
@@ -250,7 +261,7 @@ describe('API Client Utils', () => {
       formData.append('eventId', 'event-123');
 
       await uploadFiles('/api/admin/photos/upload', formData);
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3001/api/admin/photos/upload', // Should use port 3001
         expect.objectContaining({
@@ -262,7 +273,10 @@ describe('API Client Utils', () => {
 
     it('should work with user accessing admin on port 3000', async () => {
       mockLocation.origin = 'http://localhost:3000';
-      const mockResponse = { ok: true, json: vi.fn().mockResolvedValue({ success: true }) };
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ success: true }),
+      };
       (global.fetch as any).mockResolvedValue(mockResponse);
 
       // This simulates accessing from the "correct" server
@@ -271,7 +285,7 @@ describe('API Client Utils', () => {
       formData.append('eventId', 'event-123');
 
       await uploadFiles('/api/admin/photos/upload', formData);
-      
+
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3000/api/admin/photos/upload', // Should use port 3000
         expect.objectContaining({
@@ -283,11 +297,16 @@ describe('API Client Utils', () => {
 
     it('should work in production environment', async () => {
       mockLocation.origin = 'https://lookescolar.vercel.app';
-      const mockResponse = { ok: true, json: vi.fn().mockResolvedValue({ success: true }) };
+      const mockResponse = {
+        ok: true,
+        json: vi.fn().mockResolvedValue({ success: true }),
+      };
       (global.fetch as any).mockResolvedValue(mockResponse);
 
       const url = createApiUrl('/api/admin/photos/upload');
-      expect(url).toBe('https://lookescolar.vercel.app/api/admin/photos/upload');
+      expect(url).toBe(
+        'https://lookescolar.vercel.app/api/admin/photos/upload'
+      );
     });
   });
 });

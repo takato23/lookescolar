@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { Key, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BrutalistSectionHeader, BrutalistText, BrutalistLabel } from '@/components/ui/brutalist-typography';
+import {
+  BrutalistSectionHeader,
+  BrutalistText,
+  BrutalistLabel,
+} from '@/components/ui/brutalist-typography';
 
 interface FamilyAccessSectionProps {
   onAccess?: (token: string) => void;
@@ -17,35 +21,35 @@ export function FamilyAccessSection({ onAccess }: FamilyAccessSectionProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (token.length < 6) return;
-    
+
     setIsLoading(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     if (onAccess) {
       onAccess(token);
     }
-    
+
     // Redirect to family gallery where they can view and buy photos
     window.location.href = `/f/${token}`;
-    
+
     setIsLoading(false);
   };
 
   return (
-    <section className="py-24 px-6">
+    <section className="px-6 py-24">
       <div className="container mx-auto max-w-2xl text-center">
         <div className="mb-12">
-          <div className="w-20 h-20 mx-auto mb-8 bg-black flex items-center justify-center">
-            <Key className="w-10 h-10 text-white" />
+          <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center bg-black">
+            <Key className="h-10 w-10 text-white" />
           </div>
-          
+
           <BrutalistSectionHeader className="mb-6">
             ACCESO FAMILIAR
           </BrutalistSectionHeader>
-          
-          <BrutalistText className="text-gray-600 mb-8">
+
+          <BrutalistText className="mb-8 text-gray-600">
             Ingresá tu código para ver las fotos de tu hijo/a
           </BrutalistText>
         </div>
@@ -55,45 +59,45 @@ export function FamilyAccessSection({ onAccess }: FamilyAccessSectionProps) {
             <BrutalistLabel className="block text-center">
               Código de Acceso
             </BrutalistLabel>
-            
+
             <Input
               type="text"
               placeholder="ABC123XYZ"
               value={token}
               onChange={(e) => setToken(e.target.value.toUpperCase())}
-              className="w-full max-w-sm mx-auto font-mono text-center text-2xl tracking-[0.5em] border-2 border-black bg-white focus:ring-0 focus:border-black rounded-none h-16 px-8"
+              className="mx-auto h-16 w-full max-w-sm rounded-none border-2 border-black bg-white px-8 text-center font-mono text-2xl tracking-[0.5em] focus:border-black focus:ring-0"
               maxLength={9}
               required
             />
-            
-            <BrutalistText className="text-gray-500 text-sm">
+
+            <BrutalistText className="text-sm text-gray-500">
               Encontrá tu código en el papel que te dieron en la escuela
             </BrutalistText>
           </div>
-          
+
           <Button
             type="submit"
             disabled={isLoading || token.length < 6}
-            className="bg-black text-white hover:bg-gray-800 font-mono uppercase tracking-wider text-sm px-12 py-4 rounded-none border-2 border-black disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="group rounded-none border-2 border-black bg-black px-12 py-4 font-mono text-sm uppercase tracking-wider text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
             ) : (
               <>
                 Ver mis fotos
-                <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </>
             )}
           </Button>
         </form>
-        
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <BrutalistText className="text-gray-500 text-sm mb-4">
+
+        <div className="mt-12 border-t border-gray-200 pt-8">
+          <BrutalistText className="mb-4 text-sm text-gray-500">
             ¿No tenés tu código?
           </BrutalistText>
           <Button
             variant="ghost"
-            className="font-mono uppercase tracking-wider text-xs hover:underline"
+            className="font-mono text-xs uppercase tracking-wider hover:underline"
           >
             Consultá en la escuela
           </Button>

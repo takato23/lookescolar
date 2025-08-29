@@ -1,6 +1,6 @@
 /**
  * ADMIN TOKEN MANAGEMENT API - /api/admin/tokens/[id]
- * 
+ *
  * Individual token operations: get, revoke, rotate, usage stats
  * Features: Admin authentication, audit logging, secure operations
  */
@@ -18,7 +18,7 @@ interface RouteParams {
 
 const updateTokenSchema = z.object({
   action: z.enum(['revoke', 'rotate']),
-  reason: z.string().optional()
+  reason: z.string().optional(),
 });
 
 // GET /api/admin/tokens/[id] - Get token details with usage stats
@@ -37,12 +37,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Get token details
     const token = await accessTokenService.getToken(id);
-    
+
     if (!token) {
-      return NextResponse.json(
-        { error: 'Token not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Token not found' }, { status: 404 });
     }
 
     // Get usage statistics
@@ -69,12 +66,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           isValid: token.isValid,
           isExpired: token.isExpired,
           isRevoked: token.isRevoked,
-          isExhausted: token.isExhausted
-        }
+          isExhausted: token.isExhausted,
+        },
       },
-      usageStats
+      usageStats,
     });
-
   } catch (error: any) {
     console.error('Token GET error:', error);
     return NextResponse.json(
@@ -103,16 +99,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Get current token to verify it exists
     const existingToken = await accessTokenService.getToken(id);
     if (!existingToken) {
-      return NextResponse.json(
-        { error: 'Token not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Token not found' }, { status: 404 });
     }
 
     if (data.action === 'revoke') {
       // Revoke the token
       const success = await accessTokenService.revokeToken(id);
-      
+
       if (!success) {
         return NextResponse.json(
           { error: 'Failed to revoke token' },
@@ -121,10 +114,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       // Log the revocation
-      await accessTokenService.logAccess('', 'view', {
-        success: true,
-        notes: `Token ${existingToken.tokenPrefix} revoked by admin ${authResult.user!.id}. Reason: ${data.reason || 'No reason provided'}`
-      }).catch(() => {}); // Don't fail if logging fails
+      await accessTokenService
+        .logAccess('', 'view', {
+          success: true,
+          notes: `Token ${existingToken.tokenPrefix} revoked by admin ${authResult.user!.id}. Reason: ${data.reason || 'No reason provided'}`,
+        })
+        .catch(() => {}); // Don't fail if logging fails
 
       return NextResponse.json({
         success: true,
@@ -133,10 +128,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           tokenId: id,
           revokedAt: new Date().toISOString(),
           revokedBy: authResult.user!.id,
-          reason: data.reason
-        }
+          reason: data.reason,
+        },
       });
-
     } else if (data.action === 'rotate') {
       // For token rotation, we create a new token with the same parameters
       // and revoke the old one
@@ -151,8 +145,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         metadata: {
           ...existingToken.metadata,
           rotatedFrom: existingToken.id,
-          rotationReason: data.reason || 'Token rotation requested'
-        }
+          rotationReason: data.reason || 'Token rotation requested',
+        },
       });
 
       // Revoke the old token
@@ -162,10 +156,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const qrData = accessTokenService.generateQRData(newToken.token);
 
       // Log the rotation
-      await accessTokenService.logAccess('', 'view', {
-        success: true,
-        notes: `Token ${existingToken.tokenPrefix} rotated to ${newToken.tokenId} by admin ${authResult.user!.id}. Reason: ${data.reason || 'No reason provided'}`
-      }).catch(() => {}); // Don't fail if logging fails
+      await accessTokenService
+        .logAccess('', 'view', {
+          success: true,
+          notes: `Token ${existingToken.tokenPrefix} rotated to ${newToken.tokenId} by admin ${authResult.user!.id}. Reason: ${data.reason || 'No reason provided'}`,
+        })
+        .catch(() => {}); // Don't fail if logging fails
 
       return NextResponse.json({
         success: true,
@@ -177,19 +173,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           qrCode: qrData,
           rotatedAt: new Date().toISOString(),
           rotatedBy: authResult.user!.id,
-          reason: data.reason
-        }
+          reason: data.reason,
+        },
       });
     }
 
-    return NextResponse.json(
-      { error: 'Invalid action' },
-      { status: 400 }
-    );
-
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
     console.error('Token POST error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
@@ -210,7 +202,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const revokeRequest = new Request(request.url, {
     method: 'POST',
     headers: request.headers,
-    body: JSON.stringify({ action: 'revoke', reason: 'Token deleted via API' })
+    body: JSON.stringify({ action: 'revoke', reason: 'Token deleted via API' }),
   });
 
   return POST(revokeRequest, { params });

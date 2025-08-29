@@ -1522,11 +1522,15 @@ function LevelsContent({
         <SheetContent side="left" className="sm:max-w-sm">
           <SheetHeader>
             <SheetTitle>Carpetas</SheetTitle>
-            <SheetDescription>Explorá y abrí carpetas rápidamente</SheetDescription>
+            <SheetDescription>
+              Explorá y abrí carpetas rápidamente
+            </SheetDescription>
           </SheetHeader>
           <div className="mt-4 space-y-2">
             {courses.filter((c) => c.is_folder).length === 0 ? (
-              <div className="text-muted-foreground text-sm">No hay carpetas</div>
+              <div className="text-muted-foreground text-sm">
+                No hay carpetas
+              </div>
             ) : (
               courses
                 .filter((c) => c.is_folder)
@@ -1541,9 +1545,7 @@ function LevelsContent({
                     }}
                   >
                     <Folder className="mr-2 h-4 w-4 text-yellow-600" />
-                    <span className="break-words text-left">
-                      {folder.name}
-                    </span>
+                    <span className="break-words text-left">{folder.name}</span>
                     <Badge className="ml-auto" variant="secondary">
                       {folder.photo_count || 0}
                     </Badge>
@@ -1754,7 +1756,7 @@ function CoursesContent({
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span
-                      className="cursor-pointer break-words line-clamp-2 hover:underline md:line-clamp-1 md:truncate"
+                      className="line-clamp-2 cursor-pointer break-words hover:underline md:line-clamp-1 md:truncate"
                       onClick={() => onCourseClick(course.id)}
                     >
                       {course.name}

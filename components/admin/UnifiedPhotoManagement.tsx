@@ -44,17 +44,17 @@ const EVENT_TYPES: EventTypeConfig[] = [
     icon: Baby,
     colors: {
       primary: 'from-pink-400 to-purple-400',
-      secondary: 'from-yellow-300 to-orange-400', 
+      secondary: 'from-yellow-300 to-orange-400',
       accent: 'bg-rainbow',
       background: 'bg-gradient-to-br from-pink-50 to-purple-50',
-      text: 'text-purple-800'
+      text: 'text-purple-800',
     },
     typography: 'font-comic',
     elements: ['🌈', '⭐', '🎈', '🦄', '🌸'],
-    description: 'Ambiente mágico y colorido para los más pequeños'
+    description: 'Ambiente mágico y colorido para los más pequeños',
   },
   {
-    id: 'secundaria', 
+    id: 'secundaria',
     name: 'Secundaria',
     icon: GraduationCap,
     colors: {
@@ -62,27 +62,27 @@ const EVENT_TYPES: EventTypeConfig[] = [
       secondary: 'from-blue-600 to-indigo-700',
       accent: 'bg-gradient-to-r from-slate-500 to-blue-600',
       background: 'bg-gradient-to-br from-slate-50 to-blue-50',
-      text: 'text-slate-800'
+      text: 'text-slate-800',
     },
     typography: 'font-modern',
     elements: ['🎓', '📚', '🏆', '⚡', '🎯'],
-    description: 'Diseño moderno y profesional para adolescentes'
+    description: 'Diseño moderno y profesional para adolescentes',
   },
   {
     id: 'comunion',
-    name: 'Primera Comunión', 
+    name: 'Primera Comunión',
     icon: Church,
     colors: {
       primary: 'from-amber-300 to-yellow-400',
       secondary: 'from-white to-gray-100',
       accent: 'bg-gradient-to-r from-amber-400 to-yellow-500',
       background: 'bg-gradient-to-br from-white to-amber-50',
-      text: 'text-amber-800'
+      text: 'text-amber-800',
     },
     typography: 'font-elegant',
     elements: ['✝️', '🕊️', '👼', '💒', '🌟'],
-    description: 'Elegancia celestial para una ocasión especial'
-  }
+    description: 'Elegancia celestial para una ocasión especial',
+  },
 ];
 
 interface UnifiedPhotoManagementProps {
@@ -94,16 +94,18 @@ interface UnifiedPhotoManagementProps {
 export default function UnifiedPhotoManagement({
   eventId,
   initialEventType = 'secundaria',
-  className
+  className,
 }: UnifiedPhotoManagementProps) {
-  const [selectedEventType, setSelectedEventType] = useState<string>(initialEventType);
+  const [selectedEventType, setSelectedEventType] =
+    useState<string>(initialEventType);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const currentConfig = EVENT_TYPES.find(t => t.id === selectedEventType) || EVENT_TYPES[1];
+  const currentConfig =
+    EVENT_TYPES.find((t) => t.id === selectedEventType) || EVENT_TYPES[1];
 
   const handleEventTypeChange = (newType: string) => {
     if (newType === selectedEventType) return;
-    
+
     setIsTransitioning(true);
     setTimeout(() => {
       setSelectedEventType(newType);
@@ -118,22 +120,22 @@ export default function UnifiedPhotoManagement({
         config.colors.background,
         config.typography
       ),
-      header: cn(
-        'bg-gradient-to-r p-6 text-white',
-        config.colors.primary
-      ),
+      header: cn('bg-gradient-to-r p-6 text-white', config.colors.primary),
       card: cn(
         'border-2 shadow-lg transition-all duration-300 hover:shadow-xl',
         config.id === 'jardin' && 'border-pink-300 hover:border-pink-400',
-        config.id === 'secundaria' && 'border-slate-300 hover:border-slate-400', 
+        config.id === 'secundaria' && 'border-slate-300 hover:border-slate-400',
         config.id === 'comunion' && 'border-amber-300 hover:border-amber-400'
       ),
       button: cn(
         'transition-all duration-300',
-        config.id === 'jardin' && 'bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500',
-        config.id === 'secundaria' && 'bg-gradient-to-r from-slate-600 to-blue-600 hover:from-slate-700 hover:to-blue-700',
-        config.id === 'comunion' && 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600'
-      )
+        config.id === 'jardin' &&
+          'bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500',
+        config.id === 'secundaria' &&
+          'bg-gradient-to-r from-slate-600 to-blue-600 hover:from-slate-700 hover:to-blue-700',
+        config.id === 'comunion' &&
+          'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600'
+      ),
     };
   };
 
@@ -142,26 +144,26 @@ export default function UnifiedPhotoManagement({
   return (
     <div className={cn(themeClasses.container, className)}>
       {/* Header con selección de tipo de evento */}
-      <motion.div 
+      <motion.div
         className={themeClasses.header}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <div className="container mx-auto">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <currentConfig.icon className="w-8 h-8" />
+              <currentConfig.icon className="h-8 w-8" />
               <div>
                 <h1 className="text-3xl font-bold">
                   Gestor de Fotos - {currentConfig.name}
                 </h1>
-                <p className="text-white/80 text-sm">
+                <p className="text-sm text-white/80">
                   {currentConfig.description}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {currentConfig.elements.map((element, index) => (
                 <motion.span
@@ -178,34 +180,38 @@ export default function UnifiedPhotoManagement({
           </div>
 
           {/* Selector de tipo de evento */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {EVENT_TYPES.map((eventType) => {
               const Icon = eventType.icon;
               const isSelected = eventType.id === selectedEventType;
-              
+
               return (
                 <motion.button
                   key={eventType.id}
                   onClick={() => handleEventTypeChange(eventType.id)}
                   className={cn(
-                    'p-4 rounded-lg border-2 transition-all duration-300 text-left',
-                    isSelected 
-                      ? 'bg-white/20 border-white shadow-lg scale-105' 
-                      : 'bg-white/10 border-white/30 hover:bg-white/15'
+                    'rounded-lg border-2 p-4 text-left transition-all duration-300',
+                    isSelected
+                      ? 'scale-105 border-white bg-white/20 shadow-lg'
+                      : 'border-white/30 bg-white/10 hover:bg-white/15'
                   )}
                   whileHover={{ scale: isSelected ? 1.05 : 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={cn(
-                      'w-6 h-6',
-                      isSelected ? 'text-white' : 'text-white/70'
-                    )} />
+                    <Icon
+                      className={cn(
+                        'h-6 w-6',
+                        isSelected ? 'text-white' : 'text-white/70'
+                      )}
+                    />
                     <div>
-                      <h3 className={cn(
-                        'font-semibold',
-                        isSelected ? 'text-white' : 'text-white/80'
-                      )}>
+                      <h3
+                        className={cn(
+                          'font-semibold',
+                          isSelected ? 'text-white' : 'text-white/80'
+                        )}
+                      >
                         {eventType.name}
                       </h3>
                       <p className="text-xs text-white/60">
@@ -230,7 +236,7 @@ export default function UnifiedPhotoManagement({
         <Card className={themeClasses.card}>
           <CardHeader className={cn('pb-4', currentConfig.colors.text)}>
             <CardTitle className="flex items-center gap-3">
-              <Camera className="w-6 h-6" />
+              <Camera className="h-6 w-6" />
               Gestión de Fotografías
               <Badge variant="secondary" className={themeClasses.button}>
                 {currentConfig.name}
@@ -239,11 +245,10 @@ export default function UnifiedPhotoManagement({
           </CardHeader>
           <CardContent className="p-0">
             {/* PhotoAdmin con tema aplicado */}
-            <div className={cn(
-              'photo-admin-themed',
-              `theme-${currentConfig.id}`
-            )}>
-              <PhotoAdmin 
+            <div
+              className={cn('photo-admin-themed', `theme-${currentConfig.id}`)}
+            >
+              <PhotoAdmin
                 className="border-none shadow-none"
                 enableUpload={true}
                 enableBulkOperations={true}
@@ -262,7 +267,7 @@ export default function UnifiedPhotoManagement({
           --background-color: #fdf2f8;
           --text-color: #7c3aed;
         }
-        
+
         .theme-secundaria {
           --primary-color: #475569;
           --secondary-color: #2563eb;
@@ -270,7 +275,7 @@ export default function UnifiedPhotoManagement({
           --background-color: #f8fafc;
           --text-color: #1e293b;
         }
-        
+
         .theme-comunion {
           --primary-color: #fbbf24;
           --secondary-color: #f9fafb;
@@ -282,11 +287,15 @@ export default function UnifiedPhotoManagement({
         .photo-admin-themed .bg-white {
           background-color: var(--background-color) !important;
         }
-        
-        .photo-admin-themed button[variant="default"] {
-          background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+
+        .photo-admin-themed button[variant='default'] {
+          background: linear-gradient(
+            to right,
+            var(--primary-color),
+            var(--secondary-color)
+          );
         }
-        
+
         .photo-admin-themed .border-gray-200 {
           border-color: var(--accent-color);
           opacity: 0.3;
@@ -295,6 +304,3 @@ export default function UnifiedPhotoManagement({
     </div>
   );
 }
-
-
-

@@ -1,5 +1,5 @@
 // Lazy imported icons to reduce bundle size on Fast Refresh
-export { 
+export {
   Search,
   Grid3X3,
   List,

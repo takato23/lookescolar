@@ -4,7 +4,27 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Users, ShoppingCart, ArrowLeft, Upload, QrCode, Eye, AlertCircle, RefreshCw, Home, TrendingUp, Zap, Brain, Clock, CheckCircle2, Sparkles, ArrowRight, BarChart3, Settings } from 'lucide-react';
+import {
+  Camera,
+  Users,
+  ShoppingCart,
+  ArrowLeft,
+  Upload,
+  QrCode,
+  Eye,
+  AlertCircle,
+  RefreshCw,
+  Home,
+  TrendingUp,
+  Zap,
+  Brain,
+  Clock,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  BarChart3,
+  Settings,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 // Removed unused Card imports
@@ -312,7 +332,7 @@ export default function HolisticEventDashboard() {
                       // Show notification modal or form
                       break;
                     default:
-                      // fallback
+                    // fallback
                   }
                 }}
               />

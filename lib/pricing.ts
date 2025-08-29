@@ -170,12 +170,14 @@ export function validatePhotoSelection(
 
   const req = selectedPackage.photoRequirements;
   // Defensive checks for array properties
-  const individualSelected = (selectedPhotos.individual && Array.isArray(selectedPhotos.individual)) 
-    ? selectedPhotos.individual.length 
-    : 0;
-  const groupSelected = (selectedPhotos.group && Array.isArray(selectedPhotos.group)) 
-    ? selectedPhotos.group.length 
-    : 0;
+  const individualSelected =
+    selectedPhotos.individual && Array.isArray(selectedPhotos.individual)
+      ? selectedPhotos.individual.length
+      : 0;
+  const groupSelected =
+    selectedPhotos.group && Array.isArray(selectedPhotos.group)
+      ? selectedPhotos.group.length
+      : 0;
 
   // Validate individual photos
   const individualValid = individualSelected === req.individualPhotos;
@@ -345,12 +347,14 @@ export function getSelectionInstructions(
 
   const req = selectedPackage.photoRequirements;
   // Defensive checks for array properties
-  const individualCount = (selectedPhotos.individual && Array.isArray(selectedPhotos.individual)) 
-    ? selectedPhotos.individual.length 
-    : 0;
-  const groupCount = (selectedPhotos.group && Array.isArray(selectedPhotos.group)) 
-    ? selectedPhotos.group.length 
-    : 0;
+  const individualCount =
+    selectedPhotos.individual && Array.isArray(selectedPhotos.individual)
+      ? selectedPhotos.individual.length
+      : 0;
+  const groupCount =
+    selectedPhotos.group && Array.isArray(selectedPhotos.group)
+      ? selectedPhotos.group.length
+      : 0;
 
   // Individual photo instructions
   let individualInstr = '';

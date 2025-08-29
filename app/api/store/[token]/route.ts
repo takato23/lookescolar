@@ -9,7 +9,10 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const QuerySchema = z.object({
-  include_assets: z.enum(['true', 'false']).default('true').transform(val => val === 'true'),
+  include_assets: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((val) => val === 'true'),
   limit: z.coerce.number().min(1).max(100).default(50),
   offset: z.coerce.number().min(0).default(0),
 });
@@ -66,7 +69,7 @@ export async function GET(
           .eq('status', 'ready')
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1);
-        
+
         if (assetsResult.data && assetsResult.data.length > 0) {
           assetsData = assetsResult.data;
           count = assetsResult.count || assetsResult.data.length;
@@ -78,7 +81,7 @@ export async function GET(
             .eq('folder_id', storeData.folder_id)
             .order('created_at', { ascending: false })
             .range(offset, offset + limit - 1);
-          
+
           if (photosResult.data) {
             assetsData = photosResult.data;
             count = photosResult.count || photosResult.data.length;
@@ -95,16 +98,26 @@ export async function GET(
       } else {
         // Mapear datos de assets o photos a formato unificado
         if (assetsData && assetsData.length > 0) {
-          console.log('🔍 Debug assetsData[0]:', JSON.stringify(assetsData[0], null, 2));
-          
+          console.log(
+            '🔍 Debug assetsData[0]:',
+            JSON.stringify(assetsData[0], null, 2)
+          );
+
           assets = assetsData.map((item: any) => {
             // Construir URLs completas para previews
             let previewUrl = null;
-            console.log('🔍 Processing item:', item.filename, 'preview_path:', item.preview_path, 'preview_url:', item.preview_url);
-            
+            console.log(
+              '🔍 Processing item:',
+              item.filename,
+              'preview_path:',
+              item.preview_path,
+              'preview_url:',
+              item.preview_url
+            );
+
             // Usar preview_path si existe, sino preview_url
             const previewPath = item.preview_path || item.preview_url;
-            
+
             if (previewPath) {
               // Si es una URL relativa, convertir a URL completa
               if (previewPath.startsWith('previews/')) {
@@ -117,23 +130,28 @@ export async function GET(
             } else {
               console.log('🔍 No preview path found for:', item.filename);
             }
-            
+
             return {
               id: item.id,
-              filename: item.filename || item.original_filename || item.storage_path?.split('/').pop() || 'foto',
+              filename:
+                item.filename ||
+                item.original_filename ||
+                item.storage_path?.split('/').pop() ||
+                'foto',
               preview_url: previewUrl,
               watermark_url: item.watermark_url || item.watermark_path || null,
               file_size: item.file_size || item.file_size_bytes || 0,
-              created_at: item.created_at || item.uploaded_at || item.created_at,
+              created_at:
+                item.created_at || item.uploaded_at || item.created_at,
               // Agregar campos adicionales según la tabla
               storage_path: item.storage_path || null,
-              status: item.status || 'ready'
+              status: item.status || 'ready',
             };
           });
         } else {
           assets = [];
         }
-        
+
         pagination = {
           limit,
           offset,
@@ -164,14 +182,13 @@ export async function GET(
     // Headers para cache público
     const headers = {
       'Cache-Control': 'public, max-age=300, s-maxage=600', // 5 min browser, 10 min CDN
-      'Vary': 'Accept-Encoding',
+      Vary: 'Accept-Encoding',
     };
 
     return NextResponse.json(storeResponse, { headers });
-
   } catch (error) {
     console.error('Store access error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid query parameters', details: error.errors },
@@ -193,18 +210,17 @@ export async function POST(
 ) {
   try {
     const { token } = await params;
-    
+
     // TODO: Implementar sistema de órdenes
     // - Validar token de tienda
     // - Validar assets seleccionados
     // - Crear orden en MercadoPago
     // - Guardar orden en base de datos
-    
+
     return NextResponse.json(
       { error: 'Order system not implemented yet' },
       { status: 501 }
     );
-
   } catch (error) {
     console.error('Store order error:', error);
     return NextResponse.json(

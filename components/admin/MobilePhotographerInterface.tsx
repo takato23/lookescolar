@@ -6,12 +6,33 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Camera, Upload, Search, Filter, Menu, X, 
-  Grid3X3, List, ZoomIn, ZoomOut, RotateCw,
-  Check, Eye, Heart, Share2, Download,
-  ChevronLeft, ChevronRight, ChevronUp, ChevronDown,
-  Play, Pause, Settings, Users, Folder, Home
+import {
+  Camera,
+  Upload,
+  Search,
+  Filter,
+  Menu,
+  X,
+  Grid3X3,
+  List,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Check,
+  Eye,
+  Heart,
+  Share2,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Play,
+  Pause,
+  Settings,
+  Users,
+  Folder,
+  Home,
 } from 'lucide-react';
 import {
   Sheet,
@@ -49,7 +70,7 @@ export default function MobilePhotographerInterface({
   onPhotoSelect,
   onPhotoApprove,
   onPhotoTag,
-  onUpload
+  onUpload,
 }: MobilePhotographerInterfaceProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -58,7 +79,7 @@ export default function MobilePhotographerInterface({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showMetadata, setShowMetadata] = useState(false);
   const [quickActions, setQuickActions] = useState(false);
-  
+
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1024px)');
   const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -70,34 +91,41 @@ export default function MobilePhotographerInterface({
   };
 
   // Handle photo selection
-  const handlePhotoSelect = useCallback((photo: Photo, index: number) => {
-    setSelectedPhoto(photo);
-    setCurrentPhotoIndex(index);
-    onPhotoSelect(photo);
-  }, [onPhotoSelect]);
+  const handlePhotoSelect = useCallback(
+    (photo: Photo, index: number) => {
+      setSelectedPhoto(photo);
+      setCurrentPhotoIndex(index);
+      onPhotoSelect(photo);
+    },
+    [onPhotoSelect]
+  );
 
   // Navigation between photos
-  const navigatePhoto = useCallback((direction: 'prev' | 'next') => {
-    const newIndex = direction === 'prev' 
-      ? Math.max(0, currentPhotoIndex - 1)
-      : Math.min(photos.length - 1, currentPhotoIndex + 1);
-    
-    const newPhoto = photos[newIndex];
-    if (newPhoto) {
-      setCurrentPhotoIndex(newIndex);
-      setSelectedPhoto(newPhoto);
-      onPhotoSelect(newPhoto);
-    }
-  }, [currentPhotoIndex, photos, onPhotoSelect]);
+  const navigatePhoto = useCallback(
+    (direction: 'prev' | 'next') => {
+      const newIndex =
+        direction === 'prev'
+          ? Math.max(0, currentPhotoIndex - 1)
+          : Math.min(photos.length - 1, currentPhotoIndex + 1);
+
+      const newPhoto = photos[newIndex];
+      if (newPhoto) {
+        setCurrentPhotoIndex(newIndex);
+        setSelectedPhoto(newPhoto);
+        onPhotoSelect(newPhoto);
+      }
+    },
+    [currentPhotoIndex, photos, onPhotoSelect]
+  );
 
   // Zoom controls
   const handleZoom = useCallback((action: 'in' | 'out' | 'reset') => {
     switch (action) {
       case 'in':
-        setZoomLevel(prev => Math.min(prev * 1.5, 5));
+        setZoomLevel((prev) => Math.min(prev * 1.5, 5));
         break;
       case 'out':
-        setZoomLevel(prev => Math.max(prev / 1.5, 0.5));
+        setZoomLevel((prev) => Math.max(prev / 1.5, 0.5));
         break;
       case 'reset':
         setZoomLevel(1);
@@ -152,50 +180,45 @@ export default function MobilePhotographerInterface({
 
   // Photo grid component
   const PhotoGrid = () => (
-    <div 
-      className={cn(
-        "grid gap-2 p-4",
-        `grid-cols-${getGridCols()}`
-      )}
-    >
+    <div className={cn('grid gap-2 p-4', `grid-cols-${getGridCols()}`)}>
       {photos.map((photo, index) => (
-        <Card 
+        <Card
           key={photo.id}
           className={cn(
-            "cursor-pointer transition-all duration-200 hover:shadow-lg",
-            "touch-manipulation", // Better touch performance
-            selectedPhoto?.id === photo.id && "ring-2 ring-blue-500"
+            'cursor-pointer transition-all duration-200 hover:shadow-lg',
+            'touch-manipulation', // Better touch performance
+            selectedPhoto?.id === photo.id && 'ring-2 ring-blue-500'
           )}
           onClick={() => handlePhotoSelect(photo, index)}
         >
-          <CardContent className="p-0 relative">
-            <div className="aspect-square bg-gray-100 rounded-t overflow-hidden">
+          <CardContent className="relative p-0">
+            <div className="aspect-square overflow-hidden rounded-t bg-gray-100">
               <img
                 src={photo.thumbnailUrl}
                 alt={photo.filename}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 loading="lazy"
               />
             </div>
-            
+
             {/* Status indicators */}
-            <div className="absolute top-2 left-2 flex gap-1">
+            <div className="absolute left-2 top-2 flex gap-1">
               {photo.approved && (
-                <Badge className="bg-green-500 text-white text-xs px-1 py-0">
+                <Badge className="bg-green-500 px-1 py-0 text-xs text-white">
                   <Check className="h-3 w-3" />
                 </Badge>
               )}
               {photo.tagged && (
-                <Badge className="bg-blue-500 text-white text-xs px-1 py-0">
+                <Badge className="bg-blue-500 px-1 py-0 text-xs text-white">
                   <Users className="h-3 w-3" />
                 </Badge>
               )}
             </div>
 
             {/* Quick actions overlay */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <Button 
-                size="sm" 
+            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity hover:opacity-100">
+              <Button
+                size="sm"
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={(e) => {
@@ -206,8 +229,8 @@ export default function MobilePhotographerInterface({
               >
                 <Eye className="h-4 w-4" />
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="secondary"
                 className="h-8 w-8 p-0"
                 onClick={(e) => {
@@ -221,9 +244,9 @@ export default function MobilePhotographerInterface({
 
             {/* Photo info */}
             <div className="p-2">
-              <p className="text-xs truncate font-medium">{photo.filename}</p>
+              <p className="truncate text-xs font-medium">{photo.filename}</p>
               {photo.studentNames.length > 0 && (
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-muted-foreground truncate text-xs">
                   {photo.studentNames.join(', ')}
                 </p>
               )}
@@ -236,34 +259,38 @@ export default function MobilePhotographerInterface({
 
   // Mobile toolbar
   const MobileToolbar = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white shadow-lg">
       <div className="flex items-center justify-around p-3">
         <Button
           variant="ghost"
           size="sm"
           onClick={onUpload}
-          className="flex flex-col items-center gap-1 h-auto py-2"
+          className="flex h-auto flex-col items-center gap-1 py-2"
         >
           <Upload className="h-5 w-5" />
           <span className="text-xs">Subir</span>
         </Button>
-        
+
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-          className="flex flex-col items-center gap-1 h-auto py-2"
+          className="flex h-auto flex-col items-center gap-1 py-2"
         >
-          {viewMode === 'grid' ? <List className="h-5 w-5" /> : <Grid3X3 className="h-5 w-5" />}
+          {viewMode === 'grid' ? (
+            <List className="h-5 w-5" />
+          ) : (
+            <Grid3X3 className="h-5 w-5" />
+          )}
           <span className="text-xs">Vista</span>
         </Button>
-        
+
         <Sheet>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
-              className="flex flex-col items-center gap-1 h-auto py-2"
+              className="flex h-auto flex-col items-center gap-1 py-2"
             >
               <Filter className="h-5 w-5" />
               <span className="text-xs">Filtros</span>
@@ -272,11 +299,9 @@ export default function MobilePhotographerInterface({
           <SheetContent side="bottom" className="h-[300px]">
             <SheetHeader>
               <SheetTitle>Filtros</SheetTitle>
-              <SheetDescription>
-                Personaliza la vista de fotos
-              </SheetDescription>
+              <SheetDescription>Personaliza la vista de fotos</SheetDescription>
             </SheetHeader>
-            <div className="grid grid-cols-2 gap-4 mt-4">
+            <div className="mt-4 grid grid-cols-2 gap-4">
               <Button variant="outline" className="h-12">
                 Solo aprobadas
               </Button>
@@ -292,12 +317,12 @@ export default function MobilePhotographerInterface({
             </div>
           </SheetContent>
         </Sheet>
-        
+
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setQuickActions(!quickActions)}
-          className="flex flex-col items-center gap-1 h-auto py-2"
+          className="flex h-auto flex-col items-center gap-1 py-2"
         >
           <Settings className="h-5 w-5" />
           <span className="text-xs">Más</span>
@@ -311,9 +336,9 @@ export default function MobilePhotographerInterface({
     if (!isFullscreen || !selectedPhoto) return null;
 
     return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      <div className="fixed inset-0 z-50 flex flex-col bg-black">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 bg-black/50 text-white">
+        <div className="flex items-center justify-between bg-black/50 p-4 text-white">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -327,7 +352,7 @@ export default function MobilePhotographerInterface({
               {currentPhotoIndex + 1} de {photos.length}
             </span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -349,17 +374,17 @@ export default function MobilePhotographerInterface({
         </div>
 
         {/* Photo container */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="relative flex-1 overflow-hidden">
           <img
             src={selectedPhoto.url}
             alt={selectedPhoto.filename}
-            className="w-full h-full object-contain"
+            className="h-full w-full object-contain"
             style={{
               transform: `scale(${zoomLevel})`,
-              transition: 'transform 0.2s ease'
+              transition: 'transform 0.2s ease',
             }}
           />
-          
+
           {/* Navigation arrows */}
           <Button
             variant="ghost"
@@ -370,7 +395,7 @@ export default function MobilePhotographerInterface({
           >
             <ChevronLeft className="h-8 w-8" />
           </Button>
-          
+
           <Button
             variant="ghost"
             size="lg"
@@ -383,7 +408,7 @@ export default function MobilePhotographerInterface({
         </div>
 
         {/* Bottom controls */}
-        <div className="flex items-center justify-between p-4 bg-black/50 text-white">
+        <div className="flex items-center justify-between bg-black/50 p-4 text-white">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -403,7 +428,7 @@ export default function MobilePhotographerInterface({
               <ZoomIn className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"
@@ -416,11 +441,16 @@ export default function MobilePhotographerInterface({
 
         {/* Metadata overlay */}
         {showMetadata && (
-          <div className="absolute bottom-20 left-4 right-4 bg-black/80 text-white p-4 rounded-lg">
-            <h3 className="font-medium mb-2">{selectedPhoto.filename}</h3>
+          <div className="absolute bottom-20 left-4 right-4 rounded-lg bg-black/80 p-4 text-white">
+            <h3 className="mb-2 font-medium">{selectedPhoto.filename}</h3>
             <div className="space-y-1 text-sm">
               <p>Estado: {selectedPhoto.approved ? 'Aprobada' : 'Pendiente'}</p>
-              <p>Etiquetas: {selectedPhoto.studentNames.length > 0 ? selectedPhoto.studentNames.join(', ') : 'Sin etiquetar'}</p>
+              <p>
+                Etiquetas:{' '}
+                {selectedPhoto.studentNames.length > 0
+                  ? selectedPhoto.studentNames.join(', ')
+                  : 'Sin etiquetar'}
+              </p>
             </div>
           </div>
         )}
@@ -431,16 +461,13 @@ export default function MobilePhotographerInterface({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile header */}
-      <div className="sticky top-0 bg-white border-b shadow-sm z-40 p-4">
+      <div className="sticky top-0 z-40 border-b bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">Gestión de Fotos</h1>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar..."
-                className="pl-9 w-48"
-              />
+              <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Input placeholder="Buscar..." className="w-48 pl-9" />
             </div>
           </div>
         </div>

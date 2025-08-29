@@ -1,6 +1,6 @@
 /**
  * COURSE MANAGEMENT SERVICE - Domain Separation Logic
- * 
+ *
  * Manages courses, course memberships, and folder assignments
  * Implements domain separation: Courses ≠ Subjects (families)
  * Features: Course creation, family enrollment, folder linking
@@ -84,7 +84,7 @@ export class CourseManagementService {
       .from('courses')
       .insert({
         event_id: eventId,
-        name: name.trim()
+        name: name.trim(),
       })
       .select('*')
       .single();
@@ -101,8 +101,9 @@ export class CourseManagementService {
    */
   async getEventCourses(eventId: string): Promise<Course[]> {
     try {
-      const { data, error } = await this.supabase
-        .rpc('get_event_courses', { p_event_id: eventId });
+      const { data, error } = await this.supabase.rpc('get_event_courses', {
+        p_event_id: eventId,
+      });
 
       if (error) {
         throw new Error(`Failed to get event courses: ${error.message}`);
@@ -115,21 +116,23 @@ export class CourseManagementService {
         createdAt: new Date(course.created_at),
         updatedAt: new Date(course.updated_at),
         memberCount: parseInt(course.member_count) || 0,
-        folderCount: parseInt(course.folder_count) || 0
+        folderCount: parseInt(course.folder_count) || 0,
       }));
     } catch (error) {
       // Fallback to basic query if RPC function not available
       console.warn('Using fallback query for courses:', error);
-      
+
       const { data, error: queryError } = await this.supabase
         .from('courses')
-        .select(`
+        .select(
+          `
           id,
           event_id,
           name,
           created_at,
           updated_at
-        `)
+        `
+        )
         .eq('event_id', eventId)
         .order('name');
 
@@ -137,10 +140,10 @@ export class CourseManagementService {
         throw new Error(`Failed to get courses: ${queryError.message}`);
       }
 
-      return (data || []).map(course => ({
+      return (data || []).map((course) => ({
         ...this.mapCourseData(course),
         memberCount: 0, // Will be computed separately if needed
-        folderCount: 0
+        folderCount: 0,
       }));
     }
   }
@@ -162,20 +165,23 @@ export class CourseManagementService {
     // Get member and folder counts
     const [memberCount, folderCount] = await Promise.all([
       this.getMemberCount(courseId),
-      this.getFolderCount(courseId)
+      this.getFolderCount(courseId),
     ]);
 
     return {
       ...this.mapCourseData(data),
       memberCount,
-      folderCount
+      folderCount,
     };
   }
 
   /**
    * Update course name
    */
-  async updateCourse(courseId: string, updates: { name?: string }): Promise<Course> {
+  async updateCourse(
+    courseId: string,
+    updates: { name?: string }
+  ): Promise<Course> {
     const updateData: any = {};
     if (updates.name) {
       updateData.name = updates.name.trim();
@@ -211,7 +217,10 @@ export class CourseManagementService {
   /**
    * Add family to course (enroll family)
    */
-  async addMemberToCourse(courseId: string, subjectId: string): Promise<CourseMember> {
+  async addMemberToCourse(
+    courseId: string,
+    subjectId: string
+  ): Promise<CourseMember> {
     // Check if already a member
     const { data: existing } = await this.supabase
       .from('course_members')
@@ -228,7 +237,7 @@ export class CourseManagementService {
       .from('course_members')
       .insert({
         course_id: courseId,
-        subject_id: subjectId
+        subject_id: subjectId,
       })
       .select('*')
       .single();
@@ -243,7 +252,10 @@ export class CourseManagementService {
   /**
    * Remove family from course
    */
-  async removeMemberFromCourse(courseId: string, subjectId: string): Promise<boolean> {
+  async removeMemberFromCourse(
+    courseId: string,
+    subjectId: string
+  ): Promise<boolean> {
     const { error } = await this.supabase
       .from('course_members')
       .delete()
@@ -258,8 +270,9 @@ export class CourseManagementService {
    */
   async getCourseMembers(courseId: string): Promise<CourseMember[]> {
     try {
-      const { data, error } = await this.supabase
-        .rpc('get_course_families', { p_course_id: courseId });
+      const { data, error } = await this.supabase.rpc('get_course_families', {
+        p_course_id: courseId,
+      });
 
       if (error) {
         throw new Error(`Failed to get course members: ${error.message}`);
@@ -273,14 +286,15 @@ export class CourseManagementService {
           id: member.subject_id,
           firstName: member.first_name,
           lastName: member.last_name,
-          familyName: member.family_name
-        }
+          familyName: member.family_name,
+        },
       }));
     } catch (error) {
       // Fallback to basic query
       const { data, error: queryError } = await this.supabase
         .from('course_members')
-        .select(`
+        .select(
+          `
           *,
           subjects:subject_id (
             id,
@@ -288,23 +302,26 @@ export class CourseManagementService {
             last_name,
             family_name
           )
-        `)
+        `
+        )
         .eq('course_id', courseId);
 
       if (queryError) {
         throw new Error(`Failed to get course members: ${queryError.message}`);
       }
 
-      return (data || []).map(member => ({
+      return (data || []).map((member) => ({
         courseId: member.course_id,
         subjectId: member.subject_id,
         createdAt: new Date(member.created_at),
-        subject: member.subjects ? {
-          id: member.subjects.id,
-          firstName: member.subjects.first_name,
-          lastName: member.subjects.last_name,
-          familyName: member.subjects.family_name
-        } : undefined
+        subject: member.subjects
+          ? {
+              id: member.subjects.id,
+              firstName: member.subjects.first_name,
+              lastName: member.subjects.last_name,
+              familyName: member.subjects.family_name,
+            }
+          : undefined,
       }));
     }
   }
@@ -315,7 +332,8 @@ export class CourseManagementService {
   async getFamilyCourses(subjectId: string): Promise<Course[]> {
     const { data, error } = await this.supabase
       .from('course_members')
-      .select(`
+      .select(
+        `
         courses (
           id,
           event_id,
@@ -323,7 +341,8 @@ export class CourseManagementService {
           created_at,
           updated_at
         )
-      `)
+      `
+      )
       .eq('subject_id', subjectId);
 
     if (error) {
@@ -333,13 +352,16 @@ export class CourseManagementService {
     return (data || [])
       .map((item: any) => item.courses)
       .filter(Boolean)
-      .map(course => this.mapCourseData(course));
+      .map((course) => this.mapCourseData(course));
   }
 
   /**
    * Link folder to course (grants course access to folder)
    */
-  async linkFolderToCourse(folderId: string, courseId: string): Promise<FolderCourseAssignment> {
+  async linkFolderToCourse(
+    folderId: string,
+    courseId: string
+  ): Promise<FolderCourseAssignment> {
     // Check if already linked
     const { data: existing } = await this.supabase
       .from('folder_courses')
@@ -356,7 +378,7 @@ export class CourseManagementService {
       .from('folder_courses')
       .insert({
         folder_id: folderId,
-        course_id: courseId
+        course_id: courseId,
       })
       .select('*')
       .single();
@@ -371,7 +393,10 @@ export class CourseManagementService {
   /**
    * Unlink folder from course
    */
-  async unlinkFolderFromCourse(folderId: string, courseId: string): Promise<boolean> {
+  async unlinkFolderFromCourse(
+    folderId: string,
+    courseId: string
+  ): Promise<boolean> {
     const { error } = await this.supabase
       .from('folder_courses')
       .delete()
@@ -387,7 +412,8 @@ export class CourseManagementService {
   async getCourseFolders(courseId: string): Promise<FolderCourseAssignment[]> {
     const { data, error } = await this.supabase
       .from('folder_courses')
-      .select(`
+      .select(
+        `
         *,
         folders (
           id,
@@ -395,23 +421,26 @@ export class CourseManagementService {
           photo_count,
           is_published
         )
-      `)
+      `
+      )
       .eq('course_id', courseId);
 
     if (error) {
       throw new Error(`Failed to get course folders: ${error.message}`);
     }
 
-    return (data || []).map(assignment => ({
+    return (data || []).map((assignment) => ({
       folderId: assignment.folder_id,
       courseId: assignment.course_id,
       createdAt: new Date(assignment.created_at),
-      folder: assignment.folders ? {
-        id: assignment.folders.id,
-        name: assignment.folders.name,
-        photoCount: assignment.folders.photo_count,
-        isPublished: assignment.folders.is_published
-      } : undefined
+      folder: assignment.folders
+        ? {
+            id: assignment.folders.id,
+            name: assignment.folders.name,
+            photoCount: assignment.folders.photo_count,
+            isPublished: assignment.folders.is_published,
+          }
+        : undefined,
     }));
   }
 
@@ -421,7 +450,8 @@ export class CourseManagementService {
   async getFolderCourses(folderId: string): Promise<Course[]> {
     const { data, error } = await this.supabase
       .from('folder_courses')
-      .select(`
+      .select(
+        `
         courses (
           id,
           event_id,
@@ -429,7 +459,8 @@ export class CourseManagementService {
           created_at,
           updated_at
         )
-      `)
+      `
+      )
       .eq('folder_id', folderId);
 
     if (error) {
@@ -439,13 +470,16 @@ export class CourseManagementService {
     return (data || [])
       .map((item: any) => item.courses)
       .filter(Boolean)
-      .map(course => this.mapCourseData(course));
+      .map((course) => this.mapCourseData(course));
   }
 
   /**
    * Bulk enroll families to course
    */
-  async bulkEnrollFamilies(courseId: string, subjectIds: string[]): Promise<{ enrolled: number; skipped: number }> {
+  async bulkEnrollFamilies(
+    courseId: string,
+    subjectIds: string[]
+  ): Promise<{ enrolled: number; skipped: number }> {
     let enrolled = 0;
     let skipped = 0;
 
@@ -465,7 +499,10 @@ export class CourseManagementService {
   /**
    * Bulk link folders to course
    */
-  async bulkLinkFolders(courseId: string, folderIds: string[]): Promise<{ linked: number; skipped: number }> {
+  async bulkLinkFolders(
+    courseId: string,
+    folderIds: string[]
+  ): Promise<{ linked: number; skipped: number }> {
     let linked = 0;
     let skipped = 0;
 
@@ -487,21 +524,29 @@ export class CourseManagementService {
    */
   async getCourseStats(eventId: string): Promise<CourseStats> {
     const courses = await this.getEventCourses(eventId);
-    
-    const totalMembers = courses.reduce((sum, course) => sum + course.memberCount, 0);
-    const totalFolders = courses.reduce((sum, course) => sum + course.folderCount, 0);
-    
+
+    const totalMembers = courses.reduce(
+      (sum, course) => sum + course.memberCount,
+      0
+    );
+    const totalFolders = courses.reduce(
+      (sum, course) => sum + course.folderCount,
+      0
+    );
+
     return {
       totalCourses: courses.length,
       totalMembers,
       totalFolders,
-      averageMembersPerCourse: courses.length > 0 ? totalMembers / courses.length : 0,
-      averageFoldersPerCourse: courses.length > 0 ? totalFolders / courses.length : 0
+      averageMembersPerCourse:
+        courses.length > 0 ? totalMembers / courses.length : 0,
+      averageFoldersPerCourse:
+        courses.length > 0 ? totalFolders / courses.length : 0,
     };
   }
 
   // Helper methods
-  
+
   private async getMemberCount(courseId: string): Promise<number> {
     const { count } = await this.supabase
       .from('course_members')
@@ -528,7 +573,7 @@ export class CourseManagementService {
       createdAt: new Date(data.created_at),
       updatedAt: new Date(data.updated_at),
       memberCount: 0, // Will be set separately
-      folderCount: 0  // Will be set separately
+      folderCount: 0, // Will be set separately
     };
   }
 
@@ -536,7 +581,7 @@ export class CourseManagementService {
     return {
       courseId: data.course_id,
       subjectId: data.subject_id,
-      createdAt: new Date(data.created_at)
+      createdAt: new Date(data.created_at),
     };
   }
 
@@ -544,7 +589,7 @@ export class CourseManagementService {
     return {
       folderId: data.folder_id,
       courseId: data.course_id,
-      createdAt: new Date(data.created_at)
+      createdAt: new Date(data.created_at),
     };
   }
 }

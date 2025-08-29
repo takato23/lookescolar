@@ -1,10 +1,19 @@
-import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  beforeAll,
+  afterAll,
+} from 'vitest';
 import { NextRequest } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { 
-  authenticateAdmin, 
-  AdminAuthMiddleware, 
-  AdminSecurityLogger 
+import {
+  authenticateAdmin,
+  AdminAuthMiddleware,
+  AdminSecurityLogger,
 } from '@/lib/middleware/admin-auth.middleware';
 
 // Mock the Supabase client
@@ -14,7 +23,9 @@ vi.mock('@/lib/supabase/server', () => ({
 
 // Mock rate limit middleware
 vi.mock('@/lib/middleware/rate-limit.middleware', () => ({
-  rateLimitMiddleware: vi.fn().mockResolvedValue({ allowed: true, limit: 30, remaining: 29 }),
+  rateLimitMiddleware: vi
+    .fn()
+    .mockResolvedValue({ allowed: true, limit: 30, remaining: 29 }),
 }));
 
 // Mock security validator
@@ -180,7 +191,9 @@ describe('Admin Publish Authentication Security Tests', () => {
 
     describe('Rate Limiting Tests', () => {
       it('should return 429 when rate limit exceeded', async () => {
-        const { rateLimitMiddleware } = await import('@/lib/middleware/rate-limit.middleware');
+        const { rateLimitMiddleware } = await import(
+          '@/lib/middleware/rate-limit.middleware'
+        );
         (rateLimitMiddleware as any).mockResolvedValueOnce({
           allowed: false,
           limit: 10,
@@ -212,7 +225,9 @@ describe('Admin Publish Authentication Security Tests', () => {
           error: null,
         });
 
-        const { rateLimitMiddleware } = await import('@/lib/middleware/rate-limit.middleware');
+        const { rateLimitMiddleware } = await import(
+          '@/lib/middleware/rate-limit.middleware'
+        );
         (rateLimitMiddleware as any).mockResolvedValueOnce({
           allowed: true,
           limit: 10,
@@ -260,7 +275,8 @@ describe('Admin Publish Authentication Security Tests', () => {
         // Simulate production mode with admin emails
         const originalNodeEnv = process.env.NODE_ENV;
         process.env.NODE_ENV = 'production';
-        process.env.ADMIN_EMAILS = 'admin@lookescolar.com,owner@lookescolar.com';
+        process.env.ADMIN_EMAILS =
+          'admin@lookescolar.com,owner@lookescolar.com';
 
         mockSupabaseClient.auth.getUser.mockResolvedValue({
           data: {
@@ -382,7 +398,9 @@ describe('Admin Publish Authentication Security Tests', () => {
       it('should log rate limit violations', async () => {
         const logSpy = vi.spyOn(AdminSecurityLogger, 'logAdminAction');
 
-        const { rateLimitMiddleware } = await import('@/lib/middleware/rate-limit.middleware');
+        const { rateLimitMiddleware } = await import(
+          '@/lib/middleware/rate-limit.middleware'
+        );
         (rateLimitMiddleware as any).mockResolvedValueOnce({
           allowed: false,
           limit: 10,
@@ -467,8 +485,10 @@ describe('Admin Publish Authentication Security Tests', () => {
       });
 
       const wrappedHandler = AdminAuthMiddleware.withAuth(mockHandler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
-      
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
+
       const response = await wrappedHandler(request);
 
       expect(mockHandler).toHaveBeenCalledWith(request);
@@ -484,8 +504,10 @@ describe('Admin Publish Authentication Security Tests', () => {
       });
 
       const wrappedHandler = AdminAuthMiddleware.withAuth(mockHandler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
-      
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
+
       const response = await wrappedHandler(request);
 
       expect(mockHandler).not.toHaveBeenCalled();
@@ -512,8 +534,10 @@ describe('Admin Publish Authentication Security Tests', () => {
       });
 
       const wrappedHandler = AdminAuthMiddleware.withAuth(mockHandler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
-      
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
+
       const response = await wrappedHandler(request);
 
       expect(mockHandler).not.toHaveBeenCalled();
@@ -527,7 +551,9 @@ describe('Admin Publish Authentication Security Tests', () => {
     });
 
     it('should return 429 when rate limit is exceeded', async () => {
-      const { rateLimitMiddleware } = await import('@/lib/middleware/rate-limit.middleware');
+      const { rateLimitMiddleware } = await import(
+        '@/lib/middleware/rate-limit.middleware'
+      );
       (rateLimitMiddleware as any).mockResolvedValueOnce({
         allowed: false,
         limit: 10,
@@ -537,8 +563,10 @@ describe('Admin Publish Authentication Security Tests', () => {
       });
 
       const wrappedHandler = AdminAuthMiddleware.withAuth(mockHandler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
-      
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
+
       const response = await wrappedHandler(request);
 
       expect(mockHandler).not.toHaveBeenCalled();
@@ -563,10 +591,14 @@ describe('Admin Publish Authentication Security Tests', () => {
         error: null,
       });
 
-      const errorHandler = vi.fn().mockRejectedValue(new Error('Handler error'));
+      const errorHandler = vi
+        .fn()
+        .mockRejectedValue(new Error('Handler error'));
       const wrappedHandler = AdminAuthMiddleware.withAuth(errorHandler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
-      
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
+
       const response = await wrappedHandler(request);
 
       expect(response.status).toBe(500);
@@ -586,7 +618,9 @@ describe('Admin Publish Authentication Security Tests', () => {
         error: null,
       });
 
-      const { rateLimitMiddleware } = await import('@/lib/middleware/rate-limit.middleware');
+      const { rateLimitMiddleware } = await import(
+        '@/lib/middleware/rate-limit.middleware'
+      );
       (rateLimitMiddleware as any).mockResolvedValueOnce({
         allowed: true,
         limit: 10,
@@ -595,8 +629,10 @@ describe('Admin Publish Authentication Security Tests', () => {
       });
 
       const wrappedHandler = AdminAuthMiddleware.withAuth(mockHandler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
-      
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
+
       const response = await wrappedHandler(request);
 
       expect(response.status).toBe(200);
@@ -621,7 +657,9 @@ describe('Admin Publish Authentication Security Tests', () => {
       });
 
       // Mock rate limiting as successful
-      const { rateLimitMiddleware } = await import('@/lib/middleware/rate-limit.middleware');
+      const { rateLimitMiddleware } = await import(
+        '@/lib/middleware/rate-limit.middleware'
+      );
       (rateLimitMiddleware as any).mockResolvedValue({
         allowed: true,
         limit: 10,
@@ -638,13 +676,16 @@ describe('Admin Publish Authentication Security Tests', () => {
       );
 
       const wrappedHandler = AdminAuthMiddleware.withAuth(handler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ settings: { allowDownload: true } }),
-      });
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ settings: { allowDownload: true } }),
+        }
+      );
 
       const response = await wrappedHandler(request);
 
@@ -671,7 +712,9 @@ describe('Admin Publish Authentication Security Tests', () => {
 
       const handler = vi.fn();
       const wrappedHandler = AdminAuthMiddleware.withAuth(handler);
-      const request = new NextRequest('http://localhost:3000/api/admin/folders/123/publish');
+      const request = new NextRequest(
+        'http://localhost:3000/api/admin/folders/123/publish'
+      );
 
       const response = await wrappedHandler(request);
 

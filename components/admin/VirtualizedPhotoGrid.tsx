@@ -106,7 +106,10 @@ export default function VirtualizedPhotoGrid({
     const baseItem = itemSize + PHOTO_CARD_PADDING;
     const mobileItem = Math.floor(availableWidth / 2);
     const effectiveItem = isMobile ? Math.max(140, mobileItem) : baseItem;
-    const cols = Math.max(isMobile ? 2 : 1, Math.floor(availableWidth / effectiveItem));
+    const cols = Math.max(
+      isMobile ? 2 : 1,
+      Math.floor(availableWidth / effectiveItem)
+    );
     const rows = Math.ceil(photos.length / cols);
 
     return {

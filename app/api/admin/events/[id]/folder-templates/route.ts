@@ -26,7 +26,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
           eventId,
           action,
           templateId,
-          search
+          search,
         });
 
         // Handle different actions
@@ -34,14 +34,14 @@ export const GET = RateLimitMiddleware.withRateLimit(
           case 'list':
           default:
             // Get available templates
-            const templates = search 
+            const templates = search
               ? SchoolFolderTemplatesService.searchTemplates(search)
               : SchoolFolderTemplatesService.getAvailableTemplates();
 
             return NextResponse.json({
               success: true,
               templates,
-              count: templates.length
+              count: templates.length,
             });
 
           case 'preview':
@@ -52,35 +52,40 @@ export const GET = RateLimitMiddleware.withRateLimit(
               );
             }
 
-            const preview = SchoolFolderTemplatesService.generateTemplatePreview(templateId);
+            const preview =
+              SchoolFolderTemplatesService.generateTemplatePreview(templateId);
             return NextResponse.json({
               success: preview.success,
               preview: preview.preview,
-              error: preview.error
+              error: preview.error,
             });
 
           case 'validate':
             if (!templateId) {
               return NextResponse.json(
-                { success: false, error: 'Template ID required for validation' },
+                {
+                  success: false,
+                  error: 'Template ID required for validation',
+                },
                 { status: 400 }
               );
             }
 
-            const validation = await SchoolFolderTemplatesService.validateTemplateForEvent(
-              eventId,
-              templateId
-            );
+            const validation =
+              await SchoolFolderTemplatesService.validateTemplateForEvent(
+                eventId,
+                templateId
+              );
 
             return NextResponse.json({
               success: true,
-              validation
+              validation,
             });
         }
       } catch (error) {
         logger.error('Error in folder templates GET endpoint', {
           requestId,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
 
         return NextResponse.json(
@@ -121,7 +126,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           requestId,
           eventId,
           templateId,
-          replaceExisting
+          replaceExisting,
         });
 
         if (!templateId) {
@@ -132,18 +137,19 @@ export const POST = RateLimitMiddleware.withRateLimit(
         }
 
         // Validate template first
-        const validation = await SchoolFolderTemplatesService.validateTemplateForEvent(
-          eventId,
-          templateId
-        );
+        const validation =
+          await SchoolFolderTemplatesService.validateTemplateForEvent(
+            eventId,
+            templateId
+          );
 
         if (!validation.canApply) {
           return NextResponse.json(
-            { 
-              success: false, 
+            {
+              success: false,
               error: 'Cannot apply template',
               conflicts: validation.conflicts,
-              warnings: validation.warnings
+              warnings: validation.warnings,
             },
             { status: 409 }
           );
@@ -155,7 +161,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           templateId,
           {
             replaceExisting,
-            customizations
+            customizations,
           }
         );
 
@@ -170,20 +176,19 @@ export const POST = RateLimitMiddleware.withRateLimit(
           requestId,
           eventId,
           templateId,
-          createdCount: result.createdFolders?.length || 0
+          createdCount: result.createdFolders?.length || 0,
         });
 
         return NextResponse.json({
           success: true,
           message: `Template applied successfully. Created ${result.createdFolders?.length || 0} folders.`,
           createdFolders: result.createdFolders,
-          warnings: validation.warnings
+          warnings: validation.warnings,
         });
-
       } catch (error) {
         logger.error('Error in folder templates POST endpoint', {
           requestId,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
 
         return NextResponse.json(

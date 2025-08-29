@@ -1,6 +1,6 @@
 /**
  * INTEGRATION TESTING - Admin Publish System Complete
- * 
+ *
  * Comprehensive integration validation:
  * - Database migrations work correctly
  * - Supabase auth integration functions
@@ -10,7 +10,13 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
-import { setupE2EDatabase, cleanupE2EDatabase, createTestEvent, createTestCodes, createTestPhotos } from '../test-utils';
+import {
+  setupE2EDatabase,
+  cleanupE2EDatabase,
+  createTestEvent,
+  createTestCodes,
+  createTestPhotos,
+} from '../test-utils';
 
 // Integration test configuration
 const INTEGRATION_CONFIG = {
@@ -33,7 +39,7 @@ async function waitForReactQueryToSettle(page: Page): Promise<void> {
     () => {
       const queryClient = (window as any).__REACT_QUERY_CLIENT__;
       if (!queryClient) return true;
-      
+
       const queries = queryClient.getQueryCache().getAll();
       return queries.every((query: any) => !query.state.isFetching);
     },
@@ -42,18 +48,21 @@ async function waitForReactQueryToSettle(page: Page): Promise<void> {
 }
 
 async function simulateNetworkDelay(page: Page, delay: number): Promise<void> {
-  await page.route('**/api/**', async route => {
-    await new Promise(resolve => setTimeout(resolve, delay));
+  await page.route('**/api/**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, delay));
     route.continue();
   });
 }
 
-async function simulateNetworkError(page: Page, errorCode: number = 500): Promise<void> {
-  await page.route('**/api/**', route => {
+async function simulateNetworkError(
+  page: Page,
+  errorCode: number = 500
+): Promise<void> {
+  await page.route('**/api/**', (route) => {
     route.fulfill({
       status: errorCode,
       body: JSON.stringify({ error: 'Simulated network error' }),
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   });
 }
@@ -69,7 +78,10 @@ async function loginAsAdmin(page: Page): Promise<void> {
 test.describe('Database Integration Testing', () => {
   test.beforeEach(async () => {
     await setupE2EDatabase();
-    await createTestEvent({ id: TEST_EVENT_ID, name: 'Integration Test Event' });
+    await createTestEvent({
+      id: TEST_EVENT_ID,
+      name: 'Integration Test Event',
+    });
     await createTestPhotos(TEST_EVENT_ID, 25);
     await createTestCodes(TEST_EVENT_ID, TEST_CODES);
   });
@@ -91,13 +103,13 @@ test.describe('Database Integration Testing', () => {
     // Test database constraints and relationships
     const response = await page.request.get('/api/admin/publish/list');
     expect(response.status()).toBe(200);
-    
+
     const data = await response.json();
     expect(Array.isArray(data.codes) || Array.isArray(data)).toBeTruthy();
 
     // Test that foreign key constraints work
     const invalidResponse = await page.request.post('/api/admin/publish', {
-      data: { codeId: '00000000-0000-0000-0000-000000000000' } // Non-existent UUID
+      data: { codeId: '00000000-0000-0000-0000-000000000000' }, // Non-existent UUID
     });
     expect(invalidResponse.status()).toBe(404); // Should fail gracefully
   });
@@ -110,24 +122,32 @@ test.describe('Database Integration Testing', () => {
     // Get initial state
     const initialResponse = await page.request.get('/api/admin/publish/list');
     const initialData = await initialResponse.json();
-    const initialCodes = Array.isArray(initialData) ? initialData : initialData.codes;
+    const initialCodes = Array.isArray(initialData)
+      ? initialData
+      : initialData.codes;
 
     // Simulate a failed transaction by corrupting the request
     const corruptResponse = await page.request.post('/api/admin/publish', {
-      data: { codeId: 'invalid-uuid-format' }
+      data: { codeId: 'invalid-uuid-format' },
     });
     expect(corruptResponse.status()).toBe(400);
 
     // Database should remain in consistent state
-    const afterFailureResponse = await page.request.get('/api/admin/publish/list');
+    const afterFailureResponse = await page.request.get(
+      '/api/admin/publish/list'
+    );
     const afterFailureData = await afterFailureResponse.json();
-    const afterFailureCodes = Array.isArray(afterFailureData) ? afterFailureData : afterFailureData.codes;
+    const afterFailureCodes = Array.isArray(afterFailureData)
+      ? afterFailureData
+      : afterFailureData.codes;
 
     expect(afterFailureCodes.length).toBe(initialCodes.length);
-    
+
     // No partial updates should have occurred
     for (let i = 0; i < initialCodes.length; i++) {
-      expect(afterFailureCodes[i].is_published).toBe(initialCodes[i].is_published);
+      expect(afterFailureCodes[i].is_published).toBe(
+        initialCodes[i].is_published
+      );
     }
   });
 
@@ -136,26 +156,28 @@ test.describe('Database Integration Testing', () => {
     await page.goto('/admin/publish');
 
     // Test multiple concurrent connections
-    const promises = Array.from({ length: 5 }, () => 
+    const promises = Array.from({ length: 5 }, () =>
       page.request.get('/api/admin/publish/list')
     );
 
     const responses = await Promise.all(promises);
-    responses.forEach(response => {
+    responses.forEach((response) => {
       expect(response.status()).toBe(200);
     });
 
     // Test connection pooling under load
-    const heavyLoadPromises = Array.from({ length: 20 }, (_, i) => 
+    const heavyLoadPromises = Array.from({ length: 20 }, (_, i) =>
       page.request.post('/api/admin/publish', {
-        data: { codeId: `int-code-${i % 3 + 1}` }
+        data: { codeId: `int-code-${(i % 3) + 1}` },
       })
     );
 
     const heavyLoadResponses = await Promise.allSettled(heavyLoadPromises);
-    
+
     // Most should succeed, some might fail due to race conditions but not due to connection issues
-    const successCount = heavyLoadResponses.filter(r => r.status === 'fulfilled').length;
+    const successCount = heavyLoadResponses.filter(
+      (r) => r.status === 'fulfilled'
+    ).length;
     expect(successCount).toBeGreaterThan(10); // At least half should succeed
   });
 });
@@ -192,18 +214,18 @@ test.describe('Supabase Auth Integration', () => {
 
     // Try to make API call - should handle session refresh
     const response = await page.request.get('/api/admin/publish/list');
-    
+
     // Should either succeed (if refresh worked) or redirect to login
     const isSuccess = response.status() === 200;
     const isRedirect = response.status() === 401 || response.status() === 403;
-    
+
     expect(isSuccess || isRedirect).toBeTruthy();
   });
 
   test('role-based authorization', async ({ page }) => {
     // Test admin role works
     await loginAsAdmin(page);
-    
+
     const adminResponse = await page.request.get('/api/admin/publish/list');
     expect(adminResponse.status()).toBe(200);
 
@@ -227,11 +249,13 @@ test.describe('React Query + API Integration', () => {
     const initialCacheState = await page.evaluate(() => {
       const queryClient = (window as any).__REACT_QUERY_CLIENT__;
       if (!queryClient) return null;
-      
+
       const queries = queryClient.getQueryCache().getAll();
       return {
         queryCount: queries.length,
-        publishQueries: queries.filter((q: any) => q.queryKey.includes('publish')).length
+        publishQueries: queries.filter((q: any) =>
+          q.queryKey.includes('publish')
+        ).length,
       };
     });
 
@@ -239,7 +263,7 @@ test.describe('React Query + API Integration', () => {
 
     // Make a mutation
     const firstCard = page.locator('[data-testid="folder-card"]').first();
-    if (await firstCard.count() > 0) {
+    if ((await firstCard.count()) > 0) {
       await firstCard.locator('[data-testid="publish-button"]').click();
       await waitForReactQueryToSettle(page);
 
@@ -247,12 +271,14 @@ test.describe('React Query + API Integration', () => {
       const afterMutationCache = await page.evaluate(() => {
         const queryClient = (window as any).__REACT_QUERY_CLIENT__;
         if (!queryClient) return null;
-        
-        const publishQuery = queryClient.getQueryCache().find(['publish', 'list']);
+
+        const publishQuery = queryClient
+          .getQueryCache()
+          .find(['publish', 'list']);
         return {
           hasData: !!publishQuery?.state?.data,
           isStale: publishQuery?.isStale(),
-          lastUpdated: publishQuery?.state?.dataUpdatedAt
+          lastUpdated: publishQuery?.state?.dataUpdatedAt,
         };
       });
 
@@ -266,25 +292,31 @@ test.describe('React Query + API Integration', () => {
     await waitForReactQueryToSettle(page);
 
     // Find an unpublished code
-    const unpublishedCard = page.locator('[data-testid="folder-card"][data-published="false"]').first();
-    
-    if (await unpublishedCard.count() > 0) {
+    const unpublishedCard = page
+      .locator('[data-testid="folder-card"][data-published="false"]')
+      .first();
+
+    if ((await unpublishedCard.count()) > 0) {
       // Simulate network error after optimistic update
       await simulateNetworkError(page, 500);
 
       await unpublishedCard.locator('[data-testid="publish-button"]').click();
-      
+
       // Should show optimistic update first
-      await expect(unpublishedCard.locator('[data-testid="status-badge"]')).toContainText('Publicado');
-      
+      await expect(
+        unpublishedCard.locator('[data-testid="status-badge"]')
+      ).toContainText('Publicado');
+
       // Then rollback on error
       await page.waitForTimeout(2000);
-      
+
       // Remove network error simulation
       await page.unroute('**/api/**');
-      
+
       // Should show error state or rollback
-      const hasErrorState = await page.locator('[data-testid="error-toast"], [data-testid="error-message"]').count();
+      const hasErrorState = await page
+        .locator('[data-testid="error-toast"], [data-testid="error-message"]')
+        .count();
       expect(hasErrorState).toBeGreaterThan(0);
     }
   });
@@ -296,7 +328,7 @@ test.describe('React Query + API Integration', () => {
 
     // Monitor network requests
     const requests: string[] = [];
-    page.on('request', request => {
+    page.on('request', (request) => {
       if (request.url().includes('/api/admin/publish')) {
         requests.push(`${request.method()} ${request.url()}`);
       }
@@ -307,14 +339,16 @@ test.describe('React Query + API Integration', () => {
     await waitForReactQueryToSettle(page);
 
     // Should have made a refetch request
-    const refetchRequests = requests.filter(r => r.includes('GET') && r.includes('list'));
+    const refetchRequests = requests.filter(
+      (r) => r.includes('GET') && r.includes('list')
+    );
     expect(refetchRequests.length).toBeGreaterThan(0);
 
     // Test interval refetch (if enabled)
     await page.waitForTimeout(65000); // Wait for interval refetch (60s + buffer)
-    
-    const intervalRefetches = requests.filter(r => 
-      r.includes('GET') && r.includes('list')
+
+    const intervalRefetches = requests.filter(
+      (r) => r.includes('GET') && r.includes('list')
     ).length;
     expect(intervalRefetches).toBeGreaterThan(1); // Initial + at least one interval
   });
@@ -329,12 +363,12 @@ test.describe('React Query + API Integration', () => {
     const cardCount = Math.min(await cards.count(), 3);
 
     const mutations: Promise<void>[] = [];
-    
+
     for (let i = 0; i < cardCount; i++) {
       const card = cards.nth(i);
       const publishButton = card.locator('[data-testid="publish-button"]');
-      
-      if (await publishButton.count() > 0) {
+
+      if ((await publishButton.count()) > 0) {
         mutations.push(publishButton.click());
       }
     }
@@ -378,18 +412,20 @@ test.describe('Error Handling Integration', () => {
 
   test('network timeout handling', async ({ page }) => {
     await loginAsAdmin(page);
-    
+
     // Simulate slow network
     await simulateNetworkDelay(page, 10000); // 10 second delay
-    
+
     await page.goto('/admin/publish');
-    
+
     // Should show loading state
     await expect(page.locator('[data-testid="loading"]')).toBeVisible();
-    
+
     // Should eventually timeout and show error
-    await expect(page.locator('[data-testid="error-message"]')).toBeVisible({ timeout: 15000 });
-    
+    await expect(page.locator('[data-testid="error-message"]')).toBeVisible({
+      timeout: 15000,
+    });
+
     // Clear network delay
     await page.unroute('**/api/**');
   });
@@ -401,14 +437,14 @@ test.describe('Error Handling Integration', () => {
 
     // Simulate partial API failure
     let requestCount = 0;
-    await page.route('**/api/admin/publish', route => {
+    await page.route('**/api/admin/publish', (route) => {
       requestCount++;
       if (requestCount % 2 === 0) {
         // Fail every other request
         route.fulfill({
           status: 500,
           body: JSON.stringify({ error: 'Intermittent failure' }),
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         });
       } else {
         route.continue();
@@ -422,16 +458,20 @@ test.describe('Error Handling Integration', () => {
     for (let i = 0; i < cardCount; i++) {
       const card = cards.nth(i);
       const publishButton = card.locator('[data-testid="publish-button"]');
-      
-      if (await publishButton.count() > 0) {
+
+      if ((await publishButton.count()) > 0) {
         await publishButton.click();
         await page.waitForTimeout(1000);
       }
     }
 
     // Should show both success and error states
-    const successCount = await page.locator('[data-testid="success-toast"]').count();
-    const errorCount = await page.locator('[data-testid="error-toast"]').count();
+    const successCount = await page
+      .locator('[data-testid="success-toast"]')
+      .count();
+    const errorCount = await page
+      .locator('[data-testid="error-toast"]')
+      .count();
 
     expect(successCount + errorCount).toBeGreaterThan(0);
     expect(successCount).toBeGreaterThan(0); // Some should succeed
@@ -439,7 +479,7 @@ test.describe('Error Handling Integration', () => {
 
   test('validation error handling', async ({ page }) => {
     await loginAsAdmin(page);
-    
+
     // Test various validation scenarios
     const validationTests = [
       { codeId: 'invalid-uuid', expectedStatus: 400 },
@@ -450,11 +490,11 @@ test.describe('Error Handling Integration', () => {
 
     for (const testCase of validationTests) {
       const response = await page.request.post('/api/admin/publish', {
-        data: testCase
+        data: testCase,
       });
 
       expect(response.status()).toBe(testCase.expectedStatus);
-      
+
       const body = await response.json();
       expect(body.error).toBeDefined();
       expect(typeof body.error).toBe('string');
@@ -466,9 +506,9 @@ test.describe('Fallback Scenarios', () => {
   test('graceful degradation with JavaScript disabled', async ({ browser }) => {
     // Create context with JavaScript disabled
     const context = await browser.newContext({
-      javaScriptEnabled: false
+      javaScriptEnabled: false,
     });
-    
+
     const page = await context.newPage();
 
     try {
@@ -482,7 +522,6 @@ test.describe('Fallback Scenarios', () => {
       // Should have fallback content or redirect
       const body = await page.textContent('body');
       expect(body).toBeDefined();
-
     } finally {
       await context.close();
     }
@@ -501,20 +540,28 @@ test.describe('Fallback Scenarios', () => {
 
     // Should use cached data
     await page.reload();
-    
+
     // Might show cached content or offline indicator
-    const hasOfflineIndicator = await page.locator('[data-testid="offline-indicator"]').count();
-    const hasCachedContent = await page.locator('[data-testid="stats-total"]').count();
+    const hasOfflineIndicator = await page
+      .locator('[data-testid="offline-indicator"]')
+      .count();
+    const hasCachedContent = await page
+      .locator('[data-testid="stats-total"]')
+      .count();
 
     expect(hasOfflineIndicator > 0 || hasCachedContent > 0).toBeTruthy();
 
     // Test offline behavior for mutations
-    const publishButton = page.locator('[data-testid="publish-button"]').first();
-    if (await publishButton.count() > 0) {
+    const publishButton = page
+      .locator('[data-testid="publish-button"]')
+      .first();
+    if ((await publishButton.count()) > 0) {
       await publishButton.click();
-      
+
       // Should show offline error or queue for later
-      const errorShown = await page.locator('[data-testid="offline-error"], [data-testid="queued-action"]').count();
+      const errorShown = await page
+        .locator('[data-testid="offline-error"], [data-testid="queued-action"]')
+        .count();
       expect(errorShown).toBeGreaterThan(0);
     }
 
@@ -539,9 +586,16 @@ test.describe('Fallback Scenarios', () => {
           fetch: typeof fetch !== 'undefined',
           promises: typeof Promise !== 'undefined',
           arrow: (() => true)(), // Arrow functions
-          const: (() => { try { eval('const x = 1'); return true; } catch { return false; } })(),
+          const: (() => {
+            try {
+              eval('const x = 1');
+              return true;
+            } catch {
+              return false;
+            }
+          })(),
           classList: !!document.body.classList,
-          querySelector: !!document.querySelector
+          querySelector: !!document.querySelector,
         };
       });
 
@@ -551,7 +605,6 @@ test.describe('Fallback Scenarios', () => {
       expect(supportsModernFeatures.querySelector).toBeTruthy();
 
       console.log(`${browserName} feature support:`, supportsModernFeatures);
-
     } finally {
       await page.close();
     }
@@ -560,7 +613,7 @@ test.describe('Fallback Scenarios', () => {
   test('memory and resource constraints', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin/publish');
-    
+
     // Test with limited memory simulation
     await page.evaluate(() => {
       // Simulate memory pressure
@@ -568,24 +621,30 @@ test.describe('Fallback Scenarios', () => {
       for (let i = 0; i < 100; i++) {
         arrays.push(new Array(10000).fill(Math.random()));
       }
-      
+
       // Keep references to prevent GC
       (window as any).memoryTest = arrays;
     });
 
     // Should still function under memory pressure
     await expect(page.locator('h1')).toContainText('Publicación de Galerías');
-    
-    const publishButton = page.locator('[data-testid="publish-button"]').first();
-    if (await publishButton.count() > 0) {
+
+    const publishButton = page
+      .locator('[data-testid="publish-button"]')
+      .first();
+    if ((await publishButton.count()) > 0) {
       await publishButton.click();
-      
+
       // Should either work or show graceful error
       await page.waitForTimeout(2000);
-      
-      const hasSuccess = await page.locator('[data-testid="success-toast"]').count();
-      const hasError = await page.locator('[data-testid="error-toast"]').count();
-      
+
+      const hasSuccess = await page
+        .locator('[data-testid="success-toast"]')
+        .count();
+      const hasError = await page
+        .locator('[data-testid="error-toast"]')
+        .count();
+
       expect(hasSuccess + hasError).toBeGreaterThan(0);
     }
 
@@ -600,29 +659,31 @@ test.describe('Fallback Scenarios', () => {
     const contexts = await Promise.all([
       browser.newContext(),
       browser.newContext(),
-      browser.newContext()
+      browser.newContext(),
     ]);
 
     const pages = await Promise.all(
-      contexts.map(context => context.newPage())
+      contexts.map((context) => context.newPage())
     );
 
     try {
       // Login all users
-      await Promise.all(pages.map(async page => {
-        await loginAsAdmin(page);
-        await page.goto('/admin/publish');
-        await waitForReactQueryToSettle(page);
-      }));
+      await Promise.all(
+        pages.map(async (page) => {
+          await loginAsAdmin(page);
+          await page.goto('/admin/publish');
+          await waitForReactQueryToSettle(page);
+        })
+      );
 
       // Concurrent operations on same data
       const operations = pages.map(async (page, index) => {
         const cards = page.locator('[data-testid="folder-card"]');
         const card = cards.nth(index); // Different cards for each user
-        
-        if (await card.count() > 0) {
+
+        if ((await card.count()) > 0) {
           const publishButton = card.locator('[data-testid="publish-button"]');
-          if (await publishButton.count() > 0) {
+          if ((await publishButton.count()) > 0) {
             await publishButton.click();
           }
         }
@@ -631,19 +692,22 @@ test.describe('Fallback Scenarios', () => {
       await Promise.allSettled(operations);
 
       // Wait for all operations to complete
-      await Promise.all(pages.map(page => waitForReactQueryToSettle(page)));
+      await Promise.all(pages.map((page) => waitForReactQueryToSettle(page)));
 
       // Check final state consistency
-      const finalStates = await Promise.all(pages.map(async page => {
-        const cards = page.locator('[data-testid="folder-card"]');
-        return cards.count();
-      }));
+      const finalStates = await Promise.all(
+        pages.map(async (page) => {
+          const cards = page.locator('[data-testid="folder-card"]');
+          return cards.count();
+        })
+      );
 
       // All users should see consistent state
-      expect(finalStates.every(count => count === finalStates[0])).toBeTruthy();
-
+      expect(
+        finalStates.every((count) => count === finalStates[0])
+      ).toBeTruthy();
     } finally {
-      await Promise.all(contexts.map(context => context.close()));
+      await Promise.all(contexts.map((context) => context.close()));
     }
   });
 });

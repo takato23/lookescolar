@@ -1,6 +1,6 @@
 /**
  * GALLERY HEADER COMPONENT
- * 
+ *
  * Displays gallery title, context info, and key stats
  * Features: Responsive design, scope indicators, expiry warnings
  */
@@ -10,12 +10,12 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  ClockIcon, 
+import {
+  ClockIcon,
   ShieldIcon,
   DownloadIcon,
   EyeIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
 } from 'lucide-react';
 import { GalleryContext } from '@/lib/services/hierarchical-gallery.service';
 import { formatDate } from '@/lib/utils';
@@ -31,58 +31,71 @@ interface GalleryHeaderProps {
   label: string;
 }
 
-export function GalleryHeader({ context, stats, icon, label }: GalleryHeaderProps) {
+export function GalleryHeader({
+  context,
+  stats,
+  icon,
+  label,
+}: GalleryHeaderProps) {
   const isExpiringSoon = () => {
     if (!context.expiresAt) return false;
-    
+
     const now = new Date();
     const expiryDate = new Date(context.expiresAt);
-    const hoursUntilExpiry = (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-    
+    const hoursUntilExpiry =
+      (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
     return hoursUntilExpiry <= 24 && hoursUntilExpiry > 0;
   };
 
   const getAccessLevelColor = () => {
     switch (context.accessLevel) {
-      case 'full': return context.canDownload ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
-      case 'read_only': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'full':
+        return context.canDownload
+          ? 'bg-green-100 text-green-800'
+          : 'bg-blue-100 text-blue-800';
+      case 'read_only':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getScopeColor = () => {
     switch (context.scope) {
-      case 'event': return 'bg-purple-100 text-purple-800';
-      case 'course': return 'bg-blue-100 text-blue-800';
-      case 'family': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'event':
+        return 'bg-purple-100 text-purple-800';
+      case 'course':
+        return 'bg-blue-100 text-blue-800';
+      case 'family':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="bg-white border-b shadow-sm">
+    <div className="border-b bg-white shadow-sm">
       <div className="container mx-auto px-4 py-6">
         {/* Main Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="text-4xl">{icon}</div>
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 lg:text-3xl">
                 {context.resourceName}
               </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge className={getScopeColor()}>
-                  {label}
-                </Badge>
+              <div className="mt-1 flex items-center gap-2">
+                <Badge className={getScopeColor()}>{label}</Badge>
                 <Badge className={getAccessLevelColor()}>
                   {context.canDownload ? (
                     <>
-                      <DownloadIcon className="h-3 w-3 mr-1" />
+                      <DownloadIcon className="mr-1 h-3 w-3" />
                       Download Enabled
                     </>
                   ) : (
                     <>
-                      <EyeIcon className="h-3 w-3 mr-1" />
+                      <EyeIcon className="mr-1 h-3 w-3" />
                       View Only
                     </>
                   )}
@@ -94,11 +107,15 @@ export function GalleryHeader({ context, stats, icon, label }: GalleryHeaderProp
           {/* Quick Stats */}
           <div className="flex gap-4 text-sm">
             <div className="text-center">
-              <div className="font-bold text-lg text-blue-600">{stats.totalFolders}</div>
+              <div className="text-lg font-bold text-blue-600">
+                {stats.totalFolders}
+              </div>
               <div className="text-gray-600">Folders</div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-lg text-green-600">{stats.totalAssets}</div>
+              <div className="text-lg font-bold text-green-600">
+                {stats.totalAssets}
+              </div>
               <div className="text-gray-600">Photos</div>
             </div>
           </div>
@@ -113,9 +130,13 @@ export function GalleryHeader({ context, stats, icon, label }: GalleryHeaderProp
               <AlertDescription>
                 <div className="flex items-center justify-between">
                   <span>
-                    This gallery access expires soon: <strong>{formatDate(context.expiresAt)}</strong>
+                    This gallery access expires soon:{' '}
+                    <strong>{formatDate(context.expiresAt)}</strong>
                   </span>
-                  <Badge variant="outline" className="text-orange-700 border-orange-300">
+                  <Badge
+                    variant="outline"
+                    className="border-orange-300 text-orange-700"
+                  >
                     Expiring Soon
                   </Badge>
                 </div>
@@ -126,19 +147,20 @@ export function GalleryHeader({ context, stats, icon, label }: GalleryHeaderProp
           {/* Access Info Card */}
           <Card className="bg-gray-50">
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <ShieldIcon className="h-4 w-4 text-gray-600" />
                     <span className="font-medium">Secure Access</span>
                   </div>
-                  
+
                   <div className="h-4 w-px bg-gray-300" />
-                  
+
                   <div>
-                    Access Level: <span className="font-medium">{context.accessLevel}</span>
+                    Access Level:{' '}
+                    <span className="font-medium">{context.accessLevel}</span>
                   </div>
-                  
+
                   {context.expiresAt && (
                     <>
                       <div className="h-4 w-px bg-gray-300" />
@@ -149,7 +171,7 @@ export function GalleryHeader({ context, stats, icon, label }: GalleryHeaderProp
                     </>
                   )}
                 </div>
-                
+
                 <div className="text-xs text-gray-500">
                   LookEscolar Gallery System
                 </div>

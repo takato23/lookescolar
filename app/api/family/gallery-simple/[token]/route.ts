@@ -108,40 +108,50 @@ export async function GET(
       } else {
         // THIRD: Check subject_tokens table (individual student access)
         const { data: tokenRow } = await supabase
-        .from('subject_tokens')
-        .select('subject_id, expires_at')
-        .eq('token', token)
-        .single();
+          .from('subject_tokens')
+          .select('subject_id, expires_at')
+          .eq('token', token)
+          .single();
 
-      if (!tokenRow) {
-        return NextResponse.json({ error: 'Token no válido' }, { status: 404 });
-      }
+        if (!tokenRow) {
+          return NextResponse.json(
+            { error: 'Token no válido' },
+            { status: 404 }
+          );
+        }
 
-      if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) {
-        return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
-      }
+        if (tokenRow.expires_at && new Date(tokenRow.expires_at) < new Date()) {
+          return NextResponse.json(
+            { error: 'Token expirado' },
+            { status: 401 }
+          );
+        }
 
-      subjectId = tokenRow.subject_id as string;
+        subjectId = tokenRow.subject_id as string;
 
-      const { data: subj } = await supabase
-        .from('subjects')
-        .select('id, event_id')
-        .eq('id', subjectId)
-        .single();
-      if (!subj) {
-        return NextResponse.json(
-          { error: 'Sujeto no encontrado' },
-          { status: 404 }
-        );
-      }
+        const { data: subj } = await supabase
+          .from('subjects')
+          .select('id, event_id')
+          .eq('id', subjectId)
+          .single();
+        if (!subj) {
+          return NextResponse.json(
+            { error: 'Sujeto no encontrado' },
+            { status: 404 }
+          );
+        }
         eventId = subj.event_id as string;
         mode = 'subject';
       }
     }
 
     // Cargar evento (opcional)
-    let eventInfo: { id: string; name: string; school_name?: string; theme?: string } | null =
-      null;
+    let eventInfo: {
+      id: string;
+      name: string;
+      school_name?: string;
+      theme?: string;
+    } | null = null;
     if (eventId) {
       const { data: eventData } = await supabase
         .from('events')
@@ -181,7 +191,7 @@ export async function GET(
         .eq('status', 'ready')
         .order('created_at', { ascending: true })
         .range(offset, offset + limit - 1);
-      
+
       if (photosError) {
         console.error('Error fetching folder photos:', photosError);
         return NextResponse.json(
@@ -254,22 +264,22 @@ export async function GET(
         let key: string | null = null;
         let filename: string | null = null;
         let fileSize: number | null = null;
-        
+
         if (mode === 'folder') {
           // Nuevo sistema: assets table
           key = photo.preview_path || photo.original_path;
           filename = photo.filename;
           fileSize = photo.file_size;
         } else {
-          // Sistema legacy: photos table  
+          // Sistema legacy: photos table
           key = photo.watermark_path || photo.preview_path;
           filename = photo.original_filename;
           fileSize = photo.file_size;
         }
-        
+
         const preview_url = key ? await signedUrlForKey(key, 900) : null;
         if (!preview_url) return null;
-        
+
         return {
           id: photo.id,
           filename: filename ?? null,

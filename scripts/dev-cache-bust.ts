@@ -29,7 +29,9 @@ function main() {
   if (existsSync(staticChunksDir)) {
     try {
       rmSync(staticChunksDir, { recursive: true, force: true });
-      console.log('🧹 Cleared .next/static/chunks to force rebuild on next dev request.');
+      console.log(
+        '🧹 Cleared .next/static/chunks to force rebuild on next dev request.'
+      );
       console.log('➡️  Restart dev server if needed: npm run dev');
     } catch (e) {
       console.error('❌ Failed to remove static chunks:', (e as Error).message);
@@ -50,4 +52,3 @@ function main() {
 }
 
 main();
-

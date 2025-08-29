@@ -20,7 +20,7 @@ describe('Admin Published Folders Performance Tests', () => {
       .insert({
         name: 'Performance Test Event',
         date: '2024-01-01',
-        description: 'Test event for performance testing'
+        description: 'Test event for performance testing',
       })
       .select('id')
       .single();
@@ -61,7 +61,7 @@ describe('Admin Published Folders Performance Tests', () => {
     for (let i = 0; i < testFolderIds.length; i++) {
       const folderId = testFolderIds[i];
       const assetCount = foldersToCreate[i].photo_count;
-      
+
       for (let j = 0; j < assetCount; j++) {
         assetsToCreate.push({
           folder_id: folderId,
@@ -70,7 +70,7 @@ describe('Admin Published Folders Performance Tests', () => {
           file_size: 1024 * 1024, // 1MB
           checksum: `checksum_${i}_${j}`,
           mime_type: 'image/jpeg',
-          status: 'ready'
+          status: 'ready',
         });
       }
     }
@@ -89,10 +89,10 @@ describe('Admin Published Folders Performance Tests', () => {
     if (testEventId) {
       // Delete assets first (foreign key constraint)
       await supabase.from('assets').delete().in('folder_id', testFolderIds);
-      
+
       // Delete folders
       await supabase.from('folders').delete().in('id', testFolderIds);
-      
+
       // Delete event
       await supabase.from('events').delete().eq('id', testEventId);
     }
@@ -104,7 +104,7 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 50,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const startTime = performance.now();
@@ -115,7 +115,7 @@ describe('Admin Published Folders Performance Tests', () => {
       expect(result.success).toBe(true);
       expect(result.folders).toHaveLength(5);
       expect(duration).toBeLessThan(200); // Target: <200ms
-      
+
       console.log(`[PERF TEST] Basic query took ${duration.toFixed(2)}ms`);
     });
 
@@ -124,7 +124,7 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 3,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const startTime = performance.now();
@@ -138,7 +138,7 @@ describe('Admin Published Folders Performance Tests', () => {
       expect(result.pagination.totalPages).toBe(2);
       expect(result.pagination.hasNextPage).toBe(true);
       expect(duration).toBeLessThan(150); // Should be even faster with fewer results
-      
+
       console.log(`[PERF TEST] Paginated query took ${duration.toFixed(2)}ms`);
     });
 
@@ -148,7 +148,7 @@ describe('Admin Published Folders Performance Tests', () => {
         search: 'Root',
         page: 1,
         limit: 50,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const startTime = performance.now();
@@ -158,9 +158,9 @@ describe('Admin Published Folders Performance Tests', () => {
 
       expect(result.success).toBe(true);
       expect(result.folders).toHaveLength(2); // Should find 2 root folders
-      expect(result.folders.every(f => f.name.includes('Root'))).toBe(true);
+      expect(result.folders.every((f) => f.name.includes('Root'))).toBe(true);
       expect(duration).toBeLessThan(250); // Search might be slightly slower
-      
+
       console.log(`[PERF TEST] Search query took ${duration.toFixed(2)}ms`);
     });
 
@@ -169,19 +169,19 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 50,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const result = await folderPublishService.getPublishedFolders(params);
-      
+
       expect(result.success).toBe(true);
-      
+
       // Verify photo counts match what we created
       const expectedCounts = [25, 30, 15, 20, 10];
       const actualCounts = result.folders
         .sort((a, b) => a.name.localeCompare(b.name))
-        .map(f => f.photo_count);
-      
+        .map((f) => f.photo_count);
+
       expect(actualCounts).toEqual(expectedCounts.sort());
     });
 
@@ -190,14 +190,14 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 50,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const result = await folderPublishService.getPublishedFolders(params);
-      
+
       expect(result.success).toBe(true);
-      
-      result.folders.forEach(folder => {
+
+      result.folders.forEach((folder) => {
         expect(folder.share_token).toBeDefined();
         expect(folder.family_url).toBeDefined();
         expect(folder.qr_url).toBeDefined();
@@ -216,13 +216,13 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 10,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       await folderPublishService.getPublishedFolders(params);
 
       const stats = monitor.getDbStats('getPublishedFolders');
-      
+
       expect(stats.totalQueries).toBeGreaterThan(0);
       expect(stats.avgResponseTime).toBeGreaterThan(0);
       expect(stats.avgResponseTime).toBeLessThan(500); // Should be well under 500ms
@@ -231,14 +231,14 @@ describe('Admin Published Folders Performance Tests', () => {
 
     it('should provide performance summary', async () => {
       const summary = monitor.getPerformanceSummary();
-      
+
       expect(summary).toHaveProperty('currentStats');
       expect(summary).toHaveProperty('recentOperations');
       expect(summary).toHaveProperty('alerts');
-      
+
       expect(summary.currentStats.avgResponseTime).toBeGreaterThan(0);
       expect(summary.recentOperations.length).toBeGreaterThan(0);
-      
+
       // Check for performance alerts
       if (summary.alerts.length > 0) {
         console.warn('[PERF] Performance alerts:', summary.alerts);
@@ -252,16 +252,16 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 10,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const concurrentRequests = 5;
       const startTime = performance.now();
 
       // Execute concurrent requests
-      const promises = Array(concurrentRequests).fill(null).map(() => 
-        folderPublishService.getPublishedFolders(params)
-      );
+      const promises = Array(concurrentRequests)
+        .fill(null)
+        .map(() => folderPublishService.getPublishedFolders(params));
 
       const results = await Promise.all(promises);
       const endTime = performance.now();
@@ -269,15 +269,17 @@ describe('Admin Published Folders Performance Tests', () => {
       const avgDuration = totalDuration / concurrentRequests;
 
       // All requests should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.success).toBe(true);
         expect(result.folders.length).toBeGreaterThan(0);
       });
 
       // Average duration should still be reasonable
       expect(avgDuration).toBeLessThan(300); // 300ms average for concurrent requests
-      
-      console.log(`[PERF TEST] ${concurrentRequests} concurrent requests: avg ${avgDuration.toFixed(2)}ms`);
+
+      console.log(
+        `[PERF TEST] ${concurrentRequests} concurrent requests: avg ${avgDuration.toFixed(2)}ms`
+      );
     });
 
     it('should scale with larger result sets', async () => {
@@ -286,7 +288,7 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 100, // Maximum allowed
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const startTime = performance.now();
@@ -297,8 +299,10 @@ describe('Admin Published Folders Performance Tests', () => {
       expect(result.success).toBe(true);
       expect(result.folders).toHaveLength(5); // We only have 5 folders
       expect(duration).toBeLessThan(300); // Should handle large limits efficiently
-      
-      console.log(`[PERF TEST] Large page size (100) took ${duration.toFixed(2)}ms`);
+
+      console.log(
+        `[PERF TEST] Large page size (100) took ${duration.toFixed(2)}ms`
+      );
     });
   });
 
@@ -311,16 +315,16 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: testEventId,
         page: 1,
         limit: 50,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       await folderPublishService.getPublishedFolders(params);
 
       const stats = monitor.getDbStats('getPublishedFolders');
-      
+
       // Should be exactly 1 query operation recorded (count + data in parallel)
       expect(stats.totalQueries).toBe(1);
-      
+
       console.log(`[PERF TEST] Query count: ${stats.totalQueries} (target: 1)`);
     });
 
@@ -339,7 +343,7 @@ describe('Admin Published Folders Performance Tests', () => {
           event_id: testEventId,
           page: 1,
           limit: testCase.limit,
-          include_unpublished: false
+          include_unpublished: false,
         };
 
         const startTime = performance.now();
@@ -349,7 +353,7 @@ describe('Admin Published Folders Performance Tests', () => {
 
         expect(result.success).toBe(true);
         expect(result.folders).toHaveLength(testCase.expectedResults);
-        
+
         durations.push(duration);
       }
 
@@ -359,8 +363,11 @@ describe('Admin Published Folders Performance Tests', () => {
       const ratio = maxDuration / minDuration;
 
       expect(ratio).toBeLessThan(3); // Max variation should be < 3x
-      
-      console.log('[PERF TEST] Duration consistency:', durations.map(d => `${d.toFixed(2)}ms`).join(', '));
+
+      console.log(
+        '[PERF TEST] Duration consistency:',
+        durations.map((d) => `${d.toFixed(2)}ms`).join(', ')
+      );
     });
   });
 
@@ -370,7 +377,7 @@ describe('Admin Published Folders Performance Tests', () => {
         event_id: '00000000-0000-0000-0000-000000000000', // Invalid UUID
         page: 1,
         limit: 10,
-        include_unpublished: false
+        include_unpublished: false,
       };
 
       const startTime = performance.now();

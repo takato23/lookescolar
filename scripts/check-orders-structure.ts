@@ -20,11 +20,8 @@ async function checkOrdersStructure() {
 
   try {
     // Try to get one record to see structure
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .limit(1);
-    
+    const { data, error } = await supabase.from('orders').select('*').limit(1);
+
     if (error) {
       console.log(`❌ Error querying orders: ${error.message}`);
     } else if (data && data.length > 0) {
@@ -38,7 +35,7 @@ async function checkOrdersStructure() {
         .from('orders')
         .select('id, status, created_at')
         .limit(1);
-      
+
       if (structError) {
         console.log(`❌ Structure error: ${structError.message}`);
       } else {
@@ -51,6 +48,3 @@ async function checkOrdersStructure() {
 }
 
 checkOrdersStructure().catch(console.error);
-
-
-

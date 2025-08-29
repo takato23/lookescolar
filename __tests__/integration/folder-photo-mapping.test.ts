@@ -1,7 +1,7 @@
 /**
  * Integration tests for folder-to-subjects mapping and photo count accuracy
  * Tests the critical relationship between folders, photos, and subjects
- * 
+ *
  * Validates:
  * - Photo count accuracy in folders
  * - Subject assignment and folder mapping
@@ -9,7 +9,15 @@
  * - Hierarchical folder structures
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 
@@ -31,11 +39,11 @@ describe('Folder-Photo Mapping Integration', () => {
         width: 400,
         height: 300,
         channels: 3,
-        background: { r: 200, g: 100, b: 50 }
-      }
+        background: { r: 200, g: 100, b: 50 },
+      },
     })
-    .jpeg({ quality: 80 })
-    .toBuffer();
+      .jpeg({ quality: 80 })
+      .toBuffer();
 
     const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
     return new File([blob], name, { type: 'image/jpeg' });
@@ -52,7 +60,7 @@ describe('Folder-Photo Mapping Integration', () => {
         date: new Date().toISOString().split('T')[0],
         location: 'Test Location',
         status: 'draft',
-        school_name: 'Mapping Test School'
+        school_name: 'Mapping Test School',
       })
       .select('id')
       .single();
@@ -67,7 +75,7 @@ describe('Folder-Photo Mapping Integration', () => {
   afterAll(async () => {
     if (testEventId) {
       // Comprehensive cleanup
-      
+
       // Clean up storage files first
       if (testPhotoIds.length > 0) {
         const { data: photos } = await supabase
@@ -77,30 +85,20 @@ describe('Folder-Photo Mapping Integration', () => {
 
         if (photos && photos.length > 0) {
           const PREVIEW_BUCKET = process.env.STORAGE_BUCKET_PREVIEW || 'photos';
-          const filePaths = photos
-            .map(p => p.preview_path)
-            .filter(Boolean);
-          
+          const filePaths = photos.map((p) => p.preview_path).filter(Boolean);
+
           if (filePaths.length > 0) {
-            await supabase.storage
-              .from(PREVIEW_BUCKET)
-              .remove(filePaths);
+            await supabase.storage.from(PREVIEW_BUCKET).remove(filePaths);
           }
         }
 
         // Delete photo records
-        await supabase
-          .from('photos')
-          .delete()
-          .in('id', testPhotoIds);
+        await supabase.from('photos').delete().in('id', testPhotoIds);
       }
 
       // Delete folders
       if (testFolderIds.length > 0) {
-        await supabase
-          .from('folders')
-          .delete()
-          .in('id', testFolderIds);
+        await supabase.from('folders').delete().in('id', testFolderIds);
       }
 
       // Delete event
@@ -116,17 +114,11 @@ describe('Folder-Photo Mapping Integration', () => {
   afterEach(async () => {
     // Clean up test data
     if (testPhotoIds.length > 0) {
-      await supabase
-        .from('photos')
-        .delete()
-        .in('id', testPhotoIds);
+      await supabase.from('photos').delete().in('id', testPhotoIds);
     }
 
     if (testFolderIds.length > 0) {
-      await supabase
-        .from('folders')
-        .delete()
-        .in('id', testFolderIds);
+      await supabase.from('folders').delete().in('id', testFolderIds);
     }
   });
 
@@ -138,8 +130,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Empty Test Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       expect(response.status).toBe(201);
@@ -152,12 +144,14 @@ describe('Folder-Photo Mapping Integration', () => {
       const listResponse = await fetch(`${API_BASE_URL}/api/admin/folders`);
       const listData = await listResponse.json();
 
-      const createdFolder = listData.folders.find((f: any) => f.id === folderId);
+      const createdFolder = listData.folders.find(
+        (f: any) => f.id === folderId
+      );
       expect(createdFolder).toMatchObject({
         id: folderId,
         name: 'Empty Test Folder',
         event_id: testEventId,
-        photo_count: 0
+        photo_count: 0,
       });
     });
 
@@ -169,8 +163,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Count Test Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -181,17 +175,20 @@ describe('Folder-Photo Mapping Integration', () => {
       const files = await Promise.all([
         createTestImage('count-1.jpg'),
         createTestImage('count-2.jpg'),
-        createTestImage('count-3.jpg')
+        createTestImage('count-3.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
@@ -209,7 +206,9 @@ describe('Folder-Photo Mapping Integration', () => {
       const listResponse = await fetch(`${API_BASE_URL}/api/admin/folders`);
       const listData = await listResponse.json();
 
-      const updatedFolder = listData.folders.find((f: any) => f.id === folderId);
+      const updatedFolder = listData.folders.find(
+        (f: any) => f.id === folderId
+      );
       expect(updatedFolder.photo_count).toBe(3);
     });
 
@@ -221,8 +220,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Source Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folder2Response = await fetch(`${API_BASE_URL}/api/admin/folders`, {
@@ -231,8 +230,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Destination Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folder1Data = await folder1Response.json();
@@ -245,17 +244,20 @@ describe('Folder-Photo Mapping Integration', () => {
       // Upload and assign photos to folder1
       const files = await Promise.all([
         createTestImage('move-1.jpg'),
-        createTestImage('move-2.jpg')
+        createTestImage('move-2.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
@@ -306,8 +308,8 @@ describe('Folder-Photo Mapping Integration', () => {
           event_id: testEventId,
           parent_id: null,
           subject_type: 'class',
-          metadata: { grade: '5', section: 'A' }
-        })
+          metadata: { grade: '5', section: 'A' },
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -321,7 +323,7 @@ describe('Folder-Photo Mapping Integration', () => {
           name: 'Test Student',
           event_id: testEventId,
           grade: '5A',
-          email: 'test@example.com'
+          email: 'test@example.com',
         })
         .select('id')
         .single();
@@ -334,10 +336,13 @@ describe('Folder-Photo Mapping Integration', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoId = uploadData.results[0].id;
@@ -346,21 +351,23 @@ describe('Folder-Photo Mapping Integration', () => {
       // Link photo to subject and folder
       await supabase
         .from('photos')
-        .update({ 
+        .update({
           subject_id: subject.id,
-          folder_id: folderId 
+          folder_id: folderId,
         })
         .eq('id', photoId);
 
       // Verify organization
       const { data: organizedPhoto } = await supabase
         .from('photos')
-        .select(`
+        .select(
+          `
           id,
           subject_id,
           folder_id,
           students:subject_id(name, grade)
-        `)
+        `
+        )
         .eq('id', photoId)
         .single();
 
@@ -369,8 +376,8 @@ describe('Folder-Photo Mapping Integration', () => {
         folder_id: folderId,
         students: {
           name: 'Test Student',
-          grade: '5A'
-        }
+          grade: '5A',
+        },
       });
     });
 
@@ -382,8 +389,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Bulk Assignment Test',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -395,17 +402,20 @@ describe('Folder-Photo Mapping Integration', () => {
         createTestImage('bulk-1.jpg'),
         createTestImage('bulk-2.jpg'),
         createTestImage('bulk-3.jpg'),
-        createTestImage('bulk-4.jpg')
+        createTestImage('bulk-4.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
@@ -423,7 +433,9 @@ describe('Folder-Photo Mapping Integration', () => {
       const listResponse = await fetch(`${API_BASE_URL}/api/admin/folders`);
       const listData = await listResponse.json();
 
-      const updatedFolder = listData.folders.find((f: any) => f.id === folderId);
+      const updatedFolder = listData.folders.find(
+        (f: any) => f.id === folderId
+      );
       expect(updatedFolder.photo_count).toBe(4);
 
       // Verify all photos are assigned
@@ -432,7 +444,7 @@ describe('Folder-Photo Mapping Integration', () => {
         .select('id, folder_id')
         .in('id', photoIds);
 
-      assignedPhotos?.forEach(photo => {
+      assignedPhotos?.forEach((photo) => {
         expect(photo.folder_id).toBe(folderId);
       });
     });
@@ -447,8 +459,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Grade 5',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const parentData = await parentResponse.json();
@@ -462,8 +474,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Section A',
           event_id: testEventId,
-          parent_id: parentId
-        })
+          parent_id: parentId,
+        }),
       });
 
       const child2Response = await fetch(`${API_BASE_URL}/api/admin/folders`, {
@@ -472,8 +484,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Section B',
           event_id: testEventId,
-          parent_id: parentId
-        })
+          parent_id: parentId,
+        }),
       });
 
       const child1Data = await child1Response.json();
@@ -494,19 +506,19 @@ describe('Folder-Photo Mapping Integration', () => {
       expect(parentFolder).toMatchObject({
         id: parentId,
         name: 'Grade 5',
-        parent_id: null
+        parent_id: null,
       });
 
       expect(child1Folder).toMatchObject({
         id: child1Id,
         name: 'Section A',
-        parent_id: parentId
+        parent_id: parentId,
       });
 
       expect(child2Folder).toMatchObject({
         id: child2Id,
         name: 'Section B',
-        parent_id: parentId
+        parent_id: parentId,
       });
     });
 
@@ -518,8 +530,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Grade 6',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const childResponse = await fetch(`${API_BASE_URL}/api/admin/folders`, {
@@ -528,8 +540,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Section A',
           event_id: testEventId,
-          parent_id: (await parentResponse.json()).folder.id
-        })
+          parent_id: (await parentResponse.json()).folder.id,
+        }),
       });
 
       const parentId = (await parentResponse.json()).folder.id;
@@ -539,17 +551,20 @@ describe('Folder-Photo Mapping Integration', () => {
       // Upload photos to child folder
       const files = await Promise.all([
         createTestImage('nested-1.jpg'),
-        createTestImage('nested-2.jpg')
+        createTestImage('nested-2.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
@@ -583,8 +598,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Retrieval Test Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -594,17 +609,20 @@ describe('Folder-Photo Mapping Integration', () => {
       // Upload photos
       const files = await Promise.all([
         createTestImage('retrieve-1.jpg'),
-        createTestImage('retrieve-2.jpg')
+        createTestImage('retrieve-2.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
@@ -642,8 +660,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Empty Retrieval Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -673,8 +691,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Delete Test Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -686,10 +704,13 @@ describe('Folder-Photo Mapping Integration', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoId = uploadData.results[0].id;
@@ -727,8 +748,8 @@ describe('Folder-Photo Mapping Integration', () => {
         body: JSON.stringify({
           name: 'Concurrent Test Folder',
           event_id: testEventId,
-          parent_id: null
-        })
+          parent_id: null,
+        }),
       });
 
       const folderData = await folderResponse.json();
@@ -737,24 +758,29 @@ describe('Folder-Photo Mapping Integration', () => {
 
       // Upload multiple photos
       const files = await Promise.all(
-        Array(10).fill(0).map((_, i) => createTestImage(`concurrent-${i}.jpg`))
+        Array(10)
+          .fill(0)
+          .map((_, i) => createTestImage(`concurrent-${i}.jpg`))
       );
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
       testPhotoIds.push(...photoIds);
 
       // Simulate concurrent assignments
-      const assignments = photoIds.map(photoId =>
+      const assignments = photoIds.map((photoId) =>
         supabase
           .from('photos')
           .update({ folder_id: folderId })
@@ -764,7 +790,7 @@ describe('Folder-Photo Mapping Integration', () => {
       const results = await Promise.all(assignments);
 
       // All assignments should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.error).toBeNull();
       });
 
@@ -772,7 +798,9 @@ describe('Folder-Photo Mapping Integration', () => {
       const listResponse = await fetch(`${API_BASE_URL}/api/admin/folders`);
       const listData = await listResponse.json();
 
-      const updatedFolder = listData.folders.find((f: any) => f.id === folderId);
+      const updatedFolder = listData.folders.find(
+        (f: any) => f.id === folderId
+      );
       expect(updatedFolder.photo_count).toBe(10);
     });
   });

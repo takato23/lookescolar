@@ -22,7 +22,7 @@ const imageFile = z.object({
 
 const phoneNumber = z
   .string()
-  .regex(/^[\+]?[1-9][\d]{0,15}$/, 'Número de teléfono inválido')
+  .regex(/^[+]?[1-9][\d]{0,15}$/, 'Número de teléfono inválido')
   .optional();
 
 const email = z.string().email('Email inválido').min(1, 'Email es requerido');

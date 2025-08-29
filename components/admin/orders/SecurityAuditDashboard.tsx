@@ -10,7 +10,9 @@ export default function SecurityAuditDashboard() {
           <CardTitle>Security Audit</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Security audit dashboard coming soon...</p>
+          <p className="text-muted-foreground">
+            Security audit dashboard coming soon...
+          </p>
         </CardContent>
       </Card>
     </div>

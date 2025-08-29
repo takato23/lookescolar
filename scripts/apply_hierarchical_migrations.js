@@ -15,16 +15,16 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function executeMigration(filename, description) {
   console.log(`\n🔄 Aplicando ${description}...`);
-  
+
   try {
     const sql = fs.readFileSync(`supabase/migrations/${filename}`, 'utf8');
     const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
-    
+
     if (error) {
       console.error(`❌ Error en ${filename}:`, error);
       return false;
     }
-    
+
     console.log(`✅ ${description} aplicada exitosamente`);
     return true;
   } catch (err) {
@@ -34,14 +34,16 @@ async function executeMigration(filename, description) {
 }
 
 async function main() {
-  console.log('🚀 Iniciando aplicación de migraciones del sistema jerárquico...');
-  
+  console.log(
+    '🚀 Iniciando aplicación de migraciones del sistema jerárquico...'
+  );
+
   const migrations = [
     ['20250829_domain_model.sql', 'Modelo de dominios separados'],
     ['20250829_unified_tokens.sql', 'Sistema de tokens unificado'],
-    ['20250829_canonical_functions.sql', 'Funciones SQL canónicas']
+    ['20250829_canonical_functions.sql', 'Funciones SQL canónicas'],
   ];
-  
+
   for (const [filename, description] of migrations) {
     const success = await executeMigration(filename, description);
     if (!success) {
@@ -49,8 +51,10 @@ async function main() {
       process.exit(1);
     }
   }
-  
-  console.log('\n🎉 Todas las migraciones del sistema jerárquico aplicadas exitosamente!');
+
+  console.log(
+    '\n🎉 Todas las migraciones del sistema jerárquico aplicadas exitosamente!'
+  );
   console.log('\nSistema de tokens jerárquico listo:');
   console.log('- 🏫 Tokens de evento: acceso completo al evento');
   console.log('- 📚 Tokens de curso: acceso específico por curso');

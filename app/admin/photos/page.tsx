@@ -44,9 +44,7 @@ function PhotoSystemError() {
             />
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
-          System Error
-        </h3>
+        <h3 className="mb-2 text-lg font-medium text-gray-900">System Error</h3>
         <p className="mb-4 text-sm text-gray-600">
           There was an error loading the unified photo management system.
         </p>
@@ -63,18 +61,18 @@ function PhotoSystemError() {
 
 /**
  * Unified Photos Page - NEW FOLDER-FIRST ARCHITECTURE
- * 
+ *
  * This is the SINGLE ENTRY POINT for all photo management:
  * - Folder-based hierarchy navigation
  * - 3-panel layout (Folders + Photos + Inspector)
  * - Mouse-first interactions (Shift+Click, Ctrl+Click, Drag & Drop)
  * - Unified assets system with checksum deduplication
  * - Album generation and public access
- * 
+ *
  * Replaces:
  * - /admin/events/[id]/library (event-specific photo management)
  * - Previous photo management interfaces
- * 
+ *
  * Features:
  * - Unified folder hierarchy with optional event metadata
  * - Mouse-optimized selection and bulk operations
@@ -86,33 +84,37 @@ function PhotoSystemError() {
  */
 export default function UnifiedPhotosPage() {
   // Create a query client per mount to avoid cross-session leakage
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        cacheTime: 10 * 60 * 1000, // 10 minutes
-        retry: 3,
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        refetchOnWindowFocus: false,
-      },
-      mutations: {
-        retry: 1,
-      },
-    },
-  }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000, // 5 minutes
+            cacheTime: 10 * 60 * 1000, // 10 minutes
+            retry: 3,
+            retryDelay: (attemptIndex) =>
+              Math.min(1000 * 2 ** attemptIndex, 30000),
+            refetchOnWindowFocus: false,
+          },
+          mutations: {
+            retry: 1,
+          },
+        },
+      })
+  );
   return (
     <QueryClientProvider client={queryClient}>
       {/* Global Notifications */}
       <Toaster position="top-right" />
-      
+
       {/* Main Photo System - New Architecture */}
-      <ErrorBoundaryWrapper 
-        level="page" 
+      <ErrorBoundaryWrapper
+        level="page"
         name="PhotoAdmin"
         fallback={<PhotoSystemError />}
       >
         <Suspense fallback={<PhotoSystemLoader />}>
-          <PhotoAdmin 
+          <PhotoAdmin
             className="h-screen"
             enableUpload={true}
             enableBulkOperations={true}
@@ -130,7 +132,7 @@ export default function UnifiedPhotosPage() {
  * - Error boundaries for graceful failure handling
  * - Virtualization handles infinite scroll without memory leaks
  * - All operations are in-place, no page navigation
- * 
+ *
  * Migration Notes:
  * - This page replaces the need for multiple photo interfaces
  * - Old routes should redirect here with appropriate filters

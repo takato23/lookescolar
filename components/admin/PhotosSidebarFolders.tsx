@@ -533,7 +533,7 @@ export default function PhotosSidebarFolders({
                             >
                               <div className="min-w-0 flex-1">
                                 <div
-                                  className="text-sm font-semibold break-words leading-snug"
+                                  className="break-words text-sm font-semibold leading-snug"
                                   title={code.code_value}
                                 >
                                   📁 {code.code_value}

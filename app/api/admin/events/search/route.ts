@@ -9,8 +9,14 @@ export const GET = RateLimitMiddleware.withRateLimit(
     try {
       const url = new URL(request.url);
       const q = (url.searchParams.get('q') || '').trim();
-      const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 50);
-      const offset = Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0);
+      const limit = Math.min(
+        parseInt(url.searchParams.get('limit') || '20', 10) || 20,
+        50
+      );
+      const offset = Math.max(
+        parseInt(url.searchParams.get('offset') || '0', 10) || 0,
+        0
+      );
       const status = url.searchParams.get('status');
 
       const supabase = await createServerSupabaseServiceClient();
@@ -30,7 +36,10 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       const { data, error } = await query;
       if (error) {
-        return NextResponse.json({ success: true, events: [], error: error.message }, { status: 200 });
+        return NextResponse.json(
+          { success: true, events: [], error: error.message },
+          { status: 200 }
+        );
       }
 
       const events = (data || []).map((e) => ({
@@ -40,12 +49,17 @@ export const GET = RateLimitMiddleware.withRateLimit(
         status: (e as any).status || 'active',
       }));
 
-      return NextResponse.json({ success: true, events, nextOffset: offset + events.length, hasMore: events.length === limit });
+      return NextResponse.json({
+        success: true,
+        events,
+        nextOffset: offset + events.length,
+        hasMore: events.length === limit,
+      });
     } catch (err) {
-      return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Internal server error' },
+        { status: 500 }
+      );
     }
   })
 );
-
-
-

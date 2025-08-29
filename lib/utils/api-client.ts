@@ -29,10 +29,13 @@ export function createApiUrl(path: string): string {
  * @param path - API path or full URL
  * @param options - Fetch options
  */
-export async function apiFetch(path: string, options?: RequestInit): Promise<Response> {
+export async function apiFetch(
+  path: string,
+  options?: RequestInit
+): Promise<Response> {
   // If it's already a full URL, use it as-is
   const url = path.startsWith('http') ? path : createApiUrl(path);
-  
+
   return fetch(url, {
     ...options,
     headers: {
@@ -49,12 +52,12 @@ export async function apiFetch(path: string, options?: RequestInit): Promise<Res
  * @param options - Additional fetch options
  */
 export async function uploadFiles(
-  path: string, 
-  formData: FormData, 
+  path: string,
+  formData: FormData,
   options?: Omit<RequestInit, 'body' | 'method'>
 ): Promise<Response> {
   const url = createApiUrl(path);
-  
+
   return fetch(url, {
     method: 'POST',
     body: formData,

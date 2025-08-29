@@ -23,75 +23,75 @@ services:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
         NEXT_PUBLIC_MP_PUBLIC_KEY: ${NEXT_PUBLIC_MP_PUBLIC_KEY}
         NEXT_PUBLIC_MP_ENVIRONMENT: ${NEXT_PUBLIC_MP_ENVIRONMENT:-sandbox}
-    
+
     ports:
-      - "${PORT:-3000}:3000"
-    
+      - '${PORT:-3000}:3000'
+
     environment:
       # Core Configuration
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
-      
+
       # Application URLs
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - CORS_ORIGIN=${CORS_ORIGIN}
       - ALLOWED_DOMAINS=${ALLOWED_DOMAINS}
-      
+
       # Supabase Configuration
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - DATABASE_URL=${DATABASE_URL}
-      
+
       # Security
       - SESSION_SECRET=${SESSION_SECRET}
       - SECURITY_HEADERS_ENABLED=true
       - MASK_SENSITIVE_LOGS=true
       - SKIP_AUTH=false
-      
+
       # Storage Configuration
       - STORAGE_BUCKET=${STORAGE_BUCKET:-photos-private-bucket}
       - SIGNED_URL_EXPIRY_MINUTES=${SIGNED_URL_EXPIRY_MINUTES:-60}
       - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10485760}
       - MAX_FILES_PER_REQUEST=${MAX_FILES_PER_REQUEST:-20}
-      
+
       # Rate Limiting (Redis)
       - ENABLE_RATE_LIMIT=true
       - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL:-redis://redis:6379}
       - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN:-}
-      
+
       # Mercado Pago
       - NEXT_PUBLIC_MP_PUBLIC_KEY=${NEXT_PUBLIC_MP_PUBLIC_KEY}
       - MP_ACCESS_TOKEN=${MP_ACCESS_TOKEN}
       - MP_WEBHOOK_SECRET=${MP_WEBHOOK_SECRET}
       - NEXT_PUBLIC_MP_ENVIRONMENT=${NEXT_PUBLIC_MP_ENVIRONMENT:-sandbox}
-      
+
       # Monitoring & Logging
       - LOG_LEVEL=${LOG_LEVEL:-warn}
       - ENABLE_METRICS=true
       - ENABLE_PERFORMANCE_MONITORING=true
       - ENABLE_EGRESS_MONITORING=true
-      
+
       # Photo Processing
       - MAX_CONCURRENT_UPLOADS=${MAX_CONCURRENT_UPLOADS:-5}
       - WATERMARK_OPACITY=${WATERMARK_OPACITY:-0.5}
       - PHOTO_MAX_SIZE=${PHOTO_MAX_SIZE:-1600}
       - PHOTO_QUALITY=${PHOTO_QUALITY:-72}
-    
+
     volumes:
       - uploads:/app/uploads
       - logs:/app/logs
       - temp:/app/temp
-    
+
     depends_on:
       - redis
-    
+
     networks:
       - app-network
-    
+
     restart: unless-stopped
-    
+
     deploy:
       resources:
         limits:
@@ -100,9 +100,9 @@ services:
         reservations:
           cpus: '1.0'
           memory: 1G
-    
+
     healthcheck:
-      test: ["CMD", "node", "/app/healthcheck.js"]
+      test: ['CMD', 'node', '/app/healthcheck.js']
       interval: 30s
       timeout: 5s
       retries: 3
@@ -114,8 +114,8 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "${REDIS_PORT:-6379}:6379"
-    
+      - '${REDIS_PORT:-6379}:6379'
+
     command: >
       redis-server 
       --appendonly yes 
@@ -127,15 +127,15 @@ services:
       --save 900 1
       --save 300 10
       --save 60 10000
-    
+
     volumes:
       - redis-data:/data
-    
+
     networks:
       - app-network
-    
+
     restart: unless-stopped
-    
+
     deploy:
       resources:
         limits:
@@ -144,9 +144,9 @@ services:
         reservations:
           cpus: '0.1'
           memory: 128M
-    
+
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 30s
       timeout: 5s
       retries: 3
@@ -224,20 +224,20 @@ volumes:
       type: none
       o: bind
       device: ${HOST_UPLOADS_PATH:-./uploads}
-  
+
   logs:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ${HOST_LOGS_PATH:-./logs}
-  
+
   temp:
     driver: local
-  
+
   redis-data:
     driver: local
-  
+
   backup-storage:
     driver: local
     driver_opts:

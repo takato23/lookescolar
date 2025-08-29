@@ -2,18 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { generateChecksum, checkDuplicateByChecksum } from '@/lib/services/checksum.service';
+import {
+  generateChecksum,
+  checkDuplicateByChecksum,
+} from '@/lib/services/checksum.service';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 
 // Validation schema for unified upload
 const UploadSchema = z.object({
   folder_id: z.string().uuid(),
-  files: z.array(z.object({
-    filename: z.string().min(1).max(255),
-    mime_type: z.string(),
-    size: z.number().positive(),
-  })).min(1).max(10), // Max 10 files per request
+  files: z
+    .array(
+      z.object({
+        filename: z.string().min(1).max(255),
+        mime_type: z.string(),
+        size: z.number().positive(),
+      })
+    )
+    .min(1)
+    .max(10), // Max 10 files per request
   generate_previews: z.boolean().default(true),
   watermark_text: z.string().optional(),
 });
@@ -39,11 +47,11 @@ async function generatePreview(
   watermark_text?: string
 ): Promise<{ buffer: Buffer; filename: string }> {
   let image = sharp(buffer);
-  
+
   // Resize to 1024px max width/height while maintaining aspect ratio
   image = image.resize(1024, 1024, {
     fit: 'inside',
-    withoutEnlargement: true
+    withoutEnlargement: true,
   });
 
   // Add watermark if specified
@@ -55,20 +63,22 @@ async function generatePreview(
         </text>
       </svg>
     `;
-    
+
     const watermarkBuffer = Buffer.from(watermarkSvg);
-    image = image.composite([{
-      input: watermarkBuffer,
-      gravity: 'southeast'
-    }]);
+    image = image.composite([
+      {
+        input: watermarkBuffer,
+        gravity: 'southeast',
+      },
+    ]);
   }
 
   // Convert to WebP for optimal compression
   const processedBuffer = await image.webp({ quality: 85 }).toBuffer();
-  
+
   return {
     buffer: processedBuffer,
-    filename: `preview_${Date.now()}.webp`
+    filename: `preview_${Date.now()}.webp`,
   };
 }
 
@@ -86,7 +96,7 @@ async function uploadToStorage(
     .from(bucket)
     .upload(path, buffer, {
       contentType: mime_type,
-      upsert: false
+      upsert: false,
     });
 
   if (error) {
@@ -102,7 +112,8 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const folderId = formData.get('folder_id') as string;
     const generatePreviews = formData.get('generate_previews') !== 'false';
-    const watermarkText = formData.get('watermark_text') as string || undefined;
+    const watermarkText =
+      (formData.get('watermark_text') as string) || undefined;
 
     if (!folderId) {
       return NextResponse.json(
@@ -126,7 +137,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Verify admin access
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -170,10 +184,10 @@ export async function POST(request: NextRequest) {
       try {
         // Read file buffer
         const buffer = Buffer.from(await file.arrayBuffer());
-        
+
         // Generate checksum for deduplication
         const checksum = generateChecksum(buffer);
-        
+
         // Check for duplicates
         const duplicateCheck = await checkDuplicateByChecksum(
           checksum,
@@ -185,7 +199,7 @@ export async function POST(request: NextRequest) {
           results.push({
             success: false,
             duplicate: duplicateCheck.duplicateAsset,
-            error: `Duplicate file detected: ${file.name}`
+            error: `Duplicate file detected: ${file.name}`,
           });
           continue;
         }
@@ -197,7 +211,7 @@ export async function POST(request: NextRequest) {
             const metadata = await sharp(buffer).metadata();
             dimensions = {
               width: metadata.width || 0,
-              height: metadata.height || 0
+              height: metadata.height || 0,
             };
           } catch (e) {
             console.warn('Could not extract image dimensions:', e);
@@ -209,7 +223,7 @@ export async function POST(request: NextRequest) {
         const fileExtension = file.name.split('.').pop() || '';
         const baseFileName = file.name.replace(/\.[^/.]+$/, '');
         const originalPath = `${folder.path}/${baseFileName}_${timestamp}.${fileExtension}`;
-        
+
         // Upload original file
         const originalUpload = await uploadToStorage(
           serviceRoleSupabase,
@@ -222,7 +236,7 @@ export async function POST(request: NextRequest) {
         if (originalUpload.error) {
           results.push({
             success: false,
-            error: `Failed to upload original: ${originalUpload.error}`
+            error: `Failed to upload original: ${originalUpload.error}`,
           });
           continue;
         }
@@ -231,9 +245,13 @@ export async function POST(request: NextRequest) {
         let previewPath = null;
         if (generatePreviews && file.type.startsWith('image/')) {
           try {
-            const preview = await generatePreview(buffer, file.type, watermarkText);
+            const preview = await generatePreview(
+              buffer,
+              file.type,
+              watermarkText
+            );
             const previewUploadPath = `${folder.path}/${baseFileName}_preview_${timestamp}.webp`;
-            
+
             const previewUpload = await uploadToStorage(
               serviceRoleSupabase,
               'previews',
@@ -265,50 +283,51 @@ export async function POST(request: NextRequest) {
             uploaded_by: user.id,
             upload_timestamp: new Date().toISOString(),
             watermark_applied: !!watermarkText,
-            preview_generated: !!previewPath
-          }
+            preview_generated: !!previewPath,
+          },
         };
 
         const { data: newAsset, error: createError } = await supabase
           .from('assets')
           .insert(assetData)
-          .select(`
+          .select(
+            `
             *,
             folder:folders!inner(
               id,
               name,
               path
             )
-          `)
+          `
+          )
           .single();
 
         if (createError) {
           console.error('Error creating asset:', createError);
           results.push({
             success: false,
-            error: `Failed to create asset record: ${createError.message}`
+            error: `Failed to create asset record: ${createError.message}`,
           });
           continue;
         }
 
         results.push({
           success: true,
-          asset: newAsset
+          asset: newAsset,
         });
-
       } catch (error) {
         console.error('Error processing file:', file.name, error);
         results.push({
           success: false,
-          error: `Failed to process file: ${error}`
+          error: `Failed to process file: ${error}`,
         });
       }
     }
 
     // Summary
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
-    const duplicates = results.filter(r => r.duplicate).length;
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+    const duplicates = results.filter((r) => r.duplicate).length;
 
     return NextResponse.json({
       success: successful > 0,
@@ -316,25 +335,24 @@ export async function POST(request: NextRequest) {
         total: files.length,
         successful,
         failed,
-        duplicates
+        duplicates,
       },
       results,
       folder: {
         id: folder.id,
         name: folder.name,
-        path: folder.path
-      }
+        path: folder.path,
+      },
     });
-
   } catch (error) {
     console.error('Upload error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Validation failed',
-          details: error.errors 
+          details: error.errors,
         },
         { status: 400 }
       );

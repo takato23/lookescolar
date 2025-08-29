@@ -8,9 +8,9 @@
   line-height: 1.1;
   background: linear-gradient(
     135deg,
-    rgba(59, 130, 246, 0.9) 0%,   /* Blue-500 */
-    rgba(139, 92, 246, 0.9) 50%,  /* Purple-500 */
-    rgba(16, 185, 129, 0.9) 100%  /* Emerald-500 */
+    rgba(59, 130, 246, 0.9) 0%,
+    /* Blue-500 */ rgba(139, 92, 246, 0.9) 50%,
+    /* Purple-500 */ rgba(16, 185, 129, 0.9) 100% /* Emerald-500 */
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -21,9 +21,9 @@
 .dark .liquid-title {
   background: linear-gradient(
     135deg,
-    rgba(96, 165, 250, 1) 0%,     /* Blue-400 */
-    rgba(167, 139, 250, 1) 50%,   /* Purple-400 */
-    rgba(52, 211, 153, 1) 100%    /* Emerald-400 */
+    rgba(96, 165, 250, 1) 0%,
+    /* Blue-400 */ rgba(167, 139, 250, 1) 50%,
+    /* Purple-400 */ rgba(52, 211, 153, 1) 100% /* Emerald-400 */
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -75,7 +75,7 @@
 }
 
 .dark .liquid-description {
-  color: rgba(200, 206, 215, 0.90); /* Better description contrast */
+  color: rgba(200, 206, 215, 0.9); /* Better description contrast */
   background: rgba(48, 48, 56, 0.12); /* Subtle background */
 }
 
@@ -120,7 +120,7 @@
 
 .dark .liquid-label {
   color: rgba(220, 224, 230, 0.95); /* Much better label contrast */
-  background: rgba(48, 48, 56, 0.20); /* More visible label background */
+  background: rgba(48, 48, 56, 0.2); /* More visible label background */
   border: 1px solid rgba(255, 255, 255, 0.12); /* Better border */
 }
 
@@ -131,8 +131,8 @@
   letter-spacing: -0.05em;
   background: linear-gradient(
     135deg,
-    rgba(34, 197, 94, 0.9) 0%,    /* Green-500 */
-    rgba(59, 130, 246, 0.9) 100%  /* Blue-500 */
+    rgba(34, 197, 94, 0.9) 0%,
+    /* Green-500 */ rgba(59, 130, 246, 0.9) 100% /* Blue-500 */
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -143,8 +143,8 @@
 .dark .liquid-number {
   background: linear-gradient(
     135deg,
-    rgba(74, 222, 128, 1) 0%,     /* Green-400 */
-    rgba(96, 165, 250, 1) 100%    /* Blue-400 */
+    rgba(74, 222, 128, 1) 0%,
+    /* Green-400 */ rgba(96, 165, 250, 1) 100% /* Blue-400 */
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -208,14 +208,15 @@
 
 /* Animaciones de texto */
 @keyframes liquid-text-glow {
-  0%, 100% {
-    text-shadow: 
+  0%,
+  100% {
+    text-shadow:
       0 0 5px rgba(59, 130, 246, 0.3),
       0 0 10px rgba(59, 130, 246, 0.2),
       0 0 15px rgba(59, 130, 246, 0.1);
   }
   50% {
-    text-shadow: 
+    text-shadow:
       0 0 10px rgba(59, 130, 246, 0.4),
       0 0 20px rgba(59, 130, 246, 0.3),
       0 0 30px rgba(59, 130, 246, 0.2);
@@ -231,11 +232,11 @@
   .liquid-title {
     letter-spacing: -0.02em;
   }
-  
+
   .liquid-nav-text {
     font-weight: 600;
   }
-  
+
   .liquid-label {
     font-size: 0.8rem;
     padding: 0.2rem 0.6rem;

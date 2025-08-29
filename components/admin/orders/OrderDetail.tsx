@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 
@@ -48,10 +53,19 @@ interface OrderDetailProps {
   orderId: string;
   isOpen: boolean;
   onClose: () => void;
-  onStatusUpdate?: (orderId: string, status: 'delivered' | 'cancelled', notes?: string) => void;
+  onStatusUpdate?: (
+    orderId: string,
+    status: 'delivered' | 'cancelled',
+    notes?: string
+  ) => void;
 }
 
-export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }: OrderDetailProps) {
+export default function OrderDetail({
+  orderId,
+  isOpen,
+  onClose,
+  onStatusUpdate,
+}: OrderDetailProps) {
   const [order, setOrder] = useState<EnhancedOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +73,7 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
   // Load order details
   useEffect(() => {
     if (!isOpen || !orderId) return;
-    
+
     const loadOrder = async () => {
       setLoading(true);
       setError(null);
@@ -90,7 +104,7 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Detalle de Pedido</span>
@@ -113,9 +127,7 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
         )}
 
         {error && (
-          <div className="text-center py-8 text-red-600">
-            Error: {error}
-          </div>
+          <div className="py-8 text-center text-red-600">Error: {error}</div>
         )}
 
         {order && (
@@ -128,41 +140,74 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Cliente</label>
-                    <p className="text-lg font-semibold">{order.contact_name}</p>
-                    <p className="text-sm text-muted-foreground">{order.contact_email}</p>
+                    <label className="text-muted-foreground text-sm font-medium">
+                      Cliente
+                    </label>
+                    <p className="text-lg font-semibold">
+                      {order.contact_name}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {order.contact_email}
+                    </p>
                     {order.contact_phone && (
-                      <p className="text-sm text-muted-foreground">{order.contact_phone}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {order.contact_phone}
+                      </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Estado</label>
+                    <label className="text-muted-foreground text-sm font-medium">
+                      Estado
+                    </label>
                     <div className="flex items-center gap-2">
-                      <Badge variant={
-                        order.status === 'approved' ? 'default' :
-                        order.status === 'delivered' ? 'secondary' :
-                        order.status === 'pending' ? 'outline' : 'destructive'
-                      }>
-                        {order.status === 'pending' ? 'Pendiente' :
-                         order.status === 'approved' ? 'Pagado' :
-                         order.status === 'delivered' ? 'Entregado' :
-                         order.status === 'failed' ? 'Fallido' : 'Cancelado'}
+                      <Badge
+                        variant={
+                          order.status === 'approved'
+                            ? 'default'
+                            : order.status === 'delivered'
+                              ? 'secondary'
+                              : order.status === 'pending'
+                                ? 'outline'
+                                : 'destructive'
+                        }
+                      >
+                        {order.status === 'pending'
+                          ? 'Pendiente'
+                          : order.status === 'approved'
+                            ? 'Pagado'
+                            : order.status === 'delivered'
+                              ? 'Entregado'
+                              : order.status === 'failed'
+                                ? 'Fallido'
+                                : 'Cancelado'}
                       </Badge>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Total</label>
-                    <p className="text-xl font-bold">{formatCurrency(order.total_amount_cents)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.total_items} {order.total_items === 1 ? 'item' : 'items'}
+                    <label className="text-muted-foreground text-sm font-medium">
+                      Total
+                    </label>
+                    <p className="text-xl font-bold">
+                      {formatCurrency(order.total_amount_cents)}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {order.total_items}{' '}
+                      {order.total_items === 1 ? 'item' : 'items'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Fecha</label>
-                    <p className="text-sm">{new Date(order.created_at).toLocaleDateString('es-AR')}</p>
+                    <label className="text-muted-foreground text-sm font-medium">
+                      Fecha
+                    </label>
+                    <p className="text-sm">
+                      {new Date(order.created_at).toLocaleDateString('es-AR')}
+                    </p>
                     {order.delivered_at && (
                       <p className="text-sm text-emerald-600">
-                        Entregado: {new Date(order.delivered_at).toLocaleDateString('es-AR')}
+                        Entregado:{' '}
+                        {new Date(order.delivered_at).toLocaleDateString(
+                          'es-AR'
+                        )}
                       </p>
                     )}
                   </div>
@@ -171,21 +216,39 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
                 {/* Event and Subject Info */}
                 {(order.event || order.subject) && (
                   <div className="border-t pt-4">
-                    <h4 className="font-medium mb-2">Información del Evento</h4>
+                    <h4 className="mb-2 font-medium">Información del Evento</h4>
                     {order.event && (
-                      <div className="text-sm space-y-1">
-                        <p><span className="font-medium">Evento:</span> {order.event.name}</p>
-                        <p><span className="font-medium">Colegio:</span> {order.event.school}</p>
-                        <p><span className="font-medium">Fecha:</span> {new Date(order.event.date).toLocaleDateString('es-AR')}</p>
+                      <div className="space-y-1 text-sm">
+                        <p>
+                          <span className="font-medium">Evento:</span>{' '}
+                          {order.event.name}
+                        </p>
+                        <p>
+                          <span className="font-medium">Colegio:</span>{' '}
+                          {order.event.school}
+                        </p>
+                        <p>
+                          <span className="font-medium">Fecha:</span>{' '}
+                          {new Date(order.event.date).toLocaleDateString(
+                            'es-AR'
+                          )}
+                        </p>
                       </div>
                     )}
                     {order.subject && (
-                      <div className="text-sm mt-2">
-                        <p><span className="font-medium">Sujeto:</span> {order.subject.name}</p>
-                        <p><span className="font-medium">Tipo:</span> {
-                          order.subject.type === 'student' ? 'Estudiante' :
-                          order.subject.type === 'couple' ? 'Pareja' : 'Familia'
-                        }</p>
+                      <div className="mt-2 text-sm">
+                        <p>
+                          <span className="font-medium">Sujeto:</span>{' '}
+                          {order.subject.name}
+                        </p>
+                        <p>
+                          <span className="font-medium">Tipo:</span>{' '}
+                          {order.subject.type === 'student'
+                            ? 'Estudiante'
+                            : order.subject.type === 'couple'
+                              ? 'Pareja'
+                              : 'Familia'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -194,10 +257,16 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
                 {/* Payment Info */}
                 {order.mp_payment_id && (
                   <div className="border-t pt-4">
-                    <h4 className="font-medium mb-2">Información de Pago</h4>
-                    <div className="text-sm space-y-1">
-                      <p><span className="font-medium">ID Pago MP:</span> {order.mp_payment_id}</p>
-                      <p><span className="font-medium">Estado MP:</span> {order.mp_status}</p>
+                    <h4 className="mb-2 font-medium">Información de Pago</h4>
+                    <div className="space-y-1 text-sm">
+                      <p>
+                        <span className="font-medium">ID Pago MP:</span>{' '}
+                        {order.mp_payment_id}
+                      </p>
+                      <p>
+                        <span className="font-medium">Estado MP:</span>{' '}
+                        {order.mp_status}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -215,19 +284,19 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
                     {order.items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                        className="bg-muted/50 flex items-center justify-between rounded-lg p-3"
                       >
                         <div>
                           <p className="font-medium">{item.label}</p>
                           {item.photo && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               Foto ID: {item.photo.id.slice(-8)}
                             </p>
                           )}
                         </div>
                         <div className="text-right">
                           <p className="font-medium">x {item.quantity}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {formatCurrency(item.price_cents * item.quantity)}
                           </p>
                         </div>
@@ -247,14 +316,22 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
                 <CardContent className="space-y-3">
                   {order.notes && (
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Notas del Cliente:</label>
-                      <p className="text-sm mt-1 p-2 bg-muted/50 rounded">{order.notes}</p>
+                      <label className="text-muted-foreground text-sm font-medium">
+                        Notas del Cliente:
+                      </label>
+                      <p className="bg-muted/50 mt-1 rounded p-2 text-sm">
+                        {order.notes}
+                      </p>
                     </div>
                   )}
                   {order.admin_notes && (
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Notas del Admin:</label>
-                      <p className="text-sm mt-1 p-2 bg-muted/50 rounded">{order.admin_notes}</p>
+                      <label className="text-muted-foreground text-sm font-medium">
+                        Notas del Admin:
+                      </label>
+                      <p className="bg-muted/50 mt-1 rounded p-2 text-sm">
+                        {order.admin_notes}
+                      </p>
                     </div>
                   )}
                 </CardContent>
@@ -263,7 +340,7 @@ export default function OrderDetail({ orderId, isOpen, onClose, onStatusUpdate }
 
             {/* Actions */}
             {onStatusUpdate && order.status === 'approved' && (
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex justify-end gap-2 border-t pt-4">
                 <Button
                   onClick={() => onStatusUpdate(order.id, 'delivered')}
                   variant="default"

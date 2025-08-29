@@ -159,17 +159,25 @@ async function handleGET(request: NextRequest) {
     // QUICK FIX: Return empty for eventId-based queries (use events endpoint instead)
     if (eventId) {
       return NextResponse.json({
-        data: { photos: [], pagination: { page: 1, limit: 50, total: 0, totalPages: 0 } },
-        debug: { message: 'Use /api/admin/events/{eventId}/photos for event-specific photos' }
+        data: {
+          photos: [],
+          pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+        },
+        debug: {
+          message:
+            'Use /api/admin/events/{eventId}/photos for event-specific photos',
+        },
       });
     }
 
     const buildBaseQuery = () =>
-      serviceClient.from('assets').select(
-        `id, folder_id, filename, original_path, preview_path, status, created_at, file_size, dimensions, metadata`,
-        { count: 'exact' }
-      );
-    
+      serviceClient
+        .from('assets')
+        .select(
+          `id, folder_id, filename, original_path, preview_path, status, created_at, file_size, dimensions, metadata`,
+          { count: 'exact' }
+        );
+
     let query = buildBaseQuery();
     // Filter by code_id when provided (supports 'null' to mean unassigned)
     if (codeId === 'null') {
@@ -446,12 +454,21 @@ async function handleDELETE(request: NextRequest) {
       const { eventId, codeId } = validation.data;
 
       // Build query to get asset IDs by filter via folders
-      const { data: folders } = await supabase.from('folders').select('id').eq('event_id', eventId);
+      const { data: folders } = await supabase
+        .from('folders')
+        .select('id')
+        .eq('event_id', eventId);
       if (!folders?.length) {
-        return NextResponse.json({ message: 'No folders found for event', count: 0 });
+        return NextResponse.json({
+          message: 'No folders found for event',
+          count: 0,
+        });
       }
-      const folderIds = folders.map(f => f.id);
-      let query = supabase.from('assets').select('id').in('folder_id', folderIds);
+      const folderIds = folders.map((f) => f.id);
+      let query = supabase
+        .from('assets')
+        .select('id')
+        .in('folder_id', folderIds);
 
       // Handle codeId filter
       if (codeId === 'null') {

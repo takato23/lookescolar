@@ -559,11 +559,7 @@ export function EnhancedQRScanner({
               Start Scanner
             </Button>
           ) : (
-            <Button
-              onClick={stopScanning}
-              variant="danger"
-              className="flex-1"
-            >
+            <Button onClick={stopScanning} variant="danger" className="flex-1">
               <Square className="mr-2 h-4 w-4" />
               Stop Scanner
             </Button>

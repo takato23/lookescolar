@@ -13,7 +13,12 @@ export interface AppSettings {
 
   // Watermark Configuration
   watermarkText: string;
-  watermarkPosition: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
+  watermarkPosition:
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left'
+    | 'center';
   watermarkOpacity: number;
   watermarkSize: 'small' | 'medium' | 'large';
 
@@ -67,11 +72,37 @@ export const SETTINGS_CONSTRAINTS = {
  * Settings categories for UI organization
  */
 export const SETTINGS_CATEGORIES = {
-  business: ['businessName', 'businessEmail', 'businessPhone', 'businessAddress', 'businessWebsite'],
-  watermark: ['watermarkText', 'watermarkPosition', 'watermarkOpacity', 'watermarkSize'],
-  upload: ['uploadMaxSizeMb', 'uploadMaxConcurrent', 'uploadQuality', 'uploadMaxResolution'],
-  pricing: ['defaultPhotoPriceArs', 'bulkDiscountPercentage', 'bulkDiscountMinimum', 'packPriceArs'],
-  notifications: ['notifyNewOrders', 'notifyPayments', 'notifyWeeklyReport', 'notifyStorageAlerts'],
+  business: [
+    'businessName',
+    'businessEmail',
+    'businessPhone',
+    'businessAddress',
+    'businessWebsite',
+  ],
+  watermark: [
+    'watermarkText',
+    'watermarkPosition',
+    'watermarkOpacity',
+    'watermarkSize',
+  ],
+  upload: [
+    'uploadMaxSizeMb',
+    'uploadMaxConcurrent',
+    'uploadQuality',
+    'uploadMaxResolution',
+  ],
+  pricing: [
+    'defaultPhotoPriceArs',
+    'bulkDiscountPercentage',
+    'bulkDiscountMinimum',
+    'packPriceArs',
+  ],
+  notifications: [
+    'notifyNewOrders',
+    'notifyPayments',
+    'notifyWeeklyReport',
+    'notifyStorageAlerts',
+  ],
   localization: ['timezone', 'dateFormat', 'currency', 'language'],
   system: ['autoCleanupPreviews', 'cleanupPreviewDays'],
 } as const;

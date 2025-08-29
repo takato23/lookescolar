@@ -57,4 +57,3 @@ export const adminNavigationItems: NavigationItem[] = [
     icon: Settings,
   },
 ];
-

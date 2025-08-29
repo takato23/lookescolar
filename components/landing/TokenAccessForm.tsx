@@ -64,7 +64,11 @@ export function FamilyAccessForm() {
     try {
       await validateAccessCode(accessCode);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pudimos encontrar este código. ¿Está correcto?');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'No pudimos encontrar este código. ¿Está correcto?'
+      );
     } finally {
       setLoading(false);
     }
@@ -163,7 +167,8 @@ export function FamilyAccessForm() {
                 ¿No tienes un código?
               </h4>
               <p className="text-muted-foreground text-sm">
-                Contacta con el fotógrafo de tu evento para obtener tu código de acceso.
+                Contacta con el fotógrafo de tu evento para obtener tu código de
+                acceso.
               </p>
             </div>
           </div>

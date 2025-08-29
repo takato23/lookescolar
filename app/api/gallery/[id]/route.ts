@@ -11,7 +11,10 @@ export async function GET(
     const eventId = params.id;
     const url = new URL(request.url);
     const page = Math.max(parseInt(url.searchParams.get('page') || '1', 10), 1);
-    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '24', 10), 1), 100);
+    const limit = Math.min(
+      Math.max(parseInt(url.searchParams.get('limit') || '24', 10), 1),
+      100
+    );
     const offset = (page - 1) * limit;
 
     const supabase = await createServerSupabaseServiceClient();
@@ -40,8 +43,8 @@ export async function GET(
       );
     }
 
-    const folderIds = folders?.map(f => f.id) || [];
-    
+    const folderIds = folders?.map((f) => f.id) || [];
+
     if (folderIds.length === 0) {
       // No folders found, return empty result
       return NextResponse.json({
@@ -112,7 +115,7 @@ export async function GET(
       const key = asset.preview_path || asset.original_path;
       const signed_url = toPublicUrl(key) || '';
       const dimensions = asset.dimensions ? JSON.parse(asset.dimensions) : null;
-      
+
       return {
         id: asset.id,
         storage_path: asset.original_path,
@@ -165,5 +168,3 @@ export async function GET(
     );
   }
 }
-
-

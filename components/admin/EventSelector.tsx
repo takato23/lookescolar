@@ -11,7 +11,10 @@ import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ChevronsUpDown, Star, Search } from 'lucide-react';
 
-interface EventLite { id: string; name: string }
+interface EventLite {
+  id: string;
+  name: string;
+}
 
 export default function EventSelector({
   value,
@@ -55,7 +58,9 @@ export default function EventSelector({
     setLoading(false);
   };
 
-  useEffect(() => { fetchPage(true); }, [debounced]);
+  useEffect(() => {
+    fetchPage(true);
+  }, [debounced]);
 
   useEffect(() => {
     if (!open) return;
@@ -63,18 +68,26 @@ export default function EventSelector({
     if (!el) return;
     const onScroll = () => {
       if (!hasMore || loading) return;
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) fetchPage(false);
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40)
+        fetchPage(false);
     };
     el.addEventListener('scroll', onScroll);
     return () => el.removeEventListener('scroll', onScroll);
   }, [open, hasMore, loading]);
 
-  const displayValue = useMemo(() => items.find((e) => e.id === value)?.name || 'Seleccionar evento', [items, value]);
+  const displayValue = useMemo(
+    () => items.find((e) => e.id === value)?.name || 'Seleccionar evento',
+    [items, value]
+  );
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      try { localStorage.setItem('le:favEventIds', JSON.stringify(next)); } catch {}
+      const next = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
+      try {
+        localStorage.setItem('le:favEventIds', JSON.stringify(next));
+      } catch {}
       return next;
     });
   };
@@ -85,18 +98,22 @@ export default function EventSelector({
     // update recents
     setRecents((prev) => {
       const next = [id, ...prev.filter((x) => x !== id)].slice(0, 10);
-      try { localStorage.setItem('le:recentEventIds', JSON.stringify(next)); } catch {}
+      try {
+        localStorage.setItem('le:recentEventIds', JSON.stringify(next));
+      } catch {}
       return next;
     });
   };
 
   const favoriteItems = items.filter((e) => favorites.includes(e.id));
-  const recentItems = items.filter((e) => recents.includes(e.id) && !favorites.includes(e.id));
+  const recentItems = items.filter(
+    (e) => recents.includes(e.id) && !favorites.includes(e.id)
+  );
 
   // TEMP: Simplified select dropdown without popover
   return (
-    <select 
-      className={cn('w-72 p-2 border rounded-md bg-white', className)}
+    <select
+      className={cn('w-72 rounded-md border bg-white p-2', className)}
       value={value || ''}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -109,5 +126,3 @@ export default function EventSelector({
     </select>
   );
 }
-
-

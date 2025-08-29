@@ -95,20 +95,28 @@ async function handlePATCH(request: NextRequest) {
     if (photosList.length > 0) {
       const photoIds = photosList.map((p: any) => p.id);
       operations.push(
-        supabaseAdmin.from('photos').update({ subject_id: target_folder_id }).in('id', photoIds)
+        supabaseAdmin
+          .from('photos')
+          .update({ subject_id: target_folder_id })
+          .in('id', photoIds)
       );
     }
     if (assetsList.length > 0) {
       const assetIds = assetsList.map((a: any) => a.id);
       operations.push(
-        supabaseAdmin.from('assets').update({ folder_id: target_folder_id }).in('id', assetIds)
+        supabaseAdmin
+          .from('assets')
+          .update({ folder_id: target_folder_id })
+          .in('id', assetIds)
       );
     }
 
     const results = await Promise.all(operations);
     const failed = results.find((r) => (r as any)?.error);
     if (failed && (failed as any).error) {
-      logger.error('Failed to move some assets', { error: (failed as any).error.message });
+      logger.error('Failed to move some assets', {
+        error: (failed as any).error.message,
+      });
       return NextResponse.json(
         { success: false, error: 'Failed to move assets' },
         { status: 500 }
@@ -119,13 +127,20 @@ async function handlePATCH(request: NextRequest) {
     const movedTotal = photosList.length + assetsList.length;
 
     // Try RPC deltas first; if unavailable or any error, fall back to recalc per folder
-    const deltas: Record<string, number> = { ...Object.fromEntries(Object.entries(sourceFolderCounts).map(([k, v]) => [k, -v])) };
+    const deltas: Record<string, number> = {
+      ...Object.fromEntries(
+        Object.entries(sourceFolderCounts).map(([k, v]) => [k, -v])
+      ),
+    };
     deltas[target_folder_id] = (deltas[target_folder_id] || 0) + movedTotal;
 
     const tryRpcUpdates = async () => {
       const results = await Promise.all(
         Object.entries(deltas).map(([folderId, delta]) =>
-          supabaseAdmin.rpc('update_folder_photo_count_delta', { folder_id: folderId, delta })
+          supabaseAdmin.rpc('update_folder_photo_count_delta', {
+            folder_id: folderId,
+            delta,
+          })
         )
       );
       const anyError = results.find((r: any) => r && r.error);
@@ -134,26 +149,33 @@ async function handlePATCH(request: NextRequest) {
 
     const recalcAndSet = async (folderId: string) => {
       try {
-        const [{ count: assetsCount }, { count: photosCount }] = await Promise.all([
-          (await createServerSupabaseServiceClient())
-            .from('assets')
-            .select('id', { count: 'exact', head: true })
-            .eq('folder_id', folderId),
-          (await createServerSupabaseServiceClient())
-            .from('photos')
-            .select('id', { count: 'exact', head: true })
-            .eq('subject_id', folderId),
-        ]);
+        const [{ count: assetsCount }, { count: photosCount }] =
+          await Promise.all([
+            (await createServerSupabaseServiceClient())
+              .from('assets')
+              .select('id', { count: 'exact', head: true })
+              .eq('folder_id', folderId),
+            (await createServerSupabaseServiceClient())
+              .from('photos')
+              .select('id', { count: 'exact', head: true })
+              .eq('subject_id', folderId),
+          ]);
         const newCount = (assetsCount || 0) + (photosCount || 0);
         const { error } = await (await createServerSupabaseServiceClient())
           .from('folders')
           .update({ photo_count: newCount })
           .eq('id', folderId);
         if (error) {
-          logger.warn('Failed to set recalculated folder count', { folderId, error: error.message });
+          logger.warn('Failed to set recalculated folder count', {
+            folderId,
+            error: error.message,
+          });
         }
       } catch (e: any) {
-        logger.warn('Recalc folder count failed', { folderId, error: e?.message || String(e) });
+        logger.warn('Recalc folder count failed', {
+          folderId,
+          error: e?.message || String(e),
+        });
       }
     };
 
@@ -177,12 +199,15 @@ async function handlePATCH(request: NextRequest) {
     });
 
     return NextResponse.json(response);
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn('Invalid bulk move data', { errors: error.errors });
       return NextResponse.json(
-        { success: false, error: 'Invalid request data', details: error.errors },
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.errors,
+        },
         { status: 400 }
       );
     }
@@ -211,10 +236,11 @@ async function handleDELETE(request: NextRequest) {
     const supabaseAdmin = await createServerSupabaseServiceClient();
 
     // Query photos table (legacy/unified)
-    const { data: photosToDelete, error: fetchPhotosError } = await supabaseAdmin
-      .from('photos')
-      .select('id, subject_id, storage_path, preview_path')
-      .in('id', asset_ids);
+    const { data: photosToDelete, error: fetchPhotosError } =
+      await supabaseAdmin
+        .from('photos')
+        .select('id, subject_id, storage_path, preview_path')
+        .in('id', asset_ids);
 
     if (fetchPhotosError) {
       logger.error('Failed to fetch photos for deletion', {
@@ -223,10 +249,11 @@ async function handleDELETE(request: NextRequest) {
     }
 
     // Query assets table (new system)
-    const { data: assetsToDelete, error: fetchAssetsError } = await supabaseAdmin
-      .from('assets')
-      .select('id, folder_id, original_path, preview_path')
-      .in('id', asset_ids);
+    const { data: assetsToDelete, error: fetchAssetsError } =
+      await supabaseAdmin
+        .from('assets')
+        .select('id, folder_id, original_path, preview_path')
+        .in('id', asset_ids);
 
     if (fetchAssetsError) {
       logger.error('Failed to fetch assets for deletion', {
@@ -354,7 +381,10 @@ async function handleDELETE(request: NextRequest) {
     const tryRpcUpdates = async () => {
       const results = await Promise.all(
         Object.entries(folderCounts).map(([folderId, count]) =>
-          supabaseAdmin.rpc('update_folder_photo_count_delta', { folder_id: folderId, delta: -count })
+          supabaseAdmin.rpc('update_folder_photo_count_delta', {
+            folder_id: folderId,
+            delta: -count,
+          })
         )
       );
       const anyError = results.find((r: any) => r && r.error);
@@ -363,32 +393,41 @@ async function handleDELETE(request: NextRequest) {
 
     const recalcAndSet = async (folderId: string) => {
       try {
-        const [{ count: assetsCount }, { count: photosCount }] = await Promise.all([
-          (await createServerSupabaseServiceClient())
-            .from('assets')
-            .select('id', { count: 'exact', head: true })
-            .eq('folder_id', folderId),
-          (await createServerSupabaseServiceClient())
-            .from('photos')
-            .select('id', { count: 'exact', head: true })
-            .eq('subject_id', folderId),
-        ]);
+        const [{ count: assetsCount }, { count: photosCount }] =
+          await Promise.all([
+            (await createServerSupabaseServiceClient())
+              .from('assets')
+              .select('id', { count: 'exact', head: true })
+              .eq('folder_id', folderId),
+            (await createServerSupabaseServiceClient())
+              .from('photos')
+              .select('id', { count: 'exact', head: true })
+              .eq('subject_id', folderId),
+          ]);
         const newCount = (assetsCount || 0) + (photosCount || 0);
         const { error } = await (await createServerSupabaseServiceClient())
           .from('folders')
           .update({ photo_count: newCount })
           .eq('id', folderId);
         if (error) {
-          logger.warn('Failed to set recalculated folder count (delete)', { folderId, error: error.message });
+          logger.warn('Failed to set recalculated folder count (delete)', {
+            folderId,
+            error: error.message,
+          });
         }
       } catch (e: any) {
-        logger.warn('Recalc folder count failed (delete)', { folderId, error: e?.message || String(e) });
+        logger.warn('Recalc folder count failed (delete)', {
+          folderId,
+          error: e?.message || String(e),
+        });
       }
     };
 
     const rpcRes = await tryRpcUpdates();
     if (!rpcRes.ok) {
-      await Promise.all(Object.keys(folderCounts).map((fid) => recalcAndSet(fid)));
+      await Promise.all(
+        Object.keys(folderCounts).map((fid) => recalcAndSet(fid))
+      );
     }
 
     const deletedCount = photosFound.length + assetsFound.length;
@@ -408,12 +447,15 @@ async function handleDELETE(request: NextRequest) {
     });
 
     return NextResponse.json(response);
-
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn('Invalid bulk delete data', { errors: error.errors });
       return NextResponse.json(
-        { success: false, error: 'Invalid request data', details: error.errors },
+        {
+          success: false,
+          error: 'Invalid request data',
+          details: error.errors,
+        },
         { status: 400 }
       );
     }

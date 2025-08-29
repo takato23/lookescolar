@@ -37,13 +37,16 @@ export const POST = RateLimitMiddleware.withRateLimit(
       logger.info('Bulk move photos request', {
         requestId,
         photoCount: photoIds?.length || 0,
-        targetFolderId: target_folder_id || 'root'
+        targetFolderId: target_folder_id || 'root',
       });
 
       // Validate input
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'photoIds array is required and must not be empty' },
+          {
+            success: false,
+            error: 'photoIds array is required and must not be empty',
+          },
           { status: 400 }
         );
       }
@@ -68,7 +71,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           logger.error('Target folder not found', {
             requestId,
             targetFolderId: target_folder_id,
-            error: folderError?.message
+            error: folderError?.message,
           });
 
           return NextResponse.json(
@@ -93,7 +96,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
 
         if (folderExists.event_id !== samplePhoto.event_id) {
           return NextResponse.json(
-            { success: false, error: 'Target folder does not belong to the same event' },
+            {
+              success: false,
+              error: 'Target folder does not belong to the same event',
+            },
             { status: 400 }
           );
         }
@@ -104,7 +110,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
         .from('photos')
         .update({
           folder_id: target_folder_id || null,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .in('id', photoIds)
         .select('id, original_filename, folder_id');
@@ -114,7 +120,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           requestId,
           photoIds: photoIds.slice(0, 5), // Log first 5 IDs for debugging
           targetFolderId: target_folder_id,
-          error: error.message
+          error: error.message,
         });
 
         return NextResponse.json(
@@ -129,7 +135,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
         requestId,
         requestedCount: photoIds.length,
         movedCount,
-        targetFolderId: target_folder_id || 'root'
+        targetFolderId: target_folder_id || 'root',
       });
 
       return NextResponse.json({
@@ -137,13 +143,12 @@ export const POST = RateLimitMiddleware.withRateLimit(
         message: `${movedCount} photos moved successfully`,
         movedCount,
         movedPhotos: data,
-        targetFolderId: target_folder_id
+        targetFolderId: target_folder_id,
       });
-
     } catch (error) {
       logger.error('Unexpected error in bulk move endpoint', {
         requestId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       return NextResponse.json(

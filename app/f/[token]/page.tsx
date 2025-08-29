@@ -11,7 +11,7 @@ interface PageProps {
 
 export default async function LegacyFamilyPage({ params }: PageProps) {
   const { token } = await params;
-  
+
   // Redirigir automáticamente a la nueva ruta unificada
   redirect(`/store-unified/${token}`);
 }

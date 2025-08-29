@@ -230,6 +230,8 @@ class AppleGradeCacheManager {
       });
     }
   }
+    }
+  }
 
   /**
    * Get current cache status and metrics

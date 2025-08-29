@@ -77,9 +77,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       serviceClient.from('subjects').select('id'),
 
       // Estadísticas de órdenes - simplificado (usar total en lugar de total)
-      serviceClient
-        .from('orders')
-        .select('id, status, created_at'),
+      serviceClient.from('orders').select('id, status, created_at'),
 
       // Estadísticas de pagos (mes en curso) - tabla no existe, usar placeholder
       Promise.resolve({ data: [], error: null }),
@@ -102,39 +100,68 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     if (Object.keys(errors).length > 0) {
       console.error('Error en queries de estadísticas:', errors);
-      
+
       // Return partial stats if some tables are available
       const partialStats = {
-        events: eventsStats.error ? { total: 0, active: 0, completed: 0 } : {
-          total: eventsStats.data?.length || 0,
-          active: eventsStats.data?.filter((e: any) => e.status === 'active').length || 0,
-          completed: eventsStats.data?.filter((e: any) => e.status !== 'active').length || 0,
-        },
-        photos: photosStats.error ? { total: 0, tagged: 0, untagged: 0, uploaded_today: 0 } : {
-          total: photosStats.data?.length || 0,
-          tagged: 0, // Will calculate if no error
-          untagged: 0, // Will calculate if no error  
-          uploaded_today: 0, // Will calculate if no error
-        },
-        subjects: subjectsStats.error ? { total: 0, with_tokens: 0 } : {
-          total: subjectsStats.data?.length || 0,
-          with_tokens: 0, // Will calculate if no error
-        },
-        orders: ordersStats.error ? { 
-          total: 0, pending: 0, approved: 0, delivered: 0, failed: 0, 
-          total_revenue_cents: 0, monthly_revenue_cents: 0 
-        } : {
-          total: ordersStats.data?.length || 0,
-          pending: ordersStats.data?.filter((o: any) => o.status === 'pending').length || 0,
-          approved: ordersStats.data?.filter((o: any) => o.status === 'approved').length || 0,
-          delivered: ordersStats.data?.filter((o: any) => o.status === 'delivered').length || 0,
-          failed: ordersStats.data?.filter((o: any) => o.status === 'failed').length || 0,
-          total_revenue_cents: 0,
-          monthly_revenue_cents: 0,
-        },
+        events: eventsStats.error
+          ? { total: 0, active: 0, completed: 0 }
+          : {
+              total: eventsStats.data?.length || 0,
+              active:
+                eventsStats.data?.filter((e: any) => e.status === 'active')
+                  .length || 0,
+              completed:
+                eventsStats.data?.filter((e: any) => e.status !== 'active')
+                  .length || 0,
+            },
+        photos: photosStats.error
+          ? { total: 0, tagged: 0, untagged: 0, uploaded_today: 0 }
+          : {
+              total: photosStats.data?.length || 0,
+              tagged: 0, // Will calculate if no error
+              untagged: 0, // Will calculate if no error
+              uploaded_today: 0, // Will calculate if no error
+            },
+        subjects: subjectsStats.error
+          ? { total: 0, with_tokens: 0 }
+          : {
+              total: subjectsStats.data?.length || 0,
+              with_tokens: 0, // Will calculate if no error
+            },
+        orders: ordersStats.error
+          ? {
+              total: 0,
+              pending: 0,
+              approved: 0,
+              delivered: 0,
+              failed: 0,
+              total_revenue_cents: 0,
+              monthly_revenue_cents: 0,
+            }
+          : {
+              total: ordersStats.data?.length || 0,
+              pending:
+                ordersStats.data?.filter((o: any) => o.status === 'pending')
+                  .length || 0,
+              approved:
+                ordersStats.data?.filter((o: any) => o.status === 'approved')
+                  .length || 0,
+              delivered:
+                ordersStats.data?.filter((o: any) => o.status === 'delivered')
+                  .length || 0,
+              failed:
+                ordersStats.data?.filter((o: any) => o.status === 'failed')
+                  .length || 0,
+              total_revenue_cents: 0,
+              monthly_revenue_cents: 0,
+            },
         storage: { photos_count: 0, estimated_size_gb: 0 },
         activity: { recent_uploads: 0, recent_orders: 0, recent_payments: 0 },
-        system: { health_status: 'warning' as const, expired_tokens: 0, cache_timestamp: now.toISOString() },
+        system: {
+          health_status: 'warning' as const,
+          expired_tokens: 0,
+          cache_timestamp: now.toISOString(),
+        },
       };
 
       return NextResponse.json({
@@ -168,7 +195,8 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     // Get tagged assets count from metadata
     const taggedAssets = assets.filter(
-      (a) => a.metadata && typeof a.metadata === 'object' && a.metadata.subject_id
+      (a) =>
+        a.metadata && typeof a.metadata === 'object' && a.metadata.subject_id
     );
 
     const photoStats = {
@@ -250,7 +278,8 @@ export const GET = withAuth(async (request: NextRequest) => {
     const recentPaymentsList = (paymentsStats.data || [])
       .filter(
         (p: any) =>
-          p.processed_at && new Date(p.processed_at) >= new Date(yesterday) &&
+          p.processed_at &&
+          new Date(p.processed_at) >= new Date(yesterday) &&
           p.mp_status === 'approved'
       )
       .slice(0, 10)
@@ -272,9 +301,14 @@ export const GET = withAuth(async (request: NextRequest) => {
         ]
       : [];
 
-    const recentActivity = [...photosActivityItem, ...recentOrdersList, ...recentPaymentsList]
+    const recentActivity = [
+      ...photosActivityItem,
+      ...recentOrdersList,
+      ...recentPaymentsList,
+    ]
       .sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )
       .slice(0, 15);
 

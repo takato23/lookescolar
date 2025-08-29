@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  ShoppingCart, 
-  Download, 
-  Eye, 
-  Calendar, 
+import {
+  ShoppingCart,
+  Download,
+  Eye,
+  Calendar,
   Image as ImageIcon,
   Loader2,
   Heart,
-  Share2 
+  Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -51,7 +51,12 @@ interface StoreViewProps {
   initialAssets: Asset[];
 }
 
-export default function StoreView({ token, store, event, initialAssets }: StoreViewProps) {
+export default function StoreView({
+  token,
+  store,
+  event,
+  initialAssets,
+}: StoreViewProps) {
   const [assets, setAssets] = useState<Asset[]>(initialAssets);
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -64,13 +69,15 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/store/${token}?offset=${offset}&limit=20`);
+      const response = await fetch(
+        `/api/store/${token}?offset=${offset}&limit=20`
+      );
       if (response.ok) {
         const data = await response.json();
         const newAssets = data.assets || [];
-        
-        setAssets(prev => [...prev, ...newAssets]);
-        setOffset(prev => prev + newAssets.length);
+
+        setAssets((prev) => [...prev, ...newAssets]);
+        setOffset((prev) => prev + newAssets.length);
         setHasMore(data.pagination?.hasMore || false);
       }
     } catch (error) {
@@ -83,7 +90,7 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
 
   // Manejar selección de asset
   const toggleAssetSelection = (assetId: string) => {
-    setSelectedAssets(prev => {
+    setSelectedAssets((prev) => {
       const newSelection = new Set(prev);
       if (newSelection.has(assetId)) {
         newSelection.delete(assetId);
@@ -99,7 +106,10 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
     if (store.settings.watermark_enabled && asset.watermark_url) {
       return asset.watermark_url;
     }
-    return asset.preview_url || `/admin/previews/${asset.filename.replace(/\.[^/.]+$/, '')}_preview.webp`;
+    return (
+      asset.preview_url ||
+      `/admin/previews/${asset.filename.replace(/\.[^/.]+$/, '')}_preview.webp`
+    );
   };
 
   // Compartir tienda
@@ -136,29 +146,31 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="border-b bg-white shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex-1">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
                 {store.settings.store_title || store.name}
               </h1>
-              <p className="text-lg text-gray-600 mt-1">{event.name}</p>
+              <p className="mt-1 text-lg text-gray-600">{event.name}</p>
               {event.date && (
-                <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
                   <Calendar className="h-4 w-4" />
                   {new Date(event.date).toLocaleDateString('es-ES', {
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
                   })}
                 </div>
               )}
               {store.settings.store_description && (
-                <p className="text-gray-600 mt-2">{store.settings.store_description}</p>
+                <p className="mt-2 text-gray-600">
+                  {store.settings.store_description}
+                </p>
               )}
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Badge variant="secondary" className="flex items-center gap-1">
                 <Eye className="h-3 w-3" />
@@ -169,7 +181,7 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
                 {store.asset_count} fotos
               </Badge>
               <Button variant="outline" size="sm" onClick={shareStore}>
-                <Share2 className="h-4 w-4 mr-2" />
+                <Share2 className="mr-2 h-4 w-4" />
                 Compartir
               </Button>
             </div>
@@ -180,10 +192,11 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
       {/* Barra de selección */}
       {selectedAssets.size > 0 && (
         <div className="bg-blue-600 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <span className="font-medium">
-                {selectedAssets.size} foto{selectedAssets.size > 1 ? 's' : ''} seleccionada{selectedAssets.size > 1 ? 's' : ''}
+                {selectedAssets.size} foto{selectedAssets.size > 1 ? 's' : ''}{' '}
+                seleccionada{selectedAssets.size > 1 ? 's' : ''}
               </span>
               <div className="flex items-center gap-3">
                 <Button
@@ -200,7 +213,7 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
                   onClick={startPurchase}
                   className="bg-white text-blue-600 hover:bg-gray-100"
                 >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  <ShoppingCart className="mr-2 h-4 w-4" />
                   Comprar Seleccionadas
                 </Button>
               </div>
@@ -210,11 +223,11 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
       )}
 
       {/* Grid de fotos */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {assets.length === 0 ? (
-          <div className="text-center py-12">
-            <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="py-12 text-center">
+            <ImageIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+            <h3 className="mb-2 text-lg font-medium text-gray-900">
               No hay fotos disponibles
             </h3>
             <p className="text-gray-500">
@@ -224,7 +237,7 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
         ) : (
           <>
             {/* Grid responsive */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {assets.map((asset) => (
                 <AssetCard
                   key={asset.id}
@@ -239,7 +252,7 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
 
             {/* Botón cargar más */}
             {hasMore && (
-              <div className="text-center mt-8">
+              <div className="mt-8 text-center">
                 <Button
                   variant="outline"
                   onClick={loadMoreAssets}
@@ -248,7 +261,7 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Cargando...
                     </>
                   ) : (
@@ -262,8 +275,8 @@ export default function StoreView({ token, store, event, initialAssets }: StoreV
       </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <footer className="mt-12 border-t bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="text-center text-sm text-gray-500">
             {store.settings.contact_info && (
               <p className="mb-2">{store.settings.contact_info}</p>
@@ -285,16 +298,24 @@ interface AssetCardProps {
   allowDownload?: boolean;
 }
 
-function AssetCard({ asset, imageUrl, isSelected, onSelect, allowDownload }: AssetCardProps) {
+function AssetCard({
+  asset,
+  imageUrl,
+  isSelected,
+  onSelect,
+  allowDownload,
+}: AssetCardProps) {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
   return (
-    <Card className={`group cursor-pointer transition-all hover:shadow-lg ${
-      isSelected ? 'ring-2 ring-blue-500 shadow-lg' : ''
-    }`}>
-      <CardContent className="p-0 relative">
-        <div className="aspect-square relative overflow-hidden rounded-lg">
+    <Card
+      className={`group cursor-pointer transition-all hover:shadow-lg ${
+        isSelected ? 'shadow-lg ring-2 ring-blue-500' : ''
+      }`}
+    >
+      <CardContent className="relative p-0">
+        <div className="relative aspect-square overflow-hidden rounded-lg">
           {/* Loading state */}
           {imageLoading && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -314,7 +335,7 @@ function AssetCard({ asset, imageUrl, isSelected, onSelect, allowDownload }: Ass
             <img
               src={imageUrl}
               alt={asset.filename}
-              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform group-hover:scale-105"
               onLoad={() => setImageLoading(false)}
               onError={() => {
                 setImageError(true);
@@ -324,19 +345,21 @@ function AssetCard({ asset, imageUrl, isSelected, onSelect, allowDownload }: Ass
           )}
 
           {/* Overlay */}
-          <div 
-            className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center"
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all duration-200 group-hover:bg-opacity-20"
             onClick={onSelect}
           >
             {/* Selection indicator */}
-            <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 transition-all ${
-              isSelected 
-                ? 'bg-blue-500 border-blue-500' 
-                : 'border-white bg-black bg-opacity-20 group-hover:bg-opacity-40'
-            }`}>
+            <div
+              className={`absolute right-2 top-2 h-6 w-6 rounded-full border-2 transition-all ${
+                isSelected
+                  ? 'border-blue-500 bg-blue-500'
+                  : 'border-white bg-black bg-opacity-20 group-hover:bg-opacity-40'
+              }`}
+            >
               {isSelected && (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-white rounded-full" />
+                <div className="flex h-full w-full items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-white" />
                 </div>
               )}
             </div>
@@ -346,7 +369,7 @@ function AssetCard({ asset, imageUrl, isSelected, onSelect, allowDownload }: Ass
               <Button
                 variant="secondary"
                 size="sm"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-0 transition-opacity group-hover:opacity-100"
                 onClick={(e) => {
                   e.stopPropagation();
                   // TODO: Implementar descarga

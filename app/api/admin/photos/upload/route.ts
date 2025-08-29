@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createServerSupabaseServiceClient,
-} from '@/lib/supabase/server';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { processImageBatch, validateImage } from '@/lib/services/watermark';
 import { uploadToStorage } from '@/lib/services/storage';
@@ -9,7 +7,8 @@ import { uploadToStorage } from '@/lib/services/storage';
 let qrDetectionService: any;
 async function getQrService() {
   if (!qrDetectionService) {
-    qrDetectionService = (await import('@/lib/services/qr-detection.service')).qrDetectionService;
+    qrDetectionService = (await import('@/lib/services/qr-detection.service'))
+      .qrDetectionService;
   }
   return qrDetectionService;
 }
@@ -146,7 +145,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
           },
           'warn'
         );
-        return NextResponse.json({ success: false, error: 'Event not found' }, { status: 404 });
+        return NextResponse.json(
+          { success: false, error: 'Event not found' },
+          { status: 404 }
+        );
       }
 
       // Verificar que el usuario tiene acceso al evento
@@ -526,8 +528,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
 
 // Provide a small JSON response for GET to avoid test JSON parse errors on 405/HTML
 export async function GET() {
-  return NextResponse.json({
-    success: false,
-    error: 'Method not allowed',
-  }, { status: 405 });
+  return NextResponse.json(
+    {
+      success: false,
+      error: 'Method not allowed',
+    },
+    { status: 405 }
+  );
 }

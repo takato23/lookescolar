@@ -50,9 +50,14 @@ const DEFAULT_WATERMARK_OPTIONS: WatermarkOptions = {
 
 export type WatermarkConfig = {
   text: string;
-  position: 'bottom-right'|'bottom-left'|'top-right'|'top-left'|'center';
+  position:
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-right'
+    | 'top-left'
+    | 'center';
   opacity: number;
-  size: 'small'|'medium'|'large';
+  size: 'small' | 'medium' | 'large';
 };
 
 /**
@@ -68,7 +73,10 @@ export async function getWatermarkConfig(): Promise<WatermarkConfig> {
       size: settings.watermarkSize,
     };
   } catch (error) {
-    console.error('Failed to get watermark settings from DB, using defaults:', error);
+    console.error(
+      'Failed to get watermark settings from DB, using defaults:',
+      error
+    );
     return {
       text: '© LookEscolar',
       position: 'bottom-right',
@@ -83,10 +91,14 @@ export async function getWatermarkConfig(): Promise<WatermarkConfig> {
  */
 function sizeToFontSize(size: 'small' | 'medium' | 'large'): number {
   switch (size) {
-    case 'small': return 32;
-    case 'medium': return 48;
-    case 'large': return 64;
-    default: return 48;
+    case 'small':
+      return 32;
+    case 'medium':
+      return 48;
+    case 'large':
+      return 64;
+    default:
+      return 48;
   }
 }
 
@@ -108,7 +120,7 @@ export async function processImageWithWatermark(
 ): Promise<ProcessedImage> {
   // Get watermark config from settings if not provided in options
   const watermarkConfig = options.text ? null : await getWatermarkConfig();
-  
+
   const config = {
     ...DEFAULT_WATERMARK_OPTIONS,
     ...(watermarkConfig && {
@@ -134,7 +146,7 @@ export async function processImageWithWatermark(
   // Get upload settings for max resolution
   const uploadSettings = await getAppSettings();
   const maxDimension = uploadSettings.uploadMaxResolution;
-  
+
   // Calcular nuevas dimensiones
   let newWidth = metadata.width;
   let newHeight = metadata.height;

@@ -33,15 +33,20 @@ interface RotateResponse {
 }
 
 // API functions
-const fetchPublishList = async (): Promise<{ codes: CodeRow[]; event: EventInfo | null }> => {
+const fetchPublishList = async (): Promise<{
+  codes: CodeRow[];
+  event: EventInfo | null;
+}> => {
   const response = await fetch('/api/admin/publish/list');
   if (!response.ok) {
     throw new Error('Failed to fetch publish list');
   }
   const data = await response.json();
-  
+
   // Normalize the response
-  const codes = (Array.isArray(data) ? data : (data?.rows || data?.data || [])).map((c: any) => ({
+  const codes = (
+    Array.isArray(data) ? data : data?.rows || data?.data || []
+  ).map((c: any) => ({
     id: (c.id ?? c.code_id) as string,
     event_id: (c.event_id as string) ?? '',
     course_id: (c.course_id as string) ?? null,
@@ -64,7 +69,7 @@ const fetchPublishList = async (): Promise<{ codes: CodeRow[]; event: EventInfo 
         if (eventData.event) {
           event = {
             id: eventId,
-            name: eventData.event.name || eventData.event.school || 'Evento'
+            name: eventData.event.name || eventData.event.school || 'Evento',
           };
         }
       }
@@ -82,12 +87,12 @@ const publishCode = async (codeId: string): Promise<PublishResponse> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ codeId }),
   });
-  
+
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || 'Error publishing code');
   }
-  
+
   return data;
 };
 
@@ -97,12 +102,12 @@ const unpublishCode = async (codeId: string): Promise<PublishResponse> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ codeId }),
   });
-  
+
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || 'Error unpublishing code');
   }
-  
+
   return data;
 };
 
@@ -112,12 +117,12 @@ const rotateToken = async (codeId: string): Promise<RotateResponse> => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ codeId }),
   });
-  
+
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || 'Error rotating token');
   }
-  
+
   return data;
 };
 
@@ -133,13 +138,7 @@ export function usePublishData() {
   const queryClient = useQueryClient();
 
   // Main data query with optimized caching
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    isRefetching,
-  } = useQuery({
+  const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: publishQueryKeys.list(),
     queryFn: fetchPublishList,
     staleTime: 30 * 1000, // 30 seconds
@@ -151,18 +150,21 @@ export function usePublishData() {
   });
 
   // Optimistic update helper
-  const updateCodeOptimistically = useCallback((codeId: string, updates: Partial<CodeRow>) => {
-    queryClient.setQueryData(publishQueryKeys.list(), (old: any) => {
-      if (!old) return old;
-      
-      return {
-        ...old,
-        codes: old.codes.map((code: CodeRow) =>
-          code.id === codeId ? { ...code, ...updates } : code
-        ),
-      };
-    });
-  }, [queryClient]);
+  const updateCodeOptimistically = useCallback(
+    (codeId: string, updates: Partial<CodeRow>) => {
+      queryClient.setQueryData(publishQueryKeys.list(), (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          codes: old.codes.map((code: CodeRow) =>
+            code.id === codeId ? { ...code, ...updates } : code
+          ),
+        };
+      });
+    },
+    [queryClient]
+  );
 
   // Publish mutation with optimistic updates
   const publishMutation = useMutation({
@@ -236,15 +238,21 @@ export function usePublishData() {
   });
 
   // Bulk operations
-  const bulkPublish = useCallback(async (codeIds: string[]) => {
-    const promises = codeIds.map(id => publishMutation.mutateAsync(id));
-    await Promise.allSettled(promises);
-  }, [publishMutation]);
+  const bulkPublish = useCallback(
+    async (codeIds: string[]) => {
+      const promises = codeIds.map((id) => publishMutation.mutateAsync(id));
+      await Promise.allSettled(promises);
+    },
+    [publishMutation]
+  );
 
-  const bulkUnpublish = useCallback(async (codeIds: string[]) => {
-    const promises = codeIds.map(id => unpublishMutation.mutateAsync(id));
-    await Promise.allSettled(promises);
-  }, [unpublishMutation]);
+  const bulkUnpublish = useCallback(
+    async (codeIds: string[]) => {
+      const promises = codeIds.map((id) => unpublishMutation.mutateAsync(id));
+      await Promise.allSettled(promises);
+    },
+    [unpublishMutation]
+  );
 
   // Manual cache invalidation
   const invalidateCache = useCallback(() => {
@@ -252,56 +260,59 @@ export function usePublishData() {
   }, [queryClient]);
 
   // Prefetch individual code data
-  const prefetchCode = useCallback((codeId: string) => {
-    queryClient.prefetchQuery({
-      queryKey: publishQueryKeys.code(codeId),
-      queryFn: () => data?.codes.find(c => c.id === codeId),
-      staleTime: 30 * 1000,
-    });
-  }, [queryClient, data]);
+  const prefetchCode = useCallback(
+    (codeId: string) => {
+      queryClient.prefetchQuery({
+        queryKey: publishQueryKeys.code(codeId),
+        queryFn: () => data?.codes.find((c) => c.id === codeId),
+        staleTime: 30 * 1000,
+      });
+    },
+    [queryClient, data]
+  );
 
   return {
     // Data
     codes: data?.codes || [],
     event: data?.event || null,
-    
+
     // Loading states
     isLoading,
     isRefetching,
     error,
-    
+
     // Actions
     publish: publishMutation.mutate,
     unpublish: unpublishMutation.mutate,
     rotateToken: rotateMutation.mutate,
     refetch,
-    
+
     // Bulk actions
     bulkPublish,
     bulkUnpublish,
-    
+
     // Action states
     isPublishing: publishMutation.isPending,
     isUnpublishing: unpublishMutation.isPending,
     isRotating: rotateMutation.isPending,
-    
+
     // Individual action states
-    getIsPublishing: (codeId: string) => 
+    getIsPublishing: (codeId: string) =>
       publishMutation.isPending && publishMutation.variables === codeId,
-    getIsUnpublishing: (codeId: string) => 
+    getIsUnpublishing: (codeId: string) =>
       unpublishMutation.isPending && unpublishMutation.variables === codeId,
-    getIsRotating: (codeId: string) => 
+    getIsRotating: (codeId: string) =>
       rotateMutation.isPending && rotateMutation.variables === codeId,
-    
+
     // Cache management
     invalidateCache,
     prefetchCode,
-    
+
     // Stats (computed)
     stats: {
       total: data?.codes.length || 0,
-      published: data?.codes.filter(c => c.is_published).length || 0,
-      unpublished: data?.codes.filter(c => !c.is_published).length || 0,
+      published: data?.codes.filter((c) => c.is_published).length || 0,
+      unpublished: data?.codes.filter((c) => !c.is_published).length || 0,
       totalPhotos: data?.codes.reduce((sum, c) => sum + c.photos_count, 0) || 0,
     },
   };
@@ -333,15 +344,18 @@ export function usePublishSync() {
 export function usePublishErrorHandler() {
   const queryClient = useQueryClient();
 
-  const handleError = useCallback((error: Error, context?: any) => {
-    console.error('Publish operation error:', error);
-    
-    // You can integrate with your notification system here
-    // showErrorNotification('Error en publicación', error.message);
-    
-    // Clear error state after showing notification
-    queryClient.resetQueries({ queryKey: publishQueryKeys.all });
-  }, [queryClient]);
+  const handleError = useCallback(
+    (error: Error, context?: any) => {
+      console.error('Publish operation error:', error);
+
+      // You can integrate with your notification system here
+      // showErrorNotification('Error en publicación', error.message);
+
+      // Clear error state after showing notification
+      queryClient.resetQueries({ queryKey: publishQueryKeys.all });
+    },
+    [queryClient]
+  );
 
   return { handleError };
 }

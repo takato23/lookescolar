@@ -64,7 +64,9 @@ export class FolderPublishService {
   private monitor: ServerPerformanceMonitor;
 
   constructor(supabase?: SupabaseClient<Database>) {
-    this.supabasePromise = supabase ? Promise.resolve(supabase) : createServerSupabaseServiceClient();
+    this.supabasePromise = supabase
+      ? Promise.resolve(supabase)
+      : createServerSupabaseServiceClient();
     this.baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     this.monitor = ServerPerformanceMonitor.getInstance();
   }
@@ -78,15 +80,14 @@ export class FolderPublishService {
    * Uses PostgreSQL aggregation to avoid N+1 queries
    */
   async getPublishedFolders(params: FolderQuery): Promise<FoldersResponse> {
-    return this.monitor.timeQuery(
-      'getPublishedFolders',
-      async () => {
-        const supabase = await this.getSupabase();
-        
-        // Build optimized query with JOIN and COUNT aggregation
-        let baseQuery = supabase
-          .from('folders')
-          .select(`
+    return this.monitor
+      .timeQuery(
+        'getPublishedFolders',
+        async () => {
+          const supabase = await this.getSupabase();
+
+          // Build optimized query with JOIN and COUNT aggregation
+          let baseQuery = supabase.from('folders').select(`
             id,
             name,
             parent_id,
@@ -104,75 +105,81 @@ export class FolderPublishService {
             )
           `);
 
-        // Apply filters
-        baseQuery = this.applyFilters(baseQuery, params);
+          // Apply filters
+          baseQuery = this.applyFilters(baseQuery, params);
 
-        // Get total count with same filters (separate query for performance)
-        let countQuery = supabase
-          .from('folders')
-          .select('id', { count: 'exact', head: true });
-        
-        countQuery = this.applyFilters(countQuery, params);
+          // Get total count with same filters (separate query for performance)
+          let countQuery = supabase
+            .from('folders')
+            .select('id', { count: 'exact', head: true });
 
-        // Execute queries in parallel
-        const [countResult, dataResult] = await Promise.all([
-          countQuery,
-          baseQuery
-            .order('depth', { ascending: true })
-            .order('sort_order', { ascending: true })
-            .range((params.page - 1) * params.limit, params.page * params.limit - 1)
-        ]);
+          countQuery = this.applyFilters(countQuery, params);
 
-        const { count: totalCount, error: countError } = countResult;
-        const { data: foldersData, error: foldersError } = dataResult;
-        
-        if (countError) {
-          console.error('[ERROR] Count query failed:', countError);
-          throw countError;
-        }
+          // Execute queries in parallel
+          const [countResult, dataResult] = await Promise.all([
+            countQuery,
+            baseQuery
+              .order('depth', { ascending: true })
+              .order('sort_order', { ascending: true })
+              .range(
+                (params.page - 1) * params.limit,
+                params.page * params.limit - 1
+              ),
+          ]);
 
-        if (foldersError) {
-          console.error('[ERROR] Folders query failed:', foldersError);
-          throw foldersError;
-        }
+          const { count: totalCount, error: countError } = countResult;
+          const { data: foldersData, error: foldersError } = dataResult;
 
-        // Transform data with URLs
-        const folders = (foldersData || []).map(folder => this.transformFolder(folder));
+          if (countError) {
+            console.error('[ERROR] Count query failed:', countError);
+            throw countError;
+          }
 
-        // Calculate pagination metadata
-        const totalPages = Math.ceil((totalCount || 0) / params.limit);
-        const publishedFolders = folders.filter(f => f.is_published).length;
+          if (foldersError) {
+            console.error('[ERROR] Folders query failed:', foldersError);
+            throw foldersError;
+          }
 
-        return {
-          success: true,
-          folders,
-          pagination: {
-            page: params.page,
-            limit: params.limit,
-            total: totalCount || 0,
-            totalPages,
-            hasNextPage: params.page < totalPages,
-            hasPrevPage: params.page > 1,
+          // Transform data with URLs
+          const folders = (foldersData || []).map((folder) =>
+            this.transformFolder(folder)
+          );
+
+          // Calculate pagination metadata
+          const totalPages = Math.ceil((totalCount || 0) / params.limit);
+          const publishedFolders = folders.filter((f) => f.is_published).length;
+
+          return {
+            success: true,
+            folders,
+            pagination: {
+              page: params.page,
+              limit: params.limit,
+              total: totalCount || 0,
+              totalPages,
+              hasNextPage: params.page < totalPages,
+              hasPrevPage: params.page > 1,
+            },
+            summary: {
+              total_folders: totalCount || 0,
+              published_folders: publishedFolders,
+              unpublished_folders: (totalCount || 0) - publishedFolders,
+              current_page_folders: folders.length,
+            },
+          };
+        },
+        {
+          page: params.page,
+          limit: params.limit,
+          filters: {
+            event_id: params.event_id,
+            search: params.search,
+            date_from: params.date_from,
+            date_to: params.date_to,
           },
-          summary: {
-            total_folders: totalCount || 0,
-            published_folders: publishedFolders,
-            unpublished_folders: (totalCount || 0) - publishedFolders,
-            current_page_folders: folders.length,
-          },
-        };
-      },
-      { 
-        page: params.page,
-        limit: params.limit,
-        filters: {
-          event_id: params.event_id,
-          search: params.search,
-          date_from: params.date_from,
-          date_to: params.date_to
         }
-      }
-    ).then(({ result }) => result);
+      )
+      .then(({ result }) => result);
   }
 
   /**
@@ -210,11 +217,9 @@ export class FolderPublishService {
    * Transform database record to API response format
    */
   private transformFolder(folder: any): PublishedFolder {
-    const familyUrl = folder.share_token 
-      ? `/f/${folder.share_token}`
-      : null;
-    
-    const qrUrl = folder.share_token 
+    const familyUrl = folder.share_token ? `/f/${folder.share_token}` : null;
+
+    const qrUrl = folder.share_token
       ? `/api/qr?token=${folder.share_token}`
       : null;
 
@@ -241,15 +246,17 @@ export class FolderPublishService {
    */
   async getFolderById(id: string): Promise<PublishedFolder | null> {
     console.time(`[PERF] getFolderById:${id}`);
-    
+
     try {
       const supabase = await this.getSupabase();
       const { data, error } = await supabase
         .from('folders')
-        .select(`
+        .select(
+          `
           *,
           events(name, date)
-        `)
+        `
+        )
         .eq('id', id)
         .single();
 
@@ -261,10 +268,9 @@ export class FolderPublishService {
       }
 
       const result = this.transformFolder(data);
-      
+
       console.timeEnd(`[PERF] getFolderById:${id}`);
       return result;
-
     } catch (error) {
       console.timeEnd(`[PERF] getFolderById:${id}`);
       console.error(`[ERROR] getFolderById failed for ${id}:`, error);
@@ -277,28 +283,31 @@ export class FolderPublishService {
    */
   async getFoldersByIds(ids: string[]): Promise<PublishedFolder[]> {
     if (ids.length === 0) return [];
-    
+
     console.time(`[PERF] getFoldersByIds:${ids.length}`);
-    
+
     try {
       const supabase = await this.getSupabase();
       const { data, error } = await supabase
         .from('folders')
-        .select(`
+        .select(
+          `
           *,
           events(name, date)
-        `)
+        `
+        )
         .in('id', ids);
 
       if (error) {
         throw error;
       }
 
-      const folders = (data || []).map(folder => this.transformFolder(folder));
-      
+      const folders = (data || []).map((folder) =>
+        this.transformFolder(folder)
+      );
+
       console.timeEnd(`[PERF] getFoldersByIds:${ids.length}`);
       return folders;
-
     } catch (error) {
       console.timeEnd(`[PERF] getFoldersByIds:${ids.length}`);
       console.error(`[ERROR] getFoldersByIds failed:`, error);
@@ -316,43 +325,54 @@ export class FolderPublishService {
     recent_publications: number;
   }> {
     console.time('[PERF] getPerformanceStats');
-    
+
     try {
       const supabase = await this.getSupabase();
-      
+
       // Single query with aggregations
       const { data, error } = await supabase.rpc('get_folder_stats', {});
-      
+
       if (error) {
         // Fallback to manual queries if RPC doesn't exist
-        const [totalResult, publishedResult, avgResult, recentResult] = await Promise.all([
-          supabase.from('folders').select('id', { count: 'exact', head: true }),
-          supabase.from('folders').select('id', { count: 'exact', head: true }).eq('is_published', true),
-          supabase.from('folders').select('photo_count'),
-          supabase
-            .from('folders')
-            .select('id', { count: 'exact', head: true })
-            .eq('is_published', true)
-            .gte('published_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-        ]);
+        const [totalResult, publishedResult, avgResult, recentResult] =
+          await Promise.all([
+            supabase
+              .from('folders')
+              .select('id', { count: 'exact', head: true }),
+            supabase
+              .from('folders')
+              .select('id', { count: 'exact', head: true })
+              .eq('is_published', true),
+            supabase.from('folders').select('photo_count'),
+            supabase
+              .from('folders')
+              .select('id', { count: 'exact', head: true })
+              .eq('is_published', true)
+              .gte(
+                'published_at',
+                new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+              ),
+          ]);
 
-        const totalPhotos = avgResult.data?.reduce((sum, f) => sum + (f.photo_count || 0), 0) || 0;
+        const totalPhotos =
+          avgResult.data?.reduce((sum, f) => sum + (f.photo_count || 0), 0) ||
+          0;
         const totalFolders = totalResult.count || 0;
-        
+
         const stats = {
           total_folders: totalFolders,
           published_folders: publishedResult.count || 0,
-          avg_photos_per_folder: totalFolders > 0 ? Math.round(totalPhotos / totalFolders) : 0,
+          avg_photos_per_folder:
+            totalFolders > 0 ? Math.round(totalPhotos / totalFolders) : 0,
           recent_publications: recentResult.count || 0,
         };
-        
+
         console.timeEnd('[PERF] getPerformanceStats');
         return stats;
       }
 
       console.timeEnd('[PERF] getPerformanceStats');
       return data;
-
     } catch (error) {
       console.timeEnd('[PERF] getPerformanceStats');
       console.error('[ERROR] getPerformanceStats failed:', error);

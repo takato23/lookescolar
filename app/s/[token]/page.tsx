@@ -1,8 +1,8 @@
 /**
  * UNIFIED SHARE PAGE - /s/[token]
- * 
+ *
  * REDIRECCIÓN A TIENDA UNIFICADA
- * 
+ *
  * Esta ruta ahora redirige automáticamente a la tienda unificada
  * para mantener consistencia en la experiencia del usuario
  */
@@ -26,7 +26,7 @@ export default async function SharePage({ params }: PageProps) {
   try {
     // Validar token rápidamente
     const validation = await hierarchicalGalleryService.validateAccess(token);
-    
+
     if (!validation.isValid) {
       // Si el token no es válido, redirigir a página de error
       redirect('/error?reason=invalid-token');
@@ -34,7 +34,6 @@ export default async function SharePage({ params }: PageProps) {
 
     // Token válido - redirigir a tienda unificada
     redirect(`/store-unified/${token}`);
-
   } catch (error) {
     console.error('Share page error:', error);
     redirect('/error?reason=validation-failed');

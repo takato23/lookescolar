@@ -1,6 +1,6 @@
 /**
  * SECURE PREVIEW ENDPOINT - /api/s/[token]/preview/[assetId]
- * 
+ *
  * Token-gated preview endpoint for photo viewing
  * Features: Access validation, audit logging, optimized previews
  */
@@ -23,18 +23,19 @@ const PREVIEW_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { token, assetId } = params;
   const startTime = Date.now();
-  
+
   // Get client info for logging
   const headersList = headers();
-  const ip = headersList.get('x-forwarded-for') || 
-             headersList.get('x-real-ip') || 
-             'unknown';
+  const ip =
+    headersList.get('x-forwarded-for') ||
+    headersList.get('x-real-ip') ||
+    'unknown';
   const userAgent = headersList.get('user-agent') || 'unknown';
 
   try {
     // Step 1: Validate token
     const validation = await hierarchicalGalleryService.validateAccess(token);
-    
+
     if (!validation.isValid) {
       await hierarchicalGalleryService.logAccess(token, 'view', {
         ip,
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         path: request.url,
         responseTimeMs: Date.now() - startTime,
         success: false,
-        notes: `Preview denied: ${validation.reason}`
+        notes: `Preview denied: ${validation.reason}`,
       });
 
       return NextResponse.json(
@@ -52,8 +53,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Step 2: Verify asset access
-    const canAccessAsset = await hierarchicalGalleryService.canAccessAsset(token, assetId);
-    
+    const canAccessAsset = await hierarchicalGalleryService.canAccessAsset(
+      token,
+      assetId
+    );
+
     if (!canAccessAsset) {
       await hierarchicalGalleryService.logAccess(token, 'view', {
         ip,
@@ -61,7 +65,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         path: request.url,
         responseTimeMs: Date.now() - startTime,
         success: false,
-        notes: `Preview asset access denied: ${assetId}`
+        notes: `Preview asset access denied: ${assetId}`,
       });
 
       return NextResponse.json(
@@ -74,15 +78,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const cacheKey = `${token}:${assetId}`;
     const cached = previewCache.get(cacheKey);
     const now = Date.now();
-    
+
     let previewUrl: string | null;
-    
+
     if (cached && now < cached.expiresAt) {
       previewUrl = cached.url;
     } else {
       // Step 4: Generate fresh preview URL
-      previewUrl = await hierarchicalGalleryService.getPreviewUrl(token, assetId);
-      
+      previewUrl = await hierarchicalGalleryService.getPreviewUrl(
+        token,
+        assetId
+      );
+
       if (!previewUrl) {
         await hierarchicalGalleryService.logAccess(token, 'view', {
           ip,
@@ -90,7 +97,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           path: request.url,
           responseTimeMs: Date.now() - startTime,
           success: false,
-          notes: 'Failed to generate preview URL'
+          notes: 'Failed to generate preview URL',
         });
 
         return NextResponse.json(
@@ -102,13 +109,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       // Cache the URL
       previewCache.set(cacheKey, {
         url: previewUrl,
-        expiresAt: now + PREVIEW_CACHE_TTL
+        expiresAt: now + PREVIEW_CACHE_TTL,
       });
     }
 
     // Step 5: Fetch and stream the preview
     const previewResponse = await fetch(previewUrl);
-    
+
     if (!previewResponse.ok) {
       await hierarchicalGalleryService.logAccess(token, 'view', {
         ip,
@@ -116,16 +123,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         path: request.url,
         responseTimeMs: Date.now() - startTime,
         success: false,
-        notes: 'Preview fetch failed from storage'
+        notes: 'Preview fetch failed from storage',
       });
 
-      return NextResponse.json(
-        { error: 'Preview not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Preview not found' }, { status: 404 });
     }
 
-    const contentType = previewResponse.headers.get('content-type') || 'image/jpeg';
+    const contentType =
+      previewResponse.headers.get('content-type') || 'image/jpeg';
     const contentLength = previewResponse.headers.get('content-length');
     const imageBuffer = await previewResponse.arrayBuffer();
 
@@ -136,44 +141,45 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       path: request.url,
       responseTimeMs: Date.now() - startTime,
       success: true,
-      notes: `Preview accessed (${imageBuffer.byteLength} bytes)`
+      notes: `Preview accessed (${imageBuffer.byteLength} bytes)`,
     });
 
     // Step 7: Return image with proper headers
     const response = new NextResponse(imageBuffer);
-    
+
     response.headers.set('Content-Type', contentType);
     if (contentLength) {
       response.headers.set('Content-Length', contentLength);
     }
-    
+
     // Security headers
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('X-Frame-Options', 'SAMEORIGIN');
-    
-    // Cache control for previews
-    response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=7200');
-    response.headers.set('ETag', `"${assetId}"`);
-    
-    return response;
 
+    // Cache control for previews
+    response.headers.set(
+      'Cache-Control',
+      'public, max-age=3600, s-maxage=7200'
+    );
+    response.headers.set('ETag', `"${assetId}"`);
+
+    return response;
   } catch (error: any) {
     console.error('Preview endpoint error:', error);
 
     // Log the error
-    await hierarchicalGalleryService.logAccess(token, 'view', {
-      ip,
-      userAgent,
-      path: request.url,
-      responseTimeMs: Date.now() - startTime,
-      success: false,
-      notes: `Server error: ${error.message}`
-    }).catch(() => {}); // Don't fail if logging fails
+    await hierarchicalGalleryService
+      .logAccess(token, 'view', {
+        ip,
+        userAgent,
+        path: request.url,
+        responseTimeMs: Date.now() - startTime,
+        success: false,
+        notes: `Server error: ${error.message}`,
+      })
+      .catch(() => {}); // Don't fail if logging fails
 
-    return NextResponse.json(
-      { error: 'Server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 

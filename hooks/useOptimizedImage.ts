@@ -1,6 +1,6 @@
 /**
  * Optimized Image Hook
- * 
+ *
  * Provides lazy loading, WebP support, and responsive images
  * Optimized for minimal bandwidth usage
  */
@@ -36,7 +36,9 @@ interface OptimizedImageResult {
   handleError: () => void;
 }
 
-export function useOptimizedImage(options: OptimizedImageOptions): OptimizedImageResult {
+export function useOptimizedImage(
+  options: OptimizedImageOptions
+): OptimizedImageResult {
   const {
     src,
     alt,
@@ -52,7 +54,9 @@ export function useOptimizedImage(options: OptimizedImageOptions): OptimizedImag
   const [isLoading, setIsLoading] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(placeholder === 'blur' && blurDataURL ? blurDataURL : '');
+  const [currentSrc, setCurrentSrc] = useState(
+    placeholder === 'blur' && blurDataURL ? blurDataURL : ''
+  );
   const [currentSrcSet, setCurrentSrcSet] = useState('');
 
   const imgRef = useRef<HTMLImageElement>(null);
@@ -69,40 +73,45 @@ export function useOptimizedImage(options: OptimizedImageOptions): OptimizedImag
       const dataURL = canvas.toDataURL('image/webp');
       setSupportsWebP(dataURL.indexOf('data:image/webp') === 0);
     };
-    
+
     checkWebPSupport();
   }, []);
 
   // Generate responsive image URLs
-  const generateImageUrls = useCallback((baseSrc: string): { src: string; srcSet: string } => {
-    if (!baseSrc) return { src: '', srcSet: '' };
+  const generateImageUrls = useCallback(
+    (baseSrc: string): { src: string; srcSet: string } => {
+      if (!baseSrc) return { src: '', srcSet: '' };
 
-    // Define responsive breakpoints
-    const breakpoints = [400, 800, 1200, 1600];
-    const format = supportsWebP ? 'webp' : 'jpeg';
-    
-    // Extract base URL and filename
-    const url = new URL(baseSrc, window.location.origin);
-    const pathParts = url.pathname.split('/');
-    const filename = pathParts[pathParts.length - 1];
-    const basePath = pathParts.slice(0, -1).join('/');
+      // Define responsive breakpoints
+      const breakpoints = [400, 800, 1200, 1600];
+      const format = supportsWebP ? 'webp' : 'jpeg';
 
-    // Generate different sizes
-    const srcSetEntries = breakpoints.map(width => {
-      const optimizedFilename = `${width}w_${format}_${filename}`;
-      const optimizedUrl = `${basePath}/optimized/${optimizedFilename}`;
-      return `${optimizedUrl} ${width}w`;
-    }).join(', ');
+      // Extract base URL and filename
+      const url = new URL(baseSrc, window.location.origin);
+      const pathParts = url.pathname.split('/');
+      const filename = pathParts[pathParts.length - 1];
+      const basePath = pathParts.slice(0, -1).join('/');
 
-    // Default src (largest size)
-    const defaultFilename = `${breakpoints[breakpoints.length - 1]}w_${format}_${filename}`;
-    const defaultSrc = `${basePath}/optimized/${defaultFilename}`;
+      // Generate different sizes
+      const srcSetEntries = breakpoints
+        .map((width) => {
+          const optimizedFilename = `${width}w_${format}_${filename}`;
+          const optimizedUrl = `${basePath}/optimized/${optimizedFilename}`;
+          return `${optimizedUrl} ${width}w`;
+        })
+        .join(', ');
 
-    return {
-      src: defaultSrc,
-      srcSet: srcSetEntries,
-    };
-  }, [supportsWebP]);
+      // Default src (largest size)
+      const defaultFilename = `${breakpoints[breakpoints.length - 1]}w_${format}_${filename}`;
+      const defaultSrc = `${basePath}/optimized/${defaultFilename}`;
+
+      return {
+        src: defaultSrc,
+        srcSet: srcSetEntries,
+      };
+    },
+    [supportsWebP]
+  );
 
   // Handle intersection observer for lazy loading
   useEffect(() => {
@@ -115,7 +124,7 @@ export function useOptimizedImage(options: OptimizedImageOptions): OptimizedImag
             const { src: optimizedSrc, srcSet } = generateImageUrls(src);
             setCurrentSrc(optimizedSrc);
             setCurrentSrcSet(srcSet);
-            
+
             if (observerRef.current) {
               observerRef.current.disconnect();
             }
@@ -157,14 +166,14 @@ export function useOptimizedImage(options: OptimizedImageOptions): OptimizedImag
   const handleError = useCallback(() => {
     setIsLoading(false);
     setHasError(true);
-    
+
     // Fallback to original image
     if (currentSrc !== src) {
       setCurrentSrc(src);
       setCurrentSrcSet('');
       return;
     }
-    
+
     const error = new Error(`Failed to load image: ${src}`);
     onError?.(error);
   }, [src, currentSrc, onError]);
@@ -210,17 +219,17 @@ export function useOptimizedImage(options: OptimizedImageOptions): OptimizedImag
 export function useProgressiveImage(
   lowQualitySrc: string,
   highQualitySrc: string,
-  options: { 
+  options: {
     threshold?: number;
     onHighQualityLoad?: () => void;
   } = {}
 ) {
   const { threshold = 0.1, onHighQualityLoad } = options;
-  
+
   const [currentSrc, setCurrentSrc] = useState(lowQualitySrc);
   const [isLoadingHQ, setIsLoadingHQ] = useState(false);
   const [isHQLoaded, setIsHQLoaded] = useState(false);
-  
+
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -231,7 +240,7 @@ export function useProgressiveImage(
         entries.forEach((entry) => {
           if (entry.isIntersecting && !isHQLoaded) {
             setIsLoadingHQ(true);
-            
+
             // Preload high quality image
             const hqImage = new Image();
             hqImage.onload = () => {
@@ -244,7 +253,7 @@ export function useProgressiveImage(
               setIsLoadingHQ(false);
             };
             hqImage.src = highQualitySrc;
-            
+
             observer.disconnect();
           }
         });
@@ -277,26 +286,26 @@ export function useBlurPlaceholder(src: string, blurAmount = 20) {
     // Generate blur placeholder
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     if (!ctx) return;
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    
+
     img.onload = () => {
       // Small canvas for blur effect
       canvas.width = 40;
       canvas.height = 30;
-      
+
       // Draw scaled down image
       ctx.filter = `blur(${blurAmount}px)`;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      
+
       // Convert to data URL
       const dataURL = canvas.toDataURL('image/jpeg', 0.1);
       setPlaceholderSrc(dataURL);
     };
-    
+
     img.src = src;
   }, [src, blurAmount]);
 

@@ -282,7 +282,7 @@ export default function EventDetailPage() {
                     Nueva interfaz unificada para gestionar fotos y carpetas
                   </p>
                   <div className="space-y-2">
-                    <Button 
+                    <Button
                       className="w-full bg-blue-600 hover:bg-blue-700"
                       onClick={() => router.push(`/admin/events/${id}/library`)}
                     >
@@ -295,13 +295,15 @@ export default function EventDetailPage() {
                       eventName={event?.name || 'Evento'}
                       onTemplateApplied={(template, folders) => {
                         // Refresh the page or show a success message
-                        console.log(`Applied template: ${template.name}, created ${folders.length} folders`);
+                        console.log(
+                          `Applied template: ${template.name}, created ${folders.length} folders`
+                        );
                       }}
                       triggerButton={
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <FolderPlus className="mr-2 h-3 w-3" />
@@ -398,7 +400,9 @@ export default function EventDetailPage() {
                   eventName={event?.name || 'Evento'}
                   onTemplateApplied={(template, folders) => {
                     // Show success message or refresh
-                    console.log(`Applied template: ${template.name}, created ${folders.length} folders`);
+                    console.log(
+                      `Applied template: ${template.name}, created ${folders.length} folders`
+                    );
                     // You could add a toast notification here
                   }}
                   triggerButton={
@@ -410,7 +414,7 @@ export default function EventDetailPage() {
                 />
               </CardContent>
             </Card>
-            
+
             <Card className="cursor-pointer transition-shadow hover:shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -598,7 +602,8 @@ export default function EventDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="mb-4 text-sm text-blue-600">
-                  Sistema unificado para subir fotos y organizarlas por carpetas familiares
+                  Sistema unificado para subir fotos y organizarlas por carpetas
+                  familiares
                 </p>
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700"
@@ -654,7 +659,9 @@ export default function EventDetailPage() {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push(`/admin/events/${id}?view=students`)}
+                  onClick={() =>
+                    router.push(`/admin/events/${id}?view=students`)
+                  }
                 >
                   <Users className="mr-2 h-4 w-4" />
                   Ver Estudiantes
@@ -673,8 +680,8 @@ export default function EventDetailPage() {
                 <p className="mb-4 text-sm text-gray-600">
                   Revisar pedidos realizados por las familias
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => router.push(`/admin/orders?event=${id}`)}
                 >
@@ -711,14 +718,15 @@ export default function EventDetailPage() {
 
       {/* Modal para modo avanzado si se requiere */}
       {showLegacyMode && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <Card className="w-full max-w-md">
             <CardHeader>
               <CardTitle>¿Cambiar a Modo Avanzado?</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="mb-4 text-sm text-gray-600">
-                El modo avanzado incluye funciones adicionales y dashboard holístico.
+                El modo avanzado incluye funciones adicionales y dashboard
+                holístico.
               </p>
               <div className="flex gap-3">
                 <Button
@@ -727,7 +735,11 @@ export default function EventDetailPage() {
                 >
                   Cancelar
                 </Button>
-                <Button onClick={() => window.location.href = `/admin/events/${id}/holistic`}>
+                <Button
+                  onClick={() =>
+                    (window.location.href = `/admin/events/${id}/holistic`)
+                  }
+                >
                   Ir a Modo Avanzado
                 </Button>
               </div>

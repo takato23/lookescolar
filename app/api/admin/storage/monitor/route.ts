@@ -4,7 +4,7 @@ import { ImageOptimizationService } from '@/lib/services/image-optimization.serv
 
 /**
  * Storage Monitoring API
- * 
+ *
  * GET: Get current storage usage and recommendations
  * POST: Trigger cleanup or optimization actions
  */
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     if (detailed) {
       // Get comprehensive usage report
       const report = await StorageMonitor.getUsageReport();
-      
+
       return NextResponse.json({
         success: true,
         data: report,
@@ -25,8 +25,9 @@ export async function GET(request: NextRequest) {
     } else {
       // Get basic storage stats
       const stats = await StorageMonitor.getStorageStats();
-      const recommendations = await StorageMonitor.getOptimizationRecommendations();
-      
+      const recommendations =
+        await StorageMonitor.getOptimizationRecommendations();
+
       return NextResponse.json({
         success: true,
         data: {
@@ -72,17 +73,14 @@ export async function POST(request: NextRequest) {
           request,
           fileSize
         );
-        
+
         return NextResponse.json({
           success: true,
           data: storageCheck,
         });
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
   } catch (error) {
     console.error('Storage monitor action error:', error);

@@ -6,13 +6,13 @@ import fs from 'fs';
 // First, let's check if we can read the migration files
 const migrations = [
   'supabase/migrations/20250829_domain_model.sql',
-  'supabase/migrations/20250829_unified_tokens.sql', 
-  'supabase/migrations/20250829_canonical_functions.sql'
+  'supabase/migrations/20250829_unified_tokens.sql',
+  'supabase/migrations/20250829_canonical_functions.sql',
 ];
 
 console.log('🔍 Verificando archivos de migración...');
 
-migrations.forEach(file => {
+migrations.forEach((file) => {
   try {
     const content = fs.readFileSync(file, 'utf8');
     console.log(`✅ ${file} - ${content.length} caracteres`);

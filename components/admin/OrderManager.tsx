@@ -249,7 +249,8 @@ export default function OrderManager() {
       o.status === 'pending' &&
       Date.now() - new Date(o.created_at).getTime() > 24 * 60 * 60 * 1000;
 
-    const missingTotal = (o: EnhancedOrder) => !o.total_amount_cents || o.total_amount_cents <= 0;
+    const missingTotal = (o: EnhancedOrder) =>
+      !o.total_amount_cents || o.total_amount_cents <= 0;
     const missingPreference = (o: EnhancedOrder) =>
       (o.mp_preference_id == null || o.mp_preference_id === '') &&
       Date.now() - new Date(o.created_at).getTime() > 60 * 60 * 1000; // older than 1h
@@ -639,9 +640,14 @@ export default function OrderManager() {
         <TabsTrigger value="problems" className="gap-2">
           <AlertTriangle className="h-4 w-4" />
           Problemas
-          {(problemOrders.pendingOver24h.length + problemOrders.missingTotal.length + problemOrders.missingPreference.length) > 0 && (
+          {problemOrders.pendingOver24h.length +
+            problemOrders.missingTotal.length +
+            problemOrders.missingPreference.length >
+            0 && (
             <span className="ml-2 rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
-              {problemOrders.pendingOver24h.length + problemOrders.missingTotal.length + problemOrders.missingPreference.length}
+              {problemOrders.pendingOver24h.length +
+                problemOrders.missingTotal.length +
+                problemOrders.missingPreference.length}
             </span>
           )}
         </TabsTrigger>
@@ -1149,21 +1155,36 @@ export default function OrderManager() {
             </CardHeader>
             <CardContent className="space-y-3">
               {problemOrders.pendingOver24h.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Sin casos</div>
+                <div className="text-muted-foreground text-sm">Sin casos</div>
               ) : (
                 problemOrders.pendingOver24h.map((o) => (
-                  <div key={o.id} className="flex items-center justify-between rounded-md border border-yellow-500/20 bg-yellow-500/5 p-3">
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between rounded-md border border-yellow-500/20 bg-yellow-500/5 p-3"
+                  >
                     <div className="text-sm">
-                      <div className="font-medium">#{o.id.slice(-8)} • {o.contact_name}</div>
-                      <div className="text-muted-foreground">Creada: {new Date(o.created_at).toLocaleString('es-AR')}</div>
+                      <div className="font-medium">
+                        #{o.id.slice(-8)} • {o.contact_name}
+                      </div>
+                      <div className="text-muted-foreground">
+                        Creada: {new Date(o.created_at).toLocaleString('es-AR')}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openOrderDetail(o)}>Ver</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openOrderDetail(o)}
+                      >
+                        Ver
+                      </Button>
                       <Button
                         size="sm"
                         variant="destructive"
                         onClick={async () => {
-                          await fetch('/api/admin/orders/cleanup', { method: 'POST' });
+                          await fetch('/api/admin/orders/cleanup', {
+                            method: 'POST',
+                          });
                           loadOrders(false);
                         }}
                       >
@@ -1188,20 +1209,35 @@ export default function OrderManager() {
             </CardHeader>
             <CardContent className="space-y-3">
               {problemOrders.missingTotal.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Sin casos</div>
+                <div className="text-muted-foreground text-sm">Sin casos</div>
               ) : (
                 problemOrders.missingTotal.map((o) => (
-                  <div key={o.id} className="flex items-center justify-between rounded-md border border-red-500/20 bg-red-500/5 p-3">
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between rounded-md border border-red-500/20 bg-red-500/5 p-3"
+                  >
                     <div className="text-sm">
-                      <div className="font-medium">#{o.id.slice(-8)} • {o.contact_name}</div>
-                      <div className="text-muted-foreground">Estado: {o.status}</div>
+                      <div className="font-medium">
+                        #{o.id.slice(-8)} • {o.contact_name}
+                      </div>
+                      <div className="text-muted-foreground">
+                        Estado: {o.status}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openOrderDetail(o)}>Ver</Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(`/admin/orders/${o.id}`, '_blank')}
+                        onClick={() => openOrderDetail(o)}
+                      >
+                        Ver
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          window.open(`/admin/orders/${o.id}`, '_blank')
+                        }
                       >
                         Abrir detalle
                       </Button>
@@ -1224,20 +1260,35 @@ export default function OrderManager() {
             </CardHeader>
             <CardContent className="space-y-3">
               {problemOrders.missingPreference.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Sin casos</div>
+                <div className="text-muted-foreground text-sm">Sin casos</div>
               ) : (
                 problemOrders.missingPreference.map((o) => (
-                  <div key={o.id} className="flex items-center justify-between rounded-md border border-orange-500/20 bg-orange-500/5 p-3">
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between rounded-md border border-orange-500/20 bg-orange-500/5 p-3"
+                  >
                     <div className="text-sm">
-                      <div className="font-medium">#{o.id.slice(-8)} • {o.contact_name}</div>
-                      <div className="text-muted-foreground">Creada: {new Date(o.created_at).toLocaleString('es-AR')}</div>
+                      <div className="font-medium">
+                        #{o.id.slice(-8)} • {o.contact_name}
+                      </div>
+                      <div className="text-muted-foreground">
+                        Creada: {new Date(o.created_at).toLocaleString('es-AR')}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openOrderDetail(o)}>Ver</Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(`/admin/orders/${o.id}`, '_blank')}
+                        onClick={() => openOrderDetail(o)}
+                      >
+                        Ver
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          window.open(`/admin/orders/${o.id}`, '_blank')
+                        }
                       >
                         Abrir detalle
                       </Button>

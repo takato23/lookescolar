@@ -1,6 +1,6 @@
 /**
  * ADMIN TOKEN USAGE API - /api/admin/tokens/[id]/usage
- * 
+ *
  * Detailed usage statistics and access logs for tokens
  * Features: Usage analytics, access logs, performance metrics
  */
@@ -23,7 +23,9 @@ const usageQuerySchema = z.object({
   logPage: z.string().optional().default('1'),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
-  action: z.enum(['list_folders', 'list_assets', 'download', 'view']).optional()
+  action: z
+    .enum(['list_folders', 'list_assets', 'download', 'view'])
+    .optional(),
 });
 
 // GET /api/admin/tokens/[id]/usage - Get detailed usage statistics
@@ -46,16 +48,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       logPage: searchParams.get('logPage'),
       dateFrom: searchParams.get('dateFrom'),
       dateTo: searchParams.get('dateTo'),
-      action: searchParams.get('action')
+      action: searchParams.get('action'),
     });
 
     // Verify token exists
     const token = await accessTokenService.getToken(id);
     if (!token) {
-      return NextResponse.json(
-        { error: 'Token not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Token not found' }, { status: 404 });
     }
 
     // Get usage statistics
@@ -64,7 +63,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const response: any = {
       tokenId: id,
       tokenPrefix: token.tokenPrefix,
-      usageStats
+      usageStats,
     };
 
     // Include detailed logs if requested
@@ -112,7 +111,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
 
       // Process logs for response
-      const processedLogs = (logs || []).map(log => ({
+      const processedLogs = (logs || []).map((log) => ({
         id: log.id,
         occurredAt: log.occurred_at,
         ip: log.ip,
@@ -121,7 +120,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         action: log.action,
         ok: log.ok,
         responseTimeMs: log.response_time_ms,
-        notes: log.notes
+        notes: log.notes,
       }));
 
       // Generate analytics from logs
@@ -135,17 +134,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           total: count || 0,
           totalPages: Math.ceil((count || 0) / limit),
           hasNext: offset + limit < (count || 0),
-          hasPrev: page > 1
+          hasPrev: page > 1,
         },
-        analytics
+        analytics,
       };
     }
 
     return NextResponse.json(response);
-
   } catch (error: any) {
     console.error('Token usage GET error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid query parameters', details: error.errors },
@@ -170,23 +168,25 @@ function generateAnalytics(logs: any[]) {
       actionBreakdown: {},
       hourlyUsage: [],
       topIPs: [],
-      errorSummary: []
+      errorSummary: [],
     };
   }
 
   const totalRequests = logs.length;
-  const successfulRequests = logs.filter(log => log.ok).length;
+  const successfulRequests = logs.filter((log) => log.ok).length;
   const successRate = (successfulRequests / totalRequests) * 100;
 
   // Response time analytics (only for successful requests with timing)
-  const timedLogs = logs.filter(log => log.ok && log.response_time_ms);
-  const averageResponseTime = timedLogs.length > 0 
-    ? timedLogs.reduce((sum, log) => sum + log.response_time_ms, 0) / timedLogs.length 
-    : 0;
+  const timedLogs = logs.filter((log) => log.ok && log.response_time_ms);
+  const averageResponseTime =
+    timedLogs.length > 0
+      ? timedLogs.reduce((sum, log) => sum + log.response_time_ms, 0) /
+        timedLogs.length
+      : 0;
 
   // Action breakdown
   const actionBreakdown: Record<string, number> = {};
-  logs.forEach(log => {
+  logs.forEach((log) => {
     actionBreakdown[log.action] = (actionBreakdown[log.action] || 0) + 1;
   });
 
@@ -196,33 +196,33 @@ function generateAnalytics(logs: any[]) {
     const hour = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
     hour.setMinutes(0, 0, 0);
     const nextHour = new Date(hour.getTime() + 60 * 60 * 1000);
-    
-    const requestsInHour = logs.filter(log => {
+
+    const requestsInHour = logs.filter((log) => {
       const logTime = new Date(log.occurred_at);
       return logTime >= hour && logTime < nextHour;
     }).length;
 
     return {
       hour: hour.toISOString(),
-      requests: requestsInHour
+      requests: requestsInHour,
     };
   });
 
   // Top IPs
   const ipCounts: Record<string, number> = {};
-  logs.forEach(log => {
+  logs.forEach((log) => {
     if (log.ip && log.ip !== 'unknown') {
       ipCounts[log.ip] = (ipCounts[log.ip] || 0) + 1;
     }
   });
-  
+
   const topIPs = Object.entries(ipCounts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 10)
     .map(([ip, count]) => ({ ip, requests: count }));
 
   // Error summary
-  const errors = logs.filter(log => !log.ok);
+  const errors = logs.filter((log) => !log.ok);
   const errorSummary = errors.reduce((acc: Record<string, number>, log) => {
     const errorKey = log.notes || 'Unknown error';
     acc[errorKey] = (acc[errorKey] || 0) + 1;
@@ -239,6 +239,6 @@ function generateAnalytics(logs: any[]) {
     errorSummary: Object.entries(errorSummary)
       .sort(([, a], [, b]) => (b as number) - (a as number))
       .slice(0, 5)
-      .map(([error, count]) => ({ error, count }))
+      .map(([error, count]) => ({ error, count })),
   };
 }

@@ -22,16 +22,17 @@ async function handleUnpublishAction(
         is_published: false,
         share_token: null,
         published_at: null,
-        publish_settings: null
+        publish_settings: null,
       })
       .eq('id', id);
 
     if (updateError) {
       console.error('[API] Migration columns not available:', updateError);
       return NextResponse.json(
-        { 
-          error: 'Database migration required. Please apply the folder sharing migration first.',
-          details: 'Migration file: 20250826_folder_sharing_system.sql'
+        {
+          error:
+            'Database migration required. Please apply the folder sharing migration first.',
+          details: 'Migration file: 20250826_folder_sharing_system.sql',
         },
         { status: 500 }
       );
@@ -53,11 +54,20 @@ async function handleUnpublishAction(
 }
 
 const bodySchema = z.object({
-  action: z.enum(['publish', 'unpublish', 'rotate']).optional().default('publish'),
-  settings: z.object({
-    allowDownload: z.boolean().optional().default(false),
-    watermarkLevel: z.enum(['light', 'medium', 'heavy']).optional().default('medium'),
-  }).optional().default({}),
+  action: z
+    .enum(['publish', 'unpublish', 'rotate'])
+    .optional()
+    .default('publish'),
+  settings: z
+    .object({
+      allowDownload: z.boolean().optional().default(false),
+      watermarkLevel: z
+        .enum(['light', 'medium', 'heavy'])
+        .optional()
+        .default('medium'),
+    })
+    .optional()
+    .default({}),
 });
 
 async function handlePOST(
@@ -67,7 +77,7 @@ async function handlePOST(
   try {
     // Validate params
     const { id } = paramsSchema.parse(await params);
-    
+
     // Validate request body
     const body = await request.json().catch(() => ({}));
     const { action, settings } = bodySchema.parse(body);
@@ -83,10 +93,7 @@ async function handlePOST(
       .single();
 
     if (folderError || !folder) {
-      return NextResponse.json(
-        { error: 'Folder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
     }
 
     // Handle different actions
@@ -176,17 +183,18 @@ async function handlePOST(
           publish_settings: {
             ...settings,
             published_by: 'admin',
-            publish_method: 'folder_share'
-          }
+            publish_method: 'folder_share',
+          },
         })
         .eq('id', id);
 
       if (updateError) {
         console.error('[API] Migration columns not available:', updateError);
         return NextResponse.json(
-          { 
-            error: 'Database migration required. Please apply the folder sharing migration first.',
-            details: 'Migration file: 20250826_folder_sharing_system.sql'
+          {
+            error:
+              'Database migration required. Please apply the folder sharing migration first.',
+            details: 'Migration file: 20250826_folder_sharing_system.sql',
           },
           { status: 500 }
         );
@@ -216,7 +224,7 @@ async function handlePOST(
     }
   } catch (error) {
     console.error('[API] Folder publish error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
@@ -250,10 +258,7 @@ async function handleDELETE(
       .single();
 
     if (folderError || !folder) {
-      return NextResponse.json(
-        { error: 'Folder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
     }
 
     try {
@@ -264,16 +269,17 @@ async function handleDELETE(
           is_published: false,
           share_token: null,
           published_at: null,
-          publish_settings: null
+          publish_settings: null,
         })
         .eq('id', id);
 
       if (updateError) {
         console.error('[API] Migration columns not available:', updateError);
         return NextResponse.json(
-          { 
-            error: 'Database migration required. Please apply the folder sharing migration first.',
-            details: 'Migration file: 20250826_folder_sharing_system.sql'
+          {
+            error:
+              'Database migration required. Please apply the folder sharing migration first.',
+            details: 'Migration file: 20250826_folder_sharing_system.sql',
           },
           { status: 500 }
         );
@@ -294,12 +300,9 @@ async function handleDELETE(
     }
   } catch (error) {
     console.error('[API] Folder unpublish error:', error);
-    
+
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid folder ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid folder ID' }, { status: 400 });
     }
 
     return NextResponse.json(

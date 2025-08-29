@@ -19,7 +19,7 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 8px 32px 0 rgba(31, 38, 135, 0.37),
     inset 0 0 0 1px rgba(255, 255, 255, 0.1),
     inset 0 -20px 40px -20px rgba(255, 255, 255, 0.05);
@@ -35,7 +35,7 @@
     rgba(255, 255, 255, 0.03) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
+  box-shadow:
     0 8px 32px 0 rgba(0, 0, 0, 0.6),
     inset 0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 -20px 40px -20px rgba(255, 255, 255, 0.02),
@@ -71,22 +71,30 @@
 /* Liquid glass button with shimmer effect */
 .liquid-glass-button-ios26 {
   position: relative;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .liquid-glass-button-ios26 {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
@@ -172,7 +180,7 @@
   padding: 1rem;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.05);
@@ -188,7 +196,7 @@
   backdrop-filter: blur(16px) brightness(0.95);
   -webkit-backdrop-filter: blur(16px) brightness(0.95);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2),
@@ -222,8 +230,12 @@
 }
 
 @keyframes progress-shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Enhanced modal animations */
@@ -297,14 +309,14 @@
 /* Enhanced hover effects for cards */
 .neural-glass-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.2),
     inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .dark .neural-glass-card:hover {
-  box-shadow: 
+  box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.4),
     0 0 80px rgba(99, 119, 237, 0.2),
     0 0 0 1px rgba(255, 255, 255, 0.1),
@@ -315,7 +327,7 @@
 .neural-fab {
   position: relative;
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(59, 130, 246, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   border: none;
@@ -348,7 +360,7 @@
 
 .neural-fab:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 12px 48px rgba(59, 130, 246, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
@@ -367,7 +379,7 @@
   padding: 1.5rem;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
@@ -384,13 +396,18 @@
 }
 
 @keyframes metric-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .neural-metric-display:hover {
   transform: translateY(-4px);
-  box-shadow: 
+  box-shadow:
     0 16px 48px rgba(0, 0, 0, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
@@ -407,7 +424,7 @@
 .neural-search-glass:focus {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 
+  box-shadow:
     0 0 0 4px rgba(59, 130, 246, 0.1),
     0 8px 32px rgba(59, 130, 246, 0.2);
 }
@@ -497,7 +514,7 @@
   backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 24px;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2),
     inset 0 -1px 0 rgba(0, 0, 0, 0.05);
@@ -551,14 +568,14 @@
 /* Enhanced card hover effects */
 .liquid-glass-card-ios26:hover {
   transform: scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 12px 40px rgba(31, 38, 135, 0.45),
     inset 0 0 0 1px rgba(255, 255, 255, 0.15),
     inset 0 -20px 40px -20px rgba(255, 255, 255, 0.08);
 }
 
 .dark .liquid-glass-card-ios26:hover {
-  box-shadow: 
+  box-shadow:
     0 12px 40px rgba(0, 0, 0, 0.7),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08),
     inset 0 -20px 40px -20px rgba(255, 255, 255, 0.04),
@@ -579,11 +596,12 @@
     rgba(255, 255, 255, 0.06) 100%
   );
   backdrop-filter: blur(48px) saturate(200%) brightness(1.1) contrast(1.05);
-  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.1) contrast(1.05);
+  -webkit-backdrop-filter: blur(48px) saturate(200%) brightness(1.1)
+    contrast(1.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 32px;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(31, 38, 135, 0.4),
     inset 0 0 0 1px rgba(255, 255, 255, 0.1),
     0 0 120px rgba(99, 119, 237, 0.12);
@@ -598,7 +616,7 @@
     rgba(255, 255, 255, 0.03) 100%
   );
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
+  box-shadow:
     0 16px 64px rgba(0, 0, 0, 0.8),
     inset 0 0 0 1px rgba(255, 255, 255, 0.05),
     0 0 120px rgba(99, 119, 237, 0.08);
@@ -643,7 +661,7 @@
   border-radius: 20px;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(31, 38, 135, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
@@ -658,7 +676,7 @@
   backdrop-filter: blur(24px) brightness(0.95);
   -webkit-backdrop-filter: blur(24px) brightness(0.95);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 0 80px rgba(99, 119, 237, 0.1);
@@ -666,13 +684,13 @@
 
 .neural-glass-card:hover {
   transform: translateY(-8px) scale(1.02) rotateX(2deg);
-  box-shadow: 
+  box-shadow:
     0 32px 128px rgba(31, 38, 135, 0.5),
     0 0 160px rgba(99, 119, 237, 0.2);
 }
 
 .dark .neural-glass-card:hover {
-  box-shadow: 
+  box-shadow:
     0 32px 128px rgba(0, 0, 0, 0.7),
     0 0 160px rgba(99, 119, 237, 0.15);
 }
@@ -685,7 +703,10 @@
 .neural-events-grid {
   display: grid;
   gap: var(--grid-gap, 24px);
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min-width, 320px), 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(var(--card-min-width, 320px), 1fr)
+  );
   padding: var(--grid-padding, 24px);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -758,7 +779,8 @@
 
 /* Neural Pulse Animation */
 @keyframes neural-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.8;
     transform: scale(1);
   }
@@ -809,7 +831,7 @@
   );
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  box-shadow: 
+  box-shadow:
     0 16px 48px rgba(99, 119, 237, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -818,7 +840,7 @@
 
 .neural-fab:hover {
   transform: scale(1.1) translateY(-4px);
-  box-shadow: 
+  box-shadow:
     0 24px 64px rgba(99, 119, 237, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
@@ -873,9 +895,9 @@
 .neural-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.0) 0%,
+    rgba(255, 255, 255, 0) 0%,
     rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.0) 100%
+    rgba(255, 255, 255, 0) 100%
   );
   background-size: 200% 100%;
   animation: neural-shimmer-animation 2s infinite;
@@ -952,7 +974,8 @@
 }
 
 .neural-glass-card:hover {
-  transform: translateY(-12px) translateZ(50px) rotateX(5deg) rotateY(-2deg) scale(1.02);
+  transform: translateY(-12px) translateZ(50px) rotateX(5deg) rotateY(-2deg)
+    scale(1.02);
   filter: brightness(1.1) saturate(1.2);
 }
 
@@ -993,7 +1016,8 @@
 
 /* Enhanced Card Entrance Animation */
 .neural-card-enter {
-  animation: neural-card-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: neural-card-entrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)
+    forwards;
   opacity: 0;
   transform: translateY(60px) scale(0.9) rotateX(10deg);
 }
@@ -1019,7 +1043,8 @@
 }
 
 @keyframes neural-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   25% {
@@ -1040,14 +1065,15 @@
 
 /* Neural Glow Effect */
 @keyframes neural-glow {
-  0%, 100% {
-    box-shadow: 
+  0%,
+  100% {
+    box-shadow:
       0 16px 48px rgba(99, 119, 237, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.3),
       0 0 80px rgba(99, 119, 237, 0.2);
   }
   50% {
-    box-shadow: 
+    box-shadow:
       0 20px 60px rgba(99, 119, 237, 0.6),
       inset 0 1px 0 rgba(255, 255, 255, 0.4),
       0 0 120px rgba(99, 119, 237, 0.3);
@@ -1071,7 +1097,12 @@
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(90deg, transparent, rgba(99, 119, 237, 0.3), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(99, 119, 237, 0.3),
+    transparent
+  );
   border-radius: 6px;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -1083,8 +1114,13 @@
 }
 
 @keyframes progress-glow {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 /* Button Ripple Effect */
@@ -1102,9 +1138,15 @@
   left: 50%;
   width: 0;
   height: 0;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 70%
+  );
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 .neural-glass-card .neural-fab:active::before,
@@ -1148,8 +1190,12 @@
 }
 
 @keyframes neural-loading-sweep {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 /* Micro-interactions for Stats */
@@ -1159,7 +1205,7 @@
 
 .neural-metric-display:hover {
   transform: translateY(-4px) scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.15),
     inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
@@ -1167,13 +1213,13 @@
 /* Search Input Focus Animation */
 .neural-glass-card input:focus {
   transform: scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(99, 119, 237, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* Dropdown Menu Animation */
-.neural-glass-card[data-state="open"] {
+.neural-glass-card[data-state='open'] {
   animation: dropdown-appear 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1193,7 +1239,7 @@
   .neural-events-grid {
     transition: all 0.6s ease-out;
   }
-  
+
   .neural-events-grid > * {
     transition: all 0.4s ease-out;
   }
@@ -1204,13 +1250,14 @@
   .neural-glass-card:hover {
     filter: brightness(1.2) saturate(1.3);
   }
-  
+
   .neural-pulse {
     animation: neural-pulse-dark 6s ease-in-out infinite;
   }
-  
+
   @keyframes neural-pulse-dark {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 0.7;
       transform: scale(1);
       filter: brightness(1);
@@ -1243,7 +1290,7 @@
     animation: none !important;
     transition: none !important;
   }
-  
+
   .neural-glass-card:hover {
     transform: none !important;
   }

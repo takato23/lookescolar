@@ -29,7 +29,7 @@ async function handleGET(
 
     const now = Date.now();
     const cacheKey = `preview_${filename}`;
-    
+
     // Check cache first
     const cached = urlCache.get(cacheKey);
     if (cached && cached.expires > now) {
@@ -38,10 +38,10 @@ async function handleGET(
     }
 
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Optimized: Use assets table instead of photos for better performance
     const baseFilename = filename.replace('_preview.webp', '');
-    
+
     // Buscar por preview_path que es donde realmente están las rutas
     const { data: asset } = await supabase
       .from('assets')
@@ -57,7 +57,9 @@ async function handleGET(
     const isCircularUrl = (url: string): boolean => {
       if (!url) return false;
       // Check if URL points back to our preview endpoint
-      return url.includes('/admin/previews/') || url.includes('/api/admin/previews/');
+      return (
+        url.includes('/admin/previews/') || url.includes('/api/admin/previews/')
+      );
     };
 
     console.log(`[PREVIEW] Processing ${filename}, asset:`, {
@@ -73,16 +75,20 @@ async function handleGET(
       const { data, error } = await supabase.storage
         .from('photos')
         .createSignedUrl(asset.preview_path, 3600);
-      
+
       if (!error && data?.signedUrl) {
         signedUrl = data.signedUrl;
-        console.log(`[PREVIEW] Generated signed URL from preview_path for ${filename}`);
+        console.log(
+          `[PREVIEW] Generated signed URL from preview_path for ${filename}`
+        );
       }
     } else if (asset?.watermark_url && !isCircularUrl(asset.watermark_url)) {
       signedUrl = asset.watermark_url;
       console.log(`[PREVIEW] Using watermark_url for ${filename}`);
     } else if (asset?.storage_path) {
-      console.log(`[PREVIEW] Generating signed URL for ${filename} from storage_path: ${asset.storage_path}`);
+      console.log(
+        `[PREVIEW] Generating signed URL for ${filename} from storage_path: ${asset.storage_path}`
+      );
       // Generate signed URL with transformation
       const { data, error } = await supabase.storage
         .from('photos')
@@ -90,15 +96,18 @@ async function handleGET(
           transform: {
             width: 800,
             height: 800,
-            resize: 'contain'
-          }
+            resize: 'contain',
+          },
         });
-      
+
       if (!error && data?.signedUrl) {
         signedUrl = data.signedUrl;
         console.log(`[PREVIEW] Generated signed URL for ${filename}`);
       } else {
-        console.warn(`[PREVIEW] Failed to generate signed URL for ${filename}:`, error);
+        console.warn(
+          `[PREVIEW] Failed to generate signed URL for ${filename}:`,
+          error
+        );
       }
     }
 
@@ -118,13 +127,15 @@ async function handleGET(
     }
 
     if (!signedUrl) {
-      console.warn(`[PREVIEW] No signed URL found for ${filename}, returning transparent pixel`);
+      console.warn(
+        `[PREVIEW] No signed URL found for ${filename}, returning transparent pixel`
+      );
       // Return a 1x1 transparent pixel instead of error to prevent infinite loading
       const transparentPixel = Buffer.from(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
         'base64'
       );
-      
+
       return new NextResponse(transparentPixel, {
         headers: {
           'Content-Type': 'image/png',
@@ -133,7 +144,9 @@ async function handleGET(
       });
     }
 
-    console.log(`[PREVIEW] Redirecting ${filename} to: ${signedUrl.substring(0, 100)}...`);
+    console.log(
+      `[PREVIEW] Redirecting ${filename} to: ${signedUrl.substring(0, 100)}...`
+    );
 
     // Cache the URL
     urlCache.set(cacheKey, {
@@ -152,16 +165,15 @@ async function handleGET(
 
     // Redirect instead of proxying to reduce server load
     return NextResponse.redirect(signedUrl, 302);
-
   } catch (error) {
     console.error('Preview proxy error:', error);
-    
+
     // Return transparent pixel on error to prevent infinite loading
     const transparentPixel = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
       'base64'
     );
-    
+
     return new NextResponse(transparentPixel, {
       headers: {
         'Content-Type': 'image/png',

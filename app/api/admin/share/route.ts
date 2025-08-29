@@ -171,7 +171,8 @@ export const POST = RateLimitMiddleware.withRateLimit(
             .select('event_id')
             .eq('id', folderId)
             .maybeSingle();
-          if (folder && 'event_id' in folder) folderEventId = (folder as any).event_id || null;
+          if (folder && 'event_id' in folder)
+            folderEventId = (folder as any).event_id || null;
         } catch {}
         if (!folderEventId) {
           try {
@@ -232,7 +233,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // If sharing a specific folder, validate it exists and belongs to the event
       if (shareType === 'folder' && folderId) {
         // If both folder and derived exist and differ, force to folder's event
-        if (folderEventId && derivedEventId && folderEventId !== derivedEventId) {
+        if (
+          folderEventId &&
+          derivedEventId &&
+          folderEventId !== derivedEventId
+        ) {
           derivedEventId = folderEventId;
         }
       }
@@ -259,14 +264,18 @@ export const POST = RateLimitMiddleware.withRateLimit(
         }
 
         // Check all assets belong to the event
-        const invalidAssets = assets.filter((asset) => asset.folders?.event_id !== derivedEventId);
+        const invalidAssets = assets.filter(
+          (asset) => asset.folders?.event_id !== derivedEventId
+        );
         if (invalidAssets.length > 0) {
           // Override to assets event if possible
           derivedEventId = assets[0].folders?.event_id || derivedEventId;
         }
 
         // Check if all assets are ready (equivalent to approved)
-        const notReadyAssets = assets.filter((asset) => asset.status !== 'ready');
+        const notReadyAssets = assets.filter(
+          (asset) => asset.status !== 'ready'
+        );
         if (notReadyAssets.length > 0) {
           logger.warn('Sharing non-ready assets', {
             requestId,

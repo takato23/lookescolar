@@ -29,7 +29,10 @@ async function fixFolderCounts() {
       .eq('folder_id', folder.id);
 
     if (countError) {
-      console.error(`❌ Error counting assets for folder ${folder.name}:`, countError);
+      console.error(
+        `❌ Error counting assets for folder ${folder.name}:`,
+        countError
+      );
       continue;
     }
 
@@ -40,7 +43,10 @@ async function fixFolderCounts() {
       .eq('id', folder.id);
 
     if (updateError) {
-      console.error(`❌ Error updating count for folder ${folder.name}:`, updateError);
+      console.error(
+        `❌ Error updating count for folder ${folder.name}:`,
+        updateError
+      );
       continue;
     }
 

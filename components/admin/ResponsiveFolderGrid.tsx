@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -62,42 +68,49 @@ export function ResponsiveFolderGrid({
   enableBulkActions = false,
   className,
 }: ResponsiveFolderGridProps) {
-  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>(
+    {}
+  );
   const [copied, setCopied] = useState<Record<string, boolean>>({});
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [imagesLoaded, setImagesLoaded] = useState<Set<string>>(new Set());
-  
+
   const gridRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Handle action with loading state
-  const handleAction = useCallback(async (
-    codeId: string,
-    action: () => Promise<void>,
-    actionType: string
-  ) => {
-    setActionLoading(prev => ({ ...prev, [`${codeId}_${actionType}`]: true }));
-    try {
-      await action();
-    } catch (error) {
-      console.error(`Error ${actionType}:`, error);
-    } finally {
-      setActionLoading(prev => ({ ...prev, [`${codeId}_${actionType}`]: false }));
-    }
-  }, []);
+  const handleAction = useCallback(
+    async (codeId: string, action: () => Promise<void>, actionType: string) => {
+      setActionLoading((prev) => ({
+        ...prev,
+        [`${codeId}_${actionType}`]: true,
+      }));
+      try {
+        await action();
+      } catch (error) {
+        console.error(`Error ${actionType}:`, error);
+      } finally {
+        setActionLoading((prev) => ({
+          ...prev,
+          [`${codeId}_${actionType}`]: false,
+        }));
+      }
+    },
+    []
+  );
 
   // Copy URL to clipboard
   const handleCopyUrl = useCallback(async (code: CodeRow) => {
     if (!code.token) return;
-    
+
     // Use public shared gallery route for consistent previewing
     const url = `${window.location.origin}/public/gallery/${code.token}`;
     try {
       await navigator.clipboard.writeText(url);
-      setCopied(prev => ({ ...prev, [code.id]: true }));
+      setCopied((prev) => ({ ...prev, [code.id]: true }));
       setTimeout(() => {
-        setCopied(prev => ({ ...prev, [code.id]: false }));
+        setCopied((prev) => ({ ...prev, [code.id]: false }));
       }, 2000);
     } catch (error) {
       console.error('Error copying URL:', error);
@@ -105,20 +118,23 @@ export function ResponsiveFolderGrid({
   }, []);
 
   // Toggle card selection
-  const handleToggleSelection = useCallback((codeId: string) => {
-    if (!onSelectionChange) return;
-    
-    const isSelected = selectedCodes.includes(codeId);
-    if (isSelected) {
-      onSelectionChange(selectedCodes.filter(id => id !== codeId));
-    } else {
-      onSelectionChange([...selectedCodes, codeId]);
-    }
-  }, [selectedCodes, onSelectionChange]);
+  const handleToggleSelection = useCallback(
+    (codeId: string) => {
+      if (!onSelectionChange) return;
+
+      const isSelected = selectedCodes.includes(codeId);
+      if (isSelected) {
+        onSelectionChange(selectedCodes.filter((id) => id !== codeId));
+      } else {
+        onSelectionChange([...selectedCodes, codeId]);
+      }
+    },
+    [selectedCodes, onSelectionChange]
+  );
 
   // Toggle card expansion
   const handleToggleExpanded = useCallback((codeId: string) => {
-    setExpandedCards(prev => {
+    setExpandedCards((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(codeId)) {
         newSet.delete(codeId);
@@ -131,11 +147,11 @@ export function ResponsiveFolderGrid({
 
   // Handle image load/error
   const handleImageLoad = useCallback((codeId: string) => {
-    setImagesLoaded(prev => new Set([...prev, codeId]));
+    setImagesLoaded((prev) => new Set([...prev, codeId]));
   }, []);
 
   const handleImageError = useCallback((codeId: string) => {
-    setImageErrors(prev => new Set([...prev, codeId]));
+    setImageErrors((prev) => new Set([...prev, codeId]));
   }, []);
 
   // Format date helper
@@ -155,8 +171,12 @@ export function ResponsiveFolderGrid({
       const isExpanded = expandedCards.has(code.id);
       const hasImageError = imageErrors.has(code.id);
       const isImageLoaded = imagesLoaded.has(code.id);
-      const familyUrl = code.token ? `${window.location.origin}/public/gallery/${code.token}` : '';
-      const qrUrl = code.token ? `/api/qr?token=${encodeURIComponent(code.token)}` : '';
+      const familyUrl = code.token
+        ? `${window.location.origin}/public/gallery/${code.token}`
+        : '';
+      const qrUrl = code.token
+        ? `/api/qr?token=${encodeURIComponent(code.token)}`
+        : '';
 
       return (
         <div
@@ -170,46 +190,46 @@ export function ResponsiveFolderGrid({
           }}
           className={cn(
             'group relative',
-            'neural-glass-card border rounded-xl p-4',
+            'neural-glass-card rounded-xl border p-4',
             'transition-all duration-300 ease-out',
-            'hover:shadow-lg hover:-translate-y-0.5',
+            'hover:-translate-y-0.5 hover:shadow-lg',
             'focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2',
-            isSelected && 'ring-2 ring-primary-500 bg-primary-50/50',
-            code.is_published 
-              ? 'border-emerald-200 bg-emerald-50/30' 
+            isSelected && 'bg-primary-50/50 ring-2 ring-primary-500',
+            code.is_published
+              ? 'border-emerald-200 bg-emerald-50/30'
               : 'border-gray-200 bg-white',
             'min-h-[200px] sm:min-h-[240px]' // Minimum height for consistent layout
           )}
         >
           {/* Selection checkbox for bulk actions */}
           {enableBulkActions && (
-            <div className="absolute top-3 left-3 z-10">
+            <div className="absolute left-3 top-3 z-10">
               <input
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => handleToggleSelection(code.id)}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 min-h-[16px] min-w-[16px]"
+                className="h-4 min-h-[16px] w-4 min-w-[16px] rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 aria-label={`Seleccionar ${code.code_value}`}
               />
             </div>
           )}
 
           {/* Status indicator */}
-          <div className="absolute top-3 right-3">
+          <div className="absolute right-3 top-3">
             {code.is_published ? (
-              <Badge 
-                variant="secondary" 
-                className="bg-emerald-100 text-emerald-800 text-xs font-medium"
+              <Badge
+                variant="secondary"
+                className="bg-emerald-100 text-xs font-medium text-emerald-800"
               >
-                <Eye className="w-3 h-3 mr-1" />
+                <Eye className="mr-1 h-3 w-3" />
                 Publicado
               </Badge>
             ) : (
-              <Badge 
-                variant="outline" 
-                className="bg-gray-100 text-gray-700 text-xs font-medium"
+              <Badge
+                variant="outline"
+                className="bg-gray-100 text-xs font-medium text-gray-700"
               >
-                <EyeOff className="w-3 h-3 mr-1" />
+                <EyeOff className="mr-1 h-3 w-3" />
                 Privado
               </Badge>
             )}
@@ -218,13 +238,13 @@ export function ResponsiveFolderGrid({
           {/* Photo preview */}
           <div className="mb-4 mt-8">
             {code.preview_photos && code.preview_photos.length > 0 ? (
-              <div className="relative h-32 w-full rounded-lg overflow-hidden bg-gray-100">
+              <div className="relative h-32 w-full overflow-hidden rounded-lg bg-gray-100">
                 {!isImageLoaded && !hasImageError && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
                   </div>
                 )}
-                
+
                 {!hasImageError ? (
                   <Image
                     src={code.preview_photos[0]}
@@ -240,13 +260,13 @@ export function ResponsiveFolderGrid({
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                    <Camera className="w-8 h-8 text-gray-400" />
+                    <Camera className="h-8 w-8 text-gray-400" />
                   </div>
                 )}
 
                 {/* Photo count overlay */}
                 {code.photos_count > 1 && (
-                  <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-md text-xs font-medium">
+                  <div className="absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-1 text-xs font-medium text-white">
                     +{code.photos_count - 1} fotos
                   </div>
                 )}
@@ -255,17 +275,17 @@ export function ResponsiveFolderGrid({
                 {onPreview && (
                   <button
                     onClick={() => onPreview(code)}
-                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                     aria-label={`Vista previa de ${code.code_value}`}
                   >
-                    <Eye className="w-6 h-6 text-white" />
+                    <Eye className="h-6 w-6 text-white" />
                   </button>
                 )}
               </div>
             ) : (
-              <div className="h-32 w-full rounded-lg bg-gray-100 flex items-center justify-center">
-                <Camera className="w-8 h-8 text-gray-400" />
-                <span className="ml-2 text-gray-500 text-sm">Sin fotos</span>
+              <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gray-100">
+                <Camera className="h-8 w-8 text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">Sin fotos</span>
               </div>
             )}
           </div>
@@ -273,17 +293,17 @@ export function ResponsiveFolderGrid({
           {/* Card header */}
           <div className="space-y-3">
             <div>
-              <h3 className="font-semibold text-lg text-gray-900 truncate">
+              <h3 className="truncate text-lg font-semibold text-gray-900">
                 {code.code_value}
               </h3>
-              <div className="flex items-center gap-3 text-sm text-gray-600 mt-1">
+              <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
                 <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
+                  <Users className="h-4 w-4" />
                   <span>{code.photos_count} fotos</span>
                 </div>
                 {code.created_at && (
                   <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="h-4 w-4" />
                     <span>{formatDate(code.created_at)}</span>
                   </div>
                 )}
@@ -295,19 +315,21 @@ export function ResponsiveFolderGrid({
               {/* Primary action button */}
               {!code.is_published ? (
                 <Button
-                  onClick={() => handleAction(code.id, () => onPublish(code.id), 'publish')}
+                  onClick={() =>
+                    handleAction(code.id, () => onPublish(code.id), 'publish')
+                  }
                   disabled={actionLoading[`${code.id}_publish`]}
-                  className="w-full font-medium min-h-[44px] bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="min-h-[44px] w-full bg-emerald-600 font-medium text-white hover:bg-emerald-700"
                   aria-label={`Publicar ${code.code_value}`}
                 >
                   {actionLoading[`${code.id}_publish`] ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       <span>Publicando...</span>
                     </>
                   ) : (
                     <>
-                      <Eye className="w-4 h-4 mr-2" />
+                      <Eye className="mr-2 h-4 w-4" />
                       <span>Publicar</span>
                     </>
                   )}
@@ -318,93 +340,107 @@ export function ResponsiveFolderGrid({
                     onClick={() => handleCopyUrl(code)}
                     disabled={!code.token}
                     variant="outline"
-                    className="flex-1 font-medium min-h-[44px]"
+                    className="min-h-[44px] flex-1 font-medium"
                     aria-label={`Copiar enlace de ${code.code_value}`}
                   >
                     {copied[code.id] ? (
                       <>
-                        <CheckCircle2 className="w-4 h-4 mr-2 text-emerald-600" />
+                        <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
                         <span className="text-emerald-600">¡Copiado!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4 mr-2" />
+                        <Copy className="mr-2 h-4 w-4" />
                         <span>Copiar</span>
                       </>
                     )}
                   </Button>
-                  
+
                   <Button
                     onClick={() => handleToggleExpanded(code.id)}
                     variant="outline"
                     size="sm"
-                    className="px-3 min-h-[44px] min-w-[44px]"
+                    className="min-h-[44px] min-w-[44px] px-3"
                     aria-label={`${isExpanded ? 'Contraer' : 'Expandir'} opciones`}
                   >
-                    <MoreVertical className={cn(
-                      'w-4 h-4 transition-transform duration-200',
-                      isExpanded && 'rotate-90'
-                    )} />
+                    <MoreVertical
+                      className={cn(
+                        'h-4 w-4 transition-transform duration-200',
+                        isExpanded && 'rotate-90'
+                      )}
+                    />
                   </Button>
                 </div>
               )}
 
               {/* Expanded actions */}
               {isExpanded && code.is_published && (
-                <div className="space-y-2 pt-2 border-t border-gray-200">
+                <div className="space-y-2 border-t border-gray-200 pt-2">
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       onClick={() => window.open(qrUrl, '_blank')}
                       variant="ghost"
                       size="sm"
-                      className="justify-start min-h-[40px]"
+                      className="min-h-[40px] justify-start"
                       aria-label={`Ver QR de ${code.code_value}`}
                     >
-                      <QrCode className="w-4 h-4 mr-2" />
+                      <QrCode className="mr-2 h-4 w-4" />
                       <span>QR</span>
                     </Button>
-                    
+
                     <Button
                       onClick={() => window.open(familyUrl, '_blank')}
                       variant="ghost"
                       size="sm"
-                      className="justify-start min-h-[40px]"
+                      className="min-h-[40px] justify-start"
                       aria-label={`Abrir galería de ${code.code_value}`}
                     >
-                      <ExternalLink className="w-4 h-4 mr-2" />
+                      <ExternalLink className="mr-2 h-4 w-4" />
                       <span>Abrir</span>
                     </Button>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2">
                     <Button
-                      onClick={() => handleAction(code.id, () => onRotateToken(code.id), 'rotate')}
+                      onClick={() =>
+                        handleAction(
+                          code.id,
+                          () => onRotateToken(code.id),
+                          'rotate'
+                        )
+                      }
                       disabled={actionLoading[`${code.id}_rotate`]}
                       variant="ghost"
                       size="sm"
-                      className="justify-start min-h-[40px] text-blue-700 hover:text-blue-800 hover:bg-blue-50"
+                      className="min-h-[40px] justify-start text-blue-700 hover:bg-blue-50 hover:text-blue-800"
                       aria-label={`Rotar token de ${code.code_value}`}
                     >
                       {actionLoading[`${code.id}_rotate`] ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <RotateCcw className="w-4 h-4 mr-2" />
+                        <RotateCcw className="mr-2 h-4 w-4" />
                       )}
                       <span>Rotar</span>
                     </Button>
-                    
+
                     <Button
-                      onClick={() => handleAction(code.id, () => onUnpublish(code.id), 'unpublish')}
+                      onClick={() =>
+                        handleAction(
+                          code.id,
+                          () => onUnpublish(code.id),
+                          'unpublish'
+                        )
+                      }
                       disabled={actionLoading[`${code.id}_unpublish`]}
                       variant="ghost"
                       size="sm"
-                      className="justify-start min-h-[40px] text-red-700 hover:text-red-800 hover:bg-red-50"
+                      className="min-h-[40px] justify-start text-red-700 hover:bg-red-50 hover:text-red-800"
                       aria-label={`Despublicar ${code.code_value}`}
                     >
                       {actionLoading[`${code.id}_unpublish`] ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <EyeOff className="w-4 h-4 mr-2" />
+                        <EyeOff className="mr-2 h-4 w-4" />
                       )}
                       <span>Despublicar</span>
                     </Button>
@@ -415,9 +451,9 @@ export function ResponsiveFolderGrid({
 
             {/* Last accessed info */}
             {code.last_accessed && code.is_published && (
-              <div className="pt-2 border-t border-gray-200">
+              <div className="border-t border-gray-200 pt-2">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Clock className="w-3 h-3" />
+                  <Clock className="h-3 w-3" />
                   <span>Último acceso: {formatDate(code.last_accessed)}</span>
                 </div>
               </div>
@@ -427,13 +463,13 @@ export function ResponsiveFolderGrid({
       );
     });
   }, [
-    codes, 
-    selectedCodes, 
-    expandedCards, 
-    actionLoading, 
-    copied, 
-    imageErrors, 
-    imagesLoaded, 
+    codes,
+    selectedCodes,
+    expandedCards,
+    actionLoading,
+    copied,
+    imageErrors,
+    imagesLoaded,
     enableBulkActions,
     handleAction,
     handleCopyUrl,
@@ -445,7 +481,7 @@ export function ResponsiveFolderGrid({
     onPreview,
     formatDate,
     handleImageLoad,
-    handleImageError
+    handleImageError,
   ]);
 
   if (loading) {
@@ -454,9 +490,9 @@ export function ResponsiveFolderGrid({
 
   if (codes.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Camera className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+      <div className="py-16 text-center">
+        <Camera className="mx-auto mb-4 h-16 w-16 text-gray-400" />
+        <h3 className="mb-2 text-lg font-medium text-gray-900">
           No hay códigos disponibles
         </h3>
         <p className="text-gray-500">
@@ -471,12 +507,12 @@ export function ResponsiveFolderGrid({
       ref={gridRef}
       className={cn(
         'grid gap-4',
-        'grid-cols-1',                    // Mobile: 1 column
-        'sm:grid-cols-2',                 // Small: 2 columns  
-        'lg:grid-cols-3',                 // Large: 3 columns
-        'xl:grid-cols-4',                 // XL: 4 columns
-        '2xl:grid-cols-5',                // 2XL: 5 columns
-        'auto-rows-fr',                   // Equal height rows
+        'grid-cols-1', // Mobile: 1 column
+        'sm:grid-cols-2', // Small: 2 columns
+        'lg:grid-cols-3', // Large: 3 columns
+        'xl:grid-cols-4', // XL: 4 columns
+        '2xl:grid-cols-5', // 2XL: 5 columns
+        'auto-rows-fr', // Equal height rows
         className
       )}
     >
@@ -486,27 +522,31 @@ export function ResponsiveFolderGrid({
 }
 
 // Skeleton loading component
-export function ResponsiveFolderGridSkeleton({ count = 8 }: { count?: number }) {
+export function ResponsiveFolderGridSkeleton({
+  count = 8,
+}: {
+  count?: number;
+}) {
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={index}
-          className="neural-glass-card border rounded-xl p-4 min-h-[240px]"
+          className="neural-glass-card min-h-[240px] rounded-xl border p-4"
         >
           {/* Status badge skeleton */}
-          <div className="flex justify-between items-start mb-4">
+          <div className="mb-4 flex items-start justify-between">
             <div /> {/* Spacer */}
             <Skeleton className="h-6 w-20 rounded-full" />
           </div>
 
           {/* Image skeleton */}
-          <Skeleton className="h-32 w-full rounded-lg mb-4" />
+          <Skeleton className="mb-4 h-32 w-full rounded-lg" />
 
           {/* Content skeleton */}
           <div className="space-y-3">
             <div>
-              <Skeleton className="h-6 w-3/4 mb-2" />
+              <Skeleton className="mb-2 h-6 w-3/4" />
               <div className="flex items-center gap-3">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-20" />
@@ -527,38 +567,44 @@ export function useFolderGrid() {
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-  const handleBulkPublish = useCallback(async (
-    codeIds: string[],
-    publishAction: (codeId: string) => Promise<void>
-  ) => {
-    setBulkActionLoading(true);
-    try {
-      await Promise.all(codeIds.map(id => publishAction(id)));
-      setSelectedCodes([]);
-    } catch (error) {
-      console.error('Error in bulk publish:', error);
-    } finally {
-      setBulkActionLoading(false);
-    }
-  }, []);
+  const handleBulkPublish = useCallback(
+    async (
+      codeIds: string[],
+      publishAction: (codeId: string) => Promise<void>
+    ) => {
+      setBulkActionLoading(true);
+      try {
+        await Promise.all(codeIds.map((id) => publishAction(id)));
+        setSelectedCodes([]);
+      } catch (error) {
+        console.error('Error in bulk publish:', error);
+      } finally {
+        setBulkActionLoading(false);
+      }
+    },
+    []
+  );
 
-  const handleBulkUnpublish = useCallback(async (
-    codeIds: string[],
-    unpublishAction: (codeId: string) => Promise<void>
-  ) => {
-    setBulkActionLoading(true);
-    try {
-      await Promise.all(codeIds.map(id => unpublishAction(id)));
-      setSelectedCodes([]);
-    } catch (error) {
-      console.error('Error in bulk unpublish:', error);
-    } finally {
-      setBulkActionLoading(false);
-    }
-  }, []);
+  const handleBulkUnpublish = useCallback(
+    async (
+      codeIds: string[],
+      unpublishAction: (codeId: string) => Promise<void>
+    ) => {
+      setBulkActionLoading(true);
+      try {
+        await Promise.all(codeIds.map((id) => unpublishAction(id)));
+        setSelectedCodes([]);
+      } catch (error) {
+        console.error('Error in bulk unpublish:', error);
+      } finally {
+        setBulkActionLoading(false);
+      }
+    },
+    []
+  );
 
   const selectAll = useCallback((codes: CodeRow[]) => {
-    setSelectedCodes(codes.map(code => code.id));
+    setSelectedCodes(codes.map((code) => code.id));
   }, []);
 
   const clearSelection = useCallback(() => {

@@ -46,7 +46,10 @@ const limiterCache = new Map<string, Ratelimit>();
 
 if (USE_REDIS) {
   try {
-    redis = new Redis({ url: REDIS_URL as string, token: REDIS_TOKEN as string });
+    redis = new Redis({
+      url: REDIS_URL as string,
+      token: REDIS_TOKEN as string,
+    });
     logger.info('[RateLimit] Using Upstash Redis backend');
   } catch (e) {
     logger.warn('[RateLimit] Failed to init Redis. Falling back to memory.', {
@@ -199,7 +202,8 @@ async function checkRateLimit(
       const id = `${type}:${key}`;
       const result = await limiter!.limit(id);
       const nowMs = Date.now();
-      const resetTime = nowMs + (result.reset - Math.floor(nowMs / 1000)) * 1000;
+      const resetTime =
+        nowMs + (result.reset - Math.floor(nowMs / 1000)) * 1000;
       return {
         allowed: result.success,
         limit: config.requests,

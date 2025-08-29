@@ -297,7 +297,8 @@ export async function POST(request: NextRequest) {
       {
         orderId: order.id,
         preferenceId: mpResponse.id,
-        redirectUrl: mpResponse.sandbox_init_point || mpResponse.init_point || '',
+        redirectUrl:
+          mpResponse.sandbox_init_point || mpResponse.init_point || '',
         totalAmount: totalAmount / 100, // En pesos para el frontend
         photoCount: photos.length,
         package: validatedData.package,

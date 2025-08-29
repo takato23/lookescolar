@@ -56,7 +56,7 @@ export default function UnifiedStorePage() {
       }
 
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || 'Error en la respuesta');
       }
@@ -65,7 +65,8 @@ export default function UnifiedStorePage() {
       setSubject(data.subject);
     } catch (err) {
       console.error('Error loading gallery:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error cargando la galería';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Error cargando la galería';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

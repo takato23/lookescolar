@@ -17,7 +17,9 @@ async function getSharp() {
     try {
       sharp = (await import('sharp')).default;
     } catch (error) {
-      logger.error('Failed to load Sharp', { error: error instanceof Error ? error.message : error });
+      logger.error('Failed to load Sharp', {
+        error: error instanceof Error ? error.message : error,
+      });
       throw new Error('Image processing unavailable');
     }
   }
@@ -50,7 +52,12 @@ async function handlePOST(request: NextRequest) {
     }
 
     // Validation
-    const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const ALLOWED_MIME_TYPES = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+    ];
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     const MAX_FILES = 10;
 
@@ -90,7 +97,9 @@ async function handlePOST(request: NextRequest) {
           .eq('id', folder.event_id)
           .single();
         if (ev) {
-          watermarkLabel = `${ev.school_name || ''}${ev.school_name && ev.name ? ' · ' : ''}${ev.name || ''}`.trim() || 'Look Escolar';
+          watermarkLabel =
+            `${ev.school_name || ''}${ev.school_name && ev.name ? ' · ' : ''}${ev.name || ''}`.trim() ||
+            'Look Escolar';
         }
       }
     } catch {}
@@ -116,9 +125,12 @@ async function handlePOST(request: NextRequest) {
 
         // Get file buffer
         const buffer = Buffer.from(await file.arrayBuffer());
-        
+
         // Generate checksum
-        const checksum = crypto.createHash('sha256').update(buffer).digest('hex');
+        const checksum = crypto
+          .createHash('sha256')
+          .update(buffer)
+          .digest('hex');
 
         // Check for duplicates
         const { data: existing } = await supabase
@@ -128,9 +140,9 @@ async function handlePOST(request: NextRequest) {
           .single();
 
         if (existing) {
-          errors.push({ 
-            filename: file.name, 
-            error: `Duplicate of ${existing.filename}` 
+          errors.push({
+            filename: file.name,
+            error: `Duplicate of ${existing.filename}`,
           });
           continue;
         }
@@ -144,7 +156,10 @@ async function handlePOST(request: NextRequest) {
           });
 
         if (uploadError) {
-          logger.error('Upload failed', { filename: file.name, error: uploadError.message });
+          logger.error('Upload failed', {
+            filename: file.name,
+            error: uploadError.message,
+          });
           errors.push({ filename: file.name, error: 'Upload failed' });
           continue;
         }
@@ -166,7 +181,10 @@ async function handlePOST(request: NextRequest) {
         } catch (previewError) {
           logger.warn('Preview generation failed', {
             filename: file.name,
-            error: previewError instanceof Error ? previewError.message : previewError,
+            error:
+              previewError instanceof Error
+                ? previewError.message
+                : previewError,
           });
           // Continue without preview
         }
@@ -188,15 +206,15 @@ async function handlePOST(request: NextRequest) {
           .single();
 
         if (insertError) {
-          logger.error('Asset record creation failed', { 
-            filename: file.name, 
-            error: insertError.message 
+          logger.error('Asset record creation failed', {
+            filename: file.name,
+            error: insertError.message,
           });
-          
+
           // Cleanup uploaded file
           await supabase.storage.from('photo-private').remove([originalPath]);
           await supabase.storage.from('photos').remove([previewPath]);
-          
+
           errors.push({ filename: file.name, error: 'Database error' });
           continue;
         }
@@ -204,7 +222,7 @@ async function handlePOST(request: NextRequest) {
         results.push({
           id: asset.id,
           filename: asset.filename,
-          status: 'success'
+          status: 'success',
         });
 
         logger.info('Asset uploaded successfully', {
@@ -213,11 +231,10 @@ async function handlePOST(request: NextRequest) {
           folderId,
           fileSize: file.size,
         });
-
       } catch (fileError) {
-        logger.error('File processing error', { 
-          filename: file.name, 
-          error: fileError instanceof Error ? fileError.message : fileError 
+        logger.error('File processing error', {
+          filename: file.name,
+          error: fileError instanceof Error ? fileError.message : fileError,
         });
         errors.push({ filename: file.name, error: 'Processing failed' });
       }
@@ -234,27 +251,36 @@ async function handlePOST(request: NextRequest) {
         });
         if (rpcRes.error) {
           // Fallback: recalc precise count and set
-          const [{ count: assetsCount }, { count: photosCount }] = await Promise.all([
-            (await createServerSupabaseServiceClient())
-              .from('assets')
-              .select('id', { count: 'exact', head: true })
-              .eq('folder_id', folderId),
-            (await createServerSupabaseServiceClient())
-              .from('photos')
-              .select('id', { count: 'exact', head: true })
-              .eq('subject_id', folderId),
-          ]);
+          const [{ count: assetsCount }, { count: photosCount }] =
+            await Promise.all([
+              (await createServerSupabaseServiceClient())
+                .from('assets')
+                .select('id', { count: 'exact', head: true })
+                .eq('folder_id', folderId),
+              (await createServerSupabaseServiceClient())
+                .from('photos')
+                .select('id', { count: 'exact', head: true })
+                .eq('subject_id', folderId),
+            ]);
           const newCount = (assetsCount || 0) + (photosCount || 0);
-          const { error: setErr } = await (await createServerSupabaseServiceClient())
+          const { error: setErr } = await (
+            await createServerSupabaseServiceClient()
+          )
             .from('folders')
             .update({ photo_count: newCount })
             .eq('id', folderId);
           if (setErr) {
-            logger.warn('Failed to set recalculated folder count (upload)', { folderId, error: setErr.message });
+            logger.warn('Failed to set recalculated folder count (upload)', {
+              folderId,
+              error: setErr.message,
+            });
           }
         }
       } catch (e: any) {
-        logger.warn('Failed to update folder count after upload', { folderId, error: e?.message || String(e) });
+        logger.warn('Failed to update folder count after upload', {
+          folderId,
+          error: e?.message || String(e),
+        });
       }
     }
     const response = {
@@ -273,15 +299,14 @@ async function handlePOST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json(response, { 
-      status: success ? 200 : 400 
+    return NextResponse.json(response, {
+      status: success ? 200 : 400,
+    });
+  } catch (error) {
+    logger.error('Upload API error', {
+      error: error instanceof Error ? error.message : error,
     });
 
-  } catch (error) {
-    logger.error('Upload API error', { 
-      error: error instanceof Error ? error.message : error 
-    });
-    
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

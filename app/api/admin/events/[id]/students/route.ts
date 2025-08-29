@@ -98,7 +98,8 @@ export const GET = withAuth(
       // Process subjects (students) with simplified data
       const processedStudents = (students || []).map((subject) => {
         // Check if access token is still valid
-        const hasActiveToken = subject.access_token && 
+        const hasActiveToken =
+          subject.access_token &&
           new Date(subject.token_expires_at) > new Date();
 
         return {
@@ -174,7 +175,7 @@ export const POST = withAuth(
 
       // Generate QR code if not provided
       const qrCode = await generateStudentQRCode(eventId, validatedData.name);
-      
+
       // Generate access token
       const accessToken = generateSecureToken();
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
@@ -328,7 +329,6 @@ async function generateStudentQRCode(
 
   return `${prefix}-${eventShort}-${nameShort}-${random}-${timestamp}`;
 }
-
 
 // Generate secure token
 function generateSecureToken(): string {

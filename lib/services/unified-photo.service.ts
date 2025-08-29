@@ -22,8 +22,8 @@ export interface UnifiedPhoto {
 
 /**
  * Unified Photo Service
- * 
- * Provides a single interface to query photos from both old (photos table) 
+ *
+ * Provides a single interface to query photos from both old (photos table)
  * and new (folders/assets) systems. Prioritizes the new system when available.
  */
 export class UnifiedPhotoService {
@@ -42,12 +42,15 @@ export class UnifiedPhotoService {
 
   /**
    * Get photo count for an event using the unified system
-   * 
+   *
    * UPDATED: Now uses the assets table via folders for the new system
    */
-  async getEventPhotoCount(eventId: string, folderId?: string | null): Promise<number> {
+  async getEventPhotoCount(
+    eventId: string,
+    folderId?: string | null
+  ): Promise<number> {
     const supabase = await this.getSupabase();
-    
+
     if (folderId) {
       // Count assets in specific folder
       const { count } = await supabase
@@ -67,13 +70,13 @@ export class UnifiedPhotoService {
         return 0;
       }
 
-      const folderIds = folders.map(f => f.id);
+      const folderIds = folders.map((f) => f.id);
       const { count } = await supabase
         .from('assets')
         .select('*', { count: 'exact', head: true })
         .in('folder_id', folderIds)
         .eq('status', 'ready');
-      
+
       return count || 0;
     }
   }
@@ -83,7 +86,7 @@ export class UnifiedPhotoService {
    */
   async getUntaggedPhotoCount(eventId: string): Promise<number> {
     const supabase = await this.getSupabase();
-    
+
     // Get all folders for this event
     const { data: folders } = await supabase
       .from('folders')
@@ -94,8 +97,8 @@ export class UnifiedPhotoService {
       return 0;
     }
 
-    const folderIds = folders.map(f => f.id);
-    
+    const folderIds = folders.map((f) => f.id);
+
     // Count assets without subject_id in their metadata
     const { count } = await supabase
       .from('assets')
@@ -111,7 +114,7 @@ export class UnifiedPhotoService {
    * Get photos for an event with optional filters
    */
   async getEventPhotos(
-    eventId: string, 
+    eventId: string,
     options: {
       limit?: number;
       offset?: number;
@@ -121,7 +124,13 @@ export class UnifiedPhotoService {
     } = {}
   ): Promise<UnifiedPhoto[]> {
     const supabase = await this.getSupabase();
-    const { limit = 50, offset = 0, includeUnapproved = false, studentId, courseId } = options;
+    const {
+      limit = 50,
+      offset = 0,
+      includeUnapproved = false,
+      studentId,
+      courseId,
+    } = options;
 
     // Try new system first
     const { data: folders } = await supabase
@@ -131,10 +140,11 @@ export class UnifiedPhotoService {
 
     if (folders && folders.length > 0) {
       const folderIds = folders.map((f: any) => f.id);
-      
+
       let query = supabase
         .from('assets')
-        .select(`
+        .select(
+          `
           id,
           filename,
           original_path,
@@ -144,7 +154,8 @@ export class UnifiedPhotoService {
           mime_type,
           created_at,
           status
-        `)
+        `
+        )
         .in('folder_id', folderIds)
         .order('created_at', { ascending: false });
 

@@ -82,13 +82,18 @@ export async function GET(
             id: folderData.id,
             name: folderData.name,
             event_id: folderData.event_id,
-            events: folderData.events
+            events: folderData.events,
           },
           type: 'folder',
         };
-        debugMigration('Folder token found', { folderId: folderData.id, folderName: folderData.name });
+        debugMigration('Folder token found', {
+          folderId: folderData.id,
+          folderName: folderData.name,
+        });
       } else {
-        debugMigration('Folder token not found, trying subject tokens', { error: folderError });
+        debugMigration('Folder token not found, trying subject tokens', {
+          error: folderError,
+        });
       }
     } catch (e) {
       debugMigration('Folder token validation failed', { error: e });
@@ -124,7 +129,9 @@ export async function GET(
             students: subjectTokenData.subjects, // Map subjects to students for compatibility
             type: 'subject',
           };
-          debugMigration('Subject token found', { subjectId: subjectTokenData.subjects?.id });
+          debugMigration('Subject token found', {
+            subjectId: subjectTokenData.subjects?.id,
+          });
         } else {
           error = subjectError;
         }
@@ -148,7 +155,11 @@ export async function GET(
     }
 
     // Verificar que el token no haya expirado (solo para subject tokens)
-    if (tokenData.type === 'subject' && tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
+    if (
+      tokenData.type === 'subject' &&
+      tokenData.expires_at &&
+      new Date(tokenData.expires_at) < new Date()
+    ) {
       debugMigration('Token expired', { expiresAt: tokenData.expires_at });
       return NextResponse.json(
         {
@@ -164,7 +175,8 @@ export async function GET(
     if (tokenData.type === 'folder') {
       // Handle folder token response
       const folder = tokenData.folder;
-      const hasValidEvent = folder && folder.events && typeof folder.events === 'object';
+      const hasValidEvent =
+        folder && folder.events && typeof folder.events === 'object';
 
       if (!hasValidEvent) {
         debugMigration('Associated event not found for folder', {
@@ -221,7 +233,8 @@ export async function GET(
           name: student.name,
           event: {
             id: hasValidEvent && student.events.id ? student.events.id : '',
-            name: hasValidEvent && student.events.name ? student.events.name : '',
+            name:
+              hasValidEvent && student.events.name ? student.events.name : '',
           },
         },
       };

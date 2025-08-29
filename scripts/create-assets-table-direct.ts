@@ -51,31 +51,35 @@ ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
 `;
 
     console.log('⚙️  Creating assets table and indexes...');
-    
+
     // Use PostgreSQL functions that exist in Supabase
-    const { data, error } = await supabase.rpc('sql', { 
-      query: createTableSQL 
+    const { data, error } = await supabase.rpc('sql', {
+      query: createTableSQL,
     });
 
     if (error) {
       console.log('❌ Error creating table:', error.message);
-      
+
       // Fallback: Try using fetch to hit Supabase's REST endpoint directly
       console.log('🔄 Trying alternative approach...');
-      
+
       const response = await fetch(`${supabaseUrl}/rest/v1/rpc/sql`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'apikey': supabaseServiceKey
+          Authorization: `Bearer ${supabaseServiceKey}`,
+          apikey: supabaseServiceKey,
         },
-        body: JSON.stringify({ query: createTableSQL })
+        body: JSON.stringify({ query: createTableSQL }),
       });
 
       if (!response.ok) {
-        console.log('❌ Alternative approach failed too. Manual intervention needed.');
-        console.log('📋 Please execute this SQL manually in Supabase Dashboard > SQL Editor:');
+        console.log(
+          '❌ Alternative approach failed too. Manual intervention needed.'
+        );
+        console.log(
+          '📋 Please execute this SQL manually in Supabase Dashboard > SQL Editor:'
+        );
         console.log('---');
         console.log(createTableSQL);
         console.log('---');
@@ -95,21 +99,23 @@ ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
           filename: 'test-photo-1.jpg',
           original_path: '/storage/originals/test-photo-1.jpg',
           preview_path: '/storage/previews/test-photo-1.jpg',
-          checksum: 'abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567890abcdef12',
+          checksum:
+            'abc123def456ghi789jkl012mno345pqr678stu901vwx234yz567890abcdef12',
           file_size: 1024000,
           mime_type: 'image/jpeg',
-          status: 'ready'
+          status: 'ready',
         },
         {
           folder_id: '1d4fe778-f4fa-4d11-8b8e-647f63a485d2',
           filename: 'test-photo-2.jpg',
           original_path: '/storage/originals/test-photo-2.jpg',
           preview_path: '/storage/previews/test-photo-2.jpg',
-          checksum: 'def456ghi789jkl012mno345pqr678stu901vwx234yz567890abcdef123456ab',
+          checksum:
+            'def456ghi789jkl012mno345pqr678stu901vwx234yz567890abcdef123456ab',
           file_size: 2048000,
           mime_type: 'image/jpeg',
-          status: 'ready'
-        }
+          status: 'ready',
+        },
       ]);
 
     if (insertError) {
@@ -128,7 +134,9 @@ ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
     if (verifyError) {
       console.log('❌ Verification failed:', verifyError.message);
     } else {
-      console.log(`✅ Assets table verified! Found ${verifyData?.length || 0} records`);
+      console.log(
+        `✅ Assets table verified! Found ${verifyData?.length || 0} records`
+      );
       if (verifyData && verifyData.length > 0) {
         verifyData.forEach((asset, i) => {
           console.log(`   ${i + 1}. ${asset.filename} (${asset.status})`);
@@ -139,12 +147,19 @@ ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
     // Test the exact API query
     console.log('\n🧪 Testing the exact API query...');
     const targetFolderId = '1d4fe778-f4fa-4d11-8b8e-647f63a485d2';
-    
-    const { data: apiTestData, error: apiTestError, count } = await supabase
+
+    const {
+      data: apiTestData,
+      error: apiTestError,
+      count,
+    } = await supabase
       .from('assets')
-      .select('id, filename, preview_path, file_size, created_at, folder_id, status', {
-        count: 'exact',
-      })
+      .select(
+        'id, filename, preview_path, file_size, created_at, folder_id, status',
+        {
+          count: 'exact',
+        }
+      )
       .eq('folder_id', targetFolderId)
       .order('created_at', { ascending: false })
       .range(0, 49);
@@ -152,11 +167,14 @@ ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
     if (apiTestError) {
       console.log('❌ API test query failed:', apiTestError.message);
     } else {
-      console.log(`✅ API test query success! Found ${apiTestData?.length || 0} assets (total: ${count})`);
+      console.log(
+        `✅ API test query success! Found ${apiTestData?.length || 0} assets (total: ${count})`
+      );
     }
 
-    console.log('\n🎉 Assets table setup completed! You can now test the PhotoAdmin component.');
-
+    console.log(
+      '\n🎉 Assets table setup completed! You can now test the PhotoAdmin component.'
+    );
   } catch (err) {
     console.error('❌ Setup failed:', err);
     console.log('\n📋 Manual SQL to execute in Supabase Dashboard:');
@@ -195,6 +213,3 @@ ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
 }
 
 createAssetsTableDirect().catch(console.error);
-
-
-

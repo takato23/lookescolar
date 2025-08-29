@@ -5,19 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ResponsiveFolderGrid, useFolderGrid } from '@/components/admin/ResponsiveFolderGrid';
+import {
+  ResponsiveFolderGrid,
+  useFolderGrid,
+} from '@/components/admin/ResponsiveFolderGrid';
 import { PhotoPreviewModal } from '@/components/admin/PhotoPreviewModal';
 import { usePublishSuccessToast } from '@/components/admin/PublishSuccessToast';
 import { useFolderPublishData } from '@/hooks/useFolderPublishData';
-import { 
-  QrCode, 
-  RotateCcw, 
-  LinkIcon, 
-  Copy, 
-  ExternalLink, 
-  RefreshCw, 
-  Users, 
-  User, 
+import {
+  QrCode,
+  RotateCcw,
+  LinkIcon,
+  Copy,
+  ExternalLink,
+  RefreshCw,
+  Users,
+  User,
   Search,
   Filter,
   X,
@@ -27,7 +30,7 @@ import {
   EyeOff,
   Grid3X3,
   List,
-  ScanLine
+  ScanLine,
 } from 'lucide-react';
 
 type CodeRow = {
@@ -60,16 +63,18 @@ export default function PublishPage() {
     getIsUnpublishing,
     getIsRotating,
   } = useFolderPublishData();
-  
+
   // Local UI state
   const [filter, setFilter] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'published' | 'unpublished'
+  >('all');
   const [previewFolder, setPreviewFolder] = useState<any | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPublicEnabled, setIsPublicEnabled] = useState<boolean | null>(null);
   const [togglingPublic, setTogglingPublic] = useState(false);
-  
+
   // Folder grid hook for bulk actions
   const {
     selectedCodes,
@@ -80,9 +85,10 @@ export default function PublishPage() {
     selectAll,
     clearSelection,
   } = useFolderGrid();
-  
+
   // Toast notifications
-  const { showPublishSuccess, showUnpublishSuccess, showRotateSuccess } = usePublishSuccessToast();
+  const { showPublishSuccess, showUnpublishSuccess, showRotateSuccess } =
+    usePublishSuccessToast();
 
   // Error handling
   if (error) {
@@ -92,111 +98,132 @@ export default function PublishPage() {
   // Enhanced filtering with status filter
   const filtered = useMemo(() => {
     let result = rows;
-    
+
     // Apply text filter
     const q = filter.trim().toLowerCase();
     if (q) {
       result = result.filter((r) => r.code_value.toLowerCase().includes(q));
     }
-    
+
     // Apply status filter
     if (statusFilter === 'published') {
       result = result.filter((r) => r.is_published);
     } else if (statusFilter === 'unpublished') {
       result = result.filter((r) => !r.is_published);
     }
-    
+
     return result;
   }, [rows, filter, statusFilter]);
 
   // Preview handler
-  const handlePreview = useCallback((code: CodeRow) => {
-    // Find the backing folder to enrich preview context
-    const folder = folders?.find((f) => f.id === code.id);
-    setPreviewFolder({
-      id: code.id,
-      name: code.code_value,
-      parent_id: folder?.event_id || selectedEvent?.id || null,
-      depth: 0,
-      photo_count: code.photos_count,
-      is_published: !!code.is_published,
-      share_token: folder?.share_token || code.token || null,
-      published_at: folder?.published_at || null,
-      family_url: folder?.family_url || null,
-      qr_url: folder?.qr_url || null,
-      settings: {},
-    });
-    setIsPreviewOpen(true);
-  }, [folders, selectedEvent]);
+  const handlePreview = useCallback(
+    (code: CodeRow) => {
+      // Find the backing folder to enrich preview context
+      const folder = folders?.find((f) => f.id === code.id);
+      setPreviewFolder({
+        id: code.id,
+        name: code.code_value,
+        parent_id: folder?.event_id || selectedEvent?.id || null,
+        depth: 0,
+        photo_count: code.photos_count,
+        is_published: !!code.is_published,
+        share_token: folder?.share_token || code.token || null,
+        published_at: folder?.published_at || null,
+        family_url: folder?.family_url || null,
+        qr_url: folder?.qr_url || null,
+        settings: {},
+      });
+      setIsPreviewOpen(true);
+    },
+    [folders, selectedEvent]
+  );
 
   // Action handlers with React Query and toast integration
-  const publish = useCallback((codeId: string) => {
-    const code = rows.find(r => r.id === codeId);
-    if (!code) return;
+  const publish = useCallback(
+    (codeId: string) => {
+      const code = rows.find((r) => r.id === codeId);
+      if (!code) return;
 
-    publishMutation(codeId, {
-      onSuccess: (data) => {
-        if (data.share_token) {
-          const familyUrl = data.family_url || `${window.location.origin}/f/${data.share_token}`;
-          const qrUrl = data.qr_url || `/api/qr?token=${encodeURIComponent(data.share_token)}`;
-          
-          showPublishSuccess({
-            codeId: code.id,
-            codeValue: code.code_value,
-            token: data.share_token,
-            familyUrl,
-            qrUrl,
-            photosCount: code.photos_count,
-            eventName: selectedEvent?.name,
-            action: 'published',
-          }, {
-            onUndo: unpublish,
-            duration: 10000,
-          });
-        }
-      },
-      onError: (error) => {
-        console.error('Error publishing:', error);
-        // Add error toast here if needed
-      }
-    });
-  }, [rows, selectedEvent, publishMutation, showPublishSuccess]);
+      publishMutation(codeId, {
+        onSuccess: (data) => {
+          if (data.share_token) {
+            const familyUrl =
+              data.family_url ||
+              `${window.location.origin}/f/${data.share_token}`;
+            const qrUrl =
+              data.qr_url ||
+              `/api/qr?token=${encodeURIComponent(data.share_token)}`;
 
-  const rotate = useCallback((codeId: string) => {
-    const code = rows.find(r => r.id === codeId);
-    if (!code) return;
+            showPublishSuccess(
+              {
+                codeId: code.id,
+                codeValue: code.code_value,
+                token: data.share_token,
+                familyUrl,
+                qrUrl,
+                photosCount: code.photos_count,
+                eventName: selectedEvent?.name,
+                action: 'published',
+              },
+              {
+                onUndo: unpublish,
+                duration: 10000,
+              }
+            );
+          }
+        },
+        onError: (error) => {
+          console.error('Error publishing:', error);
+          // Add error toast here if needed
+        },
+      });
+    },
+    [rows, selectedEvent, publishMutation, showPublishSuccess]
+  );
 
-    rotateMutation(codeId, {
-      onSuccess: (data) => {
-        if (data.newToken || data.share_token) {
-          const token = data.newToken || data.share_token;
-          const familyUrl = data.family_url || `${window.location.origin}/f/${token}`;
-          const qrUrl = data.qr_url || `/api/qr?token=${encodeURIComponent(token)}`;
-          
-          showRotateSuccess(code.code_value, token, familyUrl, qrUrl);
-        }
-      },
-      onError: (error) => {
-        console.error('Error rotating token:', error);
-        // Add error toast here if needed
-      }
-    });
-  }, [rows, rotateMutation, showRotateSuccess]);
+  const rotate = useCallback(
+    (codeId: string) => {
+      const code = rows.find((r) => r.id === codeId);
+      if (!code) return;
 
-  const unpublish = useCallback((codeId: string) => {
-    const code = rows.find(r => r.id === codeId);
-    if (!code) return;
+      rotateMutation(codeId, {
+        onSuccess: (data) => {
+          if (data.newToken || data.share_token) {
+            const token = data.newToken || data.share_token;
+            const familyUrl =
+              data.family_url || `${window.location.origin}/f/${token}`;
+            const qrUrl =
+              data.qr_url || `/api/qr?token=${encodeURIComponent(token)}`;
 
-    unpublishMutation(codeId, {
-      onSuccess: () => {
-        showUnpublishSuccess(code.code_value, code.id, publish);
-      },
-      onError: (error) => {
-        console.error('Error unpublishing:', error);
-        // Add error toast here if needed
-      }
-    });
-  }, [rows, unpublishMutation, showUnpublishSuccess, publish]);
+            showRotateSuccess(code.code_value, token, familyUrl, qrUrl);
+          }
+        },
+        onError: (error) => {
+          console.error('Error rotating token:', error);
+          // Add error toast here if needed
+        },
+      });
+    },
+    [rows, rotateMutation, showRotateSuccess]
+  );
+
+  const unpublish = useCallback(
+    (codeId: string) => {
+      const code = rows.find((r) => r.id === codeId);
+      if (!code) return;
+
+      unpublishMutation(codeId, {
+        onSuccess: () => {
+          showUnpublishSuccess(code.code_value, code.id, publish);
+        },
+        onError: (error) => {
+          console.error('Error unpublishing:', error);
+          // Add error toast here if needed
+        },
+      });
+    },
+    [rows, unpublishMutation, showUnpublishSuccess, publish]
+  );
 
   const copy = async (text: string) => {
     try {
@@ -243,11 +270,14 @@ export default function PublishPage() {
     if (!selectedEvent?.id) return;
     setTogglingPublic(true);
     try {
-      const resp = await fetch(`/api/admin/events/${selectedEvent.id}/public-gallery`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: next }),
-      });
+      const resp = await fetch(
+        `/api/admin/events/${selectedEvent.id}/public-gallery`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: next }),
+        }
+      );
       const json = await resp.json();
       if (!resp.ok) throw new Error(json.error || 'No se pudo actualizar');
       setIsPublicEnabled(next);
@@ -259,27 +289,29 @@ export default function PublishPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6 max-w-7xl">
+    <div className="container mx-auto max-w-7xl space-y-6 px-4 py-6">
       {/* Mobile-first header */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
               Publicación de Galerías
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="mt-1 text-gray-600">
               Gestiona el acceso familiar a las fotos del evento
             </p>
           </div>
-          
-          <Button 
-            onClick={() => refetch()} 
-            variant="outline" 
+
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
             disabled={isRefetching}
-            className="flex-shrink-0 min-h-[44px]"
+            className="min-h-[44px] flex-shrink-0"
             aria-label="Actualizar datos"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`}
+            />
             <span className="hidden sm:inline">
               {isRefetching ? 'Actualizando...' : 'Actualizar'}
             </span>
@@ -288,31 +320,39 @@ export default function PublishPage() {
 
         {/* Stats cards - Mobile responsive */}
         {stats.total > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Card className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {stats.total}
+                </div>
                 <div className="text-sm text-gray-600">Total códigos</div>
               </div>
             </Card>
-            
+
             <Card className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-emerald-600">{stats.published}</div>
+                <div className="text-2xl font-bold text-emerald-600">
+                  {stats.published}
+                </div>
                 <div className="text-sm text-gray-600">Publicados</div>
               </div>
             </Card>
-            
+
             <Card className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{stats.unpublished}</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {stats.unpublished}
+                </div>
                 <div className="text-sm text-gray-600">Privados</div>
               </div>
             </Card>
-            
+
             <Card className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.totalPhotos}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.totalPhotos}
+                </div>
                 <div className="text-sm text-gray-600">Fotos totales</div>
               </div>
             </Card>
@@ -324,27 +364,30 @@ export default function PublishPage() {
       {selectedEvent && (
         <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-blue-100/30">
           <div className="p-4 sm:p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="flex-shrink-0 p-3 rounded-full bg-blue-100">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex-shrink-0 rounded-full bg-blue-100 p-3">
                 <Users className="h-6 w-6 text-blue-600" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-blue-900">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg font-semibold text-blue-900 sm:text-xl">
                   Galería Pública
                 </h2>
-                <p className="text-sm text-blue-700 mt-1">
-                  <strong>{selectedEvent.name}</strong> - Todas las familias ven las mismas fotos
+                <p className="mt-1 text-sm text-blue-700">
+                  <strong>{selectedEvent.name}</strong> - Todas las familias ven
+                  las mismas fotos
                 </p>
                 {isPublicEnabled === false && (
-                  <p className="text-xs text-blue-700 mt-1">Actualmente deshabilitada</p>
+                  <p className="mt-1 text-xs text-blue-700">
+                    Actualmente deshabilitada
+                  </p>
                 )}
               </div>
             </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button 
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
                 onClick={copyPublicLink}
-                className="bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none min-h-[44px]"
+                className="min-h-[44px] flex-1 bg-blue-600 hover:bg-blue-700 sm:flex-none"
               >
                 <Copy className="mr-2 h-4 w-4" />
                 Copiar Enlace Público
@@ -353,13 +396,9 @@ export default function PublishPage() {
               <Button
                 asChild
                 variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50 flex-1 sm:flex-none min-h-[44px]"
+                className="min-h-[44px] flex-1 border-blue-300 text-blue-700 hover:bg-blue-50 sm:flex-none"
               >
-                <a
-                  href={getPublicUrl()}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a href={getPublicUrl()} target="_blank" rel="noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Vista Previa
                 </a>
@@ -377,9 +416,11 @@ export default function PublishPage() {
               </Button>
             </div>
 
-            <div className="mt-4 p-3 bg-blue-100/50 rounded-lg border border-blue-200">
-              <div className="text-xs font-medium text-blue-700 mb-1">Enlace público:</div>
-              <div className="text-xs font-mono text-blue-800 break-all">
+            <div className="mt-4 rounded-lg border border-blue-200 bg-blue-100/50 p-3">
+              <div className="mb-1 text-xs font-medium text-blue-700">
+                Enlace público:
+              </div>
+              <div className="break-all font-mono text-xs text-blue-800">
                 {getPublicUrl()}
               </div>
             </div>
@@ -390,100 +431,107 @@ export default function PublishPage() {
       {/* SECCIÓN: COMPARTIR PERSONALIZADO */}
       <Card className="border-orange-200 bg-gradient-to-br from-orange-50/50 to-orange-100/30">
         <div className="border-b border-orange-200 bg-orange-100/50 p-4 sm:p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0 p-3 rounded-full bg-orange-100">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex-shrink-0 rounded-full bg-orange-100 p-3">
               <User className="h-6 w-6 text-orange-600" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg sm:text-xl font-semibold text-orange-900">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-semibold text-orange-900 sm:text-xl">
                 Galerías Personalizadas
               </h2>
-              <p className="text-sm text-orange-700 mt-1">
-                Cada código familiar ve solo <strong>sus fotos específicas</strong>
+              <p className="mt-1 text-sm text-orange-700">
+                Cada código familiar ve solo{' '}
+                <strong>sus fotos específicas</strong>
               </p>
             </div>
           </div>
-          
+
           {/* Mobile-first controls */}
           <div className="space-y-3">
             {/* Search and filter row */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                 <Input
                   placeholder="Buscar código (ej. 3B-07)..."
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="pl-10 min-h-[44px]"
+                  className="min-h-[44px] pl-10"
                 />
                 {filter && (
                   <button
                     onClick={() => setFilter('')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm min-h-[44px] bg-white"
+                  className="min-h-[44px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
                 >
                   <option value="all">Todos</option>
                   <option value="published">Publicados</option>
                   <option value="unpublished">Privados</option>
                 </select>
-                
+
                 <Button
                   variant="outline"
-                  onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                  className="px-3 min-h-[44px] min-w-[44px]"
+                  onClick={() =>
+                    setViewMode(viewMode === 'grid' ? 'list' : 'grid')
+                  }
+                  className="min-h-[44px] min-w-[44px] px-3"
                   aria-label={`Cambiar a vista ${viewMode === 'grid' ? 'lista' : 'grilla'}`}
                 >
-                  {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
+                  {viewMode === 'grid' ? (
+                    <List className="h-4 w-4" />
+                  ) : (
+                    <Grid3X3 className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
 
             {/* Bulk actions */}
             {selectedCodes.length > 0 && (
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-orange-200/50 rounded-lg border border-orange-300">
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-orange-300 bg-orange-200/50 p-3">
                 <span className="text-sm font-medium text-orange-800">
                   {selectedCodes.length} seleccionados
                 </span>
-                
+
                 <div className="flex flex-wrap gap-2">
                   <Button
                     onClick={() => bulkPublishMutation(selectedCodes)}
                     disabled={bulkActionLoading}
                     size="sm"
-                    className="bg-emerald-600 hover:bg-emerald-700 min-h-[36px]"
+                    className="min-h-[36px] bg-emerald-600 hover:bg-emerald-700"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
+                    <Eye className="mr-2 h-4 w-4" />
                     Publicar
                   </Button>
-                  
+
                   <Button
                     onClick={() => bulkUnpublishMutation(selectedCodes)}
                     disabled={bulkActionLoading}
                     size="sm"
                     variant="outline"
-                    className="border-orange-300 text-orange-700 hover:bg-orange-100 min-h-[36px]"
+                    className="min-h-[36px] border-orange-300 text-orange-700 hover:bg-orange-100"
                   >
-                    <EyeOff className="w-4 h-4 mr-2" />
+                    <EyeOff className="mr-2 h-4 w-4" />
                     Despublicar
                   </Button>
-                  
+
                   <Button
                     onClick={clearSelection}
                     size="sm"
                     variant="ghost"
-                    className="text-orange-700 hover:bg-orange-100 min-h-[36px]"
+                    className="min-h-[36px] text-orange-700 hover:bg-orange-100"
                   >
-                    <X className="w-4 h-4 mr-2" />
+                    <X className="mr-2 h-4 w-4" />
                     Limpiar
                   </Button>
                 </div>
@@ -510,33 +558,61 @@ export default function PublishPage() {
             // Legacy list view as fallback
             <div className="space-y-2">
               {loading ? (
-                <div className="text-center py-8 text-gray-500">Cargando...</div>
+                <div className="py-8 text-center text-gray-500">
+                  Cargando...
+                </div>
               ) : filtered.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">No hay códigos que mostrar</div>
+                <div className="py-8 text-center text-gray-500">
+                  No hay códigos que mostrar
+                </div>
               ) : (
                 filtered.map((r) => {
-                  const url = r.token ? `${window.location.origin}/public/gallery/${r.token}` : '';
+                  const url = r.token
+                    ? `${window.location.origin}/public/gallery/${r.token}`
+                    : '';
                   return (
-                    <div key={r.id} className="grid grid-cols-12 items-center gap-2 border border-gray-200 rounded-lg px-4 py-3 text-sm hover:bg-gray-50">
-                      <div className="col-span-3 font-medium">{r.code_value}</div>
+                    <div
+                      key={r.id}
+                      className="grid grid-cols-12 items-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm hover:bg-gray-50"
+                    >
+                      <div className="col-span-3 font-medium">
+                        {r.code_value}
+                      </div>
                       <div className="col-span-2">{r.photos_count}</div>
                       <div className="col-span-2">
-                        <Badge variant={r.is_published ? "default" : "outline"} className="text-xs">
+                        <Badge
+                          variant={r.is_published ? 'default' : 'outline'}
+                          className="text-xs"
+                        >
                           {r.is_published ? 'Publicado' : 'Privado'}
                         </Badge>
                       </div>
                       <div className="col-span-5 flex flex-wrap items-center gap-2">
                         {!r.is_published ? (
-                          <Button onClick={() => publish(r.id)} size="sm" className="min-h-[36px]">
+                          <Button
+                            onClick={() => publish(r.id)}
+                            size="sm"
+                            className="min-h-[36px]"
+                          >
                             Publicar
                           </Button>
                         ) : (
                           <div className="flex flex-wrap gap-2">
-                            <Button onClick={() => copy(url)} size="sm" variant="outline" className="min-h-[36px]">
+                            <Button
+                              onClick={() => copy(url)}
+                              size="sm"
+                              variant="outline"
+                              className="min-h-[36px]"
+                            >
                               <Copy className="mr-1 h-3 w-3" />
                               Copiar
                             </Button>
-                            <Button onClick={() => rotate(r.id)} size="sm" variant="outline" className="min-h-[36px]">
+                            <Button
+                              onClick={() => rotate(r.id)}
+                              size="sm"
+                              variant="outline"
+                              className="min-h-[36px]"
+                            >
                               <RotateCcw className="mr-1 h-3 w-3" />
                               Rotar
                             </Button>

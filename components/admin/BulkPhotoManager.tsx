@@ -125,7 +125,7 @@ export function BulkPhotoManager({
   folders,
   onPhotosUpdated,
   onClose,
-  className
+  className,
 }: BulkPhotoManagerProps) {
   const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
@@ -136,7 +136,8 @@ export function BulkPhotoManager({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
-  const [pendingOperation, setPendingOperation] = useState<BulkOperation | null>(null);
+  const [pendingOperation, setPendingOperation] =
+    useState<BulkOperation | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [operationProgress, setOperationProgress] = useState<{
     current: number;
@@ -151,9 +152,14 @@ export function BulkPhotoManager({
 
   // Filter photos based on current filters
   const filteredPhotos = useMemo(() => {
-    return photos.filter(photo => {
+    return photos.filter((photo) => {
       // Search filter
-      if (filters.search && !photo.original_filename.toLowerCase().includes(filters.search.toLowerCase())) {
+      if (
+        filters.search &&
+        !photo.original_filename
+          .toLowerCase()
+          .includes(filters.search.toLowerCase())
+      ) {
         return false;
       }
 
@@ -182,16 +188,25 @@ export function BulkPhotoManager({
       }
 
       // File size filter
-      if (filters.file_size_min && photo.file_size < filters.file_size_min * 1024) {
+      if (
+        filters.file_size_min &&
+        photo.file_size < filters.file_size_min * 1024
+      ) {
         return false;
       }
 
-      if (filters.file_size_max && photo.file_size > filters.file_size_max * 1024) {
+      if (
+        filters.file_size_max &&
+        photo.file_size > filters.file_size_max * 1024
+      ) {
         return false;
       }
 
       // Processing status filter
-      if (filters.processing_status && photo.processing_status !== filters.processing_status) {
+      if (
+        filters.processing_status &&
+        photo.processing_status !== filters.processing_status
+      ) {
         return false;
       }
 
@@ -203,9 +218,12 @@ export function BulkPhotoManager({
   const stats = useMemo(() => {
     const total = filteredPhotos.length;
     const selected = selectedPhotos.size;
-    const approved = filteredPhotos.filter(p => p.approved).length;
+    const approved = filteredPhotos.filter((p) => p.approved).length;
     const pending = total - approved;
-    const totalSizeKB = filteredPhotos.reduce((sum, p) => sum + Math.round(p.file_size / 1024), 0);
+    const totalSizeKB = filteredPhotos.reduce(
+      (sum, p) => sum + Math.round(p.file_size / 1024),
+      0
+    );
 
     return {
       total,
@@ -214,8 +232,8 @@ export function BulkPhotoManager({
       pending,
       totalSizeKB,
       selectedSizeKB: filteredPhotos
-        .filter(p => selectedPhotos.has(p.id))
-        .reduce((sum, p) => sum + Math.round(p.file_size / 1024), 0)
+        .filter((p) => selectedPhotos.has(p.id))
+        .reduce((sum, p) => sum + Math.round(p.file_size / 1024), 0),
     };
   }, [filteredPhotos, selectedPhotos]);
 
@@ -224,151 +242,168 @@ export function BulkPhotoManager({
     if (selectedPhotos.size === filteredPhotos.length) {
       setSelectedPhotos(new Set());
     } else {
-      setSelectedPhotos(new Set(filteredPhotos.map(p => p.id)));
+      setSelectedPhotos(new Set(filteredPhotos.map((p) => p.id)));
     }
   }, [filteredPhotos, selectedPhotos]);
 
-  const handleSelectPhoto = useCallback((photoId: string, selected: boolean) => {
-    setSelectedPhotos(prev => {
-      const newSet = new Set(prev);
-      if (selected) {
-        newSet.add(photoId);
-      } else {
-        newSet.delete(photoId);
+  const handleSelectPhoto = useCallback(
+    (photoId: string, selected: boolean) => {
+      setSelectedPhotos((prev) => {
+        const newSet = new Set(prev);
+        if (selected) {
+          newSet.add(photoId);
+        } else {
+          newSet.delete(photoId);
+        }
+        return newSet;
+      });
+    },
+    []
+  );
+
+  const handleSelectByFilter = useCallback(
+    (criteria: 'approved' | 'pending' | 'folder') => {
+      let photosToSelect: Photo[] = [];
+
+      switch (criteria) {
+        case 'approved':
+          photosToSelect = filteredPhotos.filter((p) => p.approved);
+          break;
+        case 'pending':
+          photosToSelect = filteredPhotos.filter((p) => !p.approved);
+          break;
+        case 'folder':
+          // Select photos in the currently selected folder
+          photosToSelect = filteredPhotos.filter(
+            (p) => p.folder_id === filters.folder_id
+          );
+          break;
       }
-      return newSet;
-    });
-  }, []);
 
-  const handleSelectByFilter = useCallback((criteria: 'approved' | 'pending' | 'folder') => {
-    let photosToSelect: Photo[] = [];
-
-    switch (criteria) {
-      case 'approved':
-        photosToSelect = filteredPhotos.filter(p => p.approved);
-        break;
-      case 'pending':
-        photosToSelect = filteredPhotos.filter(p => !p.approved);
-        break;
-      case 'folder':
-        // Select photos in the currently selected folder
-        photosToSelect = filteredPhotos.filter(p => p.folder_id === filters.folder_id);
-        break;
-    }
-
-    setSelectedPhotos(new Set(photosToSelect.map(p => p.id)));
-  }, [filteredPhotos, filters.folder_id]);
+      setSelectedPhotos(new Set(photosToSelect.map((p) => p.id)));
+    },
+    [filteredPhotos, filters.folder_id]
+  );
 
   // Bulk operations
-  const executeBulkOperation = useCallback(async (operation: BulkOperation) => {
-    setIsLoading(true);
-    setOperationProgress({
-      current: 0,
-      total: operation.photos.length,
-      operation: operation.type
-    });
+  const executeBulkOperation = useCallback(
+    async (operation: BulkOperation) => {
+      setIsLoading(true);
+      setOperationProgress({
+        current: 0,
+        total: operation.photos.length,
+        operation: operation.type,
+      });
 
-    try {
-      const batchSize = 10; // Process in batches to avoid overwhelming the server
-      const batches = [];
-      
-      for (let i = 0; i < operation.photos.length; i += batchSize) {
-        batches.push(operation.photos.slice(i, i + batchSize));
-      }
+      try {
+        const batchSize = 10; // Process in batches to avoid overwhelming the server
+        const batches = [];
 
-      let processedCount = 0;
-
-      for (const batch of batches) {
-        let endpoint = '';
-        let method = 'POST';
-        let body: any = {};
-
-        switch (operation.type) {
-          case 'approve':
-            endpoint = `/api/admin/photos/bulk-approve`;
-            body = { photoIds: batch, approved: true };
-            break;
-          case 'reject':
-            endpoint = `/api/admin/photos/bulk-approve`;
-            body = { photoIds: batch, approved: false };
-            break;
-          case 'move':
-            endpoint = `/api/admin/photos/bulk-move`;
-            body = { photoIds: batch, target_folder_id: operation.target_folder_id };
-            break;
-          case 'delete':
-            endpoint = `/api/admin/photos/bulk-delete`;
-            method = 'DELETE';
-            body = { photoIds: batch };
-            break;
+        for (let i = 0; i < operation.photos.length; i += batchSize) {
+          batches.push(operation.photos.slice(i, i + batchSize));
         }
 
-        const response = await fetch(endpoint, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
+        let processedCount = 0;
 
-        if (!response.ok) {
-          throw new Error(`Failed to ${operation.type} photos`);
+        for (const batch of batches) {
+          let endpoint = '';
+          let method = 'POST';
+          let body: any = {};
+
+          switch (operation.type) {
+            case 'approve':
+              endpoint = `/api/admin/photos/bulk-approve`;
+              body = { photoIds: batch, approved: true };
+              break;
+            case 'reject':
+              endpoint = `/api/admin/photos/bulk-approve`;
+              body = { photoIds: batch, approved: false };
+              break;
+            case 'move':
+              endpoint = `/api/admin/photos/bulk-move`;
+              body = {
+                photoIds: batch,
+                target_folder_id: operation.target_folder_id,
+              };
+              break;
+            case 'delete':
+              endpoint = `/api/admin/photos/bulk-delete`;
+              method = 'DELETE';
+              body = { photoIds: batch };
+              break;
+          }
+
+          const response = await fetch(endpoint, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to ${operation.type} photos`);
+          }
+
+          processedCount += batch.length;
+          setOperationProgress((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  current: processedCount,
+                }
+              : null
+          );
+
+          // Small delay between batches
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
 
-        processedCount += batch.length;
-        setOperationProgress(prev => prev ? {
-          ...prev,
-          current: processedCount
-        } : null);
-
-        // Small delay between batches
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Clear selection and refresh
+        setSelectedPhotos(new Set());
+        onPhotosUpdated();
+      } catch (error) {
+        console.error(`Bulk ${operation.type} failed:`, error);
+        // TODO: Show error notification
+      } finally {
+        setIsLoading(false);
+        setOperationProgress(null);
+        setShowBulkDialog(false);
+        setShowConfirmDialog(false);
+        setPendingOperation(null);
       }
+    },
+    [onPhotosUpdated]
+  );
 
-      // Clear selection and refresh
-      setSelectedPhotos(new Set());
-      onPhotosUpdated();
+  const handleBulkAction = useCallback(
+    (type: BulkOperation['type'], targetFolderId?: string | null) => {
+      if (selectedPhotos.size === 0) return;
 
-    } catch (error) {
-      console.error(`Bulk ${operation.type} failed:`, error);
-      // TODO: Show error notification
-    } finally {
-      setIsLoading(false);
-      setOperationProgress(null);
-      setShowBulkDialog(false);
-      setShowConfirmDialog(false);
-      setPendingOperation(null);
-    }
-  }, [onPhotosUpdated]);
+      const operation: BulkOperation = {
+        type,
+        photos: Array.from(selectedPhotos),
+        target_folder_id: targetFolderId || null,
+      };
 
-  const handleBulkAction = useCallback((
-    type: BulkOperation['type'], 
-    targetFolderId?: string | null
-  ) => {
-    if (selectedPhotos.size === 0) return;
-
-    const operation: BulkOperation = {
-      type,
-      photos: Array.from(selectedPhotos),
-      target_folder_id: targetFolderId || null,
-    };
-
-    // Show confirmation for destructive actions
-    if (type === 'delete') {
-      setPendingOperation(operation);
-      setShowConfirmDialog(true);
-    } else {
-      executeBulkOperation(operation);
-    }
-  }, [selectedPhotos, executeBulkOperation]);
+      // Show confirmation for destructive actions
+      if (type === 'delete') {
+        setPendingOperation(operation);
+        setShowConfirmDialog(true);
+      } else {
+        executeBulkOperation(operation);
+      }
+    },
+    [selectedPhotos, executeBulkOperation]
+  );
 
   const formatFileSize = (bytes: number): string => {
     const kb = bytes / 1024;
     if (kb < 1024) return `${Math.round(kb)} KB`;
-    return `${Math.round(kb / 1024 * 10) / 10} MB`;
+    return `${Math.round((kb / 1024) * 10) / 10} MB`;
   };
 
   const getFolderName = (folderId: string | null): string => {
     if (!folderId) return 'Raíz';
-    const folder = folders.find(f => f.id === folderId);
+    const folder = folders.find((f) => f.id === folderId);
     return folder ? folder.name : 'Carpeta desconocida';
   };
 
@@ -390,21 +425,29 @@ export function BulkPhotoManager({
 
       <CardContent className="space-y-6">
         {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.total}
+            </div>
             <div className="text-xs text-blue-700">Total</div>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+          <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {stats.approved}
+            </div>
             <div className="text-xs text-green-700">Aprobadas</div>
           </div>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-center">
+            <div className="text-2xl font-bold text-yellow-600">
+              {stats.pending}
+            </div>
             <div className="text-xs text-yellow-700">Pendientes</div>
           </div>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.selected}</div>
+          <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              {stats.selected}
+            </div>
             <div className="text-xs text-purple-700">Seleccionadas</div>
           </div>
         </div>
@@ -418,17 +461,24 @@ export function BulkPhotoManager({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Search */}
               <div className="space-y-2">
-                <Label htmlFor="search" className="text-xs font-medium">Buscar por nombre</Label>
+                <Label htmlFor="search" className="text-xs font-medium">
+                  Buscar por nombre
+                </Label>
                 <div className="relative">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                   <Input
                     id="search"
                     placeholder="Buscar fotos..."
                     value={filters.search}
-                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        search: e.target.value,
+                      }))
+                    }
                     className="pl-8"
                   />
                 </div>
@@ -437,12 +487,16 @@ export function BulkPhotoManager({
               {/* Approval Status */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium">Estado</Label>
-                <Select 
-                  value={filters.approved === null ? '' : String(filters.approved)}
-                  onValueChange={(value) => setFilters(prev => ({ 
-                    ...prev, 
-                    approved: value === '' ? null : value === 'true'
-                  }))}
+                <Select
+                  value={
+                    filters.approved === null ? '' : String(filters.approved)
+                  }
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      approved: value === '' ? null : value === 'true',
+                    }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos los estados" />
@@ -458,12 +512,14 @@ export function BulkPhotoManager({
               {/* Folder Filter */}
               <div className="space-y-2">
                 <Label className="text-xs font-medium">Carpeta</Label>
-                <Select 
+                <Select
                   value={filters.folder_id || ''}
-                  onValueChange={(value) => setFilters(prev => ({ 
-                    ...prev, 
-                    folder_id: value || null
-                  }))}
+                  onValueChange={(value) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      folder_id: value || null,
+                    }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas las carpetas" />
@@ -471,11 +527,13 @@ export function BulkPhotoManager({
                   <SelectContent>
                     <SelectItem value="">Todas</SelectItem>
                     <SelectItem value="root">Raíz</SelectItem>
-                    {folders.map(folder => (
+                    {folders.map((folder) => (
                       <SelectItem key={folder.id} value={folder.id}>
                         <div className="flex items-center gap-2">
                           <FolderOpen className="h-4 w-4" />
-                          <span style={{ paddingLeft: `${folder.depth * 12}px` }}>
+                          <span
+                            style={{ paddingLeft: `${folder.depth * 12}px` }}
+                          >
                             {folder.name}
                           </span>
                         </div>
@@ -486,25 +544,39 @@ export function BulkPhotoManager({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* Date Range */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label htmlFor="date-from" className="text-xs">Desde</Label>
+                  <Label htmlFor="date-from" className="text-xs">
+                    Desde
+                  </Label>
                   <Input
                     id="date-from"
                     type="date"
                     value={filters.date_from || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        date_from: e.target.value,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="date-to" className="text-xs">Hasta</Label>
+                  <Label htmlFor="date-to" className="text-xs">
+                    Hasta
+                  </Label>
                   <Input
                     id="date-to"
                     type="date"
                     value={filters.date_to || ''}
-                    onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        date_to: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -512,29 +584,41 @@ export function BulkPhotoManager({
               {/* File Size Range */}
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label htmlFor="size-min" className="text-xs">Tamaño min (KB)</Label>
+                  <Label htmlFor="size-min" className="text-xs">
+                    Tamaño min (KB)
+                  </Label>
                   <Input
                     id="size-min"
                     type="number"
                     placeholder="Min KB"
                     value={filters.file_size_min || ''}
-                    onChange={(e) => setFilters(prev => ({ 
-                      ...prev, 
-                      file_size_min: e.target.value ? parseInt(e.target.value) : null 
-                    }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        file_size_min: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      }))
+                    }
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="size-max" className="text-xs">Tamaño max (KB)</Label>
+                  <Label htmlFor="size-max" className="text-xs">
+                    Tamaño max (KB)
+                  </Label>
                   <Input
                     id="size-max"
                     type="number"
                     placeholder="Max KB"
                     value={filters.file_size_max || ''}
-                    onChange={(e) => setFilters(prev => ({ 
-                      ...prev, 
-                      file_size_max: e.target.value ? parseInt(e.target.value) : null 
-                    }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        file_size_max: e.target.value
+                          ? parseInt(e.target.value)
+                          : null,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -564,9 +648,12 @@ export function BulkPhotoManager({
                 className="gap-2"
               >
                 <CheckSquare className="h-3 w-3" />
-                {selectedPhotos.size === filteredPhotos.length ? 'Deseleccionar' : 'Seleccionar'} Todo
+                {selectedPhotos.size === filteredPhotos.length
+                  ? 'Deseleccionar'
+                  : 'Seleccionar'}{' '}
+                Todo
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -576,7 +663,7 @@ export function BulkPhotoManager({
                 <CheckCircle2 className="h-3 w-3" />
                 Aprobadas ({stats.approved})
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -586,7 +673,7 @@ export function BulkPhotoManager({
                 <Eye className="h-3 w-3" />
                 Pendientes ({stats.pending})
               </Button>
-              
+
               {filters.folder_id && (
                 <Button
                   variant="outline"
@@ -601,13 +688,13 @@ export function BulkPhotoManager({
             </div>
 
             {stats.selected > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium text-blue-700">
                     {stats.selected} fotos seleccionadas
                   </span>
                   <span className="text-blue-600">
-                    {Math.round(stats.selectedSizeKB / 1024 * 10) / 10} MB
+                    {Math.round((stats.selectedSizeKB / 1024) * 10) / 10} MB
                   </span>
                 </div>
               </div>
@@ -625,7 +712,7 @@ export function BulkPhotoManager({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                 <Button
                   variant="default"
                   size="sm"
@@ -636,7 +723,7 @@ export function BulkPhotoManager({
                   <CheckCircle2 className="h-3 w-3" />
                   Aprobar
                 </Button>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -664,24 +751,34 @@ export function BulkPhotoManager({
                     <DialogHeader>
                       <DialogTitle>Mover {stats.selected} fotos</DialogTitle>
                       <DialogDescription>
-                        Selecciona la carpeta de destino para las fotos seleccionadas
+                        Selecciona la carpeta de destino para las fotos
+                        seleccionadas
                       </DialogDescription>
                     </DialogHeader>
-                    
+
                     <div className="space-y-4">
-                      <Select onValueChange={(folderId) => {
-                        handleBulkAction('move', folderId === 'root' ? null : folderId);
-                      }}>
+                      <Select
+                        onValueChange={(folderId) => {
+                          handleBulkAction(
+                            'move',
+                            folderId === 'root' ? null : folderId
+                          );
+                        }}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar carpeta destino" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="root">Raíz del evento</SelectItem>
-                          {folders.map(folder => (
+                          {folders.map((folder) => (
                             <SelectItem key={folder.id} value={folder.id}>
                               <div className="flex items-center gap-2">
                                 <FolderOpen className="h-4 w-4" />
-                                <span style={{ paddingLeft: `${folder.depth * 12}px` }}>
+                                <span
+                                  style={{
+                                    paddingLeft: `${folder.depth * 12}px`,
+                                  }}
+                                >
                                   {folder.name}
                                 </span>
                               </div>
@@ -693,29 +790,31 @@ export function BulkPhotoManager({
                   </DialogContent>
                 </Dialog>
 
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => handleBulkAction('delete')}
-                disabled={isLoading}
-                className="gap-2"
-              >
-                <Trash2 className="h-3 w-3" />
-                Eliminar
-              </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleBulkAction('delete')}
+                  disabled={isLoading}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Eliminar
+                </Button>
               </div>
 
               {isLoading && operationProgress && (
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span>Procesando {operationProgress.operation}...</span>
-                    <span>{operationProgress.current} / {operationProgress.total}</span>
+                    <span>
+                      {operationProgress.current} / {operationProgress.total}
+                    </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                      style={{ 
-                        width: `${(operationProgress.current / operationProgress.total) * 100}%` 
+                  <div className="h-2 w-full rounded-full bg-gray-200">
+                    <div
+                      className="h-2 rounded-full bg-green-500 transition-all duration-300"
+                      style={{
+                        width: `${(operationProgress.current / operationProgress.total) * 100}%`,
                       }}
                     ></div>
                   </div>
@@ -732,7 +831,7 @@ export function BulkPhotoManager({
               <span>Fotos ({filteredPhotos.length})</span>
               {stats.totalSizeKB > 0 && (
                 <Badge variant="outline">
-                  {Math.round(stats.totalSizeKB / 1024 * 10) / 10} MB total
+                  {Math.round((stats.totalSizeKB / 1024) * 10) / 10} MB total
                 </Badge>
               )}
             </CardTitle>
@@ -740,36 +839,36 @@ export function BulkPhotoManager({
           <CardContent>
             <ScrollArea className="h-96">
               {filteredPhotos.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="py-8 text-center text-gray-500">
                   No se encontraron fotos con los filtros aplicados
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filteredPhotos.map(photo => (
+                  {filteredPhotos.map((photo) => (
                     <div
                       key={photo.id}
                       className={cn(
-                        "flex items-center gap-3 p-3 rounded-lg border transition-all",
-                        selectedPhotos.has(photo.id) 
-                          ? "border-blue-300 bg-blue-50" 
-                          : "border-gray-200 hover:border-gray-300"
+                        'flex items-center gap-3 rounded-lg border p-3 transition-all',
+                        selectedPhotos.has(photo.id)
+                          ? 'border-blue-300 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
                       )}
                     >
                       <Checkbox
                         checked={selectedPhotos.has(photo.id)}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handleSelectPhoto(photo.id, checked as boolean)
                         }
                       />
-                      
-                      <div className="flex-grow min-w-0">
+
+                      <div className="min-w-0 flex-grow">
                         <div className="flex items-center justify-between">
-                          <p className="font-medium text-sm truncate">
+                          <p className="truncate text-sm font-medium">
                             {photo.original_filename}
                           </p>
                           <div className="flex items-center gap-2">
-                            <Badge 
-                              variant={photo.approved ? "default" : "secondary"}
+                            <Badge
+                              variant={photo.approved ? 'default' : 'secondary'}
                               className="text-xs"
                             >
                               {photo.approved ? 'Aprobada' : 'Pendiente'}
@@ -779,11 +878,15 @@ export function BulkPhotoManager({
                             </span>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
-                          <span>{photo.width} × {photo.height}</span>
+
+                        <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
+                          <span>
+                            {photo.width} × {photo.height}
+                          </span>
                           <span>{getFolderName(photo.folder_id)}</span>
-                          <span>{new Date(photo.created_at).toLocaleDateString()}</span>
+                          <span>
+                            {new Date(photo.created_at).toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -804,14 +907,17 @@ export function BulkPhotoManager({
               Confirmar Eliminación
             </AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro que deseas eliminar {pendingOperation?.photos.length} fotos?
-              Esta acción no se puede deshacer.
+              ¿Estás seguro que deseas eliminar{' '}
+              {pendingOperation?.photos.length} fotos? Esta acción no se puede
+              deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => pendingOperation && executeBulkOperation(pendingOperation)}
+              onClick={() =>
+                pendingOperation && executeBulkOperation(pendingOperation)
+              }
               className="bg-red-600 hover:bg-red-700"
             >
               Eliminar

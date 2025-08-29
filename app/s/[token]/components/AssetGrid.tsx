@@ -1,6 +1,6 @@
 /**
  * ASSET GRID COMPONENT
- * 
+ *
  * Displays photos in responsive grid with download controls
  * Features: Lazy loading, pagination, download permissions, modal preview
  */
@@ -12,13 +12,13 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DownloadIcon, 
-  EyeIcon, 
+import {
+  DownloadIcon,
+  EyeIcon,
   ZoomInIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  ImageIcon
+  ImageIcon,
 } from 'lucide-react';
 import { GalleryAsset } from '@/lib/services/hierarchical-gallery.service';
 import { formatFileSize, formatDate } from '@/lib/utils';
@@ -43,7 +43,7 @@ export function AssetGrid({
   canDownload,
   pagination,
   onPageChange,
-  onAssetSelect
+  onAssetSelect,
 }: AssetGridProps) {
   const [selectedAsset, setSelectedAsset] = useState<GalleryAsset | null>(null);
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
@@ -60,29 +60,29 @@ export function AssetGrid({
 
   const handleDownload = async (asset: GalleryAsset, e?: React.MouseEvent) => {
     e?.stopPropagation(); // Prevent modal from opening
-    
+
     if (!canDownload) return;
-    
-    setDownloadingIds(prev => new Set(prev).add(asset.id));
-    
+
+    setDownloadingIds((prev) => new Set(prev).add(asset.id));
+
     try {
       // Call our download API endpoint
       const response = await fetch(`/api/s/${token}/download/${asset.id}`);
-      
+
       if (!response.ok) {
         throw new Error('Download failed');
       }
-      
+
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
-      
+
       // Create download link
       const link = document.createElement('a');
       link.href = url;
       link.download = asset.filename;
       document.body.appendChild(link);
       link.click();
-      
+
       // Cleanup
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
@@ -90,7 +90,7 @@ export function AssetGrid({
       console.error('Download error:', error);
       // TODO: Show error toast
     } finally {
-      setDownloadingIds(prev => {
+      setDownloadingIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(asset.id);
         return newSet;
@@ -114,7 +114,7 @@ export function AssetGrid({
         <div className="text-sm text-gray-600">
           Showing {startItem}-{endItem} of {total} photos
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -125,11 +125,11 @@ export function AssetGrid({
             <ChevronLeftIcon className="h-4 w-4" />
             Previous
           </Button>
-          
-          <span className="text-sm font-medium px-2">
+
+          <span className="px-2 text-sm font-medium">
             Page {page} of {totalPages}
           </span>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -147,14 +147,14 @@ export function AssetGrid({
   return (
     <div className="space-y-4">
       {/* Asset Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {assets.map((asset) => (
           <Card
             key={asset.id}
-            className="group overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            className="group cursor-pointer overflow-hidden transition-shadow hover:shadow-lg"
             onClick={() => handleAssetClick(asset)}
           >
-            <div className="aspect-square relative">
+            <div className="relative aspect-square">
               {/* Image */}
               <Image
                 src={getPreviewUrl(asset)}
@@ -165,10 +165,10 @@ export function AssetGrid({
                 placeholder="blur"
                 blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
               />
-              
+
               {/* Overlay with actions */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all duration-200 group-hover:bg-opacity-60">
+                <div className="flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <Button size="sm" variant="secondary">
                     <ZoomInIcon className="h-4 w-4" />
                   </Button>
@@ -185,23 +185,26 @@ export function AssetGrid({
                 </div>
               </div>
             </div>
-            
+
             {/* Asset Info */}
             <CardContent className="p-3">
               <div className="space-y-1">
-                <div className="text-xs font-medium truncate" title={asset.filename}>
+                <div
+                  className="truncate text-xs font-medium"
+                  title={asset.filename}
+                >
                   {asset.filename}
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{formatFileSize(asset.fileSize)}</span>
                   {canDownload ? (
                     <Badge variant="secondary" className="text-xs">
-                      <DownloadIcon className="h-2 w-2 mr-1" />
+                      <DownloadIcon className="mr-1 h-2 w-2" />
                       Download
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-xs">
-                      <EyeIcon className="h-2 w-2 mr-1" />
+                      <EyeIcon className="mr-1 h-2 w-2" />
                       View Only
                     </Badge>
                   )}
@@ -217,9 +220,11 @@ export function AssetGrid({
 
       {/* Empty State */}
       {assets.length === 0 && (
-        <div className="text-center py-12">
-          <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No photos found</h3>
+        <div className="py-12 text-center">
+          <ImageIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+          <h3 className="mb-2 text-lg font-medium text-gray-900">
+            No photos found
+          </h3>
           <p className="text-gray-600">
             There are no photos available in this selection.
           </p>

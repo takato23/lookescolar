@@ -41,7 +41,7 @@ class PublishPerformanceMonitor {
    */
   startOperation(operation: string, metadata?: Record<string, any>): string {
     const operationId = `${operation}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const metric: PerformanceMetrics = {
       operation: `${operation}:${operationId}`,
       startTime: Date.now(),
@@ -49,11 +49,11 @@ class PublishPerformanceMonitor {
       metadata: {
         ...metadata,
         operationId,
-      }
+      },
     };
 
     this.metrics.push(metric);
-    
+
     // Cleanup old metrics to prevent memory leaks
     if (this.metrics.length > this.maxMetricsHistory) {
       this.metrics = this.metrics.slice(-this.maxMetricsHistory);
@@ -67,13 +67,13 @@ class PublishPerformanceMonitor {
    * Complete tracking a performance operation
    */
   endOperation(
-    operationId: string, 
-    success: boolean, 
-    itemCount?: number, 
+    operationId: string,
+    success: boolean,
+    itemCount?: number,
     errorMessage?: string,
     additionalMetadata?: Record<string, any>
   ): PerformanceMetrics | null {
-    const metricIndex = this.metrics.findIndex(m => 
+    const metricIndex = this.metrics.findIndex((m) =>
       m.operation.includes(operationId)
     );
 
@@ -96,31 +96,42 @@ class PublishPerformanceMonitor {
 
     // Log performance result
     const isBulkOperation = metric.operation.includes('bulk');
-    const threshold = isBulkOperation ? 
-      this.performanceThresholds.bulk_slow : 
-      this.performanceThresholds.slow;
-    const criticalThreshold = isBulkOperation ?
-      this.performanceThresholds.bulk_critical :
-      this.performanceThresholds.critical;
+    const threshold = isBulkOperation
+      ? this.performanceThresholds.bulk_slow
+      : this.performanceThresholds.slow;
+    const criticalThreshold = isBulkOperation
+      ? this.performanceThresholds.bulk_critical
+      : this.performanceThresholds.critical;
 
     const operationName = metric.operation.split(':')[0];
-    const throughput = itemCount ? (itemCount / (duration / 1000)).toFixed(1) : 'N/A';
+    const throughput = itemCount
+      ? (itemCount / (duration / 1000)).toFixed(1)
+      : 'N/A';
 
     if (!success) {
-      console.error(`[PERF] ❌ ${operationName} failed after ${duration}ms:`, errorMessage || 'No error details provided');
+      console.error(
+        `[PERF] ❌ ${operationName} failed after ${duration}ms:`,
+        errorMessage || 'No error details provided'
+      );
       console.error(`[PERF] Debug info for ${operationName}:`, {
         operation: metric.operation,
         startTime: new Date(metric.startTime).toISOString(),
         endTime: new Date(endTime).toISOString(),
         itemCount: itemCount || 'N/A',
-        metadata: metric.metadata
+        metadata: metric.metadata,
       });
     } else if (duration > criticalThreshold) {
-      console.error(`[PERF] 🐌 CRITICAL: ${operationName} took ${duration}ms (${throughput} items/s)`);
+      console.error(
+        `[PERF] 🐌 CRITICAL: ${operationName} took ${duration}ms (${throughput} items/s)`
+      );
     } else if (duration > threshold) {
-      console.warn(`[PERF] ⚠️  SLOW: ${operationName} took ${duration}ms (${throughput} items/s)`);
+      console.warn(
+        `[PERF] ⚠️  SLOW: ${operationName} took ${duration}ms (${throughput} items/s)`
+      );
     } else {
-      console.log(`[PERF] ✅ ${operationName} completed in ${duration}ms (${throughput} items/s)`);
+      console.log(
+        `[PERF] ✅ ${operationName} completed in ${duration}ms (${throughput} items/s)`
+      );
     }
 
     return metric;
@@ -129,11 +140,11 @@ class PublishPerformanceMonitor {
   /**
    * Get current performance statistics
    */
-  getStats(timeRangeMs = 3600000): PublishStats { // Default: last hour
+  getStats(timeRangeMs = 3600000): PublishStats {
+    // Default: last hour
     const cutoffTime = Date.now() - timeRangeMs;
-    const recentMetrics = this.metrics.filter(m => 
-      m.startTime > cutoffTime && 
-      m.duration !== undefined
+    const recentMetrics = this.metrics.filter(
+      (m) => m.startTime > cutoffTime && m.duration !== undefined
     );
 
     if (recentMetrics.length === 0) {
@@ -150,9 +161,9 @@ class PublishPerformanceMonitor {
       };
     }
 
-    const successful = recentMetrics.filter(m => m.success);
-    const failed = recentMetrics.filter(m => !m.success);
-    const durations = recentMetrics.map(m => m.duration!);
+    const successful = recentMetrics.filter((m) => m.success);
+    const failed = recentMetrics.filter((m) => !m.success);
+    const durations = recentMetrics.map((m) => m.duration!);
     const totalTime = durations.reduce((sum, d) => sum + d, 0);
 
     return {
@@ -179,14 +190,13 @@ class PublishPerformanceMonitor {
     recommendation: string;
   }> {
     const cutoffTime = Date.now() - timeRangeMs;
-    const recentMetrics = this.metrics.filter(m => 
-      m.startTime > cutoffTime && 
-      m.duration !== undefined
+    const recentMetrics = this.metrics.filter(
+      (m) => m.startTime > cutoffTime && m.duration !== undefined
     );
 
     // Group by operation type
     const operationGroups = new Map<string, PerformanceMetrics[]>();
-    recentMetrics.forEach(metric => {
+    recentMetrics.forEach((metric) => {
       const operationType = metric.operation.split(':')[0];
       if (!operationGroups.has(operationType)) {
         operationGroups.set(operationType, []);
@@ -195,26 +205,32 @@ class PublishPerformanceMonitor {
     });
 
     const bottlenecks = [];
-    
+
     for (const [operation, metrics] of operationGroups) {
-      const avgDuration = metrics.reduce((sum, m) => sum + m.duration!, 0) / metrics.length;
-      const failures = metrics.filter(m => !m.success).length;
+      const avgDuration =
+        metrics.reduce((sum, m) => sum + m.duration!, 0) / metrics.length;
+      const failures = metrics.filter((m) => !m.success).length;
       const failureRate = failures / metrics.length;
 
       let recommendation = '';
       const isBulk = operation.includes('bulk');
-      const threshold = isBulk ? this.performanceThresholds.bulk_slow : this.performanceThresholds.slow;
+      const threshold = isBulk
+        ? this.performanceThresholds.bulk_slow
+        : this.performanceThresholds.slow;
 
       if (avgDuration > threshold) {
         if (isBulk) {
-          recommendation = 'Consider reducing batch size or optimizing database queries';
+          recommendation =
+            'Consider reducing batch size or optimizing database queries';
         } else {
           recommendation = 'Check database indexes and query optimization';
         }
       } else if (failureRate > 0.1) {
-        recommendation = 'High failure rate detected - investigate error handling';
+        recommendation =
+          'High failure rate detected - investigate error handling';
       } else if (avgDuration > threshold * 0.7) {
-        recommendation = 'Performance is degrading - consider preventive optimization';
+        recommendation =
+          'Performance is degrading - consider preventive optimization';
       } else {
         recommendation = 'Performance is good';
       }
@@ -224,7 +240,7 @@ class PublishPerformanceMonitor {
         averageDuration: Math.round(avgDuration),
         failureRate: Math.round(failureRate * 100) / 100,
         count: metrics.length,
-        recommendation
+        recommendation,
       });
     }
 
@@ -235,17 +251,18 @@ class PublishPerformanceMonitor {
   /**
    * Clear old metrics
    */
-  cleanup(olderThanMs = 24 * 60 * 60 * 1000): number { // Default: 24 hours
+  cleanup(olderThanMs = 24 * 60 * 60 * 1000): number {
+    // Default: 24 hours
     const cutoffTime = Date.now() - olderThanMs;
     const initialCount = this.metrics.length;
-    
-    this.metrics = this.metrics.filter(m => m.startTime > cutoffTime);
-    
+
+    this.metrics = this.metrics.filter((m) => m.startTime > cutoffTime);
+
     const removedCount = initialCount - this.metrics.length;
     if (removedCount > 0) {
       console.log(`[PERF] Cleaned up ${removedCount} old metrics`);
     }
-    
+
     return removedCount;
   }
 
@@ -269,31 +286,41 @@ class PublishPerformanceMonitor {
     if (stats.failedOperations > 0) {
       const failureRate = stats.failedOperations / stats.totalOperations;
       healthScore -= failureRate * 30;
-      recommendations.push(`Failure rate: ${Math.round(failureRate * 100)}% - investigate error patterns`);
+      recommendations.push(
+        `Failure rate: ${Math.round(failureRate * 100)}% - investigate error patterns`
+      );
     }
 
     // Penalize for slow operations
     if (stats.averageDuration > this.performanceThresholds.slow) {
       healthScore -= 25;
-      recommendations.push(`Average operation time is ${stats.averageDuration}ms - optimize slow queries`);
+      recommendations.push(
+        `Average operation time is ${stats.averageDuration}ms - optimize slow queries`
+      );
     }
 
     // Penalize for very slow operations
     if (stats.slowestOperation > this.performanceThresholds.critical) {
       healthScore -= 20;
-      recommendations.push(`Slowest operation: ${stats.slowestOperation}ms - critical optimization needed`);
+      recommendations.push(
+        `Slowest operation: ${stats.slowestOperation}ms - critical optimization needed`
+      );
     }
 
     // Add specific recommendations from bottlenecks
-    bottlenecks.forEach(bottleneck => {
+    bottlenecks.forEach((bottleneck) => {
       if (bottleneck.recommendation !== 'Performance is good') {
-        recommendations.push(`${bottleneck.operation}: ${bottleneck.recommendation}`);
+        recommendations.push(
+          `${bottleneck.operation}: ${bottleneck.recommendation}`
+        );
       }
     });
 
     // General recommendations based on stats
     if (stats.operationsPerSecond < 0.5 && stats.totalOperations > 10) {
-      recommendations.push('Low throughput detected - consider implementing caching or database optimization');
+      recommendations.push(
+        'Low throughput detected - consider implementing caching or database optimization'
+      );
     }
 
     if (recommendations.length === 0) {
@@ -304,7 +331,7 @@ class PublishPerformanceMonitor {
       stats,
       bottlenecks,
       recommendations: recommendations.slice(0, 5), // Top 5 recommendations
-      healthScore: Math.max(0, Math.round(healthScore))
+      healthScore: Math.max(0, Math.round(healthScore)),
     };
   }
 }
@@ -318,9 +345,12 @@ export function monitorPerformance<T extends any[], R>(
   fn: (...args: T) => Promise<R>
 ) {
   return async (...args: T): Promise<R> => {
-    const operationId = publishPerformanceMonitor.startOperation(operationName, {
-      argsCount: args.length
-    });
+    const operationId = publishPerformanceMonitor.startOperation(
+      operationName,
+      {
+        argsCount: args.length,
+      }
+    );
 
     try {
       const result = await fn(...args);
@@ -328,9 +358,9 @@ export function monitorPerformance<T extends any[], R>(
       return result;
     } catch (error) {
       publishPerformanceMonitor.endOperation(
-        operationId, 
-        false, 
-        undefined, 
+        operationId,
+        false,
+        undefined,
         error instanceof Error ? error.message : 'Unknown error'
       );
       throw error;
@@ -345,7 +375,7 @@ export function monitorBulkOperation<T>(
 ) {
   const operationId = publishPerformanceMonitor.startOperation(operationName, {
     itemCount,
-    type: 'bulk'
+    type: 'bulk',
   });
 
   return {
@@ -357,7 +387,7 @@ export function monitorBulkOperation<T>(
         errorMessage,
         { successCount }
       );
-    }
+    },
   };
 }
 
@@ -371,6 +401,6 @@ export function usePublishPerformanceMonitor(timeRangeMs = 3600000) {
     getReport,
     getStats,
     cleanup,
-    monitor: publishPerformanceMonitor
+    monitor: publishPerformanceMonitor,
   };
 }

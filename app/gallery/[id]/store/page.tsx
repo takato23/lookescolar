@@ -52,14 +52,16 @@ export default function PublicGalleryStorePage() {
       if (!eventResponse.ok) {
         throw new Error('Evento no encontrado');
       }
-      
+
       const eventData = await eventResponse.json();
       if (!eventData.success) {
         throw new Error(eventData.error || 'Error cargando evento');
       }
 
       // Load photos
-      const photosResponse = await fetch(`/api/public/gallery/event/${eventId}/photos?limit=200`);
+      const photosResponse = await fetch(
+        `/api/public/gallery/event/${eventId}/photos?limit=200`
+      );
       if (!photosResponse.ok) {
         throw new Error('Error cargando fotos');
       }
@@ -79,7 +81,8 @@ export default function PublicGalleryStorePage() {
       setPhotos(photosData.photos || []);
     } catch (err) {
       console.error('Error loading store data:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Error cargando la tienda';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Error cargando la tienda';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -92,16 +95,18 @@ export default function PublicGalleryStorePage() {
   };
 
   // Create a synthetic subject for the UnifiedStore
-  const syntheticSubject = eventInfo ? {
-    id: `public_${eventInfo.id}`,
-    name: 'Compra Pública',
-    grade_section: 'Público',
-    event: {
-      name: eventInfo.name,
-      school_name: eventInfo.school_name,
-      theme: eventInfo.theme,
-    },
-  } : null;
+  const syntheticSubject = eventInfo
+    ? {
+        id: `public_${eventInfo.id}`,
+        name: 'Compra Pública',
+        grade_section: 'Público',
+        event: {
+          name: eventInfo.name,
+          school_name: eventInfo.school_name,
+          theme: eventInfo.theme,
+        },
+      }
+    : null;
 
   // Create a synthetic token for public purchases
   const syntheticToken = `public_${eventId}_${Date.now()}`;
@@ -118,7 +123,7 @@ export default function PublicGalleryStorePage() {
 
   if (error || !eventInfo || !syntheticSubject) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-pink-50 p-4">
         <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-xl">
           <div className="text-center">
             <h2 className="mb-2 text-xl font-bold text-gray-900">

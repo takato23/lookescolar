@@ -6,17 +6,22 @@ import { z } from 'zod';
 // Validation schema
 const UploadCompleteSchema = z.object({
   folderId: z.string().uuid(),
-  uploads: z.array(z.object({
-    uploadId: z.string().uuid(),
-    filename: z.string().min(1).max(255),
-    storagePath: z.string().min(1),
-    size: z.number().int().min(1),
-    type: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/),
-    checksum: z.string().optional(),
-    width: z.number().int().positive().optional(),
-    height: z.number().int().positive().optional(),
-    metadata: z.record(z.any()).optional(),
-  })).min(1).max(100),
+  uploads: z
+    .array(
+      z.object({
+        uploadId: z.string().uuid(),
+        filename: z.string().min(1).max(255),
+        storagePath: z.string().min(1),
+        size: z.number().int().min(1),
+        type: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/),
+        checksum: z.string().optional(),
+        width: z.number().int().positive().optional(),
+        height: z.number().int().positive().optional(),
+        metadata: z.record(z.any()).optional(),
+      })
+    )
+    .min(1)
+    .max(100),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,7 +45,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Verify admin access
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -87,14 +95,16 @@ export async function POST(request: NextRequest) {
     });
 
     const verificationResults = await Promise.all(verificationPromises);
-    const missingFiles = verificationResults.filter(r => r.status === 'missing');
+    const missingFiles = verificationResults.filter(
+      (r) => r.status === 'missing'
+    );
 
     if (missingFiles.length > 0) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Some files were not uploaded successfully',
-          missingFiles 
+          missingFiles,
         },
         { status: 400 }
       );
@@ -140,7 +150,7 @@ export async function POST(request: NextRequest) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
           },
           body: JSON.stringify({
             assetId: asset.id,
@@ -175,20 +185,19 @@ export async function POST(request: NextRequest) {
       })),
       summary: {
         uploaded: createdAssets.length,
-        queued: processingResults.filter(r => r.status === 'queued').length,
-        errors: processingResults.filter(r => r.status === 'error').length,
+        queued: processingResults.filter((r) => r.status === 'queued').length,
+        errors: processingResults.filter((r) => r.status === 'error').length,
       },
     });
-
   } catch (error) {
     console.error('Upload complete error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Validation failed',
-          details: error.errors 
+          details: error.errors,
         },
         { status: 400 }
       );

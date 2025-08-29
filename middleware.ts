@@ -25,7 +25,9 @@ const CSP_HEADER = `
   frame-ancestors 'none';
   block-all-mixed-content;
   upgrade-insecure-requests;
-`.replace(/\s{2,}/g, ' ').trim();
+`
+  .replace(/\s{2,}/g, ' ')
+  .trim();
 
 // Rutas que requieren anti-hotlinking estricto
 const PROTECTED_PATHS = [
@@ -318,10 +320,15 @@ function getSecurityHeaders(pathname?: string): Record<string, string> {
   };
 
   // Headers específicos para rutas de tokens (/s/* y /api/s/*)
-  if (pathname && (pathname.startsWith('/s/') || pathname.startsWith('/api/s/'))) {
-    headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive, nosnippet, nocache';
+  if (
+    pathname &&
+    (pathname.startsWith('/s/') || pathname.startsWith('/api/s/'))
+  ) {
+    headers['X-Robots-Tag'] =
+      'noindex, nofollow, noarchive, nosnippet, nocache';
     headers['Referrer-Policy'] = 'no-referrer';
-    headers['Cache-Control'] = 'private, max-age=60, stale-while-revalidate=120';
+    headers['Cache-Control'] =
+      'private, max-age=60, stale-while-revalidate=120';
   }
 
   // CSP - Solo en producción para no romper desarrollo local

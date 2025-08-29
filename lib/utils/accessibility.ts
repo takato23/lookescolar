@@ -244,7 +244,7 @@ export function formatForScreenReader(text: string): string {
   // Format text for better screen reader pronunciation
   return text
     .replace(/\$/g, 'pesos ')
-    .replace(/\#/g, 'número ')
-    .replace(/\@/g, 'arroba ')
-    .replace(/\%/g, ' por ciento');
+    .replace(/#/g, 'número ')
+    .replace(/@/g, 'arroba ')
+    .replace(/%/g, ' por ciento');
 }

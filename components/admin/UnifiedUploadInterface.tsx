@@ -58,7 +58,7 @@ export function UnifiedUploadInterface({
 
   const handleSimpleUploadComplete = useCallback(
     (photoIds: string[]) => {
-      setUploadStats(prev => ({
+      setUploadStats((prev) => ({
         ...prev,
         totalUploaded: prev.totalUploaded + photoIds.length,
       }));
@@ -69,7 +69,7 @@ export function UnifiedUploadInterface({
 
   const handleBulkUploadComplete = useCallback(
     (results: { succeeded: string[]; failed: any[] }) => {
-      setUploadStats(prev => ({
+      setUploadStats((prev) => ({
         ...prev,
         totalUploaded: prev.totalUploaded + results.succeeded.length,
       }));
@@ -80,12 +80,12 @@ export function UnifiedUploadInterface({
 
   const getCurrentFolderPath = () => {
     if (!currentFolderId) return 'Raíz del evento';
-    const folder = folders.find(f => f.id === currentFolderId);
+    const folder = folders.find((f) => f.id === currentFolderId);
     return folder ? folder.path : currentFolderName || 'Carpeta seleccionada';
   };
 
   return (
-    <Card className={cn('w-full max-w-4xl mx-auto', className)}>
+    <Card className={cn('mx-auto w-full max-w-4xl', className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
@@ -94,11 +94,11 @@ export function UnifiedUploadInterface({
               Subir Fotos
             </CardTitle>
             {eventName && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Evento: <span className="font-medium">{eventName}</span>
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               📁 Destino: {getCurrentFolderPath()}
             </p>
           </div>
@@ -119,7 +119,10 @@ export function UnifiedUploadInterface({
       </CardHeader>
 
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'simple' | 'bulk')}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'simple' | 'bulk')}
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="simple" className="gap-2">
               <ImageIcon className="h-4 w-4" />
@@ -133,17 +136,22 @@ export function UnifiedUploadInterface({
 
           <div className="mt-4 space-y-4">
             {/* Mode Description */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className={cn(
-                "p-3 rounded border transition-all",
-                activeTab === 'simple' ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-              )}>
-                <div className="flex items-center gap-2 font-medium text-sm mb-2">
+            <div className="grid grid-cols-1 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-2">
+              <div
+                className={cn(
+                  'rounded border p-3 transition-all',
+                  activeTab === 'simple'
+                    ? 'border-blue-300 bg-blue-50'
+                    : 'border-gray-200'
+                )}
+              >
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <ImageIcon className="h-4 w-4" />
                   Subida Simple
                 </div>
-                <p className="text-xs text-gray-600 mb-2">
-                  Ideal para pocas fotos (hasta 20). Sube una por una con vista previa inmediata.
+                <p className="mb-2 text-xs text-gray-600">
+                  Ideal para pocas fotos (hasta 20). Sube una por una con vista
+                  previa inmediata.
                 </p>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Clock className="h-3 w-3" />
@@ -151,16 +159,21 @@ export function UnifiedUploadInterface({
                 </div>
               </div>
 
-              <div className={cn(
-                "p-3 rounded border transition-all",
-                activeTab === 'bulk' ? 'border-blue-300 bg-blue-50' : 'border-gray-200'
-              )}>
-                <div className="flex items-center gap-2 font-medium text-sm mb-2">
+              <div
+                className={cn(
+                  'rounded border p-3 transition-all',
+                  activeTab === 'bulk'
+                    ? 'border-blue-300 bg-blue-50'
+                    : 'border-gray-200'
+                )}
+              >
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <Zap className="h-4 w-4" />
                   Subida Masiva
                 </div>
-                <p className="text-xs text-gray-600 mb-2">
-                  Para muchas fotos (cientos). Subida en lotes con progreso detallado.
+                <p className="mb-2 text-xs text-gray-600">
+                  Para muchas fotos (cientos). Subida en lotes con progreso
+                  detallado.
                 </p>
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <TrendingUp className="h-3 w-3" />
@@ -170,17 +183,18 @@ export function UnifiedUploadInterface({
             </div>
 
             {/* Optimization Notice */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
               <div className="flex items-start gap-2">
-                <Info className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-700 mb-1">
+                  <p className="mb-1 font-medium text-blue-700">
                     Optimización automática activada
                   </p>
-                  <p className="text-blue-600 text-xs leading-relaxed">
-                    Todas las fotos se optimizan automáticamente a <strong>35KB</strong> con 
-                    marca de agua "<strong>LOOK ESCOLAR</strong>" para maximizar el espacio 
-                    del plan gratuito de Supabase.
+                  <p className="text-xs leading-relaxed text-blue-600">
+                    Todas las fotos se optimizan automáticamente a{' '}
+                    <strong>35KB</strong> con marca de agua "
+                    <strong>LOOK ESCOLAR</strong>" para maximizar el espacio del
+                    plan gratuito de Supabase.
                   </p>
                 </div>
               </div>
@@ -193,7 +207,7 @@ export function UnifiedUploadInterface({
               currentFolderId={currentFolderId}
               currentFolderName={currentFolderName || undefined}
               onUploadComplete={handleSimpleUploadComplete}
-              className="border-0 shadow-none p-0"
+              className="border-0 p-0 shadow-none"
             />
           </TabsContent>
 
@@ -212,49 +226,55 @@ export function UnifiedUploadInterface({
 
         {/* Upload Statistics */}
         {uploadStats.totalUploaded > 0 && (
-          <div className="mt-6 pt-4 border-t">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">
+          <div className="mt-6 border-t pt-4">
+            <h4 className="mb-2 text-sm font-medium text-gray-700">
               Estadísticas de esta sesión
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="grid grid-cols-1 gap-4 text-center sm:grid-cols-3">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3">
                 <div className="text-lg font-bold text-green-600">
                   {uploadStats.totalUploaded}
                 </div>
                 <div className="text-xs text-green-700">Fotos subidas</div>
               </div>
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
                 <div className="text-lg font-bold text-purple-600">
-                  ~{Math.round(uploadStats.totalUploaded * 35 / 1024 * 10) / 10} MB
+                  ~
+                  {Math.round(((uploadStats.totalUploaded * 35) / 1024) * 10) /
+                    10}{' '}
+                  MB
                 </div>
-                <div className="text-xs text-purple-700">Espacio optimizado</div>
+                <div className="text-xs text-purple-700">
+                  Espacio optimizado
+                </div>
               </div>
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <div className="text-lg font-bold text-orange-600">
-                  ~70%
+              <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+                <div className="text-lg font-bold text-orange-600">~70%</div>
+                <div className="text-xs text-orange-700">
+                  Compresión promedio
                 </div>
-                <div className="text-xs text-orange-700">Compresión promedio</div>
               </div>
             </div>
           </div>
         )}
 
         {/* Storage Capacity Indicator */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+        <div className="mt-4 rounded-lg bg-gray-50 p-3">
+          <div className="mb-2 flex items-center justify-between text-xs text-gray-600">
             <span>Capacidad estimada del plan gratuito</span>
             <span>~28,500 fotos (1GB)</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-              style={{ 
-                width: `${Math.min((uploadStats.totalUploaded / 28500) * 100, 100)}%` 
+          <div className="h-2 w-full rounded-full bg-gray-200">
+            <div
+              className="h-2 rounded-full bg-green-500 transition-all duration-300"
+              style={{
+                width: `${Math.min((uploadStats.totalUploaded / 28500) * 100, 100)}%`,
               }}
             ></div>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Fotos optimizadas a 35KB cada una para maximizar el espacio disponible
+          <p className="mt-1 text-xs text-gray-500">
+            Fotos optimizadas a 35KB cada una para maximizar el espacio
+            disponible
           </p>
         </div>
       </CardContent>

@@ -14,10 +14,13 @@ async function testUpload() {
   formData.append('folder_id', 'f34608fa-6118-4369-9e71-f625fc192ce6'); // General folder
 
   try {
-    const response = await fetch('http://localhost:3000/api/admin/assets/upload', {
-      method: 'POST',
-      body: formData,
-    });
+    const response = await fetch(
+      'http://localhost:3000/api/admin/assets/upload',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
 
     const result = await response.json();
     console.log('Upload response:', JSON.stringify(result, null, 2));
@@ -25,7 +28,6 @@ async function testUpload() {
 
     // Cleanup
     fs.unlinkSync('test-image.jpg');
-
   } catch (error) {
     console.error('Upload test error:', error.message);
     // Cleanup

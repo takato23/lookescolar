@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 /**
  * MercadoPago Webhook Handler
- * 
+ *
  * Processes payment notifications from MercadoPago
  * Updates order status and triggers production workflow
  */
@@ -13,7 +13,12 @@ import crypto from 'crypto';
 interface MercadoPagoNotification {
   id: number;
   live_mode: boolean;
-  type: 'payment' | 'plan' | 'subscription' | 'invoice' | 'point_integration_wh';
+  type:
+    | 'payment'
+    | 'plan'
+    | 'subscription'
+    | 'invoice'
+    | 'point_integration_wh';
   date_created: string;
   application_id: number;
   user_id: number;
@@ -33,7 +38,16 @@ interface MercadoPagoPayment {
   money_release_date: string | null;
   payment_method_id: string;
   payment_type_id: string;
-  status: 'pending' | 'approved' | 'authorized' | 'in_process' | 'in_mediation' | 'rejected' | 'cancelled' | 'refunded' | 'charged_back';
+  status:
+    | 'pending'
+    | 'approved'
+    | 'authorized'
+    | 'in_process'
+    | 'in_mediation'
+    | 'rejected'
+    | 'cancelled'
+    | 'refunded'
+    | 'charged_back';
   status_detail: string;
   currency_id: string;
   description: string | null;
@@ -145,37 +159,46 @@ interface MercadoPagoPayment {
 export async function POST(request: NextRequest) {
   try {
     console.log('🔔 [WEBHOOK] Notificación recibida de MercadoPago');
-    
+
     const body = await request.json();
     console.log('📋 [WEBHOOK] Datos recibidos:', JSON.stringify(body, null, 2));
-    
+
     // Verificar que sea una notificación válida
     if (!body.data || !body.data.id) {
       console.log('❌ [WEBHOOK] Datos inválidos');
       return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     }
-    
+
     const paymentId = body.data.id;
     console.log('💰 [WEBHOOK] Procesando pago:', paymentId);
-    
+
     // Obtener detalles del pago desde MercadoPago
-    const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: {
-        'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-      },
-    });
-    
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+        },
+      }
+    );
+
     if (!response.ok) {
       console.error('❌ [WEBHOOK] Error obteniendo detalles del pago');
-      return NextResponse.json({ error: 'Error obteniendo detalles' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error obteniendo detalles' },
+        { status: 500 }
+      );
     }
-    
+
     const payment = await response.json();
-    console.log('📊 [WEBHOOK] Detalles del pago:', JSON.stringify(payment, null, 2));
-    
+    console.log(
+      '📊 [WEBHOOK] Detalles del pago:',
+      JSON.stringify(payment, null, 2)
+    );
+
     // Actualizar orden en la base de datos
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Buscar por external_reference (que es el order.id)
     const { error: updateError } = await supabase
       .from('orders')
@@ -186,16 +209,18 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', payment.external_reference);
-    
+
     if (updateError) {
       console.error('❌ [WEBHOOK] Error actualizando orden:', updateError);
-      return NextResponse.json({ error: 'Error actualizando orden' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Error actualizando orden' },
+        { status: 500 }
+      );
     }
-    
+
     console.log('✅ [WEBHOOK] Orden actualizada correctamente');
-    
+
     return NextResponse.json({ success: true });
-    
   } catch (error) {
     console.error('❌ [WEBHOOK] Error general:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
@@ -206,10 +231,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const challenge = searchParams.get('challenge');
-  
+
   if (challenge) {
     return NextResponse.json({ challenge });
   }
-  
+
   return NextResponse.json({ status: 'Webhook endpoint active' });
 }

@@ -88,7 +88,9 @@ async function handleGET(request: NextRequest) {
 
     // Compute effective offset if page provided
     const limit = queryParams.limit;
-    const offset = queryParams.page ? (queryParams.page - 1) * limit : queryParams.offset;
+    const offset = queryParams.page
+      ? (queryParams.page - 1) * limit
+      : queryParams.offset;
 
     // For the current UI, we only need folder-scoped queries. If only event_id is provided
     // (no folder selected), PhotoAdmin uses a different endpoint. We keep basic support here.
@@ -97,9 +99,12 @@ async function handleGET(request: NextRequest) {
     // Base select with count for total
     let sel = supabase
       .from('assets')
-      .select('id, filename, preview_path, file_size, created_at, folder_id, status', {
-        count: 'exact',
-      })
+      .select(
+        'id, filename, preview_path, file_size, created_at, folder_id, status',
+        {
+          count: 'exact',
+        }
+      )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -109,9 +114,12 @@ async function handleGET(request: NextRequest) {
 
     if (queryParams.status) sel = sel.eq('status', queryParams.status);
     if (queryParams.q) sel = sel.ilike('filename', `%${queryParams.q}%`);
-    if (typeof queryParams.min_size === 'number') sel = sel.gte('file_size', queryParams.min_size);
-    if (typeof queryParams.max_size === 'number') sel = sel.lte('file_size', queryParams.max_size);
-    if (queryParams.start_date) sel = sel.gte('created_at', queryParams.start_date);
+    if (typeof queryParams.min_size === 'number')
+      sel = sel.gte('file_size', queryParams.min_size);
+    if (typeof queryParams.max_size === 'number')
+      sel = sel.lte('file_size', queryParams.max_size);
+    if (queryParams.start_date)
+      sel = sel.gte('created_at', queryParams.start_date);
     if (queryParams.end_date) sel = sel.lte('created_at', queryParams.end_date);
 
     const { data, error, count } = await sel;

@@ -31,7 +31,9 @@ async function checkEventsAndFolders() {
     } else {
       console.log(`✅ Found ${events?.length || 0} events:`);
       events?.forEach((event, i) => {
-        console.log(`   ${i + 1}. "${event.name}" - ${event.school} (${event.id})`);
+        console.log(
+          `   ${i + 1}. "${event.name}" - ${event.school} (${event.id})`
+        );
       });
     }
 
@@ -49,7 +51,9 @@ async function checkEventsAndFolders() {
       folders?.forEach((folder, i) => {
         const isRoot = !folder.parent_id;
         const prefix = isRoot ? '📂' : '  └─ 📁';
-        console.log(`   ${i + 1}. ${prefix} "${folder.name}" (Event: ${folder.event_id})`);
+        console.log(
+          `   ${i + 1}. ${prefix} "${folder.name}" (Event: ${folder.event_id})`
+        );
       });
     }
 
@@ -63,13 +67,17 @@ async function checkEventsAndFolders() {
           .eq('folder_id', folder.id);
 
         if (assetsError) {
-          console.log(`   ❌ Error checking assets for "${folder.name}": ${assetsError.message}`);
+          console.log(
+            `   ❌ Error checking assets for "${folder.name}": ${assetsError.message}`
+          );
         } else {
           const assetCount = assets?.length || 0;
           console.log(`   📁 "${folder.name}": ${assetCount} assets`);
           if (assetCount > 0) {
             assets?.slice(0, 3).forEach((asset, i) => {
-              console.log(`      ${i + 1}. ${asset.filename} (${asset.status})`);
+              console.log(
+                `      ${i + 1}. ${asset.filename} (${asset.status})`
+              );
             });
             if (assetCount > 3) {
               console.log(`      ... and ${assetCount - 3} more`);
@@ -90,7 +98,9 @@ async function checkEventsAndFolders() {
           .order('name');
 
         if (eventFoldersError) {
-          console.log(`   ❌ Error getting folders for "${event.name}": ${eventFoldersError.message}`);
+          console.log(
+            `   ❌ Error getting folders for "${event.name}": ${eventFoldersError.message}`
+          );
         } else {
           const folderCount = eventFolders?.length || 0;
           console.log(`   📅 "${event.name}": ${folderCount} folders`);
@@ -102,13 +112,9 @@ async function checkEventsAndFolders() {
         }
       }
     }
-
   } catch (err) {
     console.error('❌ Check failed:', err);
   }
 }
 
 checkEventsAndFolders().catch(console.error);
-
-
-
