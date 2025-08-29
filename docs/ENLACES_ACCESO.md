@@ -26,7 +26,11 @@
   - Tagging
     - Por sujeto: `POST /api/admin/photos/assign-subject`
     - Por carpeta: `POST /api/admin/tagging` (set `code_id`)
-  - Publish: `GET /api/admin/publish/list`
+  - Publish endpoints:
+    - `GET  /api/admin/publish/list[?eventId={id}]`
+    - `POST /api/admin/publish`          (publicar códigos)
+    - `POST /api/admin/publish/revoke`   (rotar token)
+    - `POST /api/admin/publish/unpublish`(despublicar)
   - Órdenes: `GET /api/admin/orders`, `PATCH /api/admin/orders/{id}`, `GET /api/admin/orders/export`
 - Público/Familia
   - Selección pública: `POST /api/public/selection`
@@ -35,5 +39,3 @@
 - Pagos (MP)
   - Crear preferencia: `POST /api/payments/create-preference`
   - Webhook: `POST /api/payments/webhook`
-
-

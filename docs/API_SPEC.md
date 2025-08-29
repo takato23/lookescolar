@@ -1,8 +1,11 @@
 ## Publicación y Selección V1
 
+GET /api/admin/publish/list?[eventId={eventId}] -> { rows: CodeRow[] }
+
 POST /api/admin/publish { codeId } -> { token, url }
 
 POST /api/admin/publish/revoke { codeId } -> { token, url }
+
 POST /api/admin/publish/unpublish { codeId } -> { ok }
 
 GET /api/admin/orders/export?eventId=...&courseId=...
@@ -14,5 +17,3 @@ POST /api/public/selection { token, selectedPhotoIds[], package, contact? } -> {
 ## Deprecated
 
 - GET/POST `/api/storage/signed-url` eliminado en producción. Usar siempre el helper server-side `signedUrlForKey()` para firmar y pasar la URL al cliente. Mantener el endpoint solo en desarrollo para debug.
-
-
