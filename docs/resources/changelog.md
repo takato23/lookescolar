@@ -1,23 +1,37 @@
 # Change Log
 
-This document tracks significant changes and updates to the LookEscolar system.
-
 ## [Unreleased]
 
 ### Added
-- New documentation structure and guidelines
-- Standardized development practices
-- Enhanced security documentation
+- 
+
+## [2.0.0] - 2025-01-31
+
+### Added
+- Unified store purchase wizard for family, salon, school, and student
+- Dynamic event themes selection (Default, Jardín, Secundaria, Bautismo)
+- MercadoPago integration with preference creation and webhook handling
+- Physical product catalog (Option A, Option B, additional copies)
+- Automatic WebP compression, multiple resolutions, and lazy loading
+- Touch gesture support for mobile interactions
+- Automated image watermarking and background processing pipeline
+- Enhanced testing workflow for MVP, integration, and security tests
 
 ### Changed
-- Reorganized documentation files for better discoverability
-- Updated deployment guidelines
-- Improved testing standards
+- Migrated to Next.js 14 and updated React 19
+- Supabase database schema modifications and RLS policy enhancements
+- Optimized gallery performance with virtualized grids and CDN caching
+- Refactored codebase structure and standardized documentation layout
 
 ### Fixed
-- Documentation inconsistencies
-- Broken links in documentation
-- Outdated information in setup guides
+- Photo upload error handling and checksum deduplication
+- Idempotent MercadoPago webhook processing
+- Storage monitoring and automated cleanup for Supabase limits
+
+### Breaking Changes
+- API endpoints renamed for folder-first design (`/api/admin/photos/upload-to-folder`)
+- Public album route changed from `/api/public/albums/{token}` to `/a/{token}`
+- Original images no longer served; always serve WebP previews
 
 ## [1.0.0] - 2025-08-22
 
@@ -44,85 +58,3 @@ This document tracks significant changes and updates to the LookEscolar system.
 ## Previous Versions
 
 This project was developed iteratively with continuous improvements. Detailed change tracking began with version 1.0.0.
-
-## Documentation Updates
-
-### 2025-08-22
-- Created comprehensive documentation structure
-- Migrated agent documentation to standardized formats
-- Established maintenance and troubleshooting guides
-- Added asset management guidelines
-
-## Feature Development Timeline
-
-### Q1 2025
-- Project inception and initial development
-- Core architecture and database design
-- Basic photo upload and management
-
-### Q2 2025
-- Family portal implementation
-- QR code integration
-- Payment processing setup
-
-### Q3 2025
-- Security enhancements
-- Performance optimizations
-- Testing infrastructure
-
-### Q4 2025 (Planned)
-- Advanced analytics dashboard
-- Mobile app development
-- Additional payment providers
-
-## Migration History
-
-### Database Migrations
-- Initial schema setup
-- Security policy implementation
-- Performance index additions
-- Feature-specific table additions
-
-### API Changes
-- Version 1: Basic CRUD operations
-- Version 2: Enhanced security and validation
-- Version 3: Performance improvements
-
-## Breaking Changes
-
-### Security Model Update
-- Changed from direct client database access to API-only access
-- Implemented comprehensive RLS policies
-- Updated token generation and validation
-
-### Photo Processing Pipeline
-- Moved from client-side to server-side processing
-- Added automatic watermarking
-- Implemented dual-bucket storage strategy
-
-## Known Issues
-
-### Performance
-- Large event galleries may experience loading delays
-- Photo upload processing time increases with image count
-
-### Compatibility
-- Some older browsers may not support all features
-- Mobile Safari has specific issues with file uploads
-
-## Future Plans
-
-### Short Term (Next 3 Months)
-- Enhanced admin dashboard analytics
-- Improved mobile experience
-- Additional testing coverage
-
-### Medium Term (Next 6 Months)
-- Multi-language support
-- Advanced search and filtering
-- Integration with school management systems
-
-### Long Term (Next Year)
-- Machine learning for photo tagging
-- Video support
-- Advanced reporting and analytics
