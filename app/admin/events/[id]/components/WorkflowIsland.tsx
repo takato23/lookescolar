@@ -52,7 +52,6 @@ export function WorkflowIsland({
 
   // Function to handle action execution
   const handleActionExecution = (action: WorkflowAction) => {
-
     // Route based on action type and ID
     switch (action.type) {
       case 'upload':

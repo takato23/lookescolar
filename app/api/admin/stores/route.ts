@@ -11,13 +11,15 @@ import { z } from 'zod';
 // Esquemas de validación
 const CreateStoreSchema = z.object({
   folder_id: z.string().uuid(),
-  store_settings: z.object({
-    allow_download: z.boolean().default(false),
-    watermark_enabled: z.boolean().default(true),
-    store_title: z.string().optional(),
-    store_description: z.string().optional(),
-    contact_info: z.string().optional(),
-  }).optional(),
+  store_settings: z
+    .object({
+      allow_download: z.boolean().default(false),
+      watermark_enabled: z.boolean().default(true),
+      store_title: z.string().optional(),
+      store_description: z.string().optional(),
+      contact_info: z.string().optional(),
+    })
+    .optional(),
 });
 
 const ListStoresSchema = z.object({
@@ -89,10 +91,9 @@ export async function POST(request: NextRequest) {
         ...storeData,
       },
     });
-
   } catch (error) {
     console.error('Store creation error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
@@ -144,9 +145,12 @@ export async function GET(request: NextRequest) {
       .then(({ data }) => ({
         data: {
           total_stores: data?.length || 0,
-          total_assets: data?.reduce((sum, store) => sum + (store.asset_count || 0), 0) || 0,
-          total_views: data?.reduce((sum, store) => sum + (store.view_count || 0), 0) || 0,
-        }
+          total_assets:
+            data?.reduce((sum, store) => sum + (store.asset_count || 0), 0) ||
+            0,
+          total_views:
+            data?.reduce((sum, store) => sum + (store.view_count || 0), 0) || 0,
+        },
       }));
 
     return NextResponse.json({
@@ -159,10 +163,9 @@ export async function GET(request: NextRequest) {
       },
       stats,
     });
-
   } catch (error) {
     console.error('Store listing error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid query parameters', details: error.errors },
@@ -193,10 +196,12 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createServerSupabaseServiceClient();
 
     // Llamar función para despublicar
-    const { data: success, error: unpublishError } = await supabase
-      .rpc('unpublish_store', {
+    const { data: success, error: unpublishError } = await supabase.rpc(
+      'unpublish_store',
+      {
         p_folder_id: folder_id,
-      });
+      }
+    );
 
     if (unpublishError) {
       console.error('Error unpublishing store:', unpublishError);
@@ -217,7 +222,6 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Store unpublished successfully',
     });
-
   } catch (error) {
     console.error('Store deletion error:', error);
     return NextResponse.json(
@@ -226,4 +230,3 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
-

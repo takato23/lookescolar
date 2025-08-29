@@ -6,10 +6,10 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 /**
  * Performance benchmark script for published folders endpoint
- * 
+ *
  * Usage:
  * npm run ts-node scripts/benchmark-published-folders.ts
- * 
+ *
  * Or with specific parameters:
  * npm run ts-node scripts/benchmark-published-folders.ts --event-id=uuid --iterations=20
  */
@@ -38,7 +38,7 @@ async function parseArgs(): Promise<BenchmarkOptions> {
   const options: BenchmarkOptions = {
     iterations: 10,
     concurrent: false,
-    warmup: true
+    warmup: true,
   };
 
   for (const arg of args) {
@@ -58,15 +58,17 @@ async function parseArgs(): Promise<BenchmarkOptions> {
 
 async function findTestEvent(): Promise<string | null> {
   const supabase = createServerSupabaseServiceClient();
-  
+
   // Look for events with published folders
   const { data, error } = await supabase
     .from('events')
-    .select(`
+    .select(
+      `
       id,
       name,
       folders!inner(id)
-    `)
+    `
+    )
     .eq('folders.is_published', true)
     .limit(1);
 
@@ -90,27 +92,29 @@ async function runBenchmark(
   console.log(`\n🚀 Running benchmark: ${operation}`);
   console.log(`   Iterations: ${iterations}`);
   console.log(`   Mode: ${concurrent ? 'Concurrent' : 'Sequential'}`);
-  
+
   const startTime = Date.now();
 
   if (concurrent) {
     // Run all iterations concurrently
-    const promises = Array(iterations).fill(null).map(async (_, index) => {
-      try {
-        const iterationStart = performance.now();
-        await testFn();
-        const duration = performance.now() - iterationStart;
-        results.push(duration);
-        successCount++;
-        
-        if (index % Math.ceil(iterations / 10) === 0) {
-          process.stdout.write('.');
+    const promises = Array(iterations)
+      .fill(null)
+      .map(async (_, index) => {
+        try {
+          const iterationStart = performance.now();
+          await testFn();
+          const duration = performance.now() - iterationStart;
+          results.push(duration);
+          successCount++;
+
+          if (index % Math.ceil(iterations / 10) === 0) {
+            process.stdout.write('.');
+          }
+        } catch (error) {
+          console.error(`Iteration ${index + 1} failed:`, error);
+          results.push(-1); // Mark as failed
         }
-      } catch (error) {
-        console.error(`Iteration ${index + 1} failed:`, error);
-        results.push(-1); // Mark as failed
-      }
-    });
+      });
 
     await Promise.all(promises);
   } else {
@@ -122,14 +126,14 @@ async function runBenchmark(
         const duration = performance.now() - iterationStart;
         results.push(duration);
         successCount++;
-        
+
         if (i % Math.ceil(iterations / 10) === 0) {
           process.stdout.write('.');
         }
-        
+
         // Small delay between sequential requests
         if (i < iterations - 1) {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
         }
       } catch (error) {
         console.error(`Iteration ${i + 1} failed:`, error);
@@ -139,7 +143,7 @@ async function runBenchmark(
   }
 
   const totalTime = Date.now() - startTime;
-  const successfulResults = results.filter(r => r > 0).sort((a, b) => a - b);
+  const successfulResults = results.filter((r) => r > 0).sort((a, b) => a - b);
   const queryStats = monitor.getDbStats(operation);
 
   console.log(` ✅ Completed in ${totalTime}ms`);
@@ -147,21 +151,25 @@ async function runBenchmark(
   return {
     operation,
     iterations: results.length,
-    avgTime: successfulResults.reduce((sum, time) => sum + time, 0) / successfulResults.length || 0,
+    avgTime:
+      successfulResults.reduce((sum, time) => sum + time, 0) /
+        successfulResults.length || 0,
     minTime: successfulResults[0] || 0,
     maxTime: successfulResults[successfulResults.length - 1] || 0,
-    p95Time: successfulResults[Math.floor(successfulResults.length * 0.95)] || 0,
-    p99Time: successfulResults[Math.floor(successfulResults.length * 0.99)] || 0,
+    p95Time:
+      successfulResults[Math.floor(successfulResults.length * 0.95)] || 0,
+    p99Time:
+      successfulResults[Math.floor(successfulResults.length * 0.99)] || 0,
     successRate: successCount / results.length,
-    queryCount: queryStats.totalQueries
+    queryCount: queryStats.totalQueries,
   };
 }
 
 function printResults(results: BenchmarkResult[]): void {
   console.log('\n📊 PERFORMANCE BENCHMARK RESULTS');
-  console.log('=' .repeat(80));
-  
-  results.forEach(result => {
+  console.log('='.repeat(80));
+
+  results.forEach((result) => {
     console.log(`\n🔍 ${result.operation.toUpperCase()}`);
     console.log(`   Iterations:    ${result.iterations}`);
     console.log(`   Success Rate:  ${(result.successRate * 100).toFixed(2)}%`);
@@ -171,42 +179,53 @@ function printResults(results: BenchmarkResult[]): void {
     console.log(`   Max Time:      ${result.maxTime.toFixed(2)}ms`);
     console.log(`   P95 Time:      ${result.p95Time.toFixed(2)}ms`);
     console.log(`   P99 Time:      ${result.p99Time.toFixed(2)}ms`);
-    
+
     // Performance assessment
-    const assessment = result.avgTime < 100 ? '🟢 EXCELLENT' :
-                      result.avgTime < 200 ? '🟡 GOOD' :
-                      result.avgTime < 500 ? '🟠 ACCEPTABLE' : '🔴 NEEDS IMPROVEMENT';
-    
+    const assessment =
+      result.avgTime < 100
+        ? '🟢 EXCELLENT'
+        : result.avgTime < 200
+          ? '🟡 GOOD'
+          : result.avgTime < 500
+            ? '🟠 ACCEPTABLE'
+            : '🔴 NEEDS IMPROVEMENT';
+
     console.log(`   Assessment:    ${assessment}`);
   });
 }
 
 function generateRecommendations(results: BenchmarkResult[]): void {
   console.log('\n💡 PERFORMANCE RECOMMENDATIONS');
-  console.log('=' .repeat(80));
-  
+  console.log('='.repeat(80));
+
   const recommendations: string[] = [];
-  
-  results.forEach(result => {
+
+  results.forEach((result) => {
     if (result.avgTime > 500) {
-      recommendations.push(`❗ ${result.operation}: Average response time is ${result.avgTime.toFixed(2)}ms (target: <200ms)`);
+      recommendations.push(
+        `❗ ${result.operation}: Average response time is ${result.avgTime.toFixed(2)}ms (target: <200ms)`
+      );
     }
-    
+
     if (result.p95Time > 1000) {
-      recommendations.push(`❗ ${result.operation}: P95 response time is ${result.p95Time.toFixed(2)}ms (investigate outliers)`);
+      recommendations.push(
+        `❗ ${result.operation}: P95 response time is ${result.p95Time.toFixed(2)}ms (investigate outliers)`
+      );
     }
-    
+
     if (result.successRate < 1.0) {
-      recommendations.push(`❗ ${result.operation}: Success rate is ${(result.successRate * 100).toFixed(2)}% (investigate failures)`);
+      recommendations.push(
+        `❗ ${result.operation}: Success rate is ${(result.successRate * 100).toFixed(2)}% (investigate failures)`
+      );
     }
   });
-  
+
   if (recommendations.length === 0) {
     console.log('✅ All performance metrics are within acceptable ranges!');
   } else {
-    recommendations.forEach(rec => console.log(rec));
+    recommendations.forEach((rec) => console.log(rec));
   }
-  
+
   // Database optimization recommendations
   console.log('\n🔧 DATABASE OPTIMIZATION TIPS:');
   console.log('   • Run: ANALYZE folders, assets, events;');
@@ -217,29 +236,31 @@ function generateRecommendations(results: BenchmarkResult[]): void {
 
 async function main(): Promise<void> {
   console.log('🎯 LookEscolar Published Folders Performance Benchmark');
-  console.log('=' .repeat(60));
-  
+  console.log('='.repeat(60));
+
   try {
     const options = await parseArgs();
     const monitor = PerformanceMonitor.getInstance();
     monitor.clearMetrics(); // Start fresh
-    
+
     // Find test event if not provided
     let eventId = options.eventId;
     if (!eventId) {
       console.log('🔍 Finding test event with published folders...');
       eventId = await findTestEvent();
-      
+
       if (!eventId) {
-        console.error('❌ No events with published folders found. Create some test data first.');
+        console.error(
+          '❌ No events with published folders found. Create some test data first.'
+        );
         process.exit(1);
       }
-      
+
       console.log(`✅ Using event: ${eventId}`);
     }
-    
+
     const results: BenchmarkResult[] = [];
-    
+
     // Warmup if requested
     if (options.warmup) {
       console.log('\n🔥 Warming up...');
@@ -247,72 +268,83 @@ async function main(): Promise<void> {
         event_id: eventId,
         page: 1,
         limit: 10,
-        include_unpublished: false
+        include_unpublished: false,
       });
       monitor.clearMetrics(); // Clear warmup metrics
     }
-    
+
     // Benchmark 1: Basic query performance
-    results.push(await runBenchmark(
-      'Basic Query (50 folders)',
-      () => folderPublishService.getPublishedFolders({
-        event_id: eventId,
-        page: 1,
-        limit: 50,
-        include_unpublished: false
-      }),
-      options.iterations || 10,
-      false
-    ));
-    
+    results.push(
+      await runBenchmark(
+        'Basic Query (50 folders)',
+        () =>
+          folderPublishService.getPublishedFolders({
+            event_id: eventId,
+            page: 1,
+            limit: 50,
+            include_unpublished: false,
+          }),
+        options.iterations || 10,
+        false
+      )
+    );
+
     // Benchmark 2: Pagination performance
-    results.push(await runBenchmark(
-      'Pagination Query (10 per page)',
-      () => folderPublishService.getPublishedFolders({
-        event_id: eventId,
-        page: 2,
-        limit: 10,
-        include_unpublished: false
-      }),
-      options.iterations || 10,
-      false
-    ));
-    
+    results.push(
+      await runBenchmark(
+        'Pagination Query (10 per page)',
+        () =>
+          folderPublishService.getPublishedFolders({
+            event_id: eventId,
+            page: 2,
+            limit: 10,
+            include_unpublished: false,
+          }),
+        options.iterations || 10,
+        false
+      )
+    );
+
     // Benchmark 3: Search performance
-    results.push(await runBenchmark(
-      'Search Query',
-      () => folderPublishService.getPublishedFolders({
-        event_id: eventId,
-        search: 'test',
-        page: 1,
-        limit: 20,
-        include_unpublished: false
-      }),
-      options.iterations || 10,
-      false
-    ));
-    
+    results.push(
+      await runBenchmark(
+        'Search Query',
+        () =>
+          folderPublishService.getPublishedFolders({
+            event_id: eventId,
+            search: 'test',
+            page: 1,
+            limit: 20,
+            include_unpublished: false,
+          }),
+        options.iterations || 10,
+        false
+      )
+    );
+
     // Benchmark 4: Concurrent requests
     if (options.concurrent) {
-      results.push(await runBenchmark(
-        'Concurrent Requests',
-        () => folderPublishService.getPublishedFolders({
-          event_id: eventId,
-          page: 1,
-          limit: 25,
-          include_unpublished: false
-        }),
-        Math.min(options.iterations || 5, 10), // Limit concurrent iterations
-        true
-      ));
+      results.push(
+        await runBenchmark(
+          'Concurrent Requests',
+          () =>
+            folderPublishService.getPublishedFolders({
+              event_id: eventId,
+              page: 1,
+              limit: 25,
+              include_unpublished: false,
+            }),
+          Math.min(options.iterations || 5, 10), // Limit concurrent iterations
+          true
+        )
+      );
     }
-    
+
     // Print results and recommendations
     printResults(results);
     generateRecommendations(results);
-    
+
     console.log('\n✅ Benchmark completed successfully!');
-    
   } catch (error) {
     console.error('❌ Benchmark failed:', error);
     process.exit(1);
@@ -321,7 +353,7 @@ async function main(): Promise<void> {
 
 // Run if called directly
 if (import.meta.url === new URL(process.argv[1], 'file://').href) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });

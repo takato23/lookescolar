@@ -16,7 +16,9 @@ export default async function FamilyLayout({
 }: FamilyLayoutProps) {
   const { token } = await params;
   // Navegación móvil con items parametrizados por token
-  const baseItems = Array.isArray(familyNavigationItems) ? familyNavigationItems : [];
+  const baseItems = Array.isArray(familyNavigationItems)
+    ? familyNavigationItems
+    : [];
   const navigationItems = baseItems.map((item) => ({
     ...item,
     href: item.href.replace('/f', `/f/${token}`),

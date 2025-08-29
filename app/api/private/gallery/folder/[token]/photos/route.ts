@@ -3,7 +3,7 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 /**
  * Private Gallery Photos API
- * 
+ *
  * Gets photos for a private folder gallery using folder token
  */
 
@@ -16,7 +16,7 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
-    
+
     const supabase = await createServerSupabaseServiceClient();
 
     // Verify folder exists and is published
@@ -27,10 +27,7 @@ export async function GET(
       .single();
 
     if (folderError || !folder) {
-      return NextResponse.json(
-        { error: 'Folder not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 });
     }
 
     if (!folder.is_published) {
@@ -48,25 +45,24 @@ export async function GET(
       .single();
 
     if (eventError || !event) {
-      return NextResponse.json(
-        { error: 'Event not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
     // Get photos from this folder
     const offset = (page - 1) * limit;
-    
+
     const { data: photos, error: photosError } = await supabase
       .from('assets')
-      .select(`
+      .select(
+        `
         id,
         filename,
         file_size,
         dimensions,
         preview_path,
         folder_id
-      `)
+      `
+      )
       .eq('folder_id', folder.id)
       .eq('status', 'ready')
       .order('created_at', { ascending: false })
@@ -88,7 +84,7 @@ export async function GET(
       .eq('status', 'ready');
 
     // Transform photos for frontend
-    const transformedPhotos = (photos || []).map(photo => ({
+    const transformedPhotos = (photos || []).map((photo) => ({
       id: photo.id,
       filename: photo.filename,
       preview_url: `/admin/previews/${photo.filename}`,
@@ -113,7 +109,6 @@ export async function GET(
         name: event.name,
       },
     });
-
   } catch (error) {
     console.error('Private gallery photos error:', error);
     return NextResponse.json(
@@ -122,4 +117,3 @@ export async function GET(
     );
   }
 }
-

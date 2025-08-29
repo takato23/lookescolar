@@ -14,7 +14,17 @@ import { formatPrice, formatNumber } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { useState, useEffect } from 'react';
-import { Calendar, Camera, Users, DollarSign, Package, TrendingUp, Zap, Star, RefreshCw } from 'lucide-react';
+import {
+  Calendar,
+  Camera,
+  Users,
+  DollarSign,
+  Package,
+  TrendingUp,
+  Zap,
+  Star,
+  RefreshCw,
+} from 'lucide-react';
 import { QuickActions } from '@/components/admin/dashboard/QuickActions';
 
 export default function AdminDashboard() {
@@ -148,7 +158,10 @@ export default function AdminDashboard() {
 
         {/* Quick Actions - Mobile First (solo visible en mobile) */}
         <div className="block lg:hidden">
-          <Card variant="glass" className="noise animate-slide-up overflow-hidden">
+          <Card
+            variant="glass"
+            className="noise animate-slide-up overflow-hidden"
+          >
             <CardHeader gradient>
               <CardTitle as="h2" className="flex items-center gap-3">
                 <Zap className="h-6 w-6 text-accent-500" />

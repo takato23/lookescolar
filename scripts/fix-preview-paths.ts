@@ -2,7 +2,7 @@
 
 /**
  * Fix Preview Paths - Diagnostic and repair script for preview URL issues
- * 
+ *
  * This script:
  * 1. Scans for photos with storage path mismatches
  * 2. Identifies orphaned preview files
@@ -23,7 +23,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-  auth: { persistSession: false }
+  auth: { persistSession: false },
 });
 
 interface Photo {
@@ -54,7 +54,7 @@ async function diagnosePreviews() {
     missingPreviewPath: 0,
     invalidStoragePath: 0,
     orphanedFiles: 0,
-    fixedPaths: 0
+    fixedPaths: 0,
   };
 
   const fixes: Array<{ id: string; newPath: string }> = [];
@@ -63,23 +63,28 @@ async function diagnosePreviews() {
     // Check if preview_path is null
     if (!photo.preview_path) {
       issues.missingPreviewPath++;
-      
+
       // Try to infer the correct preview path
       if (photo.storage_path) {
-        const inferredPath = photo.storage_path.replace('/uploads/', '/previews/');
-        
+        const inferredPath = photo.storage_path.replace(
+          '/uploads/',
+          '/previews/'
+        );
+
         // Check if file exists in storage
         const { error: checkError } = await supabase.storage
           .from(PREVIEW_BUCKET)
           .list(inferredPath.split('/').slice(0, -1).join('/'), {
-            search: inferredPath.split('/').pop()
+            search: inferredPath.split('/').pop(),
           });
 
         if (!checkError) {
           fixes.push({ id: photo.id, newPath: inferredPath });
           console.log(`✅ Can fix preview path for ${photo.original_filename}`);
         } else {
-          console.log(`⚠️  Cannot locate preview file for ${photo.original_filename}`);
+          console.log(
+            `⚠️  Cannot locate preview file for ${photo.original_filename}`
+          );
         }
       }
     }
@@ -98,9 +103,11 @@ async function diagnosePreviews() {
 
   // Ask user if they want to apply fixes
   if (fixes.length > 0) {
-    console.log('\n🔧 Would you like to apply fixes? (This will update the database)');
+    console.log(
+      '\n🔧 Would you like to apply fixes? (This will update the database)'
+    );
     console.log('   Press Ctrl+C to cancel, or any key to continue...');
-    
+
     // Note: In a real script, you'd use readline for user input
     // For now, just apply fixes automatically in development
     if (process.env.NODE_ENV !== 'production') {
@@ -113,7 +120,7 @@ async function diagnosePreviews() {
 
 async function applyFixes(fixes: Array<{ id: string; newPath: string }>) {
   console.log(`\n🔧 Applying ${fixes.length} fixes...`);
-  
+
   for (const fix of fixes) {
     const { error } = await supabase
       .from('photos')
@@ -132,20 +139,22 @@ async function applyFixes(fixes: Array<{ id: string; newPath: string }>) {
 
 async function testPreviewRoute() {
   console.log('\n🧪 Testing preview route...');
-  
+
   const testUrl = 'http://localhost:3000/admin/previews/test_preview.webp';
-  
+
   try {
     const response = await fetch(testUrl, {
       headers: {
-        'Authorization': 'Bearer dev_demo_token_123'
-      }
+        Authorization: 'Bearer dev_demo_token_123',
+      },
     });
-    
+
     if (response.ok) {
       console.log('✅ Preview route is responding');
     } else {
-      console.log(`⚠️  Preview route returned ${response.status}: ${response.statusText}`);
+      console.log(
+        `⚠️  Preview route returned ${response.status}: ${response.statusText}`
+      );
     }
   } catch (error) {
     console.log('❌ Preview route test failed:', (error as Error).message);
@@ -154,18 +163,23 @@ async function testPreviewRoute() {
 
 async function main() {
   console.log('🔧 LookEscolar Preview Path Repair Tool\n');
-  
+
   try {
     await diagnosePreviews();
     await testPreviewRoute();
-    
+
     console.log('\n✨ Diagnosis complete!');
     console.log('\n💡 Recommendations:');
-    console.log('   1. Use direct Supabase signed URLs for admin interface (current working solution)');
+    console.log(
+      '   1. Use direct Supabase signed URLs for admin interface (current working solution)'
+    );
     console.log('   2. Fix /admin/previews/ route for any legacy usage');
-    console.log('   3. Standardize upload paths to match admin API expectations');
-    console.log('   4. Consider deprecating /admin/previews/ route if not needed');
-    
+    console.log(
+      '   3. Standardize upload paths to match admin API expectations'
+    );
+    console.log(
+      '   4. Consider deprecating /admin/previews/ route if not needed'
+    );
   } catch (error) {
     console.error('❌ Script failed:', error);
     process.exit(1);

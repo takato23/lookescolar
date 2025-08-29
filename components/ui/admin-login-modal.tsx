@@ -26,28 +26,28 @@ export function AdminLoginModal({ onLogin }: AdminLoginModalProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="font-mono uppercase tracking-wider text-xs hover:bg-gray-100 border border-gray-300 hover:border-gray-400 rounded-none"
+          className="rounded-none border border-gray-300 font-mono text-xs uppercase tracking-wider hover:border-gray-400 hover:bg-gray-100"
         >
-          <User className="w-4 h-4 mr-2" />
+          <User className="mr-2 h-4 w-4" />
           Admin
         </Button>
       </Dialog.Trigger>
-      
+
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 transform">
           <div className="relative">
             <Dialog.Close asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute -top-12 right-0 text-white hover:text-gray-300 border border-white/20 hover:border-white/40 rounded-none"
+                className="absolute -top-12 right-0 rounded-none border border-white/20 text-white hover:border-white/40 hover:text-gray-300"
                 aria-label="Cerrar modal de login"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </Button>
             </Dialog.Close>
-            
+
             <AdminLoginForm onSubmit={handleLogin} />
           </div>
         </Dialog.Content>

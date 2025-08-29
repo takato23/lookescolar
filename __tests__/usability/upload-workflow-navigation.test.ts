@@ -13,26 +13,38 @@ describe('Photo Upload Navigation Flows', () => {
         quickActions: {
           mobile: [
             { label: 'Subir Fotos', target: '/admin/photos', visible: true },
-            { label: 'Crear Evento', target: '/admin/events/new', visible: true }
+            {
+              label: 'Crear Evento',
+              target: '/admin/events/new',
+              visible: true,
+            },
           ],
           desktop: [
             { label: 'Subir Fotos', target: '/admin/photos', visible: true },
-            { label: 'Crear Evento', target: '/admin/events/new', visible: true }
-          ]
+            {
+              label: 'Crear Evento',
+              target: '/admin/events/new',
+              visible: true,
+            },
+          ],
         },
         statsCards: [
           { label: 'Fotos subidas', target: '/admin/photos', clickable: true },
-          { label: 'Eventos activos', target: '/admin/events', clickable: true },
+          {
+            label: 'Eventos activos',
+            target: '/admin/events',
+            clickable: true,
+          },
           { label: 'Familias registradas', clickable: false },
-          { label: 'Ventas', target: '/admin/orders', clickable: true }
-        ]
+          { label: 'Ventas', target: '/admin/orders', clickable: true },
+        ],
       };
 
       // Verify upload access points exist
       expect(dashboardActions.quickActions.mobile).toContainEqual(
         expect.objectContaining({
           label: 'Subir Fotos',
-          target: '/admin/photos'
+          target: '/admin/photos',
         })
       );
 
@@ -40,14 +52,24 @@ describe('Photo Upload Navigation Flows', () => {
         expect.objectContaining({
           label: 'Fotos subidas',
           target: '/admin/photos',
-          clickable: true
+          clickable: true,
         })
       );
     });
 
     it('should maintain consistency between mobile and desktop actions', () => {
-      const mobileActions = ['Subir Fotos', 'Crear Evento', 'Asignar Fotos', 'Ver Pedidos'];
-      const desktopActions = ['Subir Fotos', 'Crear Evento', 'Asignar Fotos', 'Ver Pedidos'];
+      const mobileActions = [
+        'Subir Fotos',
+        'Crear Evento',
+        'Asignar Fotos',
+        'Ver Pedidos',
+      ];
+      const desktopActions = [
+        'Subir Fotos',
+        'Crear Evento',
+        'Asignar Fotos',
+        'Ver Pedidos',
+      ];
 
       expect(mobileActions).toEqual(desktopActions);
     });
@@ -61,32 +83,34 @@ describe('Photo Upload Navigation Flows', () => {
           label: 'Biblioteca de Fotos',
           target: '/admin/events/[id]/library',
           isPrimary: true,
-          description: 'Modern upload interface'
+          description: 'Modern upload interface',
         },
         {
           id: 'classic-interface',
           label: 'Gestión Clásica',
           target: '/admin/photos?eventId=[id]',
           isPrimary: false,
-          description: 'Traditional photo management'
+          description: 'Traditional photo management',
         },
         {
           id: 'gallery-view',
           label: 'Ver Galería Pública',
           target: '/gallery/[id]',
           isPrimary: false,
-          description: 'Preview family view'
-        }
+          description: 'Preview family view',
+        },
       ];
 
       // Verify primary upload path exists
-      const primaryUpload = eventDetailActions.find(action => action.isPrimary);
+      const primaryUpload = eventDetailActions.find(
+        (action) => action.isPrimary
+      );
       expect(primaryUpload).toBeDefined();
       expect(primaryUpload?.target).toBe('/admin/events/[id]/library');
 
       // Verify alternative paths exist
-      const alternativeUpload = eventDetailActions.find(
-        action => action.target.includes('/admin/photos')
+      const alternativeUpload = eventDetailActions.find((action) =>
+        action.target.includes('/admin/photos')
       );
       expect(alternativeUpload).toBeDefined();
     });
@@ -96,12 +120,16 @@ describe('Photo Upload Navigation Flows', () => {
         level0: { path: '/admin', label: 'Dashboard' },
         level1: { path: '/admin/events', label: 'Events List' },
         level2: { path: '/admin/events/[id]', label: 'Event Detail' },
-        level3: { path: '/admin/events/[id]/library', label: 'Photo Library' }
+        level3: { path: '/admin/events/[id]/library', label: 'Photo Library' },
       };
 
       // Verify logical hierarchy
-      expect(navigationHierarchy.level3.path).toContain(navigationHierarchy.level2.path);
-      expect(navigationHierarchy.level2.path).toContain(navigationHierarchy.level1.path);
+      expect(navigationHierarchy.level3.path).toContain(
+        navigationHierarchy.level2.path
+      );
+      expect(navigationHierarchy.level2.path).toContain(
+        navigationHierarchy.level1.path
+      );
     });
   });
 
@@ -112,28 +140,28 @@ describe('Photo Upload Navigation Flows', () => {
           {
             trigger: 'upload-button',
             target: '/admin/events/[eventId]/library',
-            condition: 'eventId present'
+            condition: 'eventId present',
           },
           {
             trigger: 'empty-state-button',
             target: '/admin/events/[eventId]/library',
-            condition: 'no photos found'
-          }
+            condition: 'no photos found',
+          },
         ],
         withoutEvent: [
           {
             trigger: 'create-event-button',
             target: '/admin/events/new',
-            condition: 'no event context'
-          }
-        ]
+            condition: 'no event context',
+          },
+        ],
       };
 
       // Verify upload paths from gallery
       expect(galleryActions.withEvent).toContainEqual(
         expect.objectContaining({
           trigger: 'upload-button',
-          target: '/admin/events/[eventId]/library'
+          target: '/admin/events/[eventId]/library',
         })
       );
 
@@ -141,7 +169,7 @@ describe('Photo Upload Navigation Flows', () => {
       expect(galleryActions.withEvent).toContainEqual(
         expect.objectContaining({
           trigger: 'empty-state-button',
-          target: '/admin/events/[eventId]/library'
+          target: '/admin/events/[eventId]/library',
         })
       );
     });
@@ -153,31 +181,38 @@ describe('Photo Upload Navigation Flows', () => {
         { step: 1, path: '/admin', action: 'dashboard entry' },
         { step: 2, path: '/admin/events', action: 'click events stats' },
         { step: 3, path: '/admin/events/new', action: 'create first event' },
-        { step: 4, path: '/admin/events/[id]', action: 'event created, redirected' },
-        { step: 5, path: '/admin/events/[id]/library', action: 'click library interface' },
-        { step: 6, action: 'upload photos via drag-drop' }
+        {
+          step: 4,
+          path: '/admin/events/[id]',
+          action: 'event created, redirected',
+        },
+        {
+          step: 5,
+          path: '/admin/events/[id]/library',
+          action: 'click library interface',
+        },
+        { step: 6, action: 'upload photos via drag-drop' },
       ];
 
       // Verify journey completeness
       expect(newUserJourney).toHaveLength(6);
-      
+
       // Verify critical paths
-      const hasUploadStep = newUserJourney.some(step => 
-        step.action.includes('upload') || step.path?.includes('library')
+      const hasUploadStep = newUserJourney.some(
+        (step) =>
+          step.action.includes('upload') || step.path?.includes('library')
       );
       expect(hasUploadStep).toBe(true);
 
       // Verify no broken links in journey
-      const paths = newUserJourney
-        .map(step => step.path)
-        .filter(Boolean);
-      
+      const paths = newUserJourney.map((step) => step.path).filter(Boolean);
+
       expect(paths).toEqual([
         '/admin',
-        '/admin/events', 
+        '/admin/events',
         '/admin/events/new',
         '/admin/events/[id]',
-        '/admin/events/[id]/library'
+        '/admin/events/[id]/library',
       ]);
     });
 
@@ -186,7 +221,7 @@ describe('Photo Upload Navigation Flows', () => {
         { step: 1, path: '/admin', action: 'dashboard entry' },
         { step: 2, path: '/admin/photos', action: 'click quick upload' },
         { step: 3, action: 'select event filter' },
-        { step: 4, action: 'upload photos directly' }
+        { step: 4, action: 'upload photos directly' },
       ];
 
       expect(quickJourney).toHaveLength(4);
@@ -197,15 +232,23 @@ describe('Photo Upload Navigation Flows', () => {
       const eventWorkflow = [
         { step: 1, path: '/admin', action: 'dashboard entry' },
         { step: 2, path: '/admin/events', action: 'events navigation' },
-        { step: 3, path: '/admin/events/[id]', action: 'select existing event' },
-        { step: 4, path: '/admin/events/[id]/library', action: 'library interface' },
-        { step: 5, action: 'upload with folder organization' }
+        {
+          step: 3,
+          path: '/admin/events/[id]',
+          action: 'select existing event',
+        },
+        {
+          step: 4,
+          path: '/admin/events/[id]/library',
+          action: 'library interface',
+        },
+        { step: 5, action: 'upload with folder organization' },
       ];
 
       expect(eventWorkflow).toHaveLength(5);
-      
+
       // Verify reaches library interface
-      const libraryStep = eventWorkflow.find(step => 
+      const libraryStep = eventWorkflow.find((step) =>
         step.path?.includes('/library')
       );
       expect(libraryStep).toBeDefined();
@@ -220,7 +263,7 @@ describe('Photo Upload Navigation Flows', () => {
         eventDetail: /^\/admin\/events\/\[id\]$/,
         eventLibrary: /^\/admin\/events\/\[id\]\/library$/,
         photos: /^\/admin\/photos$/,
-        gallery: /^\/admin\/gallery$/
+        gallery: /^\/admin\/gallery$/,
       };
 
       // Verify patterns are consistent
@@ -240,13 +283,15 @@ describe('Photo Upload Navigation Flows', () => {
         '/admin/events/[id]': '/admin/events',
         '/admin/events': '/admin',
         '/admin/photos': '/admin',
-        '/admin/gallery': '/admin'
+        '/admin/gallery': '/admin',
       };
 
       // Verify back navigation exists for each deep page
       Object.entries(backNavigation).forEach(([current, back]) => {
         expect(back).toBeTruthy();
-        expect(back.split('/').length).toBeLessThanOrEqual(current.split('/').length);
+        expect(back.split('/').length).toBeLessThanOrEqual(
+          current.split('/').length
+        );
       });
     });
   });
@@ -258,26 +303,26 @@ describe('Photo Upload Navigation Flows', () => {
           {
             scenario: 'gallery with no upload path',
             solution: 'upload button when eventId present',
-            implemented: true
+            implemented: true,
           },
           {
             scenario: 'empty event with no photos',
             solution: 'call-to-action to upload',
-            implemented: true
-          }
+            implemented: true,
+          },
         ],
         missingContext: [
           {
             scenario: 'photos page without event',
             solution: 'event selector required',
-            implemented: true
-          }
-        ]
+            implemented: true,
+          },
+        ],
       };
 
       // Verify critical fixes implemented
-      const criticalFixes = errorPrevention.deadEnds.filter(fix => 
-        fix.scenario.includes('gallery') && fix.implemented
+      const criticalFixes = errorPrevention.deadEnds.filter(
+        (fix) => fix.scenario.includes('gallery') && fix.implemented
       );
       expect(criticalFixes).toHaveLength(1);
     });
@@ -288,11 +333,11 @@ describe('Photo Upload Navigation Flows', () => {
         manage: 'Gestionar Fotos',
         view: 'Ver Galería',
         library: 'Biblioteca de Fotos',
-        classic: 'Gestión Clásica'
+        classic: 'Gestión Clásica',
       };
 
       // Verify all labels are in Spanish and descriptive
-      Object.values(actionLabels).forEach(label => {
+      Object.values(actionLabels).forEach((label) => {
         expect(label).toBeTruthy();
         expect(label.length).toBeGreaterThan(3);
         expect(label).toMatch(/^[A-ZÁÉÍÓÚÜ]/); // Starts with capital letter
@@ -308,16 +353,16 @@ describe('Photo Upload Navigation Flows', () => {
           { id: 'create-event', label: 'Crear Evento', priority: 'high' },
           { id: 'upload-photos', label: 'Subir Fotos', priority: 'high' },
           { id: 'assign-photos', label: 'Asignar Fotos', priority: 'medium' },
-          { id: 'view-orders', label: 'Ver Pedidos', priority: 'medium' }
-        ]
+          { id: 'view-orders', label: 'Ver Pedidos', priority: 'medium' },
+        ],
       };
 
       // Verify mobile layout exists
       expect(mobileQuickActions.layout).toBe('grid-cols-2');
-      
+
       // Verify high priority actions for mobile
       const highPriorityActions = mobileQuickActions.actions.filter(
-        action => action.priority === 'high'
+        (action) => action.priority === 'high'
       );
       expect(highPriorityActions).toHaveLength(2);
     });
@@ -326,7 +371,7 @@ describe('Photo Upload Navigation Flows', () => {
       const touchRequirements = {
         minimumTouchTarget: 44, // pixels
         spacing: 8, // pixels between elements
-        gestures: ['tap', 'long-press', 'swipe']
+        gestures: ['tap', 'long-press', 'swipe'],
       };
 
       expect(touchRequirements.minimumTouchTarget).toBeGreaterThanOrEqual(44);
@@ -341,7 +386,7 @@ describe('Photo Upload Navigation Flows', () => {
         pageLoadTime: 2000, // milliseconds
         navigationDelay: 200, // milliseconds
         uploadInitiation: 1000, // milliseconds
-        progressFeedback: 100 // milliseconds
+        progressFeedback: 100, // milliseconds
       };
 
       // Verify realistic targets
@@ -361,7 +406,7 @@ describe('Upload Interface Integration', () => {
         maxFileSize: 50 * 1024 * 1024, // 50MB
         maxFiles: 20,
         progressTracking: true,
-        folderOrganization: true
+        folderOrganization: true,
       };
 
       expect(uploadFeatures.dragDrop).toBe(true);
@@ -373,13 +418,13 @@ describe('Upload Interface Integration', () => {
       const feedbackStates = [
         'pending',
         'uploading',
-        'processing', 
+        'processing',
         'completed',
-        'error'
+        'error',
       ];
 
       const expectedStates = ['pending', 'uploading', 'completed', 'error'];
-      expectedStates.forEach(state => {
+      expectedStates.forEach((state) => {
         expect(feedbackStates).toContain(state);
       });
     });
@@ -391,26 +436,29 @@ describe('Upload Interface Integration', () => {
         libraryToClassic: {
           trigger: 'cross-link notification button',
           target: '/admin/photos?eventId=[id]',
-          context: 'library interface'
+          context: 'library interface',
         },
         classicToLibrary: {
           available: false, // Not currently implemented
-          suggestion: 'Add "Try New Interface" button'
-        }
+          suggestion: 'Add "Try New Interface" button',
+        },
       };
 
-      expect(crossNavigation.libraryToClassic.target).toContain('/admin/photos');
+      expect(crossNavigation.libraryToClassic.target).toContain(
+        '/admin/photos'
+      );
     });
   });
 });
 
 // Integration test helpers
 export const navigationTestHelpers = {
-  simulateUserJourney: (journey: Array<{path: string; action: string}>) => {
+  simulateUserJourney: (journey: Array<{ path: string; action: string }>) => {
     return journey.map((step, index) => ({
       stepNumber: index + 1,
       ...step,
-      isValid: step.path?.startsWith('/admin') || step.action?.includes('upload')
+      isValid:
+        step.path?.startsWith('/admin') || step.action?.includes('upload'),
     }));
   },
 
@@ -421,17 +469,18 @@ export const navigationTestHelpers = {
       '/admin/events/[id]',
       '/admin/events/[id]/library',
       '/admin/photos',
-      '/admin/gallery'
+      '/admin/gallery',
     ];
-    
-    return validPaths.some(validPath => 
-      path === validPath || path.match(validPath.replace('[id]', '\\w+'))
+
+    return validPaths.some(
+      (validPath) =>
+        path === validPath || path.match(validPath.replace('[id]', '\\w+'))
     );
   },
 
   calculateNavigationDepth: (path: string) => {
     return path.split('/').length - 1; // Subtract 1 for empty string before first /
-  }
+  },
 };
 
 console.log('✅ Upload Workflow Navigation Tests Complete');

@@ -83,8 +83,8 @@ INSERT INTO public.assets (
     // Split SQL into individual statements
     const statements = sqlContent
       .split(';')
-      .map(stmt => stmt.trim())
-      .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+      .map((stmt) => stmt.trim())
+      .filter((stmt) => stmt.length > 0 && !stmt.startsWith('--'));
 
     console.log(`📄 Found ${statements.length} SQL statements to execute\n`);
 
@@ -97,11 +97,13 @@ INSERT INTO public.assets (
       }
 
       console.log(`⚙️  Executing statement ${i + 1}/${statements.length}...`);
-      console.log(`   ${statement.substring(0, 80)}${statement.length > 80 ? '...' : ''}`);
+      console.log(
+        `   ${statement.substring(0, 80)}${statement.length > 80 ? '...' : ''}`
+      );
 
       try {
-        const { data, error } = await supabase.rpc('exec', { 
-          sql: statement + ';' 
+        const { data, error } = await supabase.rpc('exec', {
+          sql: statement + ';',
         });
 
         if (error) {
@@ -110,7 +112,9 @@ INSERT INTO public.assets (
           if (error.message.includes('already exists')) {
             console.log('   ℹ️  Resource already exists, continuing...');
           } else if (error.message.includes('does not exist')) {
-            console.log('   ⚠️  Dependency missing, might need manual intervention');
+            console.log(
+              '   ⚠️  Dependency missing, might need manual intervention'
+            );
           }
         } else {
           console.log(`✅ Statement ${i + 1} executed successfully`);
@@ -130,7 +134,9 @@ INSERT INTO public.assets (
     if (verifyError) {
       console.log('❌ Verification failed:', verifyError.message);
     } else {
-      console.log(`✅ Assets table verified! Found ${verifyData?.length || 0} test records`);
+      console.log(
+        `✅ Assets table verified! Found ${verifyData?.length || 0} test records`
+      );
       if (verifyData && verifyData.length > 0) {
         verifyData.forEach((asset, i) => {
           console.log(`   ${i + 1}. ${asset.filename} (${asset.status})`);
@@ -141,12 +147,19 @@ INSERT INTO public.assets (
     // Test the exact API query
     console.log('\n🧪 Testing the exact API query...');
     const targetFolderId = '1d4fe778-f4fa-4d11-8b8e-647f63a485d2';
-    
-    const { data: apiTestData, error: apiTestError, count } = await supabase
+
+    const {
+      data: apiTestData,
+      error: apiTestError,
+      count,
+    } = await supabase
       .from('assets')
-      .select('id, filename, preview_path, file_size, created_at, folder_id, status', {
-        count: 'exact',
-      })
+      .select(
+        'id, filename, preview_path, file_size, created_at, folder_id, status',
+        {
+          count: 'exact',
+        }
+      )
       .eq('folder_id', targetFolderId)
       .order('created_at', { ascending: false })
       .range(0, 49);
@@ -154,11 +167,14 @@ INSERT INTO public.assets (
     if (apiTestError) {
       console.log('❌ API test query failed:', apiTestError.message);
     } else {
-      console.log(`✅ API test query success! Found ${apiTestData?.length || 0} assets (total: ${count})`);
+      console.log(
+        `✅ API test query success! Found ${apiTestData?.length || 0} assets (total: ${count})`
+      );
     }
 
-    console.log('\n🎉 Migration completed! You can now test the PhotoAdmin component.');
-
+    console.log(
+      '\n🎉 Migration completed! You can now test the PhotoAdmin component.'
+    );
   } catch (err) {
     console.error('❌ Migration failed:', err);
   }

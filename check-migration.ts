@@ -16,18 +16,24 @@ async function checkMigration() {
   console.log('=== FOLDERS ===');
   console.log('Error:', foldersError);
   console.log('Count:', folders?.length || 0);
-  folders?.forEach(f => console.log(`- ${f.name} (id: ${f.id}, photos: ${f.photo_count}, event: ${f.event_id})`));
+  folders?.forEach((f) =>
+    console.log(
+      `- ${f.name} (id: ${f.id}, photos: ${f.photo_count}, event: ${f.event_id})`
+    )
+  );
 
-  // Check assets  
+  // Check assets
   const { data: assets, error: assetsError } = await supabase
     .from('assets')
     .select('id, filename, folder_id, created_at')
     .limit(10);
 
   console.log('\n=== ASSETS ===');
-  console.log('Error:', assetsError);  
+  console.log('Error:', assetsError);
   console.log('Count:', assets?.length || 0);
-  assets?.forEach(a => console.log(`- ${a.filename} (folder: ${a.folder_id})`));
+  assets?.forEach((a) =>
+    console.log(`- ${a.filename} (folder: ${a.folder_id})`)
+  );
 
   // Check event 83070ba2-738e-4038-ab5e-0c42fe4a2880 specifically
   const { data: targetFolder } = await supabase
@@ -39,15 +45,15 @@ async function checkMigration() {
   if (targetFolder) {
     console.log(`\n=== EVENT 83070ba2 FOLDER ===`);
     console.log(`Folder: ${targetFolder.name} (${targetFolder.id})`);
-    
+
     const { data: folderAssets } = await supabase
       .from('assets')
       .select('id, filename')
       .eq('folder_id', targetFolder.id)
       .limit(5);
-      
+
     console.log(`Assets in folder: ${folderAssets?.length || 0}`);
-    folderAssets?.forEach(a => console.log(`  - ${a.filename}`));
+    folderAssets?.forEach((a) => console.log(`  - ${a.filename}`));
   }
 
   // Check Maristas folder specifically
@@ -58,7 +64,7 @@ async function checkMigration() {
 
   console.log(`\n=== MARISTAS FOLDER ASSETS ===`);
   console.log(`Count: ${maristasAssets?.length || 0}`);
-  maristasAssets?.forEach(a => console.log(`  - ${a.filename}`));
+  maristasAssets?.forEach((a) => console.log(`  - ${a.filename}`));
 
   // Check actual storage paths for a few assets
   const { data: sampleAssets } = await supabase
@@ -67,7 +73,7 @@ async function checkMigration() {
     .limit(3);
 
   console.log(`\n=== SAMPLE ASSET STORAGE PATHS ===`);
-  sampleAssets?.forEach(a => {
+  sampleAssets?.forEach((a) => {
     console.log(`File: ${a.filename}`);
     console.log(`  Preview: ${a.preview_path}`);
     console.log(`  Storage: ${a.storage_path}`);

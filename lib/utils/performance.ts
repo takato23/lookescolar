@@ -72,37 +72,46 @@ export class PerformanceMonitor {
     metadata?: Record<string, any>
   ): Promise<{ result: T; metric: DatabasePerformanceMetric }> {
     const startTime = performance.now();
-    const startMemory = typeof process !== 'undefined' ? process.memoryUsage() : null;
-    
+    const startMemory =
+      typeof process !== 'undefined' ? process.memoryUsage() : null;
+
     try {
       const result = await queryFn();
       const duration = performance.now() - startTime;
-      const endMemory = typeof process !== 'undefined' ? process.memoryUsage() : null;
-      
+      const endMemory =
+        typeof process !== 'undefined' ? process.memoryUsage() : null;
+
       const metric: DatabasePerformanceMetric = {
         operation,
         duration,
         timestamp: new Date(),
         metadata: {
           ...metadata,
-          memoryDelta: startMemory && endMemory ? endMemory.heapUsed - startMemory.heapUsed : undefined,
-          success: true
-        }
+          memoryDelta:
+            startMemory && endMemory
+              ? endMemory.heapUsed - startMemory.heapUsed
+              : undefined,
+          success: true,
+        },
       };
 
       this.recordDbMetric(metric);
-      
+
       // Log performance warnings
       if (duration > 500) {
-        console.warn(`[PERF] Slow query detected: ${operation} took ${duration.toFixed(2)}ms`);
+        console.warn(
+          `[PERF] Slow query detected: ${operation} took ${duration.toFixed(2)}ms`
+        );
       } else if (duration < 100) {
-        console.log(`[PERF] Fast query: ${operation} completed in ${duration.toFixed(2)}ms ✅`);
+        console.log(
+          `[PERF] Fast query: ${operation} completed in ${duration.toFixed(2)}ms ✅`
+        );
       }
 
       return { result, metric };
     } catch (error) {
       const duration = performance.now() - startTime;
-      
+
       const metric: DatabasePerformanceMetric = {
         operation,
         duration,
@@ -110,13 +119,16 @@ export class PerformanceMonitor {
         metadata: {
           ...metadata,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
       };
 
       this.recordDbMetric(metric);
-      console.error(`[PERF] Query failed: ${operation} after ${duration.toFixed(2)}ms`, error);
-      
+      console.error(
+        `[PERF] Query failed: ${operation} after ${duration.toFixed(2)}ms`,
+        error
+      );
+
       throw error;
     }
   }
@@ -126,7 +138,7 @@ export class PerformanceMonitor {
    */
   recordDbMetric(metric: DatabasePerformanceMetric): void {
     this.dbMetrics.push(metric);
-    
+
     // Keep only recent metrics to prevent memory leaks
     if (this.dbMetrics.length > this.maxDbMetrics) {
       this.dbMetrics = this.dbMetrics.slice(-this.maxDbMetrics);
@@ -134,7 +146,9 @@ export class PerformanceMonitor {
 
     // Log critical performance issues
     if (metric.duration > 1000) {
-      console.error(`[PERF] CRITICAL: ${metric.operation} took ${metric.duration.toFixed(2)}ms`);
+      console.error(
+        `[PERF] CRITICAL: ${metric.operation} took ${metric.duration.toFixed(2)}ms`
+      );
     }
   }
 
@@ -144,10 +158,10 @@ export class PerformanceMonitor {
   getDbStats(operation?: string, timeWindow?: number): QueryPerformanceStats {
     const now = Date.now();
     const windowMs = timeWindow || 60000; // Default: last minute
-    
-    const relevantMetrics = this.dbMetrics.filter(m => {
+
+    const relevantMetrics = this.dbMetrics.filter((m) => {
       const matchesOperation = !operation || m.operation === operation;
-      const withinWindow = (now - m.timestamp.getTime()) <= windowMs;
+      const withinWindow = now - m.timestamp.getTime() <= windowMs;
       return matchesOperation && withinWindow;
     });
 
@@ -158,22 +172,29 @@ export class PerformanceMonitor {
         totalQueries: 0,
         cacheHitRate: 0,
         slowQueries: 0,
-        errorRate: 0
+        errorRate: 0,
       };
     }
 
-    const durations = relevantMetrics.map(m => m.duration).sort((a, b) => a - b);
-    const successfulQueries = relevantMetrics.filter(m => m.metadata?.success !== false);
-    const cacheHits = relevantMetrics.filter(m => m.cacheHit === true);
-    const slowQueries = relevantMetrics.filter(m => m.duration > 500);
+    const durations = relevantMetrics
+      .map((m) => m.duration)
+      .sort((a, b) => a - b);
+    const successfulQueries = relevantMetrics.filter(
+      (m) => m.metadata?.success !== false
+    );
+    const cacheHits = relevantMetrics.filter((m) => m.cacheHit === true);
+    const slowQueries = relevantMetrics.filter((m) => m.duration > 500);
 
     return {
-      avgResponseTime: durations.reduce((sum, d) => sum + d, 0) / durations.length,
+      avgResponseTime:
+        durations.reduce((sum, d) => sum + d, 0) / durations.length,
       p95ResponseTime: durations[Math.floor(durations.length * 0.95)] || 0,
       totalQueries: relevantMetrics.length,
       cacheHitRate: cacheHits.length / relevantMetrics.length,
       slowQueries: slowQueries.length,
-      errorRate: (relevantMetrics.length - successfulQueries.length) / relevantMetrics.length
+      errorRate:
+        (relevantMetrics.length - successfulQueries.length) /
+        relevantMetrics.length,
     };
   }
 
@@ -182,33 +203,47 @@ export class PerformanceMonitor {
    */
   getPerformanceSummary(): {
     currentStats: QueryPerformanceStats;
-    recentOperations: Array<{ operation: string; count: number; avgDuration: number }>;
+    recentOperations: Array<{
+      operation: string;
+      count: number;
+      avgDuration: number;
+    }>;
     alerts: string[];
   } {
     const currentStats = this.getDbStats();
-    
-    // Group by operation
-    const operationGroups = this.dbMetrics.reduce((acc, metric) => {
-      if (!acc[metric.operation]) {
-        acc[metric.operation] = [];
-      }
-      acc[metric.operation].push(metric);
-      return acc;
-    }, {} as Record<string, DatabasePerformanceMetric[]>);
 
-    const recentOperations = Object.entries(operationGroups).map(([operation, metrics]) => ({
-      operation,
-      count: metrics.length,
-      avgDuration: metrics.reduce((sum, m) => sum + m.duration, 0) / metrics.length
-    })).sort((a, b) => b.count - a.count);
+    // Group by operation
+    const operationGroups = this.dbMetrics.reduce(
+      (acc, metric) => {
+        if (!acc[metric.operation]) {
+          acc[metric.operation] = [];
+        }
+        acc[metric.operation].push(metric);
+        return acc;
+      },
+      {} as Record<string, DatabasePerformanceMetric[]>
+    );
+
+    const recentOperations = Object.entries(operationGroups)
+      .map(([operation, metrics]) => ({
+        operation,
+        count: metrics.length,
+        avgDuration:
+          metrics.reduce((sum, m) => sum + m.duration, 0) / metrics.length,
+      }))
+      .sort((a, b) => b.count - a.count);
 
     // Generate performance alerts
     const alerts: string[] = [];
     if (currentStats.avgResponseTime > 300) {
-      alerts.push(`High average response time: ${currentStats.avgResponseTime.toFixed(2)}ms`);
+      alerts.push(
+        `High average response time: ${currentStats.avgResponseTime.toFixed(2)}ms`
+      );
     }
     if (currentStats.errorRate > 0.05) {
-      alerts.push(`High error rate: ${(currentStats.errorRate * 100).toFixed(2)}%`);
+      alerts.push(
+        `High error rate: ${(currentStats.errorRate * 100).toFixed(2)}%`
+      );
     }
     if (currentStats.slowQueries > 5) {
       alerts.push(`Too many slow queries: ${currentStats.slowQueries}`);
@@ -217,7 +252,7 @@ export class PerformanceMonitor {
     return {
       currentStats,
       recentOperations,
-      alerts
+      alerts,
     };
   }
 

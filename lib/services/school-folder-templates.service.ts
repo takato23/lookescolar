@@ -1,6 +1,6 @@
 /**
  * School Folder Templates Service
- * 
+ *
  * Provides predefined folder structures for different types of school events
  * Supports hierarchical organization for efficient photo management
  */
@@ -29,7 +29,8 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
   {
     id: 'complete-school',
     name: 'Escuela Completa (Jardín + Primaria + Secundaria)',
-    description: 'Estructura completa para escuelas con todos los niveles educativos',
+    description:
+      'Estructura completa para escuelas con todos los niveles educativos',
     tags: ['completa', 'todos-niveles', 'jardin', 'primaria', 'secundaria'],
     template: [
       {
@@ -41,19 +42,19 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
           {
             name: 'Salita de 3 años',
             sort_order: 1,
-            metadata: { age: 3, color: 'amarilla' }
+            metadata: { age: 3, color: 'amarilla' },
           },
           {
             name: 'Salita de 4 años',
             sort_order: 2,
-            metadata: { age: 4, color: 'verde' }
+            metadata: { age: 4, color: 'verde' },
           },
           {
             name: 'Salita de 5 años',
             sort_order: 3,
-            metadata: { age: 5, color: 'azul' }
-          }
-        ]
+            metadata: { age: 5, color: 'azul' },
+          },
+        ],
       },
       {
         name: 'Nivel Primaria',
@@ -64,34 +65,34 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
           {
             name: '1er Grado',
             sort_order: 1,
-            metadata: { grade: 1, division: 'A' }
+            metadata: { grade: 1, division: 'A' },
           },
           {
             name: '2do Grado',
             sort_order: 2,
-            metadata: { grade: 2, division: 'A' }
+            metadata: { grade: 2, division: 'A' },
           },
           {
             name: '3er Grado',
             sort_order: 3,
-            metadata: { grade: 3, division: 'A' }
+            metadata: { grade: 3, division: 'A' },
           },
           {
             name: '4to Grado',
             sort_order: 4,
-            metadata: { grade: 4, division: 'A' }
+            metadata: { grade: 4, division: 'A' },
           },
           {
             name: '5to Grado',
             sort_order: 5,
-            metadata: { grade: 5, division: 'A' }
+            metadata: { grade: 5, division: 'A' },
           },
           {
             name: '6to Grado',
             sort_order: 6,
-            metadata: { grade: 6, division: 'A' }
-          }
-        ]
+            metadata: { grade: 6, division: 'A' },
+          },
+        ],
       },
       {
         name: 'Nivel Secundaria',
@@ -102,36 +103,36 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
           {
             name: '1er Año',
             sort_order: 1,
-            metadata: { year: 1, orientation: 'general' }
+            metadata: { year: 1, orientation: 'general' },
           },
           {
             name: '2do Año',
             sort_order: 2,
-            metadata: { year: 2, orientation: 'general' }
+            metadata: { year: 2, orientation: 'general' },
           },
           {
             name: '3er Año',
             sort_order: 3,
-            metadata: { year: 3, orientation: 'general' }
+            metadata: { year: 3, orientation: 'general' },
           },
           {
             name: 'Bachiller Economía',
             sort_order: 4,
-            metadata: { year: 4, orientation: 'economia' }
+            metadata: { year: 4, orientation: 'economia' },
           },
           {
             name: 'Bachiller Naturales',
             sort_order: 5,
-            metadata: { year: 5, orientation: 'naturales' }
+            metadata: { year: 5, orientation: 'naturales' },
           },
           {
             name: 'Bachiller Humanidades',
             sort_order: 6,
-            metadata: { year: 6, orientation: 'humanidades' }
-          }
-        ]
-      }
-    ]
+            metadata: { year: 6, orientation: 'humanidades' },
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'jardin-only',
@@ -143,21 +144,21 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
         name: 'Salita Roja (3 años)',
         description: 'Niños de 3 años',
         sort_order: 1,
-        metadata: { age: 3, color: 'roja' }
+        metadata: { age: 3, color: 'roja' },
       },
       {
         name: 'Salita Azul (4 años)',
         description: 'Niños de 4 años',
         sort_order: 2,
-        metadata: { age: 4, color: 'azul' }
+        metadata: { age: 4, color: 'azul' },
       },
       {
         name: 'Salita Verde (5 años)',
         description: 'Niños de 5 años',
         sort_order: 3,
-        metadata: { age: 5, color: 'verde' }
-      }
-    ]
+        metadata: { age: 5, color: 'verde' },
+      },
+    ],
   },
   {
     id: 'secundaria-bachilleratos',
@@ -174,19 +175,19 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
           {
             name: '1er Año',
             sort_order: 1,
-            metadata: { year: 1 }
+            metadata: { year: 1 },
           },
           {
             name: '2do Año',
             sort_order: 2,
-            metadata: { year: 2 }
+            metadata: { year: 2 },
           },
           {
             name: '3er Año',
             sort_order: 3,
-            metadata: { year: 3 }
-          }
-        ]
+            metadata: { year: 3 },
+          },
+        ],
       },
       {
         name: 'Bachilleratos',
@@ -197,26 +198,26 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
           {
             name: 'Bachiller Economía',
             sort_order: 1,
-            metadata: { orientation: 'economia' }
+            metadata: { orientation: 'economia' },
           },
           {
             name: 'Bachiller Naturales',
             sort_order: 2,
-            metadata: { orientation: 'naturales' }
+            metadata: { orientation: 'naturales' },
           },
           {
             name: 'Bachiller Humanidades',
             sort_order: 3,
-            metadata: { orientation: 'humanidades' }
+            metadata: { orientation: 'humanidades' },
           },
           {
             name: 'Bachiller Arte',
             sort_order: 4,
-            metadata: { orientation: 'arte' }
-          }
-        ]
-      }
-    ]
+            metadata: { orientation: 'arte' },
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'custom-structure',
@@ -228,10 +229,10 @@ export const SCHOOL_FOLDER_TEMPLATES: SchoolFolderStructure[] = [
         name: 'Fotos Generales',
         description: 'Carpeta general para organizar después',
         sort_order: 1,
-        metadata: { type: 'general' }
-      }
-    ]
-  }
+        metadata: { type: 'general' },
+      },
+    ],
+  },
 ];
 
 export class SchoolFolderTemplatesService {
@@ -246,7 +247,7 @@ export class SchoolFolderTemplatesService {
    * Get a specific template by ID
    */
   static getTemplateById(templateId: string): SchoolFolderStructure | null {
-    return SCHOOL_FOLDER_TEMPLATES.find(t => t.id === templateId) || null;
+    return SCHOOL_FOLDER_TEMPLATES.find((t) => t.id === templateId) || null;
   }
 
   /**
@@ -254,11 +255,12 @@ export class SchoolFolderTemplatesService {
    */
   static searchTemplates(query: string): SchoolFolderStructure[] {
     const normalizedQuery = query.toLowerCase().trim();
-    
-    return SCHOOL_FOLDER_TEMPLATES.filter(template => 
-      template.name.toLowerCase().includes(normalizedQuery) ||
-      template.description.toLowerCase().includes(normalizedQuery) ||
-      template.tags.some(tag => tag.toLowerCase().includes(normalizedQuery))
+
+    return SCHOOL_FOLDER_TEMPLATES.filter(
+      (template) =>
+        template.name.toLowerCase().includes(normalizedQuery) ||
+        template.description.toLowerCase().includes(normalizedQuery) ||
+        template.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))
     );
   }
 
@@ -266,7 +268,7 @@ export class SchoolFolderTemplatesService {
    * Apply a template structure to an event
    */
   static async applyTemplateToEvent(
-    eventId: string, 
+    eventId: string,
     templateId: string,
     options: {
       replaceExisting?: boolean;
@@ -284,7 +286,7 @@ export class SchoolFolderTemplatesService {
         requestId,
         eventId,
         templateId,
-        options
+        options,
       });
 
       const template = this.getTemplateById(templateId);
@@ -306,24 +308,25 @@ export class SchoolFolderTemplatesService {
         requestId,
         eventId,
         templateId,
-        createdCount: createdFolders.length
+        createdCount: createdFolders.length,
       });
 
       return {
         success: true,
-        createdFolders
+        createdFolders,
       };
     } catch (error) {
       logger.error('Failed to apply template to event', {
         requestId,
         eventId,
         templateId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to apply template'
+        error:
+          error instanceof Error ? error.message : 'Failed to apply template',
       };
     }
   }
@@ -351,13 +354,13 @@ export class SchoolFolderTemplatesService {
           metadata: {
             ...folderTemplate.metadata,
             template_generated: true,
-            created_at_depth: depth
-          }
+            created_at_depth: depth,
+          },
         });
 
         if (result.success && result.folder) {
           createdFolders.push(result.folder);
-          
+
           // If this folder has children, create them recursively
           if (folderTemplate.children && folderTemplate.children.length > 0) {
             const childFolders = await this.createFolderHierarchy(
@@ -374,7 +377,7 @@ export class SchoolFolderTemplatesService {
             requestId,
             eventId,
             folderName: folderTemplate.name,
-            error: result.error
+            error: result.error,
           });
         }
       } catch (error) {
@@ -382,7 +385,7 @@ export class SchoolFolderTemplatesService {
           requestId,
           eventId,
           folderName: folderTemplate.name,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
     }
@@ -418,17 +421,21 @@ export class SchoolFolderTemplatesService {
     const preview: Array<{ name: string; path: string; depth: number }> = [];
 
     for (const folder of folders) {
-      const currentPath = parentPath ? `${parentPath} / ${folder.name}` : folder.name;
-      
+      const currentPath = parentPath
+        ? `${parentPath} / ${folder.name}`
+        : folder.name;
+
       preview.push({
         name: folder.name,
         path: currentPath,
-        depth
+        depth,
       });
 
       // Add children recursively
       if (folder.children) {
-        preview.push(...this.generateFolderPreview(folder.children, currentPath, depth + 1));
+        preview.push(
+          ...this.generateFolderPreview(folder.children, currentPath, depth + 1)
+        );
       }
     }
 
@@ -454,9 +461,12 @@ export class SchoolFolderTemplatesService {
 
       // Get existing folders for the event
       const existingFolders = await folderService.getFolders(eventId, null);
-      
+
       if (!existingFolders.success) {
-        return { canApply: false, conflicts: ['Cannot check existing folders'] };
+        return {
+          canApply: false,
+          conflicts: ['Cannot check existing folders'],
+        };
       }
 
       const conflicts: string[] = [];
@@ -464,7 +474,7 @@ export class SchoolFolderTemplatesService {
 
       // Check for name conflicts at root level
       const existingNames = new Set(
-        existingFolders.folders?.map(f => f.name.toLowerCase()) || []
+        existingFolders.folders?.map((f) => f.name.toLowerCase()) || []
       );
 
       for (const templateFolder of template.template) {
@@ -474,18 +484,23 @@ export class SchoolFolderTemplatesService {
       }
 
       if (existingFolders.folders && existingFolders.folders.length > 0) {
-        warnings.push(`Event already has ${existingFolders.folders.length} folders`);
+        warnings.push(
+          `Event already has ${existingFolders.folders.length} folders`
+        );
       }
 
       return {
         canApply: conflicts.length === 0,
         conflicts: conflicts.length > 0 ? conflicts : undefined,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (error) {
-      return { 
-        canApply: false, 
-        conflicts: ['Validation error: ' + (error instanceof Error ? error.message : 'Unknown error')]
+      return {
+        canApply: false,
+        conflicts: [
+          'Validation error: ' +
+            (error instanceof Error ? error.message : 'Unknown error'),
+        ],
       };
     }
   }

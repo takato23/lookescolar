@@ -75,8 +75,8 @@ export async function GET(request: NextRequest) {
         .select('metadata')
         .not('metadata->code_id', 'is', null);
       if (!rowsErr && rows) {
-        allPhotoRows = rows.map(r => ({ 
-          code_id: r.metadata?.code_id || null 
+        allPhotoRows = rows.map((r) => ({
+          code_id: r.metadata?.code_id || null,
         }));
       }
     } catch {

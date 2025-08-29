@@ -104,4 +104,4 @@ export async function createServerSupabaseServiceClient(): Promise<
 // Aliases de compatibilidad para código existente
 export const createClient = createServerSupabaseClient;
 export const createServiceClient = createServerSupabaseServiceClient;
-export const createServerClient = createServerSupabaseClient;
+export { createServerSupabaseClient as createServerClient };

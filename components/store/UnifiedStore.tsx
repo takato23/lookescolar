@@ -11,7 +11,19 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ShoppingCart, Package, Image, Users, User, MapPin, Mail, Phone, CreditCard, Loader2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  ShoppingCart,
+  Package,
+  Image,
+  Users,
+  User,
+  MapPin,
+  Mail,
+  Phone,
+  CreditCard,
+  Loader2,
+} from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -67,7 +79,7 @@ export function UnifiedStore({
     cartItems,
     checkoutStep,
     contactInfo,
-    
+
     // Actions
     setToken,
     setEventInfo,
@@ -98,7 +110,9 @@ export function UnifiedStore({
     state: contactInfo?.address?.state || '',
     zipCode: contactInfo?.address?.zipCode || '',
   });
-  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>(
+    {}
+  );
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Initialize store
@@ -115,17 +129,23 @@ export function UnifiedStore({
   const eventTheme = (subject.event.theme as any) || 'default';
 
   // Separate photos by type (this would need to come from API in real implementation)
-  const individualPhotos = photos.filter(p => !p.filename.toLowerCase().includes('grupo'));
-  const groupPhotos = photos.filter(p => p.filename.toLowerCase().includes('grupo'));
+  const individualPhotos = photos.filter(
+    (p) => !p.filename.toLowerCase().includes('grupo')
+  );
+  const groupPhotos = photos.filter((p) =>
+    p.filename.toLowerCase().includes('grupo')
+  );
 
   // Handle contact form changes
-  const handleContactFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleContactFormChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setContactForm(prev => ({ ...prev, [name]: value }));
-    
+    setContactForm((prev) => ({ ...prev, [name]: value }));
+
     // Clear error when user starts typing
     if (contactErrors[name]) {
-      setContactErrors(prev => ({ ...prev, [name]: '' }));
+      setContactErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
@@ -133,7 +153,7 @@ export function UnifiedStore({
   const saveContactInfo = () => {
     try {
       const validatedData = ContactSchema.parse(contactForm);
-      
+
       const contactInfo = {
         name: validatedData.name,
         email: validatedData.email,
@@ -146,7 +166,7 @@ export function UnifiedStore({
           country: 'Argentina',
         },
       };
-      
+
       setContactInfo(contactInfo);
       return true;
     } catch (error) {
@@ -193,15 +213,15 @@ export function UnifiedStore({
       }
 
       const { init_point, sandbox_init_point } = await response.json();
-      
+
       // Redirect to MercadoPago checkout
-      const checkoutUrl = process.env.NODE_ENV === 'production' ? init_point : sandbox_init_point;
+      const checkoutUrl =
+        process.env.NODE_ENV === 'production' ? init_point : sandbox_init_point;
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
       } else {
         throw new Error('URL de pago no disponible');
       }
-
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(
@@ -215,7 +235,7 @@ export function UnifiedStore({
   const renderPackageSelection = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Selecciona tu Paquete</h2>
+        <h2 className="mb-2 text-2xl font-bold">Selecciona tu Paquete</h2>
         <p className="text-muted-foreground">
           Elige entre nuestras opciones de carpetas personalizadas
         </p>
@@ -223,10 +243,10 @@ export function UnifiedStore({
 
       <div className="grid gap-6 md:grid-cols-2">
         {PRODUCT_CATALOG.productOptions.map((option) => (
-          <Card 
+          <Card
             key={option.id}
             className={`cursor-pointer transition-all hover:shadow-lg ${
-              selectedPackage?.id === option.id ? 'ring-2 ring-primary' : ''
+              selectedPackage?.id === option.id ? 'ring-primary ring-2' : ''
             }`}
             onClick={() => selectPackage(option.id)}
           >
@@ -242,19 +262,22 @@ export function UnifiedStore({
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-4 text-sm">
                 {option.description}
               </p>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Carpeta personalizada:</span>
-                  <span className="font-medium">{option.contents.folderSize}</span>
+                  <span className="font-medium">
+                    {option.contents.folderSize}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Fotos individuales:</span>
                   <span className="font-medium">
-                    {option.contents.individualPhotos} x {option.contents.individualSize}
+                    {option.contents.individualPhotos} x{' '}
+                    {option.contents.individualSize}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -276,8 +299,8 @@ export function UnifiedStore({
       </div>
 
       <div className="flex justify-center">
-        <Button 
-          onClick={nextStep} 
+        <Button
+          onClick={nextStep}
           disabled={!canProceedToNextStep()}
           className="theme-button"
         >
@@ -290,7 +313,7 @@ export function UnifiedStore({
   const renderPhotoSelection = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Selecciona tus Fotos</h2>
+        <h2 className="mb-2 text-2xl font-bold">Selecciona tus Fotos</h2>
         <p className="text-muted-foreground">
           Elige las fotos que quieres incluir en tu {selectedPackage?.name}
         </p>
@@ -300,21 +323,22 @@ export function UnifiedStore({
         <div className="grid gap-6">
           {/* Individual Photos */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
               <Image className="h-5 w-5" />
-              Fotos Individuales 
+              Fotos Individuales
               <Badge variant="outline">
-                {selectedPhotos.individual.length}/{selectedPackage.contents.individualPhotos}
+                {selectedPhotos.individual.length}/
+                {selectedPackage.contents.individualPhotos}
               </Badge>
             </h3>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
               {individualPhotos.map((photo) => (
                 <div
                   key={photo.id}
                   className={`photo-card cursor-pointer transition-all ${
-                    selectedPhotos.individual.includes(photo.id) 
-                      ? 'selected-photo' 
+                    selectedPhotos.individual.includes(photo.id)
+                      ? 'selected-photo'
                       : ''
                   }`}
                   onClick={() => selectIndividualPhoto(photo.id)}
@@ -322,9 +346,9 @@ export function UnifiedStore({
                   <img
                     src={photo.preview_url}
                     alt={photo.filename}
-                    className="w-full h-32 object-cover rounded"
+                    className="h-32 w-full rounded object-cover"
                   />
-                  <p className="text-xs mt-1 truncate">{photo.filename}</p>
+                  <p className="mt-1 truncate text-xs">{photo.filename}</p>
                 </div>
               ))}
             </div>
@@ -332,21 +356,22 @@ export function UnifiedStore({
 
           {/* Group Photos */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
               <Users className="h-5 w-5" />
               Fotos Grupales
               <Badge variant="outline">
-                {selectedPhotos.group.length}/{selectedPackage.contents.groupPhotos}
+                {selectedPhotos.group.length}/
+                {selectedPackage.contents.groupPhotos}
               </Badge>
             </h3>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
               {groupPhotos.map((photo) => (
                 <div
                   key={photo.id}
                   className={`photo-card cursor-pointer transition-all ${
-                    selectedPhotos.group.includes(photo.id) 
-                      ? 'selected-photo' 
+                    selectedPhotos.group.includes(photo.id)
+                      ? 'selected-photo'
                       : ''
                   }`}
                   onClick={() => selectGroupPhoto(photo.id)}
@@ -354,9 +379,9 @@ export function UnifiedStore({
                   <img
                     src={photo.preview_url}
                     alt={photo.filename}
-                    className="w-full h-32 object-cover rounded"
+                    className="h-32 w-full rounded object-cover"
                   />
-                  <p className="text-xs mt-1 truncate">{photo.filename}</p>
+                  <p className="mt-1 truncate text-xs">{photo.filename}</p>
                 </div>
               ))}
             </div>
@@ -368,8 +393,8 @@ export function UnifiedStore({
         <Button variant="outline" onClick={prevStep}>
           Anterior
         </Button>
-        <Button 
-          onClick={nextStep} 
+        <Button
+          onClick={nextStep}
           disabled={!canProceedToNextStep()}
           className="theme-button"
         >
@@ -382,7 +407,7 @@ export function UnifiedStore({
   const renderExtrasSelection = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Copias Adicionales</h2>
+        <h2 className="mb-2 text-2xl font-bold">Copias Adicionales</h2>
         <p className="text-muted-foreground">
           Añade copias extras en diferentes tamaños (opcional)
         </p>
@@ -392,45 +417,54 @@ export function UnifiedStore({
         {PRODUCT_CATALOG.additionalCopies.map((copy) => (
           <Card key={copy.id}>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <h4 className="font-medium">{copy.name}</h4>
-                <Badge variant="secondary">
-                  {formatCurrency(copy.price)}
-                </Badge>
+                <Badge variant="secondary">{formatCurrency(copy.price)}</Badge>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const existingItem = cartItems.find(item => item.productId === copy.id);
+                    const existingItem = cartItems.find(
+                      (item) => item.productId === copy.id
+                    );
                     if (existingItem && existingItem.quantity > 0) {
-                      updateCartItemQuantity(existingItem.id, existingItem.quantity - 1);
+                      updateCartItemQuantity(
+                        existingItem.id,
+                        existingItem.quantity - 1
+                      );
                     }
                   }}
                 >
                   -
                 </Button>
-                
+
                 <span className="w-8 text-center">
-                  {cartItems.find(item => item.productId === copy.id)?.quantity || 0}
+                  {cartItems.find((item) => item.productId === copy.id)
+                    ?.quantity || 0}
                 </span>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const existingItem = cartItems.find(item => item.productId === copy.id);
+                    const existingItem = cartItems.find(
+                      (item) => item.productId === copy.id
+                    );
                     if (existingItem) {
-                      updateCartItemQuantity(existingItem.id, existingItem.quantity + 1);
+                      updateCartItemQuantity(
+                        existingItem.id,
+                        existingItem.quantity + 1
+                      );
                     } else {
                       addToCart({
                         type: 'additional_copy',
                         productId: copy.id,
                         quantity: 1,
                         unitPrice: copy.price,
-                        metadata: { size: copy.size }
+                        metadata: { size: copy.size },
                       });
                     }
                   }}
@@ -438,9 +472,9 @@ export function UnifiedStore({
                   +
                 </Button>
               </div>
-              
+
               {copy.isSet && (
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Set de {copy.setQuantity} fotos
                 </p>
               )}
@@ -463,7 +497,7 @@ export function UnifiedStore({
   const renderContactForm = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Información de Contacto</h2>
+        <h2 className="mb-2 text-2xl font-bold">Información de Contacto</h2>
         <p className="text-muted-foreground">
           Completa tus datos para el envío del pedido
         </p>
@@ -489,7 +523,9 @@ export function UnifiedStore({
                 placeholder="Tu nombre completo"
               />
               {contactErrors.name && (
-                <p className="text-sm text-red-500 mt-1">{contactErrors.name}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {contactErrors.name}
+                </p>
               )}
             </div>
 
@@ -504,7 +540,9 @@ export function UnifiedStore({
                 placeholder="tu@email.com"
               />
               {contactErrors.email && (
-                <p className="text-sm text-red-500 mt-1">{contactErrors.email}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {contactErrors.email}
+                </p>
               )}
             </div>
 
@@ -519,7 +557,9 @@ export function UnifiedStore({
                 placeholder="11 1234-5678"
               />
               {contactErrors.phone && (
-                <p className="text-sm text-red-500 mt-1">{contactErrors.phone}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {contactErrors.phone}
+                </p>
               )}
             </div>
           </CardContent>
@@ -544,7 +584,9 @@ export function UnifiedStore({
                 placeholder="Av. Corrientes 1234, Piso 5, Depto A"
               />
               {contactErrors.street && (
-                <p className="text-sm text-red-500 mt-1">{contactErrors.street}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {contactErrors.street}
+                </p>
               )}
             </div>
 
@@ -559,7 +601,9 @@ export function UnifiedStore({
                   placeholder="Buenos Aires"
                 />
                 {contactErrors.city && (
-                  <p className="text-sm text-red-500 mt-1">{contactErrors.city}</p>
+                  <p className="mt-1 text-sm text-red-500">
+                    {contactErrors.city}
+                  </p>
                 )}
               </div>
 
@@ -573,7 +617,9 @@ export function UnifiedStore({
                   placeholder="CABA"
                 />
                 {contactErrors.state && (
-                  <p className="text-sm text-red-500 mt-1">{contactErrors.state}</p>
+                  <p className="mt-1 text-sm text-red-500">
+                    {contactErrors.state}
+                  </p>
                 )}
               </div>
             </div>
@@ -588,7 +634,9 @@ export function UnifiedStore({
                 placeholder="1043"
               />
               {contactErrors.zipCode && (
-                <p className="text-sm text-red-500 mt-1">{contactErrors.zipCode}</p>
+                <p className="mt-1 text-sm text-red-500">
+                  {contactErrors.zipCode}
+                </p>
               )}
             </div>
           </CardContent>
@@ -599,7 +647,7 @@ export function UnifiedStore({
         <Button variant="outline" onClick={prevStep}>
           Anterior
         </Button>
-        <Button 
+        <Button
           onClick={() => {
             if (saveContactInfo()) {
               nextStep();
@@ -616,7 +664,7 @@ export function UnifiedStore({
   const renderPayment = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Finalizar Pedido</h2>
+        <h2 className="mb-2 text-2xl font-bold">Finalizar Pedido</h2>
         <p className="text-muted-foreground">
           Revisa tu pedido y procede al pago seguro
         </p>
@@ -629,14 +677,16 @@ export function UnifiedStore({
         <CardContent className="space-y-4">
           {/* Base Package */}
           {selectedPackage && (
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{selectedPackage.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {selectedPackage.description}
                 </p>
               </div>
-              <p className="font-medium">{formatCurrency(selectedPackage.basePrice)}</p>
+              <p className="font-medium">
+                {formatCurrency(selectedPackage.basePrice)}
+              </p>
             </div>
           )}
 
@@ -647,10 +697,14 @@ export function UnifiedStore({
               <div className="space-y-2">
                 <p className="font-medium">Copias Adicionales:</p>
                 {cartItems.map((item) => {
-                  const copy = PRODUCT_CATALOG.additionalCopies.find(c => c.id === item.productId);
+                  const copy = PRODUCT_CATALOG.additionalCopies.find(
+                    (c) => c.id === item.productId
+                  );
                   return (
                     <div key={item.id} className="flex justify-between text-sm">
-                      <span>{copy?.name} x{item.quantity}</span>
+                      <span>
+                        {copy?.name} x{item.quantity}
+                      </span>
                       <span>{formatCurrency(item.totalPrice)}</span>
                     </div>
                   );
@@ -663,7 +717,9 @@ export function UnifiedStore({
           <Separator />
           <div className="flex justify-between">
             <span>Envío</span>
-            <span>{formatCurrency(PRODUCT_CATALOG.pricing.shippingCost || 0)}</span>
+            <span>
+              {formatCurrency(PRODUCT_CATALOG.pricing.shippingCost || 0)}
+            </span>
           </div>
 
           {/* Total */}
@@ -687,7 +743,10 @@ export function UnifiedStore({
               <p>{contactInfo.email}</p>
               {contactInfo.phone && <p>{contactInfo.phone}</p>}
               <p>{contactInfo.address.street}</p>
-              <p>{contactInfo.address.city}, {contactInfo.address.state} {contactInfo.address.zipCode}</p>
+              <p>
+                {contactInfo.address.city}, {contactInfo.address.state}{' '}
+                {contactInfo.address.zipCode}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -697,7 +756,7 @@ export function UnifiedStore({
         <Button variant="outline" onClick={prevStep}>
           Anterior
         </Button>
-        <Button 
+        <Button
           onClick={processPayment}
           disabled={isProcessingPayment}
           className="theme-button flex items-center gap-2"
@@ -739,8 +798,8 @@ export function UnifiedStore({
     <ThemedGalleryWrapper eventTheme={eventTheme as any}>
       <div className="min-h-screen p-4">
         {/* Header */}
-        <div className="max-w-6xl mx-auto mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mx-auto mb-6 max-w-6xl">
+          <div className="mb-4 flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={onBack}
@@ -749,36 +808,38 @@ export function UnifiedStore({
               <ArrowLeft className="h-4 w-4" />
               Volver a la galería
             </Button>
-            
+
             <div className="text-center">
               <h1 className="text-lg font-semibold">{subject.event.name}</h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {subject.event.school_name}
               </p>
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                Paso {['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep) + 1} de 5
+              <span className="text-muted-foreground text-sm">
+                Paso{' '}
+                {['package', 'photos', 'extras', 'contact', 'payment'].indexOf(
+                  checkoutStep
+                ) + 1}{' '}
+                de 5
               </span>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+          <div className="h-2 w-full rounded-full bg-gray-200">
+            <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ 
-                width: `${(((['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep) + 1) / 5) * 100)}%` 
+              style={{
+                width: `${((['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep) + 1) / 5) * 100}%`,
               }}
             />
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
-          {renderCurrentStep()}
-        </div>
+        <div className="mx-auto max-w-4xl">{renderCurrentStep()}</div>
       </div>
     </ThemedGalleryWrapper>
   );

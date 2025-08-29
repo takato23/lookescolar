@@ -103,7 +103,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       // Si se solicitan estadísticas, obtener estadísticas reales de la BD
       if (includeStats && events && events.length > 0) {
-        const { UnifiedPhotoService } = await import('@/lib/services/unified-photo.service');
+        const { UnifiedPhotoService } = await import(
+          '@/lib/services/unified-photo.service'
+        );
         const photoService = new UnifiedPhotoService(serviceClient as any);
 
         const eventsStatsPromises = events.map(async (event) => {
@@ -128,12 +130,15 @@ export const GET = RateLimitMiddleware.withRateLimit(
             untaggedPhotos: null,
             totalOrders: orders.length,
             pendingOrders: orders.filter((o) => o.status === 'pending').length,
-            approvedOrders: orders.filter((o) => o.status === 'approved').length,
-            deliveredOrders: orders.filter((o) => o.status === 'delivered').length,
+            approvedOrders: orders.filter((o) => o.status === 'approved')
+              .length,
+            deliveredOrders: orders.filter((o) => o.status === 'delivered')
+              .length,
             revenue: Math.round(
               orders
                 .filter((o) => ['approved', 'delivered'].includes(o.status))
-                .reduce((sum, order) => sum + (order.total_amount || 0), 0) / 100
+                .reduce((sum, order) => sum + (order.total_amount || 0), 0) /
+                100
             ),
             lastPhotoUploaded: null,
             lastOrderCreated:

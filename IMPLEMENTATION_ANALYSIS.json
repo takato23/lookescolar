@@ -8,7 +8,7 @@
     "target_users": ["Familias", "Salones", "Escuelas", "Estudiantes"],
     "main_features": [
       "Flujo de compra unificado",
-      "Temas visuales manuales", 
+      "Temas visuales manuales",
       "Integración MercadoPago",
       "Catálogo de productos físicos",
       "Optimizaciones para Supabase gratuito",
@@ -35,7 +35,7 @@
     },
     "step_2": {
       "name": "Sistema de Temas Dinámicos",
-      "status": "completed", 
+      "status": "completed",
       "description": "Temas visuales seleccionables manualmente por la fotógrafa",
       "deliverables": [
         "lib/services/gallery-theme.service.ts",
@@ -114,7 +114,7 @@
       "description": "Mejoras de UX manteniendo simplicidad",
       "deliverables": [
         "components/ui/LoadingStates.tsx",
-        "components/ui/FeedbackComponents.tsx", 
+        "components/ui/FeedbackComponents.tsx",
         "components/ui/TouchGestures.tsx",
         "components/gallery/EnhancedGallery.tsx"
       ],
@@ -130,9 +130,7 @@
       "name": "Testing y Validación",
       "status": "completed",
       "description": "Documentación completa y validación del flujo",
-      "deliverables": [
-        "IMPLEMENTATION_ANALYSIS.json"
-      ],
+      "deliverables": ["IMPLEMENTATION_ANALYSIS.json"],
       "key_features": [
         "Análisis completo de implementación",
         "Documentación técnica",
@@ -179,11 +177,11 @@
       },
       "option_b": {
         "price": 12500,
-        "currency": "ARS", 
+        "currency": "ARS",
         "includes": [
           "Carpeta personalizada 20x30 cm",
           "2 fotos individuales 15x21 cm",
-          "8 fotos pequeñas 4x5 cm", 
+          "8 fotos pequeñas 4x5 cm",
           "1 foto grupal 15x21 cm"
         ]
       }
@@ -228,7 +226,7 @@
     "jardin": {
       "colors": {
         "primary": "#FF6B9D",
-        "secondary": "#4ECDC4", 
+        "secondary": "#4ECDC4",
         "accent": "#FFE66D"
       },
       "description": "Colorido y mágico para jardín de infantes"
@@ -289,11 +287,7 @@
       "CLOUDINARY_URL (optional)",
       "AWS_* (optional for S3)"
     ],
-    "dependencies": [
-      "sharp",
-      "cloudinary",
-      "zustand"
-    ],
+    "dependencies": ["sharp", "cloudinary", "zustand"],
     "database_migrations": [
       "20250131_add_event_theme.sql",
       "20250131_create_unified_orders.sql"

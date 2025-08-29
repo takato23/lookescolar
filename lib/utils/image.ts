@@ -8,11 +8,11 @@
  */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
@@ -41,7 +41,13 @@ export const getOptimalImageSize = (
  * Validates image file type
  */
 export const isValidImageType = (file: File): boolean => {
-  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  const validTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+  ];
   return validTypes.includes(file.type.toLowerCase());
 };
 
@@ -53,10 +59,10 @@ export const generateImageAlt = (
   subjects?: { name: string; grade?: string }[]
 ): string => {
   if (subjects && subjects.length > 0) {
-    const names = subjects.map(s => s.name).join(', ');
+    const names = subjects.map((s) => s.name).join(', ');
     return `Photo of ${names}`;
   }
-  
+
   // Remove file extension and format nicely
   const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
   return `Photo: ${nameWithoutExt.replace(/[-_]/g, ' ')}`;
@@ -72,9 +78,12 @@ export const calculateAspectRatio = (width: number, height: number): number => {
 /**
  * Determines if an image is in landscape or portrait orientation
  */
-export const getImageOrientation = (width: number, height: number): 'landscape' | 'portrait' | 'square' => {
+export const getImageOrientation = (
+  width: number,
+  height: number
+): 'landscape' | 'portrait' | 'square' => {
   const ratio = calculateAspectRatio(width, height);
-  
+
   if (Math.abs(ratio - 1) < 0.1) return 'square';
   return ratio > 1 ? 'landscape' : 'portrait';
 };

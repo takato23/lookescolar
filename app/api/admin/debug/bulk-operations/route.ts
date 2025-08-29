@@ -8,9 +8,11 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
 
   try {
     const supabase = await createServerSupabaseServiceClient();
-    
+
     // Get performance stats
-    const perfReport = publishPerformanceMonitor.generateReport(24 * 60 * 60 * 1000); // Last 24h
+    const perfReport = publishPerformanceMonitor.generateReport(
+      24 * 60 * 60 * 1000
+    ); // Last 24h
     const recentStats = publishPerformanceMonitor.getStats(60 * 60 * 1000); // Last hour
 
     // Check database health for folders table
@@ -25,10 +27,10 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
 
     // Check if bulk_publish_folders function exists
     const { data: funcExists, error: funcError } = await supabase
-      .rpc('bulk_publish_folders', { 
-        p_folder_ids: [], 
-        p_batch_size: 1, 
-        p_settings: {} 
+      .rpc('bulk_publish_folders', {
+        p_folder_ids: [],
+        p_batch_size: 1,
+        p_settings: {},
       })
       .limit(0);
 
@@ -47,7 +49,7 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
         url: '/api/admin/folders/bulk-publish',
         method: 'POST',
         available: true, // We know it exists since we're testing from within
-      }
+      },
     };
 
     return NextResponse.json({
@@ -65,19 +67,18 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
         memory_usage: process.memoryUsage(),
         uptime: process.uptime(),
         node_version: process.version,
-      }
+      },
     });
-
   } catch (error) {
     const executionTime = Date.now() - requestStart;
     console.error('[DEBUG] Bulk operations debug error:', error);
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to generate debug report',
         details: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString(),
-        execution_time_ms: executionTime
+        execution_time_ms: executionTime,
       },
       { status: 500 }
     );
@@ -108,13 +109,12 @@ async function handlePOST(request: NextRequest): Promise<NextResponse> {
       case 'bulk_function':
         // Test bulk function with empty array
         try {
-          const { data, error } = await supabase
-            .rpc('bulk_publish_folders', {
-              p_folder_ids: [],
-              p_batch_size: 1,
-              p_settings: {}
-            });
-          
+          const { data, error } = await supabase.rpc('bulk_publish_folders', {
+            p_folder_ids: [],
+            p_batch_size: 1,
+            p_settings: {},
+          });
+
           testResults = {
             test: 'bulk_function',
             function_available: !error,
@@ -125,7 +125,10 @@ async function handlePOST(request: NextRequest): Promise<NextResponse> {
           testResults = {
             test: 'bulk_function',
             function_available: false,
-            error: funcError instanceof Error ? funcError.message : 'Function test failed'
+            error:
+              funcError instanceof Error
+                ? funcError.message
+                : 'Function test failed',
           };
         }
         break;
@@ -148,7 +151,7 @@ async function handlePOST(request: NextRequest): Promise<NextResponse> {
       default:
         testResults = {
           test: 'unknown',
-          error: `Unknown test type: ${test_type}`
+          error: `Unknown test type: ${test_type}`,
         };
     }
 
@@ -157,17 +160,16 @@ async function handlePOST(request: NextRequest): Promise<NextResponse> {
       execution_time_ms: Date.now() - requestStart,
       timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     const executionTime = Date.now() - requestStart;
     console.error('[DEBUG] Test error:', error);
 
     return NextResponse.json(
-      { 
+      {
         error: 'Test failed',
         details: error instanceof Error ? error.message : 'Unknown error',
         execution_time_ms: executionTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );

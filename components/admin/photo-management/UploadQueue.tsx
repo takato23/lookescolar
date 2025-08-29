@@ -2,13 +2,13 @@
 
 import React, { memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   XIcon,
   UploadIcon,
   CheckIcon,
   AlertTriangleIcon,
   FileIcon,
-  RotateCcwIcon
+  RotateCcwIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -29,108 +29,115 @@ interface UploadQueueProps {
   className?: string;
 }
 
-const UploadQueueItemComponent = memo(({
-  item,
-  onCancel,
-  onRetry,
-}: {
-  item: UploadQueueItem;
-  onCancel: (id: string) => void;
-  onRetry: (id: string) => void;
-}) => {
-  const getStatusIcon = () => {
-    switch (item.status) {
-      case 'uploading':
-        return <UploadIcon className="h-4 w-4 animate-spin text-blue-500" />;
-      case 'completed':
-        return <CheckIcon className="h-4 w-4 text-green-500" />;
-      case 'error':
-        return <AlertTriangleIcon className="h-4 w-4 text-red-500" />;
-      default:
-        return <FileIcon className="h-4 w-4 text-gray-400" />;
-    }
-  };
+const UploadQueueItemComponent = memo(
+  ({
+    item,
+    onCancel,
+    onRetry,
+  }: {
+    item: UploadQueueItem;
+    onCancel: (id: string) => void;
+    onRetry: (id: string) => void;
+  }) => {
+    const getStatusIcon = () => {
+      switch (item.status) {
+        case 'uploading':
+          return <UploadIcon className="h-4 w-4 animate-spin text-blue-500" />;
+        case 'completed':
+          return <CheckIcon className="h-4 w-4 text-green-500" />;
+        case 'error':
+          return <AlertTriangleIcon className="h-4 w-4 text-red-500" />;
+        default:
+          return <FileIcon className="h-4 w-4 text-gray-400" />;
+      }
+    };
 
-  const getStatusColor = () => {
-    switch (item.status) {
-      case 'uploading': return 'text-blue-600 bg-blue-50';
-      case 'completed': return 'text-green-600 bg-green-50';
-      case 'error': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
+    const getStatusColor = () => {
+      switch (item.status) {
+        case 'uploading':
+          return 'text-blue-600 bg-blue-50';
+        case 'completed':
+          return 'text-green-600 bg-green-50';
+        case 'error':
+          return 'text-red-600 bg-red-50';
+        default:
+          return 'text-gray-600 bg-gray-50';
+      }
+    };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      className="flex items-center gap-3 p-3 border-b border-gray-100"
-    >
-      {/* File icon and info */}
-      <div className="flex-shrink-0">
-        {getStatusIcon()}
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium truncate">
-            {item.file.name}
-          </span>
-          <Badge variant="outline" className={cn('text-xs', getStatusColor())}>
-            {item.status}
-          </Badge>
-        </div>
-        
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-gray-500">
-            {formatFileSize(item.file.size)}
-          </span>
-          {item.error && (
-            <span className="text-xs text-red-500 truncate">
-              {item.error}
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        className="flex items-center gap-3 border-b border-gray-100 p-3"
+      >
+        {/* File icon and info */}
+        <div className="flex-shrink-0">{getStatusIcon()}</div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between">
+            <span className="truncate text-sm font-medium">
+              {item.file.name}
             </span>
+            <Badge
+              variant="outline"
+              className={cn('text-xs', getStatusColor())}
+            >
+              {item.status}
+            </Badge>
+          </div>
+
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-xs text-gray-500">
+              {formatFileSize(item.file.size)}
+            </span>
+            {item.error && (
+              <span className="truncate text-xs text-red-500">
+                {item.error}
+              </span>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          {item.status === 'uploading' && (
+            <div className="mt-2">
+              <Progress value={item.progress} className="h-1" />
+              <span className="text-xs text-gray-500">
+                {Math.round(item.progress)}%
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Progress bar */}
-        {item.status === 'uploading' && (
-          <div className="mt-2">
-            <Progress value={item.progress} className="h-1" />
-            <span className="text-xs text-gray-500">
-              {Math.round(item.progress)}%
-            </span>
-          </div>
-        )}
-      </div>
+        {/* Action buttons */}
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {item.status === 'error' && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onRetry(item.id)}
+              className="h-6 w-6 p-0"
+            >
+              <RotateCcwIcon className="h-3 w-3" />
+            </Button>
+          )}
 
-      {/* Action buttons */}
-      <div className="flex-shrink-0 flex items-center gap-1">
-        {item.status === 'error' && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onRetry(item.id)}
-            className="h-6 w-6 p-0"
-          >
-            <RotateCcwIcon className="h-3 w-3" />
-          </Button>
-        )}
-        
-        {(item.status === 'pending' || item.status === 'error') && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onCancel(item.id)}
-            className="h-6 w-6 p-0 text-gray-500 hover:text-red-500"
-          >
-            <XIcon className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
-    </motion.div>
-  );
-});
+          {(item.status === 'pending' || item.status === 'error') && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onCancel(item.id)}
+              className="h-6 w-6 p-0 text-gray-500 hover:text-red-500"
+            >
+              <XIcon className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+);
 
 UploadQueueItemComponent.displayName = 'UploadQueueItem';
 
@@ -142,7 +149,9 @@ const UploadQueueComponent = ({
   onClearCompleted,
   className,
 }: UploadQueueProps) => {
-  const completedItems = uploadQueue.filter(item => item.status === 'completed');
+  const completedItems = uploadQueue.filter(
+    (item) => item.status === 'completed'
+  );
   const hasItems = uploadQueue.length > 0;
 
   if (!hasItems) {
@@ -152,17 +161,19 @@ const UploadQueueComponent = ({
   return (
     <Card className={cn('', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-2">
-          <UploadIcon className={cn(
-            'h-4 w-4',
-            isUploading ? 'animate-pulse text-blue-500' : 'text-gray-500'
-          )} />
-          <h3 className="font-semibold text-sm">
+          <UploadIcon
+            className={cn(
+              'h-4 w-4',
+              isUploading ? 'animate-pulse text-blue-500' : 'text-gray-500'
+            )}
+          />
+          <h3 className="text-sm font-semibold">
             Upload Queue ({uploadQueue.length})
           </h3>
         </div>
-        
+
         {completedItems.length > 0 && (
           <Button
             variant="ghost"
@@ -176,12 +187,14 @@ const UploadQueueComponent = ({
       </div>
 
       {/* Queue list */}
-      <ScrollArea className={cn(
-        'transition-all duration-200',
-        uploadQueue.length > COMPONENT_CONFIG.UPLOAD_QUEUE.MAX_VISIBLE_ITEMS 
-          ? `h-${COMPONENT_CONFIG.UPLOAD_QUEUE.MAX_HEIGHT}` 
-          : 'max-h-96'
-      )}>
+      <ScrollArea
+        className={cn(
+          'transition-all duration-200',
+          uploadQueue.length > COMPONENT_CONFIG.UPLOAD_QUEUE.MAX_VISIBLE_ITEMS
+            ? `h-${COMPONENT_CONFIG.UPLOAD_QUEUE.MAX_HEIGHT}`
+            : 'max-h-96'
+        )}
+      >
         <AnimatePresence>
           {uploadQueue.map((item) => (
             <UploadQueueItemComponent
@@ -196,19 +209,18 @@ const UploadQueueComponent = ({
 
       {/* Footer stats */}
       {hasItems && (
-        <div className="p-3 bg-gray-50 border-t">
+        <div className="border-t bg-gray-50 p-3">
           <div className="flex justify-between text-xs text-gray-600">
             <span>
-              {uploadQueue.filter(i => i.status === 'pending').length} pending
+              {uploadQueue.filter((i) => i.status === 'pending').length} pending
             </span>
             <span>
-              {uploadQueue.filter(i => i.status === 'uploading').length} uploading
+              {uploadQueue.filter((i) => i.status === 'uploading').length}{' '}
+              uploading
             </span>
+            <span>{completedItems.length} completed</span>
             <span>
-              {completedItems.length} completed
-            </span>
-            <span>
-              {uploadQueue.filter(i => i.status === 'error').length} errors
+              {uploadQueue.filter((i) => i.status === 'error').length} errors
             </span>
           </div>
         </div>

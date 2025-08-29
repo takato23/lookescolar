@@ -60,39 +60,39 @@
 }
 
 /* Font Size Adjustments */
-[data-font-size="small"] {
+[data-font-size='small'] {
   font-size: 0.875rem;
 }
 
-[data-font-size="small"] .text-sm {
+[data-font-size='small'] .text-sm {
   font-size: 0.75rem;
 }
 
-[data-font-size="small"] .text-lg {
+[data-font-size='small'] .text-lg {
   font-size: 1rem;
 }
 
-[data-font-size="small"] .text-xl {
+[data-font-size='small'] .text-xl {
   font-size: 1.125rem;
 }
 
-[data-font-size="large"] {
+[data-font-size='large'] {
   font-size: 1.125rem;
 }
 
-[data-font-size="large"] .text-sm {
+[data-font-size='large'] .text-sm {
   font-size: 1rem;
 }
 
-[data-font-size="large"] .text-lg {
+[data-font-size='large'] .text-lg {
   font-size: 1.25rem;
 }
 
-[data-font-size="large"] .text-xl {
+[data-font-size='large'] .text-xl {
   font-size: 1.5rem;
 }
 
-[data-font-size="large"] .text-2xl {
+[data-font-size='large'] .text-2xl {
   font-size: 1.875rem;
 }
 
@@ -161,9 +161,9 @@
 }
 
 /* Tooltips and dropdowns accessibility */
-[role="tooltip"],
-[role="menu"],
-[role="listbox"] {
+[role='tooltip'],
+[role='menu'],
+[role='listbox'] {
   z-index: 1000;
 }
 
@@ -191,9 +191,9 @@
 /* Ensure interactive elements are properly sized for touch */
 @media (pointer: coarse) {
   button,
-  [role="button"],
-  input[type="button"],
-  input[type="submit"],
+  [role='button'],
+  input[type='button'],
+  input[type='submit'],
   a {
     min-height: 44px;
     min-width: 44px;
@@ -207,11 +207,11 @@
     color: black !important;
     border: 1px solid black !important;
   }
-  
+
   .bg-gradient-to-br {
     background: white !important;
   }
-  
+
   button:not(.print-visible) {
     display: none !important;
   }

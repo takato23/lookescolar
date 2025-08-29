@@ -47,10 +47,13 @@ export default function StepSummary({
   ];
 
   // Get selected photos with counts
-  const photoCounts = selectedPhotosFlat.reduce((counts, photoId) => {
-    counts[photoId] = (counts[photoId] || 0) + 1;
-    return counts;
-  }, {} as Record<string, number>);
+  const photoCounts = selectedPhotosFlat.reduce(
+    (counts, photoId) => {
+      counts[photoId] = (counts[photoId] || 0) + 1;
+      return counts;
+    },
+    {} as Record<string, number>
+  );
 
   const selectedPhotoObjects = Object.keys(photoCounts)
     .map((photoId) => photos.find((p) => p.id === photoId))

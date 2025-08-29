@@ -1,6 +1,6 @@
 /**
  * Image Optimization Service
- * 
+ *
  * Optimizes images for minimal storage usage while maintaining quality
  * Implements WebP compression, multiple resolutions, and external storage integration
  */
@@ -102,7 +102,7 @@ export class ImageOptimizationService {
       const sharp = (await import('sharp')).default;
       const originalImage = sharp(imageBuffer);
       const metadata = await originalImage.metadata();
-      
+
       const originalSize = imageBuffer.length;
       const originalFormat = metadata.format || 'unknown';
       const originalDimensions = {
@@ -120,14 +120,20 @@ export class ImageOptimizationService {
 
       // Generate thumbnail
       if (generateThumbnail) {
-        const thumbnailRes = this.RESOLUTIONS.find(r => r.name === 'thumbnail')!;
+        const thumbnailRes = this.RESOLUTIONS.find(
+          (r) => r.name === 'thumbnail'
+        )!;
         const thumbnailBuffer = await this.resizeAndCompress(
           originalImage,
           thumbnailRes
         );
-        
+
         optimized.thumbnail = {
-          url: await this.uploadToStorage(thumbnailBuffer, `thumb_${originalFilename}`, 'supabase'),
+          url: await this.uploadToStorage(
+            thumbnailBuffer,
+            `thumb_${originalFilename}`,
+            'supabase'
+          ),
           size: thumbnailBuffer.length,
         };
         totalOptimizedSize += thumbnailBuffer.length;
@@ -135,14 +141,18 @@ export class ImageOptimizationService {
 
       // Generate preview
       if (generatePreview) {
-        const previewRes = this.RESOLUTIONS.find(r => r.name === 'preview')!;
+        const previewRes = this.RESOLUTIONS.find((r) => r.name === 'preview')!;
         const previewBuffer = await this.resizeAndCompress(
           originalImage,
           previewRes
         );
-        
+
         optimized.preview = {
-          url: await this.uploadToStorage(previewBuffer, `prev_${originalFilename}`, 'supabase'),
+          url: await this.uploadToStorage(
+            previewBuffer,
+            `prev_${originalFilename}`,
+            'supabase'
+          ),
           size: previewBuffer.length,
         };
         totalOptimizedSize += previewBuffer.length;
@@ -150,14 +160,20 @@ export class ImageOptimizationService {
 
       // Generate watermark version
       if (generateWatermark) {
-        const watermarkRes = this.RESOLUTIONS.find(r => r.name === 'watermark')!;
+        const watermarkRes = this.RESOLUTIONS.find(
+          (r) => r.name === 'watermark'
+        )!;
         const watermarkBuffer = await this.resizeAndCompress(
           originalImage,
           watermarkRes
         );
-        
+
         optimized.watermark = {
-          url: await this.uploadToStorage(watermarkBuffer, `wm_${originalFilename}`, 'supabase'),
+          url: await this.uploadToStorage(
+            watermarkBuffer,
+            `wm_${originalFilename}`,
+            'supabase'
+          ),
           size: watermarkBuffer.length,
         };
         totalOptimizedSize += watermarkBuffer.length;
@@ -165,26 +181,27 @@ export class ImageOptimizationService {
 
       // Generate print version (conditionally external)
       if (generatePrint) {
-        const printRes = this.RESOLUTIONS.find(r => r.name === 'print')!;
+        const printRes = this.RESOLUTIONS.find((r) => r.name === 'print')!;
         const printBuffer = await this.resizeAndCompress(
           originalImage,
           printRes
         );
-        
+
         // Use external storage for large print files
-        const useExternal = useExternalStorage || 
+        const useExternal =
+          useExternalStorage ||
           printBuffer.length > this.STORAGE_LIMITS.EXTERNAL_STORAGE_THRESHOLD;
-        
+
         optimized.print = {
           url: await this.uploadToStorage(
-            printBuffer, 
-            `print_${originalFilename}`, 
+            printBuffer,
+            `print_${originalFilename}`,
             useExternal ? 'external' : 'supabase'
           ),
           size: printBuffer.length,
           external: useExternal,
         };
-        
+
         if (!useExternal) {
           totalOptimizedSize += printBuffer.length;
         }
@@ -204,10 +221,11 @@ export class ImageOptimizationService {
         totalSavings,
         compressionRatio,
       };
-
     } catch (error) {
       console.error('Image optimization failed:', error);
-      throw new Error(`Failed to optimize image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to optimize image: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -218,11 +236,10 @@ export class ImageOptimizationService {
     sharpImage: any, // sharp instance
     resolution: ImageResolution
   ): Promise<Buffer> {
-    let pipeline = sharpImage
-      .resize(resolution.width, resolution.height, {
-        fit: 'inside',
-        withoutEnlargement: true,
-      });
+    let pipeline = sharpImage.resize(resolution.width, resolution.height, {
+      fit: 'inside',
+      withoutEnlargement: true,
+    });
 
     if (resolution.format === 'webp') {
       pipeline = pipeline.webp({
@@ -260,7 +277,10 @@ export class ImageOptimizationService {
   /**
    * Upload to Supabase storage
    */
-  private static async uploadToSupabaseStorage(buffer: Buffer, filename: string): Promise<string> {
+  private static async uploadToSupabaseStorage(
+    buffer: Buffer,
+    filename: string
+  ): Promise<string> {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -284,25 +304,30 @@ export class ImageOptimizationService {
   /**
    * Upload to external storage (Cloudinary example)
    */
-  private static async uploadToExternalStorage(buffer: Buffer, filename: string): Promise<string> {
+  private static async uploadToExternalStorage(
+    buffer: Buffer,
+    filename: string
+  ): Promise<string> {
     // Example with Cloudinary
     if (process.env.CLOUDINARY_URL) {
       try {
         const cloudinary = (await import('cloudinary')).v2;
-        
+
         return new Promise((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              resource_type: 'image',
-              public_id: filename.replace(/\.[^/.]+$/, ''), // Remove extension
-              quality: 'auto',
-              fetch_format: 'auto',
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result?.secure_url || '');
-            }
-          ).end(buffer);
+          cloudinary.uploader
+            .upload_stream(
+              {
+                resource_type: 'image',
+                public_id: filename.replace(/\.[^/.]+$/, ''), // Remove extension
+                quality: 'auto',
+                fetch_format: 'auto',
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result?.secure_url || '');
+              }
+            )
+            .end(buffer);
         });
       } catch (error) {
         console.error('Cloudinary upload failed:', error);
@@ -339,11 +364,14 @@ export class ImageOptimizationService {
 
       let recommendation = '';
       if (usagePercentage > 90) {
-        recommendation = 'Critically high usage. Enable external storage immediately.';
+        recommendation =
+          'Critically high usage. Enable external storage immediately.';
       } else if (usagePercentage > 75) {
-        recommendation = 'High usage. Consider enabling external storage for new uploads.';
+        recommendation =
+          'High usage. Consider enabling external storage for new uploads.';
       } else if (usagePercentage > 50) {
-        recommendation = 'Moderate usage. Monitor and consider cleanup of old files.';
+        recommendation =
+          'Moderate usage. Monitor and consider cleanup of old files.';
       } else {
         recommendation = 'Storage usage is healthy.';
       }
@@ -405,14 +433,14 @@ export class ImageOptimizationService {
   ): Promise<OptimizationResult[]> {
     const { maxConcurrent = 3, useExternalStorage = false } = options;
     const results: OptimizationResult[] = [];
-    
+
     // Process images in batches to avoid overwhelming the system
     for (let i = 0; i < images.length; i += maxConcurrent) {
       const batch = images.slice(i, i + maxConcurrent);
       const batchPromises = batch.map(({ buffer, filename }) =>
         this.optimizeImage(buffer, filename, { useExternalStorage })
       );
-      
+
       const batchResults = await Promise.allSettled(batchPromises);
       batchResults.forEach((result) => {
         if (result.status === 'fulfilled') {
@@ -420,7 +448,7 @@ export class ImageOptimizationService {
         }
       });
     }
-    
+
     return results;
   }
 }

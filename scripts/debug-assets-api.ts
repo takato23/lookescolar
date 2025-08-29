@@ -51,7 +51,10 @@ async function debugAssetsAPI() {
     if (assetsError) {
       console.log('❌ Error querying assets:', assetsError.message);
     } else {
-      console.log('✅ Assets table accessible, sample:', assetsData?.[0] || 'No assets found');
+      console.log(
+        '✅ Assets table accessible, sample:',
+        assetsData?.[0] || 'No assets found'
+      );
     }
   } catch (err) {
     console.log('❌ Exception querying assets:', err);
@@ -62,9 +65,12 @@ async function debugAssetsAPI() {
   try {
     const { data, error, count } = await supabase
       .from('assets')
-      .select('id, filename, preview_path, file_size, created_at, folder_id, status', {
-        count: 'exact',
-      })
+      .select(
+        'id, filename, preview_path, file_size, created_at, folder_id, status',
+        {
+          count: 'exact',
+        }
+      )
       .eq('folder_id', targetFolderId)
       .order('created_at', { ascending: false })
       .range(0, 49);
@@ -72,7 +78,9 @@ async function debugAssetsAPI() {
     if (error) {
       console.log('❌ Exact API query error:', error);
     } else {
-      console.log(`✅ Exact API query success: ${data?.length} assets, total count: ${count}`);
+      console.log(
+        `✅ Exact API query success: ${data?.length} assets, total count: ${count}`
+      );
     }
   } catch (err) {
     console.log('❌ Exception in exact API query:', err);
@@ -83,18 +91,20 @@ async function debugAssetsAPI() {
   try {
     // Try a few common table names to see what exists
     const tableNames = ['folders', 'assets', 'event_folders', 'photos'];
-    
+
     for (const tableName of tableNames) {
       try {
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
           .limit(1);
-        
+
         if (error) {
           console.log(`❌ ${tableName}: ${error.message}`);
         } else {
-          console.log(`✅ ${tableName}: exists (${data?.length || 0} sample records)`);
+          console.log(
+            `✅ ${tableName}: exists (${data?.length || 0} sample records)`
+          );
         }
       } catch (err) {
         console.log(`❌ ${tableName}: exception`);
@@ -126,6 +136,3 @@ async function debugAssetsAPI() {
 }
 
 debugAssetsAPI().catch(console.error);
-
-
-

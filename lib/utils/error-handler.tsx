@@ -324,7 +324,7 @@ export class ErrorHandler {
           logger.info('Attempting network recovery', { errorType: error.type });
           break;
 
-        case ErrorType.RATE_LIMIT:
+        case ErrorType.RATE_LIMIT: {
           // Exponential backoff for rate limiting
           const backoffTime =
             this.retryDelay *
@@ -335,6 +335,7 @@ export class ErrorHandler {
           await this.delay(Math.min(backoffTime, 30000)); // Max 30 seconds
           logger.info('Attempting rate limit recovery', { backoffTime });
           break;
+        }
 
         case ErrorType.STORAGE:
           // Invalidate cache for storage errors

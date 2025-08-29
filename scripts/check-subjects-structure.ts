@@ -27,10 +27,22 @@ async function checkSubjectsStructure() {
 
     if (error) {
       console.log(`❌ Error querying subjects: ${error.message}`);
-      
+
       // Try with specific columns to see which ones exist
-      const commonColumns = ['id', 'name', 'event_id', 'created_at', 'updated_at', 'access_token', 'token_expires_at', 'qr_code', 'email', 'phone', 'metadata'];
-      
+      const commonColumns = [
+        'id',
+        'name',
+        'event_id',
+        'created_at',
+        'updated_at',
+        'access_token',
+        'token_expires_at',
+        'qr_code',
+        'email',
+        'phone',
+        'metadata',
+      ];
+
       console.log('\nTesting individual columns:');
       for (const col of commonColumns) {
         try {
@@ -38,7 +50,7 @@ async function checkSubjectsStructure() {
             .from('subjects')
             .select(col)
             .limit(1);
-          
+
           if (colError) {
             console.log(`  ❌ ${col}: ${colError.message}`);
           } else {
@@ -63,6 +75,3 @@ async function checkSubjectsStructure() {
 }
 
 checkSubjectsStructure();
-
-
-

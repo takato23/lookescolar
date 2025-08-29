@@ -9,15 +9,17 @@ interface BrutalistHeaderProps {
 
 export function BrutalistHeader({ children, className }: BrutalistHeaderProps) {
   return (
-    <h1 className={cn(
-      "text-6xl md:text-8xl lg:text-9xl font-black leading-none tracking-tighter",
-      "text-black select-none",
-      "font-mono uppercase",
-      // Bubble/organic letter styling
-      "drop-shadow-[4px_4px_0px_rgba(0,0,0,0.3)]",
-      "transform hover:scale-105 transition-transform duration-300",
-      className
-    )}>
+    <h1
+      className={cn(
+        'text-6xl font-black leading-none tracking-tighter md:text-8xl lg:text-9xl',
+        'select-none text-black',
+        'font-mono uppercase',
+        // Bubble/organic letter styling
+        'drop-shadow-[4px_4px_0px_rgba(0,0,0,0.3)]',
+        'transform transition-transform duration-300 hover:scale-105',
+        className
+      )}
+    >
       {children}
     </h1>
   );
@@ -29,20 +31,26 @@ interface BrutalistTextProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export function BrutalistText({ children, className, size = 'md' }: BrutalistTextProps) {
+export function BrutalistText({
+  children,
+  className,
+  size = 'md',
+}: BrutalistTextProps) {
   const sizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
     lg: 'text-lg',
-    xl: 'text-xl'
+    xl: 'text-xl',
   };
 
   return (
-    <p className={cn(
-      "font-mono text-black leading-tight",
-      sizeClasses[size],
-      className
-    )}>
+    <p
+      className={cn(
+        'font-mono leading-tight text-black',
+        sizeClasses[size],
+        className
+      )}
+    >
       {children}
     </p>
   );
@@ -53,13 +61,18 @@ interface BrutalistSectionHeaderProps {
   className?: string;
 }
 
-export function BrutalistSectionHeader({ children, className }: BrutalistSectionHeaderProps) {
+export function BrutalistSectionHeader({
+  children,
+  className,
+}: BrutalistSectionHeaderProps) {
   return (
-    <h2 className={cn(
-      "text-2xl md:text-4xl font-black font-mono uppercase tracking-wider",
-      "text-black leading-none",
-      className
-    )}>
+    <h2
+      className={cn(
+        'font-mono text-2xl font-black uppercase tracking-wider md:text-4xl',
+        'leading-none text-black',
+        className
+      )}
+    >
       {children}
     </h2>
   );
@@ -72,10 +85,12 @@ interface BrutalistLabelProps {
 
 export function BrutalistLabel({ children, className }: BrutalistLabelProps) {
   return (
-    <span className={cn(
-      "text-xs font-mono uppercase tracking-widest text-gray-600",
-      className
-    )}>
+    <span
+      className={cn(
+        'font-mono text-xs uppercase tracking-widest text-gray-600',
+        className
+      )}
+    >
       {children}
     </span>
   );

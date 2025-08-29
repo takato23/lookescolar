@@ -2,7 +2,7 @@
 
 /**
  * GENERADOR DE TOKENS DE PRUEBA
- * 
+ *
  * Genera tokens E/C/F para smoke test final
  */
 
@@ -30,7 +30,7 @@ async function generateTestTokens() {
 
     if (!events || events.length === 0) {
       console.log('❌ No hay eventos activos. Creando evento de prueba...');
-      
+
       const { data: newEvent } = await supabase
         .from('events')
         .insert({
@@ -38,11 +38,11 @@ async function generateTestTokens() {
           description: 'Evento para testing de tokens jerárquicos',
           location: 'Test Location',
           date: new Date().toISOString(),
-          status: 'active'
+          status: 'active',
         })
         .select()
         .single();
-        
+
       events.push(newEvent);
     }
 
@@ -56,7 +56,9 @@ async function generateTestTokens() {
       .limit(1);
 
     if (!courses || courses.length === 0) {
-      console.log('❌ No hay cursos disponibles. Por favor crear algunos cursos en el admin primero.');
+      console.log(
+        '❌ No hay cursos disponibles. Por favor crear algunos cursos en el admin primero.'
+      );
       return;
     }
 
@@ -64,7 +66,8 @@ async function generateTestTokens() {
     console.log(`📚 Usando curso: ${course.name} (${course.id})\n`);
 
     // Crear tokens usando la API admin
-    const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const SITE_URL =
+      process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const ADMIN_TOKEN = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     // Token de Evento (E_*)
@@ -72,7 +75,7 @@ async function generateTestTokens() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ADMIN_TOKEN}`
+        Authorization: `Bearer ${ADMIN_TOKEN}`,
       },
       body: JSON.stringify({
         scope: 'event',
@@ -80,8 +83,8 @@ async function generateTestTokens() {
         accessLevel: 'full',
         canDownload: false,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        metadata: { purpose: 'smoke-test' }
-      })
+        metadata: { purpose: 'smoke-test' },
+      }),
     });
 
     // Token de Curso (C_*)
@@ -89,7 +92,7 @@ async function generateTestTokens() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ADMIN_TOKEN}`
+        Authorization: `Bearer ${ADMIN_TOKEN}`,
       },
       body: JSON.stringify({
         scope: 'course',
@@ -97,8 +100,8 @@ async function generateTestTokens() {
         accessLevel: 'read_only',
         canDownload: true,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        metadata: { purpose: 'smoke-test' }
-      })
+        metadata: { purpose: 'smoke-test' },
+      }),
     });
 
     // Token de Familia (F_*)
@@ -106,7 +109,7 @@ async function generateTestTokens() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ADMIN_TOKEN}`
+        Authorization: `Bearer ${ADMIN_TOKEN}`,
       },
       body: JSON.stringify({
         scope: 'family',
@@ -114,14 +117,14 @@ async function generateTestTokens() {
         accessLevel: 'read_only',
         canDownload: false,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        metadata: { purpose: 'smoke-test' }
-      })
+        metadata: { purpose: 'smoke-test' },
+      }),
     });
 
     const results = await Promise.all([
       eventTokenResponse.json(),
       courseTokenResponse.json(),
-      familyTokenResponse.json()
+      familyTokenResponse.json(),
     ]);
 
     console.log('🎯 URLs DE PRUEBA GENERADAS:');
@@ -153,20 +156,27 @@ async function generateTestTokens() {
       .limit(1);
 
     if (assets && assets.length > 0) {
-      console.log(`\n📷 AssetId de ejemplo: ${assets[0].id} (${assets[0].filename})`);
-      
+      console.log(
+        `\n📷 AssetId de ejemplo: ${assets[0].id} (${assets[0].filename})`
+      );
+
       if (results[1].success) {
         const courseToken = results[1].data.token;
         console.log(`\n🔗 URLs de prueba para asset:`);
-        console.log(`Preview: ${SITE_URL}/api/s/${courseToken}/preview/${assets[0].id}`);
-        console.log(`Download: ${SITE_URL}/api/s/${courseToken}/download/${assets[0].id}`);
+        console.log(
+          `Preview: ${SITE_URL}/api/s/${courseToken}/preview/${assets[0].id}`
+        );
+        console.log(
+          `Download: ${SITE_URL}/api/s/${courseToken}/download/${assets[0].id}`
+        );
       }
     } else {
-      console.log('\n⚠️ No se encontraron assets para pruebas de preview/descarga');
+      console.log(
+        '\n⚠️ No se encontraron assets para pruebas de preview/descarga'
+      );
     }
 
     console.log('\n✅ Tokens generados exitosamente. Ready for smoke test!');
-
   } catch (error) {
     console.error('❌ Error generando tokens:', error);
   }

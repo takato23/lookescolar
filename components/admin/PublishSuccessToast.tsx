@@ -49,14 +49,14 @@ export function PublishSuccessToast({
   const [timeRemaining, setTimeRemaining] = useState(duration / 1000);
   const [copied, setCopied] = useState<'url' | 'qr' | null>(null);
   const [shared, setShared] = useState(false);
-  
+
   // Auto-hide timer
   useEffect(() => {
     if (!autoHide || !isVisible) return;
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
-        const newProgress = prev - (100 / (duration / 100));
+        const newProgress = prev - 100 / (duration / 100);
         return Math.max(0, newProgress);
       });
     }, 100);
@@ -121,7 +121,7 @@ export function PublishSuccessToast({
 
   const handleUndo = useCallback(async () => {
     if (!onUndo || isUndoing) return;
-    
+
     setIsUndoing(true);
     try {
       await onUndo(data.codeId, data.action);
@@ -162,13 +162,13 @@ export function PublishSuccessToast({
   const getIcon = () => {
     switch (data.action) {
       case 'published':
-        return <CheckCircle2 className="w-6 h-6 text-emerald-600" />;
+        return <CheckCircle2 className="h-6 w-6 text-emerald-600" />;
       case 'unpublished':
-        return <Clock className="w-6 h-6 text-orange-600" />;
+        return <Clock className="h-6 w-6 text-orange-600" />;
       case 'rotated':
-        return <Link2 className="w-6 h-6 text-blue-600" />;
+        return <Link2 className="h-6 w-6 text-blue-600" />;
       default:
-        return <CheckCircle2 className="w-6 h-6 text-gray-600" />;
+        return <CheckCircle2 className="h-6 w-6 text-gray-600" />;
     }
   };
 
@@ -179,15 +179,15 @@ export function PublishSuccessToast({
       className={cn(
         'fixed bottom-4 right-4 z-50 w-full max-w-md',
         'transform transition-all duration-300 ease-out',
-        'translate-x-0 opacity-100 scale-100',
+        'translate-x-0 scale-100 opacity-100',
         'sm:bottom-6 sm:right-6',
         className
       )}
     >
       {/* Progress bar */}
       {autoHide && (
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/20 rounded-t-xl overflow-hidden">
-          <div 
+        <div className="absolute left-0 right-0 top-0 h-1 overflow-hidden rounded-t-xl bg-white/20">
+          <div
             className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-100 ease-linear"
             style={{ width: `${progress}%` }}
           />
@@ -196,31 +196,27 @@ export function PublishSuccessToast({
 
       <div
         className={cn(
-          'neural-glass-card rounded-xl border shadow-lg backdrop-blur-md p-4',
+          'neural-glass-card rounded-xl border p-4 shadow-lg backdrop-blur-md',
           'transition-all duration-300 hover:shadow-xl',
           getActionColor()
         )}
       >
         <div className="flex items-start gap-3">
           {/* Icon */}
-          <div className="flex-shrink-0 mt-0.5">
-            {getIcon()}
-          </div>
+          <div className="mt-0.5 flex-shrink-0">{getIcon()}</div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-sm">
-                  {getActionText()}
-                </h4>
-                <div className="flex items-center gap-2 text-xs opacity-90 mt-1">
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-semibold">{getActionText()}</h4>
+                <div className="mt-1 flex items-center gap-2 text-xs opacity-90">
                   <span className="font-medium">{data.codeValue}</span>
                   {data.photosCount > 0 && (
                     <>
                       <span>•</span>
                       <div className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
+                        <Users className="h-3 w-3" />
                         <span>{data.photosCount} fotos</span>
                       </div>
                     </>
@@ -233,7 +229,7 @@ export function PublishSuccessToast({
                 variant="ghost"
                 size="sm"
                 onClick={handleHide}
-                className="flex-shrink-0 h-6 w-6 p-0 ml-2 opacity-60 hover:opacity-100 min-h-[24px]"
+                className="ml-2 h-6 min-h-[24px] w-6 flex-shrink-0 p-0 opacity-60 hover:opacity-100"
                 aria-label="Cerrar notificación"
               >
                 <X className="h-3 w-3" />
@@ -242,23 +238,23 @@ export function PublishSuccessToast({
 
             {/* Action buttons for published codes */}
             {data.action === 'published' && data.token && (
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="mb-3 flex flex-wrap gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyUrl}
                   disabled={copied === 'url'}
-                  className="flex-1 min-w-0 text-xs font-medium min-h-[36px]"
+                  className="min-h-[36px] min-w-0 flex-1 text-xs font-medium"
                   aria-label="Copiar enlace familiar"
                 >
                   {copied === 'url' ? (
                     <>
-                      <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                      <CheckCircle2 className="mr-1 h-3 w-3 text-emerald-600" />
                       <span className="text-emerald-600">¡Copiado!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3 mr-1" />
+                      <Copy className="mr-1 h-3 w-3" />
                       <span>Copiar enlace</span>
                     </>
                   )}
@@ -268,13 +264,13 @@ export function PublishSuccessToast({
                   variant="ghost"
                   size="sm"
                   onClick={handleShare}
-                  className="flex-shrink-0 text-xs font-medium min-h-[36px] px-3"
+                  className="min-h-[36px] flex-shrink-0 px-3 text-xs font-medium"
                   aria-label="Compartir enlace"
                 >
                   {shared ? (
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                   ) : (
-                    <Share2 className="w-3 h-3" />
+                    <Share2 className="h-3 w-3" />
                   )}
                 </Button>
 
@@ -282,20 +278,20 @@ export function PublishSuccessToast({
                   variant="ghost"
                   size="sm"
                   onClick={() => window.open(data.qrUrl, '_blank')}
-                  className="flex-shrink-0 text-xs font-medium min-h-[36px] px-3"
+                  className="min-h-[36px] flex-shrink-0 px-3 text-xs font-medium"
                   aria-label="Ver código QR"
                 >
-                  <QrCode className="w-3 h-3" />
+                  <QrCode className="h-3 w-3" />
                 </Button>
 
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => window.open(data.familyUrl, '_blank')}
-                  className="flex-shrink-0 text-xs font-medium min-h-[36px] px-3"
+                  className="min-h-[36px] flex-shrink-0 px-3 text-xs font-medium"
                   aria-label="Abrir galería"
                 >
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="h-3 w-3" />
                 </Button>
               </div>
             )}
@@ -315,14 +311,14 @@ export function PublishSuccessToast({
                   size="sm"
                   onClick={handleUndo}
                   disabled={isUndoing}
-                  className="text-xs font-medium min-h-[32px] px-3"
+                  className="min-h-[32px] px-3 text-xs font-medium"
                   aria-label="Deshacer acción"
                 >
                   {isUndoing ? (
-                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   ) : (
                     <>
-                      <Undo className="w-3 h-3 mr-1" />
+                      <Undo className="mr-1 h-3 w-3" />
                       <span>Deshacer</span>
                     </>
                   )}
@@ -340,95 +336,102 @@ export function PublishSuccessToast({
 export function usePublishSuccessToast() {
   const { addNotification } = useNotifications();
 
-  const showPublishSuccess = useCallback((
-    data: PublishSuccessData,
-    options?: {
-      onUndo?: (codeId: string, action: string) => Promise<void>;
-      autoHide?: boolean;
-      duration?: number;
-    }
-  ) => {
-    return addNotification({
-      type: 'success',
-      title: 'Publicación exitosa',
-      message: `Código ${data.codeValue} ${data.action === 'published' ? 'publicado' : 'actualizado'}`,
-      category: 'event',
-      duration: options?.autoHide === false ? 0 : (options?.duration || 8000),
-      action: options?.onUndo ? {
-        label: 'Deshacer',
-        onClick: () => options.onUndo!(data.codeId, data.action),
-      } : undefined,
-      metadata: data,
-    });
-  }, [addNotification]);
+  const showPublishSuccess = useCallback(
+    (
+      data: PublishSuccessData,
+      options?: {
+        onUndo?: (codeId: string, action: string) => Promise<void>;
+        autoHide?: boolean;
+        duration?: number;
+      }
+    ) => {
+      return addNotification({
+        type: 'success',
+        title: 'Publicación exitosa',
+        message: `Código ${data.codeValue} ${data.action === 'published' ? 'publicado' : 'actualizado'}`,
+        category: 'event',
+        duration: options?.autoHide === false ? 0 : options?.duration || 8000,
+        action: options?.onUndo
+          ? {
+              label: 'Deshacer',
+              onClick: () => options.onUndo!(data.codeId, data.action),
+            }
+          : undefined,
+        metadata: data,
+      });
+    },
+    [addNotification]
+  );
 
-  const showUnpublishSuccess = useCallback((
-    codeValue: string,
-    codeId: string,
-    onUndo?: (codeId: string) => Promise<void>
-  ) => {
-    return addNotification({
-      type: 'info',
-      title: 'Código despublicado',
-      message: `${codeValue} ya no es accesible para las familias`,
-      category: 'event',
-      duration: 5000,
-      action: onUndo ? {
-        label: 'Restaurar',
-        onClick: () => onUndo(codeId),
-      } : undefined,
-    });
-  }, [addNotification]);
+  const showUnpublishSuccess = useCallback(
+    (
+      codeValue: string,
+      codeId: string,
+      onUndo?: (codeId: string) => Promise<void>
+    ) => {
+      return addNotification({
+        type: 'info',
+        title: 'Código despublicado',
+        message: `${codeValue} ya no es accesible para las familias`,
+        category: 'event',
+        duration: 5000,
+        action: onUndo
+          ? {
+              label: 'Restaurar',
+              onClick: () => onUndo(codeId),
+            }
+          : undefined,
+      });
+    },
+    [addNotification]
+  );
 
-  const showRotateSuccess = useCallback((
-    codeValue: string,
-    newToken: string,
-    familyUrl: string,
-    qrUrl: string
-  ) => {
-    return addNotification({
-      type: 'success',
-      title: 'Token rotado',
-      message: `Nuevo enlace generado para ${codeValue}`,
-      category: 'event',
-      duration: 8000,
-      action: {
-        label: 'Copiar enlace',
-        onClick: async () => {
-          try {
-            await navigator.clipboard.writeText(familyUrl);
-          } catch (error) {
-            console.error('Error copying URL:', error);
-          }
+  const showRotateSuccess = useCallback(
+    (codeValue: string, newToken: string, familyUrl: string, qrUrl: string) => {
+      return addNotification({
+        type: 'success',
+        title: 'Token rotado',
+        message: `Nuevo enlace generado para ${codeValue}`,
+        category: 'event',
+        duration: 8000,
+        action: {
+          label: 'Copiar enlace',
+          onClick: async () => {
+            try {
+              await navigator.clipboard.writeText(familyUrl);
+            } catch (error) {
+              console.error('Error copying URL:', error);
+            }
+          },
         },
-      },
-      metadata: {
-        codeValue,
-        token: newToken,
-        familyUrl,
-        qrUrl,
-      },
-    });
-  }, [addNotification]);
+        metadata: {
+          codeValue,
+          token: newToken,
+          familyUrl,
+          qrUrl,
+        },
+      });
+    },
+    [addNotification]
+  );
 
-  const showBulkOperationSuccess = useCallback((
-    action: string,
-    count: number,
-    details?: string[]
-  ) => {
-    return addNotification({
-      type: 'success',
-      title: `Operación masiva completada`,
-      message: `${action} aplicada a ${count} códigos`,
-      category: 'event',
-      duration: 6000,
-      metadata: {
-        action,
-        count,
-        details,
-      },
-    });
-  }, [addNotification]);
+  const showBulkOperationSuccess = useCallback(
+    (action: string, count: number, details?: string[]) => {
+      return addNotification({
+        type: 'success',
+        title: `Operación masiva completada`,
+        message: `${action} aplicada a ${count} códigos`,
+        category: 'event',
+        duration: 6000,
+        metadata: {
+          action,
+          count,
+          details,
+        },
+      });
+    },
+    [addNotification]
+  );
 
   return {
     showPublishSuccess,
@@ -442,16 +445,16 @@ export function usePublishSuccessToast() {
 export function PublishSuccessToastSkeleton() {
   return (
     <div className="fixed bottom-4 right-4 z-50 w-full max-w-md">
-      <div className="neural-glass-card rounded-xl border border-gray-200 bg-white/90 backdrop-blur-md p-4 shadow-lg">
+      <div className="neural-glass-card rounded-xl border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-md">
         <div className="flex items-start gap-3">
-          <div className="w-6 h-6 rounded-full bg-gray-200 animate-pulse flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="h-4 bg-gray-200 rounded animate-pulse" />
-            <div className="h-3 bg-gray-100 rounded animate-pulse w-3/4" />
+          <div className="mt-0.5 h-6 w-6 flex-shrink-0 animate-pulse rounded-full bg-gray-200" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-4 animate-pulse rounded bg-gray-200" />
+            <div className="h-3 w-3/4 animate-pulse rounded bg-gray-100" />
             <div className="flex gap-2">
-              <div className="h-8 bg-gray-100 rounded animate-pulse flex-1" />
-              <div className="h-8 w-8 bg-gray-100 rounded animate-pulse" />
-              <div className="h-8 w-8 bg-gray-100 rounded animate-pulse" />
+              <div className="h-8 flex-1 animate-pulse rounded bg-gray-100" />
+              <div className="h-8 w-8 animate-pulse rounded bg-gray-100" />
+              <div className="h-8 w-8 animate-pulse rounded bg-gray-100" />
             </div>
           </div>
         </div>

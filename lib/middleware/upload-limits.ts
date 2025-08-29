@@ -21,7 +21,7 @@ interface UploadConfig {
 export async function getUploadLimits(): Promise<UploadLimits> {
   try {
     const settings = await getAppSettings();
-    
+
     return {
       maxSizeMb: settings.uploadMaxSizeMb,
       maxConcurrent: settings.uploadMaxConcurrent,
@@ -29,8 +29,11 @@ export async function getUploadLimits(): Promise<UploadLimits> {
       maxResolution: settings.uploadMaxResolution,
     };
   } catch (error) {
-    console.error('Failed to get upload limits from settings, using defaults:', error);
-    
+    console.error(
+      'Failed to get upload limits from settings, using defaults:',
+      error
+    );
+
     // Fallback to safe defaults
     return {
       maxSizeMb: 10,
@@ -44,17 +47,19 @@ export async function getUploadLimits(): Promise<UploadLimits> {
 /**
  * Validates file size against current upload limits
  */
-export async function validateFileSize(fileSizeBytes: number): Promise<{ valid: boolean; error?: string }> {
+export async function validateFileSize(
+  fileSizeBytes: number
+): Promise<{ valid: boolean; error?: string }> {
   const limits = await getUploadLimits();
   const maxSizeBytes = limits.maxSizeMb * 1024 * 1024;
-  
+
   if (fileSizeBytes > maxSizeBytes) {
     return {
       valid: false,
-      error: `File size (${(fileSizeBytes / 1024 / 1024).toFixed(1)}MB) exceeds limit of ${limits.maxSizeMb}MB`
+      error: `File size (${(fileSizeBytes / 1024 / 1024).toFixed(1)}MB) exceeds limit of ${limits.maxSizeMb}MB`,
     };
   }
-  
+
   return { valid: true };
 }
 
@@ -63,7 +68,7 @@ export async function validateFileSize(fileSizeBytes: number): Promise<{ valid: 
  */
 export async function getUploadConfig(): Promise<UploadConfig> {
   const limits = await getUploadLimits();
-  
+
   return {
     maxFileSize: limits.maxSizeMb * 1024 * 1024,
     maxFiles: limits.maxConcurrent,

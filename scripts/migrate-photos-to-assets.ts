@@ -2,10 +2,10 @@
 
 /**
  * Migration script: Photos to Assets System
- * 
+ *
  * This script migrates existing photos from the old event-based system
  * to the new folder/assets system.
- * 
+ *
  * For each event:
  * 1. Creates a folder with the event name
  * 2. Migrates all photos to assets in that folder
@@ -26,7 +26,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false }
+  auth: { persistSession: false },
 });
 
 interface Event {
@@ -77,7 +77,6 @@ async function migratePhotosToAssets() {
     }
 
     console.log('✅ Migration completed successfully!');
-
   } catch (error) {
     console.error('❌ Migration failed:', error);
     process.exit(1);
@@ -102,7 +101,7 @@ async function migrateEventPhotos(event: Event) {
   } else {
     // 2. Create a new folder for this event
     const folderName = `${event.name} (${event.date})`;
-    
+
     const { data: newFolder, error: folderError } = await supabase
       .from('folders')
       .insert({
@@ -165,41 +164,46 @@ async function migrateEventPhotos(event: Event) {
 
       // Generate checksum if we have file size (approximate)
       const checksum = generatePhotoChecksum(photo);
-      
+
       // Map paths to new system
-      const previewPath = photo.preview_path || 
+      const previewPath =
+        photo.preview_path ||
         (photo.watermark_path ? photo.watermark_path : null) ||
         `previews/${nanoid(12)}_preview.webp`;
 
       // Create asset record
-      const { error: assetError } = await supabase
-        .from('assets')
-        .insert({
-          folder_id: folderId,
-          filename: photo.original_filename,
-          original_path: photo.storage_path,
-          preview_path: previewPath,
-          file_size: photo.file_size || 0,
-          checksum: checksum,
-          mime_type: getMimeTypeFromFilename(photo.original_filename),
-          status: photo.approved ? 'ready' : 'pending',
-          created_at: photo.created_at,
-        });
+      const { error: assetError } = await supabase.from('assets').insert({
+        folder_id: folderId,
+        filename: photo.original_filename,
+        original_path: photo.storage_path,
+        preview_path: previewPath,
+        file_size: photo.file_size || 0,
+        checksum: checksum,
+        mime_type: getMimeTypeFromFilename(photo.original_filename),
+        status: photo.approved ? 'ready' : 'pending',
+        created_at: photo.created_at,
+      });
 
       if (assetError) {
-        console.error(`     ❌ Failed to create asset for ${photo.original_filename}: ${assetError.message}`);
+        console.error(
+          `     ❌ Failed to create asset for ${photo.original_filename}: ${assetError.message}`
+        );
         errorCount++;
       } else {
         migratedCount++;
       }
-
     } catch (error) {
-      console.error(`     ❌ Error processing ${photo.original_filename}:`, error);
+      console.error(
+        `     ❌ Error processing ${photo.original_filename}:`,
+        error
+      );
       errorCount++;
     }
   }
 
-  console.log(`   📊 Results: ${migratedCount} migrated, ${skippedCount} skipped, ${errorCount} errors`);
+  console.log(
+    `   📊 Results: ${migratedCount} migrated, ${skippedCount} skipped, ${errorCount} errors`
+  );
 }
 
 function generatePhotoChecksum(photo: Photo): string {

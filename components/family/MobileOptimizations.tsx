@@ -71,7 +71,10 @@ export function MobileOptimizations({ children }: MobileOptimizationsProps) {
     const metaViewport = document.querySelector('meta[name="viewport"]');
     if (metaViewport) {
       // Accesibilidad: permitir zoom del usuario y respetar tamaño del dispositivo
-      metaViewport.setAttribute('content', 'width=device-width, initial-scale=1');
+      metaViewport.setAttribute(
+        'content',
+        'width=device-width, initial-scale=1'
+      );
     }
 
     // Apple touch icon para iOS

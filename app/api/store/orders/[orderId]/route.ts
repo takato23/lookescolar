@@ -25,10 +25,7 @@ export async function GET(
       .single();
 
     if (orderError || !order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -59,7 +56,6 @@ export async function GET(
         updated_at: order.updated_at,
       },
     });
-
   } catch (error) {
     console.error('Get order error:', error);
     return NextResponse.json(

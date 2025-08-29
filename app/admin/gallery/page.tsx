@@ -10,10 +10,10 @@ export default function UnifiedGalleryRedirect() {
   useEffect(() => {
     // Build the unified photos URL with filters
     const params = new URLSearchParams();
-    
+
     // Pass through any existing query parameters as filters
     const eventId = searchParams?.get('eventId');
-    const levelId = searchParams?.get('levelId'); 
+    const levelId = searchParams?.get('levelId');
     const courseId = searchParams?.get('courseId');
     const studentId = searchParams?.get('studentId');
 

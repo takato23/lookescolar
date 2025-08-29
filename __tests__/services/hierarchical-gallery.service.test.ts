@@ -1,6 +1,6 @@
 /**
  * HIERARCHICAL GALLERY SERVICE TESTS
- * 
+ *
  * Tests for token-based gallery access service
  * Covers: Token validation, folder access, asset retrieval, permission checks
  */
@@ -14,8 +14,8 @@ vi.mock('@supabase/supabase-js');
 vi.mock('../../lib/services/access-token.service', () => ({
   accessTokenService: {
     validateToken: vi.fn(),
-    logAccess: vi.fn()
-  }
+    logAccess: vi.fn(),
+  },
 }));
 
 import { accessTokenService } from '../../lib/services/access-token.service';
@@ -24,18 +24,18 @@ const mockSupabaseClient = {
   from: vi.fn(),
   rpc: vi.fn(),
   storage: {
-    from: vi.fn()
-  }
+    from: vi.fn(),
+  },
 };
 
 const mockFrom = {
   select: vi.fn(),
   eq: vi.fn(),
-  single: vi.fn()
+  single: vi.fn(),
 };
 
 const mockStorage = {
-  createSignedUrl: vi.fn()
+  createSignedUrl: vi.fn(),
 };
 
 // Setup chainable mocks
@@ -65,7 +65,7 @@ describe('HierarchicalGalleryService', () => {
         resourceId: 'event-456',
         accessLevel: 'full',
         canDownload: true,
-        reason: 'valid'
+        reason: 'valid',
       };
 
       const mockContextData = {
@@ -79,14 +79,16 @@ describe('HierarchicalGalleryService', () => {
           totalAccesses: 15,
           successfulAccesses: 14,
           failedAccesses: 1,
-          uniqueIPs: 3
-        }
+          uniqueIPs: 3,
+        },
       };
 
-      vi.mocked(accessTokenService.validateToken).mockResolvedValueOnce(mockValidation);
+      vi.mocked(accessTokenService.validateToken).mockResolvedValueOnce(
+        mockValidation
+      );
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: [mockContextData],
-        error: null
+        error: null,
       });
 
       const result = await service.validateAccess('valid-token');
@@ -95,15 +97,18 @@ describe('HierarchicalGalleryService', () => {
       expect(result.context!.scope).toBe('event');
       expect(result.context!.resourceName).toBe('School Event 2024');
       expect(result.context!.canDownload).toBe(true);
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('api.get_token_context', {
-        p_token: 'valid-token'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'api.get_token_context',
+        {
+          p_token: 'valid-token',
+        }
+      );
     });
 
     it('should handle invalid token', async () => {
       vi.mocked(accessTokenService.validateToken).mockResolvedValueOnce({
         isValid: false,
-        reason: 'Token expired'
+        reason: 'Token expired',
       });
 
       const result = await service.validateAccess('expired-token');
@@ -116,12 +121,12 @@ describe('HierarchicalGalleryService', () => {
     it('should handle context retrieval error', async () => {
       vi.mocked(accessTokenService.validateToken).mockResolvedValueOnce({
         isValid: true,
-        tokenId: 'token-123'
+        tokenId: 'token-123',
       });
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'Context error' }
+        error: { message: 'Context error' },
       });
 
       const result = await service.validateAccess('token-with-context-error');
@@ -138,19 +143,19 @@ describe('HierarchicalGalleryService', () => {
           folder_id: 'folder-1',
           folder_name: 'Class Photos',
           photo_count: 25,
-          depth: 0
+          depth: 0,
         },
         {
           folder_id: 'folder-2',
           folder_name: 'Individual Photos',
           photo_count: 150,
-          depth: 1
-        }
+          depth: 1,
+        },
       ];
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: mockFoldersData,
-        error: null
+        error: null,
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
@@ -163,16 +168,19 @@ describe('HierarchicalGalleryService', () => {
       expect(result[0].photoCount).toBe(25);
       expect(result[0].depth).toBe(0);
 
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('api.folders_for_token', {
-        p_token: 'test-token'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'api.folders_for_token',
+        {
+          p_token: 'test-token',
+        }
+      );
 
       expect(accessTokenService.logAccess).toHaveBeenCalledWith(
         'test-token',
         'list_folders',
         expect.objectContaining({
           success: true,
-          notes: 'Retrieved 2 folders'
+          notes: 'Retrieved 2 folders',
         })
       );
     });
@@ -180,20 +188,21 @@ describe('HierarchicalGalleryService', () => {
     it('should handle folder retrieval error', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'No folders found' }
+        error: { message: 'No folders found' },
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
 
-      await expect(service.getFolders('invalid-token'))
-        .rejects.toThrow('Failed to get folders: No folders found');
+      await expect(service.getFolders('invalid-token')).rejects.toThrow(
+        'Failed to get folders: No folders found'
+      );
 
       expect(accessTokenService.logAccess).toHaveBeenCalledWith(
         'invalid-token',
         'list_folders',
         expect.objectContaining({
           success: false,
-          notes: 'No folders found'
+          notes: 'No folders found',
         })
       );
     });
@@ -204,25 +213,25 @@ describe('HierarchicalGalleryService', () => {
           folder_id: 'folder-1',
           folder_name: 'Root Folder',
           photo_count: 10,
-          depth: 0
+          depth: 0,
         },
         {
           folder_id: 'folder-2',
           folder_name: 'Subfolder A',
           photo_count: 5,
-          depth: 1
+          depth: 1,
         },
         {
           folder_id: 'folder-3',
           folder_name: 'Subfolder B',
           photo_count: 8,
-          depth: 1
-        }
+          depth: 1,
+        },
       ];
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: mockFoldersData,
-        error: null
+        error: null,
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
@@ -230,8 +239,8 @@ describe('HierarchicalGalleryService', () => {
       const result = await service.getFolderTree('test-token');
 
       expect(result).toHaveLength(3); // Root + 2 subfolders (simplified structure)
-      
-      const rootFolder = result.find(f => f.name === 'Root Folder');
+
+      const rootFolder = result.find((f) => f.name === 'Root Folder');
       expect(rootFolder).toBeDefined();
       expect(rootFolder!.depth).toBe(0);
       expect(rootFolder!.children).toBeDefined();
@@ -248,7 +257,7 @@ describe('HierarchicalGalleryService', () => {
           preview_path: 'previews/photo1.jpg',
           original_path: 'originals/photo1.jpg',
           file_size: 2048576,
-          created_at: '2024-01-01T10:00:00.000Z'
+          created_at: '2024-01-01T10:00:00.000Z',
         },
         {
           asset_id: 'asset-2',
@@ -257,8 +266,8 @@ describe('HierarchicalGalleryService', () => {
           preview_path: 'previews/photo2.jpg',
           original_path: 'originals/photo2.jpg',
           file_size: 1536000,
-          created_at: '2024-01-01T11:00:00.000Z'
-        }
+          created_at: '2024-01-01T11:00:00.000Z',
+        },
       ];
 
       const mockValidation = {
@@ -266,19 +275,20 @@ describe('HierarchicalGalleryService', () => {
         context: {
           canDownload: true,
           scope: 'event',
-          resourceId: 'event-123'
-        }
+          resourceId: 'event-123',
+        },
       };
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: mockAssetsData,
-        error: null
+        error: null,
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
 
       // Mock validateAccess for download permission check
-      const validateAccessSpy = vi.spyOn(service, 'validateAccess')
+      const validateAccessSpy = vi
+        .spyOn(service, 'validateAccess')
         .mockResolvedValueOnce(mockValidation);
 
       const result = await service.getAssets('test-token', 'folder-1');
@@ -289,10 +299,13 @@ describe('HierarchicalGalleryService', () => {
       expect(result[0].canDownload).toBe(true);
       expect(result[0].fileSize).toBe(2048576);
 
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('api.assets_for_token', {
-        p_token: 'test-token',
-        p_folder_id: 'folder-1'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'api.assets_for_token',
+        {
+          p_token: 'test-token',
+          p_folder_id: 'folder-1',
+        }
+      );
     });
 
     it('should get all assets when no folder specified', async () => {
@@ -304,42 +317,47 @@ describe('HierarchicalGalleryService', () => {
           preview_path: 'previews/photo1.jpg',
           original_path: 'originals/photo1.jpg',
           file_size: 2048576,
-          created_at: '2024-01-01T10:00:00.000Z'
-        }
+          created_at: '2024-01-01T10:00:00.000Z',
+        },
       ];
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: mockAssetsData,
-        error: null
+        error: null,
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
 
-      const validateAccessSpy = vi.spyOn(service, 'validateAccess')
+      const validateAccessSpy = vi
+        .spyOn(service, 'validateAccess')
         .mockResolvedValueOnce({
           isValid: true,
-          context: { canDownload: false }
+          context: { canDownload: false },
         });
 
       const result = await service.getAssets('test-token');
 
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('api.assets_for_token', {
-        p_token: 'test-token',
-        p_folder_id: null
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'api.assets_for_token',
+        {
+          p_token: 'test-token',
+          p_folder_id: null,
+        }
+      );
       expect(result[0].canDownload).toBe(false);
     });
 
     it('should handle asset retrieval error', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'Assets not found' }
+        error: { message: 'Assets not found' },
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
 
-      await expect(service.getAssets('invalid-token'))
-        .rejects.toThrow('Failed to get assets: Assets not found');
+      await expect(service.getAssets('invalid-token')).rejects.toThrow(
+        'Failed to get assets: Assets not found'
+      );
     });
   });
 
@@ -347,7 +365,7 @@ describe('HierarchicalGalleryService', () => {
     it('should check asset access permission', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: true,
-        error: null
+        error: null,
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
@@ -355,17 +373,20 @@ describe('HierarchicalGalleryService', () => {
       const result = await service.canAccessAsset('test-token', 'asset-123');
 
       expect(result).toBe(true);
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('api.can_access_asset', {
-        p_token: 'test-token',
-        p_asset_id: 'asset-123'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'api.can_access_asset',
+        {
+          p_token: 'test-token',
+          p_asset_id: 'asset-123',
+        }
+      );
 
       expect(accessTokenService.logAccess).toHaveBeenCalledWith(
         'test-token',
         'view',
         expect.objectContaining({
           success: true,
-          notes: 'Asset access check: asset-123'
+          notes: 'Asset access check: asset-123',
         })
       );
     });
@@ -373,7 +394,7 @@ describe('HierarchicalGalleryService', () => {
     it('should deny asset access on error', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'Access denied' }
+        error: { message: 'Access denied' },
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
@@ -391,29 +412,30 @@ describe('HierarchicalGalleryService', () => {
         context: {
           canDownload: true,
           scope: 'event',
-          resourceId: 'event-123'
-        }
+          resourceId: 'event-123',
+        },
       };
 
       const mockAssetData = {
-        original_path: 'originals/photo123.jpg'
+        original_path: 'originals/photo123.jpg',
       };
 
       const mockSignedData = {
-        signedUrl: 'https://storage.supabase.com/signed/photo123.jpg?token=abc123'
+        signedUrl:
+          'https://storage.supabase.com/signed/photo123.jpg?token=abc123',
       };
 
       vi.spyOn(service, 'validateAccess').mockResolvedValueOnce(mockValidation);
       vi.spyOn(service, 'canAccessAsset').mockResolvedValueOnce(true);
-      
+
       mockFrom.single.mockResolvedValueOnce({
         data: mockAssetData,
-        error: null
+        error: null,
       });
 
       mockStorage.createSignedUrl.mockResolvedValueOnce({
         data: mockSignedData,
-        error: null
+        error: null,
       });
 
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
@@ -433,14 +455,17 @@ describe('HierarchicalGalleryService', () => {
         context: {
           canDownload: false,
           scope: 'course',
-          resourceId: 'course-123'
-        }
+          resourceId: 'course-123',
+        },
       };
 
       vi.spyOn(service, 'validateAccess').mockResolvedValueOnce(mockValidation);
       vi.mocked(accessTokenService.logAccess).mockResolvedValueOnce(true);
 
-      const result = await service.getDownloadUrl('readonly-token', 'asset-123');
+      const result = await service.getDownloadUrl(
+        'readonly-token',
+        'asset-123'
+      );
 
       expect(result).toBeNull();
       expect(accessTokenService.logAccess).toHaveBeenCalledWith(
@@ -448,7 +473,7 @@ describe('HierarchicalGalleryService', () => {
         'download',
         expect.objectContaining({
           success: false,
-          notes: 'Download not allowed for this token'
+          notes: 'Download not allowed for this token',
         })
       );
     });
@@ -456,7 +481,7 @@ describe('HierarchicalGalleryService', () => {
     it('should deny download for inaccessible asset', async () => {
       const mockValidation = {
         isValid: true,
-        context: { canDownload: true }
+        context: { canDownload: true },
       };
 
       vi.spyOn(service, 'validateAccess').mockResolvedValueOnce(mockValidation);
@@ -472,23 +497,24 @@ describe('HierarchicalGalleryService', () => {
   describe('Preview URL Generation', () => {
     it('should generate preview URL for accessible asset', async () => {
       const mockAssetData = {
-        preview_path: 'previews/photo123.jpg'
+        preview_path: 'previews/photo123.jpg',
       };
 
       const mockSignedData = {
-        signedUrl: 'https://storage.supabase.com/signed/preview123.jpg?token=def456'
+        signedUrl:
+          'https://storage.supabase.com/signed/preview123.jpg?token=def456',
       };
 
       vi.spyOn(service, 'canAccessAsset').mockResolvedValueOnce(true);
-      
+
       mockFrom.single.mockResolvedValueOnce({
         data: mockAssetData,
-        error: null
+        error: null,
       });
 
       mockStorage.createSignedUrl.mockResolvedValueOnce({
         data: mockSignedData,
-        error: null
+        error: null,
       });
 
       const result = await service.getPreviewUrl('test-token', 'asset-123');
@@ -511,10 +537,10 @@ describe('HierarchicalGalleryService', () => {
 
     it('should return null for asset without preview', async () => {
       vi.spyOn(service, 'canAccessAsset').mockResolvedValueOnce(true);
-      
+
       mockFrom.single.mockResolvedValueOnce({
         data: { preview_path: null },
-        error: null
+        error: null,
       });
 
       const result = await service.getPreviewUrl('test-token', 'asset-123');
@@ -530,12 +556,17 @@ describe('HierarchicalGalleryService', () => {
         folderId: 'folder-1',
         filename: `photo${i + 1}.jpg`,
         fileSize: 1024576,
-        createdAt: new Date('2024-01-01')
+        createdAt: new Date('2024-01-01'),
       }));
 
       vi.spyOn(service, 'getAssets').mockResolvedValueOnce(mockAssets);
 
-      const result = await service.getAssetsPaginated('test-token', 'folder-1', 20, 10);
+      const result = await service.getAssetsPaginated(
+        'test-token',
+        'folder-1',
+        20,
+        10
+      );
 
       expect(result.assets).toHaveLength(20);
       expect(result.assets[0].id).toBe('asset-11'); // Starting from offset 10
@@ -550,22 +581,22 @@ describe('HierarchicalGalleryService', () => {
           folderId: 'folder-1',
           filename: 'group_photo_1.jpg',
           fileSize: 1024576,
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         {
           id: 'asset-2',
           folderId: 'folder-1',
           filename: 'individual_photo_1.jpg',
           fileSize: 1024576,
-          createdAt: new Date()
+          createdAt: new Date(),
         },
         {
           id: 'asset-3',
           folderId: 'folder-1',
           filename: 'group_photo_2.jpg',
           fileSize: 1024576,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       ];
 
       vi.spyOn(service, 'getAssets').mockResolvedValueOnce(mockAssets);
@@ -582,7 +613,7 @@ describe('HierarchicalGalleryService', () => {
     it('should calculate gallery stats', async () => {
       const mockFolders = [
         { id: 'folder-1', name: 'Folder 1', photoCount: 10, depth: 0 },
-        { id: 'folder-2', name: 'Folder 2', photoCount: 15, depth: 0 }
+        { id: 'folder-2', name: 'Folder 2', photoCount: 15, depth: 0 },
       ];
 
       const mockAssets = [
@@ -591,15 +622,15 @@ describe('HierarchicalGalleryService', () => {
           fileSize: 1024576,
           createdAt: new Date('2024-01-01T10:00:00Z'),
           folderId: 'folder-1',
-          filename: 'photo1.jpg'
+          filename: 'photo1.jpg',
         },
         {
           id: 'asset-2',
           fileSize: 2048576,
           createdAt: new Date('2024-01-15T15:00:00Z'),
           folderId: 'folder-2',
-          filename: 'photo2.jpg'
-        }
+          filename: 'photo2.jpg',
+        },
       ];
 
       vi.spyOn(service, 'getFolders').mockResolvedValueOnce(mockFolders);

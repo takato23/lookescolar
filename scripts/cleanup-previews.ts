@@ -12,9 +12,13 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 async function main() {
   const supabase = await createServerSupabaseServiceClient();
   const DAYS = parseInt(process.env.CLEANUP_PREVIEW_DAYS || '30', 10);
-  const cutoff = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = new Date(
+    Date.now() - DAYS * 24 * 60 * 60 * 1000
+  ).toISOString();
 
-  console.log(`🧹 Cleaning previews older than ${DAYS} days (before ${cutoff})`);
+  console.log(
+    `🧹 Cleaning previews older than ${DAYS} days (before ${cutoff})`
+  );
 
   // Prefer new assets table if available; fallback to legacy photos table
   let removedFiles = 0;
@@ -32,12 +36,17 @@ async function main() {
         .map((a) => a.preview_path as string)
         .filter(Boolean);
       if (paths.length) {
-        const { error: remErr } = await supabase.storage.from('photos').remove(paths);
+        const { error: remErr } = await supabase.storage
+          .from('photos')
+          .remove(paths);
         if (!remErr) {
           removedFiles += paths.length;
           console.log(`✅ Removed ${paths.length} preview files from assets`);
         } else {
-          console.warn('⚠️ Failed removing some asset previews:', remErr.message);
+          console.warn(
+            '⚠️ Failed removing some asset previews:',
+            remErr.message
+          );
         }
       }
     }
@@ -58,12 +67,19 @@ async function main() {
         .map((p) => p.preview_path || p.watermark_path)
         .filter(Boolean) as string[];
       if (paths.length) {
-        const { error: remErr } = await supabase.storage.from('photos').remove(paths);
+        const { error: remErr } = await supabase.storage
+          .from('photos')
+          .remove(paths);
         if (!remErr) {
           removedFiles += paths.length;
-          console.log(`✅ Removed ${paths.length} preview files from photos (legacy)`);
+          console.log(
+            `✅ Removed ${paths.length} preview files from photos (legacy)`
+          );
         } else {
-          console.warn('⚠️ Failed removing some legacy previews:', remErr.message);
+          console.warn(
+            '⚠️ Failed removing some legacy previews:',
+            remErr.message
+          );
         }
       }
     }
@@ -80,6 +96,3 @@ if (require.main === module) {
     process.exit(1);
   });
 }
-
-
-

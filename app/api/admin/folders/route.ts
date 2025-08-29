@@ -24,12 +24,13 @@ const folderQuerySchema = z.object({
 });
 
 const createFolderSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Folder name required')
     .max(100, 'Name too long')
     // Allow Unicode letters/numbers, spaces, dash, underscore, dot
     .regex(/^[\p{L}\p{N}\s\-_\.]+$/u, 'Invalid characters')
-    .transform(s => s.trim()),
+    .transform((s) => s.trim()),
   parent_id: z.string().uuid().nullable().optional(),
   event_id: z.string().uuid().nullable().optional(),
 });
@@ -63,7 +64,10 @@ interface CreateFolderResponse {
 async function handleGET(request: NextRequest) {
   try {
     // Validate environment variables
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.SUPABASE_SERVICE_ROLE_KEY
+    ) {
       logger.error('Missing Supabase environment variables');
       return NextResponse.json(
         { success: false, error: 'Database configuration error' },
@@ -79,11 +83,13 @@ async function handleGET(request: NextRequest) {
     try {
       // Ensure nulls are not passed to Zod; use undefined to allow defaults/optional
       const parent_id_raw = url.searchParams.get('parent_id');
-      const parent_id = parent_id_raw === 'null' ? null : (parent_id_raw || undefined);
+      const parent_id =
+        parent_id_raw === 'null' ? null : parent_id_raw || undefined;
       const event_id = url.searchParams.get('event_id') || undefined;
       const limit = url.searchParams.get('limit') ?? undefined;
       const offset = url.searchParams.get('offset') ?? undefined;
-      const include_global = url.searchParams.get('include_global') ?? undefined;
+      const include_global =
+        url.searchParams.get('include_global') ?? undefined;
       const scopes = url.searchParams.get('scopes') ?? undefined;
 
       queryParams = folderQuerySchema.parse({
@@ -106,16 +112,17 @@ async function handleGET(request: NextRequest) {
     let folders: any[] | undefined, error: any;
     let usingLegacy = false;
     const supabaseAdmin = await createServerSupabaseServiceClient();
-    
+
     // Parse scopes
     const scopes = queryParams.scopes
-      ? queryParams.scopes.split(',').map(s => s.trim().toLowerCase())
+      ? queryParams.scopes.split(',').map((s) => s.trim().toLowerCase())
       : undefined;
 
     // Helper to fetch from folders with filters (no clone, build queries explicitly)
-    const fetchFromFolders = async (
-      filter: { event_id?: string; include_global?: boolean }
-    ) => {
+    const fetchFromFolders = async (filter: {
+      event_id?: string;
+      include_global?: boolean;
+    }) => {
       const results: any[] = [];
 
       const applyCommonFilters = (q: any) => {
@@ -132,7 +139,9 @@ async function handleGET(request: NextRequest) {
       if (filter.event_id) {
         let q = supabaseAdmin
           .from('folders')
-          .select('id, name, parent_id, created_at, photo_count, depth, event_id')
+          .select(
+            'id, name, parent_id, created_at, photo_count, depth, event_id'
+          )
           .eq('event_id', filter.event_id);
         q = applyCommonFilters(q);
         let r = await q;
@@ -148,7 +157,9 @@ async function handleGET(request: NextRequest) {
       if (!filter.event_id || filter.include_global) {
         let qg = supabaseAdmin
           .from('folders')
-          .select('id, name, parent_id, created_at, photo_count, depth, event_id')
+          .select(
+            'id, name, parent_id, created_at, photo_count, depth, event_id'
+          )
           .is('event_id', null);
         qg = applyCommonFilters(qg);
         let rg = await qg;
@@ -183,16 +194,18 @@ async function handleGET(request: NextRequest) {
         .select('id, name, created_at, event_id')
         .limit(queryParams.limit)
         .range(queryParams.offset, queryParams.offset + queryParams.limit - 1);
-      
+
       if (queryParams.event_id) {
         subjectsQuery.eq('event_id', queryParams.event_id);
       }
-      
-      const subjectsResult = await subjectsQuery.order('created_at', { ascending: true });
-      
+
+      const subjectsResult = await subjectsQuery.order('created_at', {
+        ascending: true,
+      });
+
       if (subjectsResult.data) {
         // Transform subjects to folder format
-        folders = subjectsResult.data.map(subject => ({
+        folders = subjectsResult.data.map((subject) => ({
           id: subject.id,
           name: subject.name,
           parent_id: null,
@@ -210,7 +223,10 @@ async function handleGET(request: NextRequest) {
     }
 
     if (error) {
-      logger.error('Database query failed', { error: error.message, code: error.code });
+      logger.error('Database query failed', {
+        error: error.message,
+        code: error.code,
+      });
 
       // Fallback: legacy schema 'event_folders'
       if (error.code === '42P01') {
@@ -220,17 +236,26 @@ async function handleGET(request: NextRequest) {
           .from('event_folders')
           .select('id, name, parent_id, depth, created_at')
           .limit(queryParams.limit)
-          .range(queryParams.offset, queryParams.offset + queryParams.limit - 1);
+          .range(
+            queryParams.offset,
+            queryParams.offset + queryParams.limit - 1
+          );
         if (queryParams.parent_id !== undefined) {
           if (queryParams.parent_id === null) legacyQuery.is('parent_id', null);
           else legacyQuery.eq('parent_id', queryParams.parent_id);
         } else {
           if (!queryParams.event_id) legacyQuery.is('parent_id', null);
         }
-        if (queryParams.event_id) legacyQuery.eq('event_id', queryParams.event_id);
-        const legacyResult = await legacyQuery.order('created_at', { ascending: true });
+        if (queryParams.event_id)
+          legacyQuery.eq('event_id', queryParams.event_id);
+        const legacyResult = await legacyQuery.order('created_at', {
+          ascending: true,
+        });
         if (legacyResult.error) {
-          logger.error('Legacy query failed', { error: legacyResult.error.message, code: legacyResult.error.code });
+          logger.error('Legacy query failed', {
+            error: legacyResult.error.message,
+            code: legacyResult.error.code,
+          });
           return NextResponse.json(
             { success: false, error: 'Database table not found' },
             { status: 404 }
@@ -260,13 +285,17 @@ async function handleGET(request: NextRequest) {
         let countQuery = sbCount
           .from('event_folders')
           .select('id', { count: 'exact', head: true });
-        if (queryParams.event_id) countQuery = countQuery.eq('event_id', queryParams.event_id);
+        if (queryParams.event_id)
+          countQuery = countQuery.eq('event_id', queryParams.event_id);
         if (queryParams.parent_id !== undefined) {
           if (queryParams.parent_id === null) {
             const { count: total } = await countQuery.is('parent_id', null);
             count = total || 0;
           } else {
-            const { count: total } = await countQuery.eq('parent_id', queryParams.parent_id);
+            const { count: total } = await countQuery.eq(
+              'parent_id',
+              queryParams.parent_id
+            );
             count = total || 0;
           }
         } else {
@@ -276,12 +305,20 @@ async function handleGET(request: NextRequest) {
       } else {
         // folders table, possibly include global
         const sb = await createServerSupabaseServiceClient();
-        const base = sb.from('folders').select('id', { count: 'exact', head: true });
+        const base = sb
+          .from('folders')
+          .select('id', { count: 'exact', head: true });
         const countFor = async (eventId: string | null) => {
           let q = base;
-          q = eventId === null ? q.is('event_id', null) : q.eq('event_id', eventId);
+          q =
+            eventId === null
+              ? q.is('event_id', null)
+              : q.eq('event_id', eventId);
           if (queryParams.parent_id !== undefined) {
-            q = queryParams.parent_id === null ? q.is('parent_id', null) : q.eq('parent_id', queryParams.parent_id);
+            q =
+              queryParams.parent_id === null
+                ? q.is('parent_id', null)
+                : q.eq('parent_id', queryParams.parent_id);
           } else {
             q = q.is('parent_id', null);
           }
@@ -309,7 +346,7 @@ async function handleGET(request: NextRequest) {
       has_children?: boolean;
     }>;
 
-    const folderIds = folderRows.map(f => f.id);
+    const folderIds = folderRows.map((f) => f.id);
 
     // Prefer cached photo_count from folders table to avoid N queries
     const countsMap: Record<string, number> = {};
@@ -336,7 +373,9 @@ async function handleGET(request: NextRequest) {
       const isLegacy = usingLegacy;
       const scope: 'event' | 'global' | 'legacy' | 'template' = isLegacy
         ? 'legacy'
-        : (folder.event_id ? 'event' : 'global');
+        : folder.event_id
+          ? 'event'
+          : 'global';
       const childCount = childCountMap[folder.id] || 0;
       return {
         id: folder.id,
@@ -371,12 +410,15 @@ async function handleGET(request: NextRequest) {
       folders: folderList,
       count,
     });
-
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logger.error('Folders API error', { error: message });
     return NextResponse.json(
-      { success: false, error: 'Internal server error', details: process.env.NODE_ENV !== 'production' ? message : undefined },
+      {
+        success: false,
+        error: 'Internal server error',
+        details: process.env.NODE_ENV !== 'production' ? message : undefined,
+      },
       { status: 500 }
     );
   }
@@ -397,7 +439,9 @@ async function handlePOST(request: NextRequest) {
     const normalized = {
       ...raw,
       parent_id:
-        raw?.parent_id === 'root' || raw?.parent_id === '' ? null : raw?.parent_id,
+        raw?.parent_id === 'root' || raw?.parent_id === ''
+          ? null
+          : raw?.parent_id,
       event_id: raw?.event_id === '' ? null : raw?.event_id,
     };
     const folderData = createFolderSchema.parse(normalized);
@@ -437,13 +481,18 @@ async function handlePOST(request: NextRequest) {
 
     if (existing) {
       return NextResponse.json(
-        { success: false, error: 'Folder name already exists in this location' },
+        {
+          success: false,
+          error: 'Folder name already exists in this location',
+        },
         { status: 409 }
       );
     }
 
     // Create folder with minimal data return
-    const { data: folder, error } = await (await createServerSupabaseServiceClient())
+    const { data: folder, error } = await (
+      await createServerSupabaseServiceClient()
+    )
       .from('folders')
       .insert({
         name: folderData.name,
@@ -454,9 +503,9 @@ async function handlePOST(request: NextRequest) {
       .single();
 
     if (error) {
-      logger.error('Failed to create folder', { 
+      logger.error('Failed to create folder', {
         error: error.message,
-        folder: folderData 
+        folder: folderData,
       });
       return NextResponse.json(
         { success: false, error: 'Failed to create folder' },
@@ -472,16 +521,18 @@ async function handlePOST(request: NextRequest) {
       photo_count: 0,
     };
 
-    logger.info('Folder created successfully', { 
+    logger.info('Folder created successfully', {
       folderId: folder.id,
       name: folder.name,
     });
 
-    return NextResponse.json({
-      success: true,
-      folder: response,
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        success: true,
+        folder: response,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       logger.warn('Invalid folder data', { errors: error.errors });

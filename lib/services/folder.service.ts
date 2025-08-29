@@ -85,7 +85,8 @@ class FolderService {
       // Base query for folders - using folders table directly with cached photo_count
       let query = supabase
         .from('folders')
-        .select(`
+        .select(
+          `
           id,
           name,
           parent_id,
@@ -94,7 +95,8 @@ class FolderService {
           sort_order,
           photo_count,
           created_at
-        `)
+        `
+        )
         .eq('event_id', eventId);
 
       // Filter by parent_id (null for root folders)
@@ -161,7 +163,8 @@ class FolderService {
 
       const { data, error } = await supabase
         .from('folders')
-        .select(`
+        .select(
+          `
           id,
           name,
           parent_id,
@@ -170,7 +173,8 @@ class FolderService {
           sort_order,
           photo_count,
           created_at
-        `)
+        `
+        )
         .eq('id', folderId)
         .single();
 
@@ -667,7 +671,8 @@ class FolderService {
 
       const { data, error } = await supabase
         .from('folders')
-        .select(`
+        .select(
+          `
           id,
           name,
           parent_id,
@@ -676,7 +681,8 @@ class FolderService {
           sort_order,
           photo_count,
           created_at
-        `)
+        `
+        )
         .eq('event_id', eventId)
         .order('depth', { ascending: true })
         .order('sort_order', { ascending: true })

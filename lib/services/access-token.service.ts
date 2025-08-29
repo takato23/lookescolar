@@ -1,6 +1,6 @@
 /**
  * ACCESS TOKEN SERVICE - Hierarchical Token Management
- * 
+ *
  * Manages secure hierarchical tokens with hash+salt security
  * Supports: Event tokens, Course tokens, Family tokens
  * Features: Cryptographic security, usage tracking, expiration, auditing
@@ -79,28 +79,39 @@ export class AccessTokenService {
   /**
    * Generate a cryptographically secure token
    */
-  private generateSecureToken(scope: TokenScope): { token: string; prefix: string; hash: Buffer; salt: Buffer } {
+  private generateSecureToken(scope: TokenScope): {
+    token: string;
+    prefix: string;
+    hash: Buffer;
+    salt: Buffer;
+  } {
     // Generate secure random token (32 bytes = 256 bits)
     const tokenBytes = randomBytes(32);
     const token = tokenBytes.toString('base64url'); // URL-safe base64
-    
+
     // Create prefix for quick database lookups
     const scopePrefix = scope.charAt(0).toUpperCase(); // E, C, F
     const prefix = `${scopePrefix}_${token.substring(0, 8)}`;
-    
+
     // Generate salt and hash
     const salt = randomBytes(16); // 128-bit salt
-    const hash = createHash('sha256').update(token + salt.toString('hex')).digest();
-    
+    const hash = createHash('sha256')
+      .update(token + salt.toString('hex'))
+      .digest();
+
     return { token, prefix, hash, salt };
   }
 
   /**
    * Create a new access token with hierarchical permissions
    */
-  async createToken(params: CreateTokenParams): Promise<{ token: string; tokenId: string }> {
-    const { token, prefix, hash, salt } = this.generateSecureToken(params.scope);
-    
+  async createToken(
+    params: CreateTokenParams
+  ): Promise<{ token: string; tokenId: string }> {
+    const { token, prefix, hash, salt } = this.generateSecureToken(
+      params.scope
+    );
+
     // Prepare token data
     const tokenData: any = {
       scope: params.scope,
@@ -112,7 +123,7 @@ export class AccessTokenService {
       max_uses: params.maxUses || null,
       expires_at: params.expiresAt?.toISOString() || null,
       created_by: params.resourceId,
-      metadata: params.metadata || {}
+      metadata: params.metadata || {},
     };
 
     // Set resource field based on scope
@@ -140,7 +151,7 @@ export class AccessTokenService {
 
     return {
       token,
-      tokenId: data.id
+      tokenId: data.id,
     };
   }
 
@@ -149,20 +160,21 @@ export class AccessTokenService {
    */
   async validateToken(token: string): Promise<TokenValidation> {
     try {
-      const { data, error } = await this.supabase
-        .rpc('validate_access_token', { p_token_plain: token });
+      const { data, error } = await this.supabase.rpc('validate_access_token', {
+        p_token_plain: token,
+      });
 
       if (error) {
         return {
           isValid: false,
-          reason: `Validation error: ${error.message}`
+          reason: `Validation error: ${error.message}`,
         };
       }
 
       if (!data || data.length === 0) {
         return {
           isValid: false,
-          reason: 'Token not found'
+          reason: 'Token not found',
         };
       }
 
@@ -174,12 +186,12 @@ export class AccessTokenService {
         accessLevel: result.access_level,
         canDownload: result.can_download,
         isValid: result.is_valid,
-        reason: result.reason
+        reason: result.reason,
       };
     } catch (error: any) {
       return {
         isValid: false,
-        reason: `Validation failed: ${error.message}`
+        reason: `Validation failed: ${error.message}`,
       };
     }
   }
@@ -190,7 +202,8 @@ export class AccessTokenService {
   async getToken(tokenId: string): Promise<AccessToken | null> {
     const { data, error } = await this.supabase
       .from('access_tokens')
-      .select(`
+      .select(
+        `
         id,
         scope,
         event_id,
@@ -207,7 +220,8 @@ export class AccessTokenService {
         created_at,
         created_by,
         metadata
-      `)
+      `
+      )
       .eq('id', tokenId)
       .single();
 
@@ -221,13 +235,21 @@ export class AccessTokenService {
   /**
    * Get tokens by resource (event, course, or family)
    */
-  async getTokensByResource(scope: TokenScope, resourceId: string): Promise<AccessToken[]> {
-    const resourceColumn = scope === 'event' ? 'event_id' : 
-                          scope === 'course' ? 'course_id' : 'subject_id';
+  async getTokensByResource(
+    scope: TokenScope,
+    resourceId: string
+  ): Promise<AccessToken[]> {
+    const resourceColumn =
+      scope === 'event'
+        ? 'event_id'
+        : scope === 'course'
+          ? 'course_id'
+          : 'subject_id';
 
     const { data, error } = await this.supabase
       .from('access_tokens')
-      .select(`
+      .select(
+        `
         id,
         scope,
         event_id,
@@ -244,7 +266,8 @@ export class AccessTokenService {
         created_at,
         created_by,
         metadata
-      `)
+      `
+      )
       .eq(resourceColumn, resourceId)
       .order('created_at', { ascending: false });
 
@@ -252,7 +275,7 @@ export class AccessTokenService {
       throw new Error(`Failed to get tokens: ${error.message}`);
     }
 
-    return (data || []).map(token => this.mapTokenData(token));
+    return (data || []).map((token) => this.mapTokenData(token));
   }
 
   /**
@@ -272,8 +295,9 @@ export class AccessTokenService {
    */
   async getTokenStats(tokenId: string): Promise<TokenUsageStats | null> {
     try {
-      const { data, error } = await this.supabase
-        .rpc('get_token_usage_stats', { p_token_id: tokenId });
+      const { data, error } = await this.supabase.rpc('get_token_usage_stats', {
+        p_token_id: tokenId,
+      });
 
       if (error || !data || data.length === 0) {
         return null;
@@ -285,9 +309,13 @@ export class AccessTokenService {
         successfulAccesses: parseInt(stats.successful_accesses) || 0,
         failedAccesses: parseInt(stats.failed_accesses) || 0,
         uniqueIPs: parseInt(stats.unique_ips) || 0,
-        firstAccess: stats.first_access ? new Date(stats.first_access) : undefined,
+        firstAccess: stats.first_access
+          ? new Date(stats.first_access)
+          : undefined,
         lastAccess: stats.last_access ? new Date(stats.last_access) : undefined,
-        avgResponseTimeMs: stats.avg_response_time_ms ? parseFloat(stats.avg_response_time_ms) : undefined
+        avgResponseTimeMs: stats.avg_response_time_ms
+          ? parseFloat(stats.avg_response_time_ms)
+          : undefined,
       };
     } catch (error) {
       console.error('Failed to get token stats:', error);
@@ -311,17 +339,16 @@ export class AccessTokenService {
     }
   ): Promise<boolean> {
     try {
-      const { error } = await this.supabase
-        .rpc('api.log_token_access', {
-          p_token: token,
-          p_action: action,
-          p_ip: request.ip || null,
-          p_user_agent: request.userAgent || null,
-          p_path: request.path || null,
-          p_response_time_ms: request.responseTimeMs || null,
-          p_ok: request.success !== false,
-          p_notes: request.notes || null
-        });
+      const { error } = await this.supabase.rpc('api.log_token_access', {
+        p_token: token,
+        p_action: action,
+        p_ip: request.ip || null,
+        p_user_agent: request.userAgent || null,
+        p_path: request.path || null,
+        p_response_time_ms: request.responseTimeMs || null,
+        p_ok: request.success !== false,
+        p_notes: request.notes || null,
+      });
 
       return !error;
     } catch (error) {
@@ -333,10 +360,12 @@ export class AccessTokenService {
   /**
    * Clean up expired tokens (maintenance)
    */
-  async cleanupExpiredTokens(): Promise<{ cleanedTokens: number; cleanedLogs: number }> {
+  async cleanupExpiredTokens(): Promise<{
+    cleanedTokens: number;
+    cleanedLogs: number;
+  }> {
     try {
-      const { data, error } = await this.supabase
-        .rpc('cleanup_expired_tokens');
+      const { data, error } = await this.supabase.rpc('cleanup_expired_tokens');
 
       if (error || !data) {
         return { cleanedTokens: 0, cleanedLogs: 0 };
@@ -344,7 +373,7 @@ export class AccessTokenService {
 
       return {
         cleanedTokens: data.cleaned_tokens || 0,
-        cleanedLogs: data.cleaned_logs || 0
+        cleanedLogs: data.cleaned_logs || 0,
       };
     } catch (error) {
       console.error('Failed to cleanup expired tokens:', error);
@@ -356,7 +385,8 @@ export class AccessTokenService {
    * Generate QR code data for token
    */
   generateQRData(token: string, baseUrl?: string): string {
-    const url = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://lookescolar.com';
+    const url =
+      baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://lookescolar.com';
     return `${url}/s/${token}`;
   }
 
@@ -368,10 +398,12 @@ export class AccessTokenService {
     const now = new Date();
     const expiresAt = data.expires_at ? new Date(data.expires_at) : null;
     const revokedAt = data.revoked_at ? new Date(data.revoked_at) : null;
-    
+
     const isExpired = expiresAt ? expiresAt <= now : false;
     const isRevoked = !!revokedAt;
-    const isExhausted = data.max_uses ? data.used_count >= data.max_uses : false;
+    const isExhausted = data.max_uses
+      ? data.used_count >= data.max_uses
+      : false;
     const isValid = !isExpired && !isRevoked && !isExhausted;
 
     return {
@@ -392,7 +424,7 @@ export class AccessTokenService {
       isValid,
       isExpired,
       isRevoked,
-      isExhausted
+      isExhausted,
     };
   }
 }

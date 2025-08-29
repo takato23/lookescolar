@@ -33,14 +33,14 @@ vi.mock('@/components/admin/ResponsiveFolderGrid', () => ({
         codes.map((code: any) => (
           <div key={code.id} data-testid={`code-card-${code.id}`}>
             <span>{code.code_value}</span>
-            <button 
+            <button
               onClick={() => onPublish(code.id)}
               aria-label={`Publicar ${code.code_value}`}
             >
               Publicar
             </button>
             {onPreview && (
-              <button 
+              <button
                 onClick={() => onPreview(code)}
                 aria-label={`Vista previa de ${code.code_value}`}
               >
@@ -68,7 +68,9 @@ vi.mock('@/components/admin/PhotoPreviewModal', () => ({
   PhotoPreviewModal: ({ isOpen, onClose, folder }: any) =>
     isOpen ? (
       <div data-testid="photo-preview-modal" role="dialog" aria-modal="true">
-        <button onClick={onClose} aria-label="Cerrar modal">Cerrar</button>
+        <button onClick={onClose} aria-label="Cerrar modal">
+          Cerrar
+        </button>
         <h2>{folder?.name}</h2>
       </div>
     ) : null,
@@ -87,7 +89,7 @@ vi.mock('@/hooks/usePublishData', () => ({
         event_id: 'event-1',
       },
       {
-        id: '2', 
+        id: '2',
         code_value: '3A-12',
         photos_count: 8,
         is_published: true,
@@ -132,9 +134,7 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        {children}
-      </NotificationProvider>
+      <NotificationProvider>{children}</NotificationProvider>
     </QueryClientProvider>
   );
 }
@@ -143,7 +143,7 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
-    
+
     // Mock successful API responses
     mockFetch.mockResolvedValue({
       ok: true,
@@ -154,15 +154,21 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
   describe('Mobile-First Design', () => {
     it('renders mobile-optimized header', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
-      expect(screen.getByRole('heading', { name: /publicación de galerías/i })).toBeInTheDocument();
-      expect(screen.getByText(/gestiona el acceso familiar/i)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /actualizar datos/i })).toBeInTheDocument();
+
+      expect(
+        screen.getByRole('heading', { name: /publicación de galerías/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/gestiona el acceso familiar/i)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /actualizar datos/i })
+      ).toBeInTheDocument();
     });
 
     it('displays responsive stats cards', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       expect(screen.getByText('2')).toBeInTheDocument(); // Total códigos
       expect(screen.getByText('1')).toBeInTheDocument(); // Publicados
       expect(screen.getByText('1')).toBeInTheDocument(); // Privados
@@ -171,45 +177,51 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
 
     it('shows public gallery section when event is available', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       expect(screen.getByText('Galería Pública')).toBeInTheDocument();
       expect(screen.getByText('Graduación 2024')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /copiar enlace público/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /copiar enlace público/i })
+      ).toBeInTheDocument();
     });
   });
 
   describe('Touch-Friendly Controls', () => {
     it('has minimum 44px touch targets for buttons', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
-      const updateButton = screen.getByRole('button', { name: /actualizar datos/i });
+
+      const updateButton = screen.getByRole('button', {
+        name: /actualizar datos/i,
+      });
       const computedStyle = window.getComputedStyle(updateButton);
-      
+
       // Check for min-h-[44px] class or equivalent
       expect(updateButton.className).toMatch(/min-h-\[44px\]/);
     });
 
     it('renders search input with proper mobile styling', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const searchInput = screen.getByPlaceholderText(/buscar código/i);
       expect(searchInput).toBeInTheDocument();
       expect(searchInput.className).toMatch(/min-h-\[44px\]/);
-      
+
       // Test search icon
-      expect(searchInput.parentElement?.querySelector('[data-lucide="search"]')).toBeInTheDocument();
+      expect(
+        searchInput.parentElement?.querySelector('[data-lucide="search"]')
+      ).toBeInTheDocument();
     });
 
     it('provides clear button for search input', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const searchInput = screen.getByPlaceholderText(/buscar código/i);
       await user.type(searchInput, '3B');
-      
+
       const clearButton = screen.getByRole('button', { name: '' }); // Clear button without text
       expect(clearButton).toBeInTheDocument();
-      
+
       await user.click(clearButton);
       expect(searchInput).toHaveValue('');
     });
@@ -218,17 +230,17 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
   describe('Accessibility Features', () => {
     it('has proper heading hierarchy', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const mainHeading = screen.getByRole('heading', { level: 1 });
       expect(mainHeading).toHaveTextContent(/publicación de galerías/i);
-      
+
       const sectionHeadings = screen.getAllByRole('heading', { level: 2 });
       expect(sectionHeadings).toHaveLength(2); // Public and private sections
     });
 
     it('provides descriptive button labels', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       expect(screen.getByLabelText(/actualizar datos/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/cambiar a vista/i)).toBeInTheDocument();
     });
@@ -236,17 +248,17 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
     it('supports keyboard navigation for filters', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const statusFilter = screen.getByDisplayValue('Todos');
       expect(statusFilter).toBeInTheDocument();
-      
+
       await user.selectOptions(statusFilter, 'published');
       expect(statusFilter).toHaveValue('published');
     });
 
     it('has accessible form controls with labels', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const searchInput = screen.getByPlaceholderText(/buscar código/i);
       expect(searchInput).toBeInTheDocument();
       expect(searchInput).toHaveAttribute('type', 'text');
@@ -256,17 +268,17 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
   describe('Responsive Grid Layout', () => {
     it('renders responsive folder grid component', () => {
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       expect(screen.getByTestId('responsive-folder-grid')).toBeInTheDocument();
     });
 
     it('shows view mode toggle', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const viewToggle = screen.getByLabelText(/cambiar a vista/i);
       expect(viewToggle).toBeInTheDocument();
-      
+
       await user.click(viewToggle);
       // Should switch between grid and list views
     });
@@ -276,13 +288,13 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
     it('opens photo preview modal when preview is clicked', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       // First, make sure we can find a preview button
       const previewButtons = screen.getAllByLabelText(/vista previa de/i);
       expect(previewButtons.length).toBeGreaterThan(0);
-      
+
       await user.click(previewButtons[0]);
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('photo-preview-modal')).toBeInTheDocument();
       });
@@ -291,27 +303,29 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
     it('closes modal with escape key', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       // Open modal first
       const previewButtons = screen.getAllByLabelText(/vista previa de/i);
       await user.click(previewButtons[0]);
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('photo-preview-modal')).toBeInTheDocument();
       });
-      
+
       // Close with escape key
       await user.keyboard('{Escape}');
-      
+
       await waitFor(() => {
-        expect(screen.queryByTestId('photo-preview-modal')).not.toBeInTheDocument();
+        expect(
+          screen.queryByTestId('photo-preview-modal')
+        ).not.toBeInTheDocument();
       });
     });
 
     it('handles bulk selection actions', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       // Search for bulk action buttons (they appear when codes are selected)
       // Since our mock doesn't have selected codes, these won't appear
       // But we can test that the UI structure supports it
@@ -323,12 +337,12 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
     it('filters codes by search term', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const searchInput = screen.getByPlaceholderText(/buscar código/i);
       await user.type(searchInput, '3B');
-      
+
       expect(searchInput).toHaveValue('3B');
-      
+
       // The filtering logic is tested in the filtered useMemo
       // We can verify the input works correctly
     });
@@ -336,12 +350,12 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
     it('filters by publication status', async () => {
       const user = userEvent.setup();
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       const statusFilter = screen.getByDisplayValue('Todos');
-      
+
       await user.selectOptions(statusFilter, 'published');
       expect(statusFilter).toHaveValue('published');
-      
+
       await user.selectOptions(statusFilter, 'unpublished');
       expect(statusFilter).toHaveValue('unpublished');
     });
@@ -364,9 +378,9 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
           stats: { total: 0, published: 0, unpublished: 0, totalPhotos: 0 },
         }),
       }));
-      
+
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
   });
@@ -375,12 +389,12 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
     it('renders without performance warnings', () => {
       const consoleSpy = vi.spyOn(console, 'warn');
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       // Should not have React performance warnings
       expect(consoleSpy).not.toHaveBeenCalledWith(
         expect.stringMatching(/Warning.*performance/)
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -388,7 +402,7 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
       // This test ensures our components are structured for performance
       // The actual memoization is tested through re-render behavior
       render(<PublishPage />, { wrapper: TestWrapper });
-      
+
       // Verify key performance-critical elements are present
       expect(screen.getByTestId('responsive-folder-grid')).toBeInTheDocument();
     });
@@ -397,7 +411,7 @@ describe('Admin Publish Page - Mobile UX & Accessibility', () => {
 
 describe('Responsive Design Breakpoints', () => {
   const originalInnerWidth = global.innerWidth;
-  
+
   afterEach(() => {
     global.innerWidth = originalInnerWidth;
   });
@@ -405,16 +419,18 @@ describe('Responsive Design Breakpoints', () => {
   it('adapts layout for mobile viewport (320px)', () => {
     global.innerWidth = 320;
     render(<PublishPage />, { wrapper: TestWrapper });
-    
+
     // Mobile layout should stack elements vertically
-    const header = screen.getByRole('heading', { name: /publicación de galerías/i });
+    const header = screen.getByRole('heading', {
+      name: /publicación de galerías/i,
+    });
     expect(header).toBeInTheDocument();
   });
 
   it('adapts layout for tablet viewport (768px)', () => {
     global.innerWidth = 768;
     render(<PublishPage />, { wrapper: TestWrapper });
-    
+
     // Tablet layout should show more columns
     expect(screen.getByTestId('responsive-folder-grid')).toBeInTheDocument();
   });
@@ -422,7 +438,7 @@ describe('Responsive Design Breakpoints', () => {
   it('adapts layout for desktop viewport (1024px+)', () => {
     global.innerWidth = 1200;
     render(<PublishPage />, { wrapper: TestWrapper });
-    
+
     // Desktop layout should show full features
     expect(screen.getByTestId('responsive-folder-grid')).toBeInTheDocument();
   });

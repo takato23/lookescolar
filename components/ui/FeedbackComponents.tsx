@@ -1,6 +1,6 @@
 /**
  * Feedback Components
- * 
+ *
  * User feedback components for actions, confirmations, and status updates
  * Designed for simplicity and clarity
  */
@@ -9,16 +9,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle, 
-  Info, 
+import {
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Info,
   X,
   Heart,
   ShoppingCart,
   Eye,
-  Download
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -31,13 +31,13 @@ interface ToastProps {
   className?: string;
 }
 
-export function Toast({ 
-  type, 
-  title, 
-  description, 
+export function Toast({
+  type,
+  title,
+  description,
   duration = 5000,
   onClose,
-  className 
+  className,
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -81,36 +81,31 @@ export function Toast({
   if (!isVisible) return null;
 
   return (
-    <div className={cn(
-      'fixed top-4 right-4 z-50 max-w-sm w-full',
-      'transform transition-all duration-300 ease-in-out',
-      isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0',
-      className
-    )}>
-      <div className={cn(
-        'rounded-lg border p-4 shadow-lg',
-        getColors()
-      )}>
+    <div
+      className={cn(
+        'fixed right-4 top-4 z-50 w-full max-w-sm',
+        'transform transition-all duration-300 ease-in-out',
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0',
+        className
+      )}
+    >
+      <div className={cn('rounded-lg border p-4 shadow-lg', getColors())}>
         <div className="flex items-start space-x-3">
           {getIcon()}
-          
-          <div className="flex-1 min-w-0">
-            <h4 className="text-sm font-medium text-gray-900">
-              {title}
-            </h4>
+
+          <div className="min-w-0 flex-1">
+            <h4 className="text-sm font-medium text-gray-900">{title}</h4>
             {description && (
-              <p className="mt-1 text-sm text-gray-600">
-                {description}
-              </p>
+              <p className="mt-1 text-sm text-gray-600">{description}</p>
             )}
           </div>
-          
+
           <button
             onClick={() => {
               setIsVisible(false);
               setTimeout(() => onClose?.(), 300);
             }}
-            className="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600"
+            className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600"
           >
             <X className="h-4 w-4" />
           </button>
@@ -127,11 +122,11 @@ interface PhotoActionFeedbackProps {
   className?: string;
 }
 
-export function PhotoActionFeedback({ 
-  action, 
-  photoName, 
+export function PhotoActionFeedback({
+  action,
+  photoName,
   onUndo,
-  className 
+  className,
 }: PhotoActionFeedbackProps) {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -172,30 +167,26 @@ export function PhotoActionFeedback({
   if (!isVisible) return null;
 
   return (
-    <div className={cn(
-      'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50',
-      'bg-white rounded-lg shadow-lg border px-4 py-3',
-      'transition-all duration-300 ease-in-out',
-      isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
-      className
-    )}>
+    <div
+      className={cn(
+        'fixed bottom-4 left-1/2 z-50 -translate-x-1/2 transform',
+        'rounded-lg border bg-white px-4 py-3 shadow-lg',
+        'transition-all duration-300 ease-in-out',
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0',
+        className
+      )}
+    >
       <div className="flex items-center space-x-3">
         {getIcon()}
-        
+
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900">
-            {getActionText()}
-          </p>
-          {photoName && (
-            <p className="text-xs text-gray-500">
-              {photoName}
-            </p>
-          )}
+          <p className="text-sm font-medium text-gray-900">{getActionText()}</p>
+          {photoName && <p className="text-xs text-gray-500">{photoName}</p>}
         </div>
-        
+
         {onUndo && action !== 'download' && action !== 'view' && (
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={onUndo}
             className="text-xs"
@@ -229,40 +220,35 @@ export function ConfirmationDialog({
   type = 'default',
   onConfirm,
   onCancel,
-  className
+  className,
 }: ConfirmationDialogProps) {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onCancel}
       />
-      
+
       {/* Dialog */}
-      <div className={cn(
-        'relative bg-white rounded-lg shadow-xl max-w-md w-full p-6',
-        'transform transition-all duration-300 ease-in-out',
-        'scale-100 opacity-100',
-        className
-      )}>
+      <div
+        className={cn(
+          'relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl',
+          'transform transition-all duration-300 ease-in-out',
+          'scale-100 opacity-100',
+          className
+        )}
+      >
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {title}
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              {description}
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <p className="mt-2 text-sm text-gray-600">{description}</p>
           </div>
-          
-          <div className="flex space-x-3 justify-end">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-            >
+
+          <div className="flex justify-end space-x-3">
+            <Button variant="outline" onClick={onCancel}>
               {cancelText}
             </Button>
             <Button
@@ -316,11 +302,13 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   };
 
   return (
-    <span className={cn(
-      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border',
-      getStyles(),
-      className
-    )}>
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
+        getStyles(),
+        className
+      )}
+    >
       {label || getDefaultLabel()}
     </span>
   );
@@ -339,7 +327,7 @@ export function FloatingActionButton({
   label,
   onClick,
   variant = 'primary',
-  className
+  className,
 }: FloatingActionButtonProps) {
   return (
     <button
@@ -351,9 +339,9 @@ export function FloatingActionButton({
         'transition-all duration-300 ease-in-out',
         'hover:scale-110 active:scale-95',
         'focus:outline-none focus:ring-2 focus:ring-offset-2',
-        variant === 'primary' ? 
-          'bg-primary text-white focus:ring-primary' : 
-          'bg-white text-primary border-2 border-primary focus:ring-primary',
+        variant === 'primary'
+          ? 'bg-primary focus:ring-primary text-white'
+          : 'text-primary border-primary focus:ring-primary border-2 bg-white',
         className
       )}
       title={label}
@@ -379,32 +367,22 @@ export function EmptyState({
   title,
   description,
   action,
-  className
+  className,
 }: EmptyStateProps) {
   return (
-    <div className={cn(
-      'flex flex-col items-center justify-center py-12 px-4 text-center',
-      className
-    )}>
-      {icon && (
-        <div className="mb-4 text-gray-400">
-          {icon}
-        </div>
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center px-4 py-12 text-center',
+        className
       )}
-      
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        {title}
-      </h3>
-      
-      <p className="text-gray-600 mb-6 max-w-sm">
-        {description}
-      </p>
-      
-      {action && (
-        <Button onClick={action.onClick}>
-          {action.label}
-        </Button>
-      )}
+    >
+      {icon && <div className="mb-4 text-gray-400">{icon}</div>}
+
+      <h3 className="mb-2 text-lg font-medium text-gray-900">{title}</h3>
+
+      <p className="mb-6 max-w-sm text-gray-600">{description}</p>
+
+      {action && <Button onClick={action.onClick}>{action.label}</Button>}
     </div>
   );
 }
@@ -421,10 +399,7 @@ interface QuickActionsProps {
 
 export function QuickActions({ actions, className }: QuickActionsProps) {
   return (
-    <div className={cn(
-      'grid grid-cols-2 md:grid-cols-4 gap-2',
-      className
-    )}>
+    <div className={cn('grid grid-cols-2 gap-2 md:grid-cols-4', className)}>
       {actions.map((action, index) => (
         <button
           key={index}
@@ -432,17 +407,15 @@ export function QuickActions({ actions, className }: QuickActionsProps) {
           disabled={action.disabled}
           className={cn(
             'flex flex-col items-center justify-center p-4',
-            'bg-white border rounded-lg',
+            'rounded-lg border bg-white',
             'transition-all duration-200',
-            'hover:bg-gray-50 hover:border-primary',
-            'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'hover:border-primary hover:bg-gray-50',
+            'focus:ring-primary focus:outline-none focus:ring-2 focus:ring-offset-2',
+            'disabled:cursor-not-allowed disabled:opacity-50',
             !action.disabled && 'active:scale-95'
           )}
         >
-          <div className="mb-2 text-gray-600">
-            {action.icon}
-          </div>
+          <div className="mb-2 text-gray-600">{action.icon}</div>
           <span className="text-xs font-medium text-gray-900">
             {action.label}
           </span>

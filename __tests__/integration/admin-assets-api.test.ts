@@ -1,7 +1,7 @@
 /**
  * Integration tests for /api/admin/assets/* endpoints
  * Tests the asset management API that integrates with photos table
- * 
+ *
  * Validates:
  * - Asset listing and filtering
  * - Bulk operations
@@ -9,7 +9,15 @@
  * - Integration with photos table
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 
@@ -30,11 +38,11 @@ describe('/api/admin/assets - Asset Management API', () => {
         width: 600,
         height: 400,
         channels: 3,
-        background: { r: 100, g: 150, b: 200 }
-      }
+        background: { r: 100, g: 150, b: 200 },
+      },
     })
-    .jpeg({ quality: 80 })
-    .toBuffer();
+      .jpeg({ quality: 80 })
+      .toBuffer();
 
     const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
     return new File([blob], name, { type: 'image/jpeg' });
@@ -51,7 +59,7 @@ describe('/api/admin/assets - Asset Management API', () => {
         date: new Date().toISOString().split('T')[0],
         location: 'Test Location',
         status: 'draft',
-        school_name: 'Asset Test School'
+        school_name: 'Asset Test School',
       })
       .select('id')
       .single();
@@ -73,20 +81,13 @@ describe('/api/admin/assets - Asset Management API', () => {
 
       if (photos && photos.length > 0) {
         const PREVIEW_BUCKET = process.env.STORAGE_BUCKET_PREVIEW || 'photos';
-        const filePaths = photos
-          .map(p => p.preview_path)
-          .filter(Boolean);
-        
+        const filePaths = photos.map((p) => p.preview_path).filter(Boolean);
+
         if (filePaths.length > 0) {
-          await supabase.storage
-            .from(PREVIEW_BUCKET)
-            .remove(filePaths);
+          await supabase.storage.from(PREVIEW_BUCKET).remove(filePaths);
         }
 
-        await supabase
-          .from('photos')
-          .delete()
-          .eq('event_id', testEventId);
+        await supabase.from('photos').delete().eq('event_id', testEventId);
       }
 
       await supabase.from('events').delete().eq('id', testEventId);
@@ -100,10 +101,7 @@ describe('/api/admin/assets - Asset Management API', () => {
   afterEach(async () => {
     // Clean up test assets
     if (testAssetIds.length > 0) {
-      await supabase
-        .from('photos')
-        .delete()
-        .in('id', testAssetIds);
+      await supabase.from('photos').delete().in('id', testAssetIds);
     }
   });
 
@@ -123,8 +121,8 @@ describe('/api/admin/assets - Asset Management API', () => {
         pagination: expect.objectContaining({
           limit: 10,
           offset: 0,
-          hasMore: false
-        })
+          hasMore: false,
+        }),
       });
     });
 
@@ -135,13 +133,16 @@ describe('/api/admin/assets - Asset Management API', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       expect(uploadResponse.status).toBe(200);
-      
+
       const uploadData = await uploadResponse.json();
       const assetId = uploadData.results[0].id;
       testAssetIds.push(assetId);
@@ -167,7 +168,7 @@ describe('/api/admin/assets - Asset Management API', () => {
         mime_type: 'image/webp',
         processing_status: 'completed',
         approved: false,
-        created_at: expect.any(String)
+        created_at: expect.any(String),
       });
     });
 
@@ -178,17 +179,20 @@ describe('/api/admin/assets - Asset Management API', () => {
         createTestAsset('page-test-2.jpg'),
         createTestAsset('page-test-3.jpg'),
         createTestAsset('page-test-4.jpg'),
-        createTestAsset('page-test-5.jpg')
+        createTestAsset('page-test-5.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       testAssetIds.push(...uploadData.results.map((r: any) => r.id));
@@ -218,17 +222,20 @@ describe('/api/admin/assets - Asset Management API', () => {
       // Upload and approve one asset, leave another unapproved
       const files = await Promise.all([
         createTestAsset('approved-asset.jpg'),
-        createTestAsset('unapproved-asset.jpg')
+        createTestAsset('unapproved-asset.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       testAssetIds.push(...uploadData.results.map((r: any) => r.id));
@@ -272,7 +279,7 @@ describe('/api/admin/assets - Asset Management API', () => {
       const data = await response.json();
       expect(data).toMatchObject({
         success: false,
-        error: 'Invalid query parameters'
+        error: 'Invalid query parameters',
       });
     });
   });
@@ -286,7 +293,7 @@ describe('/api/admin/assets - Asset Management API', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/assets/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(200);
@@ -299,10 +306,10 @@ describe('/api/admin/assets - Asset Management API', () => {
             id: expect.any(String),
             originalFilename: 'dedicated-upload.jpg',
             previewPath: expect.stringMatching(/\.webp$/),
-            size: expect.any(Number)
-          })
+            size: expect.any(Number),
+          }),
         ]),
-        count: 1
+        count: 1,
       });
 
       testAssetIds.push(data.assets[0].id);
@@ -310,7 +317,9 @@ describe('/api/admin/assets - Asset Management API', () => {
 
     it('should validate file types for asset upload', async () => {
       const validFile = await createTestAsset('valid-asset.jpg');
-      const invalidFile = new File(['invalid'], 'invalid.txt', { type: 'text/plain' });
+      const invalidFile = new File(['invalid'], 'invalid.txt', {
+        type: 'text/plain',
+      });
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
@@ -319,7 +328,7 @@ describe('/api/admin/assets - Asset Management API', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/assets/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(200);
@@ -330,7 +339,7 @@ describe('/api/admin/assets - Asset Management API', () => {
       expect(data.errors).toHaveLength(1);
       expect(data.errors[0]).toMatchObject({
         filename: 'invalid.txt',
-        error: expect.stringContaining('not allowed')
+        error: expect.stringContaining('not allowed'),
       });
 
       testAssetIds.push(data.assets[0].id);
@@ -345,17 +354,20 @@ describe('/api/admin/assets - Asset Management API', () => {
       const files = await Promise.all([
         createTestAsset('bulk-1.jpg'),
         createTestAsset('bulk-2.jpg'),
-        createTestAsset('bulk-3.jpg')
+        createTestAsset('bulk-3.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       bulkTestAssetIds = uploadData.results.map((r: any) => r.id);
@@ -368,8 +380,8 @@ describe('/api/admin/assets - Asset Management API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'approve',
-          assetIds: bulkTestAssetIds
-        })
+          assetIds: bulkTestAssetIds,
+        }),
       });
 
       expect(response.status).toBe(200);
@@ -379,7 +391,7 @@ describe('/api/admin/assets - Asset Management API', () => {
         success: true,
         operation: 'approve',
         updated: bulkTestAssetIds.length,
-        failed: 0
+        failed: 0,
       });
 
       // Verify assets are approved
@@ -388,7 +400,7 @@ describe('/api/admin/assets - Asset Management API', () => {
         .select('approved')
         .in('id', bulkTestAssetIds);
 
-      assets?.forEach(asset => {
+      assets?.forEach((asset) => {
         expect(asset.approved).toBe(true);
       });
     });
@@ -399,8 +411,8 @@ describe('/api/admin/assets - Asset Management API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'reject',
-          assetIds: bulkTestAssetIds
-        })
+          assetIds: bulkTestAssetIds,
+        }),
       });
 
       expect(response.status).toBe(200);
@@ -415,7 +427,7 @@ describe('/api/admin/assets - Asset Management API', () => {
         .select('approved')
         .in('id', bulkTestAssetIds);
 
-      assets?.forEach(asset => {
+      assets?.forEach((asset) => {
         expect(asset.approved).toBe(false);
       });
     });
@@ -426,8 +438,8 @@ describe('/api/admin/assets - Asset Management API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'delete',
-          assetIds: bulkTestAssetIds
-        })
+          assetIds: bulkTestAssetIds,
+        }),
       });
 
       expect(response.status).toBe(200);
@@ -446,7 +458,9 @@ describe('/api/admin/assets - Asset Management API', () => {
       expect(assets).toHaveLength(0);
 
       // Remove from cleanup list since they're already deleted
-      testAssetIds = testAssetIds.filter(id => !bulkTestAssetIds.includes(id));
+      testAssetIds = testAssetIds.filter(
+        (id) => !bulkTestAssetIds.includes(id)
+      );
     });
 
     it('should handle mixed success/failure in bulk operations', async () => {
@@ -458,8 +472,8 @@ describe('/api/admin/assets - Asset Management API', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           operation: 'approve',
-          assetIds: mixedIds
-        })
+          assetIds: mixedIds,
+        }),
       });
 
       expect(response.status).toBe(200);
@@ -472,37 +486,46 @@ describe('/api/admin/assets - Asset Management API', () => {
 
     it('should validate bulk operation parameters', async () => {
       // Test invalid operation
-      const invalidOpResponse = await fetch(`${API_BASE_URL}/api/admin/assets/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          operation: 'invalid-operation',
-          assetIds: bulkTestAssetIds
-        })
-      });
+      const invalidOpResponse = await fetch(
+        `${API_BASE_URL}/api/admin/assets/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'invalid-operation',
+            assetIds: bulkTestAssetIds,
+          }),
+        }
+      );
 
       expect(invalidOpResponse.status).toBe(400);
 
       // Test missing assetIds
-      const missingIdsResponse = await fetch(`${API_BASE_URL}/api/admin/assets/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          operation: 'approve'
-        })
-      });
+      const missingIdsResponse = await fetch(
+        `${API_BASE_URL}/api/admin/assets/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'approve',
+          }),
+        }
+      );
 
       expect(missingIdsResponse.status).toBe(400);
 
       // Test empty assetIds array
-      const emptyIdsResponse = await fetch(`${API_BASE_URL}/api/admin/assets/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          operation: 'approve',
-          assetIds: []
-        })
-      });
+      const emptyIdsResponse = await fetch(
+        `${API_BASE_URL}/api/admin/assets/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'approve',
+            assetIds: [],
+          }),
+        }
+      );
 
       expect(emptyIdsResponse.status).toBe(400);
     });
@@ -516,10 +539,13 @@ describe('/api/admin/assets - Asset Management API', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const assetId = uploadData.results[0].id;
@@ -549,7 +575,7 @@ describe('/api/admin/assets - Asset Management API', () => {
         width: photoFromDB.width,
         height: photoFromDB.height,
         mime_type: photoFromDB.mime_type,
-        approved: photoFromDB.approved
+        approved: photoFromDB.approved,
       });
     });
 
@@ -560,10 +586,13 @@ describe('/api/admin/assets - Asset Management API', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const assetId = uploadData.results[0].id;
@@ -572,9 +601,9 @@ describe('/api/admin/assets - Asset Management API', () => {
       // Directly update in photos table
       await supabase
         .from('photos')
-        .update({ 
+        .update({
           approved: true,
-          processing_status: 'completed'
+          processing_status: 'completed',
         })
         .eq('id', assetId);
 
@@ -617,7 +646,7 @@ describe('/api/admin/assets - Asset Management API', () => {
       const data = await response.json();
       expect(data).toMatchObject({
         success: false,
-        error: 'Invalid query parameters'
+        error: 'Invalid query parameters',
       });
     });
 
@@ -625,7 +654,7 @@ describe('/api/admin/assets - Asset Management API', () => {
       const response = await fetch(`${API_BASE_URL}/api/admin/assets/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: 'invalid json {'
+        body: 'invalid json {',
       });
 
       expect(response.status).toBe(400);

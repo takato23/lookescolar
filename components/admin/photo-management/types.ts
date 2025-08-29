@@ -70,17 +70,17 @@ export interface PhotoManagementActions {
   clearSelection: () => void;
   deletePhotos: (photoIds: string[]) => Promise<void>;
   movePhotos: (photoIds: string[], folderId: string) => Promise<void>;
-  
+
   // Folder actions
   createFolder: (name: string, parentId?: string) => Promise<void>;
   deleteFolder: (folderId: string) => Promise<void>;
   navigateToFolder: (folderId: string | null) => void;
-  
+
   // View actions
   setViewMode: (mode: ViewMode) => void;
   setSortOrder: (sortBy: SortOption, order: SortOrder) => void;
   setSearchQuery: (query: string) => void;
-  
+
   // Upload actions
   startUpload: (files: File[]) => void;
   cancelUpload: (uploadId: string) => void;

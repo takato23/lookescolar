@@ -402,118 +402,118 @@ export default function UniversalSearch({
           <Loader2 className="text-muted-foreground absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform animate-spin" />
         )}
       </div>
-      
+
       {/* TEMP: Results displayed inline without popover */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white border rounded-md shadow-lg z-50 mt-1 p-0">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border bg-white p-0 shadow-lg">
           {/* TEMP: Simplified command interface */}
           <div className="max-h-96 overflow-y-auto">
-              {/* Quick filters */}
-              {showFilters && (
-                <>
-                  <div className="border-b p-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-muted-foreground text-xs font-medium">
-                        Filtros:
-                      </span>
+            {/* Quick filters */}
+            {showFilters && (
+              <>
+                <div className="border-b p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-muted-foreground text-xs font-medium">
+                      Filtros:
+                    </span>
 
-                      <Button
-                        variant={
-                          quickFilters.withPhotos ? 'default' : 'outline'
-                        }
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() =>
-                          setQuickFilters((prev) => ({
-                            ...prev,
-                            withPhotos: !prev.withPhotos,
-                          }))
-                        }
-                      >
-                        <Camera className="mr-1 h-3 w-3" />
-                        Con fotos
-                      </Button>
-
-                      <Button
-                        variant={quickFilters.approved ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() =>
-                          setQuickFilters((prev) => ({
-                            ...prev,
-                            approved: !prev.approved,
-                          }))
-                        }
-                      >
-                        <Zap className="mr-1 h-3 w-3" />
-                        Aprobadas
-                      </Button>
-
-                      <Button
-                        variant={quickFilters.recent ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() =>
-                          setQuickFilters((prev) => ({
-                            ...prev,
-                            recent: !prev.recent,
-                          }))
-                        }
-                      >
-                        <Clock className="mr-1 h-3 w-3" />
-                        Recientes
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* TEMP: Simplified search interface without Command components */}
-              {!query && recentSearches.length > 0 && (
-                <div className="p-3">
-                  <h4 className="text-sm font-medium mb-2">Búsquedas recientes</h4>
-                  {recentSearches.map((search, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleRecentSearchSelect(search)}
-                      className="flex items-center gap-2 p-2 hover:bg-gray-50 cursor-pointer rounded"
+                    <Button
+                      variant={quickFilters.withPhotos ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() =>
+                        setQuickFilters((prev) => ({
+                          ...prev,
+                          withPhotos: !prev.withPhotos,
+                        }))
+                      }
                     >
-                      <Clock className="text-muted-foreground h-4 w-4" />
-                      <span>{search}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      <Camera className="mr-1 h-3 w-3" />
+                      Con fotos
+                    </Button>
 
-              {/* Search results - TEMP: Simplified */}
-              {query && (
-                <div className="p-3">
-                  {loading ? (
-                    <div className="text-center">
-                      <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
-                      <p className="text-muted-foreground text-sm">Buscando...</p>
-                    </div>
-                  ) : results.length === 0 ? (
-                    <div className="text-center py-6">
-                      <Search className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-                      <p className="text-muted-foreground text-sm">
-                        No se encontraron resultados para "{query}"
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {results.slice(0, 5).map((result) => (
-                        <ResultItem key={result.id} result={result} />
-                      ))}
-                      {results.length > 5 && (
-                        <div className="text-muted-foreground text-xs text-center py-2">
-                          Y {results.length - 5} resultados más...
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    <Button
+                      variant={quickFilters.approved ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() =>
+                        setQuickFilters((prev) => ({
+                          ...prev,
+                          approved: !prev.approved,
+                        }))
+                      }
+                    >
+                      <Zap className="mr-1 h-3 w-3" />
+                      Aprobadas
+                    </Button>
+
+                    <Button
+                      variant={quickFilters.recent ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-6 text-xs"
+                      onClick={() =>
+                        setQuickFilters((prev) => ({
+                          ...prev,
+                          recent: !prev.recent,
+                        }))
+                      }
+                    >
+                      <Clock className="mr-1 h-3 w-3" />
+                      Recientes
+                    </Button>
+                  </div>
                 </div>
-              )}
+              </>
+            )}
+
+            {/* TEMP: Simplified search interface without Command components */}
+            {!query && recentSearches.length > 0 && (
+              <div className="p-3">
+                <h4 className="mb-2 text-sm font-medium">
+                  Búsquedas recientes
+                </h4>
+                {recentSearches.map((search, index) => (
+                  <div
+                    key={index}
+                    onClick={() => handleRecentSearchSelect(search)}
+                    className="flex cursor-pointer items-center gap-2 rounded p-2 hover:bg-gray-50"
+                  >
+                    <Clock className="text-muted-foreground h-4 w-4" />
+                    <span>{search}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Search results - TEMP: Simplified */}
+            {query && (
+              <div className="p-3">
+                {loading ? (
+                  <div className="text-center">
+                    <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
+                    <p className="text-muted-foreground text-sm">Buscando...</p>
+                  </div>
+                ) : results.length === 0 ? (
+                  <div className="py-6 text-center">
+                    <Search className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
+                    <p className="text-muted-foreground text-sm">
+                      No se encontraron resultados para "{query}"
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {results.slice(0, 5).map((result) => (
+                      <ResultItem key={result.id} result={result} />
+                    ))}
+                    {results.length > 5 && (
+                      <div className="text-muted-foreground py-2 text-center text-xs">
+                        Y {results.length - 5} resultados más...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {/* End of results */}
           </div>
         </div>

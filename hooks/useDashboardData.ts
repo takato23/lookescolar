@@ -216,33 +216,33 @@ export function useDashboardData(refreshInterval: number = 5 * 60 * 1000) {
     // Datos
     stats: statsQuery.data || null,
     activity: statsQuery.data?.recentActivity || [],
-    performance:
-      statsQuery.data
-        ? {
-            storage: {
-              used: statsQuery.data.storageUsed,
-              limit: statsQuery.data.storageLimit,
-              percentage:
-                statsQuery.data.storageLimit > 0
-                  ? (statsQuery.data.storageUsed / statsQuery.data.storageLimit) * 100
-                  : 0,
-            },
-            system: {
-              status: statsQuery.data.systemStatus,
-              alerts: [],
-            },
-            conversions: {
-              viewToCart: 0,
-              cartToPayment: statsQuery.data.conversionRate,
-              overall: statsQuery.data.conversionRate,
-            },
-            apiMetrics: {
-              responseTime: 0,
-              errorRate: 0,
-              throughput: 0,
-            },
-          }
-        : null,
+    performance: statsQuery.data
+      ? {
+          storage: {
+            used: statsQuery.data.storageUsed,
+            limit: statsQuery.data.storageLimit,
+            percentage:
+              statsQuery.data.storageLimit > 0
+                ? (statsQuery.data.storageUsed / statsQuery.data.storageLimit) *
+                  100
+                : 0,
+          },
+          system: {
+            status: statsQuery.data.systemStatus,
+            alerts: [],
+          },
+          conversions: {
+            viewToCart: 0,
+            cartToPayment: statsQuery.data.conversionRate,
+            overall: statsQuery.data.conversionRate,
+          },
+          apiMetrics: {
+            responseTime: 0,
+            errorRate: 0,
+            throughput: 0,
+          },
+        }
+      : null,
 
     // Estados de carga
     isLoading,

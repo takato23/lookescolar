@@ -9,9 +9,15 @@ export const SettingsSchema = z.object({
   businessAddress: z.string().nullable().optional(),
   businessWebsite: z.string().nullable().optional(),
   watermarkText: z.string(),
-  watermarkPosition: z.enum(['bottom-right','bottom-left','top-right','top-left','center']),
+  watermarkPosition: z.enum([
+    'bottom-right',
+    'bottom-left',
+    'top-right',
+    'top-left',
+    'center',
+  ]),
   watermarkOpacity: z.number(),
-  watermarkSize: z.enum(['small','medium','large']),
+  watermarkSize: z.enum(['small', 'medium', 'large']),
   uploadMaxSizeMb: z.number(),
   uploadMaxConcurrent: z.number(),
   uploadQuality: z.number(),
@@ -25,9 +31,9 @@ export const SettingsSchema = z.object({
   notifyWeeklyReport: z.boolean(),
   notifyStorageAlerts: z.boolean(),
   timezone: z.string(),
-  dateFormat: z.enum(['DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD']),
-  currency: z.enum(['ARS','USD','EUR']),
-  language: z.enum(['es','en']),
+  dateFormat: z.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+  currency: z.enum(['ARS', 'USD', 'EUR']),
+  language: z.enum(['es', 'en']),
   autoCleanupPreviews: z.boolean(),
   cleanupPreviewDays: z.number(),
 });
@@ -45,7 +51,7 @@ const CACHE_TTL_MS = 30_000; // 30 seconds
 
 export async function getAppSettings(force = false): Promise<AppSettings> {
   const now = Date.now();
-  
+
   // Return cached value if still valid
   if (!force && cache.value && now - cache.timestamp < CACHE_TTL_MS) {
     return cache.value;
@@ -91,19 +97,19 @@ export async function getAppSettings(force = false): Promise<AppSettings> {
     .select('*')
     .eq('id', 1)
     .single();
-    
+
   if (error) {
     throw new Error(`Failed to fetch app settings: ${error.message}`);
   }
   const settings = mapDbToSettings(data);
-  
+
   // Update cache
-  cache = { 
-    value: settings, 
+  cache = {
+    value: settings,
     timestamp: now,
-    etag: data.updated_at 
+    etag: data.updated_at,
   };
-  
+
   return settings;
 }
 

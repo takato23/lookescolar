@@ -67,14 +67,14 @@ const nextConfig = {
 
       // Optimize module resolution
       config.resolve.cache = true;
-      
+
       // Reduce bundle analyzing overhead in development
       config.optimization = {
         ...config.optimization,
         moduleIds: 'named',
         chunkIds: 'named',
       };
-      
+
       // Split chunks more aggressively
       config.optimization.splitChunks = {
         chunks: 'all',
@@ -122,7 +122,7 @@ const nextConfig = {
   experimental: {
     // Optimize chunk loading for heavy packages
     optimizePackageImports: [
-      'lucide-react', 
+      'lucide-react',
       '@radix-ui/react-icons',
       '@tanstack/react-query',
       '@tanstack/react-virtual',
@@ -130,7 +130,7 @@ const nextConfig = {
       'recharts',
       'date-fns',
       'clsx',
-      'class-variance-authority'
+      'class-variance-authority',
     ],
     // Improve Fast Refresh performance
     optimizeServerReact: true,

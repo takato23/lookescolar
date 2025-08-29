@@ -1,6 +1,6 @@
 /**
  * HIERARCHICAL GALLERY SERVICE - Token-based Access Control
- * 
+ *
  * Provides token-based access to folders and assets using canonical API functions
  * Supports: Event, Course, and Family scoped access
  * Features: Folder navigation, asset retrieval, permission validation, audit logging
@@ -73,22 +73,23 @@ export class HierarchicalGalleryService {
   async validateAccess(token: string): Promise<AccessValidation> {
     try {
       const validation = await accessTokenService.validateToken(token);
-      
+
       if (!validation.isValid) {
         return {
           isValid: false,
-          reason: validation.reason
+          reason: validation.reason,
         };
       }
 
       // Get full context using canonical API function
-      const { data, error } = await this.supabase
-        .rpc('api.get_token_context', { p_token: token });
+      const { data, error } = await this.supabase.rpc('api.get_token_context', {
+        p_token: token,
+      });
 
       if (error || !data || data.length === 0) {
         return {
           isValid: false,
-          reason: 'Failed to get token context'
+          reason: 'Failed to get token context',
         };
       }
 
@@ -99,23 +100,25 @@ export class HierarchicalGalleryService {
         resourceName: contextData.resource_name,
         accessLevel: contextData.access_level,
         canDownload: contextData.can_download,
-        expiresAt: contextData.expires_at ? new Date(contextData.expires_at) : undefined,
+        expiresAt: contextData.expires_at
+          ? new Date(contextData.expires_at)
+          : undefined,
         usageStats: contextData.usage_stats || {
           totalAccesses: 0,
           successfulAccesses: 0,
           failedAccesses: 0,
-          uniqueIPs: 0
-        }
+          uniqueIPs: 0,
+        },
       };
 
       return {
         isValid: true,
-        context
+        context,
       };
     } catch (error: any) {
       return {
         isValid: false,
-        reason: `Validation failed: ${error.message}`
+        reason: `Validation failed: ${error.message}`,
       };
     }
   }
@@ -125,17 +128,18 @@ export class HierarchicalGalleryService {
    */
   async getFolders(token: string): Promise<GalleryFolder[]> {
     const startTime = Date.now();
-    
+
     try {
       // Use canonical API function for folder access
-      const { data, error } = await this.supabase
-        .rpc('api.folders_for_token', { p_token: token });
+      const { data, error } = await this.supabase.rpc('api.folders_for_token', {
+        p_token: token,
+      });
 
       if (error) {
         await this.logAccess(token, 'list_folders', {
           success: false,
           responseTimeMs: Date.now() - startTime,
-          notes: error.message
+          notes: error.message,
         });
         throw new Error(`Failed to get folders: ${error.message}`);
       }
@@ -144,14 +148,14 @@ export class HierarchicalGalleryService {
         id: folder.folder_id,
         name: folder.folder_name,
         photoCount: folder.photo_count,
-        depth: folder.depth
+        depth: folder.depth,
       }));
 
       // Log successful access
       await this.logAccess(token, 'list_folders', {
         success: true,
         responseTimeMs: Date.now() - startTime,
-        notes: `Retrieved ${folders.length} folders`
+        notes: `Retrieved ${folders.length} folders`,
       });
 
       return folders;
@@ -159,7 +163,7 @@ export class HierarchicalGalleryService {
       await this.logAccess(token, 'list_folders', {
         success: false,
         responseTimeMs: Date.now() - startTime,
-        notes: error.message
+        notes: error.message,
       });
       throw error;
     }
@@ -170,13 +174,13 @@ export class HierarchicalGalleryService {
    */
   async getFolderTree(token: string): Promise<GalleryFolder[]> {
     const folders = await this.getFolders(token);
-    
+
     // Build hierarchical tree from flat list
     const folderMap = new Map<string, GalleryFolder>();
     const rootFolders: GalleryFolder[] = [];
 
     // First pass: create map and identify roots
-    folders.forEach(folder => {
+    folders.forEach((folder) => {
       folderMap.set(folder.id, { ...folder, children: [] });
       if (folder.depth === 0) {
         rootFolders.push(folderMap.get(folder.id)!);
@@ -184,7 +188,7 @@ export class HierarchicalGalleryService {
     });
 
     // Second pass: build tree structure (simplified since we have depth)
-    folders.forEach(folder => {
+    folders.forEach((folder) => {
       if (folder.depth > 0) {
         // For now, add to root level - proper parent-child would require parent_id
         // This is a limitation of the current folder structure
@@ -202,20 +206,19 @@ export class HierarchicalGalleryService {
    */
   async getAssets(token: string, folderId?: string): Promise<GalleryAsset[]> {
     const startTime = Date.now();
-    
+
     try {
       // Use canonical API function for asset access
-      const { data, error } = await this.supabase
-        .rpc('api.assets_for_token', { 
-          p_token: token,
-          p_folder_id: folderId || null
-        });
+      const { data, error } = await this.supabase.rpc('api.assets_for_token', {
+        p_token: token,
+        p_folder_id: folderId || null,
+      });
 
       if (error) {
         await this.logAccess(token, 'list_assets', {
           success: false,
           responseTimeMs: Date.now() - startTime,
-          notes: error.message
+          notes: error.message,
         });
         throw new Error(`Failed to get assets: ${error.message}`);
       }
@@ -232,14 +235,14 @@ export class HierarchicalGalleryService {
         originalPath: asset.original_path,
         fileSize: asset.file_size,
         createdAt: new Date(asset.created_at),
-        canDownload
+        canDownload,
       }));
 
       // Log successful access
       await this.logAccess(token, 'list_assets', {
         success: true,
         responseTimeMs: Date.now() - startTime,
-        notes: `Retrieved ${assets.length} assets${folderId ? ` from folder ${folderId}` : ''}`
+        notes: `Retrieved ${assets.length} assets${folderId ? ` from folder ${folderId}` : ''}`,
       });
 
       return assets;
@@ -247,7 +250,7 @@ export class HierarchicalGalleryService {
       await this.logAccess(token, 'list_assets', {
         success: false,
         responseTimeMs: Date.now() - startTime,
-        notes: error.message
+        notes: error.message,
       });
       throw error;
     }
@@ -258,20 +261,19 @@ export class HierarchicalGalleryService {
    */
   async canAccessAsset(token: string, assetId: string): Promise<boolean> {
     const startTime = Date.now();
-    
+
     try {
-      const { data, error } = await this.supabase
-        .rpc('api.can_access_asset', {
-          p_token: token,
-          p_asset_id: assetId
-        });
+      const { data, error } = await this.supabase.rpc('api.can_access_asset', {
+        p_token: token,
+        p_asset_id: assetId,
+      });
 
       const canAccess = data && !error;
 
       await this.logAccess(token, 'view', {
         success: canAccess,
         responseTimeMs: Date.now() - startTime,
-        notes: `Asset access check: ${assetId}`
+        notes: `Asset access check: ${assetId}`,
       });
 
       return canAccess;
@@ -279,7 +281,7 @@ export class HierarchicalGalleryService {
       await this.logAccess(token, 'view', {
         success: false,
         responseTimeMs: Date.now() - startTime,
-        notes: `Asset access error: ${error}`
+        notes: `Asset access error: ${error}`,
       });
       return false;
     }
@@ -290,7 +292,7 @@ export class HierarchicalGalleryService {
    */
   async getDownloadUrl(token: string, assetId: string): Promise<string | null> {
     const startTime = Date.now();
-    
+
     try {
       // First check if token allows downloads and can access asset
       const validation = await this.validateAccess(token);
@@ -298,7 +300,7 @@ export class HierarchicalGalleryService {
         await this.logAccess(token, 'download', {
           success: false,
           responseTimeMs: Date.now() - startTime,
-          notes: 'Download not allowed for this token'
+          notes: 'Download not allowed for this token',
         });
         return null;
       }
@@ -308,7 +310,7 @@ export class HierarchicalGalleryService {
         await this.logAccess(token, 'download', {
           success: false,
           responseTimeMs: Date.now() - startTime,
-          notes: 'Asset not accessible'
+          notes: 'Asset not accessible',
         });
         return null;
       }
@@ -324,7 +326,7 @@ export class HierarchicalGalleryService {
         await this.logAccess(token, 'download', {
           success: false,
           responseTimeMs: Date.now() - startTime,
-          notes: 'Asset not found'
+          notes: 'Asset not found',
         });
         return null;
       }
@@ -338,7 +340,7 @@ export class HierarchicalGalleryService {
         await this.logAccess(token, 'download', {
           success: false,
           responseTimeMs: Date.now() - startTime,
-          notes: 'Failed to generate download URL'
+          notes: 'Failed to generate download URL',
         });
         return null;
       }
@@ -346,7 +348,7 @@ export class HierarchicalGalleryService {
       await this.logAccess(token, 'download', {
         success: true,
         responseTimeMs: Date.now() - startTime,
-        notes: `Download URL generated for asset ${assetId}`
+        notes: `Download URL generated for asset ${assetId}`,
       });
 
       return signedData.signedUrl;
@@ -354,7 +356,7 @@ export class HierarchicalGalleryService {
       await this.logAccess(token, 'download', {
         success: false,
         responseTimeMs: Date.now() - startTime,
-        notes: error.message
+        notes: error.message,
       });
       return null;
     }
@@ -401,15 +403,15 @@ export class HierarchicalGalleryService {
    * Get paginated assets for infinite scroll
    */
   async getAssetsPaginated(
-    token: string, 
-    folderId?: string, 
+    token: string,
+    folderId?: string,
     limit: number = 20,
     offset: number = 0
   ): Promise<{ assets: GalleryAsset[]; hasMore: boolean; total: number }> {
     try {
       // Get all assets first (API function doesn't support pagination yet)
       const allAssets = await this.getAssets(token, folderId);
-      
+
       // Apply pagination in memory
       const paginatedAssets = allAssets.slice(offset, offset + limit);
       const hasMore = offset + limit < allAssets.length;
@@ -417,13 +419,13 @@ export class HierarchicalGalleryService {
       return {
         assets: paginatedAssets,
         hasMore,
-        total: allAssets.length
+        total: allAssets.length,
       };
     } catch (error) {
       return {
         assets: [],
         hasMore: false,
-        total: 0
+        total: 0,
       };
     }
   }
@@ -434,10 +436,10 @@ export class HierarchicalGalleryService {
   async searchAssets(token: string, query: string): Promise<GalleryAsset[]> {
     try {
       const allAssets = await this.getAssets(token);
-      
+
       // Filter by filename (case-insensitive)
       const searchQuery = query.toLowerCase();
-      return allAssets.filter(asset => 
+      return allAssets.filter((asset) =>
         asset.filename.toLowerCase().includes(searchQuery)
       );
     } catch (error) {
@@ -470,24 +472,26 @@ export class HierarchicalGalleryService {
     try {
       const [folders, assets] = await Promise.all([
         this.getFolders(token),
-        this.getAssets(token)
+        this.getAssets(token),
       ]);
 
       const totalSize = assets.reduce((sum, asset) => sum + asset.fileSize, 0);
-      const dates = assets.map(asset => asset.createdAt).sort((a, b) => a.getTime() - b.getTime());
+      const dates = assets
+        .map((asset) => asset.createdAt)
+        .sort((a, b) => a.getTime() - b.getTime());
 
       return {
         totalFolders: folders.length,
         totalAssets: assets.length,
         totalSize,
         oldestAsset: dates.length > 0 ? dates[0] : undefined,
-        newestAsset: dates.length > 0 ? dates[dates.length - 1] : undefined
+        newestAsset: dates.length > 0 ? dates[dates.length - 1] : undefined,
       };
     } catch (error) {
       return {
         totalFolders: 0,
         totalAssets: 0,
-        totalSize: 0
+        totalSize: 0,
       };
     }
   }

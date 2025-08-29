@@ -5,10 +5,10 @@ import { PRODUCT_CATALOG, UnifiedOrder } from '@/lib/types/unified-store';
 
 /**
  * MercadoPago Integration for Physical Products
- * 
- * Purpose: Process payments for physical products (folders and photos) 
+ *
+ * Purpose: Process payments for physical products (folders and photos)
  * with shipping information using MercadoPago Developer API
- * 
+ *
  * Required inputs:
  * - MercadoPago Public Key and Access Token
  * - Product details with SKU, title, unit price, quantity
@@ -30,16 +30,20 @@ const CreatePreferenceSchema = z.object({
       individual: z.array(z.string()),
       group: z.array(z.string()),
     }),
-    additionalCopies: z.array(z.object({
-      id: z.string(),
-      productId: z.string(),
-      quantity: z.number(),
-      unitPrice: z.number(),
-      totalPrice: z.number(),
-      metadata: z.object({
-        size: z.string().optional(),
-      }).optional(),
-    })),
+    additionalCopies: z.array(
+      z.object({
+        id: z.string(),
+        productId: z.string(),
+        quantity: z.number(),
+        unitPrice: z.number(),
+        totalPrice: z.number(),
+        metadata: z
+          .object({
+            size: z.string().optional(),
+          })
+          .optional(),
+      })
+    ),
     contactInfo: z.object({
       name: z.string(),
       email: z.string().email(),
@@ -159,7 +163,9 @@ export async function POST(request: NextRequest) {
 
     // Additional copies items
     order.additionalCopies.forEach((copy) => {
-      const copyProduct = PRODUCT_CATALOG.additionalCopies.find(c => c.id === copy.productId);
+      const copyProduct = PRODUCT_CATALOG.additionalCopies.find(
+        (c) => c.id === copy.productId
+      );
       if (copyProduct) {
         items.push({
           id: copy.productId,
@@ -205,11 +211,16 @@ export async function POST(request: NextRequest) {
 
     // Parse address
     const addressParts = order.contactInfo.address.street.split(' ');
-    const streetNumber = addressParts.find(part => /^\d+/.test(part)) || '0';
-    const streetName = addressParts.filter(part => !/^\d+/.test(part)).join(' ') || order.contactInfo.address.street;
+    const streetNumber = addressParts.find((part) => /^\d+/.test(part)) || '0';
+    const streetName =
+      addressParts.filter((part) => !/^\d+/.test(part)).join(' ') ||
+      order.contactInfo.address.street;
 
     // Get base URL for callbacks
-    const baseUrl = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl =
+      request.headers.get('origin') ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:3000';
 
     // Build MercadoPago preference
     const preference: MercadoPagoPreference = {
@@ -218,12 +229,14 @@ export async function POST(request: NextRequest) {
         name: firstName,
         surname: lastName,
         email: order.contactInfo.email,
-        ...(order.contactInfo.phone && phoneAreaCode && phoneNumber && {
-          phone: {
-            area_code: phoneAreaCode,
-            number: phoneNumber,
-          },
-        }),
+        ...(order.contactInfo.phone &&
+          phoneAreaCode &&
+          phoneNumber && {
+            phone: {
+              area_code: phoneAreaCode,
+              number: phoneNumber,
+            },
+          }),
         address: {
           street_name: streetName,
           street_number: streetNumber,
@@ -270,14 +283,17 @@ export async function POST(request: NextRequest) {
     };
 
     // Create preference in MercadoPago
-    const mpResponse = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(preference),
-    });
+    const mpResponse = await fetch(
+      'https://api.mercadopago.com/checkout/preferences',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preference),
+      }
+    );
 
     if (!mpResponse.ok) {
       const mpError = await mpResponse.text();
@@ -292,22 +308,20 @@ export async function POST(request: NextRequest) {
 
     // Store order in database
     const supabase = await createServerSupabaseServiceClient();
-    
-    const { error: orderError } = await supabase
-      .from('unified_orders')
-      .insert({
-        id: order.id,
-        token: order.token,
-        base_package: order.basePackage,
-        selected_photos: order.selectedPhotos,
-        additional_copies: order.additionalCopies,
-        contact_info: order.contactInfo,
-        total_price: order.totalPrice,
-        status: 'pending_payment',
-        mercadopago_preference_id: mpResult.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+
+    const { error: orderError } = await supabase.from('unified_orders').insert({
+      id: order.id,
+      token: order.token,
+      base_package: order.basePackage,
+      selected_photos: order.selectedPhotos,
+      additional_copies: order.additionalCopies,
+      contact_info: order.contactInfo,
+      total_price: order.totalPrice,
+      status: 'pending_payment',
+      mercadopago_preference_id: mpResult.id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
 
     if (orderError) {
       console.error('Error storing order:', orderError);
@@ -322,10 +336,9 @@ export async function POST(request: NextRequest) {
       public_key: publicKey,
       order_id: order.id,
     });
-
   } catch (error) {
     console.error('Create preference error:', error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },

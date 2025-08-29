@@ -6,23 +6,27 @@
 import { describe, it, expect } from 'vitest';
 
 describe('Preview Loading Fix', () => {
-
   describe('getPreviewUrl function', () => {
     // Import the function from the component by testing it indirectly
     const getPreviewUrl = (previewPath: string | null): string | null => {
       if (!previewPath) return null;
-      
+
       // If it's already a full URL, return as-is
-      if (previewPath.startsWith('http') || previewPath.startsWith('/admin/previews/')) {
+      if (
+        previewPath.startsWith('http') ||
+        previewPath.startsWith('/admin/previews/')
+      ) {
         return previewPath;
       }
-      
+
       // Extract filename from path
-      const filename = previewPath.includes('/') ? previewPath.split('/').pop() : previewPath;
+      const filename = previewPath.includes('/')
+        ? previewPath.split('/').pop()
+        : previewPath;
       if (!filename || !filename.endsWith('_preview.webp')) {
         return null;
       }
-      
+
       // Return proxy URL
       return `/admin/previews/${filename}`;
     };
@@ -73,21 +77,21 @@ describe('Preview Loading Fix', () => {
       const validFilenames = [
         'photo_preview.webp',
         'my-photo_preview.webp',
-        'test123_preview.webp'
+        'test123_preview.webp',
       ];
 
       const invalidFilenames = [
         'photo.jpg',
         'photo_preview.png',
         'photo_preview',
-        'preview.webp'
+        'preview.webp',
       ];
 
-      validFilenames.forEach(filename => {
+      validFilenames.forEach((filename) => {
         expect(filename.endsWith('_preview.webp')).toBe(true);
       });
 
-      invalidFilenames.forEach(filename => {
+      invalidFilenames.forEach((filename) => {
         expect(filename.endsWith('_preview.webp')).toBe(false);
       });
     });

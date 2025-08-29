@@ -171,7 +171,11 @@ class Logger {
 
     // En desarrollo o si pino no está disponible, usar console.log
     if (!this.pino || process.env.NODE_ENV === 'development') {
-      console.log(`[${level.toUpperCase()}]`, event, this.maskSensitiveData(logEntry));
+      console.log(
+        `[${level.toUpperCase()}]`,
+        event,
+        this.maskSensitiveData(logEntry)
+      );
       return;
     }
 
@@ -180,11 +184,19 @@ class Logger {
       if (typeof this.pino[level] === 'function') {
         this.pino[level](logEntry);
       } else {
-        console.log(`[${level.toUpperCase()}]`, event, this.maskSensitiveData(logEntry));
+        console.log(
+          `[${level.toUpperCase()}]`,
+          event,
+          this.maskSensitiveData(logEntry)
+        );
       }
     } catch (error) {
       // Fallback a console.log si pino falla
-      console.log(`[${level.toUpperCase()}]`, event, this.maskSensitiveData(logEntry));
+      console.log(
+        `[${level.toUpperCase()}]`,
+        event,
+        this.maskSensitiveData(logEntry)
+      );
     }
   }
 

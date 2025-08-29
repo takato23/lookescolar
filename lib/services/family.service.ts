@@ -121,7 +121,8 @@ export class FamilyService {
       // ENHANCED: First try folder share tokens (new system)
       const { data: folderData, error: folderError } = await this.supabase
         .from('folders')
-        .select(`
+        .select(
+          `
           id,
           name,
           event_id,
@@ -130,7 +131,8 @@ export class FamilyService {
             name,
             date
           )
-        `)
+        `
+        )
         .eq('share_token', token)
         .eq('is_published', true)
         .single();
@@ -147,7 +149,9 @@ export class FamilyService {
           parent_name: undefined,
           parent_email: undefined,
           token,
-          token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+          token_expires_at: new Date(
+            Date.now() + 365 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 1 year from now
           created_at: new Date().toISOString(),
           event: folderData.events
             ? {

@@ -10,7 +10,10 @@ import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { GalleryThemeService, EventTheme } from '@/lib/services/gallery-theme.service';
+import {
+  GalleryThemeService,
+  EventTheme,
+} from '@/lib/services/gallery-theme.service';
 
 // Validation schema
 const CheckoutSchema = z.object({
@@ -52,7 +55,7 @@ export function CheckoutModal({
   // Aplicar CSS variables del tema
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const theme = GalleryThemeService.getTheme(eventTheme);
     const cssVars = GalleryThemeService.generateCSSVars(theme);
     const root = document.documentElement;
@@ -196,7 +199,9 @@ export function CheckoutModal({
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className={`max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl ${themeClass}`}>
+        <div
+          className={`max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl ${themeClass}`}
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b p-6">
             <h2 className="text-xl font-semibold">Finalizar Compra</h2>
@@ -314,7 +319,7 @@ export function CheckoutModal({
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 theme-button"
+                className="theme-button flex-1"
                 onClick={onClose}
                 disabled={isLoading}
               >
@@ -322,7 +327,7 @@ export function CheckoutModal({
               </Button>
               <Button
                 type="submit"
-                className="flex-1 theme-button"
+                className="theme-button flex-1"
                 disabled={isLoading || items.length === 0}
               >
                 {isLoading ? (

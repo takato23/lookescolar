@@ -1,6 +1,6 @@
 /**
  * SECURITY PENETRATION TESTING - Admin Publish System
- * 
+ *
  * Comprehensive security validation:
  * - Unauthorized access prevention
  * - Rate limiting validation
@@ -11,7 +11,12 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { setupE2EDatabase, cleanupE2EDatabase, createTestEvent, createTestCodes } from '../test-utils';
+import {
+  setupE2EDatabase,
+  cleanupE2EDatabase,
+  createTestEvent,
+  createTestCodes,
+} from '../test-utils';
 
 // Security test configurations
 const SECURITY_CONFIG = {
@@ -58,7 +63,9 @@ test.describe('Admin Publish Security - Authentication & Authorization', () => {
     await cleanupE2EDatabase();
   });
 
-  test('prevents unauthorized access to all publish endpoints', async ({ page }) => {
+  test('prevents unauthorized access to all publish endpoints', async ({
+    page,
+  }) => {
     // Test without authentication
     const endpoints = [
       '/api/admin/publish',
@@ -71,23 +78,23 @@ test.describe('Admin Publish Security - Authentication & Authorization', () => {
     for (const endpoint of endpoints) {
       const response = await page.request.get(endpoint);
       expect(response.status()).toBe(401);
-      
+
       const responsePost = await page.request.post(endpoint, {
-        data: { codeId: 'test-id' }
+        data: { codeId: 'test-id' },
       });
       expect(responsePost.status()).toBe(401);
     }
 
     // Test with invalid token
     const invalidTokenHeaders = {
-      'Authorization': 'Bearer invalid-token-here',
-      'Content-Type': 'application/json'
+      Authorization: 'Bearer invalid-token-here',
+      'Content-Type': 'application/json',
     };
 
     for (const endpoint of endpoints) {
       const response = await page.request.post(endpoint, {
         headers: invalidTokenHeaders,
-        data: { codeId: 'test-id' }
+        data: { codeId: 'test-id' },
       });
       expect(response.status()).toBe(401);
     }
@@ -101,25 +108,28 @@ test.describe('Admin Publish Security - Authentication & Authorization', () => {
   test('validates admin role requirements', async ({ page }) => {
     // Create a non-admin user session
     await page.goto('/admin/login');
-    
+
     // Mock a non-admin user login
     await page.evaluate(() => {
-      localStorage.setItem('user-session', JSON.stringify({
-        user: { id: 'user-123', role: 'user' },
-        token: 'mock-user-token'
-      }));
+      localStorage.setItem(
+        'user-session',
+        JSON.stringify({
+          user: { id: 'user-123', role: 'user' },
+          token: 'mock-user-token',
+        })
+      );
     });
 
     // Try to access admin publish
     await page.goto('/admin/publish');
-    
+
     // Should be denied access
     await expect(page.locator('[data-testid="access-denied"]')).toBeVisible();
-    
+
     // API calls should also be denied
     const response = await page.request.post('/api/admin/publish', {
       data: { codeId: 'test-id' },
-      headers: { 'Authorization': 'Bearer mock-user-token' }
+      headers: { Authorization: 'Bearer mock-user-token' },
     });
     expect(response.status()).toBe(403);
   });
@@ -138,7 +148,7 @@ test.describe('Admin Publish Security - Authentication & Authorization', () => {
     });
 
     await page.goto('/admin/publish');
-    
+
     // Should redirect to login
     await page.waitForURL('/admin/login');
     expect(page.url()).toContain('/admin/login');
@@ -164,8 +174,8 @@ test.describe('Rate Limiting & DDoS Protection', () => {
     );
 
     const responses = await Promise.all(requests);
-    
-    responses.forEach(response => {
+
+    responses.forEach((response) => {
       if (response.status() === 200) {
         successCount++;
       } else if (response.status() === 429) {
@@ -174,7 +184,9 @@ test.describe('Rate Limiting & DDoS Protection', () => {
     });
 
     expect(rateLimitedCount).toBeGreaterThan(0);
-    expect(successCount).toBeLessThanOrEqual(SECURITY_CONFIG.RATE_LIMIT_THRESHOLD);
+    expect(successCount).toBeLessThanOrEqual(
+      SECURITY_CONFIG.RATE_LIMIT_THRESHOLD
+    );
 
     // Wait for rate limit reset (assuming 1-minute window)
     await page.waitForTimeout(61000);
@@ -188,7 +200,7 @@ test.describe('Rate Limiting & DDoS Protection', () => {
     // Create two different browser contexts to simulate different users
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
-    
+
     const page1 = await context1.newPage();
     const page2 = await context2.newPage();
 
@@ -227,30 +239,30 @@ test.describe('Input Validation & SQL Injection Protection', () => {
 
     // Test SQL injection on each endpoint
     const sqlPayloads = SECURITY_CONFIG.SQL_INJECTION_PAYLOADS;
-    
+
     for (const payload of sqlPayloads) {
       // Test codeId parameter
       const response = await page.request.post('/api/admin/publish', {
-        data: { codeId: payload }
+        data: { codeId: payload },
       });
-      
+
       // Should return validation error, not 500 (which might indicate SQL error)
       expect([400, 422]).toContain(response.status());
-      
+
       const responseBody = await response.json();
       expect(responseBody.error).toMatch(/inválido|validation|invalid/i);
     }
 
     // Test search input SQL injection
     await page.goto('/admin/publish');
-    
+
     for (const payload of sqlPayloads) {
       await page.fill('[placeholder*="Buscar código"]', payload);
       await page.waitForTimeout(500);
-      
+
       // Should not crash or show SQL errors
       await expect(page.locator('[data-testid="sql-error"]')).not.toBeVisible();
-      
+
       // Clear search
       await page.fill('[placeholder*="Buscar código"]', '');
     }
@@ -269,11 +281,11 @@ test.describe('Input Validation & SQL Injection Protection', () => {
 
     for (const invalidUUID of invalidUUIDs) {
       const response = await page.request.post('/api/admin/publish', {
-        data: { codeId: invalidUUID }
+        data: { codeId: invalidUUID },
       });
-      
+
       expect(response.status()).toBe(400);
-      
+
       const responseBody = await response.json();
       expect(responseBody.error).toMatch(/inválido|invalid|uuid/i);
     }
@@ -301,10 +313,12 @@ test.describe('Input Validation & SQL Injection Protection', () => {
     for (const maliciousInput of maliciousInputs) {
       await page.fill('[placeholder*="Buscar código"]', maliciousInput);
       await page.waitForTimeout(300);
-      
+
       // Check that input is either sanitized or rejected
-      const searchValue = await page.inputValue('[placeholder*="Buscar código"]');
-      
+      const searchValue = await page.inputValue(
+        '[placeholder*="Buscar código"]'
+      );
+
       // Input should be sanitized (no script tags) or empty
       expect(searchValue).not.toContain('<script>');
       expect(searchValue).not.toContain('javascript:');
@@ -327,21 +341,23 @@ test.describe('XSS Protection & Content Security', () => {
 
     // Check that XSS payloads in code values are escaped
     const xssPayloads = SECURITY_CONFIG.XSS_PAYLOADS;
-    
+
     for (const payload of xssPayloads) {
       // Look for elements that might contain the payload
-      const elements = page.locator(`[data-testid="code-value"]:has-text("${payload.replace(/[<>]/g, '')}")`);
+      const elements = page.locator(
+        `[data-testid="code-value"]:has-text("${payload.replace(/[<>]/g, '')}")`
+      );
       const count = await elements.count();
-      
+
       if (count > 0) {
         // Verify the payload is properly escaped
         const element = elements.first();
         const innerHTML = await element.innerHTML();
-        
+
         expect(innerHTML).not.toContain('<script>');
         expect(innerHTML).not.toContain('javascript:');
         expect(innerHTML).not.toContain('onerror');
-        
+
         // Should contain escaped versions
         if (payload.includes('<script>')) {
           expect(innerHTML).toContain('&lt;script&gt;');
@@ -350,7 +366,7 @@ test.describe('XSS Protection & Content Security', () => {
     }
 
     // Test that no alert dialogs are triggered
-    page.on('dialog', dialog => {
+    page.on('dialog', (dialog) => {
       throw new Error(`Unexpected dialog: ${dialog.message()}`);
     });
 
@@ -364,7 +380,7 @@ test.describe('XSS Protection & Content Security', () => {
     // Check CSP headers
     const response = await page.request.get('/admin/publish');
     const cspHeader = response.headers()['content-security-policy'];
-    
+
     if (cspHeader) {
       expect(cspHeader).toContain("script-src 'self'");
       expect(cspHeader).toContain("object-src 'none'");
@@ -403,28 +419,28 @@ test.describe('CSRF Protection', () => {
 
     // Test request without CSRF token
     const responseNoCsrf = await page.request.post('/api/admin/publish', {
-      data: { codeId: 'test-uuid-here' }
+      data: { codeId: 'test-uuid-here' },
       // Missing CSRF token header
     });
-    
+
     // Should be rejected
     expect(responseNoCsrf.status()).toBe(403);
 
     // Test request with invalid CSRF token
     const responseInvalidCsrf = await page.request.post('/api/admin/publish', {
       headers: { 'X-CSRF-Token': 'invalid-token' },
-      data: { codeId: 'test-uuid-here' }
+      data: { codeId: 'test-uuid-here' },
     });
-    
+
     expect(responseInvalidCsrf.status()).toBe(403);
 
     // Test valid request with CSRF token
     if (csrfToken) {
       const responseValidCsrf = await page.request.post('/api/admin/publish', {
         headers: { 'X-CSRF-Token': csrfToken },
-        data: { codeId: '550e8400-e29b-41d4-a716-446655440000' }
+        data: { codeId: '550e8400-e29b-41d4-a716-446655440000' },
       });
-      
+
       // Should not be rejected due to CSRF (might fail for other reasons like non-existent code)
       expect(responseValidCsrf.status()).not.toBe(403);
     }
@@ -447,7 +463,7 @@ test.describe('CSRF Protection', () => {
 
     // Perform a sensitive operation (publish)
     const firstCard = page.locator('[data-testid="folder-card"]').first();
-    if (await firstCard.count() > 0) {
+    if ((await firstCard.count()) > 0) {
       await firstCard.locator('[data-testid="publish-button"]').click();
       await page.waitForTimeout(1000);
     }
@@ -469,7 +485,9 @@ test.describe('CSRF Protection', () => {
 });
 
 test.describe('Data Exposure & Information Leakage', () => {
-  test('prevents sensitive data exposure in error messages', async ({ page }) => {
+  test('prevents sensitive data exposure in error messages', async ({
+    page,
+  }) => {
     // Test various error scenarios
     const sensitivePatterns = [
       /password/i,
@@ -491,14 +509,14 @@ test.describe('Data Exposure & Information Leakage', () => {
 
     for (const request of malformedRequests) {
       const response = await page.request.post('/api/admin/publish', {
-        data: request
+        data: request,
       });
 
       const responseBody = await response.json();
       const errorMessage = responseBody.error || '';
 
       // Check that no sensitive patterns are exposed
-      sensitivePatterns.forEach(pattern => {
+      sensitivePatterns.forEach((pattern) => {
         expect(errorMessage).not.toMatch(pattern);
       });
     }
@@ -506,17 +524,17 @@ test.describe('Data Exposure & Information Leakage', () => {
 
   test('validates proper error response format', async ({ page }) => {
     const response = await page.request.post('/api/admin/publish', {
-      data: { codeId: 'invalid-uuid' }
+      data: { codeId: 'invalid-uuid' },
     });
 
     expect(response.status()).toBe(400);
-    
+
     const responseBody = await response.json();
-    
+
     // Should have proper error structure
     expect(responseBody).toHaveProperty('error');
     expect(typeof responseBody.error).toBe('string');
-    
+
     // Should not expose internal details
     expect(responseBody).not.toHaveProperty('stack');
     expect(responseBody).not.toHaveProperty('sql');
@@ -533,12 +551,12 @@ test.describe('Data Exposure & Information Leakage', () => {
 
     for (const payload of traversalPayloads) {
       const response = await page.request.post('/api/admin/publish', {
-        data: { codeId: payload }
+        data: { codeId: payload },
       });
-      
+
       // Should return validation error
       expect(response.status()).toBe(400);
-      
+
       const responseBody = await response.json();
       expect(responseBody.error).toMatch(/inválido|invalid/i);
     }
@@ -559,12 +577,15 @@ test.describe('Session Security & Token Management', () => {
 
     // Publish a code to get a token
     const firstCard = page.locator('[data-testid="folder-card"]').first();
-    if (await firstCard.count() > 0) {
+    if ((await firstCard.count()) > 0) {
       await firstCard.locator('[data-testid="publish-button"]').click();
       await page.waitForTimeout(1000);
 
       // Get the token
-      const familyUrl = await page.locator('[data-testid="family-url"]').first().textContent();
+      const familyUrl = await page
+        .locator('[data-testid="family-url"]')
+        .first()
+        .textContent();
       expect(familyUrl).toMatch(/\/f\/[a-f0-9]{32}\/simple-page$/);
 
       const originalToken = familyUrl?.match(/\/f\/([a-f0-9]{32})\//)?.[1];
@@ -574,7 +595,10 @@ test.describe('Session Security & Token Management', () => {
       await page.waitForTimeout(1000);
 
       // Get new token
-      const newFamilyUrl = await page.locator('[data-testid="family-url"]').first().textContent();
+      const newFamilyUrl = await page
+        .locator('[data-testid="family-url"]')
+        .first()
+        .textContent();
       const newToken = newFamilyUrl?.match(/\/f\/([a-f0-9]{32})\//)?.[1];
 
       // Verify tokens are different
@@ -583,13 +607,17 @@ test.describe('Session Security & Token Management', () => {
 
       // Verify old token is invalidated
       if (originalToken) {
-        const oldTokenResponse = await page.request.get(`/f/${originalToken}/simple-page`);
+        const oldTokenResponse = await page.request.get(
+          `/f/${originalToken}/simple-page`
+        );
         expect(oldTokenResponse.status()).toBe(404);
       }
 
       // Verify new token works
       if (newToken) {
-        const newTokenResponse = await page.request.get(`/f/${newToken}/simple-page`);
+        const newTokenResponse = await page.request.get(
+          `/f/${newToken}/simple-page`
+        );
         expect(newTokenResponse.status()).toBe(200);
       }
     }
@@ -598,13 +626,13 @@ test.describe('Session Security & Token Management', () => {
   test('prevents token enumeration attacks', async ({ page }) => {
     // Generate multiple test tokens to check for patterns
     const tokens: string[] = [];
-    
+
     for (let i = 0; i < 5; i++) {
       const response = await page.request.post('/api/admin/publish', {
-        headers: { 'Authorization': 'Bearer valid-admin-token' },
-        data: { codeId: `test-code-${i}` }
+        headers: { Authorization: 'Bearer valid-admin-token' },
+        data: { codeId: `test-code-${i}` },
       });
-      
+
       if (response.status() === 200) {
         const responseBody = await response.json();
         if (responseBody.token) {
@@ -617,18 +645,18 @@ test.describe('Session Security & Token Management', () => {
     if (tokens.length > 1) {
       // Check that tokens don't have predictable patterns
       for (let i = 1; i < tokens.length; i++) {
-        expect(tokens[i]).not.toBe(tokens[i-1]);
-        
+        expect(tokens[i]).not.toBe(tokens[i - 1]);
+
         // Check Hamming distance (should be roughly 50% different)
         let differences = 0;
         const minLength = Math.min(tokens[0].length, tokens[i].length);
-        
+
         for (let j = 0; j < minLength; j++) {
           if (tokens[0][j] !== tokens[i][j]) {
             differences++;
           }
         }
-        
+
         const similarity = differences / minLength;
         expect(similarity).toBeGreaterThan(0.3); // At least 30% different
         expect(similarity).toBeLessThan(0.7); // At most 70% different (random should be ~50%)

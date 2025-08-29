@@ -14,18 +14,18 @@ async function testPreviewRoute() {
 
   for (const url of testUrls) {
     console.log(`Testing: ${url}`);
-    
+
     try {
       const response = await fetch(url, {
         headers: {
-          'Authorization': 'Bearer dev_demo_token_123',
-          'Accept': 'image/webp,image/*,*/*'
-        }
+          Authorization: 'Bearer dev_demo_token_123',
+          Accept: 'image/webp,image/*,*/*',
+        },
       });
 
       console.log(`  Status: ${response.status} ${response.statusText}`);
       console.log(`  Content-Type: ${response.headers.get('content-type')}`);
-      
+
       if (response.status === 200) {
         const size = response.headers.get('content-length');
         console.log(`  Size: ${size || 'unknown'} bytes`);
@@ -39,40 +39,44 @@ async function testPreviewRoute() {
         console.log(`  Body: ${body}`);
         console.log('  ❌ Unexpected response');
       }
-      
     } catch (error) {
       console.log(`  ❌ Error: ${(error as Error).message}`);
     }
-    
+
     console.log('');
   }
 
   // Test with actual photo from database
   console.log('🔍 Testing with real photo from database...\n');
-  
+
   try {
-    const photosResponse = await fetch('http://localhost:3000/api/admin/photos?limit=1', {
-      headers: {
-        'Authorization': 'Bearer dev_demo_token_123'
+    const photosResponse = await fetch(
+      'http://localhost:3000/api/admin/photos?limit=1',
+      {
+        headers: {
+          Authorization: 'Bearer dev_demo_token_123',
+        },
       }
-    });
+    );
 
     if (photosResponse.ok) {
       const data = await photosResponse.json();
       const photo = data.photos[0];
-      
+
       if (photo) {
         console.log(`Found photo: ${photo.original_filename}`);
         console.log(`Storage path: ${photo.storage_path}`);
         console.log(`Preview path: ${photo.preview_path}`);
         console.log(`Preview URL: ${photo.preview_url}`);
-        
+
         // Test the actual preview URL
         if (photo.preview_url) {
           console.log('\n🧪 Testing actual preview URL from API...');
           const previewResponse = await fetch(photo.preview_url);
-          console.log(`Status: ${previewResponse.status} ${previewResponse.statusText}`);
-          
+          console.log(
+            `Status: ${previewResponse.status} ${previewResponse.statusText}`
+          );
+
           if (previewResponse.ok) {
             console.log('✅ Direct Supabase URL works');
           } else {

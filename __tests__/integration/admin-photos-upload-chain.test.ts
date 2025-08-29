@@ -1,12 +1,20 @@
 /**
  * Integration tests for the complete admin photos upload chain
  * Tests: Upload → Preview Generation → Display → Asset Management
- * 
+ *
  * This test suite validates the entire workflow from upload to display,
  * ensuring the fixed upload functionality works end-to-end.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
 
@@ -33,11 +41,15 @@ describe('Admin Photos Upload Chain Integration', () => {
         width,
         height,
         channels: 3,
-        background: { r: Math.floor(Math.random() * 255), g: Math.floor(Math.random() * 255), b: 0 }
-      }
+        background: {
+          r: Math.floor(Math.random() * 255),
+          g: Math.floor(Math.random() * 255),
+          b: 0,
+        },
+      },
     })
-    .jpeg({ quality: 80 })
-    .toBuffer();
+      .jpeg({ quality: 80 })
+      .toBuffer();
 
     const blob = new Blob([imageBuffer], { type: `image/${format}` });
     return new File([blob], name, { type: `image/${format}` });
@@ -55,7 +67,7 @@ describe('Admin Photos Upload Chain Integration', () => {
         date: new Date().toISOString().split('T')[0],
         location: 'Test Location',
         status: 'draft',
-        school_name: 'Test School'
+        school_name: 'Test School',
       })
       .select('id')
       .single();
@@ -79,21 +91,14 @@ describe('Admin Photos Upload Chain Integration', () => {
       if (photos && photos.length > 0) {
         // Clean up storage files
         const PREVIEW_BUCKET = process.env.STORAGE_BUCKET_PREVIEW || 'photos';
-        const filePaths = photos
-          .map(p => p.preview_path)
-          .filter(Boolean);
-        
+        const filePaths = photos.map((p) => p.preview_path).filter(Boolean);
+
         if (filePaths.length > 0) {
-          await supabase.storage
-            .from(PREVIEW_BUCKET)
-            .remove(filePaths);
+          await supabase.storage.from(PREVIEW_BUCKET).remove(filePaths);
         }
 
         // Delete photo records
-        await supabase
-          .from('photos')
-          .delete()
-          .eq('event_id', testEventId);
+        await supabase.from('photos').delete().eq('event_id', testEventId);
       }
 
       // Delete event
@@ -109,10 +114,7 @@ describe('Admin Photos Upload Chain Integration', () => {
   afterEach(async () => {
     // Clean up any photos created in individual tests
     if (uploadedPhotos.length > 0) {
-      await supabase
-        .from('photos')
-        .delete()
-        .in('id', uploadedPhotos);
+      await supabase.from('photos').delete().in('id', uploadedPhotos);
     }
   });
 
@@ -125,11 +127,11 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toMatchObject({
         success: true,
@@ -142,16 +144,16 @@ describe('Admin Photos Upload Chain Integration', () => {
             width: expect.any(Number),
             height: expect.any(Number),
             path: expect.stringMatching(/events\/.*\/uploads\/.*\.webp$/),
-            qrDetected: false
-          })
+            qrDetected: false,
+          }),
         ]),
         errors: [],
         statistics: {
           total: expect.any(Number),
           successful: 1,
           failed: 0,
-          durationMs: expect.any(Number)
-        }
+          durationMs: expect.any(Number),
+        },
       });
 
       // Track for cleanup
@@ -163,20 +165,20 @@ describe('Admin Photos Upload Chain Integration', () => {
       const files = await Promise.all([
         createTestImage('multi-1.jpg', 1200, 800),
         createTestImage('multi-2.jpg', 800, 1200),
-        createTestImage('multi-3.jpg', 1000, 1000)
+        createTestImage('multi-3.jpg', 1000, 1000),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.results).toHaveLength(3);
@@ -198,7 +200,9 @@ describe('Admin Photos Upload Chain Integration', () => {
     it('should validate file types and reject invalid files', async () => {
       const validFile = await createTestImage('valid.jpg');
       // Create a fake "invalid" file (actually just a text blob)
-      const invalidFile = new File(['not an image'], 'invalid.txt', { type: 'text/plain' });
+      const invalidFile = new File(['not an image'], 'invalid.txt', {
+        type: 'text/plain',
+      });
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
@@ -207,18 +211,18 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.results).toHaveLength(1); // Only valid file processed
       expect(data.errors).toHaveLength(1);
       expect(data.errors[0]).toMatchObject({
         filename: 'invalid.txt',
-        error: 'File type not allowed'
+        error: 'File type not allowed',
       });
 
       // Track for cleanup
@@ -228,7 +232,9 @@ describe('Admin Photos Upload Chain Integration', () => {
     it('should enforce file size limits', async () => {
       // Create a large buffer to simulate oversized file
       const largeBuffer = Buffer.alloc(50 * 1024 * 1024); // 50MB
-      const largeFile = new File([largeBuffer], 'huge.jpg', { type: 'image/jpeg' });
+      const largeFile = new File([largeBuffer], 'huge.jpg', {
+        type: 'image/jpeg',
+      });
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
@@ -236,34 +242,34 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(400);
-      
+
       const data = await response.json();
       expect(data.success).toBe(false);
       expect(data.errors).toContainEqual({
         filename: 'huge.jpg',
-        error: 'File too large'
+        error: 'File too large',
       });
     });
 
     it('should validate event ownership and access', async () => {
       const testFile = await createTestImage('unauthorized.jpg');
       const invalidEventId = '00000000-0000-0000-0000-000000000000';
-      
+
       const formData = new FormData();
       formData.append('eventId', invalidEventId);
       formData.append('files', testFile);
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(404);
-      
+
       const data = await response.json();
       expect(data.error).toBe('Event not found');
     });
@@ -278,19 +284,19 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       const data = await response.json();
       expect(data.success).toBe(true);
-      
+
       const uploadedPhoto = data.results[0];
       uploadedPhotos.push(uploadedPhoto.id);
 
       // Verify preview is generated and accessible
       const previewPath = uploadedPhoto.path;
       expect(previewPath).toMatch(/\.webp$/);
-      
+
       // Check database record
       const { data: dbPhoto, error: dbError } = await supabase
         .from('photos')
@@ -304,7 +310,7 @@ describe('Admin Photos Upload Chain Integration', () => {
         preview_path: previewPath,
         mime_type: 'image/webp',
         processing_status: 'completed',
-        approved: false
+        approved: false,
       });
 
       // Verify no original is stored (free tier optimization)
@@ -320,7 +326,7 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       const data = await response.json();
@@ -333,9 +339,9 @@ describe('Admin Photos Upload Chain Integration', () => {
       const signedUrlResponse = await fetch(
         `${API_BASE_URL}/api/admin/storage/signed-url?path=${uploadedPhoto.path}`
       );
-      
+
       expect(signedUrlResponse.status).toBe(200);
-      
+
       const { signedUrl } = await signedUrlResponse.json();
       expect(signedUrl).toMatch(/^https:\/\/.*\.supabase\.co\/storage/);
     });
@@ -343,14 +349,14 @@ describe('Admin Photos Upload Chain Integration', () => {
     it('should store correct metadata for optimization tracking', async () => {
       const testFile = await createTestImage('metadata-test.jpg', 1600, 1200);
       const originalSize = testFile.size;
-      
+
       const formData = new FormData();
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       const data = await response.json();
@@ -368,7 +374,7 @@ describe('Admin Photos Upload Chain Integration', () => {
         freetier_optimized: true,
         compression_level: expect.any(Number),
         original_size: originalSize,
-        optimization_ratio: expect.any(Number)
+        optimization_ratio: expect.any(Number),
       });
 
       // Verify size reduction
@@ -383,10 +389,7 @@ describe('Admin Photos Upload Chain Integration', () => {
     afterEach(async () => {
       // Clean up test assets
       if (testAssetIds.length > 0) {
-        await supabase
-          .from('photos')
-          .delete()
-          .in('id', testAssetIds);
+        await supabase.from('photos').delete().in('id', testAssetIds);
         testAssetIds = [];
       }
     });
@@ -398,10 +401,13 @@ describe('Admin Photos Upload Chain Integration', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoId = uploadData.results[0].id;
@@ -413,7 +419,7 @@ describe('Admin Photos Upload Chain Integration', () => {
       );
 
       expect(assetsResponse.status).toBe(200);
-      
+
       const assetsData = await assetsResponse.json();
       expect(assetsData.success).toBe(true);
       expect(assetsData.assets).toContainEqual(
@@ -422,7 +428,7 @@ describe('Admin Photos Upload Chain Integration', () => {
           preview_path: expect.stringMatching(/\.webp$/),
           file_size: expect.any(Number),
           width: expect.any(Number),
-          height: expect.any(Number)
+          height: expect.any(Number),
         })
       );
     });
@@ -432,34 +438,40 @@ describe('Admin Photos Upload Chain Integration', () => {
       const files = await Promise.all([
         createTestImage('bulk-1.jpg'),
         createTestImage('bulk-2.jpg'),
-        createTestImage('bulk-3.jpg')
+        createTestImage('bulk-3.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
       testAssetIds.push(...photoIds);
 
       // Test bulk approval
-      const bulkResponse = await fetch(`${API_BASE_URL}/api/admin/assets/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          operation: 'approve',
-          assetIds: photoIds
-        })
-      });
+      const bulkResponse = await fetch(
+        `${API_BASE_URL}/api/admin/assets/bulk`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            operation: 'approve',
+            assetIds: photoIds,
+          }),
+        }
+      );
 
       expect(bulkResponse.status).toBe(200);
-      
+
       const bulkData = await bulkResponse.json();
       expect(bulkData.success).toBe(true);
       expect(bulkData.updated).toBe(photoIds.length);
@@ -470,7 +482,7 @@ describe('Admin Photos Upload Chain Integration', () => {
         .select('approved')
         .in('id', photoIds);
 
-      approvedPhotos?.forEach(photo => {
+      approvedPhotos?.forEach((photo) => {
         expect(photo.approved).toBe(true);
       });
     });
@@ -482,10 +494,13 @@ describe('Admin Photos Upload Chain Integration', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const previewPath = uploadData.results[0].path;
@@ -497,12 +512,14 @@ describe('Admin Photos Upload Chain Integration', () => {
       );
 
       expect(signedUrlResponse.status).toBe(200);
-      
+
       const signedUrlData = await signedUrlResponse.json();
       expect(signedUrlData).toMatchObject({
         success: true,
-        signedUrl: expect.stringMatching(/^https:\/\/.*\.supabase\.co\/storage/),
-        expiresIn: expect.any(Number)
+        signedUrl: expect.stringMatching(
+          /^https:\/\/.*\.supabase\.co\/storage/
+        ),
+        expiresIn: expect.any(Number),
       });
 
       // Verify the signed URL actually works
@@ -522,7 +539,7 @@ describe('Admin Photos Upload Chain Integration', () => {
         .insert({
           name: 'Test Class Folder',
           event_id: testEventId,
-          parent_id: null
+          parent_id: null,
         })
         .select('id')
         .single();
@@ -545,17 +562,20 @@ describe('Admin Photos Upload Chain Integration', () => {
       // Upload photos to the event
       const files = await Promise.all([
         createTestImage('folder-count-1.jpg'),
-        createTestImage('folder-count-2.jpg')
+        createTestImage('folder-count-2.jpg'),
       ]);
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoIds = uploadData.results.map((r: any) => r.id);
@@ -571,7 +591,9 @@ describe('Admin Photos Upload Chain Integration', () => {
       const foldersResponse = await fetch(`${API_BASE_URL}/api/admin/folders`);
       const foldersData = await foldersResponse.json();
 
-      const testFolder = foldersData.folders.find((f: any) => f.id === testFolderId);
+      const testFolder = foldersData.folders.find(
+        (f: any) => f.id === testFolderId
+      );
       expect(testFolder).toBeDefined();
       expect(testFolder.photo_count).toBe(2);
     });
@@ -583,10 +605,13 @@ describe('Admin Photos Upload Chain Integration', () => {
       formData.append('eventId', testEventId);
       formData.append('files', testFile);
 
-      const uploadResponse = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/admin/photos/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       const uploadData = await uploadResponse.json();
       const photoId = uploadData.results[0].id;
@@ -618,18 +643,18 @@ describe('Admin Photos Upload Chain Integration', () => {
       const formData = new FormData();
       formData.append('eventId', testEventId);
       // Upload without files
-      
+
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       expect(response.status).toBe(400);
-      
+
       const data = await response.json();
       expect(data).toMatchObject({
         success: false,
-        error: 'No files received'
+        error: 'No files received',
       });
     });
 
@@ -645,15 +670,17 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       // Should handle mixed success/failure
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
-      expect(data.statistics.successful + data.statistics.failed).toBeGreaterThan(0);
-      
+      expect(
+        data.statistics.successful + data.statistics.failed
+      ).toBeGreaterThan(0);
+
       if (data.results.length > 0) {
         uploadedPhotos.push(...data.results.map((r: any) => r.id));
       }
@@ -666,18 +693,18 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       // Upload 5 medium-sized images
       const files = await Promise.all(
-        Array(5).fill(0).map((_, i) => 
-          createTestImage(`perf-test-${i}.jpg`, 1200, 800)
-        )
+        Array(5)
+          .fill(0)
+          .map((_, i) => createTestImage(`perf-test-${i}.jpg`, 1200, 800))
       );
 
       const formData = new FormData();
       formData.append('eventId', testEventId);
-      files.forEach(file => formData.append('files', file));
+      files.forEach((file) => formData.append('files', file));
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       const endTime = Date.now();
@@ -685,7 +712,7 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       expect(response.status).toBe(200);
       expect(duration).toBeLessThan(30000); // Should complete within 30 seconds
-      
+
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.statistics.successful).toBe(5);
@@ -695,7 +722,11 @@ describe('Admin Photos Upload Chain Integration', () => {
 
     it('should optimize file sizes effectively', async () => {
       // Create a large test image
-      const largeFile = await createTestImage('large-optimization.jpg', 3000, 2000);
+      const largeFile = await createTestImage(
+        'large-optimization.jpg',
+        3000,
+        2000
+      );
       const originalSize = largeFile.size;
 
       const formData = new FormData();
@@ -704,7 +735,7 @@ describe('Admin Photos Upload Chain Integration', () => {
 
       const response = await fetch(`${API_BASE_URL}/api/admin/photos/upload`, {
         method: 'POST',
-        body: formData
+        body: formData,
       });
 
       const data = await response.json();

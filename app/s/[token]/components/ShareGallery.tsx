@@ -1,6 +1,6 @@
 /**
  * SHARE GALLERY COMPONENT
- * 
+ *
  * Main gallery component for hierarchical token access
  * Features: Folder navigation, asset grid, download permissions, responsive design
  */
@@ -13,16 +13,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { 
-  FolderIcon, 
-  ImageIcon, 
-  DownloadIcon, 
+import {
+  FolderIcon,
+  ImageIcon,
+  DownloadIcon,
   EyeIcon,
   ClockIcon,
   UsersIcon,
-  HardDriveIcon
+  HardDriveIcon,
 } from 'lucide-react';
-import { GalleryContext, GalleryFolder, GalleryAsset } from '@/lib/services/hierarchical-gallery.service';
+import {
+  GalleryContext,
+  GalleryFolder,
+  GalleryAsset,
+} from '@/lib/services/hierarchical-gallery.service';
 import { AssetGrid } from './AssetGrid';
 import { FolderList } from './FolderList';
 import { GalleryHeader } from './GalleryHeader';
@@ -55,12 +59,14 @@ export function ShareGallery({
   assets,
   pagination,
   stats,
-  selectedFolder
+  selectedFolder,
 }: ShareGalleryProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedAsset, setSelectedAsset] = useState<GalleryAsset | null>(null);
-  const [viewMode, setViewMode] = useState<'folders' | 'assets' | 'both'>('both');
+  const [viewMode, setViewMode] = useState<'folders' | 'assets' | 'both'>(
+    'both'
+  );
 
   // Auto-determine view mode based on content
   useEffect(() => {
@@ -95,19 +101,27 @@ export function ShareGallery({
 
   const getScopeIcon = () => {
     switch (context.scope) {
-      case 'event': return '🏫';
-      case 'course': return '📚';
-      case 'family': return '👨‍👩‍👧‍👦';
-      default: return '📁';
+      case 'event':
+        return '🏫';
+      case 'course':
+        return '📚';
+      case 'family':
+        return '👨‍👩‍👧‍👦';
+      default:
+        return '📁';
     }
   };
 
   const getScopeLabel = () => {
     switch (context.scope) {
-      case 'event': return 'School Event';
-      case 'course': return 'Course Gallery';
-      case 'family': return 'Family Gallery';
-      default: return 'Gallery';
+      case 'event':
+        return 'School Event';
+      case 'course':
+        return 'Course Gallery';
+      case 'family':
+        return 'Family Gallery';
+      default:
+        return 'Gallery';
     }
   };
 
@@ -121,44 +135,46 @@ export function ShareGallery({
         label={getScopeLabel()}
       />
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
+      <div className="container mx-auto space-y-6 px-4 py-6">
         {/* Gallery Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-4 text-center">
-              <FolderIcon className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+              <FolderIcon className="mx-auto mb-2 h-6 w-6 text-blue-600" />
               <div className="text-2xl font-bold">{stats.totalFolders}</div>
-              <div className="text-sm text-muted-foreground">Folders</div>
+              <div className="text-muted-foreground text-sm">Folders</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4 text-center">
-              <ImageIcon className="h-6 w-6 mx-auto mb-2 text-green-600" />
+              <ImageIcon className="mx-auto mb-2 h-6 w-6 text-green-600" />
               <div className="text-2xl font-bold">{stats.totalAssets}</div>
-              <div className="text-sm text-muted-foreground">Photos</div>
+              <div className="text-muted-foreground text-sm">Photos</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4 text-center">
-              <HardDriveIcon className="h-6 w-6 mx-auto mb-2 text-purple-600" />
-              <div className="text-2xl font-bold">{formatFileSize(stats.totalSize)}</div>
-              <div className="text-sm text-muted-foreground">Total Size</div>
+              <HardDriveIcon className="mx-auto mb-2 h-6 w-6 text-purple-600" />
+              <div className="text-2xl font-bold">
+                {formatFileSize(stats.totalSize)}
+              </div>
+              <div className="text-muted-foreground text-sm">Total Size</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4 text-center">
               {context.canDownload ? (
-                <DownloadIcon className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                <DownloadIcon className="mx-auto mb-2 h-6 w-6 text-green-600" />
               ) : (
-                <EyeIcon className="h-6 w-6 mx-auto mb-2 text-gray-600" />
+                <EyeIcon className="mx-auto mb-2 h-6 w-6 text-gray-600" />
               )}
               <div className="text-sm font-medium">
                 {context.canDownload ? 'Can Download' : 'View Only'}
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 {context.accessLevel === 'full' ? 'Full Access' : 'Read Only'}
               </div>
             </CardContent>
@@ -167,10 +183,11 @@ export function ShareGallery({
 
         {/* Active Folder Filter */}
         {selectedFolder && (
-          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border">
+          <div className="flex items-center gap-2 rounded-lg border bg-blue-50 p-3">
             <FolderIcon className="h-4 w-4 text-blue-600" />
             <span className="text-sm">
-              Viewing folder: {folders.find(f => f.id === selectedFolder)?.name || 'Unknown'}
+              Viewing folder:{' '}
+              {folders.find((f) => f.id === selectedFolder)?.name || 'Unknown'}
             </span>
             <Button
               variant="ghost"
@@ -186,23 +203,24 @@ export function ShareGallery({
         {/* Main Content */}
         <div className="space-y-6">
           {/* Folders Section */}
-          {(viewMode === 'folders' || viewMode === 'both') && folders.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FolderIcon className="h-5 w-5" />
-                  Folders ({folders.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <FolderList
-                  folders={folders}
-                  onFolderSelect={handleFolderSelect}
-                  selectedFolder={selectedFolder}
-                />
-              </CardContent>
-            </Card>
-          )}
+          {(viewMode === 'folders' || viewMode === 'both') &&
+            folders.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderIcon className="h-5 w-5" />
+                    Folders ({folders.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FolderList
+                    folders={folders}
+                    onFolderSelect={handleFolderSelect}
+                    selectedFolder={selectedFolder}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
           {/* Assets Section */}
           {(viewMode === 'assets' || viewMode === 'both') && (
@@ -229,16 +247,15 @@ export function ShareGallery({
                     onAssetSelect={setSelectedAsset}
                   />
                 ) : (
-                  <div className="text-center py-12">
-                    <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <div className="py-12 text-center">
+                    <ImageIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                    <h3 className="mb-2 text-lg font-medium text-gray-900">
                       No photos found
                     </h3>
                     <p className="text-gray-600">
-                      {selectedFolder 
+                      {selectedFolder
                         ? 'This folder contains no photos yet.'
-                        : 'No photos have been shared with this access level yet.'
-                      }
+                        : 'No photos have been shared with this access level yet.'}
                     </p>
                     {selectedFolder && (
                       <Button
@@ -258,18 +275,22 @@ export function ShareGallery({
           {/* Empty State */}
           {folders.length === 0 && assets.length === 0 && (
             <Card>
-              <CardContent className="text-center py-12">
-                <div className="text-6xl mb-4">{getScopeIcon()}</div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">
+              <CardContent className="py-12 text-center">
+                <div className="mb-4 text-6xl">{getScopeIcon()}</div>
+                <h3 className="mb-2 text-xl font-medium text-gray-900">
                   Gallery is Empty
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="mb-4 text-gray-600">
                   No content has been shared for this {context.scope} yet.
                 </p>
                 <div className="text-sm text-gray-500">
-                  <div>Access Level: <Badge variant="outline">{context.accessLevel}</Badge></div>
+                  <div>
+                    Access Level:{' '}
+                    <Badge variant="outline">{context.accessLevel}</Badge>
+                  </div>
                   <div className="mt-2">
-                    Permissions: {context.canDownload ? 'Download Enabled' : 'View Only'}
+                    Permissions:{' '}
+                    {context.canDownload ? 'Download Enabled' : 'View Only'}
                   </div>
                   {context.expiresAt && (
                     <div className="mt-2 flex items-center justify-center gap-1">
@@ -284,13 +305,12 @@ export function ShareGallery({
         </div>
 
         {/* Footer Info */}
-        <div className="text-center text-sm text-gray-500 space-y-1">
-          <div>
-            Secured by LookEscolar • {getScopeLabel()}
-          </div>
+        <div className="space-y-1 text-center text-sm text-gray-500">
+          <div>Secured by LookEscolar • {getScopeLabel()}</div>
           {stats.oldestAsset && stats.newestAsset && (
             <div>
-              Content from {formatDate(stats.oldestAsset)} to {formatDate(stats.newestAsset)}
+              Content from {formatDate(stats.oldestAsset)} to{' '}
+              {formatDate(stats.newestAsset)}
             </div>
           )}
           {context.expiresAt && (

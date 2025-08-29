@@ -9,14 +9,14 @@ interface UnifiedPhotosPageProps {
   };
 }
 
-export default function UnifiedPhotosPage({ 
-  searchParams 
+export default function UnifiedPhotosPage({
+  searchParams,
 }: UnifiedPhotosPageProps) {
   const { eventId, eventType = 'secundaria', theme } = searchParams;
 
   return (
     <>
-      <UnifiedPhotoManagement 
+      <UnifiedPhotoManagement
         eventId={eventId}
         initialEventType={eventType}
         className="min-h-screen"
@@ -27,8 +27,6 @@ export default function UnifiedPhotosPage({
 
 export const metadata = {
   title: 'Gestor Unificado de Fotos - LookEscolar',
-  description: 'Sistema unificado de gestión fotográfica con interfaces adaptadas por tipo de evento',
+  description:
+    'Sistema unificado de gestión fotográfica con interfaces adaptadas por tipo de evento',
 };
-
-
-

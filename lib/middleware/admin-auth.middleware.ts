@@ -45,7 +45,11 @@ export class AdminSecurityLogger {
       // TODO: Send to centralized logging service (Datadog, CloudWatch, etc.)
       console.log(JSON.stringify(log));
     } else {
-      console.log(`[ADMIN-SECURITY][${log.level.toUpperCase()}]`, log.action, log);
+      console.log(
+        `[ADMIN-SECURITY][${log.level.toUpperCase()}]`,
+        log.action,
+        log
+      );
     }
   }
 
@@ -186,7 +190,7 @@ export async function authenticateAdmin(
 
     // Get Supabase client and validate session
     const supabase = await createServerSupabaseClient();
-    
+
     const {
       data: { user },
       error: authError,
@@ -233,7 +237,12 @@ export async function authenticateAdmin(
       metadata: user.user_metadata,
     };
 
-    AdminSecurityLogger.logAdminAccess(endpoint, authenticatedUser, request, requestId);
+    AdminSecurityLogger.logAdminAccess(
+      endpoint,
+      authenticatedUser,
+      request,
+      requestId
+    );
 
     return {
       authenticated: true,
@@ -312,21 +321,27 @@ async function verifyAdminRole(userId: string, user: any): Promise<boolean> {
 async function applyAdminRateLimit(
   request: NextRequest,
   requestId: string
-): Promise<{ allowed: boolean; limit?: number; remaining?: number; resetTime?: number; retryAfter?: number }> {
+): Promise<{
+  allowed: boolean;
+  limit?: number;
+  remaining?: number;
+  resetTime?: number;
+  retryAfter?: number;
+}> {
   try {
     // Use the general rate limit middleware with admin-specific configuration
     const result = await rateLimitMiddleware(request, requestId);
-    
+
     // For admin endpoints, apply additional restrictions
     const pathname = request.nextUrl.pathname;
     const adminLimit = getAdminRateLimitConfig(pathname);
-    
+
     // Apply more restrictive admin limits if needed
     if (result.allowed && adminLimit.requests < (result.limit || Infinity)) {
       // TODO: Implement admin-specific rate limiting logic here
       // For now, use the existing rate limiter
     }
-    
+
     return result;
   } catch (error) {
     AdminSecurityLogger.logAdminAction(
@@ -343,10 +358,16 @@ async function applyAdminRateLimit(
 }
 
 // Get admin rate limit configuration
-function getAdminRateLimitConfig(pathname: string): { requests: number; windowMs: number } {
+function getAdminRateLimitConfig(pathname: string): {
+  requests: number;
+  windowMs: number;
+} {
   // Check for exact match first
   for (const [route, config] of Object.entries(ADMIN_RATE_LIMITS)) {
-    if (route !== 'default' && pathname.includes(route.replace(/\[.*?\]/g, ''))) {
+    if (
+      route !== 'default' &&
+      pathname.includes(route.replace(/\[.*?\]/g, ''))
+    ) {
       return config;
     }
   }
@@ -381,17 +402,21 @@ export function withAdminAuth<T extends any[]>(
     // Handle rate limiting
     if (authResult.rateLimitResult && !authResult.rateLimitResult.allowed) {
       return NextResponse.json(
-        { 
+        {
           error: 'Too many requests. Please try again later.',
-          details: 'Admin endpoint rate limit exceeded'
+          details: 'Admin endpoint rate limit exceeded',
         },
         {
           status: 429,
           headers: {
             'X-Request-Id': authResult.requestId,
             'X-RateLimit-Limit': String(authResult.rateLimitResult.limit ?? 0),
-            'X-RateLimit-Remaining': String(authResult.rateLimitResult.remaining ?? 0),
-            'X-RateLimit-Reset': String(authResult.rateLimitResult.resetTime ?? 0),
+            'X-RateLimit-Remaining': String(
+              authResult.rateLimitResult.remaining ?? 0
+            ),
+            'X-RateLimit-Reset': String(
+              authResult.rateLimitResult.resetTime ?? 0
+            ),
             'Retry-After': String(authResult.rateLimitResult.retryAfter ?? 0),
           },
         }
@@ -400,7 +425,8 @@ export function withAdminAuth<T extends any[]>(
 
     // Handle authentication failure
     if (!authResult.authenticated) {
-      const statusCode = authResult.error === 'Authentication required' ? 401 : 403;
+      const statusCode =
+        authResult.error === 'Authentication required' ? 401 : 403;
       return NextResponse.json(
         { error: authResult.error || 'Access denied' },
         {
@@ -415,21 +441,30 @@ export function withAdminAuth<T extends any[]>(
     try {
       // Call the original handler with authentication context
       const response = await handler(request, ...args);
-      
+
       // Add security headers and request ID
       response.headers.set('X-Request-Id', authResult.requestId);
       response.headers.set('X-Admin-Authenticated', 'true');
-      
+
       // Add rate limit headers if available
       if (authResult.rateLimitResult) {
         if (authResult.rateLimitResult.limit) {
-          response.headers.set('X-RateLimit-Limit', String(authResult.rateLimitResult.limit));
+          response.headers.set(
+            'X-RateLimit-Limit',
+            String(authResult.rateLimitResult.limit)
+          );
         }
         if (authResult.rateLimitResult.remaining !== undefined) {
-          response.headers.set('X-RateLimit-Remaining', String(authResult.rateLimitResult.remaining));
+          response.headers.set(
+            'X-RateLimit-Remaining',
+            String(authResult.rateLimitResult.remaining)
+          );
         }
         if (authResult.rateLimitResult.resetTime) {
-          response.headers.set('X-RateLimit-Reset', String(authResult.rateLimitResult.resetTime));
+          response.headers.set(
+            'X-RateLimit-Reset',
+            String(authResult.rateLimitResult.resetTime)
+          );
         }
       }
 

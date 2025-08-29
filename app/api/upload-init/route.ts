@@ -7,12 +7,21 @@ import crypto from 'crypto';
 // Validation schema
 const UploadInitSchema = z.object({
   folderId: z.string().uuid(),
-  files: z.array(z.object({
-    filename: z.string().min(1).max(255),
-    size: z.number().int().min(1).max(50 * 1024 * 1024), // 50MB max
-    type: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/),
-    checksum: z.string().optional(), // SHA-256 hex string
-  })).min(1).max(100), // Max 100 files per batch
+  files: z
+    .array(
+      z.object({
+        filename: z.string().min(1).max(255),
+        size: z
+          .number()
+          .int()
+          .min(1)
+          .max(50 * 1024 * 1024), // 50MB max
+        type: z.string().regex(/^image\/(jpeg|jpg|png|webp)$/),
+        checksum: z.string().optional(), // SHA-256 hex string
+      })
+    )
+    .min(1)
+    .max(100), // Max 100 files per batch
 });
 
 export async function POST(request: NextRequest) {
@@ -36,7 +45,10 @@ export async function POST(request: NextRequest) {
     );
 
     // Verify admin access
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -60,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate checksums if provided
     const providedChecksums = files
-      .map(f => f.checksum)
+      .map((f) => f.checksum)
       .filter(Boolean) as string[];
 
     let existingAssets: any[] = [];
@@ -69,7 +81,7 @@ export async function POST(request: NextRequest) {
         .from('assets')
         .select('checksum, original_filename, folder_id')
         .in('checksum', providedChecksums);
-      
+
       existingAssets = existing || [];
     }
 
@@ -77,7 +89,9 @@ export async function POST(request: NextRequest) {
     const uploadData = await Promise.all(
       files.map(async (file, index) => {
         // Check if file already exists by checksum
-        const existingAsset = existingAssets.find(a => a.checksum === file.checksum);
+        const existingAsset = existingAssets.find(
+          (a) => a.checksum === file.checksum
+        );
         if (existingAsset) {
           return {
             filename: file.filename,
@@ -123,9 +137,9 @@ export async function POST(request: NextRequest) {
     );
 
     // Count successful uploads
-    const readyUploads = uploadData.filter(u => u.status === 'ready');
-    const duplicates = uploadData.filter(u => u.status === 'duplicate');
-    const errors = uploadData.filter(u => u.status === 'error');
+    const readyUploads = uploadData.filter((u) => u.status === 'ready');
+    const duplicates = uploadData.filter((u) => u.status === 'duplicate');
+    const errors = uploadData.filter((u) => u.status === 'error');
 
     return NextResponse.json({
       success: true,
@@ -140,16 +154,15 @@ export async function POST(request: NextRequest) {
         errors: errors.length,
       },
     });
-
   } catch (error) {
     console.error('Upload init error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Validation failed',
-          details: error.errors 
+          details: error.errors,
         },
         { status: 400 }
       );

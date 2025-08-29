@@ -1,7 +1,7 @@
 /**
  * Página Pública de Tienda
  * /store/[token] - REDIRECCIÓN A TIENDA UNIFICADA
- * 
+ *
  * Esta ruta ahora redirige automáticamente a la tienda unificada
  * para mantener consistencia en la experiencia del usuario
  */

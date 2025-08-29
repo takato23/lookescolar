@@ -58,7 +58,7 @@ describe('PhotoAdmin Component States', () => {
         json: async () => ({
           success: true,
           folders: [],
-          count: 0
+          count: 0,
         }),
       });
 
@@ -86,10 +86,10 @@ describe('PhotoAdmin Component States', () => {
                 parent_id: null,
                 depth: 0,
                 photo_count: 0,
-                has_children: false
-              }
+                has_children: false,
+              },
             ],
-            count: 1
+            count: 1,
           }),
         })
         // Mock empty assets response
@@ -99,17 +99,23 @@ describe('PhotoAdmin Component States', () => {
             success: true,
             assets: [],
             count: 0,
-            hasMore: false
+            hasMore: false,
           }),
         });
 
       renderPhotoAdmin();
 
       await waitFor(() => {
-        expect(screen.getByText('No photos in this folder')).toBeInTheDocument();
+        expect(
+          screen.getByText('No photos in this folder')
+        ).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Upload photos or select a different folder to view content.')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Upload photos or select a different folder to view content.'
+        )
+      ).toBeInTheDocument();
     });
   });
 
@@ -121,7 +127,7 @@ describe('PhotoAdmin Component States', () => {
         status: 500,
         json: async () => ({
           success: false,
-          error: 'Internal server error'
+          error: 'Internal server error',
         }),
       });
 
@@ -142,7 +148,7 @@ describe('PhotoAdmin Component States', () => {
         status: 404,
         json: async () => ({
           success: false,
-          error: 'Database table not found'
+          error: 'Database table not found',
         }),
       });
 
@@ -162,7 +168,7 @@ describe('PhotoAdmin Component States', () => {
         status: 403,
         json: async () => ({
           success: false,
-          error: 'Database access denied'
+          error: 'Database access denied',
         }),
       });
 
@@ -193,19 +199,20 @@ describe('PhotoAdmin Component States', () => {
   describe('Loading State', () => {
     it('should show loading state while fetching folders', async () => {
       // Mock delayed response
-      mockFetch.mockImplementationOnce(() => 
-        new Promise(resolve => {
-          setTimeout(() => {
-            resolve({
-              ok: true,
-              json: async () => ({
-                success: true,
-                folders: [],
-                count: 0
-              }),
-            });
-          }, 100);
-        })
+      mockFetch.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                ok: true,
+                json: async () => ({
+                  success: true,
+                  folders: [],
+                  count: 0,
+                }),
+              });
+            }, 100);
+          })
       );
 
       renderPhotoAdmin();
@@ -215,7 +222,9 @@ describe('PhotoAdmin Component States', () => {
 
       // Wait for loading to complete
       await waitFor(() => {
-        expect(screen.queryByText('Loading folders...')).not.toBeInTheDocument();
+        expect(
+          screen.queryByText('Loading folders...')
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -233,27 +242,28 @@ describe('PhotoAdmin Component States', () => {
                 parent_id: null,
                 depth: 0,
                 photo_count: 5,
-                has_children: false
-              }
+                has_children: false,
+              },
             ],
-            count: 1
+            count: 1,
           }),
         })
         // Mock delayed assets response
-        .mockImplementationOnce(() => 
-          new Promise(resolve => {
-            setTimeout(() => {
-              resolve({
-                ok: true,
-                json: async () => ({
-                  success: true,
-                  assets: [],
-                  count: 0,
-                  hasMore: false
-                }),
-              });
-            }, 100);
-          })
+        .mockImplementationOnce(
+          () =>
+            new Promise((resolve) => {
+              setTimeout(() => {
+                resolve({
+                  ok: true,
+                  json: async () => ({
+                    success: true,
+                    assets: [],
+                    count: 0,
+                    hasMore: false,
+                  }),
+                });
+              }, 100);
+            })
         );
 
       renderPhotoAdmin();
@@ -281,7 +291,7 @@ describe('PhotoAdmin Component States', () => {
         json: async () => ({
           success: true,
           folders: [],
-          count: 0
+          count: 0,
         }),
       });
 
@@ -309,10 +319,10 @@ describe('PhotoAdmin Component States', () => {
                 parent_id: null,
                 depth: 0,
                 photo_count: 0,
-                has_children: false
-              }
+                has_children: false,
+              },
             ],
-            count: 1
+            count: 1,
           }),
         })
         // Mock empty assets response
@@ -322,7 +332,7 @@ describe('PhotoAdmin Component States', () => {
             success: true,
             assets: [],
             count: 0,
-            hasMore: false
+            hasMore: false,
           }),
         });
 
@@ -345,7 +355,7 @@ describe('PhotoAdmin Component States', () => {
         status: 500,
         json: async () => ({
           success: false,
-          error: 'Database error'
+          error: 'Database error',
         }),
       });
 
@@ -366,7 +376,7 @@ describe('PhotoAdmin Component States', () => {
         json: async () => ({
           success: true,
           folders: [],
-          count: 0
+          count: 0,
         }),
       });
 

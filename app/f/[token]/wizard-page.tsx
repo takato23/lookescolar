@@ -11,7 +11,7 @@ interface PageProps {
 
 export default async function LegacyWizardPage({ params }: PageProps) {
   const { token } = await params;
-  
+
   // Redirigir automáticamente a la nueva ruta unificada
   // El wizard está integrado en UnifiedStore
   redirect(`/store/${token}`);

@@ -37,13 +37,16 @@ export const POST = RateLimitMiddleware.withRateLimit(
       logger.info('Bulk approve/reject photos request', {
         requestId,
         photoCount: photoIds?.length || 0,
-        approved
+        approved,
       });
 
       // Validate input
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'photoIds array is required and must not be empty' },
+          {
+            success: false,
+            error: 'photoIds array is required and must not be empty',
+          },
           { status: 400 }
         );
       }
@@ -68,7 +71,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
         .from('photos')
         .update({
           approved,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .in('id', photoIds)
         .select('id, original_filename, approved');
@@ -78,7 +81,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           requestId,
           photoIds: photoIds.slice(0, 5), // Log first 5 IDs for debugging
           approved,
-          error: error.message
+          error: error.message,
         });
 
         return NextResponse.json(
@@ -93,20 +96,19 @@ export const POST = RateLimitMiddleware.withRateLimit(
         requestId,
         requestedCount: photoIds.length,
         updatedCount,
-        approved
+        approved,
       });
 
       return NextResponse.json({
         success: true,
         message: `${updatedCount} photos ${approved ? 'approved' : 'rejected'} successfully`,
         updatedCount,
-        updatedPhotos: data
+        updatedPhotos: data,
       });
-
     } catch (error) {
       logger.error('Unexpected error in bulk approve endpoint', {
         requestId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       return NextResponse.json(

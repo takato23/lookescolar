@@ -2,20 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
-  DialogFooter 
+  DialogFooter,
 } from '@/components/ui/dialog';
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,7 +44,7 @@ import {
   Loader2,
   School,
   Users,
-  GraduationCap
+  GraduationCap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -65,7 +71,10 @@ interface TemplateValidation {
 interface SchoolFolderTemplateSelectorProps {
   eventId: string;
   eventName: string;
-  onTemplateApplied?: (appliedTemplate: SchoolFolderStructure, createdFolders: any[]) => void;
+  onTemplateApplied?: (
+    appliedTemplate: SchoolFolderStructure,
+    createdFolders: any[]
+  ) => void;
   triggerButton?: React.ReactNode;
 }
 
@@ -73,12 +82,15 @@ export function SchoolFolderTemplateSelector({
   eventId,
   eventName,
   onTemplateApplied,
-  triggerButton
+  triggerButton,
 }: SchoolFolderTemplateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [templates, setTemplates] = useState<SchoolFolderStructure[]>([]);
-  const [filteredTemplates, setFilteredTemplates] = useState<SchoolFolderStructure[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<SchoolFolderStructure | null>(null);
+  const [filteredTemplates, setFilteredTemplates] = useState<
+    SchoolFolderStructure[]
+  >([]);
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<SchoolFolderStructure | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -100,10 +112,15 @@ export function SchoolFolderTemplateSelector({
     if (searchQuery.trim() === '') {
       setFilteredTemplates(templates);
     } else {
-      const filtered = templates.filter(template =>
-        template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        template.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        template.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      const filtered = templates.filter(
+        (template) =>
+          template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          template.description
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          template.tags.some((tag) =>
+            tag.toLowerCase().includes(searchQuery.toLowerCase())
+          )
       );
       setFilteredTemplates(filtered);
     }
@@ -112,7 +129,9 @@ export function SchoolFolderTemplateSelector({
   const loadTemplates = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/folder-templates?action=list`);
+      const response = await fetch(
+        `/api/admin/events/${eventId}/folder-templates?action=list`
+      );
       const data = await response.json();
 
       if (data.success) {
@@ -169,17 +188,17 @@ export function SchoolFolderTemplateSelector({
   const handleTemplateSelect = async (template: SchoolFolderStructure) => {
     setSelectedTemplate(template);
     setShowPreview(true);
-    
+
     // Load preview and validation in parallel
     await Promise.all([
       loadTemplatePreview(template.id),
-      validateTemplate(template.id)
+      validateTemplate(template.id),
     ]);
   };
 
   const handleApplyTemplate = () => {
     if (!selectedTemplate || !validation?.canApply) return;
-    
+
     // Show confirmation dialog if there are warnings
     if (validation.warnings && validation.warnings.length > 0) {
       setShowConfirmDialog(true);
@@ -193,16 +212,19 @@ export function SchoolFolderTemplateSelector({
 
     setIsApplying(true);
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/folder-templates`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          templateId: selectedTemplate.id,
-          replaceExisting: false
-        })
-      });
+      const response = await fetch(
+        `/api/admin/events/${eventId}/folder-templates`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            templateId: selectedTemplate.id,
+            replaceExisting: false,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -242,15 +264,15 @@ export function SchoolFolderTemplateSelector({
     return (
       <div className="space-y-1">
         {folders.map((folder, index) => (
-          <div 
+          <div
             key={index}
             className={cn(
-              "flex items-center gap-2 text-sm py-1",
-              "hover:bg-gray-50 rounded px-2"
+              'flex items-center gap-2 py-1 text-sm',
+              'rounded px-2 hover:bg-gray-50'
             )}
             style={{ paddingLeft: `${folder.depth * 16 + 8}px` }}
           >
-            <Folder className="h-4 w-4 text-blue-500 flex-shrink-0" />
+            <Folder className="h-4 w-4 flex-shrink-0 text-blue-500" />
             <span className="font-medium">{folder.name}</span>
           </div>
         ))}
@@ -269,21 +291,22 @@ export function SchoolFolderTemplateSelector({
             </Button>
           )}
         </DialogTrigger>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogContent className="max-h-[80vh] max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <School className="h-5 w-5" />
               Estructuras de Carpetas Escolares
             </DialogTitle>
             <DialogDescription>
-              Selecciona una estructura predefinida para organizar las fotos de <strong>{eventName}</strong>
+              Selecciona una estructura predefinida para organizar las fotos de{' '}
+              <strong>{eventName}</strong>
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
               <Input
                 placeholder="Buscar plantillas por nombre o tipo de escuela..."
                 value={searchQuery}
@@ -294,7 +317,7 @@ export function SchoolFolderTemplateSelector({
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2">
+              <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-700">
                 <AlertTriangle className="h-4 w-4" />
                 <span>{error}</span>
               </div>
@@ -303,22 +326,25 @@ export function SchoolFolderTemplateSelector({
             {/* Templates Grid */}
             <ScrollArea className="h-96">
               {isLoading ? (
-                <div className="flex items-center justify-center h-32">
+                <div className="flex h-32 items-center justify-center">
                   <Loader2 className="h-6 w-6 animate-spin" />
                   <span className="ml-2">Cargando plantillas...</span>
                 </div>
               ) : filteredTemplates.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {searchQuery ? 'No se encontraron plantillas que coincidan' : 'No hay plantillas disponibles'}
+                <div className="py-8 text-center text-gray-500">
+                  {searchQuery
+                    ? 'No se encontraron plantillas que coincidan'
+                    : 'No hay plantillas disponibles'}
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {filteredTemplates.map((template) => (
-                    <Card 
+                    <Card
                       key={template.id}
                       className={cn(
-                        "cursor-pointer transition-all duration-200 hover:shadow-md",
-                        selectedTemplate?.id === template.id && "ring-2 ring-blue-500"
+                        'cursor-pointer transition-all duration-200 hover:shadow-md',
+                        selectedTemplate?.id === template.id &&
+                          'ring-2 ring-blue-500'
                       )}
                       onClick={() => handleTemplateSelect(template)}
                     >
@@ -326,18 +352,26 @@ export function SchoolFolderTemplateSelector({
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
                             {getTemplateIcon(template.id)}
-                            <CardTitle className="text-lg">{template.name}</CardTitle>
+                            <CardTitle className="text-lg">
+                              {template.name}
+                            </CardTitle>
                           </div>
                           {selectedTemplate?.id === template.id && (
                             <CheckCircle2 className="h-5 w-5 text-blue-500" />
                           )}
                         </div>
-                        <CardDescription>{template.description}</CardDescription>
+                        <CardDescription>
+                          {template.description}
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <div className="flex flex-wrap gap-1">
                           {template.tags.map((tag) => (
-                            <Badge key={tag} variant="secondary" className="text-xs">
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs"
+                            >
                               {tag}
                             </Badge>
                           ))}
@@ -351,7 +385,7 @@ export function SchoolFolderTemplateSelector({
 
             {/* Selected Template Actions */}
             {selectedTemplate && (
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex gap-2 border-t pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setShowPreview(true)}
@@ -360,7 +394,7 @@ export function SchoolFolderTemplateSelector({
                   <Eye className="h-4 w-4" />
                   Ver Estructura
                 </Button>
-                
+
                 {validation?.canApply && (
                   <Button
                     onClick={handleApplyTemplate}
@@ -382,12 +416,12 @@ export function SchoolFolderTemplateSelector({
             {validation && (
               <div className="space-y-2">
                 {validation.conflicts && validation.conflicts.length > 0 && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                    <div className="flex items-center gap-2 font-medium mb-2">
+                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+                    <div className="mb-2 flex items-center gap-2 font-medium">
                       <AlertTriangle className="h-4 w-4" />
                       No se puede aplicar la plantilla
                     </div>
-                    <ul className="list-disc list-inside text-sm">
+                    <ul className="list-inside list-disc text-sm">
                       {validation.conflicts.map((conflict, index) => (
                         <li key={index}>{conflict}</li>
                       ))}
@@ -396,12 +430,12 @@ export function SchoolFolderTemplateSelector({
                 )}
 
                 {validation.warnings && validation.warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md">
-                    <div className="flex items-center gap-2 font-medium mb-2">
+                  <div className="rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-800">
+                    <div className="mb-2 flex items-center gap-2 font-medium">
                       <Info className="h-4 w-4" />
                       Advertencias
                     </div>
-                    <ul className="list-disc list-inside text-sm">
+                    <ul className="list-inside list-disc text-sm">
                       {validation.warnings.map((warning, index) => (
                         <li key={index}>{warning}</li>
                       ))}
@@ -431,8 +465,8 @@ export function SchoolFolderTemplateSelector({
             {preview.length > 0 ? (
               renderFolderPreview(preview)
             ) : (
-              <div className="flex items-center justify-center h-32 text-gray-500">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              <div className="flex h-32 items-center justify-center text-gray-500">
+                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                 Cargando vista previa...
               </div>
             )}
@@ -445,9 +479,9 @@ export function SchoolFolderTemplateSelector({
             {validation?.canApply && (
               <Button onClick={handleApplyTemplate} disabled={isApplying}>
                 {isApplying ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <FolderPlus className="h-4 w-4 mr-2" />
+                  <FolderPlus className="mr-2 h-4 w-4" />
                 )}
                 Aplicar Estructura
               </Button>
@@ -460,14 +494,19 @@ export function SchoolFolderTemplateSelector({
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Aplicación de Estructura</AlertDialogTitle>
+            <AlertDialogTitle>
+              Confirmar Aplicación de Estructura
+            </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>¿Estás seguro que deseas aplicar la estructura <strong>{selectedTemplate?.name}</strong>?</p>
-              
+              <p>
+                ¿Estás seguro que deseas aplicar la estructura{' '}
+                <strong>{selectedTemplate?.name}</strong>?
+              </p>
+
               {validation?.warnings && (
-                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm">
+                <div className="rounded border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
                   <strong>Advertencias:</strong>
-                  <ul className="list-disc list-inside mt-1">
+                  <ul className="mt-1 list-inside list-disc">
                     {validation.warnings.map((warning, index) => (
                       <li key={index}>{warning}</li>
                     ))}
@@ -482,9 +521,9 @@ export function SchoolFolderTemplateSelector({
             </AlertDialogCancel>
             <AlertDialogAction onClick={applyTemplate} disabled={isApplying}>
               {isApplying ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <CheckCircle2 className="h-4 w-4 mr-2" />
+                <CheckCircle2 className="mr-2 h-4 w-4" />
               )}
               Confirmar
             </AlertDialogAction>

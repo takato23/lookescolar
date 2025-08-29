@@ -2,13 +2,16 @@
 
 /**
  * PRUEBA RÁPIDA: Sistema de Family Access con Folders
- * 
+ *
  * Verifica que URLs como /f/[token] sigan funcionando después de la migración
  */
 
 const { createClient } = require('@supabase/supabase-js');
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+if (
+  !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  !process.env.SUPABASE_SERVICE_ROLE_KEY
+) {
   console.error('❌ Missing environment variables');
   process.exit(1);
 }
@@ -25,7 +28,7 @@ async function testFolderSharing() {
   try {
     // 1. Verificar si hay folders publicados
     console.log('\n📁 Verificando folders publicados...');
-    
+
     const { data: publishedFolders, error } = await supabase
       .from('folders_with_sharing')
       .select('id, name, share_token, family_url, photo_count, event_name')
@@ -45,7 +48,7 @@ async function testFolderSharing() {
     }
 
     console.log(`✅ Encontrados ${publishedFolders.length} folders publicados`);
-    
+
     // 2. Mostrar información de los folders
     for (const folder of publishedFolders) {
       console.log(`\n📂 Folder: ${folder.name}`);
@@ -58,7 +61,7 @@ async function testFolderSharing() {
 
     // 3. Verificar compatibilidad con códigos existentes
     console.log('\n🔄 Verificando códigos obsoletos...');
-    
+
     const { data: codes, error: codesError } = await supabase
       .from('codes')
       .select('code_value, token, is_published')
@@ -70,7 +73,7 @@ async function testFolderSharing() {
       console.warn('⚠️  No se pueden verificar codes:', codesError.message);
     } else if (codes && codes.length > 0) {
       console.log(`⚠️  ${codes.length} codes obsoletos con tokens activos:`);
-      codes.forEach(code => {
+      codes.forEach((code) => {
         console.log(`   • ${code.code_value}: /f/${code.token}`);
       });
       console.log('\n💡 Considera migrar estos codes a folders:');
@@ -84,8 +87,12 @@ async function testFolderSharing() {
     if (sampleFolder.share_token) {
       console.log('\n🔗 Testing family access API...');
       console.log(`💡 Prueba manual:`);
-      console.log(`   1. Visita: http://localhost:3000${sampleFolder.family_url}`);
-      console.log(`   2. O API: http://localhost:3000/api/family/gallery/${sampleFolder.share_token}`);
+      console.log(
+        `   1. Visita: http://localhost:3000${sampleFolder.family_url}`
+      );
+      console.log(
+        `   2. O API: http://localhost:3000/api/family/gallery/${sampleFolder.share_token}`
+      );
     }
 
     console.log('\n🎉 PRUEBA COMPLETADA');
@@ -93,7 +100,6 @@ async function testFolderSharing() {
     console.log('✅ Sistema de folders funcionando');
     console.log('✅ Family URLs disponibles');
     console.log('✅ Compatibilidad mantenida');
-
   } catch (error) {
     console.error('❌ Error durante prueba:', error);
   }

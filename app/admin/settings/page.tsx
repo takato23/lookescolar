@@ -147,7 +147,7 @@ export default function AdminSettingsPage() {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      
+
       if (etag) {
         headers['If-Match'] = etag;
       }
@@ -166,7 +166,7 @@ export default function AdminSettingsPage() {
         const newEtag = response.headers.get('ETag') || '';
         setEtag(newEtag);
         toast.success('Configuración guardada exitosamente');
-        
+
         // Update form data with response to ensure consistency
         setFormData({
           ...formData,
@@ -174,10 +174,14 @@ export default function AdminSettingsPage() {
           uploadMaxResolution: String(updatedSettings.uploadMaxResolution),
         });
       } else if (response.status === 412) {
-        toast.error('La configuración fue modificada por otro usuario. Recargando...');
+        toast.error(
+          'La configuración fue modificada por otro usuario. Recargando...'
+        );
         await loadSettings();
       } else {
-        const error = await response.json().catch(() => ({ error: 'Error desconocido' }));
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Error desconocido' }));
         toast.error(`Error al guardar: ${error.error || 'Error desconocido'}`);
       }
     } catch (error) {
@@ -189,14 +193,14 @@ export default function AdminSettingsPage() {
   };
 
   const updateFormData = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData((prev) => ({ ...prev, ...updates }));
   };
 
   if (isLoading) {
     return (
-      <div className="bg-background/50 min-h-screen flex items-center justify-center">
+      <div className="bg-background/50 flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-b-2"></div>
           <p className="text-card-foreground mt-2">Cargando configuración...</p>
         </div>
       </div>
@@ -276,7 +280,9 @@ export default function AdminSettingsPage() {
                       <input
                         type="text"
                         value={formData.businessName}
-                        onChange={(e) => updateFormData({ businessName: e.target.value })}
+                        onChange={(e) =>
+                          updateFormData({ businessName: e.target.value })
+                        }
                         className="input-base"
                         placeholder="Ingresa el nombre de tu negocio"
                       />
@@ -289,7 +295,9 @@ export default function AdminSettingsPage() {
                       <input
                         type="email"
                         value={formData.businessEmail || ''}
-                        onChange={(e) => updateFormData({ businessEmail: e.target.value })}
+                        onChange={(e) =>
+                          updateFormData({ businessEmail: e.target.value })
+                        }
                         className="input-base"
                         placeholder="email@ejemplo.com"
                       />
@@ -302,7 +310,9 @@ export default function AdminSettingsPage() {
                       <input
                         type="tel"
                         value={formData.businessPhone || ''}
-                        onChange={(e) => updateFormData({ businessPhone: e.target.value })}
+                        onChange={(e) =>
+                          updateFormData({ businessPhone: e.target.value })
+                        }
                         className="input-base"
                         placeholder="+54 11 1234-5678"
                       />
@@ -315,7 +325,9 @@ export default function AdminSettingsPage() {
                       <input
                         type="url"
                         value={formData.businessWebsite || ''}
-                        onChange={(e) => updateFormData({ businessWebsite: e.target.value })}
+                        onChange={(e) =>
+                          updateFormData({ businessWebsite: e.target.value })
+                        }
                         className="input-base"
                         placeholder="https://ejemplo.com"
                       />
@@ -329,7 +341,9 @@ export default function AdminSettingsPage() {
                     <textarea
                       rows={3}
                       value={formData.businessAddress || ''}
-                      onChange={(e) => updateFormData({ businessAddress: e.target.value })}
+                      onChange={(e) =>
+                        updateFormData({ businessAddress: e.target.value })
+                      }
                       className="input-base resize-none"
                       placeholder="Dirección completa del estudio"
                     />
@@ -395,7 +409,9 @@ export default function AdminSettingsPage() {
                       <input
                         type="text"
                         value={formData.watermarkText}
-                        onChange={(e) => updateFormData({ watermarkText: e.target.value })}
+                        onChange={(e) =>
+                          updateFormData({ watermarkText: e.target.value })
+                        }
                         className="input-base"
                         placeholder="Texto que aparecerá en las fotos"
                       />
@@ -406,10 +422,14 @@ export default function AdminSettingsPage() {
                         <label className="text-card-foreground mb-2 block text-sm font-medium">
                           Posición
                         </label>
-                        <select 
+                        <select
                           className="input-base"
                           value={formData.watermarkPosition}
-                          onChange={(e) => updateFormData({ watermarkPosition: e.target.value as any })}
+                          onChange={(e) =>
+                            updateFormData({
+                              watermarkPosition: e.target.value as any,
+                            })
+                          }
                         >
                           <option value="bottom-right">Abajo Derecha</option>
                           <option value="bottom-left">Abajo Izquierda</option>
@@ -428,7 +448,11 @@ export default function AdminSettingsPage() {
                           min="10"
                           max="100"
                           value={formData.watermarkOpacity}
-                          onChange={(e) => updateFormData({ watermarkOpacity: Number(e.target.value) })}
+                          onChange={(e) =>
+                            updateFormData({
+                              watermarkOpacity: Number(e.target.value),
+                            })
+                          }
                           className="w-full"
                         />
                       </div>
@@ -437,10 +461,14 @@ export default function AdminSettingsPage() {
                         <label className="text-card-foreground mb-2 block text-sm font-medium">
                           Tamaño
                         </label>
-                        <select 
+                        <select
                           className="input-base"
                           value={formData.watermarkSize}
-                          onChange={(e) => updateFormData({ watermarkSize: e.target.value as any })}
+                          onChange={(e) =>
+                            updateFormData({
+                              watermarkSize: e.target.value as any,
+                            })
+                          }
                         >
                           <option value="small">Pequeño</option>
                           <option value="medium">Mediano</option>
@@ -468,7 +496,11 @@ export default function AdminSettingsPage() {
                       <input
                         type="number"
                         value={formData.uploadMaxSizeMb}
-                        onChange={(e) => updateFormData({ uploadMaxSizeMb: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            uploadMaxSizeMb: Number(e.target.value),
+                          })
+                        }
                         min="1"
                         max="50"
                         className="input-base"
@@ -482,7 +514,11 @@ export default function AdminSettingsPage() {
                       <input
                         type="number"
                         value={formData.uploadMaxConcurrent}
-                        onChange={(e) => updateFormData({ uploadMaxConcurrent: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            uploadMaxConcurrent: Number(e.target.value),
+                          })
+                        }
                         min="1"
                         max="10"
                         className="input-base"
@@ -498,7 +534,11 @@ export default function AdminSettingsPage() {
                         min="50"
                         max="100"
                         value={formData.uploadQuality}
-                        onChange={(e) => updateFormData({ uploadQuality: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            uploadQuality: Number(e.target.value),
+                          })
+                        }
                         className="w-full"
                       />
                     </div>
@@ -507,10 +547,14 @@ export default function AdminSettingsPage() {
                       <label className="text-card-foreground mb-2 block text-sm font-medium">
                         Resolución máxima (px)
                       </label>
-                      <select 
+                      <select
                         className="input-base"
                         value={formData.uploadMaxResolution}
-                        onChange={(e) => updateFormData({ uploadMaxResolution: e.target.value as any })}
+                        onChange={(e) =>
+                          updateFormData({
+                            uploadMaxResolution: e.target.value as any,
+                          })
+                        }
                       >
                         <option value="1600">1600px</option>
                         <option value="1920">1920px</option>
@@ -537,7 +581,11 @@ export default function AdminSettingsPage() {
                       <input
                         type="number"
                         value={formData.defaultPhotoPriceArs}
-                        onChange={(e) => updateFormData({ defaultPhotoPriceArs: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            defaultPhotoPriceArs: Number(e.target.value),
+                          })
+                        }
                         min="0"
                         step="50"
                         className="input-base"
@@ -551,7 +599,11 @@ export default function AdminSettingsPage() {
                       <input
                         type="number"
                         value={formData.bulkDiscountPercentage}
-                        onChange={(e) => updateFormData({ bulkDiscountPercentage: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            bulkDiscountPercentage: Number(e.target.value),
+                          })
+                        }
                         min="0"
                         max="50"
                         className="input-base"
@@ -565,7 +617,11 @@ export default function AdminSettingsPage() {
                       <input
                         type="number"
                         value={formData.bulkDiscountMinimum}
-                        onChange={(e) => updateFormData({ bulkDiscountMinimum: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            bulkDiscountMinimum: Number(e.target.value),
+                          })
+                        }
                         min="2"
                         className="input-base"
                       />
@@ -578,7 +634,11 @@ export default function AdminSettingsPage() {
                       <input
                         type="number"
                         value={formData.packPriceArs}
-                        onChange={(e) => updateFormData({ packPriceArs: Number(e.target.value) })}
+                        onChange={(e) =>
+                          updateFormData({
+                            packPriceArs: Number(e.target.value),
+                          })
+                        }
                         min="0"
                         step="100"
                         className="input-base"
@@ -634,7 +694,11 @@ export default function AdminSettingsPage() {
                         <input
                           type="checkbox"
                           checked={formData.notifyNewOrders}
-                          onChange={(e) => updateFormData({ notifyNewOrders: e.target.checked })}
+                          onChange={(e) =>
+                            updateFormData({
+                              notifyNewOrders: e.target.checked,
+                            })
+                          }
                           className="text-primary h-4 w-4 rounded"
                         />
                       </div>
@@ -656,10 +720,12 @@ export default function AdminSettingsPage() {
                       <label className="text-card-foreground mb-2 block text-sm font-medium">
                         Zona Horaria
                       </label>
-                      <select 
+                      <select
                         className="input-base"
                         value={formData.timezone}
-                        onChange={(e) => updateFormData({ timezone: e.target.value })}
+                        onChange={(e) =>
+                          updateFormData({ timezone: e.target.value })
+                        }
                       >
                         <option value="America/Argentina/Buenos_Aires">
                           Buenos Aires (ART)
@@ -677,10 +743,12 @@ export default function AdminSettingsPage() {
                       <label className="text-card-foreground mb-2 block text-sm font-medium">
                         Formato de Fecha
                       </label>
-                      <select 
+                      <select
                         className="input-base"
                         value={formData.dateFormat}
-                        onChange={(e) => updateFormData({ dateFormat: e.target.value as any })}
+                        onChange={(e) =>
+                          updateFormData({ dateFormat: e.target.value as any })
+                        }
                       >
                         <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                         <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -692,10 +760,12 @@ export default function AdminSettingsPage() {
                       <label className="text-card-foreground mb-2 block text-sm font-medium">
                         Moneda
                       </label>
-                      <select 
+                      <select
                         className="input-base"
                         value={formData.currency}
-                        onChange={(e) => updateFormData({ currency: e.target.value as any })}
+                        onChange={(e) =>
+                          updateFormData({ currency: e.target.value as any })
+                        }
                       >
                         <option value="ARS">Peso Argentino (ARS)</option>
                         <option value="USD">Dólar (USD)</option>
@@ -707,10 +777,12 @@ export default function AdminSettingsPage() {
                       <label className="text-card-foreground mb-2 block text-sm font-medium">
                         Idioma
                       </label>
-                      <select 
+                      <select
                         className="input-base"
                         value={formData.language}
-                        onChange={(e) => updateFormData({ language: e.target.value as any })}
+                        onChange={(e) =>
+                          updateFormData({ language: e.target.value as any })
+                        }
                       >
                         <option value="es">Español</option>
                         <option value="en">English</option>
@@ -754,7 +826,11 @@ export default function AdminSettingsPage() {
                           <input
                             type="checkbox"
                             checked={formData.autoCleanupPreviews}
-                            onChange={(e) => updateFormData({ autoCleanupPreviews: e.target.checked })}
+                            onChange={(e) =>
+                              updateFormData({
+                                autoCleanupPreviews: e.target.checked,
+                              })
+                            }
                             className="mr-2"
                           />
                           Eliminar previews después de 90 días

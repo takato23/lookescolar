@@ -37,15 +37,17 @@ export default function StepSelection({
   onPrev,
   loading = false,
 }: StepSelectionProps) {
-  const { 
-    selectedOption, 
-    selectedPhotos, 
+  const {
+    selectedOption,
+    selectedPhotos,
     selectedPhotosLegacy,
     toggleIndividualPhoto,
-    toggleGroupPhoto 
+    toggleGroupPhoto,
   } = useWizardStore();
   const [zoomPhoto, setZoomPhoto] = useState<Photo | null>(null);
-  const [activeTab, setActiveTab] = useState<'individual' | 'group'>('individual');
+  const [activeTab, setActiveTab] = useState<'individual' | 'group'>(
+    'individual'
+  );
 
   // Map WizardOption (id: 1|2) to PackageOption ('option-a'|'option-b') for validation
   const selectedPackage = selectedOption
@@ -54,10 +56,16 @@ export default function StepSelection({
 
   // Validate selection using PackageOption-aware helpers
   const validation = validatePhotoSelection(selectedPhotos, selectedPackage);
-  const instructions = getSelectionInstructions(selectedPackage, selectedPhotos);
+  const instructions = getSelectionInstructions(
+    selectedPackage,
+    selectedPhotos
+  );
 
   // Count occurrences of each photo using legacy format for UI display
-  const allSelectedPhotos = [...selectedPhotos.individual, ...selectedPhotos.group];
+  const allSelectedPhotos = [
+    ...selectedPhotos.individual,
+    ...selectedPhotos.group,
+  ];
   const photoCounts = allSelectedPhotos.reduce(
     (counts, photoId) => {
       counts[photoId] = (counts[photoId] || 0) + 1;
@@ -72,7 +80,7 @@ export default function StepSelection({
     const isIndividualPhoto = activeTab === 'individual';
     const maxIndividual = selectedOption.id === 1 ? 1 : 2; // Option A: 1, Option B: 2
     const maxGroup = 1; // Always 1 group photo
-    
+
     if (isIndividualPhoto) {
       // Handle individual photo selection
       const isCurrentlySelected = selectedPhotos.individual.includes(photo.id);
@@ -144,7 +152,10 @@ export default function StepSelection({
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">
-                {validation.individual.selected} individual{validation.individual.selected > 1 ? 'es' : ''} + {validation.group.selected} grupal{validation.group.selected > 1 ? 'es' : ''}
+                {validation.individual.selected} individual
+                {validation.individual.selected > 1 ? 'es' : ''} +{' '}
+                {validation.group.selected} grupal
+                {validation.group.selected > 1 ? 'es' : ''}
               </h3>
               <p className="text-sm text-gray-600">
                 {validation.individual.message}
@@ -202,7 +213,8 @@ export default function StepSelection({
         >
           Fotos Individuales
           <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
-            {selectedPhotos.individual.length}/{selectedOption?.id === 1 ? 1 : 2}
+            {selectedPhotos.individual.length}/
+            {selectedOption?.id === 1 ? 1 : 2}
           </span>
         </button>
         <button
@@ -223,7 +235,9 @@ export default function StepSelection({
       {/* Tab Content Instructions */}
       <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
         <h3 className="mb-2 font-semibold text-gray-900">
-          {activeTab === 'individual' ? 'Selecciona fotos individuales' : 'Selecciona la foto grupal'}
+          {activeTab === 'individual'
+            ? 'Selecciona fotos individuales'
+            : 'Selecciona la foto grupal'}
         </h3>
         <p className="text-sm text-gray-600">
           {activeTab === 'individual'
@@ -246,16 +260,27 @@ export default function StepSelection({
       ) : (
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {photos.map((photo) => {
-            const isIndividualSelected = selectedPhotos.individual.includes(photo.id);
+            const isIndividualSelected = selectedPhotos.individual.includes(
+              photo.id
+            );
             const isGroupSelected = selectedPhotos.group.includes(photo.id);
-            const isSelectedInCurrentTab = activeTab === 'individual' ? isIndividualSelected : isGroupSelected;
-            const maxForCurrentTab = activeTab === 'individual' 
-              ? (selectedOption?.id === 1 ? 1 : 2) 
-              : 1;
-            const currentTabSelectionCount = activeTab === 'individual' 
-              ? selectedPhotos.individual.length 
-              : selectedPhotos.group.length;
-            const canSelectInCurrentTab = !isSelectedInCurrentTab && currentTabSelectionCount < maxForCurrentTab;
+            const isSelectedInCurrentTab =
+              activeTab === 'individual'
+                ? isIndividualSelected
+                : isGroupSelected;
+            const maxForCurrentTab =
+              activeTab === 'individual'
+                ? selectedOption?.id === 1
+                  ? 1
+                  : 2
+                : 1;
+            const currentTabSelectionCount =
+              activeTab === 'individual'
+                ? selectedPhotos.individual.length
+                : selectedPhotos.group.length;
+            const canSelectInCurrentTab =
+              !isSelectedInCurrentTab &&
+              currentTabSelectionCount < maxForCurrentTab;
 
             return (
               <div
@@ -305,11 +330,13 @@ export default function StepSelection({
                 </div>
 
                 {/* Selected in other tab indicator */}
-                {!isSelectedInCurrentTab && ((activeTab === 'individual' && isGroupSelected) || (activeTab === 'group' && isIndividualSelected)) && (
-                  <div className="absolute left-2 top-2 rounded-full bg-blue-500 p-1 text-white">
-                    <CheckCircleIcon className="h-4 w-4" />
-                  </div>
-                )}
+                {!isSelectedInCurrentTab &&
+                  ((activeTab === 'individual' && isGroupSelected) ||
+                    (activeTab === 'group' && isIndividualSelected)) && (
+                    <div className="absolute left-2 top-2 rounded-full bg-blue-500 p-1 text-white">
+                      <CheckCircleIcon className="h-4 w-4" />
+                    </div>
+                  )}
 
                 {/* Photo Info */}
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
@@ -343,7 +370,7 @@ export default function StepSelection({
         >
           {validation.isValid
             ? 'Continuar a extras'
-            : (validation.overall?.message || 'Completa la selección de fotos')}
+            : validation.overall?.message || 'Completa la selección de fotos'}
         </button>
       </div>
 

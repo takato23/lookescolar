@@ -37,7 +37,10 @@ export const GET = RateLimitMiddleware.withRateLimit(
           parentId === '' || parentId === 'null' ? null : parentId;
 
         // Fetch folders directly via service to avoid delegation issues
-        const result = await folderService.getFolders(eventId, normalizedParentId);
+        const result = await folderService.getFolders(
+          eventId,
+          normalizedParentId
+        );
 
         if (!result.success) {
           logger.error('Failed to fetch folders', {
@@ -48,7 +51,10 @@ export const GET = RateLimitMiddleware.withRateLimit(
           });
 
           return NextResponse.json(
-            { success: false, error: result.error || 'Failed to fetch folders' },
+            {
+              success: false,
+              error: result.error || 'Failed to fetch folders',
+            },
             { status: 500 }
           );
         }

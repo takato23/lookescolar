@@ -104,9 +104,7 @@ const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 };
 
@@ -189,7 +187,7 @@ describe('PhotoAdmin Component', () => {
     );
 
     const searchInput = screen.getByPlaceholderText('Search photos...');
-    
+
     // Type in search
     fireEvent.change(searchInput, { target: { value: 'test search' } });
 
@@ -266,7 +264,7 @@ describe('PhotoAdmin Component', () => {
 
   it('handles cache refresh', async () => {
     const { toast } = await import('sonner');
-    
+
     render(
       <TestWrapper>
         <PhotoAdmin />

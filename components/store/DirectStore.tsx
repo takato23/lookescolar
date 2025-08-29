@@ -7,11 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  ShoppingCart, 
-  Heart, 
-  Eye, 
-  Calendar, 
+import {
+  ShoppingCart,
+  Heart,
+  Eye,
+  Calendar,
   Image as ImageIcon,
   X,
   Plus,
@@ -26,7 +26,7 @@ import {
   Camera,
   Sparkles,
   Gift,
-  Truck
+  Truck,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -97,7 +97,9 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
     state: '',
     zipCode: '',
   });
-  const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
+  const [contactErrors, setContactErrors] = useState<Record<string, string>>(
+    {}
+  );
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Precio por foto (configurable)
@@ -105,25 +107,26 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
 
   // Agregar foto al carrito
   const addToCart = (photo: Photo) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === photo.id);
+    setCartItems((prev) => {
+      const existingItem = prev.find((item) => item.id === photo.id);
       if (existingItem) {
-        return prev.map(item =>
-          item.id === photo.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+        return prev.map((item) =>
+          item.id === photo.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prev, { id: photo.id, photo, quantity: 1, price: PRICE_PER_PHOTO }];
+      return [
+        ...prev,
+        { id: photo.id, photo, quantity: 1, price: PRICE_PER_PHOTO },
+      ];
     });
-    
+
     toast.success(`${photo.filename} agregada al carrito`);
     setIsCartOpen(true);
   };
 
   // Remover foto del carrito
   const removeFromCart = (photoId: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== photoId));
+    setCartItems((prev) => prev.filter((item) => item.id !== photoId));
     toast.success('Foto removida del carrito');
   };
 
@@ -133,17 +136,18 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
       removeFromCart(photoId);
       return;
     }
-    
-    setCartItems(prev =>
-      prev.map(item =>
-        item.id === photoId ? { ...item, quantity } : item
-      )
+
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === photoId ? { ...item, quantity } : item))
     );
   };
 
   // Calcular total
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
   };
 
   // Validar formulario de contacto
@@ -184,11 +188,11 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
         body: JSON.stringify({
           token,
           contactInfo: contactForm,
-                  items: cartItems.map(item => ({
-          photoId: item.photo.id,
-          quantity: item.quantity,
-          price: item.price,
-        })),
+          items: cartItems.map((item) => ({
+            photoId: item.photo.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
         }),
       });
 
@@ -198,18 +202,20 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
       }
 
       const { redirectUrl } = await response.json();
-      
+
       // Limpiar carrito y redirigir a MercadoPago
       setCartItems([]);
       setIsCheckoutOpen(false);
       setIsCartOpen(false);
-      
+
       if (redirectUrl) {
         window.location.href = redirectUrl;
       }
     } catch (error) {
       console.error('Error en checkout:', error);
-      toast.error('Hubo un error al procesar tu pedido. Por favor intenta nuevamente.');
+      toast.error(
+        'Hubo un error al procesar tu pedido. Por favor intenta nuevamente.'
+      );
     } finally {
       setIsProcessingPayment(false);
     }
@@ -224,30 +230,35 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
         {/* Hero Section */}
         <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white">
           <div className="absolute inset-0 bg-black/20"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="text-center">
-              <div className="flex items-center justify-center mb-4">
-                <Camera className="h-8 w-8 mr-3 text-yellow-300" />
-                <h1 className="text-4xl sm:text-5xl font-bold">
+              <div className="mb-4 flex items-center justify-center">
+                <Camera className="mr-3 h-8 w-8 text-yellow-300" />
+                <h1 className="text-4xl font-bold sm:text-5xl">
                   {subject.event.name}
                 </h1>
               </div>
-              <p className="text-xl sm:text-2xl text-blue-100 mb-4">
+              <p className="mb-4 text-xl text-blue-100 sm:text-2xl">
                 📸 {subject.name}
               </p>
-              <p className="text-lg text-blue-200 max-w-2xl mx-auto">
-                Selecciona las fotos que quieres comprar. Imágenes de alta calidad 
-                impresas profesionalmente para conservar tus recuerdos más preciados.
+              <p className="mx-auto max-w-2xl text-lg text-blue-200">
+                Selecciona las fotos que quieres comprar. Imágenes de alta
+                calidad impresas profesionalmente para conservar tus recuerdos
+                más preciados.
               </p>
-              
+
               {/* Stats */}
-              <div className="flex flex-wrap justify-center gap-8 mt-8">
+              <div className="mt-8 flex flex-wrap justify-center gap-8">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-300">{photos.length}</div>
+                  <div className="text-3xl font-bold text-yellow-300">
+                    {photos.length}
+                  </div>
                   <div className="text-blue-200">Fotos Disponibles</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-300">{formatCurrency(PRICE_PER_PHOTO)}</div>
+                  <div className="text-3xl font-bold text-yellow-300">
+                    {formatCurrency(PRICE_PER_PHOTO)}
+                  </div>
                   <div className="text-blue-200">Por Foto</div>
                 </div>
                 <div className="text-center">
@@ -260,32 +271,41 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
         </div>
 
         {/* Header con carrito */}
-        <div className="bg-white/80 backdrop-blur-md shadow-sm border-b sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="sticky top-0 z-50 border-b bg-white/80 shadow-sm backdrop-blur-md">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                  <ImageIcon className="h-3 w-3 mr-1" />
+                <Badge
+                  variant="secondary"
+                  className="border-blue-200 bg-blue-100 text-blue-800"
+                >
+                  <ImageIcon className="mr-1 h-3 w-3" />
                   {photos.length} fotos
                 </Badge>
-                <Badge variant="outline" className="border-green-200 text-green-700">
-                  <Star className="h-3 w-3 mr-1" />
+                <Badge
+                  variant="outline"
+                  className="border-green-200 text-green-700"
+                >
+                  <Star className="mr-1 h-3 w-3" />
                   Calidad Premium
                 </Badge>
               </div>
-              
+
               {/* Carrito flotante */}
               <Button
                 variant="default"
                 size="lg"
                 onClick={() => setIsCartOpen(true)}
-                className="relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                className="relative bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg hover:from-blue-700 hover:to-purple-700"
               >
-                <ShoppingCart className="h-5 w-5 mr-2" />
+                <ShoppingCart className="mr-2 h-5 w-5" />
                 Mi Carrito
                 {cartItems.length > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs bg-red-500">
-                    {cartItems.reduce((total, item) => total + item.quantity, 0)}
+                  <Badge className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 p-0 text-xs">
+                    {cartItems.reduce(
+                      (total, item) => total + item.quantity,
+                      0
+                    )}
                   </Badge>
                 )}
               </Button>
@@ -295,52 +315,62 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
 
         {/* Features Section */}
         <div className="bg-white py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <div className="text-center">
-                <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
                   <Camera className="h-8 w-8 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Fotos Profesionales</h3>
-                <p className="text-gray-600">Imágenes de alta resolución capturadas por fotógrafos expertos</p>
+                <h3 className="mb-2 text-lg font-semibold">
+                  Fotos Profesionales
+                </h3>
+                <p className="text-gray-600">
+                  Imágenes de alta resolución capturadas por fotógrafos expertos
+                </p>
               </div>
               <div className="text-center">
-                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100">
                   <Truck className="h-8 w-8 text-purple-600" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Envío Rápido</h3>
-                <p className="text-gray-600">Recibe tus fotos en 24-48 horas en la puerta de tu casa</p>
+                <h3 className="mb-2 text-lg font-semibold">Envío Rápido</h3>
+                <p className="text-gray-600">
+                  Recibe tus fotos en 24-48 horas en la puerta de tu casa
+                </p>
               </div>
               <div className="text-center">
-                <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                   <Gift className="h-8 w-8 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Calidad Garantizada</h3>
-                <p className="text-gray-600">Papel fotográfico premium con acabado profesional</p>
+                <h3 className="mb-2 text-lg font-semibold">
+                  Calidad Garantizada
+                </h3>
+                <p className="text-gray-600">
+                  Papel fotográfico premium con acabado profesional
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Grid de fotos */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-gray-900">
               🎯 Selecciona tus Fotos Favoritas
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Haz clic en las fotos que te gusten para agregarlas al carrito. 
+            <p className="mx-auto max-w-2xl text-lg text-gray-600">
+              Haz clic en las fotos que te gusten para agregarlas al carrito.
               Puedes seleccionar múltiples fotos y ajustar cantidades.
             </p>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {photos.map((photo) => (
               <PhotoCard
                 key={photo.id}
                 photo={photo}
                 onAddToCart={() => addToCart(photo)}
-                isInCart={cartItems.some(item => item.id === photo.id)}
+                isInCart={cartItems.some((item) => item.id === photo.id)}
                 price={PRICE_PER_PHOTO}
               />
             ))}
@@ -349,12 +379,12 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
 
         {/* Carrito flotante */}
         {isCartOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-end p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden border border-gray-200">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+          <div className="fixed inset-0 z-50 flex items-end justify-end bg-black/60 p-4 backdrop-blur-sm">
+            <div className="max-h-[80vh] w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold flex items-center">
-                    <ShoppingCart className="h-5 w-5 mr-2" />
+                  <h3 className="flex items-center text-xl font-bold">
+                    <ShoppingCart className="mr-2 h-5 w-5" />
                     Tu Carrito
                   </h3>
                   <Button
@@ -367,25 +397,32 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
                   </Button>
                 </div>
               </div>
-              
-              <div className="p-6 max-h-96 overflow-y-auto">
+
+              <div className="max-h-96 overflow-y-auto p-6">
                 {cartItems.length === 0 ? (
-                  <div className="text-center py-12">
-                    <ShoppingCart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">Tu carrito está vacío</p>
-                    <p className="text-gray-400">Selecciona algunas fotos para comenzar</p>
+                  <div className="py-12 text-center">
+                    <ShoppingCart className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                    <p className="text-lg text-gray-500">
+                      Tu carrito está vacío
+                    </p>
+                    <p className="text-gray-400">
+                      Selecciona algunas fotos para comenzar
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {cartItems.map((item) => (
-                      <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4"
+                      >
                         <img
                           src={item.photo.preview_url}
                           alt={item.photo.filename}
-                          className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                          className="h-20 w-20 rounded-lg object-cover shadow-sm"
                         />
                         <div className="flex-1">
-                          <p className="font-semibold text-sm truncate">
+                          <p className="truncate text-sm font-semibold">
                             {item.photo.filename}
                           </p>
                           <p className="text-lg font-bold text-blue-600">
@@ -396,16 +433,22 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
                             className="h-8 w-8 p-0"
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-8 text-center font-semibold">{item.quantity}</span>
+                          <span className="w-8 text-center font-semibold">
+                            {item.quantity}
+                          </span>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
                             className="h-8 w-8 p-0"
                           >
                             <Plus className="h-3 w-3" />
@@ -416,10 +459,10 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
                   </div>
                 )}
               </div>
-              
+
               {cartItems.length > 0 && (
-                <div className="p-6 border-t bg-gradient-to-r from-gray-50 to-blue-50">
-                  <div className="flex items-center justify-between mb-6">
+                <div className="border-t bg-gradient-to-r from-gray-50 to-blue-50 p-6">
+                  <div className="mb-6 flex items-center justify-between">
                     <span className="text-lg font-semibold">Total:</span>
                     <span className="text-3xl font-bold text-blue-600">
                       {formatCurrency(getTotalPrice())}
@@ -430,9 +473,9 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
                       setIsCartOpen(false);
                       setIsCheckoutOpen(true);
                     }}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg py-3 shadow-lg"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-3 text-lg shadow-lg hover:from-blue-700 hover:to-purple-700"
                   >
-                    <CreditCard className="h-5 w-5 mr-2" />
+                    <CreditCard className="mr-2 h-5 w-5" />
                     Proceder al Pago
                   </Button>
                 </div>
@@ -443,12 +486,12 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
 
         {/* Checkout Modal */}
         {isCheckoutOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl">
+              <div className="rounded-t-2xl bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold flex items-center">
-                    <CreditCard className="h-6 w-6 mr-2" />
+                  <h2 className="flex items-center text-2xl font-bold">
+                    <CreditCard className="mr-2 h-6 w-6" />
                     Información de Envío
                   </h2>
                   <Button
@@ -464,150 +507,222 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
 
               <div className="p-6">
                 <form className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                      <Label htmlFor="name" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="name"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Nombre completo *
                       </Label>
                       <Input
                         id="name"
                         value={contactForm.name}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, name: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.name ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Tu nombre completo"
                       />
                       {contactErrors.name && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.name}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.name}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="email"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Email *
                       </Label>
                       <Input
                         id="email"
                         type="email"
                         value={contactForm.email}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="tu@email.com"
                       />
                       {contactErrors.email && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.email}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.email}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="phone"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Teléfono *
                       </Label>
                       <Input
                         id="phone"
                         value={contactForm.phone}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="+54 9 11 1234-5678"
                       />
                       {contactErrors.phone && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.phone}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.phone}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="street" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="street"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Dirección *
                       </Label>
                       <Input
                         id="street"
                         value={contactForm.street}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, street: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            street: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.street ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Calle y número"
                       />
                       {contactErrors.street && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.street}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.street}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="city" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="city"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Ciudad *
                       </Label>
                       <Input
                         id="city"
                         value={contactForm.city}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, city: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            city: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.city ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Buenos Aires"
                       />
                       {contactErrors.city && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.city}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.city}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="state" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="state"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Provincia *
                       </Label>
                       <Input
                         id="state"
                         value={contactForm.state}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, state: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            state: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.state ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Buenos Aires"
                       />
                       {contactErrors.state && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.state}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.state}
+                        </p>
                       )}
                     </div>
-                    
+
                     <div>
-                      <Label htmlFor="zipCode" className="text-sm font-semibold text-gray-700">
+                      <Label
+                        htmlFor="zipCode"
+                        className="text-sm font-semibold text-gray-700"
+                      >
                         Código Postal *
                       </Label>
                       <Input
                         id="zipCode"
                         value={contactForm.zipCode}
-                        onChange={(e) => setContactForm(prev => ({ ...prev, zipCode: e.target.value }))}
+                        onChange={(e) =>
+                          setContactForm((prev) => ({
+                            ...prev,
+                            zipCode: e.target.value,
+                          }))
+                        }
                         className={`mt-2 h-12 ${contactErrors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="1234"
                       />
                       {contactErrors.zipCode && (
-                        <p className="text-red-500 text-sm mt-1">{contactErrors.zipCode}</p>
+                        <p className="mt-1 text-sm text-red-500">
+                          {contactErrors.zipCode}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   <div className="border-t pt-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-xl font-semibold text-gray-800">Total del pedido:</span>
+                    <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 p-6">
+                      <div className="mb-4 flex items-center justify-between">
+                        <span className="text-xl font-semibold text-gray-800">
+                          Total del pedido:
+                        </span>
                         <span className="text-4xl font-bold text-blue-600">
                           {formatCurrency(getTotalPrice())}
                         </span>
                       </div>
-                      
-                      <div className="text-sm text-gray-600 mb-6">
+
+                      <div className="mb-6 text-sm text-gray-600">
                         <p>✅ Envío incluido en el precio</p>
                         <p>✅ Impresión profesional en papel fotográfico</p>
                         <p>✅ Entrega en 24-48 horas</p>
                       </div>
-                      
+
                       <Button
                         onClick={processPayment}
                         disabled={isProcessingPayment}
-                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-lg py-4 shadow-lg"
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 py-4 text-lg shadow-lg hover:from-green-700 hover:to-emerald-700"
                         size="lg"
                       >
                         {isProcessingPayment ? (
                           <>
-                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             Procesando...
                           </>
                         ) : (
                           <>
-                            <CreditCard className="h-5 w-5 mr-2" />
+                            <CreditCard className="mr-2 h-5 w-5" />
                             Pagar con MercadoPago
                           </>
                         )}
@@ -637,14 +752,14 @@ function PhotoCard({ photo, onAddToCart, isInCart, price }: PhotoCardProps) {
   const [imageError, setImageError] = useState(false);
 
   return (
-    <Card className="group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 overflow-hidden border-0 bg-white shadow-lg">
-      <CardContent className="p-0 relative">
-        <div className="aspect-square relative overflow-hidden">
+    <Card className="group cursor-pointer overflow-hidden border-0 bg-white shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
+      <CardContent className="relative p-0">
+        <div className="relative aspect-square overflow-hidden">
           {/* Loading state */}
           {imageLoading && !imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
               <div className="flex flex-col items-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500 mb-2" />
+                <Loader2 className="mb-2 h-8 w-8 animate-spin text-blue-500" />
                 <p className="text-sm text-gray-500">Cargando...</p>
               </div>
             </div>
@@ -654,7 +769,7 @@ function PhotoCard({ photo, onAddToCart, isInCart, price }: PhotoCardProps) {
           {imageError && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
               <div className="text-center">
-                <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <ImageIcon className="mx-auto mb-2 h-12 w-12 text-gray-400" />
                 <p className="text-sm text-gray-500">Error al cargar</p>
               </div>
             </div>
@@ -665,7 +780,7 @@ function PhotoCard({ photo, onAddToCart, isInCart, price }: PhotoCardProps) {
             <img
               src={photo.preview_url}
               alt={photo.filename}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
               onLoad={() => setImageLoading(false)}
               onError={() => {
                 setImageError(true);
@@ -675,21 +790,21 @@ function PhotoCard({ photo, onAddToCart, isInCart, price }: PhotoCardProps) {
           )}
 
           {/* Overlay con precio y botón */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100">
             {/* Precio */}
-            <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-full text-sm font-bold text-gray-800 shadow-lg">
+            <div className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-2 text-sm font-bold text-gray-800 shadow-lg backdrop-blur-sm">
               {formatCurrency(price)}
             </div>
 
             {/* Botón de agregar al carrito */}
-            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 transform">
               <Button
-                variant={isInCart ? "secondary" : "default"}
+                variant={isInCart ? 'secondary' : 'default'}
                 size="lg"
-                className={`transition-all duration-300 transform ${
-                  isInCart 
-                    ? 'bg-green-600 hover:bg-green-700 shadow-lg' 
-                    : 'bg-white/95 hover:bg-white text-gray-800 hover:text-gray-900 shadow-lg'
+                className={`transform transition-all duration-300 ${
+                  isInCart
+                    ? 'bg-green-600 shadow-lg hover:bg-green-700'
+                    : 'bg-white/95 text-gray-800 shadow-lg hover:bg-white hover:text-gray-900'
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -698,12 +813,12 @@ function PhotoCard({ photo, onAddToCart, isInCart, price }: PhotoCardProps) {
               >
                 {isInCart ? (
                   <>
-                    <Heart className="h-5 w-5 mr-2" />
+                    <Heart className="mr-2 h-5 w-5" />
                     Agregada
                   </>
                 ) : (
                   <>
-                    <Plus className="h-5 w-5 mr-2" />
+                    <Plus className="mr-2 h-5 w-5" />
                     Agregar
                   </>
                 )}
@@ -712,9 +827,9 @@ function PhotoCard({ photo, onAddToCart, isInCart, price }: PhotoCardProps) {
           </div>
 
           {/* Badge de "Nueva" */}
-          <div className="absolute top-3 right-3">
-            <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white border-0 shadow-lg">
-              <Sparkles className="h-3 w-3 mr-1" />
+          <div className="absolute right-3 top-3">
+            <Badge className="border-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg">
+              <Sparkles className="mr-1 h-3 w-3" />
               Nueva
             </Badge>
           </div>

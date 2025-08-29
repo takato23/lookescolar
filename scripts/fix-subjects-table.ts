@@ -41,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_subjects_token_expires ON subjects(token_expires_
 
     // Test if we can access the current columns
     console.log('\n🔍 Testing current subjects table access...');
-    
+
     try {
       const { data, error } = await supabase
         .from('subjects')
@@ -61,13 +61,13 @@ CREATE INDEX IF NOT EXISTS idx_subjects_token_expires ON subjects(token_expires_
 
     // Test what happens if we try to add a test subject with minimal data
     console.log('\n📝 Testing if we can create a test subject...');
-    
+
     try {
       const testSubject = {
         event_id: eventId,
         name: 'Test Student',
         email: 'test@example.com',
-        phone: '123456789'
+        phone: '123456789',
       };
 
       const { data, error } = await supabase
@@ -80,24 +80,17 @@ CREATE INDEX IF NOT EXISTS idx_subjects_token_expires ON subjects(token_expires_
         console.log(`❌ Cannot create test subject: ${error.message}`);
       } else {
         console.log(`✅ Created test subject: ${data.name} (ID: ${data.id})`);
-        
+
         // Clean up - delete the test subject
-        await supabase
-          .from('subjects')
-          .delete()
-          .eq('id', data.id);
+        await supabase.from('subjects').delete().eq('id', data.id);
         console.log(`🧹 Deleted test subject`);
       }
     } catch (e) {
       console.log(`❌ Error creating test subject: ${e}`);
     }
-
   } catch (error) {
     console.error('Error fixing subjects table:', error);
   }
 }
 
 fixSubjectsTable();
-
-
-

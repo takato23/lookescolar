@@ -9,17 +9,28 @@ const supabase = createClient(
 
 async function checkExistingSchema() {
   console.log('🔍 Checking existing schema...\n');
-  
+
   // Check what tables exist
-  const tables = ['events', 'subjects', 'folders', 'assets', 'courses', 'course_members', 'folder_courses', 'asset_subjects', 'access_tokens', 'token_access_logs'];
-  
+  const tables = [
+    'events',
+    'subjects',
+    'folders',
+    'assets',
+    'courses',
+    'course_members',
+    'folder_courses',
+    'asset_subjects',
+    'access_tokens',
+    'token_access_logs',
+  ];
+
   for (const table of tables) {
     try {
       const { data, error } = await supabase
         .from(table)
         .select('count')
         .limit(1);
-      
+
       if (error) {
         console.log(`❌ ${table}: ${error.message}`);
       } else {
@@ -29,7 +40,7 @@ async function checkExistingSchema() {
       console.log(`❌ ${table}: ${err.message}`);
     }
   }
-  
+
   console.log('\n🎯 Ready to apply hierarchical migrations');
 }
 

@@ -31,7 +31,11 @@ interface ContextSidebarProps {
   healthScore: number;
 }
 
-export function ContextSidebar({ eventInfo, metrics, healthScore }: ContextSidebarProps) {
+export function ContextSidebar({
+  eventInfo,
+  metrics,
+  healthScore,
+}: ContextSidebarProps) {
   const recentActivities = [
     {
       id: 1,

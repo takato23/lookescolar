@@ -42,7 +42,14 @@ interface LazyImageProps {
 }
 
 // Lazy image component with intersection observer
-function LazyImage({ src, alt, className, onLoad, onError, fetchPriority = 'auto' }: LazyImageProps) {
+function LazyImage({
+  src,
+  alt,
+  className,
+  onLoad,
+  onError,
+  fetchPriority = 'auto',
+}: LazyImageProps) {
   const [isInView, setIsInView] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);

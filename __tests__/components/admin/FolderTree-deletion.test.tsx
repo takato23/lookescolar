@@ -1,9 +1,9 @@
 /**
  * Test suite for FolderTree deletion functionality
- * 
+ *
  * Tests the secure folder deletion feature with:
  * - Proper confirmation modal
- * - System folder protection 
+ * - System folder protection
  * - Content movement handling
  * - Error handling and feedback
  */
@@ -41,7 +41,7 @@ describe('FolderTree Deletion', () => {
       child_folder_count: 0,
     },
     {
-      id: 'folder-2', 
+      id: 'folder-2',
       name: 'General',
       parent_id: null,
       event_id: null,
@@ -55,11 +55,11 @@ describe('FolderTree Deletion', () => {
       name: 'Family Photos',
       parent_id: null,
       event_id: null,
-      path: '/family-photos', 
+      path: '/family-photos',
       depth: 0,
       photo_count: 15,
       child_folder_count: 2,
-    }
+    },
   ];
 
   const renderFolderTree = (folders = mockFolders) => {
@@ -96,23 +96,25 @@ describe('FolderTree Deletion', () => {
 
       // Find the first folder's actions menu
       const actionsButtons = screen.getAllByRole('button');
-      const moreButton = actionsButtons.find(btn => 
+      const moreButton = actionsButtons.find((btn) =>
         btn.querySelector('svg')?.classList.contains('h-3')
       );
-      
+
       expect(moreButton).toBeDefined();
 
       // Click actions menu
       if (moreButton) {
         await userEvent.click(moreButton);
-        
+
         // Should show delete option
         await waitFor(() => {
           expect(screen.getByText('Delete Folder')).toBeInTheDocument();
         });
 
         // Delete option should have red styling
-        const deleteItem = screen.getByText('Delete Folder').closest('[role="menuitem"]');
+        const deleteItem = screen
+          .getByText('Delete Folder')
+          .closest('[role="menuitem"]');
         expect(deleteItem).toHaveClass('text-red-600');
       }
     });
@@ -121,7 +123,7 @@ describe('FolderTree Deletion', () => {
       renderFolderTree();
 
       const actionsButtons = screen.getAllByRole('button');
-      const moreButton = actionsButtons.find(btn => 
+      const moreButton = actionsButtons.find((btn) =>
         btn.querySelector('svg')?.classList.contains('h-3')
       );
 
@@ -151,7 +153,9 @@ describe('FolderTree Deletion', () => {
       });
 
       // Should show error for system folder
-      expect(toast.error).toHaveBeenCalledWith('System folders cannot be deleted');
+      expect(toast.error).toHaveBeenCalledWith(
+        'System folders cannot be deleted'
+      );
     });
 
     it('should allow deletion of custom folders', async () => {
@@ -159,13 +163,14 @@ describe('FolderTree Deletion', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 }
-          })
+          json: () =>
+            Promise.resolve({
+              folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 },
+            }),
         } as Response) // GET folder details
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({ success: true })
+          json: () => Promise.resolve({ success: true }),
         } as Response); // DELETE request
 
       renderFolderTree();
@@ -175,7 +180,7 @@ describe('FolderTree Deletion', () => {
       const testFolderActionButton = actionsButtons[1]; // First folder actions
 
       await userEvent.click(testFolderActionButton);
-      
+
       await waitFor(() => {
         const deleteButton = screen.getByText('Delete Folder');
         fireEvent.click(deleteButton);
@@ -193,22 +198,26 @@ describe('FolderTree Deletion', () => {
     beforeEach(() => {
       // Mock folder details API
       mockFetch.mockImplementation((url) => {
-        if (typeof url === 'string' && url.includes('/api/admin/folders/folder-1')) {
+        if (
+          typeof url === 'string' &&
+          url.includes('/api/admin/folders/folder-1')
+        ) {
           return Promise.resolve({
             ok: true,
-            json: () => Promise.resolve({
-              folder: {
-                id: 'folder-1',
-                name: 'Test Folder',
-                photo_count: 5,
-                child_folder_count: 0
-              }
-            })
+            json: () =>
+              Promise.resolve({
+                folder: {
+                  id: 'folder-1',
+                  name: 'Test Folder',
+                  photo_count: 5,
+                  child_folder_count: 0,
+                },
+              }),
           } as Response);
         }
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ success: true })
+          json: () => Promise.resolve({ success: true }),
         } as Response);
       });
     });
@@ -253,7 +262,9 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(screen.getByText('Delete Folder'));
 
       await waitFor(() => {
-        expect(screen.getByText('This action cannot be undone')).toBeInTheDocument();
+        expect(
+          screen.getByText('This action cannot be undone')
+        ).toBeInTheDocument();
       });
     });
 
@@ -267,8 +278,12 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(screen.getByText('Delete Folder'));
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Delete Folder' })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: 'Cancel' })
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: 'Delete Folder' })
+        ).toBeInTheDocument();
       });
     });
   });
@@ -278,13 +293,14 @@ describe('FolderTree Deletion', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 }
-          })
+          json: () =>
+            Promise.resolve({
+              folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 },
+            }),
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({ success: true })
+          json: () => Promise.resolve({ success: true }),
         } as Response);
     });
 
@@ -299,7 +315,9 @@ describe('FolderTree Deletion', () => {
 
       // Wait for modal and confirm deletion
       await waitFor(() => {
-        const deleteButton = screen.getByRole('button', { name: 'Delete Folder' });
+        const deleteButton = screen.getByRole('button', {
+          name: 'Delete Folder',
+        });
         fireEvent.click(deleteButton);
       });
 
@@ -321,7 +339,9 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(screen.getByText('Delete Folder'));
 
       await waitFor(() => {
-        const deleteButton = screen.getByRole('button', { name: 'Delete Folder' });
+        const deleteButton = screen.getByRole('button', {
+          name: 'Delete Folder',
+        });
         fireEvent.click(deleteButton);
       });
 
@@ -341,7 +361,9 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(testFolderActionButton);
       await userEvent.click(screen.getByText('Delete Folder'));
 
-      const deleteButton = await screen.findByRole('button', { name: 'Delete Folder' });
+      const deleteButton = await screen.findByRole('button', {
+        name: 'Delete Folder',
+      });
       fireEvent.click(deleteButton);
 
       await waitFor(() => {
@@ -356,13 +378,15 @@ describe('FolderTree Deletion', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 }
-          })
+          json: () =>
+            Promise.resolve({
+              folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 },
+            }),
         } as Response)
         .mockResolvedValueOnce({
           ok: false,
-          json: () => Promise.resolve({ error: 'Folder contains protected items' })
+          json: () =>
+            Promise.resolve({ error: 'Folder contains protected items' }),
         } as Response);
 
       renderFolderTree();
@@ -373,11 +397,15 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(testFolderActionButton);
       await userEvent.click(screen.getByText('Delete Folder'));
 
-      const deleteButton = await screen.findByRole('button', { name: 'Delete Folder' });
+      const deleteButton = await screen.findByRole('button', {
+        name: 'Delete Folder',
+      });
       fireEvent.click(deleteButton);
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('Folder contains protected items');
+        expect(toast.error).toHaveBeenCalledWith(
+          'Folder contains protected items'
+        );
       });
     });
 
@@ -385,9 +413,10 @@ describe('FolderTree Deletion', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 }
-          })
+          json: () =>
+            Promise.resolve({
+              folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 },
+            }),
         } as Response)
         .mockRejectedValueOnce(new Error('Network error'));
 
@@ -399,7 +428,9 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(testFolderActionButton);
       await userEvent.click(screen.getByText('Delete Folder'));
 
-      const deleteButton = await screen.findByRole('button', { name: 'Delete Folder' });
+      const deleteButton = await screen.findByRole('button', {
+        name: 'Delete Folder',
+      });
       fireEvent.click(deleteButton);
 
       await waitFor(() => {
@@ -415,16 +446,24 @@ describe('FolderTree Deletion', () => {
       mockFetch
         .mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 }
-          })
+          json: () =>
+            Promise.resolve({
+              folder: { id: 'folder-1', photo_count: 5, child_folder_count: 0 },
+            }),
         } as Response)
-        .mockImplementation(() => new Promise(resolve => 
-          setTimeout(() => resolve({
-            ok: true,
-            json: () => Promise.resolve({ success: true })
-          } as Response), 1000)
-        ));
+        .mockImplementation(
+          () =>
+            new Promise((resolve) =>
+              setTimeout(
+                () =>
+                  resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ success: true }),
+                  } as Response),
+                1000
+              )
+            )
+        );
 
       renderFolderTree();
 
@@ -434,7 +473,9 @@ describe('FolderTree Deletion', () => {
       await userEvent.click(testFolderActionButton);
       await userEvent.click(screen.getByText('Delete Folder'));
 
-      const deleteButton = await screen.findByRole('button', { name: 'Delete Folder' });
+      const deleteButton = await screen.findByRole('button', {
+        name: 'Delete Folder',
+      });
       fireEvent.click(deleteButton);
 
       // Should show loading state

@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     // Get asset record
     const { data: asset, error: assetError } = await supabase
       .from('assets')
-      .select(`
+      .select(
+        `
         id,
         original_path,
         folder_id,
@@ -48,7 +49,8 @@ export async function POST(request: NextRequest) {
             school_name
           )
         )
-      `)
+      `
+      )
       .eq('id', assetId)
       .single();
 
@@ -67,9 +69,8 @@ export async function POST(request: NextRequest) {
 
     try {
       // Download original image
-      const { data: originalData, error: downloadError } = await supabase.storage
-        .from('originals')
-        .download(asset.original_path);
+      const { data: originalData, error: downloadError } =
+        await supabase.storage.from('originals').download(asset.original_path);
 
       if (downloadError || !originalData) {
         throw new Error('Failed to download original image');
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       const folder = asset.folders;
       const event = folder.events;
       let watermarkText = 'LookEscolar';
-      
+
       if (event?.school_name && event?.name) {
         watermarkText = `${event.school_name} - ${event.name}`;
       } else if (event?.name) {
@@ -125,10 +126,12 @@ export async function POST(request: NextRequest) {
 
       // Add watermark overlay
       const watermarkBuffer = Buffer.from(watermarkSvg);
-      processedImage = processedImage.composite([{
-        input: watermarkBuffer,
-        blend: 'over',
-      }]);
+      processedImage = processedImage.composite([
+        {
+          input: watermarkBuffer,
+          blend: 'over',
+        },
+      ]);
 
       // Convert to WebP and optimize for 35KB target
       let quality = 80;
@@ -141,17 +144,20 @@ export async function POST(request: NextRequest) {
         imageBuffer = await processedImage
           .webp({ quality, effort: 6 })
           .toBuffer();
-        
+
         if (imageBuffer.length <= targetSize || quality <= 20) {
           break;
         }
-        
+
         quality -= 8;
         attempts++;
       } while (attempts < maxAttempts);
 
       // Generate preview path
-      const previewPath = asset.original_path.replace(/\.[^.]+$/, '_preview.webp');
+      const previewPath = asset.original_path.replace(
+        /\.[^.]+$/,
+        '_preview.webp'
+      );
 
       // Upload preview to public bucket
       const { error: uploadError } = await supabase.storage
@@ -199,44 +205,50 @@ export async function POST(request: NextRequest) {
         quality,
         watermarkText,
         originalSize: asset.file_size,
-        compressionRatio: Math.round((1 - imageBuffer.length / asset.file_size) * 100),
+        compressionRatio: Math.round(
+          (1 - imageBuffer.length / asset.file_size) * 100
+        ),
       });
-
     } catch (processingError) {
       console.error('Preview processing error:', processingError);
 
       // Update status to error
       await supabase
         .from('assets')
-        .update({ 
+        .update({
           status: 'error',
           metadata: {
             ...asset.metadata,
-            error: processingError instanceof Error ? processingError.message : 'Processing failed',
+            error:
+              processingError instanceof Error
+                ? processingError.message
+                : 'Processing failed',
             error_at: new Date().toISOString(),
           },
         })
         .eq('id', assetId);
 
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Preview processing failed',
-          details: processingError instanceof Error ? processingError.message : 'Unknown error'
+          details:
+            processingError instanceof Error
+              ? processingError.message
+              : 'Unknown error',
         },
         { status: 500 }
       );
     }
-
   } catch (error) {
     console.error('Process preview error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Validation failed',
-          details: error.errors 
+          details: error.errors,
         },
         { status: 400 }
       );

@@ -97,8 +97,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     todayOrders: data?.activity?.recent_orders ?? 0,
     todayPayments: data?.activity?.recent_payments ?? 0,
     pendingOrders: data?.orders?.pending ?? 0,
-    storageUsed:
-      (data?.storage?.estimated_size_gb ?? 0) * 1024 * 1024 * 1024,
+    storageUsed: (data?.storage?.estimated_size_gb ?? 0) * 1024 * 1024 * 1024,
     storageLimit: 5 * 1024 * 1024 * 1024,
     recentActivity: (data?.recent_activity || []).map((a: any) => ({
       id: a.id,

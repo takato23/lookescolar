@@ -57,10 +57,12 @@ export function adaptStoreDataToUnified(
   assets: StoreAsset[]
 ): UnifiedStoreData {
   // Convertir assets a fotos
-  const photos: UnifiedPhoto[] = assets.map(asset => ({
+  const photos: UnifiedPhoto[] = assets.map((asset) => ({
     id: asset.id,
     filename: asset.filename,
-    preview_url: asset.preview_url || `/admin/previews/${asset.filename.replace(/\.[^/.]+$/, '')}_preview.webp`,
+    preview_url:
+      asset.preview_url ||
+      `/admin/previews/${asset.filename.replace(/\.[^/.]+$/, '')}_preview.webp`,
     size: asset.file_size,
     width: 800, // Default width para previews
     height: 600, // Default height para previews
@@ -92,18 +94,27 @@ export function getEventTheme(storeSettings: any): string {
   if (storeSettings?.theme) {
     return storeSettings.theme;
   }
-  
+
   // Detectar tema basado en el nombre del evento
   const eventName = storeSettings?.event_name || '';
-  if (eventName.toLowerCase().includes('jardín') || eventName.toLowerCase().includes('kinder')) {
+  if (
+    eventName.toLowerCase().includes('jardín') ||
+    eventName.toLowerCase().includes('kinder')
+  ) {
     return 'jardin';
   }
-  if (eventName.toLowerCase().includes('secundaria') || eventName.toLowerCase().includes('colegio')) {
+  if (
+    eventName.toLowerCase().includes('secundaria') ||
+    eventName.toLowerCase().includes('colegio')
+  ) {
     return 'secundaria';
   }
-  if (eventName.toLowerCase().includes('bautismo') || eventName.toLowerCase().includes('comunión')) {
+  if (
+    eventName.toLowerCase().includes('bautismo') ||
+    eventName.toLowerCase().includes('comunión')
+  ) {
     return 'bautismo';
   }
-  
+
   return 'default';
 }

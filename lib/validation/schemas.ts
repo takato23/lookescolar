@@ -22,13 +22,13 @@ export const nameSchema = z
   .string()
   .min(1, 'Name is required')
   .max(100, 'Name too long')
-  .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-'\.]+$/, 'Invalid characters in name')
+  .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-'.]+$/, 'Invalid characters in name')
   .transform((s) => s.trim())
   .describe('Person name');
 
 export const phoneSchema = z
   .string()
-  .regex(/^\+?[\d\s\-\(\)]+$/, 'Invalid phone format')
+  .regex(/^[+]?[\d\s\-()]+$/, 'Invalid phone format')
   .min(8, 'Phone too short')
   .max(20, 'Phone too long')
   .transform((s) => s.replace(/\s/g, ''))
@@ -345,7 +345,7 @@ export function sanitizeString(
 ): string {
   return input
     .trim()
-    .replace(/[\x00-\x1f\x7f-\x9f]/g, '') // Remove control characters
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, '') // Remove control characters
     .substring(0, maxLength);
 }
 

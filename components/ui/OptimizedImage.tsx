@@ -1,6 +1,6 @@
 /**
  * Optimized Image Component
- * 
+ *
  * High-performance image component with lazy loading, WebP support,
  * progressive loading, and optimized bandwidth usage
  */
@@ -8,10 +8,15 @@
 'use client';
 
 import React, { forwardRef } from 'react';
-import { useOptimizedImage, useProgressiveImage, useBlurPlaceholder } from '@/hooks/useOptimizedImage';
+import {
+  useOptimizedImage,
+  useProgressiveImage,
+  useBlurPlaceholder,
+} from '@/hooks/useOptimizedImage';
 import { cn } from '@/lib/utils';
 
-interface OptimizedImageProps extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src' | 'srcSet'> {
+interface OptimizedImageProps
+  extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src' | 'srcSet'> {
   src: string;
   alt: string;
   width?: number;
@@ -58,8 +63,9 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
     const finalBlurDataURL = blurDataURL || generatedBlurSrc;
 
     // Use progressive loading for better UX
-    const shouldUseProgressive = placeholder === 'progressive' && finalBlurDataURL;
-    
+    const shouldUseProgressive =
+      placeholder === 'progressive' && finalBlurDataURL;
+
     const progressiveResult = useProgressiveImage(
       shouldUseProgressive ? finalBlurDataURL : '',
       shouldUseProgressive ? src : '',
@@ -81,12 +87,16 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
     });
 
     // Determine which result to use
-    const finalRef = shouldUseProgressive ? progressiveResult.ref : optimizedResult.ref;
-    const finalSrc = shouldUseProgressive ? progressiveResult.src : optimizedResult.src;
+    const finalRef = shouldUseProgressive
+      ? progressiveResult.ref
+      : optimizedResult.ref;
+    const finalSrc = shouldUseProgressive
+      ? progressiveResult.src
+      : optimizedResult.src;
     const finalSrcSet = shouldUseProgressive ? '' : optimizedResult.srcSet;
-    const isLoading = shouldUseProgressive ? 
-      progressiveResult.isLoadingHQ || optimizedResult.isLoading : 
-      optimizedResult.isLoading;
+    const isLoading = shouldUseProgressive
+      ? progressiveResult.isLoadingHQ || optimizedResult.isLoading
+      : optimizedResult.isLoading;
     const hasError = optimizedResult.hasError;
 
     // Combine refs
@@ -101,19 +111,16 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
     };
 
     return (
-      <div 
-        className={cn(
-          'relative overflow-hidden',
-          containerClassName
-        )}
-        style={{ 
+      <div
+        className={cn('relative overflow-hidden', containerClassName)}
+        style={{
           width: width ? `${width}px` : undefined,
           height: height ? `${height}px` : undefined,
         }}
       >
         {/* Loading placeholder */}
         {isLoading && !hasError && (
-          <div 
+          <div
             className={cn(
               'absolute inset-0 flex items-center justify-center bg-gray-100',
               loadingClassName
@@ -128,7 +135,7 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
 
         {/* Error placeholder */}
         {hasError && (
-          <div 
+          <div
             className={cn(
               'absolute inset-0 flex items-center justify-center bg-gray-100',
               errorClassName
@@ -146,7 +153,7 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
           <img
             src={finalBlurDataURL}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover filter blur-sm scale-110"
+            className="absolute inset-0 h-full w-full scale-110 object-cover blur-sm filter"
             aria-hidden="true"
           />
         )}
@@ -171,9 +178,10 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
           )}
           style={{
             ...style,
-            ...(width && height && {
-              aspectRatio: `${width} / ${height}`,
-            }),
+            ...(width &&
+              height && {
+                aspectRatio: `${width} / ${height}`,
+              }),
           }}
           {...props}
         />
@@ -208,11 +216,11 @@ export const GalleryImage = forwardRef<HTMLImageElement, GalleryImageProps>(
     ref
   ) => {
     return (
-      <div 
+      <div
         className={cn(
           'group relative cursor-pointer overflow-hidden rounded-lg transition-all duration-300',
           isSelectable && 'hover:scale-105 hover:shadow-lg',
-          isSelected && 'ring-2 ring-primary shadow-lg scale-105',
+          isSelected && 'ring-primary scale-105 shadow-lg ring-2',
           containerClassName
         )}
         onClick={isSelectable ? onSelect : undefined}
@@ -229,21 +237,31 @@ export const GalleryImage = forwardRef<HTMLImageElement, GalleryImageProps>(
           containerClassName="aspect-square"
           {...props}
         />
-        
+
         {/* Overlay */}
         {showOverlay && isSelectable && (
           <div className="absolute inset-0 bg-black bg-opacity-0 transition-all duration-300 group-hover:bg-opacity-10">
             {/* Selection indicator */}
-            <div className="absolute top-2 right-2">
-              <div className={cn(
-                'flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-300',
-                isSelected 
-                  ? 'bg-primary border-primary text-white' 
-                  : 'border-white bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100'
-              )}>
+            <div className="absolute right-2 top-2">
+              <div
+                className={cn(
+                  'flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-300',
+                  isSelected
+                    ? 'bg-primary border-primary text-white'
+                    : 'border-white bg-black bg-opacity-30 text-white opacity-0 group-hover:opacity-100'
+                )}
+              >
                 {isSelected && (
-                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 )}
               </div>
@@ -267,13 +285,7 @@ interface ThumbnailImageProps extends OptimizedImageProps {
 
 export const ThumbnailImage = forwardRef<HTMLImageElement, ThumbnailImageProps>(
   (
-    {
-      size = 'md',
-      shape = 'rounded',
-      containerClassName,
-      className,
-      ...props
-    },
+    { size = 'md', shape = 'rounded', containerClassName, className, ...props },
     ref
   ) => {
     const sizeClasses = {

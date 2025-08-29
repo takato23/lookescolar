@@ -60,27 +60,17 @@
     },
     "ragdocs": {
       "command": "npx",
-      "args": [
-        "--silent",
-        "-y",
-        "@hannesrudolph/mcp-ragdocs"
-      ],
+      "args": ["--silent", "-y", "@hannesrudolph/mcp-ragdocs"],
       "env": {
         "QDRANT_URL": "<REPLACE_WITH_QDRANT_URL>",
         "QDRANT_API_KEY": "<REPLACE_WITH_QDRANT_API_KEY>"
       },
-      "alwaysAllow": [
-        "search_documentation"
-      ],
+      "alwaysAllow": ["search_documentation"],
       "disabled": false
     },
     "puppeteer": {
       "command": "npx",
-      "args": [
-        "--silent",
-        "-y",
-        "@modelcontextprotocol/server-puppeteer"
-      ],
+      "args": ["--silent", "-y", "@modelcontextprotocol/server-puppeteer"],
       "disabled": false,
       "alwaysAllow": [
         "puppeteer_navigate",
@@ -98,17 +88,11 @@
         "@modelcontextprotocol/server-sequential-thinking"
       ],
       "disabled": false,
-      "alwaysAllow": [
-        "sequentialthinking"
-      ]
+      "alwaysAllow": ["sequentialthinking"]
     },
     "playwright": {
       "command": "npx",
-      "args": [
-        "--silent",
-        "-y",
-        "@executeautomation/playwright-mcp-server"
-      ],
+      "args": ["--silent", "-y", "@executeautomation/playwright-mcp-server"],
       "disabled": false,
       "alwaysAllow": [
         "playwright_get",

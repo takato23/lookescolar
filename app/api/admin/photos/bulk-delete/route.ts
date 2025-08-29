@@ -37,13 +37,16 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
       logger.info('Bulk delete photos request', {
         requestId,
         photoCount: photoIds?.length || 0,
-        force
+        force,
       });
 
       // Validate input
       if (!Array.isArray(photoIds) || photoIds.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'photoIds array is required and must not be empty' },
+          {
+            success: false,
+            error: 'photoIds array is required and must not be empty',
+          },
           { status: 400 }
         );
       }
@@ -59,14 +62,16 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
       // Get photo details before deletion for file cleanup
       const { data: photosToDelete, error: fetchError } = await supabase
         .from('photos')
-        .select('id, original_filename, storage_path, preview_path, watermark_path')
+        .select(
+          'id, original_filename, storage_path, preview_path, watermark_path'
+        )
         .in('id', photoIds);
 
       if (fetchError) {
         logger.error('Failed to fetch photos for deletion', {
           requestId,
           photoIds: photoIds.slice(0, 5),
-          error: fetchError.message
+          error: fetchError.message,
         });
 
         return NextResponse.json(
@@ -89,11 +94,11 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
         found: photosToDelete.length,
         databaseDeleted: 0,
         filesDeleted: 0,
-        errors: [] as string[]
+        errors: [] as string[],
       };
 
       // Collect all storage paths for deletion
-      photosToDelete.forEach(photo => {
+      photosToDelete.forEach((photo) => {
         if (photo.storage_path) storagePaths.push(photo.storage_path);
         if (photo.preview_path) storagePaths.push(photo.preview_path);
         if (photo.watermark_path) storagePaths.push(photo.watermark_path);
@@ -109,7 +114,7 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
         logger.error('Failed to delete photos from database', {
           requestId,
           photoIds: photoIds.slice(0, 5),
-          error: deleteError.message
+          error: deleteError.message,
         });
 
         return NextResponse.json(
@@ -125,24 +130,28 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
         try {
           // For FreeTierOptimizer, we only have preview/watermark paths, no originals
           // Group by bucket (assuming all are in 'photos' bucket)
-          const { data: storageDeleteResult, error: storageError } = await supabase.storage
-            .from('photos')
-            .remove(storagePaths);
+          const { data: storageDeleteResult, error: storageError } =
+            await supabase.storage.from('photos').remove(storagePaths);
 
           if (storageError) {
             logger.warn('Storage cleanup failed (non-critical)', {
               requestId,
               pathCount: storagePaths.length,
-              error: storageError.message
+              error: storageError.message,
             });
-            deletionResults.errors.push(`Storage cleanup failed: ${storageError.message}`);
+            deletionResults.errors.push(
+              `Storage cleanup failed: ${storageError.message}`
+            );
           } else {
             deletionResults.filesDeleted = storageDeleteResult?.length || 0;
           }
         } catch (storageCleanupError) {
           logger.warn('Storage cleanup exception (non-critical)', {
             requestId,
-            error: storageCleanupError instanceof Error ? storageCleanupError.message : 'Unknown error'
+            error:
+              storageCleanupError instanceof Error
+                ? storageCleanupError.message
+                : 'Unknown error',
           });
           deletionResults.errors.push('Storage cleanup exception');
         }
@@ -150,19 +159,18 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
 
       logger.info('Successfully completed bulk photo deletion', {
         requestId,
-        results: deletionResults
+        results: deletionResults,
       });
 
       return NextResponse.json({
         success: true,
         message: `${deletionResults.databaseDeleted} photos deleted successfully`,
-        results: deletionResults
+        results: deletionResults,
       });
-
     } catch (error) {
       logger.error('Unexpected error in bulk delete endpoint', {
         requestId,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
 
       return NextResponse.json(

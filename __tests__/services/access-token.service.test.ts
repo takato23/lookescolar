@@ -1,13 +1,17 @@
 /**
  * ACCESS TOKEN SERVICE TESTS
- * 
+ *
  * Tests for hierarchical token management service
  * Covers: Token generation, validation, security, audit logging
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { AccessTokenService, TokenScope, AccessLevel } from '../../lib/services/access-token.service';
+import {
+  AccessTokenService,
+  TokenScope,
+  AccessLevel,
+} from '../../lib/services/access-token.service';
 
 // Mock Supabase
 vi.mock('@supabase/supabase-js');
@@ -16,8 +20,8 @@ const mockSupabaseClient = {
   from: vi.fn(),
   rpc: vi.fn(),
   storage: {
-    from: vi.fn()
-  }
+    from: vi.fn(),
+  },
 };
 
 const mockFrom = {
@@ -26,7 +30,7 @@ const mockFrom = {
   update: vi.fn(),
   eq: vi.fn(),
   single: vi.fn(),
-  order: vi.fn()
+  order: vi.fn(),
 };
 
 // Setup chainable mocks
@@ -53,7 +57,7 @@ describe('AccessTokenService', () => {
     it('should generate secure token with correct prefix for event scope', async () => {
       mockFrom.single.mockResolvedValueOnce({
         data: { id: 'token-123' },
-        error: null
+        error: null,
       });
 
       const result = await service.createToken({
@@ -61,13 +65,13 @@ describe('AccessTokenService', () => {
         resourceId: 'event-123',
         createdBy: 'admin-456',
         accessLevel: 'full',
-        canDownload: true
+        canDownload: true,
       });
 
       expect(result.token).toBeDefined();
       expect(result.tokenId).toBe('token-123');
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('access_tokens');
-      
+
       const insertCall = mockFrom.insert.mock.calls[0][0];
       expect(insertCall.scope).toBe('event');
       expect(insertCall.event_id).toBe('event-123');
@@ -79,13 +83,13 @@ describe('AccessTokenService', () => {
     it('should generate token with course scope', async () => {
       mockFrom.single.mockResolvedValueOnce({
         data: { id: 'token-456' },
-        error: null
+        error: null,
       });
 
       await service.createToken({
         scope: 'course',
         resourceId: 'course-789',
-        createdBy: 'admin-456'
+        createdBy: 'admin-456',
       });
 
       const insertCall = mockFrom.insert.mock.calls[0][0];
@@ -99,7 +103,7 @@ describe('AccessTokenService', () => {
     it('should generate token with family scope', async () => {
       mockFrom.single.mockResolvedValueOnce({
         data: { id: 'token-789' },
-        error: null
+        error: null,
       });
 
       await service.createToken({
@@ -107,7 +111,7 @@ describe('AccessTokenService', () => {
         resourceId: 'subject-123',
         createdBy: 'admin-456',
         maxUses: 10,
-        expiresAt: new Date('2024-12-31')
+        expiresAt: new Date('2024-12-31'),
       });
 
       const insertCall = mockFrom.insert.mock.calls[0][0];
@@ -121,30 +125,34 @@ describe('AccessTokenService', () => {
     it('should handle token creation errors', async () => {
       mockFrom.single.mockResolvedValueOnce({
         data: null,
-        error: { message: 'Database error' }
+        error: { message: 'Database error' },
       });
 
-      await expect(service.createToken({
-        scope: 'event',
-        resourceId: 'event-123',
-        createdBy: 'admin-456'
-      })).rejects.toThrow('Failed to create token: Database error');
+      await expect(
+        service.createToken({
+          scope: 'event',
+          resourceId: 'event-123',
+          createdBy: 'admin-456',
+        })
+      ).rejects.toThrow('Failed to create token: Database error');
     });
   });
 
   describe('Token Validation', () => {
     it('should validate valid token', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
-        data: [{
-          token_id: 'token-123',
-          scope: 'event',
-          resource_id: 'event-456',
-          access_level: 'full',
-          can_download: true,
-          is_valid: true,
-          reason: 'valid'
-        }],
-        error: null
+        data: [
+          {
+            token_id: 'token-123',
+            scope: 'event',
+            resource_id: 'event-456',
+            access_level: 'full',
+            can_download: true,
+            is_valid: true,
+            reason: 'valid',
+          },
+        ],
+        error: null,
       });
 
       const result = await service.validateToken('valid-token-123');
@@ -154,18 +162,23 @@ describe('AccessTokenService', () => {
       expect(result.scope).toBe('event');
       expect(result.resourceId).toBe('event-456');
       expect(result.canDownload).toBe(true);
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('validate_access_token', {
-        p_token_plain: 'valid-token-123'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'validate_access_token',
+        {
+          p_token_plain: 'valid-token-123',
+        }
+      );
     });
 
     it('should handle invalid token', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
-        data: [{
-          is_valid: false,
-          reason: 'Token expired'
-        }],
-        error: null
+        data: [
+          {
+            is_valid: false,
+            reason: 'Token expired',
+          },
+        ],
+        error: null,
       });
 
       const result = await service.validateToken('expired-token');
@@ -177,7 +190,7 @@ describe('AccessTokenService', () => {
     it('should handle validation errors', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'RPC error' }
+        error: { message: 'RPC error' },
       });
 
       const result = await service.validateToken('error-token');
@@ -189,7 +202,7 @@ describe('AccessTokenService', () => {
     it('should handle token not found', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: [],
-        error: null
+        error: null,
       });
 
       const result = await service.validateToken('nonexistent-token');
@@ -217,12 +230,12 @@ describe('AccessTokenService', () => {
         last_used_at: '2024-01-15T10:30:00.000Z',
         created_at: '2024-01-01T00:00:00.000Z',
         created_by: 'admin-456',
-        metadata: { note: 'test token' }
+        metadata: { note: 'test token' },
       };
 
       mockFrom.single.mockResolvedValueOnce({
         data: mockTokenData,
-        error: null
+        error: null,
       });
 
       const result = await service.getToken('token-123');
@@ -241,7 +254,7 @@ describe('AccessTokenService', () => {
     it('should return null for non-existent token', async () => {
       mockFrom.single.mockResolvedValueOnce({
         data: null,
-        error: { message: 'Not found' }
+        error: { message: 'Not found' },
       });
 
       const result = await service.getToken('nonexistent');
@@ -267,13 +280,13 @@ describe('AccessTokenService', () => {
           last_used_at: null,
           created_at: '2024-01-01T00:00:00.000Z',
           created_by: 'admin-456',
-          metadata: {}
-        }
+          metadata: {},
+        },
       ];
 
       mockFrom.order.mockResolvedValueOnce({
         data: mockTokens,
-        error: null
+        error: null,
       });
 
       const result = await service.getTokensByResource('event', 'event-123');
@@ -287,7 +300,7 @@ describe('AccessTokenService', () => {
     it('should revoke token', async () => {
       mockFrom.eq.mockResolvedValueOnce({
         data: {},
-        error: null
+        error: null,
       });
 
       const result = await service.revokeToken('token-123');
@@ -308,12 +321,12 @@ describe('AccessTokenService', () => {
         unique_ips: '5',
         first_access: '2024-01-01T10:00:00.000Z',
         last_access: '2024-01-15T15:30:00.000Z',
-        avg_response_time_ms: '150.5'
+        avg_response_time_ms: '150.5',
       };
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: [mockStats],
-        error: null
+        error: null,
       });
 
       const result = await service.getTokenStats('token-123');
@@ -324,15 +337,18 @@ describe('AccessTokenService', () => {
       expect(result!.failedAccesses).toBe(2);
       expect(result!.uniqueIPs).toBe(5);
       expect(result!.avgResponseTimeMs).toBe(150.5);
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('get_token_usage_stats', {
-        p_token_id: 'token-123'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'get_token_usage_stats',
+        {
+          p_token_id: 'token-123',
+        }
+      );
     });
 
     it('should return null when stats not found', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: [],
-        error: null
+        error: null,
       });
 
       const result = await service.getTokenStats('nonexistent');
@@ -345,7 +361,7 @@ describe('AccessTokenService', () => {
     it('should log access successfully', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: 'log-id-123',
-        error: null
+        error: null,
       });
 
       const result = await service.logAccess('test-token', 'list_folders', {
@@ -354,30 +370,33 @@ describe('AccessTokenService', () => {
         path: '/api/gallery',
         responseTimeMs: 250,
         success: true,
-        notes: 'Successful access'
+        notes: 'Successful access',
       });
 
       expect(result).toBe(true);
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('api.log_token_access', {
-        p_token: 'test-token',
-        p_action: 'list_folders',
-        p_ip: '192.168.1.1',
-        p_user_agent: 'Mozilla/5.0...',
-        p_path: '/api/gallery',
-        p_response_time_ms: 250,
-        p_ok: true,
-        p_notes: 'Successful access'
-      });
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'api.log_token_access',
+        {
+          p_token: 'test-token',
+          p_action: 'list_folders',
+          p_ip: '192.168.1.1',
+          p_user_agent: 'Mozilla/5.0...',
+          p_path: '/api/gallery',
+          p_response_time_ms: 250,
+          p_ok: true,
+          p_notes: 'Successful access',
+        }
+      );
     });
 
     it('should handle logging errors gracefully', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: null,
-        error: { message: 'Logging failed' }
+        error: { message: 'Logging failed' },
       });
 
       const result = await service.logAccess('test-token', 'download', {
-        success: false
+        success: false,
       });
 
       expect(result).toBe(false);
@@ -392,7 +411,10 @@ describe('AccessTokenService', () => {
     });
 
     it('should generate QR data with custom base URL', async () => {
-      const qrData = service.generateQRData('test-token-123', 'https://custom.domain');
+      const qrData = service.generateQRData(
+        'test-token-123',
+        'https://custom.domain'
+      );
 
       expect(qrData).toBe('https://custom.domain/s/test-token-123');
     });
@@ -400,14 +422,16 @@ describe('AccessTokenService', () => {
     it('should cleanup expired tokens', async () => {
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: { cleaned_tokens: 5, cleaned_logs: 25 },
-        error: null
+        error: null,
       });
 
       const result = await service.cleanupExpiredTokens();
 
       expect(result.cleanedTokens).toBe(5);
       expect(result.cleanedLogs).toBe(25);
-      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith('cleanup_expired_tokens');
+      expect(mockSupabaseClient.rpc).toHaveBeenCalledWith(
+        'cleanup_expired_tokens'
+      );
     });
   });
 
@@ -415,13 +439,13 @@ describe('AccessTokenService', () => {
     it('should never store plain text tokens', async () => {
       mockFrom.single.mockResolvedValueOnce({
         data: { id: 'token-123' },
-        error: null
+        error: null,
       });
 
       await service.createToken({
         scope: 'event',
         resourceId: 'event-123',
-        createdBy: 'admin-456'
+        createdBy: 'admin-456',
       });
 
       const insertCall = mockFrom.insert.mock.calls[0][0];
@@ -434,25 +458,25 @@ describe('AccessTokenService', () => {
     it('should generate unique prefixes for different scopes', async () => {
       mockFrom.single.mockResolvedValue({
         data: { id: 'token-123' },
-        error: null
+        error: null,
       });
 
       await service.createToken({
         scope: 'event',
         resourceId: 'event-123',
-        createdBy: 'admin'
+        createdBy: 'admin',
       });
 
       await service.createToken({
         scope: 'course',
         resourceId: 'course-123',
-        createdBy: 'admin'
+        createdBy: 'admin',
       });
 
       await service.createToken({
         scope: 'family',
         resourceId: 'family-123',
-        createdBy: 'admin'
+        createdBy: 'admin',
       });
 
       const calls = mockFrom.insert.mock.calls;

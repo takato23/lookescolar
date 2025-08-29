@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { QrCode, RotateCcw, LinkIcon, Copy, ExternalLink, RefreshCw, Users, User } from 'lucide-react';
+import {
+  QrCode,
+  RotateCcw,
+  LinkIcon,
+  Copy,
+  ExternalLink,
+  RefreshCw,
+  Users,
+  User,
+} from 'lucide-react';
 import { SimpleTooltip as Tooltip } from '@/components/ui/tooltip';
 
 type CodeRow = {
@@ -21,7 +30,10 @@ export default function PublishPage() {
   const [rows, setRows] = useState<CodeRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('');
-  const [selectedEvent, setSelectedEvent] = useState<{id: string, name: string} | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -32,7 +44,7 @@ export default function PublishPage() {
       if (!res.ok) throw new Error(json.error || 'Error');
 
       // El endpoint puede devolver un array directo o un objeto con { rows }
-      const arr = Array.isArray(json) ? json : (json?.rows || json?.data || []);
+      const arr = Array.isArray(json) ? json : json?.rows || json?.data || [];
 
       const mapped: CodeRow[] = (arr as any[]).map((c) => ({
         id: (c.id ?? c.code_id) as string,
@@ -55,7 +67,7 @@ export default function PublishPage() {
           if (eventRes.ok && eventJson.event) {
             setSelectedEvent({
               id: eventId,
-              name: eventJson.event.name || eventJson.event.school || 'Evento'
+              name: eventJson.event.name || eventJson.event.school || 'Evento',
             });
           }
         } catch (e) {
@@ -149,171 +161,214 @@ export default function PublishPage() {
   };
 
   return (
-      <div className="container mx-auto space-y-6 p-6">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold">Publicación</h1>
-            <p className="text-muted-foreground">Dos tipos de compartir: público general y personalizado por familia</p>
-          </div>
-          <Button onClick={load} aria-label="Refrescar" variant="outline">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+    <div className="container mx-auto space-y-6 p-6">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Publicación</h1>
+          <p className="text-muted-foreground">
+            Dos tipos de compartir: público general y personalizado por familia
+          </p>
         </div>
+        <Button onClick={load} aria-label="Refrescar" variant="outline">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
 
-        {/* SECCIÓN: COMPARTIR PÚBLICO */}
-        {selectedEvent && (
-          <Card className="border-blue-200 bg-blue-50/50">
-            <div className="p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-full bg-blue-100 p-2">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-blue-900">Compartir Público</h2>
-                  <p className="text-sm text-blue-700">
-                    Evento: {selectedEvent.name} - <strong>Todas las familias ven las mismas fotos</strong>
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-3">
-                <Tooltip text="Enlace para compartir con todas las familias del evento">
-                  <Button 
-                    onClick={copyPublicLink}
-                    variant="default"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copiar Enlace Público
-                  </Button>
-                </Tooltip>
-
-                <Tooltip text="Previsualizar cómo ven las familias la galería pública">
-                  <a
-                    href={getPublicUrl()}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center rounded-md bg-white border border-blue-300 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Ver Galería Pública
-                  </a>
-                </Tooltip>
-
-                <div className="text-xs text-blue-600 font-mono bg-blue-100 px-2 py-1 rounded">
-                  {getPublicUrl()}
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* SECCIÓN: COMPARTIR PERSONALIZADO */}
-        <Card className="border-orange-200 bg-orange-50/50">
-          <div className="border-b border-orange-200 bg-orange-100/50 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="rounded-full bg-orange-100 p-2">
-                <User className="h-5 w-5 text-orange-600" />
+      {/* SECCIÓN: COMPARTIR PÚBLICO */}
+      {selectedEvent && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <div className="p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-full bg-blue-100 p-2">
+                <Users className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-orange-900">Compartir Personalizado</h2>
-                <p className="text-sm text-orange-700">
-                  Cada código/familia ve solo <strong>sus fotos específicas</strong> - Control granular
+                <h2 className="text-lg font-semibold text-blue-900">
+                  Compartir Público
+                </h2>
+                <p className="text-sm text-blue-700">
+                  Evento: {selectedEvent.name} -{' '}
+                  <strong>Todas las familias ven las mismas fotos</strong>
                 </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
-              <Input
-                placeholder="Filtrar por código (p. ej. 3B-07)"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="max-w-xs"
-              />
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Tooltip text="Enlace para compartir con todas las familias del evento">
+                <Button
+                  onClick={copyPublicLink}
+                  variant="default"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copiar Enlace Público
+                </Button>
+              </Tooltip>
+
+              <Tooltip text="Previsualizar cómo ven las familias la galería pública">
+                <a
+                  href={getPublicUrl()}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-md border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Ver Galería Pública
+                </a>
+              </Tooltip>
+
+              <div className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-600">
+                {getPublicUrl()}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* SECCIÓN: COMPARTIR PERSONALIZADO */}
+      <Card className="border-orange-200 bg-orange-50/50">
+        <div className="border-b border-orange-200 bg-orange-100/50 p-4">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-full bg-orange-100 p-2">
+              <User className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-orange-900">
+                Compartir Personalizado
+              </h2>
+              <p className="text-sm text-orange-700">
+                Cada código/familia ve solo{' '}
+                <strong>sus fotos específicas</strong> - Control granular
+              </p>
             </div>
           </div>
 
-          <div className="p-0 overflow-hidden">
-        <div className="grid grid-cols-12 bg-muted/40 px-4 py-2 text-sm font-medium">
-          <div className="col-span-3">Código</div>
-          <div className="col-span-2">Fotos</div>
-          <div className="col-span-2">Publicado</div>
-          <div className="col-span-5">Acciones</div>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Filtrar por código (p. ej. 3B-07)"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="max-w-xs"
+            />
+          </div>
         </div>
-        <div>
-          {loading ? (
-            <div className="p-6 text-sm text-muted-foreground">Cargando…</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">Sin resultados</div>
-          ) : (
-            filtered.map((r) => {
-              const url = r.token ? `${window.location.origin}/f/${r.token}/simple-page` : '';
-              return (
-                <div key={r.id} className="grid grid-cols-12 items-center gap-2 border-t px-4 py-3 text-sm">
-                  <div className="col-span-3 font-medium">{r.code_value}</div>
-                  <div className="col-span-2">{r.photos_count}</div>
-                  <div className="col-span-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${r.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}>
-                      {r.is_published ? 'Publicado' : 'No publicado'}
-                    </span>
-                  </div>
-                  <div className="col-span-5 flex flex-wrap items-center gap-2">
-                    {!r.is_published && (
-                      <Button onClick={() => publish(r.id)} aria-label="Publicar" size="sm">
-                        Publicar
-                      </Button>
-                    )}
-                    {r.is_published && (
-                      <>
-                        <Button onClick={() => rotate(r.id)} aria-label="Revocar token" size="sm" variant="outline">
-                          <RotateCcw className="mr-1 h-4 w-4" /> Rotar token
-                        </Button>
-                        <Button onClick={() => unpublish(r.id)} aria-label="Despublicar" size="sm" variant="destructive">
-                          Despublicar
-                        </Button>
-                        {r.token && (
-                          <>
-                            <Tooltip text={`Copiar enlace personalizado para ${r.code_value}`}>
-                              <Button onClick={() => copy(url)} aria-label="Copiar link" size="sm" variant="ghost">
-                                <Copy className="mr-1 h-4 w-4" /> Copiar link
-                              </Button>
-                            </Tooltip>
 
-                            <Tooltip text={`Ver galería personalizada de ${r.code_value}`}>
-                              <a
-                                href={`/f/${r.token}/simple-page`}
-                                target="_blank"
-                                rel="noreferrer"
-                                aria-label={`Abrir enlace personalizado ${r.code_value}`}
-                                className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+        <div className="overflow-hidden p-0">
+          <div className="bg-muted/40 grid grid-cols-12 px-4 py-2 text-sm font-medium">
+            <div className="col-span-3">Código</div>
+            <div className="col-span-2">Fotos</div>
+            <div className="col-span-2">Publicado</div>
+            <div className="col-span-5">Acciones</div>
+          </div>
+          <div>
+            {loading ? (
+              <div className="text-muted-foreground p-6 text-sm">Cargando…</div>
+            ) : filtered.length === 0 ? (
+              <div className="text-muted-foreground p-6 text-sm">
+                Sin resultados
+              </div>
+            ) : (
+              filtered.map((r) => {
+                const url = r.token
+                  ? `${window.location.origin}/f/${r.token}/simple-page`
+                  : '';
+                return (
+                  <div
+                    key={r.id}
+                    className="grid grid-cols-12 items-center gap-2 border-t px-4 py-3 text-sm"
+                  >
+                    <div className="col-span-3 font-medium">{r.code_value}</div>
+                    <div className="col-span-2">{r.photos_count}</div>
+                    <div className="col-span-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${r.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}
+                      >
+                        {r.is_published ? 'Publicado' : 'No publicado'}
+                      </span>
+                    </div>
+                    <div className="col-span-5 flex flex-wrap items-center gap-2">
+                      {!r.is_published && (
+                        <Button
+                          onClick={() => publish(r.id)}
+                          aria-label="Publicar"
+                          size="sm"
+                        >
+                          Publicar
+                        </Button>
+                      )}
+                      {r.is_published && (
+                        <>
+                          <Button
+                            onClick={() => rotate(r.id)}
+                            aria-label="Revocar token"
+                            size="sm"
+                            variant="outline"
+                          >
+                            <RotateCcw className="mr-1 h-4 w-4" /> Rotar token
+                          </Button>
+                          <Button
+                            onClick={() => unpublish(r.id)}
+                            aria-label="Despublicar"
+                            size="sm"
+                            variant="destructive"
+                          >
+                            Despublicar
+                          </Button>
+                          {r.token && (
+                            <>
+                              <Tooltip
+                                text={`Copiar enlace personalizado para ${r.code_value}`}
                               >
-                                <ExternalLink className="mr-1 h-4 w-4" /> Ver galería
-                              </a>
-                            </Tooltip>
+                                <Button
+                                  onClick={() => copy(url)}
+                                  aria-label="Copiar link"
+                                  size="sm"
+                                  variant="ghost"
+                                >
+                                  <Copy className="mr-1 h-4 w-4" /> Copiar link
+                                </Button>
+                              </Tooltip>
 
-                            <Tooltip text={`Generar código QR para ${r.code_value}`}>
-                              <a
-                                href={`/api/qr?token=${encodeURIComponent(r.token)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                aria-label={`Ver QR ${r.code_value}`}
-                                className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                              <Tooltip
+                                text={`Ver galería personalizada de ${r.code_value}`}
                               >
-                                <QrCode className="mr-1 h-4 w-4" /> QR
-                              </a>
-                            </Tooltip>
-                          </>
-                        )}
-                      </>
-                    )}
+                                <a
+                                  href={`/f/${r.token}/simple-page`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Abrir enlace personalizado ${r.code_value}`}
+                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                                >
+                                  <ExternalLink className="mr-1 h-4 w-4" /> Ver
+                                  galería
+                                </a>
+                              </Tooltip>
+
+                              <Tooltip
+                                text={`Generar código QR para ${r.code_value}`}
+                              >
+                                <a
+                                  href={`/api/qr?token=${encodeURIComponent(r.token)}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Ver QR ${r.code_value}`}
+                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                                >
+                                  <QrCode className="mr-1 h-4 w-4" /> QR
+                                </a>
+                              </Tooltip>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
           </div>
-          </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
+    </div>
   );
 }

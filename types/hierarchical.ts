@@ -1,6 +1,6 @@
 /**
  * HIERARCHICAL SYSTEM TYPES
- * 
+ *
  * TypeScript types for the hierarchical token system
  * Covers: Events, Courses, Folders, Assets, Tokens, and API responses
  */
@@ -445,7 +445,12 @@ export interface Database {
       // Canonical API functions
       'api.folders_for_token': {
         Args: { p_token: string };
-        Returns: { folder_id: string; folder_name: string; photo_count: number; depth: number }[];
+        Returns: {
+          folder_id: string;
+          folder_name: string;
+          photo_count: number;
+          depth: number;
+        }[];
       };
       'api.assets_for_token': {
         Args: { p_token: string; p_folder_id?: string };

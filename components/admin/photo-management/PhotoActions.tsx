@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import { 
+import {
   DownloadIcon,
   TrashIcon,
   MoveIcon,
@@ -12,17 +12,17 @@ import {
   ListIcon,
   FilterIcon,
   MoreVerticalIcon,
-  SearchIcon
+  SearchIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ViewMode, SortOption, SortOrder } from './types';
@@ -73,11 +73,16 @@ const PhotoActionsComponent = ({
   const isAllSelected = selectedCount === totalCount && totalCount > 0;
 
   return (
-    <div className={cn('flex flex-col sm:flex-row gap-4 p-4 bg-white border-b', className)}>
+    <div
+      className={cn(
+        'flex flex-col gap-4 border-b bg-white p-4 sm:flex-row',
+        className
+      )}
+    >
       {/* Search and filters row */}
-      <div className="flex-1 flex items-center gap-2">
+      <div className="flex flex-1 items-center gap-2">
         {/* Search input */}
-        <div className="relative flex-1 max-w-md">
+        <div className="relative max-w-md flex-1">
           <Input
             placeholder={`Search ${totalCount} photos...`}
             value={searchQuery}
@@ -108,8 +113,10 @@ const PhotoActionsComponent = ({
               Size {sortBy === 'size' && (sortOrder === 'asc' ? '↑' : '↓')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => onSortChange(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')}
+            <DropdownMenuItem
+              onClick={() =>
+                onSortChange(sortBy, sortOrder === 'asc' ? 'desc' : 'asc')
+              }
             >
               {sortOrder === 'asc' ? 'Sort Descending' : 'Sort Ascending'}
             </DropdownMenuItem>
@@ -117,7 +124,7 @@ const PhotoActionsComponent = ({
         </DropdownMenu>
 
         {/* View mode toggle */}
-        <div className="flex border rounded-lg p-1">
+        <div className="flex rounded-lg border p-1">
           <Button
             variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
             size="sm"
@@ -209,8 +216,8 @@ const PhotoActionsComponent = ({
                   Share
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={onDelete} 
+                <DropdownMenuItem
+                  onClick={onDelete}
                   className="gap-2 text-red-600 focus:text-red-600"
                 >
                   <TrashIcon className="h-4 w-4" />
@@ -225,15 +232,18 @@ const PhotoActionsComponent = ({
   );
 };
 
-export const PhotoActions = memo(PhotoActionsComponent, (prevProps, nextProps) => {
-  return (
-    prevProps.selectedCount === nextProps.selectedCount &&
-    prevProps.totalCount === nextProps.totalCount &&
-    prevProps.viewMode === nextProps.viewMode &&
-    prevProps.sortBy === nextProps.sortBy &&
-    prevProps.sortOrder === nextProps.sortOrder &&
-    prevProps.searchQuery === nextProps.searchQuery
-  );
-});
+export const PhotoActions = memo(
+  PhotoActionsComponent,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.selectedCount === nextProps.selectedCount &&
+      prevProps.totalCount === nextProps.totalCount &&
+      prevProps.viewMode === nextProps.viewMode &&
+      prevProps.sortBy === nextProps.sortBy &&
+      prevProps.sortOrder === nextProps.sortOrder &&
+      prevProps.searchQuery === nextProps.searchQuery
+    );
+  }
+);
 
 PhotoActions.displayName = 'PhotoActions';

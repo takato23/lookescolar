@@ -121,12 +121,22 @@ export const GET = RateLimitMiddleware.withRateLimit(
                   // Usar UnifiedPhotoService para conteo correcto
                   (async () => {
                     try {
-                      const { UnifiedPhotoService } = await import('@/lib/services/unified-photo.service');
-                      const photoService = new UnifiedPhotoService(serviceClient);
-                      const count = await photoService.getEventPhotoCount(event.id);
+                      const { UnifiedPhotoService } = await import(
+                        '@/lib/services/unified-photo.service'
+                      );
+                      const photoService = new UnifiedPhotoService(
+                        serviceClient
+                      );
+                      const count = await photoService.getEventPhotoCount(
+                        event.id
+                      );
                       return { count };
                     } catch (error) {
-                      console.warn('Error getting photo count for event:', event.id, error);
+                      console.warn(
+                        'Error getting photo count for event:',
+                        event.id,
+                        error
+                      );
                       return { count: 0 };
                     }
                   })(),

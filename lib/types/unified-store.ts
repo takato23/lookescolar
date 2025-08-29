@@ -78,7 +78,8 @@ export const PRODUCT_CATALOG = {
     {
       id: 'option_a',
       name: 'OPCIÓN A',
-      description: 'Carpeta personalizada completa con fotos individuales y grupales',
+      description:
+        'Carpeta personalizada completa con fotos individuales y grupales',
       basePrice: 8500, // $8,500 ARS
       type: 'option_a' as const,
       contents: {
@@ -124,7 +125,7 @@ export const PRODUCT_CATALOG = {
       ],
     },
   ],
-  
+
   additionalCopies: [
     {
       id: 'copy_4x5_set',
@@ -168,14 +169,14 @@ export const PRODUCT_CATALOG = {
       description: 'Foto individual de 20x30 cm',
     },
   ],
-  
+
   pricing: {
     currency: 'ARS',
     shippingCost: 1500, // $1,500 ARS envío a domicilio
     freeShippingThreshold: 15000, // Envío gratis en compras mayores a $15,000
     taxIncluded: true, // Precios con IVA incluido
   },
-  
+
   shipping: {
     estimatedDays: '3-5 días hábiles',
     productionTime: '2-3 días hábiles',
@@ -183,7 +184,7 @@ export const PRODUCT_CATALOG = {
     coverage: 'Todo el país',
     trackingIncluded: true,
   },
-  
+
   policies: {
     returnPolicy: '30 días para devoluciones',
     warrantyPeriod: '6 meses por defectos de impresión',

@@ -65,12 +65,15 @@ export const GET = withAuth(
         .from('folders')
         .select('id')
         .eq('event_id', eventId);
-      
-      const { data: photoStats } = folders?.length 
+
+      const { data: photoStats } = folders?.length
         ? await supabase
             .from('assets')
             .select('id, folder_id')
-            .in('folder_id', folders.map(f => f.id))
+            .in(
+              'folder_id',
+              folders.map((f) => f.id)
+            )
         : { data: [] };
 
       // Calculate statistics
