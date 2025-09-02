@@ -13,6 +13,7 @@ This document tracks significant changes and updates to the LookEscolar system.
 - Reorganized documentation files for better discoverability
 - Updated deployment guidelines
 - Improved testing standards
+- Refactored admin/photos page to use React Query, Suspense, and dynamic PhotoAdmin component
 
 ### Fixed
 - Documentation inconsistencies
