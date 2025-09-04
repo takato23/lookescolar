@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { PhotoCard } from '@/components/public/PhotoCard';
 import { PhotoModal } from '@/components/public/PhotoModal';
 import { Button } from '@/components/ui/button';
+import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
 import { useCartStore } from '@/store/useCartStore';
 import { ImageIcon, RefreshCwIcon, AlertTriangleIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react';
 
@@ -156,6 +157,16 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   }
 
   const { photos = [], pagination } = galleryData;
+  // Pixieset-like design mapping (grids/nav)
+  const design = ((galleryData as any)?.event?.settings?.design || {
+    grid: { style: 'vertical', thumb: 'regular', spacing: 'regular', nav: 'icons_text' },
+  }) as any;
+  const showNavText = design.grid?.nav !== 'icons';
+  const gapClass = design.grid?.spacing === 'large' ? 'gap-10' : 'gap-8';
+  const gridColsClass = design.grid?.thumb === 'large'
+    ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-2'
+    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  const eventTheme = ((galleryData as any)?.event?.theme || 'default') as any;
   const filteredPhotos = getFilteredPhotos();
 
   if (!photos || photos.length === 0) {
@@ -171,8 +182,36 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     { id: 'ordenar' as const, label: 'Ordenar ↓', count: null }
   ];
 
+  const coverUrl = photos[0]?.signed_url;
+
   return (
+    <ThemedGalleryWrapper eventTheme={eventTheme}>
     <div className="space-y-8">
+      {/* Cover - estilos Pixieset (Novel/Vintage/Frame/Stripe/Divider/Journal/Classic/None) */}
+      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className={`grid grid-cols-1 gap-6 md:grid-cols-3 ${design?.cover?.style === 'classic' ? 'md:grid-cols-2' : ''}`}>
+          <div className={`col-span-1 rounded-xl border p-6 ${design?.cover?.style === 'vintage' ? 'bg-amber-50' : ''} ${design?.cover?.style === 'journal' ? 'bg-slate-50' : ''}`}>
+            <div className="text-xs uppercase tracking-wide text-gray-500">{(galleryData?.event?.school || 'Colegio')}</div>
+            <h1 className="mt-2 text-2xl font-bold text-gray-900">{galleryData.event.name}</h1>
+            <div className="mt-1 text-sm text-gray-500">
+              {new Date(galleryData.event.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
+            </div>
+            <Button className="mt-4 theme-button">Ver galería</Button>
+          </div>
+          {design?.cover?.style !== 'none' && (
+            <div className={`col-span-2 overflow-hidden ${design?.cover?.style === 'frame' ? 'rounded-2xl border-4 border-gray-200' : 'rounded-xl border'} ${design?.cover?.style === 'stripe' ? 'bg-gradient-to-br from-gray-50 to-white p-4' : ''}`}>
+              {coverUrl ? (
+                <img src={coverUrl} alt="Cover" className={`h-full w-full ${design?.cover?.style === 'stripe' ? 'rounded-lg' : ''} max-h-[420px] object-cover`} />
+              ) : (
+                <div className="flex h-[280px] w-full items-center justify-center bg-gray-100 text-gray-400">Sin portada</div>
+              )}
+              {design?.cover?.style === 'divider' && (
+                <div className="mt-3 h-1 w-24 rounded bg-gray-200" />
+              )}
+            </div>
+          )}
+        </div>
+      </div>
       {/* Tabs navegación - Diseño liquid-glass mejorado */}
       <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
         <div className="flex space-x-2">
@@ -192,7 +231,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
               <div className="flex items-center justify-center gap-2">
                 {tab.id === 'seleccionadas' && <ShoppingCartIcon className="h-4 w-4" />}
                 {tab.id === 'tu-hijo' && <HeartIcon className="h-4 w-4" />}
-                <span>{tab.label}</span>
+                {showNavText && <span>{tab.label}</span>}
                 {tab.count !== null && (
                   <span className={`
                     px-2 py-1 rounded-full text-xs font-bold
@@ -211,7 +250,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
       </div>
 
       {/* Grid de fotos - Diseño liquid-glass mejorado */}
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" role="grid" aria-label="Galería de fotos">
+      <div className={`grid ${gapClass} ${gridColsClass}`} role="grid" aria-label="Galería de fotos">
         {filteredPhotos.map((photo) => (
           <div key={photo.id} className="group">
             <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-4 shadow-xl shadow-cyan-500/10 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20 hover:scale-105">
@@ -263,12 +302,13 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
           photo={photos.find(p => p.id === selectedPhotoId) || null}
           photos={photos.map(p => ({ id: p.id, signed_url: p.signed_url }))}
           price={1000}
+          eventId={eventId}
         />
       )}
 
       {/* Loading more indicator - Liquid glass design */}
       {loadingMore && (
-        <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`grid ${gapClass} ${gridColsClass}`}>
           {Array.from({ length: 6 }).map((_, i) => {
             const gradients = [
               'from-orange-300 to-yellow-400',
@@ -294,6 +334,7 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
         </div>
       )}
     </div>
+    </ThemedGalleryWrapper>
   );
 }
 

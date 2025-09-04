@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { PRODUCT_CATALOG, UnifiedOrder } from '@/lib/types/unified-store';
@@ -58,6 +59,8 @@ const CreatePreferenceSchema = z.object({
     }),
     totalPrice: z.number(),
   }),
+  // Optional override for callback base path
+  callbackBase: z.enum(['share', 'f', 'store', 'store-unified']).optional(),
 });
 
 type CreatePreferenceRequest = z.infer<typeof CreatePreferenceSchema>;
@@ -132,15 +135,23 @@ interface MercadoPagoPreference {
 
 export async function POST(request: NextRequest) {
   try {
+    const requestId = crypto.randomUUID();
+    const start = Date.now();
     // Validate request body
     const body = await request.json();
-    const { order } = CreatePreferenceSchema.parse(body);
+    const { order, callbackBase } = CreatePreferenceSchema.parse(body);
 
     // Get MercadoPago credentials
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-    const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
+    // Credentials with fallbacks for legacy env names
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
+    const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
 
     if (!accessToken || !publicKey) {
+      console.error('[MP][create-preference] missing credentials', {
+        requestId,
+        hasAccessToken: !!accessToken,
+        hasPublicKey: !!publicKey,
+      });
       return NextResponse.json(
         { error: 'MercadoPago credentials not configured' },
         { status: 500 }
@@ -222,6 +233,9 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_APP_URL ||
       'http://localhost:3000';
 
+    // Determine callback path base
+    const basePath = callbackBase || 'f';
+
     // Build MercadoPago preference
     const preference: MercadoPagoPreference = {
       items,
@@ -261,9 +275,9 @@ export async function POST(request: NextRequest) {
         },
       },
       back_urls: {
-        success: `${baseUrl}/f/${order.token}/payment/success`,
-        failure: `${baseUrl}/f/${order.token}/payment/failure`,
-        pending: `${baseUrl}/f/${order.token}/payment/pending`,
+        success: `${baseUrl}/${basePath}/${order.token}/payment/success`,
+        failure: `${baseUrl}/${basePath}/${order.token}/payment/failure`,
+        pending: `${baseUrl}/${basePath}/${order.token}/payment/pending`,
       },
       auto_return: 'approved',
       payment_methods: {
@@ -283,6 +297,15 @@ export async function POST(request: NextRequest) {
     };
 
     // Create preference in MercadoPago
+    const maskedToken = order.token ? `${order.token.slice(0, 8)}...` : 'n/a';
+    console.info('[MP][create-preference] request', {
+      requestId,
+      orderId: order.id,
+      token: maskedToken,
+      items: items.map((i) => ({ id: i.id, qty: i.quantity, price: i.unit_price })),
+      total: items.reduce((s, i) => s + i.unit_price * i.quantity, 0),
+      callbackBase: basePath,
+    });
     const mpResponse = await fetch(
       'https://api.mercadopago.com/checkout/preferences',
       {
@@ -297,7 +320,7 @@ export async function POST(request: NextRequest) {
 
     if (!mpResponse.ok) {
       const mpError = await mpResponse.text();
-      console.error('MercadoPago API Error:', mpError);
+      console.error('[MP][create-preference] API error', { requestId, mpError });
       return NextResponse.json(
         { error: 'Error creating payment preference' },
         { status: 500 }
@@ -305,13 +328,59 @@ export async function POST(request: NextRequest) {
     }
 
     const mpResult = await mpResponse.json();
+    console.info('[MP][create-preference] response', {
+      requestId,
+      orderId: order.id,
+      preferenceId: mpResult?.id,
+      elapsedMs: Date.now() - start,
+    });
 
     // Store order in database
     const supabase = await createServerSupabaseServiceClient();
 
+    // Try to resolve share_token_id and event_id for unified analytics
+    let shareTokenId: string | null = null;
+    let eventId: string | null = null;
+    try {
+      const is64 = /^[a-f0-9]{64}$/i.test(order.token);
+      if (is64) {
+        const { data: tok } = await supabase
+          .from('share_tokens')
+          .select('id, event_id')
+          .eq('token', order.token)
+          .eq('is_active', true)
+          .maybeSingle();
+        if (tok) {
+          shareTokenId = (tok as any).id;
+          eventId = (tok as any).event_id || null;
+        }
+      } else if (order.token && order.token.length >= 16) {
+        // Folder legacy token: map to folder -> share_tokens
+        const { data: folder } = await supabase
+          .from('folders')
+          .select('id, event_id')
+          .eq('share_token', order.token)
+          .maybeSingle();
+        if (folder) {
+          eventId = (folder as any).event_id || null;
+          const { data: st } = await supabase
+            .from('share_tokens')
+            .select('id')
+            .eq('folder_id', (folder as any).id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (st) shareTokenId = (st as any).id;
+        }
+      }
+    } catch {}
+
     const { error: orderError } = await supabase.from('unified_orders').insert({
       id: order.id,
       token: order.token,
+      event_id: eventId,
+      share_token_id: shareTokenId,
       base_package: order.basePackage,
       selected_photos: order.selectedPhotos,
       additional_copies: order.additionalCopies,
@@ -324,11 +393,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (orderError) {
-      console.error('Error storing order:', orderError);
+      console.error('[MP][create-preference] store order error', { requestId, orderError });
       // Continue anyway - preference was created successfully
     }
 
-    return NextResponse.json({
+    const resp = NextResponse.json({
       success: true,
       preference_id: mpResult.id,
       init_point: mpResult.init_point,
@@ -336,8 +405,10 @@ export async function POST(request: NextRequest) {
       public_key: publicKey,
       order_id: order.id,
     });
+    resp.headers.set('X-Request-ID', requestId);
+    return resp;
   } catch (error) {
-    console.error('Create preference error:', error);
+    console.error('[MP][create-preference] error', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

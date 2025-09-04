@@ -1,10 +1,13 @@
 'use client';
 
 import React, { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { Toaster } from 'sonner';
 import { ErrorBoundaryWrapper } from '@/components/admin/ErrorBoundary';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 // Dynamic import of PhotoAdmin with client-only rendering and loader
 const PhotoAdmin = dynamic(() => import('@/components/admin/PhotoAdmin'), {
@@ -83,6 +86,9 @@ function PhotoSystemError() {
  * - Checksum-based deduplication
  */
 export default function UnifiedPhotosPage() {
+  const search = useSearchParams();
+  const eventId = search?.get('event_id') ?? search?.get('eventId');
+  const backHref = eventId ? `/admin/events/${eventId}?from=photos` : null;
   // Create a query client per mount to avoid cross-session leakage
   const [queryClient] = useState(
     () =>
@@ -106,6 +112,17 @@ export default function UnifiedPhotosPage() {
     <QueryClientProvider client={queryClient}>
       {/* Global Notifications */}
       <Toaster position="top-right" />
+
+      {backHref && (
+        <div className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+            <span className="text-sm text-gray-600">Contexto de evento</span>
+            <Link href={backHref}>
+              <Button size="sm" variant="outline">Volver al evento</Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Main Photo System - New Architecture */}
       <ErrorBoundaryWrapper

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SubjectsSection from './subjects-section';
@@ -32,11 +32,14 @@ import {
   Settings,
   FileUser,
 } from 'lucide-react';
+import { fetchEventMetrics } from './actions';
+import { computePhotoAdminUrl } from '@/lib/routes/admin';
 
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Restaurado: NO redirigir automáticamente - mantener gestión de eventos específica
   const id = params['id'] as string;
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +47,10 @@ export default function EventDetailPage() {
   const [activeTab, setActiveTab] = useState(searchParams?.get('tab') || 'overview');
   const [subjects, setSubjects] = useState<any[]>([]);
   const [refreshSubjects, setRefreshSubjects] = useState(0);
+  const [metrics, setMetrics] = useState<
+    | { orders: { total: number; paid: number; pending: number }; students: { total: number }; photos: { total: number; unassigned: number | null } }
+    | null
+  >(null);
 
   useEffect(() => {
     if (id) {
@@ -61,14 +68,14 @@ export default function EventDetailPage() {
   const fetchEvent = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/events/${id}`);
-      
+      let response = await fetch(`/api/admin/events/${id}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch event');
+        // Fallback a ?id=
+        response = await fetch(`/api/admin/events?id=${id}`);
       }
-      
+      if (!response.ok) throw new Error('Failed to fetch event');
       const data = await response.json();
-      setEvent(data.event);
+      setEvent(data.event || data);
     } catch (err) {
       console.error('Error fetching event:', err);
       setError(err instanceof Error ? err.message : 'Error loading event');
@@ -100,6 +107,18 @@ export default function EventDetailPage() {
     url.searchParams.set('tab', tabValue);
     window.history.replaceState({}, '', url.toString());
   };
+
+  // Load metrics via server action (economical counts)
+  useEffect(() => {
+    (async () => {
+      try {
+        const m = await fetchEventMetrics(id);
+        setMetrics(m);
+      } catch (e) {
+        console.warn('Metrics load failed');
+      }
+    })();
+  }, [id]);
 
   if (loading) {
     return (
@@ -208,12 +227,34 @@ export default function EventDetailPage() {
               
               {/* Primary Actions */}
               <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/admin/events/${id}/edit`)}
+                  className="gap-2"
+                >
+                  <Edit3 className="h-4 w-4" />
+                  Editar Información
+                </Button>
                 <button
-                  onClick={() => router.push(`/admin/photos?eventId=${id}`)}
-                  className="liquid-button liquid-button-primary px-6 py-3 rounded-xl flex items-center gap-2 font-semibold"
+                  onClick={() => router.push(`/admin/events/${id}/unified`)}
+                  className="liquid-button liquid-button-primary px-6 py-3 rounded-xl flex items-center gap-2 font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
                 >
                   <Camera className="h-5 w-5" />
-                  <span className="liquid-button-text">Gestionar Fotos</span>
+                  <span className="liquid-button-text">🚀 Nueva Interfaz Unificada</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const url = computePhotoAdminUrl(
+                      id,
+                      (event?.settings?.general?.rootFolderId as string | undefined) || undefined
+                    );
+                    router.push(url);
+                  }}
+                  className="liquid-button liquid-button-secondary px-4 py-3 rounded-xl flex items-center gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="liquid-button-text">AdminFotos (Actual)</span>
                 </button>
                 
                 <button
@@ -261,12 +302,14 @@ export default function EventDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Fotos</p>
-                  <p className="text-2xl font-bold">{event.stats?.totalPhotos || 0}</p>
-                  {event.stats?.untaggedPhotos > 0 && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      {event.stats.untaggedPhotos} sin etiquetar
-                    </p>
-                  )}
+                  <p className="text-2xl font-bold">{metrics?.photos.total ?? event.stats?.totalPhotos ?? 0}</p>
+                  <p className="text-xs mt-1">
+                    {metrics?.photos.unassigned === null ? (
+                      <span className="text-gray-500" title="No disponible (esquema legacy)">—</span>
+                    ) : (
+                      <span className="text-amber-600">{metrics?.photos.unassigned ?? 0} sin asignar</span>
+                    )}
+                  </p>
                 </div>
                 <Camera className="h-8 w-8 text-blue-500 opacity-50 group-hover:opacity-100" />
               </div>
@@ -278,7 +321,7 @@ export default function EventDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Familias</p>
-                  <p className="text-2xl font-bold">{event.stats?.totalSubjects || 0}</p>
+                  <p className="text-2xl font-bold">{metrics?.students.total ?? event.stats?.totalSubjects ?? 0}</p>
                   <p className="text-xs text-muted-foreground mt-1">Con tokens</p>
                 </div>
                 <Users className="h-8 w-8 text-purple-500 opacity-50 group-hover:opacity-100" />
@@ -292,12 +335,10 @@ export default function EventDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Pedidos</p>
-                  <p className="text-2xl font-bold">{event.stats?.totalOrders || 0}</p>
-                  {event.stats?.pendingOrders > 0 && (
-                    <p className="text-xs text-orange-600 mt-1">
-                      {event.stats.pendingOrders} pendientes
-                    </p>
-                  )}
+                  <p className="text-2xl font-bold">{metrics?.orders.total ?? event.stats?.totalOrders ?? 0}</p>
+                  <p className="text-xs text-orange-600 mt-1">
+                    {metrics?.orders.pending ?? event.stats?.pendingOrders ?? 0} pendientes
+                  </p>
                 </div>
                 <ShoppingCart className="h-8 w-8 text-green-500 opacity-50 group-hover:opacity-100" />
               </div>
@@ -345,7 +386,7 @@ export default function EventDetailPage() {
               <Button
                 variant="outline"
                 className="h-auto flex-col py-4 hover:bg-blue-50 hover:border-blue-300 group"
-                onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                onClick={() => router.push(`/admin/events/${id}/unified`)}
               >
                 <Upload className="mb-2 h-6 w-6 text-blue-600 group-hover:scale-110 transition-transform" />
                 <span className="font-medium">Gestionar Fotos</span>
@@ -656,7 +697,13 @@ export default function EventDetailPage() {
                       <Button
                         variant="default"
                         size="sm"
-                        onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                        onClick={() => {
+                          const url = computePhotoAdminUrl(
+                            id,
+                            (event?.settings?.general?.rootFolderId as string | undefined) || undefined
+                          );
+                          router.push(url);
+                        }}
                       >
                         Administrar
                         <ArrowLeft className="ml-2 h-4 w-4 rotate-180" />
@@ -683,7 +730,7 @@ export default function EventDetailPage() {
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => router.push(`/admin/photos?eventId=${id}`)}
+                        onClick={() => router.push(`/admin/events/${id}/unified`)}
                       >
                         <Upload className="mr-2 h-4 w-4" />
                         Administrar

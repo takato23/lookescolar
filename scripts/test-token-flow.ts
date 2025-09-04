@@ -254,7 +254,7 @@ async function main() {
   try {
     console.log(`
 🧪 TEST DE FLUJO COMPLETO DE TOKENS AUTOMÁTICO
-===============================================
+ ===============================================
 Verificando: Upload → QR → Token → Export → Portal
     `);
 
@@ -275,7 +275,7 @@ Verificando: Upload → QR → Token → Export → Portal
 
     console.log(`
 ✅ PRUEBA COMPLETADA CON ÉXITO
-==============================
+ ==============================
 El flujo automático de tokens está funcionando correctamente:
 
 1. ✅ Generación automática de tokens

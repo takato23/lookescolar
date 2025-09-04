@@ -1,46 +1,29 @@
-# Node / Next.js
-node_modules/
-.next/
-out/
-dist/
-.turbo/
-.vercel/
-.cache/
-
-# Env files
-.env
-.env.local
-.env.*.local
-!.env.example
-
 # Logs
-logs/
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
-# OS / Editor
-.DS_Store
-Thumbs.db
-.idea/
+node_modules
+dist
+dist-ssr
+*.local
+
+# Next.js build output
+.next/
+.next-dev.pid
+
+# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-
-# Testing / Coverage
-coverage/
-.playwright/
-playwright-report/
-test-results/
-
-# Typescript
-*.tsbuildinfo
-
-# Supabase local artifacts
-supabase/.temp/
-supabase/.branches/
-
-# Misc
-*.local
-*.bak
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+/dist

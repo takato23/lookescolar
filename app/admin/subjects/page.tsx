@@ -51,7 +51,10 @@ export default function SubjectsPage() {
         throw new Error('Error cargando eventos');
       }
       const eventsData = await eventsResponse.json();
-      setEvents(eventsData.events || []);
+      const list = Array.isArray(eventsData)
+        ? eventsData
+        : eventsData.events || eventsData.data?.events || eventsData.data || [];
+      setEvents(list);
 
       // Cargar sujetos con información del evento
       const subjectsResponse = await fetch('/api/admin/subjects');

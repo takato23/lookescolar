@@ -237,18 +237,27 @@ export default function StoreView({
         ) : (
           <>
             {/* Grid responsive */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {assets.map((asset) => (
-                <AssetCard
-                  key={asset.id}
-                  asset={asset}
-                  imageUrl={getImageUrl(asset)}
-                  isSelected={selectedAssets.has(asset.id)}
-                  onSelect={() => toggleAssetSelection(asset.id)}
-                  allowDownload={store.settings.allow_download}
-                />
-              ))}
-            </div>
+            {(() => {
+              const design: any = (store as any)?.settings?.design || {};
+              const gapClass = design?.grid?.spacing === 'large' ? 'gap-6' : 'gap-4';
+              const colsClass = design?.grid?.thumb === 'large'
+                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+              return (
+                <div className={`grid ${colsClass} ${gapClass}`}>
+                  {assets.map((asset) => (
+                    <AssetCard
+                      key={asset.id}
+                      asset={asset}
+                      imageUrl={getImageUrl(asset)}
+                      isSelected={selectedAssets.has(asset.id)}
+                      onSelect={() => toggleAssetSelection(asset.id)}
+                      allowDownload={store.settings.allow_download}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* Botón cargar más */}
             {hasMore && (

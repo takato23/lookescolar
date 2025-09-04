@@ -538,7 +538,7 @@ export function EventCard({
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link
-                  href={`/admin/photos?eventId=${event.id}`}
+                  href={`/admin/events/${event.id}/unified`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Camera className="mr-2 h-4 w-4" />

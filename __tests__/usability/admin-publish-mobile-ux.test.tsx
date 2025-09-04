@@ -6,7 +6,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationProvider } from '@/components/ui/NotificationSystem';
-import PublishPage from '@/app/admin/publish/page';
+import PublishPage from '@/app/admin/publish/PublishClient';
 import userEvent from '@testing-library/user-event';
 
 import { vi } from 'vitest';

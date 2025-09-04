@@ -76,28 +76,36 @@ export async function createServerSupabaseServiceClient(): Promise<
 > {
   const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
   const serviceRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+  const anonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl) {
     throw new Error(
-      'Variables de entorno de Supabase faltantes (NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY)'
+      'Variables de entorno de Supabase faltantes (NEXT_PUBLIC_SUPABASE_URL)'
     );
   }
 
-  // No caching to prevent memory leaks
-
-  // Para service role, usar createClient directamente sin cookies
-  // Importar createClient de @supabase/supabase-js
   const { createClient } = await import('@supabase/supabase-js');
 
-  const client = createClient<Database>(supabaseUrl, serviceRoleKey, {
+  // Prefer service role when available; gracefully fallback to anon for public APIs
+  const keyToUse = serviceRoleKey || anonKey;
+  if (!keyToUse) {
+    throw new Error(
+      'Variables de entorno de Supabase faltantes (SUPABASE_SERVICE_ROLE_KEY o NEXT_PUBLIC_SUPABASE_ANON_KEY)'
+    );
+  }
+
+  if (!serviceRoleKey) {
+    // eslint-disable-next-line no-console
+    console.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY ausente. Usando ANON como fallback para operaciones públicas.');
+  }
+
+  const client = createClient<Database>(supabaseUrl, keyToUse, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   });
 
-  // No caching to prevent memory leaks
-  
   return client;
 }
 

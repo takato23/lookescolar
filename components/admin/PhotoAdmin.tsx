@@ -112,9 +112,14 @@ import {
   Zap,
   AlertCircle,
   ArrowLeft,
+  
 } from 'lucide-react';
 import { PhotoUploadButton } from './PhotoUploadButton';
 import EventSelector from './EventSelector';
+
+// 🚀 FASE 2: Importar componentes de contexto de evento
+import { EventContextBanner } from '@/components/admin/shared/EventContextBanner';
+import { StudentManagement } from '@/components/admin/shared/StudentManagement';
 
 // Types (optimized for minimal egress)
 interface OptimizedFolder {
@@ -500,6 +505,7 @@ const FolderTreePanel: React.FC<{
   className?: string;
   isLoading?: boolean;
   eventId?: string | null;
+  onOpenStudentManagement?: () => void;
 }> = ({
   folders,
   selectedFolderId,
@@ -508,6 +514,7 @@ const FolderTreePanel: React.FC<{
   className,
   isLoading,
   eventId,
+  onOpenStudentManagement,
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
@@ -909,6 +916,18 @@ const FolderTreePanel: React.FC<{
             >
               <Plus className="h-4 w-4" />
             </Button>
+            {/* 🚀 FASE 2: Botón de gestión de estudiantes cuando hay contexto de evento */}
+            {eventId && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onOpenStudentManagement?.()}
+                className="h-8 shrink-0 px-2 text-green-600 hover:text-green-800"
+                title="Gestión de estudiantes"
+              >
+                <Users className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1736,15 +1755,15 @@ const InspectorPanel: React.FC<{
                 <h4 className="font-medium">Acciones</h4>
 
                 <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={onCreateAlbum}
-                  >
-                    <Star className="mr-2 h-4 w-4" />
-                    Crear álbum
-                  </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={onCreateAlbum}
+                >
+                  <Star className="mr-2 h-4 w-4" />
+                  Crear enlace
+                </Button>
                   {albumTargetInfo && (
                     <div className="ml-1 text-[11px] leading-snug text-gray-500">
                       {albumTargetInfo}
@@ -1844,6 +1863,18 @@ export default function PhotoAdmin({
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showEscaparateManager, setShowEscaparateManager] = useState(false);
+  // 🚀 FASE 2: Estado para gestión de estudiantes
+  const [showStudentManagement, setShowStudentManagement] = useState(false);
+  // Share creation modal state
+  const [showCreateShareModal, setShowCreateShareModal] = useState(false);
+  const [sharePassword, setSharePassword] = useState('');
+  const [shareExpiresAt, setShareExpiresAt] = useState('');
+  const [shareAllowDownload, setShareAllowDownload] = useState(false);
+  const [shareAllowComments, setShareAllowComments] = useState(false);
+  const [isCreatingShare, setIsCreatingShare] = useState(false);
+  // Share manager state
+  const [shares, setShares] = useState<any[]>([]);
+  const [loadingShares, setLoadingShares] = useState(false);
 
   // Settings state - persisted in localStorage
   const [settings, setSettings] = useState(() => {
@@ -2041,6 +2072,23 @@ export default function PhotoAdmin({
     localStorage.setItem('photoAdminSettings', JSON.stringify(defaultSettings));
     toast.success('Configuración restablecida');
   }, []);
+
+  // 🚀 FASE 2: Función para limpiar contexto de evento
+  const handleRemoveEventContext = useCallback(() => {
+    setSelectedEventId(null);
+    try {
+      localStorage.removeItem('le:lastEventId');
+      // Limpiar URL params también
+      const url = new URL(window.location.href);
+      url.searchParams.delete('event_id');
+      url.searchParams.delete('eventId');
+      window.history.replaceState({}, '', url.toString());
+      toast.success('Contexto de evento removido');
+    } catch (e) {
+      console.warn('Error clearing event context:', e);
+    }
+  }, []);
+
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
     const fromLocalStorage =
       typeof window !== 'undefined'
@@ -2888,80 +2936,73 @@ export default function PhotoAdmin({
         return;
       }
 
-      const eventId = (selectedEventId ||
+      const eventId = selectedEventId ||
         searchParams.get('event_id') ||
-        searchParams.get('eventId')) as string | undefined;
+        searchParams.get('eventId') ||
+        // Derivar desde carpeta seleccionada si existe
+        (selectedFolderId && folders.find(f => f.id === selectedFolderId)?.event_id) ||
+        // Derivar desde assets seleccionados
+        (selectedAssetIds.size > 0 && assets.find(a => selectedAssetIds.has(a.id))?.event_id) ||
+        undefined;
 
-      if (!eventId) {
-        toast.error('No se puede identificar el evento');
+      // Validar que tenemos eventId o que el API puede derivarlo
+      if (!eventId && !selectedFolderId && selectedAssetIds.size === 0) {
+        toast.error('No se puede crear enlace: falta contexto de evento');
         return;
       }
 
-      // NUEVA LÓGICA: Crear escaparate temporal usando gallery shares
-      let sharePayload: any;
-      let shareTitle: string;
+      // Build payload for admin share creation
+      const isFolder = !!selectedFolderId;
+      const titleBase = isFolder
+        ? folders.find((f) => f.id === selectedFolderId)?.name || 'Carpeta'
+        : `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''}`;
 
-      if (selectedFolderId) {
-        // Compartir carpeta completa
-        sharePayload = {
-          eventId,
-          shareType: 'folder',
-          folderId: selectedFolderId,
-          allowDownload: false, // TIENDA: No descarga, solo vista
-          allowComments: false,
-          expiresAt: null, // Sin expiración
-          title: `Escaparate - ${folders.find((f) => f.id === selectedFolderId)?.name || 'Carpeta'}`,
-        };
-        shareTitle = 'Carpeta';
-      } else {
-        // Compartir fotos seleccionadas
-        sharePayload = {
-          eventId,
-          shareType: 'photos',
-          photoIds: Array.from(selectedAssetIds),
-          allowDownload: false, // TIENDA: No descarga, solo vista
-          allowComments: false,
-          expiresAt: null,
-          title: `Escaparate - ${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''}`,
-        };
-        shareTitle = `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''}`;
-      }
-
-      // SISTEMA UNIFICADO: Crear enlace que conecta con la tienda completa
-      const params = new URLSearchParams();
-
-      if (selectedFolderId) {
-        params.set('folder', selectedFolderId);
-        params.set('mode', 'folder');
-      } else {
-        params.set('photos', Array.from(selectedAssetIds).join(','));
-        params.set('mode', 'selection');
-      }
-
-      // Generar token único para este escaparate
-      const token =
-        Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-
-      // URL hacia la tienda completa con productos, tamaños, precios
-      const shareUrl = `${window.location.origin}/f/${token}/enhanced-page?${params.toString()}`;
-
-      // NUEVO: Guardar enlace persistentemente (no solo copiar)
-      const shareData = {
-        id: crypto.randomUUID(),
-        token,
-        url: shareUrl,
-        title: sharePayload.title,
-        type: selectedFolderId ? 'folder' : 'photos',
-        items: selectedFolderId
-          ? [selectedFolderId]
-          : Array.from(selectedAssetIds),
-        eventId,
-        createdAt: new Date().toISOString(),
-        status: 'active',
+      const payload: any = {
+        eventId, // el backend puede derivarlo de carpeta/fotos si es necesario
+        shareType: isFolder ? 'folder' : 'photos',
+        allowDownload: shareAllowDownload,
+        allowComments: shareAllowComments,
+        expiresAt: shareExpiresAt ? new Date(shareExpiresAt).toISOString() : null,
+        title: `Escaparate - ${titleBase}`,
       };
 
-      // Guardar en localStorage para gestión persistente
+      if (isFolder) payload.folderId = selectedFolderId;
+      else payload.photoIds = Array.from(selectedAssetIds);
+
+      setIsCreatingShare(true);
+      const res = await fetch('/api/admin/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, password: sharePassword || undefined }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'No se pudo crear el enlace');
+      }
+
+      const data = await res.json();
+      const shareToken = data?.shareToken;
+      const links = data?.links || {};
+      const shareUrl: string = links.store || links.gallery || '';
+
+      if (!shareToken || !shareUrl) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      // Persist lightweight record for quick access in UI manager
+      const shareData = {
+        id: shareToken.id as string,
+        token: shareToken.token as string,
+        url: shareUrl,
+        title: shareToken.title || payload.title,
+        type: payload.shareType,
+        items: isFolder ? [selectedFolderId] : Array.from(selectedAssetIds),
+        eventId,
+        createdAt: shareToken.created_at || new Date().toISOString(),
+        status: 'active' as const,
+      };
+
       const existingShares = JSON.parse(
         localStorage.getItem('photoEscaparates') || '[]'
       );
@@ -2969,23 +3010,36 @@ export default function PhotoAdmin({
       localStorage.setItem(
         'photoEscaparates',
         JSON.stringify(existingShares.slice(0, 100))
-      ); // Máximo 100
+      );
 
-      // Copiar al portapapeles OPCIONAL
-      await navigator.clipboard.writeText(shareUrl);
+      // Copy to clipboard for convenience
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+      } catch {}
 
       toast.success(`🏪 Escaparate "${shareData.title}" creado!`, {
-        description: '✅ Guardado en gestor + copiado al portapapeles',
+        description: '✅ Enlace listo (copiado) — abre el gestor para ver todos',
         action: {
           label: 'Ver Gestor',
           onClick: () => setShowEscaparateManager(true),
         },
       });
+      setShowCreateShareModal(false);
+      setSharePassword('');
+      setShareExpiresAt('');
+      setShareAllowDownload(false);
+      setShareAllowComments(false);
+      // Refresh manager list if open
+      if (showEscaparateManager) {
+        try { await loadShares(); } catch {}
+      }
     } catch (err) {
       console.error('Create share error:', err);
       toast.error(
         err instanceof Error ? err.message : 'Error creando escaparate'
       );
+    } finally {
+      setIsCreatingShare(false);
     }
   }, [
     selectedAssetIds,
@@ -2993,7 +3047,33 @@ export default function PhotoAdmin({
     selectedEventId,
     searchParams,
     folders,
+    shareAllowDownload,
+    shareAllowComments,
+    shareExpiresAt,
+    sharePassword,
+    showEscaparateManager,
   ]);
+
+  const loadShares = useCallback(async () => {
+    try {
+      if (!selectedEventId) {
+        setShares([]);
+        return;
+      }
+      setLoadingShares(true);
+      const res = await fetch(`/api/admin/share?eventId=${encodeURIComponent(selectedEventId)}`);
+      if (!res.ok) {
+        setShares([]);
+        return;
+      }
+      const data = await res.json();
+      setShares(Array.isArray(data?.shares) ? data.shares : []);
+    } catch {
+      setShares([]);
+    } finally {
+      setLoadingShares(false);
+    }
+  }, [selectedEventId]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const assetId = event.active.id as string;
@@ -3400,7 +3480,7 @@ export default function PhotoAdmin({
                   variant="outline"
                   size="sm"
                   className="h-9"
-                  onClick={() => setShowEscaparateManager(true)}
+                  onClick={async () => { setShowEscaparateManager(true); await loadShares(); }}
                   title="Gestor de enlaces de escaparates"
                 >
                   <Package className="h-4 w-4" />
@@ -3484,6 +3564,17 @@ export default function PhotoAdmin({
           </div>
         )}
 
+        {/* 🚀 FASE 2: Banner de contexto de evento */}
+        {selectedEventId && (
+          <div className="px-6 py-3">
+            <EventContextBanner
+              eventId={selectedEventId}
+              onRemoveContext={handleRemoveEventContext}
+              compact={true}
+            />
+          </div>
+        )}
+
         {/* Main Content - 3 Panel Layout */}
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Left Panel: Folder Tree */}
@@ -3496,6 +3587,7 @@ export default function PhotoAdmin({
               isLoading={isLoadingFolders}
               eventId={selectedEventId}
               className="h-full"
+              onOpenStudentManagement={() => setShowStudentManagement(true)}
             />
           </ResizablePanel>
 
@@ -3606,7 +3698,7 @@ export default function PhotoAdmin({
                   onSelectionChange={handleAssetSelection}
                   onSelectAll={handleSelectAll}
                   onClearSelection={handleClearSelection}
-                  onCreateAlbum={handleCreateAlbum}
+                  onCreateAlbum={() => setShowCreateShareModal(true)}
                   onBulkDelete={handleBulkDelete}
                   onBulkMove={handleBulkMove}
                   folders={folders}
@@ -4139,6 +4231,177 @@ export default function PhotoAdmin({
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Share Modal */}
+      {showCreateShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Crear enlace de galería</h2>
+                <Button size="sm" variant="ghost" onClick={() => setShowCreateShareModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="text-sm text-gray-600">
+                  {selectedFolderId
+                    ? 'Se compartirá la carpeta seleccionada'
+                    : `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''} seleccionada(s)`}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Contraseña (opcional)</Label>
+                  <Input
+                    placeholder="Dejar vacío para sin contraseña"
+                    value={sharePassword}
+                    onChange={(e) => setSharePassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Expiración (opcional)</Label>
+                  <Input
+                    type="datetime-local"
+                    value={shareExpiresAt}
+                    onChange={(e) => setShareExpiresAt(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Permitir descargas</Label>
+                    <p className="text-xs text-gray-500">Por defecto desactivado</p>
+                  </div>
+                  <Switch
+                    checked={shareAllowDownload}
+                    onCheckedChange={setShareAllowDownload}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Permitir comentarios</Label>
+                  </div>
+                  <Switch
+                    checked={shareAllowComments}
+                    onCheckedChange={setShareAllowComments}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 border-t pt-4">
+                  <Button variant="outline" onClick={() => setShowCreateShareModal(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleCreateAlbum} disabled={isCreatingShare}>
+                    {isCreatingShare ? 'Creando…' : 'Crear enlace'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Manager Modal */}
+      {showEscaparateManager && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Gestor de enlaces</h2>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={loadShares} disabled={loadingShares}>
+                    <RefreshCw className="mr-1 h-4 w-4" /> Actualizar
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowEscaparateManager(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {loadingShares ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Cargando enlaces…
+                  </div>
+                ) : shares.length === 0 ? (
+                  <div className="text-sm text-gray-600">No hay enlaces aún</div>
+                ) : (
+                  shares.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between rounded border p-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-gray-900">{s.title || 'Enlace'}</div>
+                        <div className="text-xs text-gray-600">
+                          {s.share_type} • {new Date(s.created_at).toLocaleString('es-AR')}
+                          {s.password_hash ? ' • 🔒 con contraseña' : ''}
+                          {s.expires_at ? ` • expira ${new Date(s.expires_at).toLocaleString('es-AR')}` : ''}
+                        </div>
+                        <div className="mt-1 truncate text-xs text-gray-500">{s.links?.store || s.links?.gallery}</div>
+                      </div>
+                      <div className="ml-3 flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(s.links?.store || s.links?.gallery || '');
+                              toast.success('Enlace copiado');
+                            } catch {}
+                          }}
+                        >
+                          Copiar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={async () => {
+                            if (!confirm('¿Desactivar este enlace?')) return;
+                            const r = await fetch(`/api/admin/share?id=${encodeURIComponent(s.id)}`, { method: 'DELETE' });
+                            if (r.ok) {
+                              toast.success('Enlace desactivado');
+                              await loadShares();
+                            } else {
+                              toast.error('No se pudo desactivar');
+                            }
+                          }}
+                        >
+                          Desactivar
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🚀 FASE 2: Modal de gestión de estudiantes */}
+      {showStudentManagement && selectedEventId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-xl">
+            <div className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Gestión de Estudiantes</h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowStudentManagement(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <StudentManagement
+                eventId={selectedEventId}
+                selectedFolderId={selectedFolderId}
+              />
             </div>
           </div>
         </div>

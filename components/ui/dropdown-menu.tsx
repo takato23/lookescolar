@@ -2,11 +2,13 @@
 
 import * as React from 'react';
 import { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils/cn';
 
 interface DropdownMenuContextValue {
   open: boolean;
   setOpen: (open: boolean) => void;
+  anchorRef: React.RefObject<HTMLDivElement>;
 }
 
 const DropdownMenuContext = createContext<DropdownMenuContextValue | null>(
@@ -19,10 +21,11 @@ interface DropdownMenuProps {
 
 export function DropdownMenu({ children }: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   return (
-    <DropdownMenuContext.Provider value={{ open, setOpen }}>
-      <div className="relative inline-block">{children}</div>
+    <DropdownMenuContext.Provider value={{ open, setOpen, anchorRef }}>
+      <div ref={anchorRef} className="relative inline-block">{children}</div>
     </DropdownMenuContext.Provider>
   );
 }
@@ -88,7 +91,7 @@ export function DropdownMenuContent({
   if (!context)
     throw new Error('DropdownMenuContent must be used within DropdownMenu');
 
-  const { open, setOpen } = context;
+  const { open, setOpen, anchorRef } = context;
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -133,22 +136,82 @@ export function DropdownMenuContent({
     left: 'right-full mr-2',
   };
 
-  return (
+  // Compute portal-based positioning to avoid clipping by overflow contexts
+  const anchorRect = anchorRef.current?.getBoundingClientRect();
+  const usePortal = true;
+
+  const positionStyles: React.CSSProperties = {};
+  const transform: string[] = [];
+  if (anchorRect) {
+    // Vertical position
+    if (side === 'top') {
+      positionStyles.top = anchorRect.top;
+      transform.push('translateY(-100%)');
+    } else if (side === 'bottom') {
+      positionStyles.top = anchorRect.bottom + 8; // small offset
+    } else if (side === 'left') {
+      positionStyles.top = anchorRect.top + anchorRect.height / 2;
+      transform.push('translateY(-50%)');
+    } else if (side === 'right') {
+      positionStyles.top = anchorRect.top + anchorRect.height / 2;
+      transform.push('translateY(-50%)');
+    }
+    // Horizontal position
+    if (align === 'start') {
+      positionStyles.left = anchorRect.left;
+    } else if (align === 'center') {
+      positionStyles.left = anchorRect.left + anchorRect.width / 2;
+      transform.push('translateX(-50%)');
+    } else if (align === 'end') {
+      positionStyles.left = anchorRect.right;
+      transform.push('translateX(-100%)');
+    }
+  }
+
+  const content = (
     <div
       ref={contentRef}
       className={cn(
-        // Container & layout
-        'absolute z-50 min-w-[10rem] overflow-hidden rounded-xl p-2',
-        // Depth & glass effect
+        'min-w-[10rem] overflow-hidden rounded-xl p-2',
         'glass-ultra shadow-3d border border-white/10 ring-1 ring-white/10 drop-shadow-xl backdrop-blur-xl',
-        // Animation
-        'animate-slide-down transform-gpu will-change-transform',
-        alignClasses[align],
-        sideClasses[side],
+        'transform-gpu will-change-transform z-[9999]',
         className
       )}
+      style={{ transform: transform.join(' '), ...(!usePortal && { position: 'absolute' }) }}
     >
       {children}
+    </div>
+  );
+
+  if (usePortal) {
+    return createPortal(
+      <div
+        className={cn(
+          'fixed inset-0 pointer-events-none z-[9999]'
+        )}
+        aria-hidden="false"
+      >
+        <div
+          className={cn('pointer-events-auto')}
+          style={{ position: 'fixed', ...positionStyles }}
+        >
+          {content}
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  // Fallback to inline absolute positioning
+  return (
+    <div
+      className={cn(
+        'absolute z-[9999]',
+        alignClasses[align],
+        sideClasses[side]
+      )}
+    >
+      {content}
     </div>
   );
 }

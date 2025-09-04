@@ -6,109 +6,45 @@ interface LiquidIconProps {
   className?: string;
 }
 
-// Dashboard Icon - Profesional con gráficos + cámara (cyan con estrellas)
+// Dashboard Icon - Panel de control moderno con métricas y cámara
 export function DashboardIcon({ size = 24, className = '' }: LiquidIconProps) {
   return (
     <div className={`${className}`} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 100 100" fill="none" className="h-full w-full">
-        {/* Fondo circular cyan */}
-        <circle cx="50" cy="50" r="50" fill="url(#dashboardBg)" />
+      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+        {/* Fondo con gradiente líquido */}
+        <circle cx="12" cy="12" r="12" fill="url(#dashboardGradient)" />
 
-        {/* Estrellas decorativas */}
+        {/* Gráficos de barras principales */}
+        <rect x="4" y="12" width="2" height="4" rx="1" fill="white" opacity="0.9" />
+        <rect x="7" y="10" width="2" height="6" rx="1" fill="white" opacity="0.9" />
+        <rect x="10" y="8" width="2" height="8" rx="1" fill="white" opacity="0.9" />
+
+        {/* Línea de tendencia */}
         <path
-          d="M25 35 L27 41 L33 41 L28 45 L30 51 L25 47 L20 51 L22 45 L17 41 L23 41 Z"
-          fill="#000"
-          opacity="0.3"
-        />
-        <path
-          d="M75 25 L77 31 L83 31 L78 35 L80 41 L75 37 L70 41 L72 35 L67 31 L73 31 Z"
-          fill="#000"
-          opacity="0.3"
-        />
-        <circle cx="20" cy="70" r="2" fill="#000" opacity="0.3" />
-        <circle cx="80" cy="65" r="2" fill="#000" opacity="0.3" />
-        <path
-          d="M70 75 L71 77 L73 77 L71.5 78.5 L72 81 L70 79.5 L68 81 L68.5 78.5 L67 77 L69 77 Z"
-          fill="#000"
-          opacity="0.3"
+          d="M4 14 L7 12 L10 10 L13 11"
+          stroke="white"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity="0.8"
         />
 
-        {/* Gráficos de barras */}
+        {/* Ícono de cámara minimalista */}
         <rect
-          x="25"
-          y="45"
+          x="14"
+          y="6"
           width="6"
-          height="15"
-          rx="3"
-          fill="#000"
-          stroke="#000"
-          strokeWidth="2"
-        />
-        <rect
-          x="35"
-          y="35"
-          width="6"
-          height="25"
-          rx="3"
-          fill="#000"
-          stroke="#000"
-          strokeWidth="2"
-        />
-        <rect
-          x="45"
-          y="40"
-          width="6"
-          height="20"
-          rx="3"
-          fill="#000"
-          stroke="#000"
-          strokeWidth="2"
-        />
-
-        {/* Base de gráficos */}
-        <rect
-          x="22"
-          y="60"
-          width="32"
-          height="3"
-          rx="1.5"
-          fill="#000"
-          opacity="0.3"
-        />
-
-        {/* Cámara */}
-        <rect
-          x="60"
-          y="45"
-          width="20"
-          height="15"
-          rx="3"
+          height="4"
+          rx="1"
           fill="none"
-          stroke="#000"
-          strokeWidth="3"
+          stroke="white"
+          strokeWidth="1.5"
+          opacity="0.9"
         />
-        <rect
-          x="65"
-          y="40"
-          width="10"
-          height="5"
-          rx="2"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <circle
-          cx="70"
-          cy="52.5"
-          r="5"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <circle cx="70" cy="52.5" r="2" fill="#000" />
+        <circle cx="17" cy="9" r="2.5" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+        <circle cx="17" cy="9" r="1" fill="white" opacity="0.9" />
 
         <defs>
-          <linearGradient id="dashboardBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="dashboardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#06b6d4" />
             <stop offset="100%" stopColor="#0891b2" />
           </linearGradient>
@@ -118,86 +54,54 @@ export function DashboardIcon({ size = 24, className = '' }: LiquidIconProps) {
   );
 }
 
-// Eventos Icon - Calendario profesional con cámara (púrpura elegante)
+// Eventos Icon - Calendario moderno con cámara integrada
 export function EventsIcon({ size = 24, className = '' }: LiquidIconProps) {
   return (
     <div className={`${className}`} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 100 100" fill="none" className="h-full w-full">
-        {/* Fondo circular púrpura */}
-        <circle cx="50" cy="50" r="50" fill="url(#eventsBg)" />
+      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+        {/* Fondo con gradiente líquido */}
+        <circle cx="12" cy="12" r="12" fill="url(#eventsGradient)" />
 
         {/* Calendario principal */}
         <rect
-          x="25"
-          y="30"
-          width="35"
-          height="45"
-          rx="5"
+          x="3"
+          y="6"
+          width="10"
+          height="10"
+          rx="2"
           fill="none"
-          stroke="#000"
-          strokeWidth="3"
+          stroke="white"
+          strokeWidth="1.5"
+          opacity="0.9"
         />
 
         {/* Header del calendario */}
-        <rect
-          x="25"
-          y="30"
-          width="35"
-          height="12"
-          rx="5"
-          fill="#000"
-          opacity="0.1"
-        />
+        <rect x="3" y="6" width="10" height="3" rx="2" fill="white" opacity="0.2" />
 
         {/* Anillas del calendario */}
-        <ellipse cx="35" cy="25" rx="3" ry="6" fill="#000" opacity="0.8" />
-        <ellipse cx="50" cy="25" rx="3" ry="6" fill="#000" opacity="0.8" />
+        <circle cx="6" cy="4.5" r="0.8" fill="white" opacity="0.8" />
+        <circle cx="9" cy="4.5" r="0.8" fill="white" opacity="0.8" />
 
-        {/* Contenido del calendario - día */}
-        <rect
-          x="30"
-          y="45"
-          width="8"
-          height="6"
-          rx="2"
-          fill="#000"
-          opacity="0.3"
-        />
-        <circle cx="35" cy="60" r="1.5" fill="#000" opacity="0.6" />
+        {/* Día en el calendario */}
+        <circle cx="6" cy="12" r="1" fill="white" opacity="0.6" />
 
-        {/* Cámara superpuesta */}
+        {/* Ícono de cámara integrado */}
         <rect
-          x="50"
-          y="50"
-          width="25"
-          height="18"
-          rx="4"
+          x="15"
+          y="4"
+          width="5"
+          height="3.5"
+          rx="0.8"
           fill="none"
-          stroke="#000"
-          strokeWidth="3"
+          stroke="white"
+          strokeWidth="1.2"
+          opacity="0.9"
         />
-        <rect
-          x="55"
-          y="45"
-          width="15"
-          height="8"
-          rx="3"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <circle
-          cx="62.5"
-          cy="59"
-          r="6"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <circle cx="62.5" cy="59" r="3" fill="#000" />
+        <circle cx="17.5" cy="6.5" r="2" fill="none" stroke="white" strokeWidth="1.2" opacity="0.9" />
+        <circle cx="17.5" cy="6.5" r="0.8" fill="white" opacity="0.9" />
 
         <defs>
-          <linearGradient id="eventsBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="eventsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#a855f7" />
             <stop offset="100%" stopColor="#7c3aed" />
           </linearGradient>
@@ -207,105 +111,39 @@ export function EventsIcon({ size = 24, className = '' }: LiquidIconProps) {
   );
 }
 
-// Carpetas Icon - Calendario profesional con cámara y estrellas doradas
+// Fotos Icon - Galería organizada con múltiples imágenes
 export function FoldersIcon({ size = 24, className = '' }: LiquidIconProps) {
   return (
     <div className={`${className}`} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 100 100" fill="none" className="h-full w-full">
-        {/* Fondo circular púrpura */}
-        <circle cx="50" cy="50" r="50" fill="url(#foldersBg)" />
+      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+        {/* Fondo con gradiente líquido */}
+        <circle cx="12" cy="12" r="12" fill="url(#foldersGradient)" />
 
-        {/* Estrellas doradas decorativas */}
+        {/* Carpeta principal */}
         <path
-          d="M20 25 L21.5 28 L25 28 L22.25 30.25 L23.75 33.5 L20 31.25 L16.25 33.5 L17.75 30.25 L15 28 L18.5 28 Z"
-          fill="#fbbf24"
-        />
-        <path
-          d="M80 70 L81.5 73 L85 73 L82.25 75.25 L83.75 78.5 L80 76.25 L76.25 78.5 L77.75 75.25 L75 73 L78.5 73 Z"
-          fill="#fbbf24"
-        />
-
-        {/* Calendario principal */}
-        <rect
-          x="20"
-          y="30"
-          width="40"
-          height="50"
-          rx="6"
+          d="M4 8 L4 16 L18 16 L18 10 L16 8 Z"
           fill="none"
-          stroke="#000"
-          strokeWidth="3"
+          stroke="white"
+          strokeWidth="1.5"
+          opacity="0.9"
         />
 
-        {/* Header del calendario */}
-        <rect
-          x="20"
-          y="30"
-          width="40"
-          height="15"
-          rx="6"
-          fill="#000"
-          opacity="0.1"
-        />
+        {/* Pestaña de la carpeta */}
+        <path d="M16 8 L18 10 L18 8 Z" fill="white" opacity="0.3" />
 
-        {/* Anillas del calendario - blancas */}
-        <ellipse
-          cx="30"
-          cy="25"
-          rx="4"
-          ry="8"
-          fill="#fff"
-          stroke="#000"
-          strokeWidth="2"
-        />
-        <ellipse
-          cx="50"
-          cy="25"
-          rx="4"
-          ry="8"
-          fill="#fff"
-          stroke="#000"
-          strokeWidth="2"
-        />
+        {/* Imágenes dentro de la carpeta */}
+        <rect x="6" y="11" width="3" height="3" rx="0.5" fill="white" opacity="0.6" />
+        <rect x="10" y="11" width="3" height="3" rx="0.5" fill="white" opacity="0.6" />
+        <rect x="14" y="11" width="3" height="3" rx="0.5" fill="white" opacity="0.6" />
 
-        {/* Contenido del calendario */}
-        <circle cx="30" cy="60" r="3" fill="#000" opacity="0.3" />
-        <circle cx="40" cy="55" r="2" fill="#000" opacity="0.4" />
-
-        {/* Cámara superpuesta */}
-        <rect
-          x="45"
-          y="55"
-          width="30"
-          height="22"
-          rx="5"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <rect
-          x="52"
-          y="48"
-          width="16"
-          height="10"
-          rx="4"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <circle
-          cx="60"
-          cy="66"
-          r="7"
-          fill="none"
-          stroke="#000"
-          strokeWidth="3"
-        />
-        <circle cx="60" cy="66" r="3" fill="#000" />
-        <circle cx="68" cy="60" r="1.5" fill="#000" />
+        {/* Miniaturas adicionales */}
+        <rect x="6" y="15" width="2" height="2" rx="0.3" fill="white" opacity="0.4" />
+        <rect x="9" y="15" width="2" height="2" rx="0.3" fill="white" opacity="0.4" />
+        <rect x="12" y="15" width="2" height="2" rx="0.3" fill="white" opacity="0.4" />
+        <rect x="15" y="15" width="2" height="2" rx="0.3" fill="white" opacity="0.4" />
 
         <defs>
-          <linearGradient id="foldersBg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="foldersGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#c084fc" />
             <stop offset="100%" stopColor="#a855f7" />
           </linearGradient>
@@ -315,4 +153,113 @@ export function FoldersIcon({ size = 24, className = '' }: LiquidIconProps) {
   );
 }
 
-export default { DashboardIcon, EventsIcon, FoldersIcon };
+// Orders Icon - Carrito de compras con productos
+export function OrdersIcon({ size = 24, className = '' }: LiquidIconProps) {
+  return (
+    <div className={`${className}`} style={{ width: size, height: size }}>
+      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+        {/* Fondo con gradiente líquido */}
+        <circle cx="12" cy="12" r="12" fill="url(#ordersGradient)" />
+
+        {/* Carrito de compras */}
+        <rect x="4" y="8" width="12" height="8" rx="1" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+
+        {/* Ruedas del carrito */}
+        <circle cx="6" cy="17" r="1.5" fill="white" opacity="0.8" />
+        <circle cx="14" cy="17" r="1.5" fill="white" opacity="0.8" />
+
+        {/* Mango del carrito */}
+        <path d="M16 8 L18 10 L18 14" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+
+        {/* Productos en el carrito */}
+        <rect x="6" y="10" width="2" height="2" rx="0.3" fill="white" opacity="0.6" />
+        <rect x="9" y="10" width="2" height="2" rx="0.3" fill="white" opacity="0.6" />
+        <rect x="12" y="10" width="2" height="2" rx="0.3" fill="white" opacity="0.6" />
+
+        <defs>
+          <linearGradient id="ordersGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#d97706" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+// QR Icon - Código QR moderno
+export function QrIcon({ size = 24, className = '' }: LiquidIconProps) {
+  return (
+    <div className={`${className}`} style={{ width: size, height: size }}>
+      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+        {/* Fondo con gradiente líquido */}
+        <circle cx="12" cy="12" r="12" fill="url(#qrGradient)" />
+
+        {/* Patrón QR simplificado */}
+        <rect x="4" y="4" width="6" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+        <rect x="4" y="4" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="8" y="4" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="4" y="8" width="2" height="2" fill="white" opacity="0.8" />
+
+        <rect x="14" y="4" width="6" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+        <rect x="14" y="4" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="18" y="4" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="14" y="8" width="2" height="2" fill="white" opacity="0.8" />
+
+        <rect x="4" y="14" width="6" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+        <rect x="4" y="14" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="8" y="14" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="4" y="18" width="2" height="2" fill="white" opacity="0.8" />
+
+        <rect x="14" y="14" width="6" height="6" rx="1" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+        <rect x="14" y="14" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="18" y="14" width="2" height="2" fill="white" opacity="0.8" />
+        <rect x="14" y="18" width="2" height="2" fill="white" opacity="0.8" />
+
+        <defs>
+          <linearGradient id="qrGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10b981" />
+            <stop offset="100%" stopColor="#059669" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+// Settings Icon - Engranajes modernos
+export function SettingsIcon({ size = 24, className = '' }: LiquidIconProps) {
+  return (
+    <div className={`${className}`} style={{ width: size, height: size }}>
+      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
+        {/* Fondo con gradiente líquido */}
+        <circle cx="12" cy="12" r="12" fill="url(#settingsGradient)" />
+
+        {/* Engranaje principal */}
+        <circle cx="12" cy="12" r="6" fill="none" stroke="white" strokeWidth="1.5" opacity="0.9" />
+        <circle cx="12" cy="12" r="2" fill="white" opacity="0.8" />
+
+        {/* Dientes del engranaje */}
+        <rect x="11" y="3" width="2" height="3" rx="1" fill="white" opacity="0.8" />
+        <rect x="18" y="11" width="3" height="2" rx="1" fill="white" opacity="0.8" />
+        <rect x="11" y="18" width="2" height="3" rx="1" fill="white" opacity="0.8" />
+        <rect x="3" y="11" width="3" height="2" rx="1" fill="white" opacity="0.8" />
+
+        {/* Dientes diagonales */}
+        <rect x="16" y="6" width="2" height="2" rx="1" fill="white" opacity="0.6" transform="rotate(45 17 7)" />
+        <rect x="16" y="16" width="2" height="2" rx="1" fill="white" opacity="0.6" transform="rotate(45 17 17)" />
+        <rect x="6" y="16" width="2" height="2" rx="1" fill="white" opacity="0.6" transform="rotate(45 7 17)" />
+        <rect x="6" y="6" width="2" height="2" rx="1" fill="white" opacity="0.6" transform="rotate(45 7 7)" />
+
+        <defs>
+          <linearGradient id="settingsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#6b7280" />
+            <stop offset="100%" stopColor="#4b5563" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+export default { DashboardIcon, EventsIcon, FoldersIcon, OrdersIcon, QrIcon, SettingsIcon };

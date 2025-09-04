@@ -481,9 +481,9 @@ class ShareTokenSecurity {
   /**
    * Extract request context from headers (for use in API routes)
    */
-  static extractRequestContext(): { ip?: string; userAgent?: string } {
+  async extractRequestContext(): Promise<{ ip?: string; userAgent?: string }> {
     try {
-      const headersList = headers();
+      const headersList = await headers();
       const ip =
         headersList.get('x-forwarded-for') ||
         headersList.get('x-real-ip') ||

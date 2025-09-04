@@ -1,57 +1,54 @@
-# LookEscolar - School Photography Management System
+# React + TypeScript + Vite
 
-## Overview
-LookEscolar is a web application for managing school photography, including uploads, tagging, publishing, and payments integration with Mercado Pago. It uses Next.js, Supabase, and Tailwind CSS.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
-- Admin dashboard for photo management
-- QR code generation for family access
-- Gallery viewing and selection for families
-- Payment processing
-- Performance monitoring and security features
+Currently, two official plugins are available:
 
-## Tech Stack
-- Frontend: Next.js 14, React 19
-- Backend: Supabase (Database, Auth, Storage)
-- Styling: Tailwind CSS
-- Testing: Vitest, Playwright
-- Payments: Mercado Pago
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Documentation
-For comprehensive documentation, see the [docs/](docs/) directory:
-- [Architecture Reference](docs/ARCHITECTURE.md)
-- [API Reference](docs/api-reference.md)
-- [Development Guidelines](docs/development/)
-- [Operations Guides](docs/operations/)
-- [Resources](docs/resources/)
+## Expanding the ESLint configuration
 
-## Setup
-1. Clone the repository: `git clone <repo-url>`
-2. Install dependencies: `npm install`
-3. Copy `.env.example` to `.env.local` and fill in values
-4. Start development server: `npm run dev`
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## Environment Variables
-See `.env.example` for required variables:
-- Supabase URLs and keys
-- Mercado Pago credentials
-- Storage bucket name
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+});
+```
 
-## Running Tests
-- Unit tests: `npm test`
-- Comprehensive tests: `npm run test:comprehensive`
-- Security tests: `npm run test:security`
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-## Deployment
-- Build: `npm run build`
-- Start: `npm start`
-- Docker: `npm run docker:build && npm run docker:run`
+```js
+// eslint.config.js
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
-## Contribution
-1. Fork the repo
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Open pull request
-
-For issues, check the docs/ folder or open a new issue.
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    "react-x": reactX,
+    "react-dom": reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs["recommended-typescript"].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+});
+```

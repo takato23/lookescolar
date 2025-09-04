@@ -1,3 +1,17 @@
+/**
+ * ⚠️ DEPRECATED COMPONENT ⚠️
+ * 
+ * Este componente ha sido marcado como DEPRECATED.
+ * Usar el sistema unificado en /admin/photos
+ * 
+ * Fecha de deprecación: 2025-09-03T04:52:49.195Z
+ * 
+ * Migración:
+ * - Reemplazar con redirect a /admin/photos?event_id={eventId}
+ * - Eliminar imports y referencias a este componente
+ * - Usar PhotoAdmin component del sistema unificado
+ */
+
 'use client';
 
 import React, { useState, useEffect } from 'react';

@@ -65,8 +65,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
       const sortBy = searchParams.get('sort_by') || 'created_at';
       const sortOrder = searchParams.get('sort_order') || 'desc';
       const includeStats = searchParams.get('include_stats') === 'true';
+      const { page, limit, offset } = parsePaginationParams(searchParams);
+      const paginated = searchParams.has('page') || searchParams.has('limit');
 
-      let query = serviceClient.from('events').select(`
+      let query = serviceClient.from('events').select(
+        `
       id,
       name,
       location,
@@ -76,7 +79,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
       price_per_photo,
       created_at,
       updated_at
-    `);
+    `,
+        { count: 'exact' }
+      );
 
       // Aplicar filtros
       if (status === 'active') {
@@ -88,8 +93,12 @@ export const GET = RateLimitMiddleware.withRateLimit(
       // Aplicar ordenamiento
       const ascending = sortOrder === 'asc';
       query = query.order(sortBy, { ascending });
+      // Paginación
+      if (paginated) {
+        query = query.range(offset, offset + limit - 1);
+      }
 
-      const { data: events, error } = await query;
+      const { data: events, error, count } = await query as any;
 
       if (error) {
         console.error('Error fetching events:', error);
@@ -103,63 +112,108 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
       // Si se solicitan estadísticas, obtener estadísticas reales de la BD
       if (includeStats && events && events.length > 0) {
-        const { UnifiedPhotoService } = await import(
-          '@/lib/services/unified-photo.service'
-        );
-        const photoService = new UnifiedPhotoService(serviceClient as any);
+        try {
+          const eventIds = events.map((e) => e.id);
+          const { data: aggStats, error: aggError } = await serviceClient.rpc(
+            'get_event_stats',
+            { event_ids: eventIds }
+          );
 
-        const eventsStatsPromises = events.map(async (event) => {
-          const [subjectsStats, photoCount, ordersStats] = await Promise.all([
-            serviceClient
-              .from('subjects')
-              .select('*', { count: 'exact', head: true })
-              .eq('event_id', event.id),
-            photoService.getEventPhotoCount(event.id),
-            serviceClient
-              .from('orders')
-              .select('id, status, total_amount, created_at')
-              .eq('event_id', event.id),
-          ]);
+          if (aggError) throw aggError;
 
-          const orders = ordersStats.data || [];
+          const map = new Map<string, any>();
+          (aggStats || []).forEach((row: any) => {
+            map.set(row.event_id, {
+              totalSubjects: row.total_subjects || 0,
+              totalPhotos: row.total_photos || 0,
+              totalOrders: row.total_orders || 0,
+              revenue: row.revenue || 0,
+            });
+          });
 
-          const stats = {
-            totalSubjects: subjectsStats.count || 0,
-            totalPhotos: photoCount || 0,
-            approvedPhotos: null,
-            untaggedPhotos: null,
-            totalOrders: orders.length,
-            pendingOrders: orders.filter((o) => o.status === 'pending').length,
-            approvedOrders: orders.filter((o) => o.status === 'approved')
-              .length,
-            deliveredOrders: orders.filter((o) => o.status === 'delivered')
-              .length,
-            revenue: Math.round(
-              orders
-                .filter((o) => ['approved', 'delivered'].includes(o.status))
-                .reduce((sum, order) => sum + (order.total_amount || 0), 0) /
-                100
-            ),
-            lastPhotoUploaded: null,
-            lastOrderCreated:
-              orders.length > 0
-                ? orders.sort(
-                    (a, b) =>
-                      new Date(b.created_at).getTime() -
-                      new Date(a.created_at).getTime()
-                  )[0].created_at
-                : null,
-          } as any;
-
-          return {
+          eventsWithStats = (events || []).map((event) => ({
             ...event,
             school: event.name || event.location,
             active: event.status === 'active',
-            stats,
-          };
-        });
+            stats: map.get(event.id) || {
+              totalSubjects: 0,
+              totalPhotos: 0,
+              totalOrders: 0,
+              revenue: 0,
+            },
+          }));
+        } catch (e) {
+          // Fallback al método por lotes para resiliencia
+          const { UnifiedPhotoService } = await import(
+            '@/lib/services/unified-photo.service'
+          );
+          const photoService = new UnifiedPhotoService(serviceClient as any);
 
-        eventsWithStats = await Promise.all(eventsStatsPromises);
+          const batchSize = parseInt(
+            process.env.EVENTS_STATS_BATCH_SIZE || '6',
+            10
+          );
+          const enriched: any[] = [];
+
+          for (let i = 0; i < events.length; i += batchSize) {
+            const batch = events.slice(i, i + batchSize);
+            const batchResults = await Promise.all(
+              batch.map(async (event) => {
+                const [subjectsStats, photoCount, ordersStats] = await Promise.all([
+                  serviceClient
+                    .from('subjects')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('event_id', event.id),
+                  photoService.getEventPhotoCount(event.id),
+                  serviceClient
+                    .from('orders')
+                    .select('id, status, total_amount, created_at')
+                    .eq('event_id', event.id),
+                ]);
+
+                const orders = ordersStats.data || [];
+
+                const stats = {
+                  totalSubjects: subjectsStats.count || 0,
+                  totalPhotos: photoCount || 0,
+                  approvedPhotos: null,
+                  untaggedPhotos: null,
+                  totalOrders: orders.length,
+                  pendingOrders: orders.filter((o) => o.status === 'pending').length,
+                  approvedOrders: orders.filter((o) => o.status === 'approved')
+                    .length,
+                  deliveredOrders: orders.filter((o) => o.status === 'delivered')
+                    .length,
+                  revenue: Math.round(
+                    orders
+                      .filter((o) => ['approved', 'delivered'].includes(o.status))
+                      .reduce((sum, order) => sum + (order.total_amount || 0), 0) /
+                      100
+                  ),
+                  lastPhotoUploaded: null,
+                  lastOrderCreated:
+                    orders.length > 0
+                      ? orders.sort(
+                          (a, b) =>
+                            new Date(b.created_at).getTime() -
+                            new Date(a.created_at).getTime()
+                        )[0].created_at
+                      : null,
+                } as any;
+
+                return {
+                  ...event,
+                  school: event.name || event.location,
+                  active: event.status === 'active',
+                  stats,
+                };
+              })
+            );
+            enriched.push(...batchResults);
+          }
+
+          eventsWithStats = enriched;
+        }
       }
 
       const duration = Date.now() - startTime;
@@ -171,7 +225,17 @@ export const GET = RateLimitMiddleware.withRateLimit(
         duration,
       });
 
-      // Compat tests: devolver arreglo como raíz (no objeto envuelto)
+      // Si se pidió paginación explícita, devolver formato con metadatos
+      if (paginated) {
+        const pagination = createPaginationMeta(page, limit, count || 0);
+        return createSuccessResponse(
+          { events: eventsWithStats },
+          pagination,
+          requestId
+        );
+      }
+
+      // Compat: devolver arreglo como raíz cuando no hay paginación
       return NextResponse.json(eventsWithStats, {
         headers: {
           'Cache-Control': 'no-store, must-revalidate',

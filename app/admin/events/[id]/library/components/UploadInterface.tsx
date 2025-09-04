@@ -37,6 +37,7 @@ interface UploadInterfaceProps {
   onUploadComplete: (photoIds: string[]) => void;
   onClose?: () => void;
   className?: string;
+  initialFiles?: File[];
 }
 
 const ALLOWED_FILE_TYPES = [
@@ -58,12 +59,27 @@ export function UploadInterface({
   onUploadComplete,
   onClose,
   className,
+  initialFiles,
 }: UploadInterfaceProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
+
+  // Prefill queue when opening with dropped files
+  useEffect(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      const fileArray = Array.from(initialFiles);
+      const toAdd: UploadFile[] = fileArray.slice(0, MAX_FILES).map((file) => ({
+        id: crypto.randomUUID(),
+        file,
+        status: 'pending',
+        progress: 0,
+      }));
+      setFiles((prev) => [...prev, ...toAdd]);
+    }
+  }, [initialFiles]);
 
   // Handle file selection
   const handleFiles = useCallback(

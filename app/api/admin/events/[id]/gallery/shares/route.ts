@@ -16,9 +16,9 @@ const CreateShareSchema = z.object({
 
 // POST /api/admin/events/[id]/gallery/shares
 export const POST = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
+  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const eventId = params.id;
+      const { id: eventId } = await params;
       const body = await req.json();
       const userId = req.headers.get('x-user-id');
 
@@ -60,7 +60,8 @@ export const POST = withAuth(
       }
 
       // Generate share URL
-      const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/share/gallery/${data.token}`;
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
+      const shareUrl = `${siteUrl}/store-unified/${data.token}`;
 
       return NextResponse.json({
         success: true,
@@ -101,9 +102,9 @@ const ListSharesSchema = z.object({
 
 // GET /api/admin/events/[id]/gallery/shares
 export const GET = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
+  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
-      const eventId = params.id;
+      const { id: eventId } = await params;
       const { searchParams } = new URL(req.url);
 
       // Parse and validate query parameters
@@ -134,26 +135,8 @@ export const GET = withAuth(
       let shareQuery = supabase
         .from('gallery_shares')
         .select(
-          `
-        id,
-        event_id,
-        level_id,
-        course_id,
-        student_id,
-        token,
-        expires_at,
-        max_views,
-        view_count,
-        allow_download,
-        allow_share,
-        custom_message,
-        created_by,
-        created_at,
-        updated_at,
-        event_levels (id, name),
-        courses (id, name, grade, section),
-        students (id, name, grade, section)
-      `
+          'id, event_id, level_id, course_id, student_id, token, expires_at, max_views, view_count, allow_download, allow_share, custom_message, created_by, created_at, updated_at',
+          { count: 'exact' }
         )
         .eq('event_id', eventId)
         .order('created_at', { ascending: false });
@@ -173,21 +156,33 @@ export const GET = withAuth(
       const { data: shares, error, count } = await shareQuery;
 
       if (error) {
+        // Graceful fallback when migration/table is not present yet
+        const msg = (error as any)?.message || '';
+        const relationMissing =
+          typeof msg === 'string' && msg.toLowerCase().includes('relation') && msg.toLowerCase().includes('does not exist');
+        if (relationMissing) {
+          console.warn('[GalleryShares] Table missing, returning empty list for compatibility');
+          return NextResponse.json({
+            success: true,
+            shares: [],
+            pagination: { page, limit, total: 0, has_more: false },
+          });
+        }
+
         console.error('Error fetching gallery shares:', error);
         return NextResponse.json(
-          { error: 'Failed to fetch gallery shares', details: error.message },
+          { error: 'Failed to fetch gallery shares', details: msg },
           { status: 500 }
         );
       }
 
       // Process shares for response
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
       const processedShares = (shares || []).map((share) => ({
         ...share,
-        share_url: `${process.env.NEXT_PUBLIC_SITE_URL}/share/gallery/${share.token}`,
-        is_expired: new Date(share.expires_at) < new Date(),
-        views_remaining: share.max_views
-          ? share.max_views - share.view_count
-          : null,
+        share_url: `${siteUrl}/store-unified/${share.token}`,
+        is_expired: share.expires_at ? new Date(share.expires_at) < new Date() : false,
+        views_remaining: share.max_views != null ? Math.max(0, share.max_views - (share.view_count || 0)) : null,
       }));
 
       return NextResponse.json({

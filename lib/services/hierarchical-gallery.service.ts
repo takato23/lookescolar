@@ -238,6 +238,9 @@ export class HierarchicalGalleryService {
         canDownload,
       }));
 
+      // Ensure consistent ordering with public gallery API: newest first
+      assets.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
       // Log successful access
       await this.logAccess(token, 'list_assets', {
         success: true,

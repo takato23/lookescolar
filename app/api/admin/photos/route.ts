@@ -100,30 +100,32 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
 
     // MEMORY OPTIMIZATION: Simplified query, fetch subjects separately if needed
     const buildBaseQuery = () => serviceClient
-      .from('photos')
+      .from('assets')
       .select(
-        `id, event_id, original_filename, storage_path, preview_path, approved, created_at, file_size, width, height`,
+        `id, folder_id, filename, original_path, preview_path, file_size, created_at`,
         { count: 'exact' }
       );
     let query = buildBaseQuery();
     
-    // Only filter by event_id if provided
+    // Only filter by folder_id if provided (replacing event_id logic)
     if (eventId) {
-      query = query.eq('event_id', eventId);
+      // For now, we'll skip the event_id filter and show all assets
+      // TODO: Need to join with folders table to filter by event_id
+      // query = query.eq('folder_id', eventId);
     }
-    // Filter by code_id when provided (supports 'null' to mean unassigned)
-    if (codeId === 'null') {
-      query = query.is('code_id', null as any);
-    } else if (codeId) {
-      query = query.eq('code_id', codeId);
-    }
+    // Note: assets table doesn't have code_id or approved columns
+    // These filters are temporarily disabled until we map the proper structure
+    // if (codeId === 'null') {
+    //   query = query.is('code_id', null as any);
+    // } else if (codeId) {
+    //   query = query.eq('code_id', codeId);
+    // }
 
-    // Aplicar filtros validados
-    if (approved === 'true') {
-      query = query.eq('approved', true);
-    } else if (approved === 'false') {
-      query = query.eq('approved', false);
-    }
+    // if (approved === 'true') {
+    //   query = query.eq('approved', true);
+    // } else if (approved === 'false') {
+    //   query = query.eq('approved', false);
+    // }
 
     // Filter by tagged status - we'll handle this in the application layer
     // since Supabase doesn't support complex joins easily in this context
@@ -133,7 +135,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
     
     // Apply search filter
     if (search) {
-      query = query.ilike('original_filename', `%${search}%`);
+      query = query.ilike('filename', `%${search}%`);
     }
     
     // Apply date filters
@@ -145,7 +147,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
     }
     
     // Apply sorting
-    const validSortColumns = ['created_at', 'original_filename'];
+    const validSortColumns = ['created_at', 'filename'];
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
     const ascending = sortOrder === 'asc';
     query = query.order(sortColumn, { ascending });

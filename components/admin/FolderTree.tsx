@@ -267,7 +267,7 @@ export function FolderTree({
   // Load children for a folder
   const loadFolderChildren = useCallback(async (folderId: string) => {
     try {
-      const response = await fetch(`/api/admin/folders?parentId=${folderId}`);
+      const response = await fetch(`/api/admin/folders?parent_id=${folderId}`);
       if (!response.ok) throw new Error('Failed to load folder children');
 
       const data = await response.json();

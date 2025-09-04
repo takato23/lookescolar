@@ -1,0 +1,406 @@
+/* =================================================================
+   ESTILOS MINIMALISTAS PARA LA TIENDA UNIFICADA
+   Diseño ultra-simple, elegante y enfocado como Chanta
+   ================================================================= */
+
+/* =================================================================
+   FONDOS Y EFECTOS VISUALES MINIMALISTAS
+   ================================================================= */
+
+/* Fondo principal ultra-simple */
+.store-background {
+  background: #fafafa;
+  position: relative;
+}
+
+/* Fondo de contenido principal minimalista */
+.store-content-background {
+  background: #ffffff;
+  border: none;
+  box-shadow: none;
+}
+
+/* Fondo de cards ultra-simple */
+.store-card-background {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.store-card-background:hover {
+  border-color: #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* =================================================================
+   ANIMACIONES SUTILES Y NATURALES
+   ================================================================= */
+
+/* Animación de entrada natural */
+@keyframes naturalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animación de hover sutil */
+@keyframes subtleHover {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+/* =================================================================
+   APLICACIÓN DE ANIMACIONES MINIMALISTAS
+   ================================================================= */
+
+/* Aplicar animaciones a los pasos */
+.store-step {
+  animation: naturalFadeIn 0.4s ease-out;
+}
+
+/* Animación sutil para las tarjetas de paquetes */
+.package-card {
+  animation: naturalFadeIn 0.3s ease-out;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.package-card:hover {
+  transform: translateY(-2px);
+  border-color: #d0d0d0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Animación sutil para las fotos */
+.photo-selection-card {
+  animation: naturalFadeIn 0.3s ease-out;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.photo-selection-card:hover {
+  transform: translateY(-1px);
+  border-color: #d0d0d0;
+}
+
+.photo-selection-card.selected {
+  border-color: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Animación sutil para las imágenes */
+.photo-image {
+  transition: all 0.2s ease;
+}
+
+.photo-image:hover {
+  transform: scale(1.02);
+}
+
+/* Animación sutil para los botones */
+.enhanced-button {
+  position: relative;
+  transition: all 0.2s ease;
+  animation: naturalFadeIn 0.3s ease-out;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+}
+
+.enhanced-button:hover {
+  background: #333333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Animación sutil para los inputs */
+.enhanced-input {
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-radius: 6px;
+  animation: naturalFadeIn 0.3s ease-out;
+}
+
+.enhanced-input:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+  outline: none;
+}
+
+/* Animación sutil para las badges */
+.enhanced-badge {
+  position: relative;
+  animation: naturalFadeIn 0.3s ease-out;
+  background: #f5f5f5;
+  color: #333333;
+  border: none;
+  border-radius: 4px;
+}
+
+.enhanced-badge:hover {
+  background: #e8e8e8;
+}
+
+/* Animación sutil para la barra de progreso */
+.progress-bar {
+  position: relative;
+  animation: naturalFadeIn 0.4s ease-out;
+  background: #f0f0f0;
+  border-radius: 2px;
+  height: 2px;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: #000000;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Animación sutil para las cards de resumen */
+.summary-card {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  animation: naturalFadeIn 0.3s ease-out;
+  border-radius: 8px;
+}
+
+.summary-card:hover {
+  border-color: #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Animación sutil para los iconos */
+.icon-container {
+  position: relative;
+  transition: all 0.2s ease;
+  animation: naturalFadeIn 0.3s ease-out;
+  background: #f5f5f5;
+  border-radius: 50%;
+}
+
+.icon-container:hover {
+  background: #e8e8e8;
+}
+
+/* Animación sutil para los botones de navegación */
+.nav-button {
+  position: relative;
+  transition: all 0.2s ease;
+  animation: naturalFadeIn 0.3s ease-out;
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.nav-button:hover {
+  background: #f8f8f8;
+  border-color: #d0d0d0;
+  transform: translateY(-1px);
+}
+
+/* Animación sutil para los separadores */
+.enhanced-separator {
+  position: relative;
+  height: 1px;
+  background: #f0f0f0;
+  animation: naturalFadeIn 0.4s ease-out;
+}
+
+/* Animación sutil para los mensajes de error */
+.error-message {
+  animation: naturalFadeIn 0.3s ease-out;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+/* Animación sutil para el header sticky */
+.sticky-header {
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+  animation: naturalFadeIn 0.3s ease-out;
+}
+
+/* =================================================================
+   EFECTOS ESPECIALES MINIMALISTAS
+   ================================================================= */
+
+/* Efecto de partículas ultra-sutiles */
+.floating-particles {
+  display: none;
+}
+
+/* Efecto de ondas minimalista */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.ripple-effect:hover::after {
+  width: 200px;
+  height: 200px;
+}
+
+/* Efecto de brillo minimalista */
+.scroll-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.scroll-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.6s;
+}
+
+.scroll-shine:hover::before {
+  left: 100%;
+}
+
+/* =================================================================
+   RESPONSIVE Y OPTIMIZACIONES
+   ================================================================= */
+
+@media (max-width: 768px) {
+  .package-card:hover {
+    transform: translateY(-1px);
+  }
+  
+  .photo-selection-card:hover {
+    transform: none;
+  }
+  
+  .enhanced-button:hover::before {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .store-background {
+    background: #fafafa;
+  }
+}
+
+/* Soporte para modo oscuro minimalista */
+@media (prefers-color-scheme: dark) {
+  .store-background {
+    background: #0a0a0a;
+  }
+  
+  .store-content-background {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+  }
+  
+  .store-card-background {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+  }
+  
+  .store-card-background:hover {
+    border-color: #3a3a3a;
+  }
+  
+  .enhanced-input {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+    color: #ffffff;
+  }
+  
+  .enhanced-input:focus {
+    border-color: #ffffff;
+  }
+  
+  .summary-card {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+  }
+  
+  .summary-card:hover {
+    border-color: #3a3a3a;
+  }
+  
+  .enhanced-button {
+    background: #ffffff;
+    color: #000000;
+  }
+  
+  .enhanced-button:hover {
+    background: #e0e0e0;
+  }
+  
+  .nav-button {
+    background: #1a1a1a;
+    color: #ffffff;
+    border-color: #2a2a2a;
+  }
+  
+  .nav-button:hover {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+  }
+}
+
+/* Estilos para impresión */
+@media print {
+  .enhanced-button,
+  .nav-button,
+  .icon-container::after,
+  .floating-particles,
+  .ripple-effect::after,
+  .scroll-shine::before {
+    display: none !important;
+  }
+  
+  .package-card,
+  .photo-selection-card,
+  .summary-card {
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+    animation: none !important;
+  }
+  
+  .store-background {
+    background: white !important;
+  }
+}

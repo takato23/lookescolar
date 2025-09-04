@@ -8,6 +8,7 @@ import {
   createSuccessResponse,
   logDevRequest,
 } from '@/lib/utils/api-response';
+import { featureFlags } from '@/lib/feature-flags';
 
 // Schema para validar el request de checkout público
 const PublicCheckoutSchema = z.object({
@@ -26,6 +27,16 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
+    // Gate legacy/public checkout when unified store is the only allowed checkout
+    if ((featureFlags as any).UNIFIED_STORE_CHECKOUT_ONLY === true || process.env.FF_UNIFIED_STORE_CHECKOUT_ONLY === 'true') {
+      return createErrorResponse(
+        'Checkout deshabilitado',
+        'Este flujo de checkout fue deshabilitado. Usá /store-unified/[token] para comprar.',
+        410,
+        requestId
+      );
+    }
+
     // Validar el body de la request
     const body = await request.json();
     const validatedData = PublicCheckoutSchema.parse(body);

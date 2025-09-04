@@ -114,15 +114,97 @@ class ShareService {
 
       const supabase = await this.getSupabase();
 
-      // Validate event exists
+      // Validate/resolve event - LÓGICA MEJORADA
+      let resolvedEventId = eventId;
+
+      // If no eventId provided or invalid, try deriving from folder or photos
+      if (!resolvedEventId && shareType === 'folder' && folderId) {
+        const { data: folder } = await supabase
+          .from('folders')
+          .select('event_id')
+          .eq('id', folderId)
+          .maybeSingle();
+        if (folder?.event_id) resolvedEventId = folder.event_id;
+      }
+
+      if (!resolvedEventId && shareType === 'photos' && photoIds && photoIds.length > 0) {
+        // Primero intentar con assets
+        const { data: assets } = await supabase
+          .from('assets')
+          .select('event_id, folder_id')
+          .in('id', photoIds);
+        
+        if (assets && assets.length > 0) {
+          // Si assets tiene event_id directo
+          const directEventIds = assets
+            .map((a: any) => a.event_id)
+            .filter(Boolean);
+          
+          if (directEventIds.length > 0) {
+            resolvedEventId = directEventIds[0];
+          } else {
+            // Si no, derivar desde folders
+            const folderIds = Array.from(new Set(
+              assets.map((a: any) => a.folder_id).filter(Boolean)
+            ));
+            
+            if (folderIds.length > 0) {
+              const { data: folders } = await supabase
+                .from('folders')
+                .select('event_id')
+                .in('id', folderIds);
+              
+              if (folders && folders.length > 0) {
+                const eventIds = Array.from(new Set(
+                  folders.map((f: any) => f.event_id).filter(Boolean)
+                ));
+                
+                if (eventIds.length > 0) {
+                  resolvedEventId = eventIds[0];
+                }
+              }
+            }
+          }
+        }
+        
+        // Como fallback, intentar con la tabla photos si assets no funcionó
+        if (!resolvedEventId) {
+          const { data: photos } = await supabase
+            .from('photos')
+            .select('event_id, folder_id')
+            .in('id', photoIds);
+          
+          if (photos && photos.length > 0) {
+            const directEventIds = photos
+              .map((p: any) => p.event_id)
+              .filter(Boolean);
+            
+            if (directEventIds.length > 0) {
+              resolvedEventId = directEventIds[0];
+            }
+          }
+        }
+      }
+
+      // Si aún no tenemos eventId, retornar error más descriptivo
+      if (!resolvedEventId) {
+        return { 
+          success: false, 
+          error: `No se pudo determinar el evento. Tipo: ${shareType}, Carpeta: ${folderId || 'N/A'}, Fotos: ${photoIds?.length || 0}` 
+        };
+      }
+
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('id, name, organization_id')
-        .eq('id', eventId)
+        .select('id, name')
+        .eq('id', resolvedEventId)
         .single();
 
       if (eventError || !event) {
-        return { success: false, error: 'Event not found' };
+        return { 
+          success: false, 
+          error: `Evento no encontrado (ID: ${resolvedEventId}). Error: ${eventError?.message || 'Desconocido'}` 
+        };
       }
 
       // Validate folder if specified
@@ -133,7 +215,7 @@ class ShareService {
           .eq('id', folderId)
           .single();
 
-        if (folderError || !folder || folder.event_id !== eventId) {
+        if (folderError || !folder || folder.event_id !== event.id) {
           return {
             success: false,
             error: 'Folder not found or does not belong to event',
@@ -143,23 +225,29 @@ class ShareService {
 
       // Validate photos if specified
       if (shareType === 'photos' && photoIds && photoIds.length > 0) {
-        const { data: photos, error: photosError } = await supabase
-          .from('photos')
-          .select('id, event_id')
+        // Validate assets exist and belong to event via folder.event_id
+        const { data: assets, error: assetsError } = await supabase
+          .from('assets')
+          .select('id, folder_id')
           .in('id', photoIds);
 
-        if (photosError || !photos || photos.length !== photoIds.length) {
-          return { success: false, error: 'Some photos not found' };
+        if (assetsError || !assets || assets.length !== photoIds.length) {
+          return { success: false, error: 'Some assets not found' };
         }
 
-        const invalidPhotos = photos.filter(
-          (photo) => photo.event_id !== eventId
-        );
-        if (invalidPhotos.length > 0) {
-          return {
-            success: false,
-            error: 'Some photos do not belong to this event',
-          };
+        const folderIds = Array.from(new Set(assets.map((a: any) => a.folder_id).filter(Boolean)));
+        if (folderIds.length > 0) {
+          const { data: folders, error: foldersError } = await supabase
+            .from('folders')
+            .select('id, event_id')
+            .in('id', folderIds);
+          if (foldersError || !folders) {
+            return { success: false, error: 'Failed to validate asset folders' };
+          }
+          const invalid = folders.filter((f: any) => f.event_id !== event.id);
+          if (invalid.length > 0) {
+            return { success: false, error: 'Some assets do not belong to this event' };
+          }
         }
       }
 
@@ -178,7 +266,7 @@ class ShareService {
       // Create share token record
       const shareData = {
         token,
-        event_id: eventId,
+        event_id: event.id,
         folder_id: shareType === 'folder' ? folderId : null,
         photo_ids: shareType === 'photos' ? photoIds : null,
         share_type: shareType,
@@ -308,7 +396,7 @@ class ShareService {
       // Get event details
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('id, name, organization_id')
+        .select('id, name')
         .eq('id', shareToken.event_id)
         .single();
 
@@ -319,7 +407,7 @@ class ShareService {
       // Initialize result
       const result: ShareAccess = {
         shareToken,
-        event,
+        event: { id: event.id, name: event.name, organization_id: '' },
         isPasswordRequired: false,
         canDownload: shareToken.allow_download,
         canComment: shareToken.allow_comments,

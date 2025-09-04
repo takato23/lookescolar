@@ -111,6 +111,11 @@ export async function middleware(request: NextRequest) {
       response.headers.set(key, value);
     });
 
+    // 3b. Robots - Prevent indexing of tokenized gallery/store
+    if (pathname.startsWith('/share/') || pathname.startsWith('/store-unified/')) {
+      response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    }
+
     // 4. Anti-hotlinking para rutas protegidas
     if (PROTECTED_PATHS.some(path => pathname.startsWith(path))) {
       const antiHotlinkResult = validateAntiHotlinking(request, referer, clientIP);

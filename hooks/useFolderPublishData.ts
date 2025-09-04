@@ -6,11 +6,13 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import {
   publishPerformanceMonitor,
   monitorBulkOperation,
 } from '@/lib/services/publish-performance-monitor';
+import { fetchCounter } from '@/lib/services/fetch-counter';
 
 interface FolderRow {
   id: string;
@@ -19,6 +21,8 @@ interface FolderRow {
   photo_count: number;
   is_published: boolean | null;
   share_token: string | null;
+  unified_share_token?: string | null;
+  store_url?: string | null;
   published_at: string | null;
   family_url: string | null;
   qr_url: string | null;
@@ -69,7 +73,8 @@ const fetchFoldersPaginated = async (
   page = 1,
   limit = 20,
   search?: string,
-  order_by = 'published_desc'
+  order_by = 'published_desc',
+  event_id?: string
 ): Promise<FoldersListResponse & { event: EventInfo | null }> => {
   const params = new URLSearchParams({
     include_unpublished: 'true',
@@ -82,9 +87,17 @@ const fetchFoldersPaginated = async (
     params.append('search', search.trim());
   }
 
+  if (event_id) {
+    params.append('event_id', event_id);
+  }
+
+  fetchCounter.increment('folders/published.query', event_id || 'all');
   const response = await fetch(`/api/admin/folders/published?${params}`);
   if (!response.ok) {
-    throw new Error('Failed to fetch folders list');
+    const text = await response.text().catch(() => '');
+    const msg = `Fetch failed /api/admin/folders/published (HTTP ${response.status}). ${text || 'Sin detalles.'}\nSugerencias: verificar migraciones requeridas y políticas RLS.`;
+    console.error('[Publish] List error:', { endpoint: '/api/admin/folders/published', status: response.status, text });
+    throw new Error(msg);
   }
   const data = await response.json();
 
@@ -96,6 +109,8 @@ const fetchFoldersPaginated = async (
     photo_count: Number(f.photo_count || f.photos_count || 0),
     is_published: Boolean(f.is_published),
     share_token: f.share_token as string | null,
+    unified_share_token: (f.unified_share_token as string | null) ?? null,
+    store_url: (f.store_url as string | null) ?? null,
     published_at: f.published_at as string | null,
     family_url: f.family_url as string | null,
     qr_url: f.qr_url as string | null,
@@ -136,11 +151,11 @@ const fetchFoldersPaginated = async (
 };
 
 // Legacy function for backward compatibility
-const fetchFoldersList = async (): Promise<{
+const fetchFoldersList = async (event_id?: string): Promise<{
   folders: FolderRow[];
   event: EventInfo | null;
 }> => {
-  const result = await fetchFoldersPaginated(1, 100); // Load first 100 for compatibility
+  const result = await fetchFoldersPaginated(1, 100, undefined, 'published_desc', event_id); // Load first 100 for compatibility
   return {
     folders: result.folders,
     event: result.event,
@@ -154,7 +169,8 @@ const publishFolder = async (folderId: string): Promise<PublishResponse> => {
   );
 
   try {
-    const response = await fetch(`/api/admin/folders/${folderId}/publish`, {
+    const endpoint = `/api/admin/folders/${folderId}/publish`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'publish' }),
@@ -162,8 +178,10 @@ const publishFolder = async (folderId: string): Promise<PublishResponse> => {
 
     const data = await response.json();
     if (!response.ok) {
-      publishPerformanceMonitor.endOperation(operationId, false, 1, data.error);
-      throw new Error(data.error || 'Error publishing folder');
+      const msg = `Error publicando carpeta. Endpoint: ${endpoint}. Detalle: ${data.error || `HTTP ${response.status}`}. Sugerencias: revisar migraciones y RLS.`;
+      publishPerformanceMonitor.endOperation(operationId, false, 1, msg);
+      console.error('[Publish] Mutation error:', msg);
+      throw new Error(msg);
     }
 
     publishPerformanceMonitor.endOperation(operationId, true, 1);
@@ -182,7 +200,8 @@ const publishFolder = async (folderId: string): Promise<PublishResponse> => {
 const unpublishFolder = async (
   folderId: string
 ): Promise<UnpublishResponse> => {
-  const response = await fetch(`/api/admin/folders/${folderId}/publish`, {
+  const endpoint = `/api/admin/folders/${folderId}/publish`;
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'unpublish' }),
@@ -190,7 +209,9 @@ const unpublishFolder = async (
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Error unpublishing folder');
+    const msg = `Error despublicando carpeta. Endpoint: ${endpoint}. Detalle: ${data.error || `HTTP ${response.status}`}. Sugerencias: revisar RLS.`;
+    console.error('[Publish] Mutation error:', msg);
+    throw new Error(msg);
   }
 
   return data;
@@ -199,7 +220,8 @@ const unpublishFolder = async (
 const rotateFolderToken = async (
   folderId: string
 ): Promise<PublishResponse> => {
-  const response = await fetch(`/api/admin/folders/${folderId}/publish`, {
+  const endpoint = `/api/admin/folders/${folderId}/publish`;
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'rotate' }),
@@ -207,16 +229,20 @@ const rotateFolderToken = async (
 
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || 'Error rotating token');
+    const msg = `Error rotando token. Endpoint: ${endpoint}. Detalle: ${data.error || `HTTP ${response.status}`}.`;
+    console.error('[Publish] Mutation error:', msg);
+    throw new Error(msg);
   }
 
   return data;
 };
 
 // Query keys
-const folderPublishQueryKeys = {
+export const folderPublishQueryKeys = {
   all: ['folderPublish'] as const,
   list: () => [...folderPublishQueryKeys.all, 'list'] as const,
+  listByEvent: (eventId: string | undefined | null) =>
+    [...folderPublishQueryKeys.all, 'list', { event_id: eventId || 'all' }] as const,
   folder: (id: string) =>
     [...folderPublishQueryKeys.all, 'folder', id] as const,
 };
@@ -228,10 +254,29 @@ export function useFolderPublishData(options?: {
   search?: string;
   order_by?: string;
   enablePagination?: boolean;
+  event_id?: string;
+  enabled?: boolean;
+  initialData?: {
+    folders: FolderRow[];
+    event: EventInfo | null;
+    pagination?: PaginationInfo;
+  };
 }) {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(options?.page || 1);
   const [searchTerm, setSearchTerm] = useState(options?.search || '');
+  const pathname = usePathname();
+  const externallyEnabled = options?.enabled ?? true;
+
+  // Try to auto-detect event_id from the URL when used under /admin/events/[id]/publish
+  const detectedEventId = (() => {
+    try {
+      const match = pathname?.match(/\/admin\/events\/([^/]+)\/publish/);
+      return options?.event_id || (match ? match[1] : undefined);
+    } catch {
+      return options?.event_id;
+    }
+  })();
 
   const isPaginationEnabled = options?.enablePagination ?? false;
   const limit = options?.limit || (isPaginationEnabled ? 20 : 100);
@@ -242,29 +287,56 @@ export function useFolderPublishData(options?: {
     queryKey: [
       ...folderPublishQueryKeys.list(),
       'paginated',
-      { page: currentPage, limit, search: searchTerm, order_by },
+      { page: currentPage, limit, search: searchTerm, order_by, event_id: detectedEventId },
     ],
     queryFn: () =>
-      fetchFoldersPaginated(currentPage, limit, searchTerm, order_by),
-    enabled: isPaginationEnabled,
-    staleTime: 30 * 1000,
+      fetchFoldersPaginated(currentPage, limit, searchTerm, order_by, detectedEventId),
+    enabled: isPaginationEnabled && externallyEnabled,
+    // Slightly longer when scoped to an event
+    staleTime: detectedEventId ? 60 * 1000 : 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    initialData: options?.initialData
+      ? {
+          folders: options.initialData.folders,
+          event: options.initialData.event,
+          pagination:
+            options.initialData.pagination ||
+            ({
+              page: currentPage,
+              limit,
+              total: options.initialData.folders.length,
+              total_pages: 1,
+              has_more: false,
+              has_previous: false,
+            } as any),
+          total: options.initialData.folders.length,
+          page: currentPage,
+          limit,
+          has_more: false,
+        }
+      : undefined,
   });
 
   // Legacy query (backward compatibility)
   const legacyQuery = useQuery({
-    queryKey: folderPublishQueryKeys.list(),
-    queryFn: fetchFoldersList,
-    enabled: !isPaginationEnabled,
-    staleTime: 30 * 1000,
+    queryKey: folderPublishQueryKeys.listByEvent(detectedEventId || 'all'),
+    queryFn: () => fetchFoldersList(detectedEventId),
+    enabled: !isPaginationEnabled && externallyEnabled,
+    staleTime: detectedEventId ? 60 * 1000 : 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchInterval: 60 * 1000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    initialData: options?.initialData
+      ? {
+          folders: options.initialData.folders,
+          event: options.initialData.event,
+        }
+      : undefined,
   });
 
   // Use appropriate query based on pagination setting

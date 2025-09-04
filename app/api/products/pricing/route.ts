@@ -1,8 +1,9 @@
 // Product Pricing API
+export const runtime = 'nodejs';
 // POST /api/products/pricing - Calculate pricing for product selections
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import {
   calculateProductCartTotal,
   formatProductPrice,
@@ -15,6 +16,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createServerSupabaseServiceClient();
     const body: PriceCalculationRequest = await request.json();
     const { event_id, selections } = body;
 
@@ -198,6 +200,7 @@ export async function POST(request: NextRequest) {
 // Get price for specific product or combo in an event
 export async function GET(request: NextRequest) {
   try {
+    const supabase = await createServerSupabaseServiceClient();
     const { searchParams } = new URL(request.url);
     const event_id = searchParams.get('event_id');
     const product_id = searchParams.get('product_id');

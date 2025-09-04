@@ -160,6 +160,16 @@ export class AccessTokenService {
    */
   async validateToken(token: string): Promise<TokenValidation> {
     try {
+      // Fast-path: legacy public share tokens (64 hex) are handled by public API
+      // Avoid calling PostgREST RPC which will error for these tokens
+      if (/^[a-f0-9]{64}$/i.test(token)) {
+        return {
+          isValid: false,
+          reason: 'share_token',
+        };
+      }
+
+      // Call RPC without schema prefix to avoid PostgREST adding `public.` twice
       const { data, error } = await this.supabase.rpc('validate_access_token', {
         p_token_plain: token,
       });

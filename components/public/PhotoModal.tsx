@@ -14,10 +14,11 @@ interface PhotoModalProps {
     signed_url: string
   }>
   price?: number
+  eventId?: string
 }
 
 // Wrapper component that provides backward compatibility with our Apple-grade PhotoModal
-export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000 }: PhotoModalProps) {
+export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000, eventId }: PhotoModalProps) {
   return (
     <EnhancedPhotoModal
       isOpen={isOpen}
@@ -26,6 +27,7 @@ export function PhotoModal({ isOpen, onClose, photo, photos, price = 1000 }: Pho
       photos={photos}
       price={price}
       familyMode={false}
+      eventId={eventId}
     />
   );
 }

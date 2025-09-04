@@ -8,6 +8,8 @@ import {
   useSpring,
 } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { PhotoProductSelector } from '@/components/products/PhotoProductSelector';
+import type { ProductCatalog } from '@/lib/types/products';
 import Image from 'next/image';
 import { ProtectedImage } from '@/components/ui/protected-image';
 import { useSignedUrl } from '@/lib/utils/signed-url-cache';
@@ -60,6 +62,8 @@ interface PhotoModalProps {
   hasPrev?: boolean;
   onPrev?: () => void;
   onNextAlternate?: () => void;
+  // Optional: enable purchase flow like Pixieset
+  eventId?: string;
 }
 
 export function PhotoModal({
@@ -85,6 +89,28 @@ export function PhotoModal({
   // Handle backward compatibility with public PhotoModal interface
   const [internalCurrentIndex, setInternalCurrentIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
+  
+  // Purchase flow state (Pixieset-like "Buy Photo")
+  const [isBuyOpen, setIsBuyOpen] = useState(false);
+  const [catalog, setCatalog] = useState<ProductCatalog | null>(null);
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
+
+  const canBuy = familyMode && Boolean(eventId);
+
+  const loadCatalog = async () => {
+    if (!catalog && eventId) {
+      try {
+        setLoadingCatalog(true);
+        const res = await fetch(`/api/products/catalog?event_id=${eventId}`);
+        const json = await res.json();
+        if (json?.success) setCatalog(json.data as ProductCatalog);
+      } catch (e) {
+        console.error('[PhotoModal] Error loading catalog', e);
+      } finally {
+        setLoadingCatalog(false);
+      }
+    }
+  };
 
   // Determine which interface pattern is being used
   const isPublicInterface = photos && photos.length > 0;
@@ -616,6 +642,21 @@ export function PhotoModal({
                         </motion.div>
                       )}
 
+                      {/* Buy Photo (Pixieset-like) */}
+                      {isPublicInterface && eventId && (
+                        <motion.button
+                          onClick={async () => {
+                            await loadCatalog();
+                            setIsBuyOpen(true);
+                          }}
+                          className="rounded-xl bg-emerald-500/90 px-3 py-2 text-sm font-medium text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl transition hover:bg-emerald-600"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          Buy Photo
+                        </motion.button>
+                      )}
+
                       {/* Zoom controls */}
                       <motion.div
                         className="flex items-center rounded-2xl bg-black/30 p-1 text-white shadow-2xl ring-1 ring-white/10 backdrop-blur-xl"
@@ -923,6 +964,25 @@ export function PhotoModal({
             </motion.div>
           </motion.div>
         </motion.div>
+      )}
+
+      {/* Purchase Selector Modal */}
+      {isPublicInterface && eventId && (
+        <PhotoProductSelector
+          isOpen={isBuyOpen}
+          onClose={() => setIsBuyOpen(false)}
+          selectedPhotos={currentPhoto ? [
+            {
+              id: currentPhoto.id,
+              filename: currentPhoto.filename,
+              watermark_url: currentPhoto.preview_url || currentPhoto.signed_url,
+            },
+          ] : []}
+          products={catalog?.products || []}
+          combos={catalog?.combos || []}
+          categories={catalog?.categories || []}
+          eventId={eventId}
+        />
       )}
     </AnimatePresence>
   );

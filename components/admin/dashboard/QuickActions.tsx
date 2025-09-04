@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Camera, Users, Package, Zap } from 'lucide-react';
+import { Calendar, Camera, Users, Package, Zap, QrCode, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickAction {
@@ -61,6 +61,24 @@ const actions: QuickAction[] = [
     iconBg: 'bg-white/20',
     textColor: 'text-white',
   },
+  {
+    href: '/admin/codes',
+    icon: QrCode,
+    title: 'Códigos QR',
+    subtitle: 'Generar códigos',
+    gradient: 'from-indigo-500 to-indigo-600',
+    iconBg: 'bg-white/20',
+    textColor: 'text-white',
+  },
+  {
+    href: '/admin/analytics',
+    icon: BarChart3,
+    title: 'Estadísticas',
+    subtitle: 'Ver rendimiento',
+    gradient: 'from-teal-500 to-teal-600',
+    iconBg: 'bg-white/20',
+    textColor: 'text-white',
+  },
 ];
 
 interface QuickActionsProps {
@@ -87,7 +105,7 @@ export const QuickActions = React.memo(function QuickActions({
       <div
         className={cn('grid gap-4', {
           'grid-cols-2': isMobile,
-          'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4': !isMobile,
+          'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4': !isMobile,
         })}
       >
         {actions.map((action) => (
@@ -160,6 +178,9 @@ const QuickActionCard = React.memo(function QuickActionCard({
               'text-purple-100': gradient.includes('purple'),
               'text-amber-100': gradient.includes('amber'),
               'text-green-100': gradient.includes('green'),
+              'text-pink-100': gradient.includes('pink'),
+              'text-indigo-100': gradient.includes('indigo'),
+              'text-teal-100': gradient.includes('teal'),
             })}
           >
             {subtitle}

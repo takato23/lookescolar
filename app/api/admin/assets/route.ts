@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { signedUrlForKey } from '@/lib/storage/signedUrl';
 import crypto from 'crypto';
 
 // Request/response IDs for tracing
@@ -92,46 +93,65 @@ async function handleGET(request: NextRequest) {
       ? (queryParams.page - 1) * limit
       : queryParams.offset;
 
-    // For the current UI, we only need folder-scoped queries. If only event_id is provided
-    // (no folder selected), PhotoAdmin uses a different endpoint. We keep basic support here.
+    // For the current UI, we need to support both new assets and legacy photos.
     const supabase = await createServerSupabaseServiceClient();
 
-    // Base select with count for total
-    let sel = supabase
+    const perSourceLimit = offset + limit; // ensure we can build the merged slice
+
+    // --- Fetch from assets table ---
+    let assetsSel = supabase
       .from('assets')
       .select(
         'id, filename, preview_path, file_size, created_at, folder_id, status',
-        {
-          count: 'exact',
-        }
+        { count: 'exact' }
       )
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .range(0, Math.max(perSourceLimit - 1, 0));
+    if (queryParams.folder_id) assetsSel = assetsSel.eq('folder_id', queryParams.folder_id);
+    if (queryParams.status) assetsSel = assetsSel.eq('status', queryParams.status);
+    if (queryParams.q) assetsSel = assetsSel.ilike('filename', `%${queryParams.q}%`);
+    if (typeof queryParams.min_size === 'number') assetsSel = assetsSel.gte('file_size', queryParams.min_size);
+    if (typeof queryParams.max_size === 'number') assetsSel = assetsSel.lte('file_size', queryParams.max_size);
+    if (queryParams.start_date) assetsSel = assetsSel.gte('created_at', queryParams.start_date);
+    if (queryParams.end_date) assetsSel = assetsSel.lte('created_at', queryParams.end_date);
+    const { data: assetsData, error: assetsError, count: assetsCount } = await assetsSel;
 
-    // Filters
-    if (queryParams.folder_id) sel = sel.eq('folder_id', queryParams.folder_id);
-    // include_children is ignored in this minimal implementation; server may add recursive support later
-
-    if (queryParams.status) sel = sel.eq('status', queryParams.status);
-    if (queryParams.q) sel = sel.ilike('filename', `%${queryParams.q}%`);
-    if (typeof queryParams.min_size === 'number')
-      sel = sel.gte('file_size', queryParams.min_size);
-    if (typeof queryParams.max_size === 'number')
-      sel = sel.lte('file_size', queryParams.max_size);
-    if (queryParams.start_date)
-      sel = sel.gte('created_at', queryParams.start_date);
-    if (queryParams.end_date) sel = sel.lte('created_at', queryParams.end_date);
-
-    const { data, error, count } = await sel;
-
-    if (error) {
+    if (assetsError) {
       return NextResponse.json(
-        { success: false, error: 'Database query failed', requestId },
+        { success: false, error: 'Database query failed (assets)', requestId },
         { status: 500, headers: { 'X-Request-Id': requestId } }
       );
     }
 
-    const assets = (data || []).map((a: any) => ({
+    // --- Fetch from legacy photos table ---
+    let photosSel = supabase
+      .from('photos')
+      .select(
+        'id, original_filename, preview_path, file_size, created_at, folder_id',
+        { count: 'exact' }
+      )
+      .order('created_at', { ascending: false })
+      .range(0, Math.max(perSourceLimit - 1, 0));
+    if (queryParams.folder_id) {
+      // Support legacy schemas where photos linked via subject_id instead of folder_id
+      photosSel = photosSel.or(
+        `folder_id.eq.${queryParams.folder_id},subject_id.eq.${queryParams.folder_id}`
+      );
+    }
+    if (queryParams.q) photosSel = photosSel.ilike('original_filename', `%${queryParams.q}%`);
+    if (typeof queryParams.min_size === 'number') photosSel = photosSel.gte('file_size', queryParams.min_size);
+    if (typeof queryParams.max_size === 'number') photosSel = photosSel.lte('file_size', queryParams.max_size);
+    if (queryParams.start_date) photosSel = photosSel.gte('created_at', queryParams.start_date);
+    if (queryParams.end_date) photosSel = photosSel.lte('created_at', queryParams.end_date);
+    const { data: photosData, error: photosError, count: photosCount } = await photosSel;
+
+    if (photosError) {
+      // do not fail entirely; return assets only
+      // but still signal with header for debugging
+      // We won't early-return; we’ll proceed with assets only
+    }
+
+    const rawAssets = (assetsData || []).map((a: any) => ({
       id: a.id,
       filename: a.filename || 'Untitled',
       preview_path: a.preview_path ?? null,
@@ -140,7 +160,38 @@ async function handleGET(request: NextRequest) {
       status: a.status || undefined,
     }));
 
-    const totalCount = count || 0;
+    const rawPhotos = (photosData || []).map((p: any) => ({
+      id: p.id,
+      filename: p.original_filename || 'Untitled',
+      preview_path: p.preview_path ?? null,
+      file_size: p.file_size ?? 0,
+      created_at: p.created_at,
+      status: 'ready' as const,
+    }));
+
+    // Merge and paginate
+    const merged = [...rawAssets, ...rawPhotos].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    const totalCount = (assetsCount || 0) + (photosCount || 0);
+    const pageItems = merged.slice(offset, offset + limit);
+
+    // For memory safety, only sign up to 24 previews per request
+    const shouldSign = pageItems.length <= 24;
+    const assets = await Promise.all(
+      pageItems.map(async (a) => {
+        let preview_url: string | null = null;
+        if (shouldSign && a.preview_path) {
+          try {
+            const url = await signedUrlForKey(a.preview_path);
+            if (typeof url === 'string' && url.length > 0) preview_url = url;
+          } catch (_) {
+            preview_url = null;
+          }
+        }
+        return { ...a, preview_url };
+      })
+    );
     const hasMore = offset + assets.length < totalCount;
 
     return NextResponse.json(

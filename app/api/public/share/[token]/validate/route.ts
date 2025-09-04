@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { shareTokenSecurity } from '@/lib/security/share-token-security';
 import { logger } from '@/lib/utils/logger';
+import crypto from 'crypto';
 
 // POST /public/share/[token]/validate
 export async function POST(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const token = params.token;
+  const { token } = await params;
 
   try {
     if (!token || typeof token !== 'string') {
@@ -32,7 +33,7 @@ export async function POST(
     }
 
     // Extract request context for security logging
-    const requestContext = shareTokenSecurity.extractRequestContext();
+    const requestContext = await shareTokenSecurity.extractRequestContext();
 
     logger.info('Public share token validation request', {
       requestId,
@@ -120,10 +121,10 @@ export async function POST(
 // GET /public/share/[token]/validate - Alternative endpoint for password-less validation
 export async function GET(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> }
 ) {
   const requestId = crypto.randomUUID();
-  const token = params.token;
+  const { token } = await params;
 
   try {
     if (!token || typeof token !== 'string') {
@@ -138,7 +139,7 @@ export async function GET(
     }
 
     // Extract request context for security logging
-    const requestContext = shareTokenSecurity.extractRequestContext();
+    const requestContext = await shareTokenSecurity.extractRequestContext();
 
     logger.info('Public share token info request', {
       requestId,

@@ -81,6 +81,14 @@ export const ActionHubPanel = memo(function ActionHubPanel({
 
   const quickActions = [
     {
+      id: 'centralita-publish',
+      title: 'Centralita Publicación',
+      icon: Zap,
+      color: 'purple',
+      href: `/admin/publish?event_id=${eventId}&tab=overview`,
+      description: 'Centro de control de publicación',
+    },
+    {
       id: 'event-photos',
       title: 'Gestión de Fotos',
       icon: Upload,
@@ -93,15 +101,15 @@ export const ActionHubPanel = memo(function ActionHubPanel({
       title: 'Ver Galería Pública',
       icon: Eye,
       color: 'purple',
-      href: `/gallery/${eventId}`,
-      description: 'Vista previa de la galería familiar',
+      href: `/admin/publish?event_id=${eventId}&tab=public`,
+      description: 'Gestionar y ver la galería del evento',
     },
     {
       id: 'photos-mgmt-classic',
       title: 'Gestión Clásica',
       icon: Camera,
       color: 'gray',
-      href: `/admin/photos?eventId=${eventId}`,
+      href: `/admin/events/${eventId}/unified`,
       description: 'Interfaz tradicional de fotos',
     },
     {

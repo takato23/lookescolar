@@ -1,135 +1,140 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
-/**
- * Public Gallery Photos API
- * 
- * Gets photos for a public event gallery
- * This is a simplified version that shows published photos from folders
- */
-
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const eventId = (await params).id;
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const eventId = params.id;
+    const url = new URL(request.url);
+    const courseId = url.searchParams.get('course');
+    const levelId = url.searchParams.get('level');
+    const limit = parseInt(url.searchParams.get('limit') || '50');
     
     const supabase = await createServerSupabaseServiceClient();
 
     // Verify event exists and is active
-    const { data: event, error: eventError } = await supabase
+    const { data: eventData, error: eventError } = await supabase
       .from('events')
       .select('id, name, status')
       .eq('id', eventId)
+      .eq('status', 'active')
       .single();
 
-    if (eventError || !event) {
+    if (eventError || !eventData) {
       return NextResponse.json(
-        { error: 'Event not found' },
+        { 
+          success: false, 
+          error: 'Evento no encontrado' 
+        },
         { status: 404 }
       );
     }
 
-    if (event.status !== 'active') {
-      return NextResponse.json(
-        { error: 'Event not active' },
-        { status: 404 }
-      );
-    }
-
-    // Get published folders from this event
-    const { data: folders, error: foldersError } = await supabase
-      .from('folders')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('is_published', true)
-      .not('share_token', 'is', null);
-
-    if (foldersError) {
-      console.error('Error fetching folders:', foldersError);
-      return NextResponse.json(
-        { error: 'Error loading gallery' },
-        { status: 500 }
-      );
-    }
-
-    if (!folders || folders.length === 0) {
-      return NextResponse.json({
-        success: true,
-        photos: [],
-        total: 0,
-        page,
-        limit,
-        has_more: false,
-      });
-    }
-
-    const folderIds = folders.map(f => f.id);
-
-    // Get photos from published folders
-    const offset = (page - 1) * limit;
-    
-    const { data: photos, error: photosError } = await supabase
-      .from('assets')
+    // Build query for photos
+    let query = supabase
+      .from('photos')
       .select(`
         id,
-        filename,
+        original_filename,
+        preview_url,
+        thumbnail_url,
         file_size,
-        dimensions,
-        preview_path,
-        folder_id
+        width,
+        height,
+        created_at,
+        metadata
       `)
-      .in('folder_id', folderIds)
-      .eq('status', 'ready')
+      .eq('event_id', eventId)
+      .eq('approved', true) // Only approved photos for public view
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .limit(limit);
+
+    // Filter by course or level if specified
+    if (courseId) {
+      query = query.contains('metadata', { course_id: courseId });
+    } else if (levelId) {
+      query = query.contains('metadata', { level_id: levelId });
+    }
+
+    const { data: photosData, error: photosError } = await query;
 
     if (photosError) {
       console.error('Error fetching photos:', photosError);
       return NextResponse.json(
-        { error: 'Error loading photos' },
+        { 
+          success: false, 
+          error: 'Error obteniendo fotos' 
+        },
         { status: 500 }
       );
     }
 
-    // Get total count for pagination
-    const { count: totalCount } = await supabase
-      .from('assets')
-      .select('id', { count: 'exact', head: true })
-      .in('folder_id', folderIds)
-      .eq('status', 'ready');
-
-    // Transform photos for frontend
-    const transformedPhotos = (photos || []).map(photo => ({
+    // Transform photos for public consumption
+    const publicPhotos = (photosData || []).map(photo => ({
       id: photo.id,
-      filename: photo.filename,
-      preview_url: `/admin/previews/${photo.filename}`,
-      size: photo.file_size || 0,
-      width: photo.dimensions?.width || 0,
-      height: photo.dimensions?.height || 0,
+      filename: photo.original_filename,
+      preview_url: photo.preview_url,
+      thumbnail_url: photo.thumbnail_url,
+      dimensions: {
+        width: photo.width,
+        height: photo.height
+      },
+      file_size: photo.file_size,
+      created_at: photo.created_at,
+      // Don't expose sensitive metadata
+      course_id: photo.metadata?.course_id,
+      level_id: photo.metadata?.level_id,
     }));
+
+    // Get context info if course/level specified
+    let contextInfo = null;
+    if (courseId) {
+      const { data: courseData } = await supabase
+        .from('courses')
+        .select('id, name, level_id, levels(id, name)')
+        .eq('id', courseId)
+        .single();
+      
+      contextInfo = {
+        type: 'course',
+        course: courseData,
+        level: courseData?.levels
+      };
+    } else if (levelId) {
+      const { data: levelData } = await supabase
+        .from('levels')
+        .select('id, name')
+        .eq('id', levelId)
+        .single();
+      
+      contextInfo = {
+        type: 'level',
+        level: levelData
+      };
+    }
 
     return NextResponse.json({
       success: true,
-      photos: transformedPhotos,
-      total: totalCount || 0,
-      page,
-      limit,
-      has_more: (totalCount || 0) > offset + limit,
-      event: {
-        id: event.id,
-        name: event.name,
-      },
+      photos: publicPhotos,
+      context: contextInfo,
+      total_count: publicPhotos.length,
+      pricing: {
+        individual_price: 200, // $2 per photo
+        album_price: Math.max(800, publicPhotos.length * 80), // Album pricing
+        bulk_discount_threshold: 3,
+        bulk_discount_percent: 10,
+      }
     });
 
   } catch (error) {
-    console.error('Public gallery photos error:', error);
+    console.error('Error in public photos API:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Error interno del servidor' 
+      },
       { status: 500 }
     );
   }

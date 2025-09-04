@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { debugMigration } from '@/lib/feature-flags';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 
 interface TokenValidationResponse {
   valid: boolean;
@@ -25,12 +26,12 @@ interface TokenValidationResponse {
   error?: string;
 }
 
-export async function GET(
+export const GET = RateLimitMiddleware.withRateLimit(async (
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-): Promise<NextResponse<TokenValidationResponse>> {
+  { params }: { params: { token: string } }
+): Promise<NextResponse<TokenValidationResponse>> => {
   try {
-    const { token } = await params;
+    const { token } = params;
 
     debugMigration('Token validation requested', {
       token: token.slice(0, 8) + '...',
@@ -260,4 +261,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+});

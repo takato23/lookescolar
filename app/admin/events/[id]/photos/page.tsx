@@ -6,5 +6,5 @@ interface PageProps {
 
 export default async function EventPhotosRedirect({ params }: PageProps) {
   const { id } = await params;
-  redirect(`/admin/photos?eventId=${id}`);
+  redirect(`/admin/events/${id}/library`);
 }

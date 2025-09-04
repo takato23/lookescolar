@@ -61,6 +61,7 @@ export interface PhotoGridProps {
   enableSelection?: boolean;
   showMetadata?: boolean;
   onPhotoAction?: (action: string, photo: PhotoGridItem) => void;
+  hideActions?: boolean;
 }
 
 export interface VirtualizedPhotoGridRef {
@@ -80,6 +81,7 @@ const PhotoCard = memo<{
   onClick: (photo: PhotoGridItem, index: number) => void;
   onSelect?: (photoId: string, index: number, shiftKey?: boolean) => void;
   onAction?: (action: string, photo: PhotoGridItem) => void;
+  hideActions?: boolean;
 }>(
   ({
     photo,
@@ -91,6 +93,7 @@ const PhotoCard = memo<{
     onClick,
     onSelect,
     onAction,
+    hideActions,
   }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -212,27 +215,29 @@ const PhotoCard = memo<{
             )}
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="shrink-0">
-                <MoreVerticalIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onAction?.('download', photo)}>
-                <DownloadIcon className="mr-2 h-4 w-4" />
-                Descargar
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction?.('approve', photo)}>
-                <CheckCircleIcon className="mr-2 h-4 w-4" />
-                {photo.approved ? 'Desaprobar' : 'Aprobar'}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAction?.('tag', photo)}>
-                <TagIcon className="mr-2 h-4 w-4" />
-                Etiquetar
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!hideActions && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="shrink-0">
+                  <MoreVerticalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onAction?.('download', photo)}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  Descargar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAction?.('approve', photo)}>
+                  <CheckCircleIcon className="mr-2 h-4 w-4" />
+                  {photo.approved ? 'Desaprobar' : 'Aprobar'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAction?.('tag', photo)}>
+                  <TagIcon className="mr-2 h-4 w-4" />
+                  Etiquetar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </Card>
       );
     }
@@ -288,29 +293,31 @@ const PhotoCard = memo<{
           {/* Overlay with actions */}
           <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/20" />
 
-          <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
-                  <MoreVerticalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onAction?.('download', photo)}>
-                  <DownloadIcon className="mr-2 h-4 w-4" />
-                  Descargar
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onAction?.('approve', photo)}>
-                  <CheckCircleIcon className="mr-2 h-4 w-4" />
-                  {photo.approved ? 'Desaprobar' : 'Aprobar'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onAction?.('tag', photo)}>
-                  <TagIcon className="mr-2 h-4 w-4" />
-                  Etiquetar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {!hideActions && (
+            <div className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
+                    <MoreVerticalIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onAction?.('download', photo)}>
+                    <DownloadIcon className="mr-2 h-4 w-4" />
+                    Descargar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onAction?.('approve', photo)}>
+                    <CheckCircleIcon className="mr-2 h-4 w-4" />
+                    {photo.approved ? 'Desaprobar' : 'Aprobar'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onAction?.('tag', photo)}>
+                    <TagIcon className="mr-2 h-4 w-4" />
+                    Etiquetar
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
 
           {/* Status badges */}
           <div className="absolute bottom-2 left-2 flex gap-1">
@@ -375,6 +382,7 @@ const GridItem = memo<GridChildComponentProps>(
       showMetadata,
       enableSelection,
       onPhotoAction,
+      hideActions,
     } = data;
 
     const index = rowIndex * columnCount + columnIndex;
@@ -516,6 +524,7 @@ export const VirtualizedPhotoGrid = forwardRef<
         showMetadata,
         enableSelection,
         onPhotoAction,
+        hideActions,
       }),
       [
         items,
@@ -527,6 +536,7 @@ export const VirtualizedPhotoGrid = forwardRef<
         showMetadata,
         enableSelection,
         onPhotoAction,
+        hideActions,
       ]
     );
 

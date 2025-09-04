@@ -6,6 +6,7 @@ import { VirtualPhotoGrid } from '@/components/ui/virtual-photo-grid';
 import { PhotoLightbox } from '@/components/family/PhotoLightbox';
 import { PhotoFilters } from '@/components/family/PhotoFilters';
 import { GalleryHeader } from '@/components/family/GalleryHeader';
+import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
 
 interface Photo {
   id: string;
@@ -376,7 +377,15 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
   // Fotos para mostrar (filtradas o todas)
   const displayPhotos = galleryState.filteredPhotos;
 
+  const design: any = (subjectInfo as any)?.event?.settings?.design || {};
+  const gapClass = design?.grid?.spacing === 'large' ? 'gap-6' : 'gap-4';
+  const colsClass = design?.grid?.thumb === 'large'
+    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+  const eventTheme = ((subjectInfo as any)?.event?.theme || 'default') as any;
+
   return (
+    <ThemedGalleryWrapper eventTheme={eventTheme}>
     <div id="gallery" className="space-y-6">
       {/* Header con estadísticas y controles */}
       <GalleryHeader
@@ -439,6 +448,7 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
         getSignedUrl={getSignedUrl}
       />
     </div>
+    </ThemedGalleryWrapper>
   );
 }
 
@@ -506,7 +516,7 @@ function GallerySkeleton() {
         <div className="h-5 w-24 animate-pulse rounded bg-gray-200" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <div className={`grid ${colsClass} ${gapClass}`}>
         {Array.from({ length: 20 }).map((_, i) => (
           <div
             key={i}

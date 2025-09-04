@@ -364,17 +364,26 @@ export function DirectStore({ token, photos, subject }: DirectStoreProps) {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {photos.map((photo) => (
-              <PhotoCard
-                key={photo.id}
-                photo={photo}
-                onAddToCart={() => addToCart(photo)}
-                isInCart={cartItems.some((item) => item.id === photo.id)}
-                price={PRICE_PER_PHOTO}
-              />
-            ))}
-          </div>
+          {(() => {
+            const design: any = (subject as any)?.event?.settings?.design || {};
+            const gapClass = design?.grid?.spacing === 'large' ? 'gap-6' : 'gap-4';
+            const colsClass = design?.grid?.thumb === 'large'
+              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+              : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6';
+            return (
+              <div className={`grid ${colsClass} ${gapClass}`}>
+                {photos.map((photo) => (
+                  <PhotoCard
+                    key={photo.id}
+                    photo={photo}
+                    onAddToCart={() => addToCart(photo)}
+                    isInCart={cartItems.some((item) => item.id === photo.id)}
+                    price={PRICE_PER_PHOTO}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Carrito flotante */}

@@ -134,6 +134,7 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
       // Fallback: optimized direct query using folders table
       console.log('[API] Using fallback query with enhanced performance');
 
+      // Include unified share token via FK relation share_tokens.folder_id -> folders.id
       let query = supabase.from('folders').select(
         `
           id,
@@ -141,7 +142,11 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
           event_id,
           photo_count,
           created_at,
-          events!inner(name, date)
+          is_published,
+          share_token,
+          published_at,
+          events!inner(name, date),
+          share_tokens!share_tokens_folder_id_fkey(token, is_active)
         `,
         { count: 'exact' }
       );
@@ -182,20 +187,31 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
       const hasMore = parsedParams.page * parsedParams.limit < totalCount;
 
       result = {
-        folders: (folders || []).map((f) => ({
-          id: f.id,
-          name: f.name,
-          event_id: f.event_id,
-          photo_count: f.photo_count || 0,
-          photos_count: f.photo_count || 0, // Compatibility alias
-          is_published: false, // Temporary: all folders not published until migration runs
-          share_token: null, // Temporary: no sharing until migration runs
-          published_at: null, // Temporary: no published date until migration runs
-          family_url: null, // Temporary: no family URL until sharing is enabled
-          qr_url: null, // Temporary: no QR until sharing is enabled
-          event_name: f.events?.name || 'Unknown Event',
-          event_date: f.events?.date || null,
-        })),
+        folders: (folders || []).map((f: any) => {
+          const shareToken = f.share_token || null;
+          // pick first active unified token if present
+          const unifiedEntry = Array.isArray(f.share_tokens)
+            ? f.share_tokens.find((st: any) => st && st.is_active)
+            : null;
+          const unifiedShareToken = unifiedEntry?.token || null;
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
+          return {
+            id: f.id,
+            name: f.name,
+            event_id: f.event_id,
+            photo_count: f.photo_count || 0,
+            photos_count: f.photo_count || 0, // Compatibility alias
+            is_published: Boolean(f.is_published),
+            share_token: shareToken,
+            unified_share_token: unifiedShareToken,
+            store_url: unifiedShareToken ? `${siteUrl}/store-unified/${unifiedShareToken}` : null,
+            published_at: f.published_at || null,
+            family_url: shareToken ? `${siteUrl}/f/${shareToken}` : null,
+            qr_url: shareToken ? `${siteUrl}/api/qr?token=${shareToken}` : null,
+            event_name: f.events?.name || 'Unknown Event',
+            event_date: f.events?.date || null,
+          };
+        }),
         pagination: {
           page: parsedParams.page,
           limit: parsedParams.limit,

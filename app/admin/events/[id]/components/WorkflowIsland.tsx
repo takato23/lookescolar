@@ -56,7 +56,7 @@ export function WorkflowIsland({
     switch (action.type) {
       case 'upload':
         if (eventId) {
-          router.push(`/admin/photos?eventId=${eventId}`);
+          router.push(`/admin/events/${eventId}/unified`);
         } else {
           router.push('/admin/photos');
         }

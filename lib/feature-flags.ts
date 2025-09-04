@@ -20,6 +20,8 @@ export interface FeatureFlags {
   UNIFIED_CART_STORE: boolean;
   PERSISTENT_FAVORITES: boolean;
   ENHANCED_PHOTO_CARDS: boolean;
+  // Payments
+  UNIFIED_STORE_CHECKOUT_ONLY: boolean; // If true, disable legacy checkout endpoints
 }
 
 // Configuración por defecto (activando admin photo library para desarrollo)
@@ -35,6 +37,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   UNIFIED_CART_STORE: false,
   PERSISTENT_FAVORITES: false,
   ENHANCED_PHOTO_CARDS: false,
+  UNIFIED_STORE_CHECKOUT_ONLY: true,
 };
 
 // Feature flags desde environment variables con fallback a DEFAULT_FLAGS
@@ -69,6 +72,9 @@ const flags: FeatureFlags = {
   ENHANCED_PHOTO_CARDS:
     process.env.FF_ENHANCED_PHOTO_CARDS === 'true' ||
     DEFAULT_FLAGS.ENHANCED_PHOTO_CARDS,
+  UNIFIED_STORE_CHECKOUT_ONLY:
+    process.env.FF_UNIFIED_STORE_CHECKOUT_ONLY === 'true' ||
+    DEFAULT_FLAGS.UNIFIED_STORE_CHECKOUT_ONLY,
 };
 
 // Export feature flags with isEnabled method

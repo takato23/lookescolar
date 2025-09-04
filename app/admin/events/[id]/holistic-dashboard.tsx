@@ -311,10 +311,10 @@ export default function HolisticEventDashboard() {
                   // Handle action execution based on action type
                   switch (action.type) {
                     case 'upload':
-                      router.push(`/admin/photos?eventId=${id}`);
+                      router.push(`/admin/events/${id}/unified`);
                       break;
                     case 'tag':
-                      router.push(`/admin/photos?eventId=${id}`);
+                      router.push(`/admin/events/${id}/unified`);
                       break;
                     case 'publish':
                       router.push(`/admin/events/${id}/publish`);

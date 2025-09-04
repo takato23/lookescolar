@@ -129,7 +129,7 @@ BEGIN
       )
     );
 END;
-$$ LANGUAGE plpgsql SECURITY_DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
 -- 6. FUNCTION: Get student gallery statistics
@@ -150,7 +150,7 @@ BEGIN
   JOIN photo_students ps ON p.id = ps.photo_id
   WHERE ps.student_id = get_student_gallery_stats.student_id;
 END;
-$$ LANGUAGE plpgsql SECURITY_DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
 -- 7. GRANT PERMISSIONS

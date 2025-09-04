@@ -3,6 +3,59 @@ import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { unifiedPhotoService } from '@/lib/services/unified-photo.service';
+import { createClient } from '@supabase/supabase-js';
+
+// UUID pattern validation
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Inline resolution function
+async function resolveFriendlyEventIdInline(identifier: string) {
+  if (UUID_PATTERN.test(identifier)) {
+    return identifier;
+  }
+
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: events, error } = await supabaseClient
+      .from('events')
+      .select('id, name, date');
+
+    if (error || !events) return null;
+
+    // Generate friendly identifier for each event and compare
+    for (const event of events) {
+      let slug = event.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim()
+        .substring(0, 50)
+        .replace(/^-+|-+$/g, '');
+        
+      if (!slug) slug = 'evento';
+      
+      if (event.date) {
+        const year = new Date(event.date).getFullYear();
+        slug = `${slug}-${year}`;
+      }
+
+      if (slug === identifier) {
+        return event.id;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error resolving friendly event ID:', error);
+    return null;
+  }
+}
 
 // Get a single event with stats
 export const GET = RateLimitMiddleware.withRateLimit(
@@ -10,7 +63,13 @@ export const GET = RateLimitMiddleware.withRateLimit(
     try {
       const supabase = await createServerSupabaseServiceClient();
       const { id } = await params;
-      const eventId = id;
+      
+      // Resolve friendly identifier to UUID if needed
+      const eventId = await resolveFriendlyEventIdInline(id);
+      
+      if (!eventId) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+      }
 
       // Get event details
       const { data: event, error: eventError } = await supabase
@@ -97,6 +156,13 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         date?: string;
         photo_price?: number;
         status?: string;
+        school_name?: string;
+        photographer_name?: string;
+        photographer_email?: string;
+        photographer_phone?: string;
+        description?: string;
+        active?: boolean;
+        theme?: 'default' | 'jardin' | 'secundaria' | 'bautismo';
       } = {};
       try {
         body = await req.json();
@@ -111,6 +177,14 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       if (body.photo_price !== undefined)
         updateData.photo_price = body.photo_price;
       if (body.status !== undefined) updateData.status = body.status;
+      if (body.school_name !== undefined) updateData.school_name = body.school_name.trim();
+      if (body.photographer_name !== undefined) updateData.photographer_name = body.photographer_name.trim();
+      if (body.photographer_email !== undefined) updateData.photographer_email = body.photographer_email.trim();
+      if (body.photographer_phone !== undefined) updateData.photographer_phone = body.photographer_phone.trim();
+      if (body.description !== undefined) updateData.description = body.description;
+      if (body.active !== undefined) updateData.status = body.active ? 'active' : 'inactive';
+
+      if (body.theme !== undefined) updateData.theme = body.theme;
 
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json(
@@ -125,7 +199,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         .from('events')
         .update(updateData)
         .eq('id', id)
-        .select('id, name, location, date, status, photo_price, created_at')
+        .select('id, name, location, date, status, photo_price, created_at, school_name, photographer_name, photographer_email, photographer_phone, description, theme')
         .single();
 
       if (error) {

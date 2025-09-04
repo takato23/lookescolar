@@ -20,7 +20,9 @@ export default function LegacyPhotosRedirect() {
     const params = new URLSearchParams();
 
     if (eventId) {
-      params.set('eventId', eventId);
+      // If an eventId is present, prefer unified event interface
+      router.replace(`/admin/events/${eventId}/unified`);
+      return;
     }
     if (courseId) {
       params.set('courseId', courseId);
@@ -49,7 +51,10 @@ export default function LegacyPhotosRedirect() {
     let newUrl = '/admin/photos';
     const params = new URLSearchParams();
 
-    if (eventId) params.set('eventId', eventId);
+    if (eventId) {
+      router.replace(`/admin/events/${eventId}/unified`);
+      return;
+    }
     if (courseId) params.set('courseId', courseId);
     if (codeId) params.set('studentId', codeId);
 

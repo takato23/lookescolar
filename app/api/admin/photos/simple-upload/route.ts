@@ -6,6 +6,7 @@ import { decodeQR, normalizeCode } from '@/lib/qr/decoder';
 import { tokenService } from '@/lib/services/token.service';
 import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
 import sharp from 'sharp';
+import crypto from 'crypto';
 export const runtime = 'nodejs';
 
 // Expected QR format: STUDENT:ID:NAME:EVENT_ID
@@ -107,6 +108,8 @@ async function handlePOST(request: NextRequest) {
     const files = formData.getAll('files') as File[];
     const formEventIdRaw = formData.get('event_id');
     const formEventId = typeof formEventIdRaw === 'string' ? formEventIdRaw : null;
+    const formFolderIdRaw = formData.get('folder_id');
+    const formFolderId = typeof formFolderIdRaw === 'string' ? formFolderIdRaw : null;
     const queryEventIdRaw = request.nextUrl.searchParams.get('eventId');
     const queryEventId = typeof queryEventIdRaw === 'string' ? queryEventIdRaw : null;
     const photoTypeRaw = formData.get('photo_type');
@@ -389,37 +392,45 @@ async function handlePOST(request: NextRequest) {
             </svg>
           `);
 
-          // Use Free Tier Optimizer for aggressive compression and watermarking
+          // 🔥 UNIFIED QUALITY SETTINGS - Single source of truth for all uploads
+          const UNIFIED_SETTINGS = {
+            targetSizeKB: 35,     // Consistent 35KB target
+            maxDimension: 512,    // Consistent 512px max (not 600px)
+            quality: 60,          // Consistent WebP quality
+            watermarkText: wmLabel,
+            enableOriginalStorage: false // Never store originals in free tier
+          };
+          
+          // Use Free Tier Optimizer with unified settings
           let optimizedResult;
           let previewBuffer: Buffer;
           
           try {
-            console.log(`[${requestId}] Starting FreeTierOptimizer for ${file.name}`);
+            console.log(`[${requestId}] 🔥 UNIFIED PROCESSING for ${file.name} with settings:`, UNIFIED_SETTINGS);
             optimizedResult = await FreeTierOptimizer.processForFreeTier(
               buffer,
-              {
-                targetSizeKB: 50,
-                maxDimension: 600,
-                watermarkText: wmLabel,
-                enableOriginalStorage: false
-              }
+              UNIFIED_SETTINGS
             );
             previewBuffer = optimizedResult.processedBuffer;
-            console.log(`[${requestId}] FreeTierOptimizer completed for ${file.name}`);
+            console.log(`[${requestId}] 🔥 UNIFIED PROCESSING completed for ${file.name}:`, {
+              originalSizeKB: Math.round(buffer.length / 1024),
+              finalSizeKB: optimizedResult.actualSizeKB,
+              dimensions: optimizedResult.finalDimensions
+            });
           } catch (optimizationError) {
             console.error(`[${requestId}] FreeTierOptimizer failed for ${file.name}:`, optimizationError);
             
             // Fallback to basic Sharp processing
             try {
               const fallbackBuffer = await sharp(buffer)
-                .resize(600, 600, { fit: 'inside', withoutEnlargement: true })
-                .webp({ quality: 60 })
+                .resize(UNIFIED_SETTINGS.maxDimension, UNIFIED_SETTINGS.maxDimension, { fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: UNIFIED_SETTINGS.quality })
                 .toBuffer();
               
               const metadata = await sharp(fallbackBuffer).metadata();
               optimizedResult = {
                 processedBuffer: fallbackBuffer,
-                finalDimensions: { width: metadata.width || 600, height: metadata.height || 600 },
+                finalDimensions: { width: metadata.width || UNIFIED_SETTINGS.maxDimension, height: metadata.height || UNIFIED_SETTINGS.maxDimension },
                 compressionLevel: 0,
                 actualSizeKB: Math.round(fallbackBuffer.length / 1024)
               };
@@ -443,83 +454,73 @@ async function handlePOST(request: NextRequest) {
             throw new Error(`Error subiendo preview: ${upPrev.error.message}`);
           }
           
-          console.log(`[${requestId}] Storage upload completed for ${file.name}`);
+          console.log(`[${requestId}] 🔥 UNIFIED STORAGE: Upload completed for ${file.name} at path: ${finalPreviewPath}`);
 
-          // Save to database with correct schema matching the database types
-          console.log(`[${requestId}] Saving to database for ${file.name}`);
+          // 🔥 UNIFIED SAVE - ONLY to assets table (no more photos table duplication)
+          console.log(`[${requestId}] 🔥 UNIFIED SAVE: Saving ${file.name} to assets table only`);
           
-          // Database requires event_id to be non-null
-          // If no event, try to find or create a "general" event
-          let dbEventId = finalEventId;
-          if (!dbEventId) {
-            console.log(`[${requestId}] No event_id for ${file.name}, looking for general event`);
-            
-            // Try to find a "general" or "shared" event
-            const { data: generalEvent } = await supabase
-              .from('events')
-              .select('id')
-              .ilike('name', '%general%')
-              .or('name.ilike.%shared%,name.ilike.%sin evento%')
-              .limit(1)
-              .single();
-            
-            if (generalEvent) {
-              dbEventId = generalEvent.id;
-              console.log(`[${requestId}] Using existing general event: ${dbEventId.substring(0, 8)}***`);
-            } else {
-              console.log(`[${requestId}] No general event found, photo cannot be saved - database requires event_id`);
-              throw new Error('Database requires event_id - no general event available');
-            }
+          if (!formFolderId) {
+            throw new Error('folder_id is required for unified asset storage');
           }
           
-          const { data: photo, error: dbError } = await supabase
-            .from('photos')
-            .insert({
-              original_filename: file.name,
-              storage_path: finalPreviewPath,
-              file_size: optimizedResult.actualSizeKB * 1024,
-              event_id: dbEventId,
-              approved: process.env['PHOTOS_DEFAULT_APPROVED'] === 'true'
-            })
+          // Create optimized asset record
+          // Generate checksum (sha256) of the stored preview to satisfy NOT NULL constraint and allow de-dup
+          const checksum = crypto.createHash('sha256').update(previewBuffer).digest('hex');
+          const dimensions = optimizedResult?.finalDimensions || { width: null, height: null };
+          const assetData = {
+            folder_id: formFolderId,
+            filename: file.name,
+            original_path: finalPreviewPath, // We only store the preview (no original in free tier)
+            preview_path: finalPreviewPath,
+            checksum,
+            file_size: optimizedResult.actualSizeKB * 1024,
+            mime_type: 'image/webp',
+            dimensions: { width: dimensions.width || null, height: dimensions.height || null },
+            status: 'ready',
+            metadata: {
+              source: 'unified-upload',
+              original_name: file.name,
+              original_mime: file.type,
+              processing_settings: UNIFIED_SETTINGS,
+              qr_detection: qrDetectionResult ? {
+                detected: true,
+                student_name: qrDetectionResult.studentName,
+                student_id: qrDetectionResult.studentId.substring(0, 8) + '***'
+              } : { detected: false }
+            }
+          };
+
+          const { data: asset, error: assetError } = await supabase
+            .from('assets')
+            .insert(assetData)
             .select()
             .single();
 
-          if (dbError) {
-            console.error(`[${requestId}] Database error for ${file.name}:`, dbError);
+          if (assetError) {
+            console.error(`[${requestId}] 🔥 UNIFIED SAVE ERROR for ${file.name}:`, assetError);
             // Clean up uploaded file on database error
             try {
               await supabase.storage.from(PREVIEW_BUCKET).remove([finalPreviewPath]);
             } catch (cleanupError) {
               console.error(`[${requestId}] Cleanup error:`, cleanupError);
             }
-            throw new Error(`DB Error: ${dbError.message || 'Unknown database error'}`);
+            throw new Error(`Asset save error: ${assetError.message || 'Unknown database error'}`);
           }
 
-          console.log(`[${requestId}] Database save completed for ${file.name}, photo ID: ${photo.id}`);
-
-          // Verify the photo was inserted properly
-          const { data: verifyPhoto } = await supabase
-            .from('photos')
-            .select('id, original_filename')
-            .eq('id', photo.id)
-            .single();
-            
-          if (!verifyPhoto) {
-            console.error(`[${requestId}] Photo verification failed for ${file.name}`);
-            throw new Error('Photo verification failed');
-          }
+          console.log(`[${requestId}] 🔥 UNIFIED SAVE SUCCESS: Asset created with ID ${asset.id}`);
           
-          console.log(`[${requestId}] Photo verification successful for ${file.name}`);
+          // Use asset.id as the primary photo ID (no more separate photo record)
+          const photoId = asset.id;
 
 
           // ===== AUTOMATIC STUDENT ASSIGNMENT =====
           let assignmentResult = null;
           let tokenGenerationResult = null;
           if (qrDetectionResult) {
-            console.log(`[${requestId}] Attempting to assign photo ${photo.id} to student from QR`);
+            console.log(`[${requestId}] 🔥 UNIFIED QR: Attempting to assign asset ${photoId} to student from QR`);
             assignmentResult = await assignPhotoToStudent(
               supabase,
-              photo.id,
+              photoId,
               qrDetectionResult.studentId,
               qrDetectionResult.eventId,
               requestId
@@ -549,12 +550,15 @@ async function handlePOST(request: NextRequest) {
           }
 
            results.push({
-            id: photo.id,
-            photoId: photo.id,
+            id: photoId, // Use asset.id as primary ID
+            asset_id: photoId, // Same as ID (unified system)
             filename: file.name,
-            storage_path: photo.storage_path,
+            storage_path: finalPreviewPath,
+            file_size: optimizedResult.actualSizeKB * 1024,
+            dimensions: optimizedResult.finalDimensions,
             success: true,
-            event_id: dbEventId, // Use the resolved dbEventId
+            folder_id: formFolderId,
+            processing_settings: UNIFIED_SETTINGS,
             qr_detected: qrDetectionResult ? {
               student_name: qrDetectionResult.studentName,
               student_id: `${qrDetectionResult.studentId.substring(0, 8)}***`,
@@ -573,10 +577,10 @@ async function handlePOST(request: NextRequest) {
             'photo_upload_success',
             {
               requestId,
-              photoId: photo.id,
+              photoId,
               filename: file.name,
-               storagePath: '[hidden]',
-               previewPath: photo.storage_path,
+              storagePath: '[hidden]',
+              previewPath: finalPreviewPath,
               size: file.size,
               mimeType: file.type,
               qrDetected: qrDetectionResult ? true : false,

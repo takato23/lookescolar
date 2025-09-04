@@ -432,7 +432,7 @@ export default function QuickFlowPage() {
             <Button
               aria-label="Ir a subir fotos"
               onClick={() =>
-                router.push(`/admin/photos?eventId=${selectedEventId}`)
+                router.push(`/admin/events/${selectedEventId}/unified`)
               }
             >
               Ir a subir

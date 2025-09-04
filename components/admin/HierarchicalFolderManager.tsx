@@ -29,6 +29,7 @@ import {
   Copy,
   RotateCcw,
   AlertTriangle,
+  ShoppingCart,
 } from 'lucide-react';
 
 interface FolderItem {
@@ -37,6 +38,8 @@ interface FolderItem {
   photo_count: number;
   is_published: boolean;
   share_token: string | null;
+  unified_share_token?: string | null;
+  store_url?: string | null;
   published_at: string | null;
   family_url: string | null;
   qr_url: string | null;
@@ -86,6 +89,121 @@ export function HierarchicalFolderManager({
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
   );
+
+  // Copy to clipboard helper
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  };
+
+  // Actions panel for a single selected folder (explicit options)
+  function SelectedFolderActions() {
+    if (selectedFolders.length !== 1) return null;
+    const folder = folders.find((f) => f.id === selectedFolders[0]);
+    if (!folder) return null;
+
+    const shareUrl =
+      folder.family_url ||
+      (folder.share_token ? `${window.location.origin}/f/${folder.share_token}` : '');
+    const qrUrl =
+      folder.qr_url || (folder.share_token ? `/api/qr?token=${folder.share_token}` : '');
+
+    const handleShare = async () => {
+      if (!shareUrl) return;
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: folder.name,
+            text: 'Mirá mi galería',
+            url: shareUrl,
+          });
+        } else {
+          await copyToClipboard(shareUrl);
+        }
+      } catch {}
+    };
+
+    return (
+      <Card className="p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Publicar / Despublicar */}
+          {/* Reducir duplicación: ocultamos publicar/despublicar aquí y dejamos acciones de enlace */}
+
+          {/* Ver fecha de publicación */}
+          {folder.published_at && (
+            <Badge variant="outline" className="ml-1">
+              <Clock className="mr-1 h-3 w-3" />
+              {new Date(folder.published_at).toLocaleDateString()}
+            </Badge>
+          )}
+
+          {/* Copiar enlace */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => shareUrl && copyToClipboard(shareUrl)}
+            disabled={!shareUrl}
+            title={shareUrl ? 'Copiar enlace' : 'Publicá para generar enlace'}
+          >
+            <Copy className="mr-2 h-4 w-4" /> Copiar
+          </Button>
+
+          {/* Compartir nativo */}
+          <Button size="sm" variant="ghost" onClick={handleShare} disabled={!shareUrl}>
+            <Share2 className="mr-2 h-4 w-4" /> Compartir
+          </Button>
+
+          {/* QR */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => (qrUrl ? window.open(qrUrl, '_blank') : undefined)}
+            disabled={!qrUrl}
+            title={qrUrl ? 'Ver QR' : 'Publicá para generar QR'}
+          >
+            <QrCode className="mr-2 h-4 w-4" /> QR
+          </Button>
+
+          {/* Tienda (Store Unified) */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              (folder.store_url || folder.unified_share_token || folder.share_token) &&
+              window.open(
+                folder.store_url ||
+                  (folder.unified_share_token
+                    ? `/store-unified/${folder.unified_share_token}`
+                    : `/store-unified/${folder.share_token}`),
+                '_blank'
+              )
+            }
+            disabled={!(folder.store_url || folder.unified_share_token || folder.share_token)}
+            title={
+              folder.store_url || folder.unified_share_token || folder.share_token
+                ? 'Abrir tienda'
+                : 'Publicá para habilitar tienda'
+            }
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" /> Tienda
+          </Button>
+
+          {/* Abrir galería */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => shareUrl && window.open(shareUrl, '_blank')}
+            disabled={!shareUrl}
+          >
+            <ExternalLink className="mr-2 h-4 w-4" /> Abrir
+          </Button>
+        </div>
+      </Card>
+    );
+  }
 
   // Build hierarchical structure
   const hierarchicalFolders = useMemo(() => {
@@ -248,15 +366,6 @@ export function HierarchicalFolderManager({
     onSelectionChange(allIds);
   }, [processedFolders, onSelectionChange]);
 
-  // Copy to clipboard helper
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  };
-
   // Render a single folder item
   const renderFolderItem = useCallback(
     (folder: any, depth: number = 0) => {
@@ -276,7 +385,11 @@ export function HierarchicalFolderManager({
         <div key={folder.id} className="relative">
           {/* Main folder row */}
           <div
-            className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${isSelected ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'} `}
+            className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
+              isSelected
+                ? 'border-blue-200 bg-blue-50'
+                : 'border-gray-200 bg-white hover:bg-gray-50'
+            } `}
             style={{ marginLeft: depth * 20 }}
           >
             {/* Expansion toggle */}
@@ -401,6 +514,26 @@ export function HierarchicalFolderManager({
                         >
                           <QrCode className="h-4 w-4" />
                         </Button>
+
+                        {(folder.store_url || folder.unified_share_token || folder.share_token) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              window.open(
+                                folder.store_url ||
+                                  (folder.unified_share_token
+                                    ? `/store-unified/${folder.unified_share_token}`
+                                    : `/store-unified/${folder.share_token}`),
+                                '_blank'
+                              )
+                            }
+                            className="h-8 w-8 p-0"
+                            title="Abrir tienda"
+                          >
+                            <ShoppingCart className="h-4 w-4" />
+                          </Button>
+                        )}
                       </>
                     )}
 
@@ -430,7 +563,11 @@ export function HierarchicalFolderManager({
                     size="sm"
                     onClick={() => onPublish(folder.id)}
                     className="h-8 w-8 p-0 text-green-600"
-                    title="Publicar"
+                    title={
+                      folder.photo_count === 0
+                        ? 'No se puede publicar una carpeta vacía'
+                        : 'Publicar'
+                    }
                     disabled={folder.photo_count === 0}
                   >
                     <Eye className="h-4 w-4" />
@@ -570,6 +707,9 @@ export function HierarchicalFolderManager({
             </select>
           </div>
         </div>
+
+        {/* Acciones para carpeta seleccionada */}
+        <SelectedFolderActions />
 
         {/* Tree controls */}
         <div className="flex items-center justify-between">

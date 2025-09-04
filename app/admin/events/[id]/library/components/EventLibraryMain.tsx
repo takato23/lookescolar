@@ -85,6 +85,8 @@ export function EventLibraryMain({
   const [showAssignInterface, setShowAssignInterface] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+  const [isDragOverUpload, setIsDragOverUpload] = useState(false);
+  const [droppedFiles, setDroppedFiles] = useState<File[] | null>(null);
 
   // Performance cache for folders and photos
   const [folderCache, setFolderCache] = useState<
@@ -924,7 +926,29 @@ export function EventLibraryMain({
         />
 
         {/* Center Panel - Content Grid */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div
+          className="relative flex flex-1 flex-col overflow-hidden"
+          onDragOver={(e) => {
+            if (e.dataTransfer?.types?.includes('Files')) {
+              e.preventDefault();
+              setIsDragOverUpload(true);
+            }
+          }}
+          onDragLeave={(e) => {
+            // Only clear when leaving container
+            if ((e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) return;
+            setIsDragOverUpload(false);
+          }}
+          onDrop={(e) => {
+            if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+              e.preventDefault();
+              const files = Array.from(e.dataTransfer.files);
+              setDroppedFiles(files);
+              setIsDragOverUpload(false);
+              setShowUploadInterface(true);
+            }
+          }}
+        >
           <ContentGridPanel
             eventId={event.id}
             currentFolderId={currentFolderId}
@@ -946,6 +970,14 @@ export function EventLibraryMain({
             onBulkSelect={handleBulkSelect}
             onClearSelection={handleClearSelection}
           />
+
+          {isDragOverUpload && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded bg-blue-50/70">
+              <div className="rounded-xl border-2 border-dashed border-blue-400 bg-white/80 px-6 py-4 text-blue-700 shadow">
+                Suelta archivos para subir a esta carpeta
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Panel - Details (optional) */}
@@ -999,7 +1031,11 @@ export function EventLibraryMain({
               currentFolderId={currentFolderId}
               currentFolderName={currentFolder?.name || ''}
               onUploadComplete={handleUploadComplete}
-              onClose={() => setShowUploadInterface(false)}
+              onClose={() => {
+                setShowUploadInterface(false);
+                setDroppedFiles(null);
+              }}
+              initialFiles={droppedFiles || undefined}
             />
           </div>
         </div>

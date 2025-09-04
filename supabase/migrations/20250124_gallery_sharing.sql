@@ -42,7 +42,8 @@ CREATE INDEX IF NOT EXISTS idx_gallery_shares_course_id ON gallery_shares(course
 CREATE INDEX IF NOT EXISTS idx_gallery_shares_student_id ON gallery_shares(student_id);
 CREATE INDEX IF NOT EXISTS idx_gallery_shares_token ON gallery_shares(token);
 CREATE INDEX IF NOT EXISTS idx_gallery_shares_expires_at ON gallery_shares(expires_at);
-CREATE INDEX IF NOT EXISTS idx_gallery_shares_active ON gallery_shares(event_id, expires_at) WHERE expires_at > NOW();
+-- Avoid NOW() in partial index predicate; keep a selective index without non-immutable funcs
+CREATE INDEX IF NOT EXISTS idx_gallery_shares_active ON gallery_shares(event_id, expires_at) WHERE expires_at IS NOT NULL;
 
 -- ============================================================
 -- 2. ENABLE RLS ON gallery_shares TABLE

@@ -55,10 +55,10 @@ export function PhotoSystemComparison({
 
     // Navigate to the appropriate system
     if (targetSystem === 'advanced' && eventId) {
-      router.push(`/admin/events/${eventId}/library`);
+      router.push(`/admin/events/${eventId}/unified`);
     } else if (targetSystem === 'legacy') {
       const url = eventId
-        ? `/admin/photos?eventId=${eventId}`
+        ? `/admin/events/${eventId}/unified`
         : '/admin/photos';
       router.push(url);
     }

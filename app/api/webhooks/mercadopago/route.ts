@@ -158,7 +158,8 @@ interface MercadoPagoPayment {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔔 [WEBHOOK] Notificación recibida de MercadoPago');
+    const requestId = crypto.randomUUID();
+    console.log('🔔 [WEBHOOK] Notificación recibida de MercadoPago', { requestId });
 
     const body = await request.json();
     console.log('📋 [WEBHOOK] Datos recibidos:', JSON.stringify(body, null, 2));
@@ -191,9 +192,22 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = await response.json();
+    const maskedToken = payment?.metadata?.token
+      ? String(payment.metadata.token).slice(0, 8) + '...'
+      : 'n/a';
     console.log(
       '📊 [WEBHOOK] Detalles del pago:',
-      JSON.stringify(payment, null, 2)
+      JSON.stringify(
+        {
+          id: payment?.id,
+          status: payment?.status,
+          external_reference: payment?.external_reference,
+          metadata: { ...payment?.metadata, token: maskedToken },
+        },
+        null,
+        2
+      ),
+      { requestId }
     );
 
     // Actualizar orden en la base de datos
@@ -218,9 +232,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ [WEBHOOK] Orden actualizada correctamente');
+    console.log('✅ [WEBHOOK] Orden actualizada correctamente', { requestId });
 
-    return NextResponse.json({ success: true });
+    const resp = NextResponse.json({ success: true });
+    resp.headers.set('X-Request-ID', requestId);
+    return resp;
   } catch (error) {
     console.error('❌ [WEBHOOK] Error general:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

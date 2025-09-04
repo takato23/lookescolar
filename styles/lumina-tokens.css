@@ -1,0 +1,538 @@
+/* Lumina Design System — scoped tokens and motions */
+
+/*
+  Uso: envolver el contenido objetivo con un contenedor que tenga la clase `lumina`.
+  Ejemplo:
+  <div class="lumina">
+    <div class="store-background"> ... </div>
+  </div>
+*/
+
+:root {
+  /* Motion tokens (también se respetan en modo reducido) */
+  --lumina-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --lumina-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --lumina-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --lumina-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --lumina-micro: 150ms;
+  --lumina-short: 250ms;
+  --lumina-medium: 400ms;
+  --lumina-long: 600ms;
+}
+
+/* Paleta Lumina – sólo activa bajo .lumina (no global) */
+.lumina,
+.lumina:root {
+  /* Neutrales */
+  --lumina-canvas: #fdfcfb;
+  --lumina-surface: #ffffff;
+  --lumina-elevated: #fefefe;
+  --lumina-border: #e8e6e3;
+
+  /* Acentos */
+  --lumina-primary: #2d2a26;
+  --lumina-secondary: #6b5b73;
+  --lumina-accent: #d4af37; /* oro sutil */
+  --lumina-muted: #a89d94;
+
+  /* Estados */
+  --lumina-success: #4a7c59;
+  --lumina-warning: #b7832f;
+  --lumina-error: #a0483b;
+  --lumina-info: #4a6b7c;
+
+  /* Transparencias */
+  --lumina-overlay: rgba(45, 42, 38, 0.03);
+  --lumina-glass: rgba(255, 255, 255, 0.85);
+  --lumina-shadow: rgba(45, 42, 38, 0.08);
+}
+
+/* Tipografía base (puede convivir con Tailwind) */
+.lumina .lumina-display-xl { font-size: 3.5rem; font-weight: 300; line-height: 1.1; letter-spacing: -0.02em; }
+.lumina .lumina-display-lg { font-size: 2.75rem; font-weight: 400; line-height: 1.2; letter-spacing: -0.015em; }
+.lumina .lumina-title { font-size: 1.875rem; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; }
+.lumina .lumina-subtitle { font-size: 1.25rem; font-weight: 400; line-height: 1.4; }
+.lumina .lumina-body { font-size: 1rem; font-weight: 400; line-height: 1.6; }
+.lumina .lumina-caption { font-size: 0.875rem; font-weight: 500; line-height: 1.4; letter-spacing: 0.005em; }
+
+/* Panel oscuro cremoso para secciones (ej: selección de paquetes) */
+.lumina .lumina-panel {
+  background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 60%),
+              linear-gradient(180deg, #111111 0%, #0d0d0d 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  padding: 2.5rem;
+}
+
+/* Hero del encabezado dentro del panel */
+.lumina .lumina-hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(6px);
+  color: #e9e6e2;
+}
+.lumina .lumina-hero-title { color: #e9e6e2; letter-spacing: -0.02em; }
+.lumina .lumina-hero-subtitle { color: #b6ada5; }
+
+/* Tarjetas de paquetes con estética premium */
+.lumina .lumina-package-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.0) 100%),
+              linear-gradient(180deg, #141414 0%, #0e0e0e 100%);
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35) !important;
+  position: relative;
+  overflow: hidden;
+}
+.lumina .lumina-package-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45) !important;
+}
+.lumina .lumina-package-card::after {
+  content: '';
+  position: absolute; inset: -1px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.25), rgba(212,175,55,0) 40%);
+  opacity: 0; pointer-events: none; transition: opacity var(--lumina-short) var(--lumina-ease-out);
+}
+.lumina .lumina-package-card:hover::after { opacity: 1; }
+.lumina .lumina-package-card.lumina-selected {
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.45), 0 24px 60px rgba(0,0,0,0.5) !important;
+}
+
+/* Variante clara cremosa */
+.lumina .lumina-package-card-light {
+  background:
+    radial-gradient(120% 100% at 50% 0%, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.0) 40%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
+  border: 1px solid rgba(232,230,227,0.9) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 12px 40px rgba(45,42,38,0.08) !important;
+  position: relative;
+  overflow: hidden;
+}
+.lumina .lumina-package-card-light:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 24px 60px rgba(45,42,38,0.12) !important;
+}
+.lumina .lumina-package-card-light::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0) 35%);
+  opacity: 0; pointer-events: none; transition: opacity var(--lumina-short) var(--lumina-ease-out);
+}
+.lumina .lumina-package-card-light:hover::after { opacity: 1; }
+.lumina .lumina-package-card-light.lumina-selected {
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.35), 0 30px 70px rgba(45,42,38,0.16) !important;
+}
+
+/* Insignias e iconos */
+.lumina .lumina-icon-badge {
+  width: 64px; height: 64px; border-radius: 999px;
+  background: radial-gradient(60% 60% at 50% 35%, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%),
+              linear-gradient(180deg, #2b2a25, #1c1b18);
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 20px rgba(0,0,0,0.35);
+}
+
+/* Precio premium */
+.lumina .lumina-price-badge {
+  background: linear-gradient(180deg, #1a1916 0%, #131210 100%) !important;
+  color: #f4f1ea !important;
+  border: 1px solid rgba(212,175,55,0.35) !important;
+  box-shadow: 0 6px 18px rgba(212,175,55,0.25);
+}
+
+/* Chips de features */
+.lumina .lumina-feature-item {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+}
+.lumina .lumina-feature-item .icon-container {
+  background: rgba(255,255,255,0.06);
+}
+
+/* Variante clara de features */
+.lumina .lumina-feature-item--light {
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(232,230,227,0.9);
+}
+.lumina .lumina-feature-item--light .icon-container {
+  background: rgba(232,230,227,0.6);
+}
+
+/* Superficie cremosa para contenedores */
+.lumina .lumina-surface-cream {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0) 60%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
+  border: 1px solid rgba(232,230,227,0.95);
+  border-radius: 28px;
+  box-shadow: 0 40px 100px rgba(45,42,38,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* Borde con glow sutil */
+.lumina .lumina-glow-border {
+  position: relative;
+}
+.lumina .lumina-glow-border::before {
+  content: '';
+  position: absolute; inset: -1px; border-radius: inherit;
+  background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(212,175,55,0) 30%);
+  pointer-events: none;
+}
+
+/* Aurora de fondo sutil para secciones hero */
+.lumina .lumina-aurora {
+  position: relative; overflow: hidden;
+}
+.lumina .lumina-aurora::before,
+.lumina .lumina-aurora::after {
+  content: '';
+  position: absolute; width: 600px; height: 600px; filter: blur(80px);
+  opacity: 0.35; pointer-events: none; z-index: 0;
+}
+.lumina .lumina-aurora::before { top: -20%; left: -10%; background: radial-gradient(50% 50% at 50% 50%, rgba(212,175,55,0.35), rgba(212,175,55,0)); }
+.lumina .lumina-aurora::after { top: -15%; right: -10%; background: radial-gradient(50% 50% at 50% 50%, rgba(107,91,115,0.35), rgba(107,91,115,0)); }
+
+/* ==========================
+   Photo Cards Emotivas
+   ========================== */
+.lumina .lumina-photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(212,175,55,0.08) 0%, rgba(212,175,55,0) 60%),
+    linear-gradient(180deg, #ffffff 0%, #fbfaf8 100%);
+  border: 1px solid rgba(232,230,227,0.95);
+  box-shadow: 0 14px 40px rgba(45,42,38,0.10);
+  transform: translateZ(0);
+  transition: transform var(--lumina-short) var(--lumina-ease-out),
+              box-shadow var(--lumina-short) var(--lumina-ease-out),
+              border-color var(--lumina-short) var(--lumina-ease-out);
+}
+.lumina .lumina-photo-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 24px 70px rgba(45,42,38,0.14);
+}
+.lumina .lumina-photo-card.selected {
+  box-shadow: 0 0 0 2px rgba(212,175,55,0.35), 0 30px 80px rgba(45,42,38,0.16);
+  border-color: rgba(212,175,55,0.45);
+}
+.lumina .lumina-photo-card::before {
+  content: '';
+  position: absolute; inset: -1px; border-radius: inherit;
+  background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0) 35%);
+  opacity: 0; pointer-events: none; transition: opacity var(--lumina-short) var(--lumina-ease-out);
+}
+.lumina .lumina-photo-card:hover::before { opacity: 1; }
+
+.lumina .lumina-photo-thumb {
+  width: 100%; height: 9rem; object-fit: cover;
+  transition: transform var(--lumina-medium) var(--lumina-ease-out), filter var(--lumina-short) var(--lumina-ease-out);
+  transform-origin: center;
+}
+.lumina .lumina-photo-card:hover .lumina-photo-thumb { transform: scale(1.06); }
+
+.lumina .lumina-photo-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.0) 50%);
+  opacity: 0; transition: opacity var(--lumina-short) var(--lumina-ease-out);
+}
+.lumina .lumina-photo-card:hover .lumina-photo-gradient { opacity: 1; }
+
+.lumina .lumina-photo-caption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; z-index: 2;
+  color: #f4f1ea; font-size: 12px; letter-spacing: 0.01em;
+}
+
+.lumina .lumina-photo-check {
+  position: absolute; right: 10px; bottom: 10px; z-index: 3;
+  width: 28px; height: 28px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  color: #1f1d1a;
+  background: linear-gradient(180deg, #d8c27a 0%, #d4af37 100%);
+  box-shadow: 0 6px 14px rgba(212,175,55,0.35);
+}
+
+.lumina .lumina-photo-fav {
+  position: absolute; left: 10px; top: 10px; z-index: 3;
+  padding: 4px 8px; border-radius: 999px;
+  color: #e9e6e2;
+  background: rgba(0,0,0,0.38);
+  border: 1px solid rgba(255,255,255,0.16);
+  backdrop-filter: blur(4px);
+  font-size: 11px;
+}
+
+/* ==========================
+   Variantes paralelas (light-only)
+   ========================== */
+.lumina.lumina-style-minimal {
+  --lumina-canvas: #fbfaf8;
+  --lumina-surface: #ffffff;
+  --lumina-elevated: #ffffff;
+  --lumina-border: #e7e5e4;
+  --lumina-shadow: rgba(45,42,38,0.06);
+}
+.lumina.lumina-style-minimal .store-card-background,
+.lumina.lumina-style-minimal .summary-card {
+  box-shadow: 0 4px 18px var(--lumina-shadow) !important;
+  border-radius: 14px !important;
+}
+.lumina.lumina-style-minimal .lumina-price-badge {
+  background: #fff !important;
+  color: #2d2a26 !important;
+  border: 1px solid var(--lumina-border) !important;
+  box-shadow: none !important;
+}
+.lumina.lumina-style-minimal .lumina-photo-card { box-shadow: 0 8px 24px var(--lumina-shadow); }
+.lumina.lumina-style-minimal .lumina-photo-gradient { background: linear-gradient(0deg, rgba(0,0,0,0.2), transparent); }
+.lumina.lumina-style-minimal .lumina-cta { border-radius: 12px; }
+
+.lumina.lumina-style-editorial {
+  --lumina-canvas: #fbfbfa;
+  --lumina-surface: #ffffff;
+  --lumina-elevated: #ffffff;
+  --lumina-border: #e6e4e2;
+}
+.lumina.lumina-style-editorial h1,
+.lumina.lumina-style-editorial h2,
+.lumina.lumina-style-editorial .lumina-hero-title { font-family: 'Playfair Display', Georgia, serif; letter-spacing: -0.01em; }
+.lumina.lumina-style-editorial .lumina-subtitle { font-family: Inter, system-ui, -apple-system, sans-serif; }
+.lumina.lumina-style-editorial .lumina-package-card-light,
+.lumina.lumina-style-editorial .lumina-feature-item--light { border-radius: 18px; box-shadow: 0 8px 24px rgba(45,42,38,0.07) !important; }
+.lumina.lumina-style-editorial .lumina-price-badge { border: 1px solid #dbd9d6 !important; }
+
+.lumina.lumina-style-quartz {
+  --lumina-canvas: #f9f8f7;
+  --lumina-surface: rgba(255,255,255,0.72);
+  --lumina-elevated: rgba(255,255,255,0.8);
+  --lumina-border: rgba(232,230,227,0.7);
+}
+.lumina.lumina-style-quartz .lumina-surface-cream { background: var(--lumina-surface); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.lumina.lumina-style-quartz .lumina-glass-card { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-color: var(--lumina-border); }
+.lumina.lumina-style-quartz .store-card-background { box-shadow: 0 12px 36px rgba(45,42,38,0.10) !important; }
+
+/* Desactivar efectos “spicy” si no se desea: solo activos en quartz y editorial */
+.lumina.lumina-style-minimal .lumina-tilt,
+.lumina.lumina-style-minimal .lumina-sparkles::after { transform: none !important; animation: none !important; box-shadow: none !important; }
+
+/* ==========================
+   Liquid Glass (inspirado en liquid-glass-react)
+   ========================== */
+.lumina .lumina-glass-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25));
+  border: 1px solid rgba(255,255,255,0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(45,42,38,0.10), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.lumina .lumina-glass-dark {
+  background: linear-gradient(180deg, rgba(18,18,18,0.55), rgba(18,18,18,0.35));
+  border: 1px solid rgba(232,230,227,0.2);
+}
+.lumina .lumina-liquid {
+  position: relative; overflow: hidden;
+}
+.lumina .lumina-liquid::before,
+.lumina .lumina-liquid::after {
+  content: '';
+  position: absolute; border-radius: 50%;
+  filter: blur(60px); opacity: 0.35; mix-blend-mode: screen;
+}
+.lumina .lumina-liquid::before { width: 420px; height: 420px; left: -10%; top: -10%; background: radial-gradient(circle, rgba(212,175,55,0.6), rgba(212,175,55,0)); }
+.lumina .lumina-liquid::after { width: 360px; height: 360px; right: -6%; top: -15%; background: radial-gradient(circle, rgba(107,91,115,0.45), rgba(107,91,115,0)); }
+
+/* Focus rings accesibles */
+.lumina :is(button, [role="button"], a, input, textarea, select) {
+  outline: none;
+}
+.lumina :is(button, [role="button"], a, input, textarea, select):focus-visible {
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.35), 0 0 0 6px rgba(212,175,55,0.15);
+  border-radius: 12px;
+}
+
+/* ==========================
+   Spicy touches – sparkles, tilt & CTA
+   ========================== */
+.lumina .lumina-tilt {
+  will-change: transform, box-shadow;
+  transform-style: preserve-3d;
+  transition: transform var(--lumina-short) var(--lumina-ease-out), box-shadow var(--lumina-short) var(--lumina-ease-out);
+}
+.lumina .lumina-tilt:hover {
+  transform: translateY(-3px) rotateX(0.6deg) rotateY(0.6deg);
+  box-shadow: 0 28px 80px rgba(45,42,38,0.14);
+}
+
+.lumina .lumina-sparkles {
+  position: relative; overflow: hidden;
+}
+.lumina .lumina-sparkles::after {
+  content: '';
+  position: absolute; inset: -40%;
+  background: conic-gradient(from 0deg, rgba(212,175,55,0), rgba(212,175,55,0.25), rgba(212,175,55,0));
+  animation: luminaSweep 2.8s linear infinite;
+  opacity: 0.25; pointer-events: none; mix-blend-mode: soft-light;
+}
+
+@keyframes luminaSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.lumina .lumina-cta {
+  position: relative;
+  background: linear-gradient(90deg, #2d2a26, #1f1d1a);
+  color: #f4f1ea;
+  border-radius: 14px;
+  border: 1px solid rgba(232,230,227,0.5);
+  box-shadow: 0 16px 40px rgba(45,42,38,0.18), 0 0 0 1px rgba(212,175,55,0.25) inset;
+}
+.lumina .lumina-cta:hover {
+  background: linear-gradient(90deg, #1f1d1a, #171512);
+  box-shadow: 0 22px 60px rgba(45,42,38,0.24), 0 0 0 1px rgba(212,175,55,0.35) inset;
+}
+.lumina .lumina-cta::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(90deg, rgba(212,175,55,0.25), rgba(212,175,55,0));
+  opacity: 0.25; pointer-events: none;
+}
+
+/* Floating counters */
+.lumina .lumina-counter-chip {
+  position: absolute; right: 12px; top: 12px; z-index: 5;
+  padding: 6px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.8);
+  color: #2d2a26; font-weight: 600; font-size: 12px;
+  border: 1px solid rgba(232,230,227,0.9);
+  box-shadow: 0 8px 24px rgba(45,42,38,0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lumina .lumina-tilt:hover { transform: none; }
+  .lumina .lumina-sparkles::after { animation: none; }
+}
+
+/* Reskin sutil de la tienda existente (scoped) */
+.lumina .store-background,
+.lumina.store-background {
+  background: var(--lumina-canvas) !important;
+}
+
+.lumina .store-content-background,
+.lumina.store-content-background {
+  background: var(--lumina-surface) !important;
+  border: 1px solid var(--lumina-border) !important;
+  box-shadow: 0 8px 40px var(--lumina-shadow) !important;
+}
+
+.lumina .store-card-background,
+.lumina.store-card-background {
+  background: var(--lumina-elevated) !important;
+  border: 1px solid var(--lumina-border) !important;
+  box-shadow: 0 6px 24px var(--lumina-shadow) !important;
+  border-radius: 12px !important;
+  transition: transform var(--lumina-short) var(--lumina-ease-out), box-shadow var(--lumina-short) var(--lumina-ease-out);
+}
+
+.lumina .store-card-background:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 10px 40px var(--lumina-shadow), 0 4px 12px rgba(212, 175, 55, 0.08);
+}
+
+/* Micro‑interacciones de fotos */
+.lumina .photo-selection-card {
+  position: relative;
+  transition: transform var(--lumina-short) var(--lumina-ease-out), box-shadow var(--lumina-short) var(--lumina-ease-out);
+}
+
+.lumina .photo-selection-card:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px var(--lumina-shadow);
+}
+
+.lumina .photo-selection-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0) 0%, rgba(212, 175, 55, 0.05) 50%, rgba(212, 175, 55, 0.10) 100%);
+  opacity: 0; border-radius: inherit;
+  transition: opacity var(--lumina-micro) var(--lumina-ease-out);
+}
+
+.lumina .photo-selection-card:hover::before { opacity: 1; }
+
+.lumina .photo-image { transition: transform var(--lumina-short) var(--lumina-ease-out); }
+.lumina .photo-selection-card:hover .photo-image { transform: scale(1.05); }
+
+/* Botones */
+.lumina .enhanced-button {
+  background: var(--lumina-primary);
+  color: white;
+  border: none; border-radius: 12px;
+  transition: transform var(--lumina-short) var(--lumina-ease-out), box-shadow var(--lumina-short) var(--lumina-ease-out), background var(--lumina-short) var(--lumina-ease-out);
+}
+
+.lumina .enhanced-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px var(--lumina-shadow), 0 4px 12px rgba(212, 175, 55, 0.10);
+  background: #1f1d1a;
+}
+
+.lumina .nav-button {
+  background: var(--lumina-surface);
+  color: var(--lumina-primary);
+  border: 1px solid var(--lumina-border);
+  border-radius: 10px;
+}
+
+.lumina .enhanced-badge {
+  background: rgba(212, 175, 55, 0.10);
+  color: var(--lumina-primary);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Barra de progreso */
+.lumina .progress-bar { background: rgba(0,0,0,0.06) !important; height: 6px; border-radius: 999px; }
+.lumina .progress-bar > div { box-shadow: 0 2px 10px rgba(212, 175, 55, 0.25) !important; }
+/* Forzar gradiente premium en la barra de progreso cuando se use la clase de relleno */
+.lumina .progress-bar > .lumina-progress-fill {
+  background: linear-gradient(90deg, var(--lumina-primary), var(--lumina-accent)) !important;
+}
+
+/* Summary cards con estética premium */
+.lumina .summary-card {
+  background: var(--lumina-elevated) !important;
+  border: 1px solid var(--lumina-border) !important;
+  box-shadow: 0 6px 24px var(--lumina-shadow) !important;
+  border-radius: 12px !important;
+}
+
+/* Accesibilidad: motion reducido */
+@media (prefers-reduced-motion: reduce) {
+  .lumina * { transition: none !important; animation: none !important; }
+}
+
+/* Dark mode sensato para Lumina */
+@media (prefers-color-scheme: dark) {
+  .lumina,
+  .lumina:root {
+    --lumina-canvas: #0a0a0a;
+    --lumina-surface: #121212;
+    --lumina-elevated: #161616;
+    --lumina-border: #2a2a2a;
+    --lumina-primary: #e9e6e2;
+    --lumina-muted: #b6ada5;
+    --lumina-shadow: rgba(0,0,0,0.45);
+  }
+}

@@ -134,8 +134,10 @@ CREATE TABLE IF NOT EXISTS student_tokens (
 -- Create indexes for student_tokens
 CREATE INDEX IF NOT EXISTS idx_student_tokens_token ON student_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_student_tokens_student_id ON student_tokens(student_id);
-CREATE INDEX IF NOT EXISTS idx_student_tokens_valid ON student_tokens(token, expires_at) WHERE expires_at > NOW();
-CREATE INDEX IF NOT EXISTS idx_student_tokens_expiring ON student_tokens(expires_at) WHERE expires_at > NOW() AND expires_at < NOW() + INTERVAL '7 days';
+-- Avoid non-immutable functions in partial index predicates
+-- Use standard indexes that the planner can use with runtime conditions
+CREATE INDEX IF NOT EXISTS idx_student_tokens_token_expires ON student_tokens(token, expires_at);
+CREATE INDEX IF NOT EXISTS idx_student_tokens_expires_not_null ON student_tokens(expires_at) WHERE expires_at IS NOT NULL;
 
 -- ============================================================
 -- 5. CREATE photo_students TABLE (replace photo_subjects)
@@ -318,33 +320,40 @@ DECLARE
   migrated_count INTEGER := 0;
   subject_record RECORD;
 BEGIN
-  -- Only migrate if students table is empty and subjects table exists and has data
-  IF (SELECT COUNT(*) FROM students) = 0 AND 
-     EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'subjects') AND
-     (SELECT COUNT(*) FROM subjects) > 0 THEN
-    
-    FOR subject_record IN 
-      SELECT id, event_id, name, email, phone, grade_section, created_at, updated_at
-      FROM subjects
-    LOOP
-      INSERT INTO students (
-        id, event_id, name, email, phone, grade, created_at, updated_at
-      ) VALUES (
-        subject_record.id,
-        subject_record.event_id,
-        subject_record.name,
-        subject_record.email,
-        subject_record.phone,
-        subject_record.grade_section,
-        subject_record.created_at,
-        subject_record.updated_at
-      );
-      migrated_count := migrated_count + 1;
-    END LOOP;
-    
-    RAISE NOTICE 'Migrated % subjects to students', migrated_count;
+  -- Only migrate if students is empty; guard access to legacy tables
+  IF (SELECT COUNT(*) FROM students) = 0 THEN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'subjects'
+    ) THEN
+      IF (SELECT COUNT(*) FROM subjects) > 0 THEN
+        FOR subject_record IN 
+          SELECT id, event_id, name, email, phone, grade_section, created_at, updated_at
+          FROM subjects
+        LOOP
+          INSERT INTO students (
+            id, event_id, name, email, phone, grade, created_at, updated_at
+          ) VALUES (
+            subject_record.id,
+            subject_record.event_id,
+            subject_record.name,
+            subject_record.email,
+            subject_record.phone,
+            subject_record.grade_section,
+            subject_record.created_at,
+            subject_record.updated_at
+          );
+          migrated_count := migrated_count + 1;
+        END LOOP;
+        RAISE NOTICE 'Migrated % subjects to students', migrated_count;
+      ELSE
+        RAISE NOTICE 'No subjects found to migrate';
+      END IF;
+    ELSE
+      RAISE NOTICE 'subjects table not found, skipping migration';
+    END IF;
   ELSE
-    RAISE NOTICE 'No migration needed - students table has data or subjects table is empty';
+    RAISE NOTICE 'students table already has data - skipping migration';
   END IF;
   
   RETURN migrated_count;
@@ -358,31 +367,38 @@ DECLARE
   migrated_count INTEGER := 0;
   token_record RECORD;
 BEGIN
-  -- Only migrate if student_tokens table is empty and subject_tokens table exists and has data
-  IF (SELECT COUNT(*) FROM student_tokens) = 0 AND 
-     EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'subject_tokens') AND
-     (SELECT COUNT(*) FROM subject_tokens) > 0 THEN
-    
-    FOR token_record IN 
-      SELECT id, subject_id, token, expires_at, created_at, used_at
-      FROM subject_tokens
-    LOOP
-      INSERT INTO student_tokens (
-        id, student_id, token, expires_at, created_at, used_at
-      ) VALUES (
-        token_record.id,
-        token_record.subject_id,
-        token_record.token,
-        token_record.expires_at,
-        token_record.created_at,
-        token_record.used_at
-      );
-      migrated_count := migrated_count + 1;
-    END LOOP;
-    
-    RAISE NOTICE 'Migrated % subject tokens to student tokens', migrated_count;
+  -- Only migrate if student_tokens is empty; guard legacy table access
+  IF (SELECT COUNT(*) FROM student_tokens) = 0 THEN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'subject_tokens'
+    ) THEN
+      IF (SELECT COUNT(*) FROM subject_tokens) > 0 THEN
+        FOR token_record IN 
+          SELECT id, subject_id, token, expires_at, created_at, used_at
+          FROM subject_tokens
+        LOOP
+          INSERT INTO student_tokens (
+            id, student_id, token, expires_at, created_at, used_at
+          ) VALUES (
+            token_record.id,
+            token_record.subject_id,
+            token_record.token,
+            token_record.expires_at,
+            token_record.created_at,
+            token_record.used_at
+          );
+          migrated_count := migrated_count + 1;
+        END LOOP;
+        RAISE NOTICE 'Migrated % subject tokens to student tokens', migrated_count;
+      ELSE
+        RAISE NOTICE 'No subject_tokens found to migrate';
+      END IF;
+    ELSE
+      RAISE NOTICE 'subject_tokens table not found, skipping migration';
+    END IF;
   ELSE
-    RAISE NOTICE 'No migration needed - student_tokens table has data or subject_tokens table is empty';
+    RAISE NOTICE 'student_tokens already has data - skipping migration';
   END IF;
   
   RETURN migrated_count;
@@ -396,31 +412,38 @@ DECLARE
   migrated_count INTEGER := 0;
   photo_subject_record RECORD;
 BEGIN
-  -- Only migrate if photo_students table is empty and photo_subjects table exists and has data
-  IF (SELECT COUNT(*) FROM photo_students) = 0 AND 
-     EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'photo_subjects') AND
-     (SELECT COUNT(*) FROM photo_subjects) > 0 THEN
-    
-    FOR photo_subject_record IN 
-      SELECT id, photo_id, subject_id, tagged_at, tagged_by, created_at
-      FROM photo_subjects
-    LOOP
-      INSERT INTO photo_students (
-        id, photo_id, student_id, tagged_at, tagged_by, created_at
-      ) VALUES (
-        photo_subject_record.id,
-        photo_subject_record.photo_id,
-        photo_subject_record.subject_id,
-        photo_subject_record.tagged_at,
-        photo_subject_record.tagged_by,
-        photo_subject_record.created_at
-      );
-      migrated_count := migrated_count + 1;
-    END LOOP;
-    
-    RAISE NOTICE 'Migrated % photo-subject associations to photo-student associations', migrated_count;
+  -- Only migrate if photo_students is empty; guard legacy table access
+  IF (SELECT COUNT(*) FROM photo_students) = 0 THEN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = 'photo_subjects'
+    ) THEN
+      IF (SELECT COUNT(*) FROM photo_subjects) > 0 THEN
+        FOR photo_subject_record IN 
+          SELECT id, photo_id, subject_id, tagged_at, tagged_by, created_at
+          FROM photo_subjects
+        LOOP
+          INSERT INTO photo_students (
+            id, photo_id, student_id, tagged_at, tagged_by, created_at
+          ) VALUES (
+            photo_subject_record.id,
+            photo_subject_record.photo_id,
+            photo_subject_record.subject_id,
+            photo_subject_record.tagged_at,
+            photo_subject_record.tagged_by,
+            photo_subject_record.created_at
+          );
+          migrated_count := migrated_count + 1;
+        END LOOP;
+        RAISE NOTICE 'Migrated % photo-subject associations to photo-student associations', migrated_count;
+      ELSE
+        RAISE NOTICE 'No photo_subjects found to migrate';
+      END IF;
+    ELSE
+      RAISE NOTICE 'photo_subjects table not found, skipping migration';
+    END IF;
   ELSE
-    RAISE NOTICE 'No migration needed - photo_students table has data or photo_subjects table is empty';
+    RAISE NOTICE 'photo_students already has data - skipping migration';
   END IF;
   
   RETURN migrated_count;
@@ -495,31 +518,71 @@ CREATE TRIGGER update_students_updated_at
 -- 14. CREATE VIEWS FOR EASIER QUERYING
 -- ============================================================
 
--- View for hierarchical event structure
-CREATE OR REPLACE VIEW hierarchical_event_structure AS
-SELECT 
-  e.id as event_id,
-  e.name as event_name,
-  e.date as event_date,
-  el.id as level_id,
-  el.name as level_name,
-  el.sort_order as level_sort_order,
-  c.id as course_id,
-  c.name as course_name,
-  c.grade,
-  c.section,
-  c.sort_order as course_sort_order,
-  COUNT(DISTINCT s.id) as student_count,
-  COUNT(DISTINCT p.id) as photo_count
-FROM events e
-LEFT JOIN event_levels el ON e.id = el.event_id AND el.active = true
-LEFT JOIN courses c ON e.id = c.event_id AND c.active = true AND (c.level_id = el.id OR c.level_id IS NULL)
-LEFT JOIN students s ON c.id = s.course_id AND s.active = true
-LEFT JOIN photo_students ps ON s.id = ps.student_id
-LEFT JOIN photos p ON ps.photo_id = p.id AND p.approved = true
-WHERE e.status = 'active'
-GROUP BY e.id, e.name, e.date, el.id, el.name, el.sort_order, c.id, c.name, c.grade, c.section, c.sort_order
-ORDER BY e.date DESC, el.sort_order, c.sort_order;
+-- Create hierarchical_event_structure view with compatibility for events without 'active' column
+DO $$
+DECLARE
+  has_active_column BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'active'
+  ) INTO has_active_column;
+
+  IF has_active_column THEN
+    EXECUTE $$
+      CREATE OR REPLACE VIEW hierarchical_event_structure AS
+      SELECT 
+        e.id as event_id,
+        e.name as event_name,
+        e.date as event_date,
+        el.id as level_id,
+        el.name as level_name,
+        el.sort_order as level_sort_order,
+        c.id as course_id,
+        c.name as course_name,
+        c.grade,
+        c.section,
+        c.sort_order as course_sort_order,
+        COUNT(DISTINCT s.id) as student_count,
+        COUNT(DISTINCT p.id) as photo_count
+      FROM events e
+      LEFT JOIN event_levels el ON e.id = el.event_id AND el.active = true
+      LEFT JOIN courses c ON e.id = c.event_id AND c.active = true AND (c.level_id = el.id OR c.level_id IS NULL)
+      LEFT JOIN students s ON c.id = s.course_id AND s.active = true
+      LEFT JOIN photo_students ps ON s.id = ps.student_id
+      LEFT JOIN photos p ON ps.photo_id = p.id AND p.approved = true
+      WHERE e.active = true
+      GROUP BY e.id, e.name, e.date, el.id, el.name, el.sort_order, c.id, c.name, c.grade, c.section, c.sort_order
+      ORDER BY e.date DESC, el.sort_order, c.sort_order
+    $$;
+  ELSE
+    EXECUTE $$
+      CREATE OR REPLACE VIEW hierarchical_event_structure AS
+      SELECT 
+        e.id as event_id,
+        e.name as event_name,
+        e.date as event_date,
+        el.id as level_id,
+        el.name as level_name,
+        el.sort_order as level_sort_order,
+        c.id as course_id,
+        c.name as course_name,
+        c.grade,
+        c.section,
+        c.sort_order as course_sort_order,
+        COUNT(DISTINCT s.id) as student_count,
+        COUNT(DISTINCT p.id) as photo_count
+      FROM events e
+      LEFT JOIN event_levels el ON e.id = el.event_id AND el.active = true
+      LEFT JOIN courses c ON e.id = c.event_id AND c.active = true AND (c.level_id = el.id OR c.level_id IS NULL)
+      LEFT JOIN students s ON c.id = s.course_id AND s.active = true
+      LEFT JOIN photo_students ps ON s.id = ps.student_id
+      LEFT JOIN photos p ON ps.photo_id = p.id AND p.approved = true
+      GROUP BY e.id, e.name, e.date, el.id, el.name, el.sort_order, c.id, c.name, c.grade, c.section, c.sort_order
+      ORDER BY e.date DESC, el.sort_order, c.sort_order
+    $$;
+  END IF;
+END $$;
 
 -- View for student photo statistics
 CREATE OR REPLACE VIEW student_photo_stats AS

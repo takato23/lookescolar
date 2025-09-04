@@ -17,6 +17,14 @@ import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortc
 import { QuickActions } from './QuickActions';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import {
+  EventProgressWidget,
+  QuickAccessWidget,
+  OrdersSummaryWidget,
+  PhotoManagementWidget,
+  BusinessMetricsWidget,
+} from './PhotographyWidgets';
+import { MobileDashboardLayout } from './MobileDashboardLayout';
+import {
   Calendar,
   Camera,
   Users,
@@ -223,14 +231,36 @@ export function DashboardClient() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
+      {/* Mobile Layout */}
+      <MobileDashboardLayout
+        stats={{
+          activeEvents: dashboardStats.activeEvents,
+          totalPhotos: dashboardStats.totalPhotos,
+          registeredFamilies: dashboardStats.registeredFamilies,
+          totalSales: dashboardStats.totalSales,
+          todayUploads: dashboardStats.todayUploads,
+          todayOrders: dashboardStats.todayOrders,
+        }}
+        currentTime={currentTime}
+      />
+      
+      {/* Desktop Layout */}
+      <div className="container mx-auto hidden px-4 py-8 lg:block">
       {/* Header */}
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <h1 className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-3xl font-bold text-transparent">
+            Estudio Fotográfico
+          </h1>
           <p className="text-muted-foreground">
-            Bienvenido de vuelta! Hoy es{' '}
-            {currentTime.toLocaleDateString('es-ES')}
+            ¡Todo listo para capturar momentos increíbles! • {' '}
+            {currentTime.toLocaleDateString('es-ES', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -334,6 +364,15 @@ export function DashboardClient() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Photography Specialized Widgets */}
+      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <EventProgressWidget />
+        <QuickAccessWidget />
+        <OrdersSummaryWidget />
+        <PhotoManagementWidget />
+        <BusinessMetricsWidget />
       </div>
 
       {/* Activity and Storage */}
@@ -441,6 +480,7 @@ export function DashboardClient() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} />
       )}
-    </div>
+      </div>
+    </>
   );
 }

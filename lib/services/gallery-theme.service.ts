@@ -7,7 +7,7 @@
  * - Secondary: Modern, sophisticated, clean design
  */
 
-export type EventTheme = 'default' | 'jardin' | 'secundaria' | 'bautismo';
+export type EventTheme = 'default' | 'jardin' | 'secundaria' | 'bautismo' | 'lumina';
 
 export interface GalleryTheme {
   id: EventTheme;
@@ -47,6 +47,46 @@ export interface GalleryTheme {
 }
 
 export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
+  lumina: {
+    id: 'lumina',
+    name: 'Lumina Premium',
+    colors: {
+      primary: '#2d2a26',
+      secondary: '#6b5b73',
+      accent: '#d4af37',
+      background: 'linear-gradient(180deg, #fdfcfb 0%, #fff 100%)',
+      cardBackground: '#ffffff',
+      textPrimary: '#2d2a26',
+      textSecondary: '#6b5b73',
+      border: '#e8e6e3',
+    },
+    fonts: {
+      heading: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      body: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+    },
+    icons: {
+      favorite: '♥',
+      selected: '✓',
+      gallery: '◌',
+      package: '◆',
+    },
+    patterns: {
+      headerPattern:
+        'linear-gradient(135deg, rgba(212,175,55,0.06) 0%, rgba(107,91,115,0.04) 50%, transparent 100%)',
+      cardPattern:
+        'linear-gradient(135deg, transparent 40%, rgba(212,175,55,0.04) 50%, transparent 60%)',
+    },
+    animations: {
+      cardHover:
+        'transform: translateY(-2px); box-shadow: 0 10px 32px rgba(45,42,38,0.08), 0 4px 12px rgba(212,175,55,0.10);',
+      buttonHover:
+        'transform: translateY(-1px); background: #1f1d1a;',
+    },
+    spacing: {
+      cardGap: '1.25rem',
+      containerPadding: '1.25rem',
+    },
+  },
   default: {
     id: 'default',
     name: 'Tema Predeterminado',
@@ -236,6 +276,7 @@ export class GalleryThemeService {
       { value: 'jardin', label: 'Jardín de Infantes' },
       { value: 'secundaria', label: 'Escuela Secundaria' },
       { value: 'bautismo', label: 'Bautismo' },
+      { value: 'lumina', label: 'Lumina Premium' },
     ];
   }
 

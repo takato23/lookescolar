@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Plus,
   Search,
@@ -29,6 +29,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useDebounce } from '@/hooks/useDebounce';
+import { FixedSizeList as VirtualList } from 'react-window';
 
 // Error boundary wrapper component
 function withErrorBoundary<P extends object>(
@@ -81,47 +83,76 @@ interface Event {
 interface EventsPageClientProps {
   events: Event[] | null;
   error: any;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+    has_more: boolean;
+  } | null;
 }
 
 // Base component
-function EventsPageClientBase({ events, error }: EventsPageClientProps) {
+function EventsPageClientBase({ events, error, pagination: initialPagination }: EventsPageClientProps) {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
+  const debouncedQuery = useDebounce(searchQuery, 250);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get('status') || 'all');
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [list, setList] = useState<Event[]>(events || []);
+  const [pagination, setPagination] = useState(initialPagination || null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingFirstPage, setLoadingFirstPage] = useState(false);
+
+  useEffect(() => {
+    setList(events || []);
+    setPagination(initialPagination || null);
+  }, [events, initialPagination]);
+
+  // Sync query params (q, status) to URL and reset page
+  useEffect(() => {
+    const sp = new URLSearchParams(Array.from(searchParams.entries()));
+    if (debouncedQuery) sp.set('q', debouncedQuery); else sp.delete('q');
+    if (statusFilter && statusFilter !== 'all') sp.set('status', statusFilter); else sp.delete('status');
+    sp.delete('page');
+    router.replace(`?${sp.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery, statusFilter]);
 
   // Filter events based on search and status
-  const filteredEvents =
-    events?.filter((event) => {
+  const filteredEvents = useMemo(() => {
+    if (!events) return [];
+
+    const q = (debouncedQuery || '').toLowerCase();
+    return list.filter((event) => {
       const matchesSearch =
-        (event.school?.toLowerCase() || '').includes(
-          searchQuery.toLowerCase()
-        ) ||
-        (event.name?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === 'all' || event.status === statusFilter;
-
+        (event.school?.toLowerCase() || '').includes(q) ||
+        (event.name?.toLowerCase() || '').includes(q);
+      const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
       return matchesSearch && matchesStatus;
-    }) || [];
+    });
+  }, [list, debouncedQuery, statusFilter]);
 
   // Calculate summary stats
-  const stats = {
-    total: filteredEvents.length,
-    totalPhotos: filteredEvents.reduce(
-      (sum, event) => sum + (event.stats?.totalPhotos || 0),
-      0
-    ),
-    totalSubjects: filteredEvents.reduce(
-      (sum, event) => sum + (event.stats?.totalSubjects || 0),
-      0
-    ),
-    totalRevenue: filteredEvents.reduce(
-      (sum, event) => sum + (event.stats?.totalRevenue || 0),
-      0
-    ),
-  };
+  const stats = useMemo(() => {
+    return {
+      total: filteredEvents.length,
+      totalPhotos: filteredEvents.reduce(
+        (sum, event) => sum + (event.stats?.totalPhotos || 0),
+        0
+      ),
+      totalSubjects: filteredEvents.reduce(
+        (sum, event) => sum + (event.stats?.totalSubjects || 0),
+        0
+      ),
+      totalRevenue: filteredEvents.reduce(
+        (sum, event) => sum + (event.stats?.totalRevenue || 0),
+        0
+      ),
+    };
+  }, [filteredEvents]);
 
   const handleDeleteEvent = async (event: Event) => {
     const hasPhotos = event.stats?.totalPhotos && event.stats?.totalPhotos > 0;
@@ -204,6 +235,82 @@ function EventsPageClientBase({ events, error }: EventsPageClientProps) {
       </div>
     );
   }
+
+  const hasMore = pagination?.has_more ?? false;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreCb = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      loadMore();
+    }
+  }, [loadingMore, hasMore]);
+
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          loadMoreCb();
+        }
+      },
+      { root: null, rootMargin: '200px', threshold: 0 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loadMoreCb]);
+
+  const loadFirstPage = async (status: string) => {
+    setLoadingFirstPage(true);
+    try {
+      const qp = new URLSearchParams();
+      qp.set('include_stats', 'true');
+      qp.set('page', '1');
+      qp.set('limit', String(pagination?.limit || 50));
+      if (status && status !== 'all') qp.set('status', status);
+      const res = await fetch(`/api/admin/events?${qp.toString()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Error cargando eventos');
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
+      const newPagination = Array.isArray(data) ? null : data.pagination || null;
+      setList(list);
+      setPagination(newPagination);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingFirstPage(false);
+    }
+  };
+
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = (pagination?.page || 1) + 1;
+      const qp = new URLSearchParams();
+      qp.set('include_stats', 'true');
+      qp.set('page', String(nextPage));
+      qp.set('limit', String(pagination?.limit || 50));
+      if (statusFilter && statusFilter !== 'all') qp.set('status', statusFilter);
+      const res = await fetch(`/api/admin/events?${qp.toString()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Error cargando más eventos');
+      const data = await res.json();
+      const more = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
+      const newPagination = Array.isArray(data) ? null : data.pagination || null;
+      setList((prev) => [...prev, ...more]);
+      setPagination(newPagination);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    // si cambian filtros/búsqueda, recargar página 1 desde el servidor
+    loadFirstPage(statusFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, debouncedQuery]);
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -374,7 +481,7 @@ function EventsPageClientBase({ events, error }: EventsPageClientProps) {
         <>
           {viewMode === 'grid' ? (
             <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 h-[600px] overflow-y-auto pr-2">
-              <div className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid grid-cols-1 gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {filteredEvents.map((event) => (
                   <EventCard
                     key={event.id}
@@ -385,20 +492,50 @@ function EventsPageClientBase({ events, error }: EventsPageClientProps) {
                   />
                 ))}
               </div>
+              {hasMore && (
+                <>
+                  <div ref={sentinelRef} className="h-6" />
+                  <div className="pb-4 pt-2 flex justify-center">
+                    <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                      {loadingMore ? 'Cargando…' : 'Cargar más'}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 h-[600px] overflow-y-auto pr-2">
-              <div className="space-y-3 pb-4">
-                {filteredEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    viewMode={viewMode}
-                    onDelete={handleDeleteEvent}
-                    isDeleting={deletingEventId === event.id}
-                  />
-                ))}
-              </div>
+              <VirtualList
+                height={600}
+                itemCount={filteredEvents.length}
+                itemSize={116}
+                width={'100%'}
+              >
+                {({ index, style }) => {
+                  const event = filteredEvents[index];
+                  return (
+                    <div style={style} className="pb-3">
+                      <EventCard
+                        key={event.id}
+                        event={event}
+                        viewMode={viewMode}
+                        onDelete={handleDeleteEvent}
+                        isDeleting={deletingEventId === event.id}
+                      />
+                    </div>
+                  );
+                }}
+              </VirtualList>
+              {hasMore && (
+                <>
+                  <div ref={sentinelRef} className="h-6" />
+                  <div className="pb-4 pt-2 flex justify-center">
+                    <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                      {loadingMore ? 'Cargando…' : 'Cargar más'}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </>
@@ -538,13 +675,13 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/admin/events/${event.id}`}>
+                <Link href={`/admin/events/${event.id}/unified`}>
                   <Eye className="mr-2 h-4 w-4" />
                   Ver detalles
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/admin/photos?eventId=${event.id}`}>
+                <Link href={`/admin/events/${event.id}/unified`}>
                   <Image className="mr-2 h-4 w-4" />
                   Gestionar fotos
                 </Link>
@@ -594,7 +731,7 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
           </div>
         </div>
 
-        <Link href={`/admin/events/${event.id}`} className="w-full">
+        <Link href={`/admin/events/${event.id}/unified`} className="w-full">
           <Button variant="outline" size="sm" className="h-8 w-full text-xs">
             <Eye className="mr-2 h-3 w-3" />
             Ver detalles

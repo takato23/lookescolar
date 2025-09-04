@@ -86,6 +86,7 @@ export function PhotoProductSelector({
   const [selectedProductType, setSelectedProductType] = useState<
     'individual' | 'combo'
   >('individual');
+  const [marketTab, setMarketTab] = useState<'packages' | 'prints' | 'wallart'>('packages');
   const [selectedProduct, setSelectedProduct] = useState<PhotoProduct | null>(
     null
   );
@@ -595,37 +596,54 @@ export function PhotoProductSelector({
 
           {/* Step Content */}
           {currentStep === 'select' && (
-            <Tabs
-              value={selectedProductType}
-              onValueChange={(value: any) => setSelectedProductType(value)}
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="individual">
-                  Productos Individuales
-                </TabsTrigger>
-                <TabsTrigger value="combo">Paquetes Combo</TabsTrigger>
-              </TabsList>
+            <div className="space-y-4">
+              {/* Pixieset-like tabs */}
+              <Tabs value={marketTab} onValueChange={(v: any) => setMarketTab(v)}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="packages">Packages</TabsTrigger>
+                  <TabsTrigger value="prints">Prints</TabsTrigger>
+                  <TabsTrigger value="wallart">Wall Art</TabsTrigger>
+                </TabsList>
 
-              <TabsContent value="individual" className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {products
-                    .filter((p) => p.is_active)
-                    .map((product) => (
-                      <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-              </TabsContent>
+                <TabsContent value="packages" className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {combos
+                      .filter((c) => c.is_active)
+                      .map((combo) => (
+                        <ComboCard key={combo.id} combo={combo} />
+                      ))}
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="combo" className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {combos
-                    .filter((c) => c.is_active)
-                    .map((combo) => (
-                      <ComboCard key={combo.id} combo={combo} />
-                    ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+                <TabsContent value="prints" className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {products
+                      .filter((p) => p.is_active && p.type === 'print')
+                      .map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="wallart" className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {products
+                      .filter(
+                        (p) =>
+                          p.is_active &&
+                          (p.finish === 'canvas' ||
+                            p.finish === 'metallic' ||
+                            (p.category?.name || '')
+                              .toLowerCase()
+                              .includes('wall'))
+                      )
+                      .map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
           )}
 
           {currentStep === 'customize' && <CustomizationPanel />}

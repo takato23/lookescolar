@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { nanoid } from 'nanoid';
+import crypto from 'crypto';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 
 const paramsSchema = z.object({
@@ -98,6 +99,22 @@ async function handlePOST(
 
     // Handle different actions
     if (action === 'unpublish') {
+      // Expire/unactivate associated share_tokens (unified sharing)
+      try {
+        await supabase
+          .from('share_tokens')
+          .update({
+            expires_at: new Date().toISOString(),
+            is_active: false,
+            metadata: {
+              revoked: true,
+              revoked_reason: 'unpublished_folder',
+              revoked_at: new Date().toISOString(),
+            },
+          })
+          .eq('folder_id', id)
+          .eq('is_active', true);
+      } catch {}
       return handleUnpublishAction(supabase, id, folder, request);
     }
 
@@ -126,12 +143,14 @@ async function handlePOST(
     // Check if folder is already published (we already have this info from the initial query)
     if (folder.is_published && folder.share_token) {
       if (action === 'rotate') {
-        // Generate new token for rotation
-        const newShareToken = nanoid(32);
+        // Generate new token(s) for rotation
+        const newShareToken32 = nanoid(32);
+        const newShareToken64 = crypto.randomBytes(32).toString('hex');
+
         const { error: rotateError } = await supabase
           .from('folders')
           .update({
-            share_token: newShareToken,
+            share_token: newShareToken32,
             published_at: new Date().toISOString(),
           })
           .eq('id', id);
@@ -143,18 +162,59 @@ async function handlePOST(
           );
         }
 
+        // Upsert share_tokens (unified sharing)
+        try {
+          const { data: existing } = await supabase
+            .from('share_tokens')
+            .select('id')
+            .eq('folder_id', id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (existing) {
+            await supabase
+              .from('share_tokens')
+              .update({ token: newShareToken64, updated_at: new Date().toISOString() })
+              .eq('id', (existing as any).id);
+          } else {
+            await supabase.from('share_tokens').insert({
+              event_id: folder.event_id,
+              folder_id: id,
+              token: newShareToken64,
+              share_type: 'folder',
+              is_active: true,
+              allow_download: false,
+              allow_comments: false,
+              metadata: { source: 'admin_rotate', folder_share_token: newShareToken32 },
+            });
+          }
+        } catch {}
+
         const origin = request.headers.get('origin') || 'http://localhost:3000';
         return NextResponse.json({
           success: true,
-          newToken: newShareToken,
-          share_token: newShareToken,
-          family_url: `${origin}/f/${newShareToken}`,
-          qr_url: `${origin}/api/qr?token=${newShareToken}`,
+          newToken: newShareToken32,
+          share_token: newShareToken32,
+          unified_share_token: newShareToken64,
+          family_url: `${origin}/f/${newShareToken32}`,
+          store_url: `${origin}/store-unified/${newShareToken64}`,
+          qr_url: `${origin}/api/qr?token=${newShareToken32}`,
           photo_count: photoCount,
         });
       }
 
-      // Already published, return existing info
+      // Already published, ensure unified share token exists
+      let unifiedToken = '';
+      try {
+        const { data: existing } = await supabase
+          .from('share_tokens')
+          .select('token')
+          .eq('folder_id', id)
+          .eq('is_active', true)
+          .maybeSingle();
+        if (existing?.token) unifiedToken = (existing as any).token;
+      } catch {}
+
       const origin = request.headers.get('origin') || 'http://localhost:3000';
       return NextResponse.json({
         success: true,
@@ -162,23 +222,26 @@ async function handlePOST(
         folder_id: folder.id,
         folder_name: folder.name,
         share_token: folder.share_token,
+        unified_share_token: unifiedToken || null,
         family_url: `${origin}/f/${folder.share_token}`,
+        store_url: unifiedToken ? `${origin}/store-unified/${unifiedToken}` : null,
         qr_url: `${origin}/api/qr?token=${folder.share_token}`,
         photo_count: photoCount,
       });
     }
 
-    // Generate a unique share token
-    const shareToken = nanoid(32);
+    // Generate unique share tokens (32 for folders table, 64 unified)
+    const shareToken32 = nanoid(32);
+    const shareToken64 = crypto.randomBytes(32).toString('hex');
     const publishedAt = new Date().toISOString();
 
     try {
-      // Try to update with migration columns if they exist
+      // Update folder (legacy fields)
       const { error: updateError } = await supabase
         .from('folders')
         .update({
           is_published: true,
-          share_token: shareToken,
+          share_token: shareToken32,
           published_at: publishedAt,
           publish_settings: {
             ...settings,
@@ -200,15 +263,47 @@ async function handlePOST(
         );
       }
 
+      // Ensure unified share_tokens row exists
+      try {
+        const { data: existing } = await supabase
+          .from('share_tokens')
+          .select('id')
+          .eq('folder_id', id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('share_tokens')
+            .update({ token: shareToken64, updated_at: new Date().toISOString(), is_active: true })
+            .eq('id', (existing as any).id);
+        } else {
+          await supabase.from('share_tokens').insert({
+            event_id: folder.event_id,
+            folder_id: id,
+            token: shareToken64,
+            share_type: 'folder',
+            is_active: true,
+            allow_download: false,
+            allow_comments: false,
+            metadata: { source: 'admin_publish', folder_share_token: shareToken32 },
+          });
+        }
+      } catch (e) {
+        console.warn('[API] Could not upsert share_tokens for folder', e);
+      }
+
       // Build response URLs
       const origin = request.headers.get('origin') || 'http://localhost:3000';
       const responseData = {
         success: true,
         folder_id: id,
         folder_name: folder.name,
-        share_token: shareToken,
-        family_url: `${origin}/f/${shareToken}`,
-        qr_url: `${origin}/api/qr?token=${shareToken}`,
+        share_token: shareToken32,
+        unified_share_token: shareToken64,
+        family_url: `${origin}/f/${shareToken32}`,
+        store_url: `${origin}/store-unified/${shareToken64}`,
+        qr_url: `${origin}/api/qr?token=${shareToken32}`,
         photo_count: photoCount,
         published_at: publishedAt,
         settings,

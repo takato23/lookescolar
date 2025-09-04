@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { featureFlags } from '@/lib/feature-flags';
 
 // Schema de validación
 const CheckoutSchema = z.object({
@@ -35,6 +36,18 @@ export async function POST(request: NextRequest) {
   );
 
   try {
+    // Gate this checkout when unified store is the only allowed checkout
+    if ((featureFlags as any).UNIFIED_STORE_CHECKOUT_ONLY === true || process.env.FF_UNIFIED_STORE_CHECKOUT_ONLY === 'true') {
+      return NextResponse.json(
+        {
+          error: 'Checkout deshabilitado',
+          message:
+            'Este flujo fue deshabilitado. Usá /store-unified/[token] para realizar compras.',
+        },
+        { status: 410 }
+      );
+    }
+
     console.log('🚀 [CHECKOUT] Iniciando procesamiento del checkout');
 
     const body = await request.json();
