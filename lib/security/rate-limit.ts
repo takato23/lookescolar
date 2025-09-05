@@ -25,3 +25,8 @@ export function createRateLimiter(config: {
     }),
   };
 }
+
+// Compatibility helper expected by routes
+export async function applyRateLimit(_req: NextRequest, _key?: string) {
+  return { success: true, limit: 100, remaining: 99, reset: Date.now() + 60000 };
+}

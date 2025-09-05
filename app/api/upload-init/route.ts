@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const { folderId, files } = UploadInitSchema.parse(body);
 
     // Create Supabase client
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,

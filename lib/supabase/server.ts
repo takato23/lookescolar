@@ -30,12 +30,9 @@ export async function createServerSupabaseClient(): Promise<
     );
   }
 
-  const cookieStore = await cookies();
-  
-  return createServerClient<Database>(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
+  try {
+    const cookieStore = cookies();
+    return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value;
@@ -44,7 +41,6 @@ export async function createServerSupabaseClient(): Promise<
           try {
             cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // Handle cookie setting errors in middleware/edge runtime
             console.warn('Cookie setting failed:', error);
           }
         },
@@ -52,17 +48,19 @@ export async function createServerSupabaseClient(): Promise<
           try {
             cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // Handle cookie removal errors in middleware/edge runtime
             console.warn('Cookie removal failed:', error);
           }
         },
       },
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-      },
-    }
-  );
+      auth: { autoRefreshToken: true, persistSession: true },
+    });
+  } catch (err) {
+    // Fallback: no cookies context (build-time or non-request usage)
+    const { createClient } = await import('@supabase/supabase-js');
+    return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+  }
 }
 
 /**

@@ -314,7 +314,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     description: string; 
   }>(null);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  const [folderActionLoading, setFolderActionLoading] = useState(false);
+  const [, setFolderActionLoading] = useState(false);
   const [showUploadInterface, setShowUploadInterface] = useState(false);
   const [initialUploadFiles, setInitialUploadFiles] = useState<File[] | null>(null);
   const [isDragOverUpload, setIsDragOverUpload] = useState(false);
@@ -719,6 +719,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       setError(null);
 
       const eventResponse = await fetch(`/api/admin/events/${eventId}`);
+      
       if (!eventResponse.ok) {
         throw new Error('Error loading event');
       }
@@ -845,14 +846,14 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     );
   }
 
-  // Error state
-  if (error || !event) {
+  // Error state - only show if there's an actual error, not just loading
+  if (error) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h3 className="text-lg font-medium text-red-800 mb-2">Error al cargar el evento</h3>
-            <p className="text-red-600 mb-4">{error || 'Evento no encontrado'}</p>
+            <p className="text-red-600 mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
               <Button
                 variant="outline"
@@ -872,24 +873,36 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     );
   }
 
+  // Show loading if no event data yet
+  if (!event) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando evento...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Clean Header - Simplified Design */}
       <div className="border-b border-gray-200 bg-white shadow-sm">
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
             {/* Left: Navigation and title */}
             <div className="flex items-center gap-4 min-w-0 flex-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/admin/events')}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push('/admin/events')}
                 className="shrink-0 text-gray-600 hover:text-gray-900"
-              >
+            >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Eventos
-              </Button>
-              
+            </Button>
+            
               <div className="h-4 w-px bg-gray-300" />
               
               <div className="min-w-0 flex-1">
@@ -910,39 +923,39 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                       year: 'numeric'
                     }) : 'Sin fecha'}
                   </span>
-                </div>
               </div>
             </div>
+          </div>
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 shrink-0">
-              <EventSelector
-                value={eventId}
-                onChange={(id) => router.push(`/admin/events/${id}/library`)}
+            <EventSelector
+              value={eventId}
+              onChange={(id) => router.push(`/admin/events/${id}/library`)}
                 className="h-8 text-sm"
-              />
+            />
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={selectedFolderId ? () => handleShareFolder() : handleShareEvent}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectedFolderId ? () => handleShareFolder() : handleShareEvent}
                 className="h-8 text-sm"
-              >
+            >
                 <LinkIcon className="h-3.5 w-3.5 mr-1.5" />
                 Compartir
-              </Button>
-              
-              <Button
-                size="sm"
-                onClick={handleViewClientGallery}
+            </Button>
+            
+            <Button
+              size="sm"
+              onClick={handleViewClientGallery}
                 className="h-8 text-sm bg-blue-600 hover:bg-blue-700"
-              >
+            >
                 <Eye className="h-3.5 w-3.5 mr-1.5" />
-                Vista Cliente
-              </Button>
-            </div>
+              Vista Cliente
+            </Button>
           </div>
         </div>
+      </div>
 
         {/* Compact metrics bar */}
         <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">
@@ -975,20 +988,20 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             </div>
             
             <div className="ml-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={refreshMetrics}
-                disabled={metricsLoading}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={refreshMetrics}
+            disabled={metricsLoading}
                 className="h-7 text-xs text-gray-500 hover:text-gray-700"
-              >
+          >
                 <RefreshCw className={cn("h-3.5 w-3.5", metricsLoading && "animate-spin")} />
-              </Button>
-            </div>
-          </div>
+          </Button>
         </div>
-      </div>
-
+        </div>
+                  </div>
+                </div>
+                
       {/* Main Content Area - Simplified 2-panel layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Folder Tree and Quick Actions */}
@@ -1022,111 +1035,111 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             
             <div className="text-xs text-gray-500">
               {enhancedFolders.length} carpetas organizadas
-            </div>
-          </div>
-
-          {/* Folder Tree */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <HierarchicalFolderTreeEnhanced
-              folders={enhancedFolders}
-              selectedFolderId={selectedFolderId}
-              expandedFolders={expandedFolders}
-              onFolderSelect={(fid) => setSelectedFolderId(fid)}
-              onFolderToggle={async (fid) => {
-                setExpandedFolders((prev) => prev.includes(fid) ? prev.filter((id) => id !== fid) : [...prev, fid]);
-                await ensureChildrenLoaded(fid);
-              }}
-              onFolderAction={async (action, folder) => {
-                switch (action) {
-                  case 'create_child': {
-                    const name = window.prompt('Nombre de la subcarpeta');
-                    if (!name) return;
-                    const res = await fetch('/api/admin/folders', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ name: name.trim(), parent_id: folder.id, event_id: event?.id }),
-                    });
-                    if (!res.ok) { try { (await import('sonner')).toast.error('No se pudo crear la carpeta'); } catch {}; return; }
-                    await refreshEnhancedFolders();
-                    try { (await import('sonner')).toast.success('Carpeta creada'); } catch {}
-                    break;
-                  }
-                  case 'rename': {
-                    const newName = window.prompt('Nuevo nombre', folder.name);
-                    if (!newName) return;
-                    const res = await fetch(`/api/admin/folders/${folder.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName.trim() }) });
-                    if (!res.ok) { try { (await import('sonner')).toast.error('No se pudo renombrar'); } catch {}; return; }
-                    await refreshEnhancedFolders();
-                    break;
-                  }
-                  case 'move': {
-                    await handleMoveFolder(folder.id);
-                    await refreshEnhancedFolders();
-                    break;
-                  }
-                  case 'share': {
-                    setSelectedFolderId(folder.id);
-                    await handleShareFolder(folder.id);
-                    break;
-                  }
-                  case 'delete': {
-                    setSelectedFolderId(folder.id);
-                    await handleDeleteFolder(folder.id);
-                    await refreshEnhancedFolders();
-                    break;
-                  }
-                }
-              }}
-              onDropPhotos={async (targetFolderId, assetIds) => {
-                try {
-                  const res = await fetch('/api/admin/assets/bulk', {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ asset_ids: assetIds, target_folder_id: targetFolderId }),
-                  });
-                  const ok = res.ok;
-                  if (!ok) throw new Error('Mover fotos falló');
-                  await refreshEnhancedFolders();
-                  if (selectedFolderId) {
-                    const params = new URLSearchParams({ folder_id: selectedFolderId, limit: '60' });
-                    const list = await fetch(`/api/admin/assets?${params.toString()}`);
-                    if (list.ok) {
-                      const json = await list.json();
-                      const mapped: Photo[] = (json.assets || []).map((a: any) => ({ id: a.id, original_filename: a.filename || 'archivo', preview_url: a.preview_url || null, thumbnail_url: a.preview_url || null, file_size: a.file_size || 0, created_at: a.created_at, approved: true, tagged: false }));
-                      setPhotos(mapped);
+                </div>
+              </div>
+              
+              {/* Folder Tree */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <HierarchicalFolderTreeEnhanced
+                  folders={enhancedFolders}
+                  selectedFolderId={selectedFolderId}
+                  expandedFolders={expandedFolders}
+                  onFolderSelect={(fid) => setSelectedFolderId(fid)}
+                  onFolderToggle={async (fid) => {
+                    setExpandedFolders((prev) => prev.includes(fid) ? prev.filter((id) => id !== fid) : [...prev, fid]);
+                    await ensureChildrenLoaded(fid);
+                  }}
+                  onFolderAction={async (action, folder) => {
+                    switch (action) {
+                      case 'create_child': {
+                        const name = window.prompt('Nombre de la subcarpeta');
+                        if (!name) return;
+                        const res = await fetch('/api/admin/folders', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: name.trim(), parent_id: folder.id, event_id: event?.id }),
+                        });
+                        if (!res.ok) { try { (await import('sonner')).toast.error('No se pudo crear la carpeta'); } catch {}; return; }
+                        await refreshEnhancedFolders();
+                        try { (await import('sonner')).toast.success('Carpeta creada'); } catch {}
+                        break;
+                      }
+                      case 'rename': {
+                        const newName = window.prompt('Nuevo nombre', folder.name);
+                        if (!newName) return;
+                        const res = await fetch(`/api/admin/folders/${folder.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName.trim() }) });
+                        if (!res.ok) { try { (await import('sonner')).toast.error('No se pudo renombrar'); } catch {}; return; }
+                        await refreshEnhancedFolders();
+                        break;
+                      }
+                      case 'move': {
+                        await handleMoveFolder(folder.id);
+                        await refreshEnhancedFolders();
+                        break;
+                      }
+                      case 'share': {
+                        setSelectedFolderId(folder.id);
+                        await handleShareFolder(folder.id);
+                        break;
+                      }
+                      case 'delete': {
+                        setSelectedFolderId(folder.id);
+                        await handleDeleteFolder(folder.id);
+                        await refreshEnhancedFolders();
+                        break;
+                      }
                     }
-                  }
-                  try { (await import('sonner')).toast.success(`Movidas ${assetIds.length} fotos`); } catch {}
-                } catch (e) {
-                  console.error(e);
-                  try { (await import('sonner')).toast.error('No se pudieron mover las fotos'); } catch {}
-                }
-              }}
-            />
-          </div>
+                  }}
+                  onDropPhotos={async (targetFolderId, assetIds) => {
+                    try {
+                      const res = await fetch('/api/admin/assets/bulk', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ asset_ids: assetIds, target_folder_id: targetFolderId }),
+                      });
+                      const ok = res.ok;
+                      if (!ok) throw new Error('Mover fotos falló');
+                      await refreshEnhancedFolders();
+                      if (selectedFolderId) {
+                        const params = new URLSearchParams({ folder_id: selectedFolderId, limit: '60' });
+                        const list = await fetch(`/api/admin/assets?${params.toString()}`);
+                        if (list.ok) {
+                          const json = await list.json();
+                          const mapped: Photo[] = (json.assets || []).map((a: any) => ({ id: a.id, original_filename: a.filename || 'archivo', preview_url: a.preview_url || null, thumbnail_url: a.preview_url || null, file_size: a.file_size || 0, created_at: a.created_at, approved: true, tagged: false }));
+                          setPhotos(mapped);
+                        }
+                      }
+                      try { (await import('sonner')).toast.success(`Movidas ${assetIds.length} fotos`); } catch {}
+                    } catch (e) {
+                      console.error(e);
+                      try { (await import('sonner')).toast.error('No se pudieron mover las fotos'); } catch {}
+                    }
+                  }}
+                />
+              </div>
 
           {/* Quick Actions */}
           <div className="border-t border-gray-100 p-4 bg-gray-50/50">
-            <div className="space-y-2">
-              <Button
-                size="sm"
+                <div className="space-y-2">
+                  <Button
+                    size="sm"
                 onClick={() => handleUploadPhotos()}
                 className="w-full justify-start h-8 bg-blue-600 hover:bg-blue-700"
-              >
+                  >
                 <Upload className="h-3.5 w-3.5 mr-2" />
                 Subir Fotos
-              </Button>
-              
+                  </Button>
+                  
               <div className="grid grid-cols-2 gap-2">
-                <Button
+                  <Button
                   variant="outline"
-                  size="sm"
+                    size="sm"
                   onClick={() => handleShareEvent()}
                   className="h-8 text-xs"
-                >
+                  >
                   <LinkIcon className="h-3.5 w-3.5 mr-1" />
                   Compartir
-                </Button>
+                  </Button>
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -1150,42 +1163,42 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               </div>
             </div>
-          </div>
         </div>
 
         {/* Main Content Panel */}
         <div className="flex-1 flex flex-col bg-white">
           {/* Content Tabs - Simplified */}
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-1 flex flex-col">
-            {/* Tab List - Cleaner design */}
-            <div className="border-b border-gray-200 px-6">
-              <TabsList className="h-12 bg-transparent p-0 border-b-0 space-x-6">
+            {/* Tab List - Fixed alignment and dark theme colors */}
+            <div className="border-b border-gray-700 px-6 bg-gray-800">
+              <TabsList className="h-12 bg-transparent p-0 border-b-0 grid grid-cols-4 gap-0">
                 <TabsTrigger 
                   value="photos" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-0 py-3 text-sm font-medium text-gray-600 data-[state=active]:text-blue-600 border-b-2 border-transparent"
+                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-400 rounded-none px-4 py-3 text-sm font-medium text-gray-300 data-[state=active]:text-blue-400 border-b-2 border-transparent hover:text-white transition-colors"
                 >
                   <Camera className="h-4 w-4 mr-2" />
                   Fotos
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-0 py-3 text-sm font-medium text-gray-600 data-[state=active]:text-blue-600 border-b-2 border-transparent"
+                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-400 rounded-none px-4 py-3 text-sm font-medium text-gray-300 data-[state=active]:text-blue-400 border-b-2 border-transparent hover:text-white transition-colors"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Configuración
                 </TabsTrigger>
                 <TabsTrigger 
                   value="store" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-0 py-3 text-sm font-medium text-gray-600 data-[state=active]:text-blue-600 border-b-2 border-transparent"
+                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-400 rounded-none px-4 py-3 text-sm font-medium text-gray-300 data-[state=active]:text-blue-400 border-b-2 border-transparent hover:text-white transition-colors"
                 >
                   <Package className="h-4 w-4 mr-2" />
                   Tienda
                 </TabsTrigger>
                 <TabsTrigger 
                   value="sharing" 
-                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-0 py-3 text-sm font-medium text-gray-600 data-[state=active]:text-blue-600 border-b-2 border-transparent"
+                  className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-400 rounded-none px-4 py-3 text-sm font-medium text-gray-300 data-[state=active]:text-blue-400 border-b-2 border-transparent hover:text-white transition-colors"
                 >
                   <LinkIcon className="h-4 w-4 mr-2" />
                   Enlaces
@@ -1250,7 +1263,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                 </div>
                 
                 {/* Selection bar */}
-                {selectedPhotoIds.length > 0 && (
+                  {selectedPhotoIds.length > 0 && (
                   <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-2">
                       <Badge variant="default" className="bg-blue-100 text-blue-700 border-blue-200">
@@ -1259,16 +1272,16 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={handleApprovePhotos}
-                        disabled={bulkActionLoading}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={handleApprovePhotos}
+                          disabled={bulkActionLoading}
                         className="h-7 text-xs"
-                      >
+                        >
                         <Star className="h-3.5 w-3.5 mr-1" />
-                        Aprobar
-                      </Button>
+                          Aprobar
+                        </Button>
                       
                       <Button 
                         variant="outline" 
@@ -1291,8 +1304,8 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                         Limpiar
                       </Button>
                     </div>
-                  </div>
-                )}
+                    </div>
+                  )}
               </div>
               
               {/* Photo Grid Area */}
@@ -1353,98 +1366,98 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                 )}
                 
                 {/* Drag overlay */}
-                {isDragOverUpload && (
+              {isDragOverUpload && (
                   <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-400">
                     <div className="text-center">
                       <Upload className="h-12 w-12 text-blue-600 mx-auto mb-3" />
                       <p className="text-lg font-medium text-blue-900">Suelta las fotos aquí</p>
                       <p className="text-sm text-blue-700">Se subirán a la carpeta seleccionada</p>
-                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+            </div>
             </TabsContent>
             
             <TabsContent value="settings" className="m-0 flex-1 p-6">
               <div className="max-w-4xl mx-auto space-y-8">
-                <div>
+                              <div>
                   <h3 className="text-xl font-medium text-gray-900 mb-2">Configuración del Evento</h3>
                   <p className="text-gray-600">Gestiona las opciones y configuración avanzada del evento</p>
-                </div>
-                
+                              </div>
+                              
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* General Settings */}
+                      {/* General Settings */}
                   <Card className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-blue-100 rounded-lg">
+                          <div className="p-2 bg-blue-100 rounded-lg">
                         <Settings className="h-5 w-5 text-blue-600" />
-                      </div>
+                          </div>
                       <h4 className="text-lg font-medium text-gray-900">General</h4>
-                    </div>
+                          </div>
                     <div className="space-y-3">
                       <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => setShowStudentModal(true)}>
                         <Users className="h-4 w-4 mr-2" />
-                        Gestionar Estudiantes
-                      </Button>
+                            Gestionar Estudiantes
+                          </Button>
                       <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Edit3 className="h-4 w-4 mr-2" />
+                            <Edit3 className="h-4 w-4 mr-2" />
                         Editar Información
                       </Button>
                       <Button variant="outline" size="sm" className="w-full justify-start">
                         <Calendar className="h-4 w-4 mr-2" />
                         Configurar Fecha
-                      </Button>
-                    </div>
+                          </Button>
+                        </div>
                   </Card>
 
-                  {/* Privacy Settings */}
+                      {/* Privacy Settings */}
                   <Card className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="p-2 bg-green-100 rounded-lg">
+                          <div className="p-2 bg-green-100 rounded-lg">
                         <Eye className="h-5 w-5 text-green-600" />
-                      </div>
+                          </div>
                       <h4 className="text-lg font-medium text-gray-900">Privacidad</h4>
-                    </div>
-                    <div className="space-y-4">
+                          </div>
+                      <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <div>
+                          <div>
                           <p className="text-sm font-medium text-gray-900">Galería Pública</p>
                           <p className="text-xs text-gray-500">Permitir acceso sin autenticación</p>
-                        </div>
+                          </div>
                         <input type="checkbox" className="rounded border-gray-300" />
-                      </div>
+                        </div>
                       <div className="flex items-center justify-between">
-                        <div>
+                          <div>
                           <p className="text-sm font-medium text-gray-900">Requerir Token</p>
                           <p className="text-xs text-gray-500">Usar tokens de acceso únicos</p>
-                        </div>
+                          </div>
                         <input type="checkbox" className="rounded border-gray-300" defaultChecked />
-                      </div>
-                    </div>
+                        </div>
+                          </div>
                   </Card>
-                </div>
-              </div>
-            </TabsContent>
-            
+                    </div>
+            </div>
+          </TabsContent>
+          
             <TabsContent value="store" className="m-0 flex-1 p-6">
               <div className="max-w-6xl mx-auto">
                 <div className="mb-6">
                   <h3 className="text-xl font-medium text-gray-900 mb-2">Configuración de Tienda</h3>
                   <p className="text-gray-600">Gestiona productos, precios y configuración de ventas</p>
-                </div>
-                
-                <div className="space-y-6">
-                  <StoreConfigPanel 
-                    eventId={eventId}
-                    onUpdate={() => {
-                      refreshMetrics();
-                    }}
-                  />
-                  <ProductManagementPanel onProductChange={refreshMetrics} />
-                </div>
               </div>
-            </TabsContent>
-            
+          
+                <div className="space-y-6">
+              <StoreConfigPanel 
+                eventId={eventId}
+                    onUpdate={() => {
+                  refreshMetrics();
+                }}
+              />
+                <ProductManagementPanel onProductChange={refreshMetrics} />
+              </div>
+            </div>
+          </TabsContent>
+          
             <TabsContent value="sharing" className="m-0 flex-1 p-6">
               <div className="max-w-4xl mx-auto space-y-6">
                 <div>
@@ -1475,16 +1488,16 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                       {selectedFolderId ? 'Generar enlace de Carpeta' : 'Selecciona una carpeta'}
                     </Button>
                   </Card>
-                </div>
+                  </div>
                 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
                     <strong>💡 Tip:</strong> Los enlaces se copian automáticamente al portapapeles y incluyen códigos QR para compartir fácilmente.
                   </p>
-                </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          </TabsContent>
+        </Tabs>
         </div>
       </div>
 

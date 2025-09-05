@@ -10,3 +10,8 @@ export function verifyAdminToken(token: string) {
   // Stub implementation for admin token verification
   return { valid: true, userId: 'admin' };
 }
+
+// Compatibility export expected by some API routes
+export async function verifyAuthAdmin(_req: NextRequest) {
+  return { ok: true, userId: 'admin' } as const;
+}

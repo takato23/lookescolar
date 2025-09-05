@@ -455,3 +455,5 @@ export function getEnhancedOrderService(): EnhancedOrderService {
   }
   return enhancedOrderServiceInstance;
 }
+
+export const enhancedOrderService = getEnhancedOrderService();

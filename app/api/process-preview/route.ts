@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const { assetId } = ProcessPreviewSchema.parse(body);
 
     // Create Supabase client
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
