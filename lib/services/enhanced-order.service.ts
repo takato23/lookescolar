@@ -21,7 +21,7 @@ export type AuditActionType =
 
 export interface UpdateOrderRequest {
   status?: OrderStatus;
-  admin_notes?: string;
+  notes?: string;
   priority_level?: number;
   estimated_delivery_date?: string;
   delivery_method?: DeliveryMethod;
@@ -231,18 +231,18 @@ export class EnhancedOrderService {
     }
 
     // Log admin action if there are significant changes
-    if (updates.status || updates.admin_notes || updates.priority_level) {
+    if (updates.status || updates.notes || updates.priority_level) {
       await this.logAuditEvent({
         order_id: orderId,
         action_type: 'admin_action',
         old_values: {
           status: currentOrder.status,
-          admin_notes: currentOrder.admin_notes,
+          notes: currentOrder.notes,
           priority_level: currentOrder.priority_level,
         },
         new_values: {
           status: updates.status || currentOrder.status,
-          admin_notes: updates.admin_notes || currentOrder.admin_notes,
+          notes: updates.notes || currentOrder.notes,
           priority_level: updates.priority_level || currentOrder.priority_level,
         },
         changed_by: adminId,
@@ -261,10 +261,13 @@ export class EnhancedOrderService {
    * Get order by ID with full details
    */
   async getOrderById(orderId: string): Promise<OrderWithDetails> {
-    await this.ensureInitialized();
     const { data: order, error } = await this.supabase
-      .from('order_details_with_audit')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        event:events(name, school, date),
+        subject:subjects(name, email, phone)
+      `)
       .eq('id', orderId)
       .single();
 
@@ -272,7 +275,23 @@ export class EnhancedOrderService {
       throw new Error('Order not found');
     }
 
-    return order as OrderWithDetails;
+    // Transform to OrderWithDetails format
+    const transformedOrder = {
+      ...order,
+      event_name: order.event?.name || null,
+      event_school: order.event?.school || null,
+      event_date: order.event?.date || null,
+      subject_name: order.subject?.name || null,
+      subject_email: order.subject?.email || null,
+      subject_phone: order.subject?.phone || null,
+      audit_log_count: 0,
+      recent_audit_events: null,
+      enhanced_status: order.status,
+      hours_since_created: null,
+      hours_since_status_change: null,
+    };
+
+    return transformedOrder as OrderWithDetails;
   }
 
   /**

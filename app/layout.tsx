@@ -5,6 +5,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { SkipToContent } from '@/components/ui/accessible';
+import '@/lib/utils/message-channel-error-handler';
 
 const inter = Inter({ subsets: ['latin'] });
 

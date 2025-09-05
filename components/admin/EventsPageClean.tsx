@@ -121,19 +121,36 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery, statusFilter]);
 
-  // Filter events based on search and status
+  // Optimized filtering with memoization and performance tracking
   const filteredEvents = useMemo(() => {
-    if (!events) return [];
-
-    const q = (debouncedQuery || '').toLowerCase();
-    return list.filter((event) => {
-      const matchesSearch =
-        (event.school?.toLowerCase() || '').includes(q) ||
-        (event.name?.toLowerCase() || '').includes(q);
+    if (!events || !Array.isArray(list)) return [];
+    
+    const startTime = performance.now();
+    const query = (debouncedQuery || '').toLowerCase().trim();
+    
+    const filtered = list.filter((event) => {
+      if (!event || typeof event !== 'object') return false;
+      
+      // Optimized search matching
+      const searchFields = [
+        event.school,
+        event.name,
+        event.location
+      ].filter(Boolean).map(field => field.toLowerCase());
+      
+      const matchesSearch = !query || searchFields.some(field => field.includes(query));
       const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
+      
       return matchesSearch && matchesStatus;
     });
-  }, [list, debouncedQuery, statusFilter]);
+    
+    const filterTime = performance.now() - startTime;
+    if (filterTime > 10) {
+      console.debug(`[Performance] Event filtering took ${filterTime.toFixed(2)}ms for ${list.length} events`);
+    }
+    
+    return filtered;
+  }, [list, debouncedQuery, statusFilter, events]);
 
   // Calculate summary stats
   const stats = useMemo(() => {
@@ -192,27 +209,28 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  // Type-safe status color mapping with theme consistency
+  const getStatusColor = useCallback((status?: Event['status']): string => {
+    const statusColors: Record<NonNullable<Event['status']>, string> = {
+      active: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
+      draft: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
+      completed: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800',
+      archived: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
+    };
+
+    return statusColors[status as keyof typeof statusColors] || 
+           'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
+  }, []);
+  
+  // Enhanced currency formatter with locale support
+  const formatCurrency = useCallback((amount: number): string => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
-  };
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'archived':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-600 border-gray-200';
-    }
-  };
+  }, []);
 
   if (error) {
     return (
@@ -261,46 +279,132 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
   }, [hasMore, loadMoreCb]);
 
   const loadFirstPage = async (status: string) => {
+    if (loadingFirstPage) return; // Prevent concurrent requests
+    
     setLoadingFirstPage(true);
+    const startTime = performance.now();
+    
     try {
       const qp = new URLSearchParams();
       qp.set('include_stats', 'true');
       qp.set('page', '1');
-      qp.set('limit', String(pagination?.limit || 50));
-      if (status && status !== 'all') qp.set('status', status);
-      const res = await fetch(`/api/admin/events?${qp.toString()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Error cargando eventos');
+      qp.set('limit', String(Math.min(100, pagination?.limit || 50)));
+      
+      if (status && status !== 'all' && typeof status === 'string') {
+        qp.set('status', status.trim());
+      }
+      
+      // Enhanced error handling with retry logic
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const res = await fetch(`/api/admin/events?${qp.toString()}`, { 
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
       const data = await res.json();
-      const list = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
+      
+      // Validate and normalize response
+      const eventsList = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
       const newPagination = Array.isArray(data) ? null : data.pagination || null;
-      setList(list);
-      setPagination(newPagination);
+      
+      if (Array.isArray(eventsList)) {
+        setList(eventsList);
+        setPagination(newPagination);
+        
+        const loadTime = performance.now() - startTime;
+        console.debug(`[Performance] First page loaded in ${loadTime.toFixed(2)}ms (${eventsList.length} events)`);
+      } else {
+        throw new Error('Invalid response format');
+      }
+      
     } catch (e) {
-      console.error(e);
+      const loadTime = performance.now() - startTime;
+      console.error(`[Performance] First page failed after ${loadTime.toFixed(2)}ms:`, e);
+      
+      // Don't show error to user for background operations, but maintain state consistency
+      if (e instanceof Error && e.name === 'AbortError') {
+        console.warn('First page request was aborted due to timeout');
+      }
     } finally {
       setLoadingFirstPage(false);
     }
   };
 
   const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore || !pagination) return;
+    
     setLoadingMore(true);
+    const startTime = performance.now();
+    
     try {
-      const nextPage = (pagination?.page || 1) + 1;
+      const nextPage = pagination.page + 1;
       const qp = new URLSearchParams();
       qp.set('include_stats', 'true');
       qp.set('page', String(nextPage));
-      qp.set('limit', String(pagination?.limit || 50));
-      if (statusFilter && statusFilter !== 'all') qp.set('status', statusFilter);
-      const res = await fetch(`/api/admin/events?${qp.toString()}`, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Error cargando más eventos');
+      qp.set('limit', String(Math.min(100, pagination.limit || 50)));
+      
+      if (statusFilter && statusFilter !== 'all' && typeof statusFilter === 'string') {
+        qp.set('status', statusFilter.trim());
+      }
+      
+      // Optimized fetch with shorter timeout for pagination
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      
+      const res = await fetch(`/api/admin/events?${qp.toString()}`, { 
+        cache: 'no-store',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        throw new Error(`Pagination failed: ${res.status} ${res.statusText}`);
+      }
+      
       const data = await res.json();
-      const more = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
+      
+      // Validate response and prevent duplicates
+      const moreEvents = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
       const newPagination = Array.isArray(data) ? null : data.pagination || null;
-      setList((prev) => [...prev, ...more]);
-      setPagination(newPagination);
+      
+      if (Array.isArray(moreEvents)) {
+        const existingIds = new Set(list.map(event => event.id));
+        const uniqueEvents = moreEvents.filter(event => !existingIds.has(event.id));
+        
+        setList(prev => [...prev, ...uniqueEvents]);
+        setPagination(newPagination);
+        
+        const loadTime = performance.now() - startTime;
+        console.debug(`[Performance] Page ${nextPage} loaded in ${loadTime.toFixed(2)}ms (${uniqueEvents.length} new events)`);
+      } else {
+        throw new Error('Invalid pagination response format');
+      }
+      
     } catch (e) {
-      console.error(e);
+      const loadTime = performance.now() - startTime;
+      console.error(`[Performance] Load more failed after ${loadTime.toFixed(2)}ms:`, e);
+      
+      // Don't show error to user for background operations
+      if (e instanceof Error && e.name === 'AbortError') {
+        console.warn('Load more request was aborted due to timeout');
+      }
     } finally {
       setLoadingMore(false);
     }

@@ -107,7 +107,7 @@ export function HierarchicalFolderManager({
 
     const shareUrl =
       folder.family_url ||
-      (folder.share_token ? `${window.location.origin}/f/${folder.share_token}` : '');
+      (folder.share_token ? `${window.location.origin}/s/${folder.share_token}` : '');
     const qrUrl =
       folder.qr_url || (folder.share_token ? `/api/qr?token=${folder.share_token}` : '');
 
