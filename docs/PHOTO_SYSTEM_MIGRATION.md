@@ -2,10 +2,10 @@
 
 ## ✅ Cambios Implementados
 
-### 1. Redirects Automáticos
-Los siguientes routes ahora redirigen al sistema unificado:
+### 1. Comportamiento de la Biblioteca de Eventos
+Los siguientes comportamientos actuales se aplican:
 
-- `app/admin/events/[id]/library/page.tsx` → `/admin/photos?event_id=${eventId}`
+- `app/admin/events/[id]/library/page.tsx` muestra temporalmente un mensaje de "Gestor de Fotos en actualización" con el skeleton `EventPhotoManagerSkeleton`; **no redirige**.
 - `app/admin/events/[id]/unified/page.tsx` → `/admin/photos?event_id=${eventId}`
 - `app/admin/photos-unified/page.tsx` → `/admin/photos`
 

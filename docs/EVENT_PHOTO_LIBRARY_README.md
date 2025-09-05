@@ -1,5 +1,8 @@
 # Event Photo Library Implementation
 
+**⚠️ ATTENTION: Temporary Maintenance**
+The Event Photo Library page is currently under maintenance. The full `EventPhotoManager` component has been disabled temporarily, and a skeleton placeholder is displayed until it is stabilized.
+
 ## Overview
 
 The Event Photo Library is a comprehensive photo management system that unifies Events and Photos into a single, modern file explorer-style interface. This implementation replaces the traditional separate photo management with an integrated hierarchical folder system.
@@ -94,6 +97,7 @@ share_access_log/ (new)
 #### Public Endpoints
 - `POST /public/share/{token}/validate` - Validate share token
 - `GET /public/share/{token}/validate` - Get share info
+```
 
 ### Services
 
@@ -113,10 +117,10 @@ share_access_log/ (new)
 
 ### Prerequisites
 
-- Node.js 18+ 
-- Next.js 15+
-- Supabase project
-- PostgreSQL database
+- Node.js 18+  
+- Next.js 15+  
+- Supabase project  
+- PostgreSQL database  
 - Sharp.js for image processing
 
 ### Environment Variables
@@ -180,242 +184,4 @@ npm run build
 
 ## 🔒 Security Considerations
 
-### Share Token Security
-- **Rate Limiting**: 50 attempts per IP per hour
-- **Access Logging**: All attempts logged with IP and user agent
-- **Password Protection**: SHA-256 hashed passwords
-- **Expiration**: Configurable expiration dates
-- **View Limits**: Maximum view count enforcement
-- **Revocation**: Admin ability to revoke tokens
-
-### Data Protection
-- **Row Level Security**: All tables use RLS policies
-- **Service Role Access**: Database functions use security definer
-- **Input Validation**: Comprehensive API input validation
-- **SQL Injection Prevention**: Parameterized queries only
-
-## 🎛️ Configuration
-
-### Feature Flags
-
-```typescript
-// Enable/disable the library feature
-const isEnabled = await featureFlags.isEnabled('event_photo_library');
-
-// Gradual rollout configuration
-await featureFlags.configure('event_photo_library', {
-  enabled: true,
-  rolloutPercentage: 50, // 50% of users
-  targetUsers: ['admin', 'photographer']
-});
-```
-
-### Performance Tuning
-
-```typescript
-// Virtualization settings
-const GRID_CONFIG = {
-  itemSize: 200,          // Grid item size
-  overscan: 2,            // Items to render outside viewport
-  columnCount: 'auto',    // Auto-calculate based on width
-  batchSize: 50           // Items per API request
-};
-
-// URL generation settings
-const URL_CONFIG = {
-  batchSize: 20,          // URLs per batch
-  concurrency: 8,         // Concurrent requests
-  expiryMinutes: 60,      // URL expiration
-  usePreview: true        // Use watermarked previews
-};
-```
-
-## 🧪 Testing
-
-### Unit Tests
-```bash
-# Run folder service tests
-npm test -- folder.service.test.ts
-
-# Run photo service tests  
-npm test -- photo.service.test.ts
-
-# Run security tests
-npm test -- share-token-security.test.ts
-```
-
-### Integration Tests
-```bash
-# Test API endpoints
-npm run test:integration
-
-# Test database migrations
-npm run test:migrations
-```
-
-### E2E Tests
-```bash
-# Test complete user workflows
-npm run test:e2e
-
-# Test photo upload flow
-npm run test:e2e -- --spec="upload-workflow"
-```
-
-## 📊 Monitoring & Analytics
-
-### Performance Metrics
-- Grid rendering performance
-- API response times
-- Image loading times
-- Memory usage with large datasets
-
-### Security Monitoring
-- Failed share token access attempts
-- Suspicious IP activity
-- Rate limit violations
-- Token usage analytics
-
-### Usage Analytics
-- Feature adoption rates
-- User interaction patterns
-- Upload success rates
-- Share token usage
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### Migration Failures
-```bash
-# Check migration status
-./scripts/migrate-event-photo-library.sh verify
-
-# View logs
-tail -f ./logs/migration_*.log
-
-# Rollback if needed
-./scripts/migrate-event-photo-library.sh rollback
-```
-
-#### Performance Issues
-```typescript
-// Reduce batch sizes
-const REDUCED_CONFIG = {
-  batchSize: 10,
-  concurrency: 4,
-  overscan: 1
-};
-
-// Enable debugging
-localStorage.setItem('debug', 'event-library:*');
-```
-
-#### Feature Flag Issues
-```typescript
-// Check feature flag status
-const status = await featureFlags.getStatus('event_photo_library');
-console.log('Feature status:', status);
-
-// Force enable for testing
-await featureFlags.forceEnable('event_photo_library', userId);
-```
-
-### Error Codes
-
-| Code | Description | Resolution |
-|------|-------------|------------|
-| `FOLDER_CYCLE_DETECTED` | Circular folder reference | Check folder hierarchy |
-| `INVALID_TOKEN` | Share token invalid | Regenerate share link |
-| `MAX_VIEWS_EXCEEDED` | Share view limit reached | Create new share |
-| `RATE_LIMIT_EXCEEDED` | Too many requests | Wait and retry |
-
-## 📈 Performance Benchmarks
-
-### Virtualization Performance
-- **1,000 photos**: < 100ms initial render
-- **10,000 photos**: < 500ms with pagination
-- **Memory usage**: ~50MB for 1,000 items
-
-### API Performance
-- **Folder listing**: < 200ms
-- **Photo batch URLs**: < 1s for 50 photos
-- **Upload processing**: < 5s per photo
-
-### Database Performance
-- **Folder hierarchy**: < 50ms for 100 levels
-- **Photo search**: < 300ms with indexes
-- **Share validation**: < 100ms
-
-## 🔄 Maintenance
-
-### Regular Tasks
-
-#### Weekly
-```bash
-# Clean up expired share tokens
-./scripts/cleanup-expired-shares.sh
-
-# Analyze performance metrics
-npm run analyze:performance
-```
-
-#### Monthly
-```bash
-# Update feature flag configurations
-./scripts/update-feature-flags.sh
-
-# Archive old access logs
-./scripts/archive-access-logs.sh
-```
-
-#### Quarterly
-```bash
-# Review security policies
-./scripts/security-audit.sh
-
-# Performance optimization review
-npm run analyze:bundle-size
-```
-
-## 🎯 Future Enhancements
-
-### Planned Features
-- [ ] Advanced search and filtering
-- [ ] Automated photo tagging
-- [ ] Bulk photo editing tools
-- [ ] Integration with external storage
-- [ ] Advanced analytics dashboard
-
-### Technical Improvements
-- [ ] GraphQL API integration
-- [ ] WebSocket real-time updates
-- [ ] Progressive Web App features
-- [ ] Enhanced mobile gestures
-- [ ] AI-powered organization
-
-## 📞 Support
-
-### Getting Help
-- **Documentation**: `/docs/event-photo-library/`
-- **API Reference**: `/docs/api/`
-- **Support Email**: support@lookescolar.com
-- **GitHub Issues**: Create issue with detailed description
-
-### Reporting Issues
-Include the following information:
-- Browser and version
-- Error messages and logs
-- Steps to reproduce
-- Expected vs actual behavior
-- Screenshots if applicable
-
-## 📄 License
-
-This implementation is part of the LookEscolar platform and is subject to the platform's licensing terms.
-
----
-
-**Last Updated**: January 15, 2024  
-**Version**: 1.0.0  
-**Contributors**: Development Team
+... (rest of document unchanged)

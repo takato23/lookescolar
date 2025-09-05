@@ -5,3 +5,7 @@
 - chore(db): migración no destructiva `events.settings` JSONB.
 - chore(config): unificación de paths en `tsconfig.json`.
 - chore(deps): agrega `@dnd-kit/*` para PhotoAdmin.
+
+## 2025-09-05
+
+- fix(library): temporarily replace EventPhotoManager in `/app/admin/events/[id]/library/page.tsx` with skeleton placeholder while stabilization in progress.
