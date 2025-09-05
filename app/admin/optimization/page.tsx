@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { StorageOptimizationDashboard } from '@/components/admin/StorageOptimizationDashboard';
+import StorageOptimizationDashboard from '@/components/admin/StorageOptimizationDashboard';
 import {
   Card,
   CardContent,

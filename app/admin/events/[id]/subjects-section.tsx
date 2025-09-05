@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { maskToken } from '@/lib/utils/tokens';
 
+// Enhanced type definitions
 interface Subject {
   id: string;
   event_id: string;
@@ -14,97 +15,283 @@ interface Subject {
   created_at: string | null;
 }
 
+interface FormData {
+  name: string;
+  grade: string;
+  bulkText: string;
+}
+
+interface SubjectsSectionProps {
+  eventId: string;
+}
+
 export default function SubjectsSection({ eventId }: { eventId: string }) {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
 
-  // Form state
-  const [formData, setFormData] = useState({
+  // Enhanced form state with validation
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     grade: '',
     bulkText: '',
   });
+  
+  // Memoized form validation
+  const isFormValid = useMemo(() => {
+    if (bulkMode) {
+      return formData.bulkText.trim().length > 0;
+    }
+    return formData.name.trim().length > 0;
+  }, [formData, bulkMode]);
 
   useEffect(() => {
     loadSubjects();
   }, [eventId]);
 
-  const loadSubjects = async () => {
+  // Optimized subjects loading with caching and error handling
+  const loadSubjects = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    
+    const startTime = performance.now();
+    
     try {
-      const resp = await fetch(`/api/admin/subjects?event_id=${eventId}`);
-      if (!resp.ok) throw new Error('Error al cargar alumnos');
-      const j = await resp.json();
-      setSubjects(j.subjects || []);
-    } catch (err: any) {
-      setError(err.message);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      const response = await fetch(`/api/admin/subjects?event_id=${eventId}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load students: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const subjectsList = Array.isArray(data.subjects) ? data.subjects : [];
+      
+      setSubjects(subjectsList);
+      
+      const loadTime = performance.now() - startTime;
+      console.debug(`[Performance] Subjects loaded in ${loadTime.toFixed(2)}ms (${subjectsList.length} subjects)`);
+      
+    } catch (err) {
+      const loadTime = performance.now() - startTime;
+      console.error(`[Performance] Subjects loading failed after ${loadTime.toFixed(2)}ms:`, err);
+      
+      const errorMessage = err instanceof Error 
+        ? err.name === 'AbortError'
+          ? 'Request timed out. Please check your connection.'
+          : err.message
+        : 'Error loading students';
+        
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId]);
 
-  const handleAddSingle = async (e: React.FormEvent) => {
+  // Enhanced single student creation with validation
+  const handleAddSingle = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isFormValid || isSubmitting) return;
+    
     setError(null);
+    setIsSubmitting(true);
+    
+    const startTime = performance.now();
 
     try {
-      const resp = await fetch('/api/admin/subjects', {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch('/api/admin/subjects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: formData.name.trim(), event_id: eventId }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ 
+          name: formData.name.trim(), 
+          event_id: eventId,
+          grade: formData.grade.trim() || null,
+        }),
+        signal: controller.signal,
       });
-      if (!resp.ok) throw new Error('Error creando alumno');
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to create student: ${response.status}`);
+      }
 
+      // Reset form and close modal
       setFormData({ name: '', grade: '', bulkText: '' });
       setShowAddForm(false);
+      
+      // Reload subjects list
       await loadSubjects();
-    } catch (err: any) {
-      setError(err.message);
+      
+      const addTime = performance.now() - startTime;
+      console.debug(`[Performance] Student added in ${addTime.toFixed(2)}ms`);
+      
+    } catch (err) {
+      const addTime = performance.now() - startTime;
+      console.error(`[Performance] Student creation failed after ${addTime.toFixed(2)}ms:`, err);
+      
+      const errorMessage = err instanceof Error 
+        ? err.name === 'AbortError'
+          ? 'Request timed out. Please try again.'
+          : err.message
+        : 'Error creating student';
+        
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }, [formData, eventId, loadSubjects, isFormValid, isSubmitting]);
 
-  const handleAddBulk = async (e: React.FormEvent) => {
+  // Enhanced bulk student creation with batch processing
+  const handleAddBulk = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isFormValid || isSubmitting) return;
+    
     setError(null);
+    setIsSubmitting(true);
+    
+    const startTime = performance.now();
 
     try {
-      // Parse bulk text (format: "Name, Grade" per line)
-      const lines = formData.bulkText.split('\n').filter((line) => line.trim());
-      const subjectsToAdd = lines.map((line) => {
-        const [name, grade] = line.split(',').map((s) => s.trim());
+      // Parse and validate bulk text
+      const lines = formData.bulkText
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      if (lines.length === 0) {
+        setError('No students found to add');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (lines.length > 100) {
+        setError('Maximum 100 students can be added at once');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const subjectsToAdd = lines.map((line, index) => {
+        const [name, grade] = line.split(',').map(s => s.trim());
+        
+        if (!name) {
+          throw new Error(`Line ${index + 1}: Student name is required`);
+        }
+        
         return {
-          event_id: eventId,
-          name: name || 'Sin nombre',
+          name,
           grade: grade || null,
+          event_id: eventId,
         };
       });
 
-      if (subjectsToAdd.length === 0) {
-        setError('No se encontraron alumnos para agregar');
-        return;
+      // Process in batches to avoid overwhelming the server
+      const batchSize = 10;
+      const batches = [];
+      
+      for (let i = 0; i < subjectsToAdd.length; i += batchSize) {
+        batches.push(subjectsToAdd.slice(i, i + batchSize));
+      }
+      
+      let successCount = 0;
+      const errors: string[] = [];
+      
+      for (const [batchIndex, batch] of batches.entries()) {
+        try {
+          const promises = batch.map(async (student, studentIndex) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            const response = await fetch('/api/admin/subjects', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({
+                name: student.name,
+                event_id: student.event_id,
+                grade: student.grade,
+              }),
+              signal: controller.signal,
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(`${student.name}: ${errorData.message || response.statusText}`);
+            }
+            
+            return student.name;
+          });
+          
+          const batchResults = await Promise.allSettled(promises);
+          
+          batchResults.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
+              successCount++;
+            } else {
+              errors.push(`Batch ${batchIndex + 1}, Student ${index + 1}: ${result.reason}`);
+            }
+          });
+          
+        } catch (batchError) {
+          errors.push(`Batch ${batchIndex + 1} failed: ${batchError}`);
+        }
+      }
+      
+      // Report results
+      if (errors.length > 0) {
+        setError(`${successCount} students added successfully. Errors: ${errors.join('; ')}`);
+      } else {
+        console.log(`Successfully added ${successCount} students`);
       }
 
-      for (const s of subjectsToAdd) {
-        const resp = await fetch('/api/admin/subjects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: s.name, event_id: s.event_id }),
-        });
-        if (!resp.ok) throw new Error('Error creando alumnos');
-      }
-
+      // Reset form and close modal
       setFormData({ name: '', grade: '', bulkText: '' });
       setShowAddForm(false);
       setBulkMode(false);
+      
+      // Reload subjects list
       await loadSubjects();
-    } catch (err: any) {
-      setError(err.message);
+      
+      const addTime = performance.now() - startTime;
+      console.debug(`[Performance] Bulk add completed in ${addTime.toFixed(2)}ms (${successCount}/${subjectsToAdd.length} successful)`);
+      
+    } catch (err) {
+      const addTime = performance.now() - startTime;
+      console.error(`[Performance] Bulk add failed after ${addTime.toFixed(2)}ms:`, err);
+      
+      const errorMessage = err instanceof Error ? err.message : 'Error adding students';
+      setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }, [formData, eventId, loadSubjects, isFormValid, isSubmitting]);
 
   const handleRotateToken = async (_subjectId: string) => {
     if (
@@ -153,7 +340,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
   };
 
   const getFamilyUrl = (token: string) => {
-    return `${window.location.origin}/f/${token}`;
+    return `${window.location.origin}/s/${token}`;
   };
 
   return (

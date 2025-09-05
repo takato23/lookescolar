@@ -209,7 +209,7 @@ async function processSequentialBulk(
               folder_id: folderId,
               success: true,
               share_token: folder.share_token,
-              family_url: `${origin}/f/${folder.share_token}`,
+              family_url: `${origin}/s/${folder.share_token}`,
               qr_url: `${origin}/api/qr?token=${folder.share_token}`,
               already_published: true,
             };
@@ -264,7 +264,7 @@ async function processSequentialBulk(
             folder_id: folderId,
             success: true,
             share_token: shareToken,
-            family_url: `${origin}/f/${shareToken}`,
+            family_url: `${origin}/s/${shareToken}`,
             qr_url: `${origin}/api/qr?token=${shareToken}`,
             photo_count: photoCount,
           };

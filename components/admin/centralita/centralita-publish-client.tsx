@@ -231,7 +231,7 @@ export default function CentralitaPublishClient(props?: {
       publishMutation(folderId, {
         onSuccess: (data: any) => {
           if (data.share_token) {
-            const familyUrl = data.family_url || `${window.location.origin}/f/${data.share_token}`;
+            const familyUrl = data.family_url || `${window.location.origin}/s/${data.share_token}`;
             const qrUrl = data.qr_url || `/api/qr?token=${encodeURIComponent(data.share_token)}`;
             sps(
               {
@@ -290,7 +290,7 @@ export default function CentralitaPublishClient(props?: {
         onSuccess: (data: any) => {
           if (data.newToken || data.share_token) {
             const token = data.newToken || data.share_token;
-            const familyUrl = data.family_url || `${window.location.origin}/f/${token}`;
+            const familyUrl = data.family_url || `${window.location.origin}/s/${token}`;
             const qrUrl = data.qr_url || `/api/qr?token=${encodeURIComponent(token)}`;
             srs(folder.name, token, familyUrl, qrUrl);
           }

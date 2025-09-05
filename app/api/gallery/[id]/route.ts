@@ -75,7 +75,7 @@ export async function GET(
     }
 
     // Count total assets from all folders for this event
-    let countQuery = supabase
+    const countQuery = supabase
       .from('assets')
       .select('*', { count: 'exact', head: true })
       .in('folder_id', folderIds);
@@ -89,7 +89,7 @@ export async function GET(
     }
 
     // Fetch paginated assets (prioritize watermark/preview for public view)
-    let photosQuery = supabase
+    const photosQuery = supabase
       .from('assets')
       .select(
         `id, original_path, preview_path, checksum, dimensions, created_at, status`

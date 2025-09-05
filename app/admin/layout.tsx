@@ -15,6 +15,8 @@ import {
   useRealTimeNotifications,
 } from '@/components/ui/NotificationSystem';
 import { KeyboardProvider } from '@/components/ui/KeyboardShortcuts';
+import '@/styles/admin-dark-mode-fixes.css';
+import Script from 'next/script';
 
 export default function AdminLayout({
   children,
@@ -145,6 +147,12 @@ export default function AdminLayout({
   return (
     <NotificationProvider>
       <KeyboardProvider>
+        {/* Force dark mode application script */}
+        <Script 
+          src="/scripts/force-dark-mode.js" 
+          strategy="afterInteractive"
+          priority={true}
+        />
         <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
       </KeyboardProvider>
     </NotificationProvider>

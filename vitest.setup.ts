@@ -217,7 +217,7 @@ beforeAll(async () => {
           tokens: dataset.tokens,
         };
         if (!Object.prototype.hasOwnProperty.call(map, name)) {
-          // eslint-disable-next-line no-console
+           
           console.error(`[Service] MockSupabase: tabla desconocida: ${name}`);
           (map as any)[name] = [];
         }

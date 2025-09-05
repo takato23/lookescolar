@@ -1,0 +1,352 @@
+/* Dark Mode Emergency Fixes for Admin Interface - MAXIMUM SPECIFICITY */
+
+/* Force dark theme application with CSS custom properties */
+:root[data-theme="dark"],
+:root.dark,
+html[data-theme="dark"],
+html.dark {
+  color-scheme: dark !important;
+  
+  /* Define dark mode custom properties */
+  --admin-bg-primary: #0f172a;
+  --admin-bg-secondary: #1e293b;
+  --admin-bg-tertiary: #334155;
+  --admin-text-primary: #e2e8f0;
+  --admin-text-secondary: #cbd5e1;
+  --admin-text-muted: #94a3b8;
+  --admin-border: #475569;
+  --admin-border-strong: #64748b;
+}
+
+/* Fallback for systems without data-theme */
+.dark {
+  color-scheme: dark !important;
+}
+
+/* ===================== GLOBAL BACKGROUND FIXES ===================== */
+
+/* Ultra-specific selectors for body and main containers */
+:root.dark body,
+html.dark body,
+[data-theme="dark"] body,
+.dark body {
+  background-color: var(--admin-bg-primary, #0f172a) !important;
+  color: var(--admin-text-primary, #e2e8f0) !important;
+}
+
+:root.dark #main-content,
+html.dark #main-content,
+[data-theme="dark"] #main-content,
+.dark #main-content {
+  background-color: var(--admin-bg-primary, #0f172a) !important;
+}
+
+/* ===================== ADMIN PANEL SPECIFIC FIXES ===================== */
+
+/* Ultra-specific selectors for admin containers */
+:root.dark .admin-photos,
+html.dark .admin-photos,
+[data-theme="dark"] .admin-photos,
+.dark .admin-photos,
+:root.dark [class*="admin"],
+html.dark [class*="admin"],
+[data-theme="dark"] [class*="admin"],
+.dark [class*="admin"],
+:root.dark .liquid-glass-app,
+html.dark .liquid-glass-app,
+[data-theme="dark"] .liquid-glass-app,
+.dark .liquid-glass-app,
+:root.dark .min-h-screen,
+html.dark .min-h-screen,
+[data-theme="dark"] .min-h-screen,
+.dark .min-h-screen {
+  background-color: var(--admin-bg-primary, #0f172a) !important;
+  color: var(--admin-text-primary, #e2e8f0) !important;
+}
+
+/* Background color overrides */
+.dark .bg-white {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .bg-gray-200 {
+  background-color: #64748b !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===================== TEXT COLOR FIXES ===================== */
+
+.dark .text-gray-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-gray-400 {
+  color: #64748b !important;
+}
+
+/* ===================== BUTTON FIXES ===================== */
+
+/* Primary buttons */
+.dark button,
+.dark .btn,
+.dark [role="button"] {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+  transition: all 0.2s ease !important;
+}
+
+.dark button:hover,
+.dark .btn:hover,
+.dark [role="button"]:hover {
+  background-color: #475569 !important;
+  border-color: #64748b !important;
+}
+
+/* Outline buttons */
+.dark button[variant="outline"],
+.dark .btn-outline,
+.dark button.outline {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark button[variant="outline"]:hover,
+.dark .btn-outline:hover,
+.dark button.outline:hover {
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+}
+
+/* ===================== CARD AND PANEL FIXES ===================== */
+
+.dark .card,
+.dark [data-radix-dialog-content],
+.dark .panel,
+.dark .modal,
+.dark .popover,
+.dark .dropdown {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===================== INPUT FIXES ===================== */
+
+.dark input,
+.dark textarea,
+.dark select,
+.dark .input {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus,
+.dark .input:focus {
+  border-color: #64748b !important;
+  ring-color: #64748b !important;
+  box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ===================== DROPDOWN AND SELECT FIXES ===================== */
+
+.dark .dropdown-content,
+.dark [data-radix-select-content],
+.dark [data-radix-dropdown-content],
+.dark .popover-content {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .dropdown-item,
+.dark [data-radix-select-item],
+.dark [data-radix-dropdown-item] {
+  color: #e2e8f0 !important;
+}
+
+.dark .dropdown-item:hover,
+.dark [data-radix-select-item]:hover,
+.dark [data-radix-dropdown-item]:hover {
+  background-color: #334155 !important;
+}
+
+/* ===================== NAVIGATION FIXES ===================== */
+
+.dark .nav,
+.dark .sidebar,
+.dark .header,
+.dark .mobile-nav,
+.dark .mobile-header {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===================== BORDER FIXES ===================== */
+
+.dark .border,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: #475569 !important;
+}
+
+.dark .border-gray-100 {
+  border-color: #334155 !important;
+}
+
+/* ===================== PHOTO ADMIN SPECIFIC FIXES ===================== */
+
+.dark .photo-grid,
+.dark .asset-grid,
+.dark .folder-tree {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .photo-item,
+.dark .asset-item {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+}
+
+.dark .photo-item:hover,
+.dark .asset-item:hover {
+  background-color: #475569 !important;
+}
+
+/* Selected states */
+.dark .photo-item.selected,
+.dark .asset-item.selected {
+  background-color: #1e40af !important;
+  border-color: #3b82f6 !important;
+}
+
+/* ===================== SCROLLBAR FIXES ===================== */
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #475569 !important;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+  background-color: #1e293b !important;
+}
+
+/* ===================== LOADING AND PLACEHOLDER FIXES ===================== */
+
+.dark .loading,
+.dark .placeholder,
+.dark .skeleton {
+  background-color: #334155 !important;
+}
+
+.dark .spinner {
+  border-color: #475569 !important;
+  border-top-color: #3b82f6 !important;
+}
+
+/* ===================== BACKDROP AND OVERLAY FIXES ===================== */
+
+.dark .backdrop,
+.dark .overlay,
+.dark .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ===================== RESPONSIVE FIXES ===================== */
+
+@media (max-width: 768px) {
+  .dark .mobile-nav,
+  .dark .mobile-header {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    border-color: rgba(51, 65, 85, 0.3) !important;
+  }
+}
+
+/* ===================== HIGH CONTRAST MODE ===================== */
+
+@media (prefers-contrast: high) {
+  .dark {
+    --background: 0 0 0 !important;
+    --foreground: 255 255 255 !important;
+    --card: 0 0 0 !important;
+    --card-foreground: 255 255 255 !important;
+  }
+
+  .dark .border {
+    border-color: #ffffff !important;
+  }
+
+  .dark button,
+  .dark .btn {
+    border: 2px solid #ffffff !important;
+  }
+}
+
+/* ===================== FORCE APPLY CLASSES ===================== */
+
+/* Emergency override for stubborn elements */
+.dark * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Ensure theme class is applied to root */
+html.dark {
+  color-scheme: dark !important;
+}
+
+html.dark body {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* ===================== THEME TOGGLE VISIBILITY ===================== */
+
+.dark .theme-toggle,
+.dark [data-theme-toggle] {
+  background-color: #334155 !important;
+  color: #e2e8f0 !important;
+  border-color: #475569 !important;
+}
+
+.dark .theme-toggle:hover,
+.dark [data-theme-toggle]:hover {
+  background-color: #475569 !important;
+}

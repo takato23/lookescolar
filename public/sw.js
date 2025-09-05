@@ -183,6 +183,24 @@ self.addEventListener('sync', (event) => {
   }
 });
 
+// Handle messages from the main thread
+self.addEventListener('message', (event) => {
+  console.log('[SW] Message received:', event.data);
+  
+  // Always respond to messages to prevent channel closure errors
+  if (event.ports && event.ports[0]) {
+    try {
+      event.ports[0].postMessage({
+        success: true,
+        message: 'Service worker received message',
+        timestamp: Date.now()
+      });
+    } catch (error) {
+      console.error('[SW] Error responding to message:', error);
+    }
+  }
+});
+
 // Push notifications (opcional)
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received');

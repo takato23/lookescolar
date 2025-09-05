@@ -6,15 +6,12 @@ import { useUnifiedStore } from '@/lib/stores/unified-store';
 import type { CheckoutStep } from '@/lib/stores/unified-store';
 import { PRODUCT_CATALOG } from '@/lib/types/unified-store';
 import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
-import '@/styles/store-enhanced.css';
-import '@/styles/lumina-tokens.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft,
   ShoppingCart,
@@ -23,8 +20,6 @@ import {
   Users,
   User,
   MapPin,
-  Mail,
-  Phone,
   CreditCard,
   Loader2,
   CheckCircle,
@@ -107,9 +102,7 @@ export function UnifiedStore({
     selectPackage,
     selectIndividualPhoto,
     selectGroupPhoto,
-    removeSelectedPhoto,
     addToCart,
-    removeFromCart,
     updateCartItemQuantity,
     setContactInfo,
     nextStep,
@@ -117,7 +110,6 @@ export function UnifiedStore({
     setStep,
     canProceedToNextStep,
     getTotalPrice,
-    getBasePrice,
     getAdditionsPrice,
     createOrder,
   } = useUnifiedStore();
@@ -137,6 +129,33 @@ export function UnifiedStore({
   );
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  // Gallery category helpers (para filtros visuales tipo mock)
+  const CATEGORY_LABELS = [
+    'Categoría 1',
+    'Categoría 2',
+    'Categoría 3',
+    'Categoría 4',
+    'Categoría 5',
+    'Categoría 6',
+  ];
+  const CATEGORY_GRADIENTS = [
+    'from-pink-300 to-pink-400',
+    'from-rose-300 to-red-400',
+    'from-orange-300 to-amber-400',
+    'from-amber-300 to-yellow-400',
+    'from-sky-300 to-cyan-400',
+    'from-emerald-300 to-teal-400',
+  ];
+  const getCategoryIndex = (key: string) => {
+    let h = 0;
+    for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+    return h % 6; // 0..5 determinístico
+  };
+  const [activeCategoryInd, setActiveCategoryInd] = useState<number | null>(null);
+  const [activeCategoryGrp, setActiveCategoryGrp] = useState<number | null>(null);
+  const PAGE_SIZE = 12;
+  const [pageInd, setPageInd] = useState(0);
+  const [pageGrp, setPageGrp] = useState(0);
 
   // Initialize store
   useEffect(() => {
@@ -190,6 +209,15 @@ export function UnifiedStore({
   const groupPhotos = photos.filter((p) =>
     p.filename.toLowerCase().includes('grupo')
   );
+
+  const filteredInd = activeCategoryInd === null
+    ? individualPhotos
+    : individualPhotos.filter((p) => getCategoryIndex(p.id || p.filename) === activeCategoryInd);
+  const filteredGrp = activeCategoryGrp === null
+    ? groupPhotos
+    : groupPhotos.filter((p) => getCategoryIndex(p.id || p.filename) === activeCategoryGrp);
+  const pagedInd = filteredInd.slice(pageInd * PAGE_SIZE, pageInd * PAGE_SIZE + PAGE_SIZE);
+  const pagedGrp = filteredGrp.slice(pageGrp * PAGE_SIZE, pageGrp * PAGE_SIZE + PAGE_SIZE);
 
   // Requirements and availability
   const requiredIndividual = selectedPackage?.contents.individualPhotos || 0;
@@ -293,359 +321,570 @@ export function UnifiedStore({
   };
 
   const renderPackageSelection = () => (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center space-y-4">
-        <div className={
-          luminaEnabled
-            ? 'lumina-hero-badge mx-auto'
-            : 'inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full'
-        }>
-          <Gift className={luminaEnabled ? 'h-4 w-4 text-[var(--lumina-accent)]' : 'h-4 w-4 text-gray-600'} />
-          <span className={luminaEnabled ? 'text-sm font-medium' : 'text-sm font-medium text-gray-700'}>
-            Paquetes Personalizados
-          </span>
-        </div>
-        <h2 className={luminaEnabled ? 'lumina-hero-title text-4xl font-semibold' : 'text-4xl font-bold text-slate-800'}>
-          Elige tu Paquete Perfecto
-        </h2>
-        <p className={luminaEnabled ? 'lumina-hero-subtitle text-base max-w-2xl mx-auto' : 'text-lg text-muted-foreground max-w-2xl mx-auto'}>
-          Diseñamos cada paquete pensando en crear recuerdos únicos y duraderos
-        </p>
-        {favoriteIds.size > 0 && (
-          <div className={
-            luminaEnabled
-              ? 'inline-flex items-center gap-2 px-4 py-3 rounded-lg border border-[rgba(212,175,55,0.25)] bg-[rgba(212,175,55,0.08)]'
-              : 'inline-flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-3 rounded-lg'
-          }>
-            <Heart className={luminaEnabled ? 'h-4 w-4 text-[var(--lumina-accent)]' : 'h-4 w-4 text-amber-600 fill-current'} />
-            <span className={luminaEnabled ? 'text-sm font-medium' : 'text-sm font-medium text-amber-700'}>
-              {favoriteIds.size} foto{favoriteIds.size !== 1 ? 's' : ''} marcada{favoriteIds.size !== 1 ? 's' : ''} como favorita{favoriteIds.size !== 1 ? 's' : ''}
+    <div className="space-y-12">
+      {/* Hero Section - Rediseñado como galería-escaparate */}
+      <div className="relative">
+        {/* Background con gradiente sutil */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-amber-50 rounded-3xl opacity-60"></div>
+        
+        <div className="relative text-center space-y-6 py-12 px-8">
+          {/* Badge moderno */}
+          <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-amber-200/50 px-6 py-3 rounded-full shadow-lg">
+            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+              <Gift className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-slate-700 tracking-wide">
+              PAQUETES PREMIUM
             </span>
           </div>
-        )}
+          
+          {/* Título principal con tipografía elegante */}
+          <div className="space-y-4">
+            <h1 className="text-5xl md:text-6xl font-light text-slate-800 tracking-tight">
+              Tu <span className="font-medium bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Galería</span>
+            </h1>
+            <h2 className="text-2xl md:text-3xl font-light text-slate-600">
+              Perfecta
+            </h2>
+          </div>
+          
+          {/* Descripción elegante */}
+          <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+            Cada paquete está diseñado para preservar tus momentos más especiales con la máxima calidad y elegancia
+          </p>
+          
+          {/* Indicador de favoritos mejorado */}
+          {favoriteIds.size > 0 && (
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 px-6 py-4 rounded-2xl shadow-sm">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center">
+                <Heart className="h-5 w-5 text-white fill-current" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-amber-800">
+                  {favoriteIds.size} foto{favoriteIds.size !== 1 ? 's' : ''} favorita{favoriteIds.size !== 1 ? 's' : ''}
+                </p>
+                <p className="text-xs text-amber-600">Seleccionadas especialmente para ti</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Panel + Cards */}
-      <div className={luminaEnabled ? 'lumina-aurora max-w-6xl mx-auto' : 'max-w-6xl mx-auto'}>
-        <div className={luminaEnabled ? 'lumina-surface-cream lumina-glow-border p-8 md:p-10' : ''}>
-          <div className="grid gap-8 md:grid-cols-2">
+      {/* Panel + Cards - Rediseñado como galería moderna */}
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 md:p-12 shadow-xl">
+          <div className="grid gap-8 lg:gap-12 md:grid-cols-2">
           {PRODUCT_CATALOG.productOptions.map((option, index) => {
             const isSelected = selectedPackage?.id === option.id;
+            const isPopular = index === 1;
+            
             return (
-              <Card
+              <div
                 key={option.id}
-                className={`package-card store-card-background group cursor-pointer transition-all duration-300 ${
-                  luminaEnabled ? 'lumina-package-card-light lumina-tilt lumina-sparkles' : 'hover:scale-105'
-                } ${
-                  isSelected && luminaEnabled ? 'lumina-selected' : ''
+                className={`group cursor-pointer transition-all duration-500 ${
+                  isSelected 
+                    ? 'transform scale-105' 
+                    : 'hover:scale-105 hover:-translate-y-2'
                 }`}
-                data-selected={isSelected ? 'true' : 'false'}
                 onClick={() => selectPackage(option.id)}
               >
-                <CardHeader className="text-center pb-4">
-                  <div className={`icon-container mx-auto mb-4 w-16 h-16 rounded-full flex items-center justify-center ${luminaEnabled ? 'lumina-icon-badge' : 'bg-gray-500'}`}>
-                    <Package className={luminaEnabled ? 'h-8 w-8 text-white/90' : 'h-8 w-8 text-white'} />
-                  </div>
-                  <CardTitle className={luminaEnabled ? 'text-xl font-semibold text-white/90' : 'text-2xl font-bold text-gray-800'}>
-                    {option.name}
-                  </CardTitle>
-                  <div className="flex items-center justify-center gap-2">
-                    <Badge variant="secondary" className={`${luminaEnabled ? 'lumina-price-badge text-base px-4 py-2' : 'enhanced-badge text-lg px-4 py-2'}`}>
-                      {formatCurrency(option.basePrice)}
-                    </Badge>
-                    {index === 1 && (
-                      <Badge variant="default" className={luminaEnabled ? 'bg-[rgba(212,175,55,0.15)] text-[var(--lumina-accent)] border border-[rgba(212,175,55,0.35)]' : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white'}>
-                        <Star className="h-3 w-3 mr-1" />
-                        Popular
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <p className={luminaEnabled ? 'text-center text-sm text-[rgba(45,42,38,0.75)] leading-relaxed' : 'text-muted-foreground text-center text-sm leading-relaxed'}>
-                    {option.description}
-                  </p>
-
-                  {/* Features Grid */}
-                  <div className="grid gap-3">
-                    <div className={`flex items-center gap-3 p-3 rounded-lg ${luminaEnabled ? 'lumina-feature-item--light' : 'bg-gray-50'}`}>
-                      <div className={`icon-container w-8 h-8 rounded-full flex items-center justify-center ${luminaEnabled ? '' : 'bg-gray-100'}`}>
-                        <Image className={luminaEnabled ? 'h-4 w-4 text-[rgba(45,42,38,0.75)]' : 'h-4 w-4 text-gray-600'} />
+                {/* Card Container */}
+                <div className={`relative overflow-hidden rounded-2xl border-2 transition-all duration-500 ${
+                  isSelected 
+                    ? 'border-amber-400 bg-gradient-to-br from-amber-50 to-orange-50 shadow-2xl shadow-amber-200/50' 
+                    : 'border-slate-200 bg-white hover:border-amber-300 hover:shadow-xl hover:shadow-amber-100/50'
+                }`}>
+                  
+                  {/* Popular Badge */}
+                  {isPopular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
+                        <Star className="h-4 w-4 inline mr-2" />
+                        MÁS POPULAR
                       </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">Carpeta personalizada</span>
-                        <p className={luminaEnabled ? 'text-xs text-[rgba(45,42,38,0.55)]' : 'text-xs text-muted-foreground'}>{option.contents.folderSize}</p>
-                      </div>
-                    </div>
-
-                    <div className={`flex items-center gap-3 p-3 rounded-lg ${luminaEnabled ? 'lumina-feature-item--light' : 'bg-gray-50'}`}>
-                      <div className={`icon-container w-8 h-8 rounded-full flex items-center justify-center ${luminaEnabled ? '' : 'bg-gray-100'}`}>
-                        <User className={luminaEnabled ? 'h-4 w-4 text-[rgba(45,42,38,0.75)]' : 'h-4 w-4 text-gray-600'} />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">Fotos individuales</span>
-                        <p className={luminaEnabled ? 'text-xs text-[rgba(45,42,38,0.55)]' : 'text-xs text-muted-foreground'}>
-                          {option.contents.individualPhotos} x {option.contents.individualSize}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={`flex items-center gap-3 p-3 rounded-lg ${luminaEnabled ? 'lumina-feature-item--light' : 'bg-gray-50'}`}>
-                      <div className={`icon-container w-8 h-8 rounded-full flex items-center justify-center ${luminaEnabled ? '' : 'bg-gray-100'}`}>
-                        <Camera className={luminaEnabled ? 'h-4 w-4 text-[rgba(45,42,38,0.75)]' : 'h-4 w-4 text-gray-600'} />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">Fotos pequeñas</span>
-                        <p className={luminaEnabled ? 'text-xs text-[rgba(45,42,38,0.55)]' : 'text-xs text-muted-foreground'}>
-                          {option.contents.smallPhotos} x {option.contents.smallSize}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className={`flex items-center gap-3 p-3 rounded-lg ${luminaEnabled ? 'lumina-feature-item--light' : 'bg-gray-50'}`}>
-                      <div className={`icon-container w-8 h-8 rounded-full flex items-center justify-center ${luminaEnabled ? '' : 'bg-pink-100'}`}>
-                        <Users className={luminaEnabled ? 'h-4 w-4 text-[rgba(45,42,38,0.75)]' : 'h-4 w-4 text-pink-600'} />
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">Foto grupal</span>
-                        <p className={luminaEnabled ? 'text-xs text-[rgba(45,42,38,0.55)]' : 'text-xs text-muted-foreground'}>
-                          {option.contents.groupPhotos} x {option.contents.groupSize}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Selection Indicator */}
-                  {isSelected && (
-                    <div className={luminaEnabled ? 'flex items-center justify-center gap-2 text-white/90 font-medium' : 'flex items-center justify-center gap-2 text-gray-800 font-medium'}>
-                      <CheckCircle className="h-5 w-5" />
-                      Seleccionado
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                  
+                  {/* Selection Indicator */}
+                  {isSelected && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                        <CheckCircle className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="p-8">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                      {/* Icon */}
+                      <div className={`mx-auto mb-6 w-20 h-20 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                        isSelected 
+                          ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-200/50' 
+                          : 'bg-gradient-to-br from-slate-100 to-slate-200 group-hover:from-amber-100 group-hover:to-orange-100'
+                      }`}>
+                        <Package className={`h-10 w-10 transition-colors duration-500 ${
+                          isSelected ? 'text-white' : 'text-slate-600 group-hover:text-amber-600'
+                        }`} />
+                      </div>
+                      
+                      {/* Title */}
+                      <h3 className={`text-2xl font-bold mb-3 transition-colors duration-500 ${
+                        isSelected ? 'text-slate-800' : 'text-slate-700 group-hover:text-slate-800'
+                      }`}>
+                        {option.name}
+                      </h3>
+                      
+                      {/* Price */}
+                      <div className="mb-4">
+                        <div className={`inline-flex items-center px-6 py-3 rounded-full text-lg font-bold transition-all duration-500 ${
+                          isSelected 
+                            ? 'bg-white text-amber-600 shadow-lg' 
+                            : 'bg-slate-100 text-slate-700 group-hover:bg-amber-100 group-hover:text-amber-700'
+                        }`}>
+                          {formatCurrency(option.basePrice)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Description */}
+                    <p className="text-slate-600 text-center text-sm leading-relaxed mb-8">
+                      {option.description}
+                    </p>
+
+                    {/* Features Grid - Rediseñado */}
+                    <div className="space-y-4">
+                      {/* Carpeta */}
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center">
+                          <Image className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-800">Carpeta personalizada</p>
+                          <p className="text-sm text-slate-500">{option.contents.folderSize}</p>
+                        </div>
+                      </div>
+
+                      {/* Fotos individuales */}
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                        <div className="w-12 h-12 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl flex items-center justify-center">
+                          <User className="h-6 w-6 text-emerald-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-800">Fotos individuales</p>
+                          <p className="text-sm text-slate-500">
+                            {option.contents.individualPhotos} x {option.contents.individualSize}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Fotos pequeñas */}
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center">
+                          <Camera className="h-6 w-6 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-800">Fotos pequeñas</p>
+                          <p className="text-sm text-slate-500">
+                            {option.contents.smallPhotos} x {option.contents.smallSize}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Foto grupal */}
+                      <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50/50 border border-slate-100">
+                        <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl flex items-center justify-center">
+                          <Users className="h-6 w-6 text-pink-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-800">Foto grupal</p>
+                          <p className="text-sm text-slate-500">
+                            {option.contents.groupPhotos} x {option.contents.groupSize}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Selection Indicator */}
+                    {isSelected && (
+                      <div className="mt-6 flex items-center justify-center gap-3 text-amber-700 font-semibold">
+                        <CheckCircle className="h-5 w-5" />
+                        Seleccionado
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             );
           })}
           </div>
         </div>
       </div>
 
-      {/* Action Button */}
-      <div className="text-center">
+      {/* Action Button - Rediseñado */}
+      <div className="text-center pt-8">
         <Button
           onClick={nextStep}
           disabled={!canProceedToNextStep()}
-          className={luminaEnabled ? 'lumina-cta px-8 py-4 text-lg font-semibold' : 'enhanced-button ripple-effect bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105'}
+          className="group relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-12 py-4 text-lg font-semibold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
-          Continuar con la Selección
-          <Zap className="ml-2 h-5 w-5" />
+          <span className="relative z-10 flex items-center gap-3">
+            Continuar con la Selección
+            <Zap className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
+          </span>
+          {/* Shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
         </Button>
+        
+        {!canProceedToNextStep() && (
+          <p className="text-sm text-slate-500 mt-4">
+            Selecciona un paquete para continuar
+          </p>
+        )}
       </div>
     </div>
   );
 
   const renderPhotoSelection = () => (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="text-center space-y-4">
-        <div className="inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
-          <Image className="h-4 w-4 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Selección de Fotos</span>
+    <div className="space-y-12">
+      {/* Header Section - Rediseñado */}
+      <div className="text-center space-y-6">
+        <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm border border-slate-200/50 px-6 py-3 rounded-full shadow-lg">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+            <Image className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-sm font-semibold text-slate-700 tracking-wide">
+            SELECCIÓN DE FOTOS
+          </span>
         </div>
-        <h2 className="text-3xl font-bold text-gray-800">
-          Elige tus Fotos Favoritas
-        </h2>
-        <p className="text-lg text-muted-foreground">
+        
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-5xl font-light text-slate-800 tracking-tight">
+            Elige tus <span className="font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Fotos</span>
+          </h1>
+          <h2 className="text-xl md:text-2xl font-light text-slate-600">
+            Favoritas
+          </h2>
+        </div>
+        
+        <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
           Selecciona las fotos que quieres incluir en tu {selectedPackage?.name}
         </p>
       </div>
 
       {selectedPackage && (
         <div className="space-y-8">
-          {/* Individual Photos Section */}
-          <div className="space-y-4 lumina-liquid">
+          {/* Individual Photos Section - Rediseñado */}
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-3 text-xl font-semibold text-gray-800">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5 text-green-600" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-2xl flex items-center justify-center shadow-lg">
+                  <User className="h-7 w-7 text-emerald-600" />
                 </div>
-                Fotos Individuales
-              </h3>
-              <Badge variant="outline" className="text-lg px-4 py-2">
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-800">Fotos Individuales</h3>
+                  <p className="text-sm text-slate-500">Selecciona tus mejores momentos</p>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 px-6 py-3 rounded-full font-bold text-lg shadow-lg">
                 {selectedPhotos.individual.length}/{selectedPackage.contents.individualPhotos}
-              </Badge>
+              </div>
             </div>
 
-            <div className={luminaEnabled ? 'lumina-surface-cream lumina-glow-border p-4 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6' : 'grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6'} role="list">
-              {individualPhotos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className={
-                    luminaEnabled
-                      ? `photo-selection-card lumina-photo-card lumina-tilt lumina-sparkles group relative cursor-pointer ${selectedPhotos.individual.includes(photo.id) ? 'selected' : ''}`
-                      : `photo-selection-card store-card-background enhanced-shadow group relative cursor-pointer transition-all duration-300 hover:scale-105 ${
-                          selectedPhotos.individual.includes(photo.id)
-                            ? 'ring-4 ring-green-500 shadow-lg shadow-green-200 selected'
-                            : 'hover:ring-2 hover:ring-gray-300 hover:shadow-md'
-                        } rounded-xl overflow-hidden`
-                  }
-                  onClick={() => selectIndividualPhoto(photo.id)}
-                  role="button"
-                  aria-pressed={selectedPhotos.individual.includes(photo.id)}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      selectIndividualPhoto(photo.id);
-                    }
-                  }}
+            {/* Filtros por categoría - Rediseñados */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => { setActiveCategoryInd(null); setPageInd(0); }}
+                className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  activeCategoryInd === null
+                    ? 'bg-slate-800 text-white shadow-lg'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                Todas
+              </button>
+              {CATEGORY_LABELS.map((label, idx) => (
+                <button
+                  key={`ind-cat-${idx}`}
+                  onClick={() => { setActiveCategoryInd(idx); setPageInd(0); }}
+                  className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    activeCategoryInd === idx 
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-200/50' 
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-gradient-to-r hover:from-amber-50 hover:to-orange-50 hover:border-amber-200'
+                  }`}
                 >
-                  <div className="relative">
-                    <img
-                      src={photo.preview_url}
-                      alt={photo.filename}
-                      loading="lazy"
-                      decoding="async"
-                      className={luminaEnabled ? 'lumina-photo-thumb' : 'photo-image h-32 w-full object-cover transition-transform duration-300 group-hover:scale-110'}
-                      onError={(e) => {
-                        const target = e.currentTarget as HTMLImageElement;
-                        target.onerror = null;
-                        target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="14">Vista previa no disponible</text></svg>';
-                      }}
-                    />
-                    {luminaEnabled && <div className="lumina-photo-gradient" />}
-                    {luminaEnabled && (
-                      <div className="lumina-photo-caption">
-                        <span className="truncate max-w-[70%]">{photo.filename}</span>
-                        {favoriteIds.has(photo.id) && (
-                          <span className="lumina-photo-fav">Favorita</span>
-                        )}
-                      </div>
-                    )}
-                    {selectedPhotos.individual.includes(photo.id) && (
-                      luminaEnabled ? (
-                        <div className="lumina-photo-check">
-                          <CheckCircle className="h-4 w-4" />
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 bg-green-500 bg-opacity-20 flex items-center justify-center">
-                          <CheckCircle className="h-8 w-8 text-green-600 bg-white rounded-full" />
-                        </div>
-                      )
-                    )}
-                  </div>
-                  {!luminaEnabled && (
-                    <div className="p-2">
-                      <p className="text-xs text-gray-600 truncate">{photo.filename}</p>
-                    </div>
-                  )}
-                </div>
+                  {label}
+                </button>
               ))}
             </div>
-          </div>
 
-          {/* Group Photos Section */}
-          <div className="space-y-4 lumina-liquid">
+            {/* Galería de fotos - Rediseñada */}
+            <div className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 shadow-lg">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6" role="list">
+              {pagedInd.map((photo) => {
+                const isSelected = selectedPhotos.individual.includes(photo.id);
+                const categoryIndex = getCategoryIndex(photo.id || photo.filename);
+                
+                return (
+                  <div
+                    key={photo.id}
+                    className={`group relative cursor-pointer transition-all duration-500 ${
+                      isSelected 
+                        ? 'transform scale-105' 
+                        : 'hover:scale-105 hover:-translate-y-1'
+                    }`}
+                    onClick={() => selectIndividualPhoto(photo.id)}
+                    role="button"
+                    aria-pressed={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectIndividualPhoto(photo.id);
+                      }
+                    }}
+                  >
+                    {/* Card Container */}
+                    <div className={`relative overflow-hidden rounded-xl border-2 transition-all duration-500 ${
+                      isSelected 
+                        ? 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-xl shadow-emerald-200/50' 
+                        : 'border-slate-200 bg-white hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100/50'
+                    }`}>
+                      
+                      {/* Selection Indicator */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <div className="w-6 h-6 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg">
+                            <CheckCircle className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Image */}
+                      <div className="relative">
+                        <img
+                          src={photo.preview_url}
+                          alt={photo.filename}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-32 w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="14">Vista previa no disponible</text></svg>';
+                          }}
+                        />
+                        
+                        {/* Overlay gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      
+                      {/* Category Badge */}
+                      <div className="absolute bottom-0 left-0 right-0">
+                        <div className={`h-6 text-center text-[10px] font-semibold text-white bg-gradient-to-r ${CATEGORY_GRADIENTS[categoryIndex]} flex items-center justify-center`}>
+                          <span className="truncate max-w-[90%]">
+                            {CATEGORY_LABELS[categoryIndex]}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+            
+            {/* Paginación - Rediseñada */}
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setPageInd((p) => Math.max(0, p - 1))} 
+                disabled={pageInd === 0}
+                className="px-6 py-2 rounded-full border-2 hover:bg-slate-50 transition-colors"
+              >
+                Anterior
+              </Button>
+              <div className="bg-white border border-slate-200 px-4 py-2 rounded-full text-sm font-medium text-slate-600">
+                Página {pageInd + 1} de {Math.max(1, Math.ceil(filteredInd.length / PAGE_SIZE))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageInd((p) => (p + 1 < Math.ceil(filteredInd.length / PAGE_SIZE) ? p + 1 : p))}
+                disabled={pageInd + 1 >= Math.ceil(filteredInd.length / PAGE_SIZE)}
+                className="px-6 py-2 rounded-full border-2 hover:bg-slate-50 transition-colors"
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+          
+          {/* Group Photos Section - Rediseñado */}
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-3 text-xl font-semibold text-gray-800">
-                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                  <Users className="h-5 w-5 text-pink-600" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-pink-100 to-pink-200 rounded-2xl flex items-center justify-center shadow-lg">
+                  <Users className="h-7 w-7 text-pink-600" />
                 </div>
-                Fotos Grupales
-              </h3>
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-800">Fotos Grupales</h3>
+                  <p className="text-sm text-slate-500">Momentos compartidos con amigos</p>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
-                <Badge variant="outline" className="text-lg px-4 py-2">
+                <div className="bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800 px-6 py-3 rounded-full font-bold text-lg shadow-lg">
                   {selectedPhotos.group.length}/{selectedPackage.contents.groupPhotos}
-                </Badge>
+                </div>
                 {availableGroupCount === 0 && (
-                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                  <div className="bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 px-4 py-2 rounded-full text-sm font-semibold border border-amber-200">
                     No disponible
-                  </Badge>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className={luminaEnabled ? 'lumina-surface-cream lumina-glow-border p-4 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6' : 'grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6'} role="list">
-              {groupPhotos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className={
-                    luminaEnabled
-                      ? `photo-selection-card lumina-photo-card lumina-tilt lumina-sparkles group relative cursor-pointer ${selectedPhotos.group.includes(photo.id) ? 'selected' : ''}`
-                      : `photo-selection-card store-card-background enhanced-shadow group relative cursor-pointer transition-all duration-300 hover:scale-105 ${
-                          selectedPhotos.group.includes(photo.id)
-                            ? 'ring-4 ring-pink-500 shadow-lg shadow-pink-200 selected'
-                            : 'hover:ring-2 hover:ring-gray-300 hover:shadow-md'
-                        } rounded-xl overflow-hidden`
-                  }
-                  onClick={() => selectGroupPhoto(photo.id)}
-                  role="button"
-                  aria-pressed={selectedPhotos.group.includes(photo.id)}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      selectGroupPhoto(photo.id);
-                    }
-                  }}
+            {/* Filtros por categoría - Rediseñados */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => { setActiveCategoryGrp(null); setPageGrp(0); }}
+                className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  activeCategoryGrp === null
+                    ? 'bg-slate-800 text-white shadow-lg'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                Todas
+              </button>
+              {CATEGORY_LABELS.map((label, idx) => (
+                <button
+                  key={`grp-cat-${idx}`}
+                  onClick={() => { setActiveCategoryGrp(idx); setPageGrp(0); }}
+                  className={`px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    activeCategoryGrp === idx 
+                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-200/50' 
+                      : 'bg-white text-slate-600 border border-slate-200 hover:bg-gradient-to-r hover:from-pink-50 hover:to-rose-50 hover:border-pink-200'
+                  }`}
                 >
-                  <div className="relative">
-                    <img
-                      src={photo.preview_url}
-                      alt={photo.filename}
-                      loading="lazy"
-                      decoding="async"
-                      className={luminaEnabled ? 'lumina-photo-thumb' : 'photo-image h-32 w-full object-cover transition-transform duration-300 group-hover:scale-110'}
-                      onError={(e) => {
-                        const target = e.currentTarget as HTMLImageElement;
-                        target.onerror = null;
-                        target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="14">Vista previa no disponible</text></svg>';
-                      }}
-                    />
-                    {luminaEnabled && <div className="lumina-photo-gradient" />}
-                    {luminaEnabled && (
-                      <div className="lumina-photo-caption">
-                        <span className="truncate max-w-[70%]">{photo.filename}</span>
-                        {favoriteIds.has(photo.id) && (
-                          <span className="lumina-photo-fav">Favorita</span>
-                        )}
-                      </div>
-                    )}
-                    {selectedPhotos.group.includes(photo.id) && (
-                      luminaEnabled ? (
-                        <div className="lumina-photo-check">
-                          <CheckCircle className="h-4 w-4" />
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 bg-pink-500 bg-opacity-20 flex items-center justify-center">
-                          <CheckCircle className="h-8 w-8 text-pink-600 bg-white rounded-full" />
-                        </div>
-                      )
-                    )}
-                  </div>
-                  {!luminaEnabled && (
-                    <div className="p-2">
-                      <p className="text-xs text-gray-600 truncate">{photo.filename}</p>
-                    </div>
-                  )}
-                </div>
+                  {label}
+                </button>
               ))}
+            </div>
+
+            {/* Galería de fotos grupales - Rediseñada */}
+            <div className="bg-white/60 backdrop-blur-sm border border-slate-200/50 rounded-2xl p-6 shadow-lg">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6" role="list">
+              {pagedGrp.map((photo) => {
+                const isSelected = selectedPhotos.group.includes(photo.id);
+                const categoryIndex = getCategoryIndex(photo.id || photo.filename);
+                
+                return (
+                  <div
+                    key={photo.id}
+                    className={`group relative cursor-pointer transition-all duration-500 ${
+                      isSelected 
+                        ? 'transform scale-105' 
+                        : 'hover:scale-105 hover:-translate-y-1'
+                    }`}
+                    onClick={() => selectGroupPhoto(photo.id)}
+                    role="button"
+                    aria-pressed={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectGroupPhoto(photo.id);
+                      }
+                    }}
+                  >
+                    {/* Card Container */}
+                    <div className={`relative overflow-hidden rounded-xl border-2 transition-all duration-500 ${
+                      isSelected 
+                        ? 'border-pink-400 bg-gradient-to-br from-pink-50 to-rose-50 shadow-xl shadow-pink-200/50' 
+                        : 'border-slate-200 bg-white hover:border-pink-300 hover:shadow-lg hover:shadow-pink-100/50'
+                    }`}>
+                      
+                      {/* Selection Indicator */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center shadow-lg">
+                            <CheckCircle className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Image */}
+                      <div className="relative">
+                        <img
+                          src={photo.preview_url}
+                          alt={photo.filename}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-32 w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-family="Arial" font-size="14">Vista previa no disponible</text></svg>';
+                          }}
+                        />
+                        
+                        {/* Overlay gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      
+                      {/* Category Badge */}
+                      <div className="absolute bottom-0 left-0 right-0">
+                        <div className={`h-6 text-center text-[10px] font-semibold text-white bg-gradient-to-r ${CATEGORY_GRADIENTS[categoryIndex]} flex items-center justify-center`}>
+                          <span className="truncate max-w-[90%]">
+                            {CATEGORY_LABELS[categoryIndex]}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+            
+            {/* Paginación - Rediseñada */}
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setPageGrp((p) => Math.max(0, p - 1))} 
+                disabled={pageGrp === 0}
+                className="px-6 py-2 rounded-full border-2 hover:bg-slate-50 transition-colors"
+              >
+                Anterior
+              </Button>
+              <div className="bg-white border border-slate-200 px-4 py-2 rounded-full text-sm font-medium text-slate-600">
+                Página {pageGrp + 1} de {Math.max(1, Math.ceil(filteredGrp.length / PAGE_SIZE))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageGrp((p) => (p + 1 < Math.ceil(filteredGrp.length / PAGE_SIZE) ? p + 1 : p))}
+                disabled={pageGrp + 1 >= Math.ceil(filteredGrp.length / PAGE_SIZE)}
+                className="px-6 py-2 rounded-full border-2 hover:bg-slate-50 transition-colors"
+              >
+                Siguiente
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Warning Message */}
+      {/* Warning Message - Rediseñado */}
       {requiredGroup > 0 && availableGroupCount === 0 && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 text-amber-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-              <Shield className="h-4 w-4 text-amber-600" />
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-6 shadow-lg">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-100 to-orange-200 rounded-2xl flex items-center justify-center shadow-lg">
+              <Shield className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <p className="font-medium">No hay foto grupal disponible</p>
-              <p className="text-sm text-amber-700">
+              <p className="font-semibold text-amber-800 text-lg">No hay foto grupal disponible</p>
+              <p className="text-sm text-amber-700 mt-1">
                 Podés continuar sin seleccionarla; tu paquete incluirá únicamente las fotos individuales.
               </p>
             </div>
@@ -653,14 +892,14 @@ export function UnifiedStore({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex justify-between pt-6">
+      {/* Navigation - Rediseñada */}
+      <div className="flex justify-between pt-8">
         <Button 
           variant="outline" 
           onClick={prevStep}
-          className="nav-button ripple-effect px-6 py-3 text-lg font-medium border-2 hover:bg-gray-50"
+          className="group flex items-center gap-3 px-8 py-4 text-lg font-semibold border-2 border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-2xl transition-all duration-300"
         >
-          <ArrowLeft className="mr-2 h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
           Anterior
         </Button>
         <Button
@@ -669,16 +908,19 @@ export function UnifiedStore({
             if (!selectedPackage) return true;
             const hasIndividuals = selectedPhotos.individual.length === requiredIndividual;
             const hasGroup = selectedPhotos.group.length === requiredGroup;
-            // Si el paquete exige grupal pero no hay disponible, sólo validar individuales
             if (requiredGroup > 0 && availableGroupCount === 0) {
               return !hasIndividuals;
             }
             return !(hasIndividuals && hasGroup);
           })()}
-          className={luminaEnabled ? 'lumina-cta px-8 py-3 text-lg font-semibold' : 'enhanced-button ripple-effect bg-gradient-to-r from-slate-600 to-gray-600 hover:from-slate-700 hover:to-gray-700 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300'}
+          className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-4 text-lg font-semibold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
-          Continuar
-          <Zap className="ml-2 h-5 w-5" />
+          <span className="relative z-10 flex items-center gap-3">
+            Continuar
+            <Zap className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
+          </span>
+          {/* Shine effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
         </Button>
       </div>
     </div>
@@ -1313,66 +1555,79 @@ export function UnifiedStore({
             : undefined
         }
       >
-        <div className="min-h-screen store-background">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-amber-50/30">
 
         
-        {/* Enhanced Header */}
-        <div className="sticky-header store-content-background border-b border-gray-200 shadow-sm sticky top-0 z-40">
-          <div className="mx-auto max-w-7xl px-4 py-4">
+        {/* Enhanced Header - Rediseñado */}
+        <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/50 shadow-sm">
+          <div className="mx-auto max-w-7xl px-6 py-6">
             <div className="flex items-center justify-between">
+              {/* Back Button */}
               <Button
                 variant="ghost"
                 onClick={() => {
                   if (checkoutStep && checkoutStep !== 'package') {
-                    // Preferir retroceder de paso en el flujo del wizard
                     try { prevStep(); } catch { /* no-op */ }
                   } else {
                     onBack ? onBack() : router.back();
                   }
                 }}
-                className="flex items-center gap-2 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors"
+                className="group flex items-center gap-3 hover:bg-slate-100 px-4 py-3 rounded-xl transition-all duration-300"
               >
-                <ArrowLeft className="h-5 w-5" />
-                <span className="hidden sm:inline">Volver</span>
+                <div className="w-8 h-8 bg-slate-100 group-hover:bg-slate-200 rounded-lg flex items-center justify-center transition-colors">
+                  <ArrowLeft className="h-4 w-4 text-slate-600" />
+                </div>
+                <span className="hidden sm:inline font-medium text-slate-700">Volver</span>
               </Button>
 
+              {/* Center - Event Info */}
               <div className="text-center">
-                <h1 className="text-xl font-bold text-gray-900">{subject.event.name}</h1>
-                <p className="text-sm text-gray-600">{subject.event.school_name}</p>
+                <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{subject.event.name}</h1>
+                <p className="text-sm text-slate-500 font-medium">{subject.event.school_name}</p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-                  <span>Paso</span>
-                  <Badge variant="secondary" className="px-3 py-1">
+              {/* Right - Progress */}
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:flex items-center gap-3 text-sm">
+                  <span className="text-slate-500 font-medium">Paso</span>
+                  <div className="bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 px-4 py-2 rounded-full font-semibold">
                     {['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep) + 1} de 5
-                  </Badge>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Enhanced Progress Bar */}
-            <div className="mt-4">
-              <div className="progress-bar h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div className="mt-6">
+              <div className="relative h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ease-out ${
-                    luminaEnabled
-                      ? 'lumina-progress-fill'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                  }`}
+                  className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-700 ease-out shadow-sm"
+                  style={{
+                    width: `${((['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep) + 1) / 5) * 100}%`,
+                  }}
+                />
+                {/* Glow effect */}
+                <div
+                  className="absolute top-0 h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full opacity-50 blur-sm transition-all duration-700 ease-out"
                   style={{
                     width: `${((['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep) + 1) / 5) * 100}%`,
                   }}
                 />
               </div>
-              <div className="flex justify-between mt-2 text-xs" style={{ color: luminaEnabled ? 'var(--lumina-muted)' : undefined }}>
+              <div className="flex justify-between mt-4 text-xs font-medium">
                 {['Paquete', 'Fotos', 'Extras', 'Contacto', 'Pago'].map((step, index) => {
                   const isActive = index <= ['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep);
+                  const isCurrent = index === ['package', 'photos', 'extras', 'contact', 'payment'].indexOf(checkoutStep);
                   return (
                     <span
                       key={step}
-                      className={isActive ? 'font-medium' : ''}
-                      style={luminaEnabled && isActive ? { color: 'var(--lumina-primary)' } : undefined}
+                      className={`transition-colors duration-300 ${
+                        isCurrent 
+                          ? 'text-amber-600 font-semibold' 
+                          : isActive 
+                            ? 'text-slate-600' 
+                            : 'text-slate-400'
+                      }`}
                     >
                       {step}
                     </span>
@@ -1384,10 +1639,25 @@ export function UnifiedStore({
         </div>
 
         {/* Main Content */}
-        <div className="mx-auto max-w-6xl px-4 py-8">
-          <div className="store-content-background rounded-2xl p-8">
+        <div className="mx-auto max-w-7xl px-6 py-12">
+          <div className="bg-white/80 backdrop-blur-sm border border-slate-200/50 rounded-3xl p-8 md:p-12 shadow-xl">
             <div className="store-step">
-              {renderCurrentStep()}
+              {(() => {
+                switch (checkoutStep) {
+                  case 'package':
+                    return renderPackageSelection();
+                  case 'photos':
+                    return renderPhotoSelection();
+                  case 'extras':
+                    return renderExtrasSelection();
+                  case 'contact':
+                    return renderContactForm();
+                  case 'payment':
+                    return renderPayment();
+                  default:
+                    return renderPackageSelection();
+                }
+              })()}
             </div>
           </div>
         </div>

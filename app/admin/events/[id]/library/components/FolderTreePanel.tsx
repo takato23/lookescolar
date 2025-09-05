@@ -39,6 +39,8 @@ interface FolderNode {
   sort_order: number;
   child_folder_count: number;
   photo_count: number;
+  photo_count_direct?: number;
+  photo_count_total?: number;
   created_at: string;
   updated_at: string;
   children?: FolderNode[];
@@ -480,20 +482,20 @@ export function FolderTreePanel({
 
     return (
       <div key={folder.id}>
-        <div
-          className={cn(
-            'group flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors',
-            'hover:bg-gray-100',
-            isSelected && 'bg-blue-100 text-blue-700',
-            isDragOver &&
-              !isDropDisabled &&
-              'border-2 border-dashed border-green-400 bg-green-100',
-            isDragOver &&
-              isDropDisabled &&
-              'border-2 border-dashed border-red-400 bg-red-100',
-            isDragged && 'opacity-50',
-            level > 0 && 'ml-4'
-          )}
+                  <div
+            className={cn(
+              'group flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors',
+              'hover:bg-gray-100 dark:hover:bg-gray-700',
+              isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+              isDragOver &&
+                !isDropDisabled &&
+                'border-2 border-dashed border-green-400 bg-green-100 dark:bg-green-900',
+              isDragOver &&
+                isDropDisabled &&
+                'border-2 border-dashed border-red-400 bg-red-100 dark:bg-red-900',
+              isDragged && 'opacity-50',
+              level > 0 && 'ml-4'
+            )}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={() => onFolderSelect(folder.id)}
           onDoubleClick={() => onFolderDoubleClick(folder.id)}
@@ -528,21 +530,27 @@ export function FolderTreePanel({
           {/* Folder icon */}
           <div className="flex-shrink-0">
             {isExpanded ? (
-              <FolderOpen className="h-4 w-4 text-blue-500" />
+              <FolderOpen className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             ) : (
-              <Folder className="h-4 w-4 text-gray-500" />
+              <Folder className="h-4 w-4 text-gray-500 dark:text-gray-400" />
             )}
           </div>
 
           {/* Folder name */}
-          <span className="min-w-0 flex-1 truncate text-sm" title={folder.name}>
+          <span className="min-w-0 flex-1 truncate text-sm dark:text-gray-200" title={folder.name}>
             {folder.name}
           </span>
 
-          {/* Photo count */}
-          {folder.photo_count > 0 && (
-            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
-              {folder.photo_count}
+          {/* Photo count (direct/total) */}
+          {(folder.photo_count_total ?? folder.photo_count) > 0 && (
+            <span
+              className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              title={`${folder.photo_count_direct ?? folder.photo_count} directas • ${folder.photo_count_total ?? folder.photo_count} total (incl. subcarpetas)`}
+            >
+              {folder.photo_count_direct ?? folder.photo_count}
+              {typeof folder.photo_count_total === 'number' && folder.photo_count_total !== (folder.photo_count_direct ?? folder.photo_count)
+                ? `/${folder.photo_count_total}`
+                : ''}
             </span>
           )}
 
@@ -619,8 +627,8 @@ export function FolderTreePanel({
   return (
     <div className="flex h-full flex-col">
       {/* Panel header */}
-      <div className="border-b border-gray-200 bg-gray-50 p-3">
-        <h3 className="text-sm font-medium text-gray-700">Carpetas</h3>
+      <div className="border-b border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200">Carpetas</h3>
       </div>
 
       {/* Tree navigation */}
@@ -630,10 +638,10 @@ export function FolderTreePanel({
           <div
             className={cn(
               'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition-colors',
-              'hover:bg-gray-100',
-              currentFolderId === null && 'bg-blue-100 text-blue-700',
+              'hover:bg-gray-100 dark:hover:bg-gray-700',
+              currentFolderId === null && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
               dragOverFolder === 'root' &&
-                'border-2 border-dashed border-green-400 bg-green-100'
+                'border-2 border-dashed border-green-400 bg-green-100 dark:bg-green-900'
             )}
             onClick={() => onFolderSelect(null)}
             onDoubleClick={() => onFolderSelect(null)}
@@ -641,8 +649,8 @@ export function FolderTreePanel({
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, null)}
           >
-            <Home className="h-4 w-4 text-gray-500" />
-            <span className="flex-1 text-sm font-medium">Fotos</span>
+            <Home className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <span className="flex-1 text-sm font-medium dark:text-gray-200">Fotos</span>
 
             {/* Root folder context menu */}
             <div className="opacity-0 transition-opacity group-hover:opacity-100">
@@ -681,18 +689,18 @@ export function FolderTreePanel({
             {treeData.map((folder) => renderFolderItem(folder))}
           </div>
         ) : (
-          <div className="py-4 text-center text-sm text-gray-500">
+          <div className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
             No hay carpetas
           </div>
         )}
       </div>
 
       {/* Quick actions */}
-      <div className="border-t border-gray-200 bg-gray-50 p-2">
+      <div className="border-t border-gray-200 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-800">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-xs"
+          className="w-full justify-start text-xs dark:text-gray-200 dark:hover:bg-gray-700"
           onClick={() => handleCreateFolder(currentFolderId)}
         >
           <Plus className="mr-1 h-3 w-3" />

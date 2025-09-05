@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
 const previewPath =
   process.env.SMOKE_PREVIEW_PATH || 'unassigned/previews/example.webp';

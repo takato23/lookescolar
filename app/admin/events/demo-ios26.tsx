@@ -11,7 +11,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { EventCard } from '@/components/admin/EventCard';
-import { EmptyState } from '@/components/ui/empty-state';
 
 // Mock data for demonstration
 const mockEvents = [

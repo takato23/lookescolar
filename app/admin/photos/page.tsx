@@ -4,6 +4,8 @@ import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
+import '@/styles/admin-photos.css';
+import '@/styles/admin-dark-mode-fixes.css';
 import { Toaster } from 'sonner';
 import { ErrorBoundaryWrapper } from '@/components/admin/ErrorBoundary';
 import Link from 'next/link';
@@ -125,6 +127,7 @@ export default function UnifiedPhotosPage() {
       )}
 
       {/* Main Photo System - New Architecture */}
+      <div className="admin-photos">
       <ErrorBoundaryWrapper
         level="page"
         name="PhotoAdmin"
@@ -138,6 +141,7 @@ export default function UnifiedPhotosPage() {
           />
         </Suspense>
       </ErrorBoundaryWrapper>
+      </div>
     </QueryClientProvider>
   );
 }

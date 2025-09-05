@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-/* eslint-disable no-console */
+ 
 import { existsSync, rmSync, statSync } from 'fs';
 import path from 'path';
 

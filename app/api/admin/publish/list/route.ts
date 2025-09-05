@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
       if (codesError) {
         if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
+           
           console.debug('publish_list', { eventId, error: codesError.message });
         }
         return NextResponse.json([]);
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       }));
 
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.debug('publish_list', { eventId, count: list.length });
       }
       return NextResponse.json(list);
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     if (allCodesErr) {
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.debug('publish_list', { error: allCodesErr.message });
       }
       return NextResponse.json([]);
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(list);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.debug('publish_list', {
         error: (error as any)?.message || 'unknown',
       });

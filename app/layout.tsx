@@ -5,6 +5,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { SkipToContent } from '@/components/ui/accessible';
+import '@/lib/utils/message-channel-error-handler';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         {/* Mercado Pago SDK */}
         <script src="https://sdk.mercadopago.com/js/v2" async></script>

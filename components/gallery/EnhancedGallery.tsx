@@ -107,7 +107,7 @@ export function EnhancedGallery({
 
   // Filter and sort photos
   const filteredPhotos = useMemo(() => {
-    let filtered = photos.filter((photo) =>
+    const filtered = photos.filter((photo) =>
       photo.filename.toLowerCase().includes(searchQuery.toLowerCase())
     );
 

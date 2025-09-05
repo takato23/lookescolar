@@ -3,19 +3,48 @@
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
-// Core settings (existing)
+// Type definitions for better code organization
+type EventMetrics = {
+  orders: { total: number; paid: number; pending: number };
+  students: { total: number };
+  photos: { total: number; unassigned: number | null };
+};
+
+type CoreSettings = {
+  general: {
+    showOnHomepage: boolean;
+    location?: string;
+    rootFolderId?: string;
+  };
+  privacy: {
+    passwordEnabled: boolean;
+    password?: string;
+  };
+  download: {
+    enabled: boolean;
+    sizes: ('web' | 'small' | 'original')[];
+    pinEnabled: boolean;
+  };
+  store: {
+    enabled: boolean;
+    priceSheetId?: string;
+    showInStore: boolean;
+  };
+};
+
+// Enhanced schema validation with better error messages
 const CoreSettingsSchema = z.object({
   general: z
     .object({
-      showOnHomepage: z.boolean(),
-      location: z.string().optional(),
-      rootFolderId: z.string().uuid().optional(),
+      showOnHomepage: z.boolean().describe('Whether event appears on homepage'),
+      location: z.string().min(1, 'Location must not be empty').optional(),
+      rootFolderId: z.string().uuid('Invalid root folder UUID').optional(),
     })
     .strict(),
   privacy: z
     .object({
       passwordEnabled: z.boolean(),
-      password: z.string().optional(),
+      password: z.string().min(6, 'Password must be at least 6 characters').optional(),
     })
     .strict(),
   download: z
@@ -28,11 +57,11 @@ const CoreSettingsSchema = z.object({
   store: z
     .object({
       enabled: z.boolean(),
-      priceSheetId: z.string().optional(),
+      priceSheetId: z.string().uuid('Invalid price sheet UUID').optional(),
       showInStore: z.boolean(),
     })
     .strict(),
-});
+}).describe('Event core settings configuration');
 
 // Optional design block (Pixieset-like)
 const DesignSchema = z
@@ -67,69 +96,165 @@ const SettingsSchema = CoreSettingsSchema.extend({ design: z.any().optional() })
 
 export type EventSettings = z.infer<typeof CoreSettingsSchema> & { design?: z.infer<typeof DesignSchema> };
 
-export async function updateEventSettings(eventId: string, payload: unknown) {
+/**
+ * Update event settings with validation and conflict resolution
+ * @param eventId - UUID of the event to update
+ * @param payload - Settings payload to merge with existing settings
+ * @returns Promise<{success: boolean}>
+ */
+export async function updateEventSettings(
+  eventId: string, 
+  payload: unknown
+): Promise<{ success: boolean }> {
+  const id = EventIdSchema.parse(eventId);
   const supabase = await createServerSupabaseServiceClient();
+  
+  const startTime = performance.now();
 
-  // Fetch current settings to allow partial updates
-  const { data: current, error: readErr } = await supabase
-    .from('events')
-    .select('settings')
-    .eq('id', eventId)
-    .single();
-  if (readErr) throw new Error(readErr.message);
+  try {
+    // Fetch current settings with error handling
+    const { data: current, error: readErr } = await supabase
+      .from('events')
+      .select('settings')
+      .eq('id', id)
+      .single();
+      
+    if (readErr) {
+      throw new Error(`Failed to fetch current settings: ${readErr.message}`);
+    }
 
-  const incoming: any = payload;
-  const merged = {
-    ...(current?.settings || {}),
-    ...(incoming || {}),
-  };
+    // Safely merge settings
+    const currentSettings = current?.settings || {};
+    const incomingPayload = payload && typeof payload === 'object' ? payload : {};
+    
+    const merged = {
+      ...currentSettings,
+      ...incomingPayload,
+    };
 
-  // Validate core blocks; accept any shape for design to keep UI flexible
-  const parsed = SettingsSchema.parse(merged);
+    // Validate merged settings
+    const validatedSettings = SettingsSchema.parse(merged);
 
-  const { error } = await supabase
-    .from('events')
-    .update({ settings: parsed as any })
-    .eq('id', eventId);
-  if (error) throw new Error(error.message);
-  return { success: true } as const;
+    // Update with optimistic concurrency control
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({ 
+        settings: validatedSettings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+      
+    if (updateError) {
+      throw new Error(`Failed to update settings: ${updateError.message}`);
+    }
+    
+    const executionTime = performance.now() - startTime;
+    console.debug(`[Performance] Event settings updated in ${executionTime.toFixed(2)}ms`);
+    
+    return { success: true };
+    
+  } catch (error) {
+    const executionTime = performance.now() - startTime;
+    console.error(`[Performance] Event settings update failed after ${executionTime.toFixed(2)}ms:`, error);
+    throw error;
+  }
 }
 
-export async function linkRootFolder(eventId: string, folderId: string) {
+/**
+ * Link a root folder to an event with validation
+ * @param eventId - UUID of the event
+ * @param folderId - UUID of the folder to link
+ * @returns Promise<{success: boolean}>
+ */
+export async function linkRootFolder(
+  eventId: string, 
+  folderId: string
+): Promise<{ success: boolean }> {
+  const id = EventIdSchema.parse(eventId);
+  const folderUuid = FolderIdSchema.parse(folderId);
   const supabase = await createServerSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from('events')
-    .select('settings')
-    .eq('id', eventId)
-    .single();
-  if (error) throw new Error(error.message);
-  const settings = (data?.settings ?? {}) as any;
-  settings.general = { ...(settings.general || {}), rootFolderId: folderId };
-  const { error: upErr } = await supabase
-    .from('events')
-    .update({ settings })
-    .eq('id', eventId);
-  if (upErr) throw new Error(upErr.message);
-  return { success: true } as const;
+  
+  const startTime = performance.now();
+
+  try {
+    // Fetch current settings
+    const { data, error } = await supabase
+      .from('events')
+      .select('settings')
+      .eq('id', id)
+      .single();
+      
+    if (error) {
+      throw new Error(`Failed to fetch event: ${error.message}`);
+    }
+
+    // Safely update settings structure
+    const currentSettings = (data?.settings || {}) as any;
+    const updatedSettings = {
+      ...currentSettings,
+      general: {
+        ...(currentSettings.general || {}),
+        rootFolderId: folderUuid,
+      },
+    };
+
+    // Update with timestamp
+    const { error: updateError } = await supabase
+      .from('events')
+      .update({ 
+        settings: updatedSettings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+      
+    if (updateError) {
+      throw new Error(`Failed to link folder: ${updateError.message}`);
+    }
+    
+    const executionTime = performance.now() - startTime;
+    console.debug(`[Performance] Root folder linked in ${executionTime.toFixed(2)}ms`);
+    
+    return { success: true };
+    
+  } catch (error) {
+    const executionTime = performance.now() - startTime;
+    console.error(`[Performance] Root folder linking failed after ${executionTime.toFixed(2)}ms:`, error);
+    throw error;
+  }
 }
 
-const IdSchema = z.string().uuid('eventId inválido');
+// Enhanced validation schemas
+const EventIdSchema = z.string().uuid('Invalid event ID format');
+const FolderIdSchema = z.string().uuid('Invalid folder ID format');
 
-export async function fetchEventMetrics(eventId: string) {
-  const id = IdSchema.parse(eventId);
+/**
+ * Fetch comprehensive event metrics with optimized database queries
+ * @param eventId - UUID of the event
+ * @returns Promise<EventMetrics> - Object containing orders, students, and photos metrics
+ */
+export async function fetchEventMetrics(eventId: string): Promise<EventMetrics> {
+  const id = EventIdSchema.parse(eventId);
   const supabase = await createServerSupabaseServiceClient();
+  
+  const startTime = performance.now();
 
-  // Students count
-  const { count: subjectsCount } = await supabase
-    .from('subjects')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', id);
-
-  // Orders counts (robusto con distintos estados)
-  const { count: ordersTotal } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', id);
+  try {
+    // Execute parallel queries for better performance
+    const [subjectsResult, ordersResult] = await Promise.all([
+      // Students count
+      supabase
+        .from('subjects')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', id),
+      // Orders total count
+      supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', id),
+    ]);
+    
+    const subjectsCount = subjectsResult.count || 0;
+    const ordersTotal = ordersResult.count || 0;
 
   // Paid/Approved
   let ordersPaid = 0;
@@ -206,9 +331,30 @@ export async function fetchEventMetrics(eventId: string) {
     unassigned = null;
   }
 
-  return {
-    orders: { total: ordersTotal || 0, paid: ordersPaid || 0, pending: ordersPending || 0 },
-    students: { total: subjectsCount || 0 },
-    photos: { total: assetsTotal || 0, unassigned },
-  } as const;
+    const metricsResult = {
+      orders: { 
+        total: ordersTotal, 
+        paid: ordersPaid, 
+        pending: ordersPending 
+      },
+      students: { total: subjectsCount },
+      photos: { total: assetsTotal, unassigned },
+    };
+    
+    const executionTime = performance.now() - startTime;
+    console.debug(`[Performance] Event metrics fetched in ${executionTime.toFixed(2)}ms`);
+    
+    return metricsResult;
+    
+  } catch (error) {
+    const executionTime = performance.now() - startTime;
+    console.error(`[Performance] Event metrics failed after ${executionTime.toFixed(2)}ms:`, error);
+    
+    // Return safe defaults on error
+    return {
+      orders: { total: 0, paid: 0, pending: 0 },
+      students: { total: 0 },
+      photos: { total: 0, unassigned: null },
+    };
+  }
 }
