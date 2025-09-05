@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import EventPhotoManager from '@/components/admin/EventPhotoManager';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface PageProps {
@@ -14,12 +13,12 @@ interface PageProps {
  */
 export default async function EventLibraryPage({ params }: PageProps) {
   const { id: eventId } = await params;
-  
+  // Temporary placeholder to unblock build while EventPhotoManager is stabilized
   return (
-    <div className="h-screen flex flex-col">
-      <Suspense fallback={<EventPhotoManagerSkeleton />}>
-        <EventPhotoManager eventId={eventId} />
-      </Suspense>
+    <div className="h-screen flex flex-col items-center justify-center p-8 text-center">
+      <h1 className="text-2xl font-semibold mb-2">Gestor de Fotos en actualización</h1>
+      <p className="text-gray-600 mb-6">Estamos mejorando esta sección para el evento {eventId}. Vuelve a intentarlo en breve.</p>
+      <EventPhotoManagerSkeleton />
     </div>
   );
 }
