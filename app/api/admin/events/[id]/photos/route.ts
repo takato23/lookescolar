@@ -262,7 +262,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
         });
 
         // Get total count for pagination
-        let countQuery = supabase
+        const countQuery = supabase
           .from('assets')
           .select('*', { count: 'exact', head: true })
           .in('folder_id', targetFolderIds);

@@ -229,7 +229,7 @@ export async function seedV1(): Promise<SeedResult> {
       }
     }
     if (!inserted) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         '[Service] Seed V1: no se pudo insertar evento en DB, se continua con valores stub:',
         String((lastErr as any)?.message || lastErr)
@@ -269,14 +269,14 @@ export async function seedV1(): Promise<SeedResult> {
         .from('codes' as unknown as string)
         .insert(payloadBase);
       if (error) {
-        // eslint-disable-next-line no-console
+         
         console.warn(
           `[Service] Codes no disponible o error insertando ${cv}:`,
           error.message
         );
       }
     } catch (e: any) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         `[Service] Codes no disponible o error insertando ${cv}:`,
         e?.message || String(e)

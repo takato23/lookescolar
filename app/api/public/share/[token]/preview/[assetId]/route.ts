@@ -37,7 +37,7 @@ export async function GET(
     }
 
     // Build query to validate asset belongs to scope
-    let q = supabase.from('assets').select('id, preview_path, folder_id, status').eq('id', assetId).single();
+    const q = supabase.from('assets').select('id, preview_path, folder_id, status').eq('id', assetId).single();
     const { data: asset, error } = await q;
     if (error || !asset) {
       return NextResponse.json(

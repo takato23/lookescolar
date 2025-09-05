@@ -71,7 +71,7 @@ export async function GET(
       'status',
     ].join(', ');
 
-    let q = supabase
+    const q = supabase
       .from('assets')
       .select(baseSelect, { count: 'exact' })
       .eq('status', 'ready')

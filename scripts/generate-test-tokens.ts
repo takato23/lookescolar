@@ -50,7 +50,7 @@ async function generateTestTokens() {
     console.log(`📅 Usando evento: ${event.name} (${event.id})\n`);
 
     // Obtener cualquier curso existente (no necesariamente del evento)
-    let { data: courses } = await supabase
+    const { data: courses } = await supabase
       .from('subjects')
       .select('id, name')
       .limit(1);

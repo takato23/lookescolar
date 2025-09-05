@@ -94,7 +94,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
 
     if (process.env.NODE_ENV === 'development') {
       // Debug log solo en dev
-      // eslint-disable-next-line no-console
+       
       console.debug('photos_query', { eventId: eventId || 'ALL', codeId, page, limit, offset });
     }
 

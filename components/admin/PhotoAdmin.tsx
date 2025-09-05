@@ -2012,7 +2012,7 @@ export default function PhotoAdmin({
         const result = await response.json();
         setUploadState((prev) => {
           if (!prev) return prev;
-          let batches = prev.batches.map((x, idx) => {
+          const batches = prev.batches.map((x, idx) => {
             if (idx !== bi) return x;
             if (result?.success) {
               const uploadedNow = result?.uploaded ?? files.length;
@@ -2044,7 +2044,7 @@ export default function PhotoAdmin({
       } catch (err: any) {
         setUploadState((prev) => {
           if (!prev) return prev;
-          let batches = prev.batches.map((x, idx) =>
+          const batches = prev.batches.map((x, idx) =>
             idx === bi
               ? {
                   ...x,

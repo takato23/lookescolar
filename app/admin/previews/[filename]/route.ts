@@ -12,7 +12,7 @@ export const GET = withAdminAuth(async (_req: NextRequest, { params }: { params:
     }
 
     // First, try to find the asset in database to get the correct path
-    let dbFoundPaths: string[] = [];
+    const dbFoundPaths: string[] = [];
     try {
       const supabase = await createServerSupabaseServiceClient();
       const { data: assets, error: dbError } = await supabase

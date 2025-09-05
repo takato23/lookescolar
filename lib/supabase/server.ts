@@ -95,7 +95,7 @@ export async function createServerSupabaseServiceClient(): Promise<
   }
 
   if (!serviceRoleKey) {
-    // eslint-disable-next-line no-console
+     
     console.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY ausente. Usando ANON como fallback para operaciones públicas.');
   }
 
