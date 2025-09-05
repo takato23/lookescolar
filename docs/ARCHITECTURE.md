@@ -187,7 +187,7 @@ graph TB
 
 ### CI/CD Pipeline
 - Automated testing on pull requests
-- Preview deployments for feature branches
+- Skip preview deployments for PR/branch environments via ignoreCommand in vercel.json
 - Production deployments from main branch
 - Database migration automation
 

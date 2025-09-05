@@ -13,6 +13,18 @@ Specialist in initial configuration, CI/CD, deployment, and infrastructure maint
 - Environment management
 - Monitoring & Logging
 
+### Vercel Configuration
+
+Configure Vercel’s `vercel.json` to control when deployments run:
+
+```json
+{
+  "ignoreCommand": "if [ \"$VERCEL_ENV\" = \"preview\" ]; then echo 'Skipping preview (PR/branch) deployments'; exit 0; else exit 1; fi"
+}
+```
+
+The `ignoreCommand` tells Vercel to skip preview deployments for pull requests or branch previews when `VERCEL_ENV` is set to `preview`.
+
 ## Specialties
 - Zero-downtime deployments
 - Database migrations
@@ -134,7 +146,7 @@ jobs:
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 5s
         ports:
           - 5432:5432
     
