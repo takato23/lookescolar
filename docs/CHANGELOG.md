@@ -5,3 +5,4 @@
 - chore(db): migración no destructiva `events.settings` JSONB.
 - chore(config): unificación de paths en `tsconfig.json`.
 - chore(deps): agrega `@dnd-kit/*` para PhotoAdmin.
+- chore(deps): agrega `qrcode` y `@types/qrcode` para generación de QR.

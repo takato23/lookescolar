@@ -62,13 +62,7 @@ graph TB
 - **Payments**: Mercado Pago SDK
 - **Image Processing**: Sharp
 - **Rate Limiting**: Upstash Redis
-- **QR Codes**: zxing-wasm
-
-### Development & Testing
-- **Testing**: Vitest, Playwright
-- **Linting**: ESLint, Prettier
-- **Type Checking**: TypeScript
-- **CI/CD**: GitHub Actions
+- **QR Codes**: zxing-wasm (scanning) & qrcode (generation)
 
 ## Core Components
 
