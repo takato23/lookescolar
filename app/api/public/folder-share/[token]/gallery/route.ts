@@ -24,11 +24,20 @@ export async function GET(
     const supabase = await createServerSupabaseServiceClient();
 
     // Resolve folder by share token and ensure it's published
+    console.log('🔍 [FOLDER-SHARE API] Looking for folder with token:', token.slice(0, 8) + '...');
+    
     const { data: folder, error: folderErr } = await supabase
       .from('folders')
-      .select('id, event_id, name, is_published')
+      .select('id, event_id, name, is_published, share_token')
       .eq('share_token', token)
       .single();
+    
+    console.log('📡 [FOLDER-SHARE API] Query result:', { 
+      found: !!folder, 
+      error: folderErr,
+      isPublished: folder?.is_published,
+      folderId: folder?.id
+    });
 
     if (folderErr || !folder || !folder.is_published) {
       return NextResponse.json(

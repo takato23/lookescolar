@@ -37,19 +37,36 @@ export const POST = withAuth(
 
       const supabase = await createServerSupabaseServiceClient();
 
-      // Create gallery share
-      const { data, error } = await supabase.rpc('create_gallery_share', {
-        p_event_id: eventId,
-        p_level_id: level_id,
-        p_course_id: course_id,
-        p_student_id: student_id,
-        p_expires_in_days: expires_in_days,
-        p_max_views: max_views,
-        p_allow_download: allow_download,
-        p_allow_share: allow_share,
-        p_custom_message: custom_message,
-        p_created_by: userId,
-      });
+      // Create gallery share using share_tokens table
+      const shareToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + expires_in_days);
+
+      const { data, error } = await supabase
+        .from('share_tokens')
+        .insert({
+          token: shareToken,
+          event_id: eventId,
+          subject_id: student_id, // Map student_id to subject_id if available
+          is_active: true,
+          expires_at: expiresAt.toISOString(),
+          max_views: max_views,
+          metadata: {
+            level_id: level_id,
+            course_id: course_id,
+            student_id: student_id,
+            allow_download: allow_download,
+            allow_share: allow_share,
+            custom_message: custom_message,
+            created_by: userId,
+            share_type: 'gallery'
+          }
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error creating gallery share:', error);
@@ -59,6 +76,25 @@ export const POST = withAuth(
         );
       }
 
+      // Transform data to match expected format
+      const transformedData = {
+        id: data.id,
+        event_id: data.event_id,
+        level_id: data.metadata?.level_id || null,
+        course_id: data.metadata?.course_id || null,
+        student_id: data.metadata?.student_id || null,
+        token: data.token,
+        expires_at: data.expires_at,
+        max_views: data.max_views,
+        view_count: data.view_count || 0,
+        allow_download: data.metadata?.allow_download || true,
+        allow_share: data.metadata?.allow_share || true,
+        custom_message: data.metadata?.custom_message || null,
+        created_by: data.metadata?.created_by || userId,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
       // Generate share URL
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
       const shareUrl = `${siteUrl}/store-unified/${data.token}`;
@@ -67,7 +103,7 @@ export const POST = withAuth(
         success: true,
         message: 'Gallery share created successfully',
         share: {
-          ...data,
+          ...transformedData,
           share_url: shareUrl,
         },
       });
@@ -131,23 +167,21 @@ export const GET = withAuth(
 
       const supabase = await createServerSupabaseServiceClient();
 
-      // Build query for gallery shares
+      // Build query for shares from share_tokens table
       let shareQuery = supabase
-        .from('gallery_shares')
-        .select(
-          'id, event_id, level_id, course_id, student_id, token, expires_at, max_views, view_count, allow_download, allow_share, custom_message, created_by, created_at, updated_at',
-          { count: 'exact' }
-        )
+        .from('share_tokens')
+        .select('*', { count: 'exact' })
         .eq('event_id', eventId)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      // Apply filters based on hierarchy level
+      // Apply filters based on hierarchy level (stored in metadata)
       if (student_id) {
-        shareQuery = shareQuery.eq('student_id', student_id);
+        shareQuery = shareQuery.eq('subject_id', student_id);
       } else if (course_id) {
-        shareQuery = shareQuery.eq('course_id', course_id);
+        shareQuery = shareQuery.contains('metadata', { course_id: course_id });
       } else if (level_id) {
-        shareQuery = shareQuery.eq('level_id', level_id);
+        shareQuery = shareQuery.contains('metadata', { level_id: level_id });
       }
 
       // Apply pagination
@@ -176,10 +210,24 @@ export const GET = withAuth(
         );
       }
 
-      // Process shares for response
+      // Process shares for response - transform share_tokens to gallery_shares format
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
       const processedShares = (shares || []).map((share) => ({
-        ...share,
+        id: share.id,
+        event_id: share.event_id,
+        level_id: share.metadata?.level_id || null,
+        course_id: share.metadata?.course_id || null,
+        student_id: share.metadata?.student_id || share.subject_id || null,
+        token: share.token,
+        expires_at: share.expires_at,
+        max_views: share.max_views,
+        view_count: share.view_count || 0,
+        allow_download: share.metadata?.allow_download ?? true,
+        allow_share: share.metadata?.allow_share ?? true,
+        custom_message: share.metadata?.custom_message || null,
+        created_by: share.metadata?.created_by || null,
+        created_at: share.created_at,
+        updated_at: share.updated_at,
         share_url: `${siteUrl}/store-unified/${share.token}`,
         is_expired: share.expires_at ? new Date(share.expires_at) < new Date() : false,
         views_remaining: share.max_views != null ? Math.max(0, share.max_views - (share.view_count || 0)) : null,

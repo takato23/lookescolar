@@ -30,6 +30,9 @@ export interface EventFolder {
 export interface FolderWithStats extends EventFolder {
   child_folder_count: number;
   photo_count: number;
+  // Extended metrics (not persisted):
+  photo_count_direct?: number;
+  photo_count_total?: number;
 }
 
 export interface CreateFolderRequest {
@@ -123,16 +126,67 @@ class FolderService {
         return { success: false, error: error.message };
       }
 
+      // Enhance photo_count: compute direct and subtree totals in a single pass
+      let foldersWithStats: any[] = (data as any[]) || [];
+      try {
+        const folderIds = foldersWithStats.map((f) => f.id);
+        if (folderIds.length > 0 && folderIds.length <= 200) {
+          // 1) Direct counts per folder
+          const directCounts = await Promise.all(
+            folderIds.map(async (id) => {
+              try {
+                const { count } = await supabase
+                  .from('assets')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('folder_id', id)
+                  .eq('status', 'ready');
+                return { id, count: count || 0 };
+              } catch {
+                return { id, count: 0 };
+              }
+            })
+          );
+          const dmap = new Map(directCounts.map((c) => [c.id, c.count] as const));
+
+          // 2) Subtree totals via RPC
+          const { data: totals, error: totalsErr } = await supabase.rpc(
+            'get_folder_subtree_photo_counts',
+            { p_folder_ids: folderIds }
+          );
+          if (!totalsErr && Array.isArray(totals)) {
+            const tmap = new Map(
+              (totals as any[]).map((r) => [r.folder_id, Number(r.total_photos) || 0])
+            );
+            foldersWithStats = foldersWithStats.map((f) => ({
+              ...f,
+              photo_count:
+                typeof f.photo_count === 'number' && f.photo_count > 0
+                  ? f.photo_count
+                  : tmap.get(f.id) || 0,
+              photo_count_direct: dmap.get(f.id) || 0,
+              photo_count_total: tmap.get(f.id) || dmap.get(f.id) || 0,
+            }));
+          }
+        }
+      } catch (e: any) {
+        logger.warn('Folder subtree photo_count RPC failed', {
+          requestId,
+          eventId,
+          parentId,
+          error: e?.message || String(e),
+        });
+      }
+
       logger.info('Successfully fetched folders', {
         requestId,
         eventId,
         parentId: parentId || 'root',
-        count: data?.length || 0,
+        count: foldersWithStats.length,
       });
 
       return {
         success: true,
-        folders: (data as FolderWithStats[]) || [],
+        folders: foldersWithStats as FolderWithStats[],
       };
     } catch (error) {
       logger.error('Unexpected error fetching folders', {

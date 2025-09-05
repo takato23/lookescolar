@@ -397,11 +397,16 @@ const PhotoItemContent = memo<{ photo: Photo }>(({ photo }) => {
         className="relative flex-1 overflow-hidden rounded-t-lg bg-gray-100"
         style={{ aspectRatio: '4/3' }}
       >
-        {photo.signed_url && !imageError ? (
+        {(photo.signed_url || photo.preview_path || photo.storage_path) && !imageError ? (
           <>
             <Image
               ref={imgRef}
-              src={photo.signed_url}
+              src={
+                photo.signed_url || 
+                (photo.preview_path ? `/admin/previews/${photo.preview_path.split('/').pop()}` : 
+                 photo.storage_path ? `/admin/previews/${photo.storage_path.split('/').pop()}` : 
+                 photo.original_filename ? `/admin/previews/${photo.original_filename}` : '')
+              }
               alt={photo.original_filename}
               fill
               className={cn(

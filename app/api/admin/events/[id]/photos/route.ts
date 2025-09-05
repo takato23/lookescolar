@@ -89,9 +89,24 @@ export const GET = RateLimitMiddleware.withRateLimit(
         let targetFolderIds: string[] = [];
 
         if (folderId) {
-          // Usar carpeta específica
-          targetFolderIds = [folderId];
-          logger.info('Using specific folder', { requestId, folderId });
+          // Usar carpeta específica e incluir descendientes
+          try {
+            const { data: rows, error: rpcErr } = await supabase.rpc(
+              'get_descendant_folders',
+              { p_folder_id: folderId }
+            );
+            if (rpcErr) {
+              logger.warn('get_descendant_folders failed, fallback to single folder', { requestId, folderId, error: rpcErr.message });
+              targetFolderIds = [folderId];
+            } else {
+              targetFolderIds = (rows || []).map((r: any) => r.id);
+              if (!targetFolderIds.includes(folderId)) targetFolderIds.push(folderId);
+            }
+          } catch (e: any) {
+            logger.warn('Error resolving descendant folders', { requestId, folderId, error: e?.message || String(e) });
+            targetFolderIds = [folderId];
+          }
+          logger.info('Using folder with descendants', { requestId, folderId, count: targetFolderIds.length });
         } else {
           // Obtener todas las carpetas del evento
           const { data: folders, error: foldersError } = await supabase
@@ -119,18 +134,100 @@ export const GET = RateLimitMiddleware.withRateLimit(
         }
 
         if (targetFolderIds.length === 0) {
-          logger.info('No folders found for event', { requestId, eventId });
-          return NextResponse.json({
-            success: true,
-            data: {
-              photos: [],
+          logger.info('No folders found for event, checking for orphaned photos', { requestId, eventId });
+          
+          // Check for photos that might not be in folders (orphaned photos)
+          let orphanedQuery = supabase
+            .from('assets')
+            .select(
+              `
+            id,
+            folder_id,
+            filename,
+            original_path,
+            preview_path,
+            checksum,
+            file_size,
+            mime_type,
+            dimensions,
+            status,
+            metadata,
+            created_at
+          `,
+              { count: 'exact' }
+            )
+            .is('folder_id', null);
+
+          // Add event filtering through metadata if available
+          // This is a fallback for cases where folder system is not fully integrated
+          orphanedQuery = orphanedQuery.or(
+            `metadata->>'event_id'.eq.${eventId},metadata->>'eventId'.eq.${eventId}`
+          );
+
+          const { data: orphanedAssets, error: orphanedError, count: orphanedCount } = await orphanedQuery;
+
+          if (orphanedError) {
+            logger.warn('Failed to check for orphaned photos', {
+              requestId,
+              eventId,
+              error: orphanedError.message,
+            });
+          }
+
+          if (orphanedAssets && orphanedAssets.length > 0) {
+            logger.info('Found orphaned photos for event', {
+              requestId,
+              eventId,
+              orphanedCount: orphanedAssets.length,
+            });
+
+            // Process orphaned photos the same way as folder photos
+            const processedOrphanedPhotos = orphanedAssets.map((asset: any) => ({
+              id: asset.id,
+              event_id: eventId,
+              subject_id: asset.metadata?.subject_id || null,
+              storage_path: asset.original_path,
+              original_filename: asset.filename || asset.metadata?.original_filename || 'foto',
+              width: asset.dimensions?.width || null,
+              height: asset.dimensions?.height || null,
+              approved: asset.status === 'ready',
+              processing_status: asset.status === 'ready' ? 'completed' : asset.status,
+              created_at: asset.created_at,
+              folder_id: asset.folder_id,
+              filename: asset.filename,
+              preview_path: asset.preview_path,
+              file_size: asset.file_size,
+              mime_type: asset.mime_type,
+              status: asset.status,
+            }));
+
+            return NextResponse.json({
+              success: true,
+              photos: processedOrphanedPhotos,
               pagination: {
                 page: 1,
                 limit,
-                total: 0,
-                totalPages: 0,
+                total: orphanedCount || 0,
+                totalPages: Math.ceil((orphanedCount || 0) / limit),
+                hasMore: false,
               },
+              folder: null,
+              note: 'Showing orphaned photos not associated with folders',
+            });
+          }
+
+          // No folders and no orphaned photos
+          return NextResponse.json({
+            success: true,
+            photos: [],
+            pagination: {
+              page: 1,
+              limit,
+              total: 0,
+              totalPages: 0,
+              hasMore: false,
             },
+            folder: null,
           });
         }
 
@@ -208,9 +305,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
           event_id: eventId, // Derived from folder relationship
           subject_id: asset.metadata?.subject_id || null,
           storage_path: asset.original_path,
+          original_filename: asset.filename || asset.metadata?.original_filename || 'foto',
           width: asset.dimensions?.width || null,
           height: asset.dimensions?.height || null,
           approved: asset.status === 'ready',
+          processing_status: asset.status === 'ready' ? 'completed' : asset.status,
           created_at: asset.created_at,
           // Additional asset fields
           folder_id: asset.folder_id,

@@ -348,11 +348,51 @@ async function handleGET(request: NextRequest) {
 
     const folderIds = folderRows.map((f) => f.id);
 
-    // Prefer cached photo_count from folders table to avoid N queries
+    // Calculate actual photo counts from assets table
     const countsMap: Record<string, number> = {};
-    for (const f of folderRows) {
-      const cached = (f as any).photo_count;
-      countsMap[f.id] = typeof cached === 'number' ? cached : 0;
+    
+    if (folderIds.length > 0) {
+      try {
+        const sb = await createServerSupabaseServiceClient();
+        const { data: assetCounts, error: countsError } = await sb
+          .from('assets')
+          .select('folder_id')
+          .in('folder_id', folderIds)
+          .eq('status', 'ready'); // Only count ready assets
+        
+        if (!countsError && assetCounts) {
+          // Count assets per folder
+          const countsByFolder: Record<string, number> = {};
+          assetCounts.forEach(asset => {
+            if (asset.folder_id) {
+              countsByFolder[asset.folder_id] = (countsByFolder[asset.folder_id] || 0) + 1;
+            }
+          });
+          
+          // Set counts for all folders (0 if no assets)
+          for (const f of folderRows) {
+            countsMap[f.id] = countsByFolder[f.id] || 0;
+          }
+        } else {
+          // Fallback to cached counts if assets query fails
+          for (const f of folderRows) {
+            const cached = (f as any).photo_count;
+            countsMap[f.id] = typeof cached === 'number' ? cached : 0;
+          }
+        }
+      } catch (error) {
+        logger.warn('Failed to get asset counts, using cached', { error });
+        // Fallback to cached counts
+        for (const f of folderRows) {
+          const cached = (f as any).photo_count;
+          countsMap[f.id] = typeof cached === 'number' ? cached : 0;
+        }
+      }
+    } else {
+      // No folders, set all to 0
+      for (const f of folderRows) {
+        countsMap[f.id] = 0;
+      }
     }
 
     // Child folder counts to compute has_children

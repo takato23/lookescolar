@@ -15,7 +15,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -85,6 +85,7 @@ import { useEventMetrics } from '@/hooks/useEventMetrics';
 import { StoreConfigPanel } from '@/components/admin/shared/StoreConfigPanel';
 import { ProductManagementPanel } from '@/components/admin/ProductManagementPanel';
 import { HierarchicalFolderTreeEnhanced } from '@/components/admin/HierarchicalFolderTreeEnhanced';
+import { ProfessionalShareModal } from '@/components/admin/ProfessionalShareModal';
 
 // Types
 interface Event {
@@ -172,7 +173,12 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // UI state
   const [showAddLevelModal, setShowAddLevelModal] = useState(false);
   const [showStudentModal, setShowStudentModal] = useState(false);
-  const [shareModal, setShareModal] = useState<null | { type: 'event' | 'folder'; url: string }>(null);
+  const [shareModal, setShareModal] = useState<null | { 
+    type: 'event' | 'folder'; 
+    url: string; 
+    title: string;
+    description: string; 
+  }>(null);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [folderActionLoading, setFolderActionLoading] = useState(false);
   // Upload modal state (open inline instead of navigating away)
@@ -544,7 +550,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     // Create or reuse event share token and open /share/{token}
     (async () => {
       try {
-        const res = await fetch('/api/admin/share', {
+        const res = await fetch('/api/share', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ shareType: 'event', eventId }),
@@ -562,7 +568,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
 
   const handleShareEvent = async () => {
     try {
-      const res = await fetch('/api/admin/share', {
+      const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shareType: 'event', eventId }),
@@ -572,28 +578,14 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
         throw new Error(data?.error || 'No se pudo generar el enlace de evento');
       }
       const shareUrl = (data.share.storeUrl as string) || (data.share.shareUrl as string);
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Galería - ${event?.school || event?.name || 'Evento'}`,
-            text: 'Mira las fotos de este evento',
-            url: shareUrl,
-          });
-        } catch (e: any) {
-          // Ignore user cancellation gracefully
-          if (e?.name === 'AbortError' || /Share canceled/i.test(String(e?.message))) {
-            // fall back to clipboard below without error toast
-          } else {
-            throw e;
-          }
-        }
-      }
-      if (!navigator.share) {
-        await navigator.clipboard.writeText(shareUrl);
-        try { (await import('sonner')).toast.success('Enlace de evento copiado'); } catch {}
-      }
-      // Show QR prompt
-      setShareModal({ type: 'event', url: shareUrl });
+      
+      // Show professional sharing modal
+      setShareModal({ 
+        type: 'event', 
+        url: shareUrl,
+        title: event?.name || 'Evento Escolar',
+        description: `${event?.location || 'Galería'} - ${event?.date || 'Evento de fotos'}`
+      });
     } catch (error) {
       console.error('Error sharing event:', error);
       try { (await import('sonner')).toast.error('No se pudo generar el enlace del evento'); } catch {}
@@ -607,7 +599,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
         try { (await import('sonner')).toast.error('Selecciona una carpeta para compartir'); } catch {}
         return;
       }
-      const res = await fetch('/api/admin/share', {
+      const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shareType: 'folder', folderId: folderToShare, eventId }),
@@ -617,9 +609,18 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
         throw new Error(data?.error || 'No se pudo generar el enlace de carpeta');
       }
       const shareUrl = (data.share.storeUrl as string) || (data.share.shareUrl as string);
-      await navigator.clipboard.writeText(shareUrl);
-      try { (await import('sonner')).toast.success('Enlace de carpeta copiado'); } catch {}
-      setShareModal({ type: 'folder', url: shareUrl });
+      
+      // Find folder name
+      const folder = folders.find(f => f.id === folderToShare);
+      const folderName = folder?.name || 'Carpeta';
+      
+      // Show professional sharing modal
+      setShareModal({ 
+        type: 'folder', 
+        url: shareUrl,
+        title: folderName,
+        description: `Álbum de fotos - ${event?.name || 'Evento'}`
+      });
     } catch (error) {
       console.error('Error sharing folder:', error);
       try { (await import('sonner')).toast.error('No se pudo generar el enlace de carpeta'); } catch {}
@@ -689,15 +690,22 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   useEffect(() => {
     const fetchAssets = async () => {
       if (!selectedFolderId) {
+        console.debug('EventPhotoManager - no folder selected, clearing photos');
         setPhotos([]);
         return;
       }
       try {
+        console.debug('EventPhotoManager - fetching assets for folder:', selectedFolderId);
         const params = new URLSearchParams({ folder_id: selectedFolderId, limit: '60' });
         const res = await fetch(`/api/admin/assets?${params.toString()}`);
-        if (!res.ok) throw new Error('Error fetching assets');
+        if (!res.ok) throw new Error(`Error fetching assets: ${res.status} ${res.statusText}`);
         const json = await res.json();
         const items = (json.assets || []) as Array<any>;
+        console.debug('EventPhotoManager - received assets from API:', {
+          count: items.length,
+          folderId: selectedFolderId,
+          response: json
+        });
         const mapped: Photo[] = items.map((a) => ({
           id: a.id,
           original_filename: a.filename || 'archivo',
@@ -718,9 +726,48 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFolderId]);
 
-  const selectedFolder = folders
-    .flatMap(f => [f, ...(f.children || [])])
-    .find(f => f.id === selectedFolderId);
+  // Auto-select first available folder if none selected
+  useEffect(() => {
+    if (!selectedFolderId && enhancedFolders.length > 0) {
+      const firstFolder = enhancedFolders[0];
+      console.debug('EventPhotoManager - auto-selecting first folder:', {
+        id: firstFolder.id,
+        name: firstFolder.name
+      });
+      setSelectedFolderId(firstFolder.id);
+    }
+  }, [selectedFolderId, enhancedFolders]);
+
+  const selectedFolder = useMemo(() => {
+    if (!selectedFolderId) return null;
+    
+    // Debug logging
+    console.debug('EventPhotoManager - selectedFolder calculation:', {
+      selectedFolderId,
+      foldersCount: folders.length,
+      enhancedFoldersCount: enhancedFolders.length,
+      folderIds: folders.map(f => f.id),
+      enhancedFolderIds: enhancedFolders.map(f => f.id)
+    });
+    
+    // Try both folder sources for robustness
+    const fromFolders = folders
+      .flatMap(f => [f, ...(f.children || [])])
+      .find(f => f.id === selectedFolderId);
+      
+    const fromEnhanced = enhancedFolders.find(f => f.id === selectedFolderId);
+    
+    const result = fromFolders || fromEnhanced;
+    
+    console.debug('EventPhotoManager - selectedFolder result:', {
+      fromFolders: !!fromFolders,
+      fromEnhanced: !!fromEnhanced,
+      finalResult: !!result,
+      resultName: result?.name
+    });
+    
+    return result;
+  }, [selectedFolderId, folders, enhancedFolders]);
 
   const filteredPhotos = photos.filter(photo =>
     photo.original_filename.toLowerCase().includes(searchQuery.toLowerCase())
@@ -731,10 +778,10 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // Loading state
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando evento...</p>
+          <p className="text-gray-600 dark:text-gray-400">Cargando evento...</p>
         </div>
       </div>
     );
@@ -743,11 +790,11 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // Error state
   if (error || !event) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center max-w-md mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <h3 className="text-lg font-medium text-red-800 mb-2">Error al cargar el evento</h3>
-            <p className="text-red-600 mb-4">{error || 'Evento no encontrado'}</p>
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <h3 className="text-lg font-medium text-red-800 dark:text-red-300 mb-2">Error al cargar el evento</h3>
+            <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Evento no encontrado'}</p>
             <div className="flex gap-2 justify-center">
               <Button
                 variant="outline"
@@ -795,33 +842,33 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
-      {/* Elegant Header - Event Information */}
-      <div className="border-b border-gray-200/60 bg-white/80 backdrop-blur-md px-8 py-6 shadow-sm">
+      {/* Simplified Header - Event Information */}
+      <div className="border-b border-gray-200/60 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md px-8 py-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push('/admin/events')}
-              className="rounded-full p-2 hover:bg-gray-100/80 transition-colors"
+              className="rounded-full p-2 hover:bg-gray-100/80 dark:hover:bg-gray-800/80 transition-colors"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             
             <div className="flex items-center gap-4">
-              <div className="text-sm text-gray-500 flex items-center gap-2">
-                <Link href="/admin" className="hover:text-blue-600 transition-colors">
+              <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                <Link href="/admin" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   <Home className="h-4 w-4" />
                 </Link>
                 <span>/</span>
-                <Link href="/admin/events" className="hover:text-blue-600 transition-colors">
+                <Link href="/admin/events" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Eventos
                 </Link>
                 <span>/</span>
               </div>
               
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+                <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
                   {event.school || event.name}
                 </h1>
                 <div className="flex items-center gap-3 mt-1">
@@ -831,7 +878,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                   >
                     {event.status === 'active' ? 'Activo' : event.status || 'Inactivo'}
                   </Badge>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                     <Calendar className="h-4 w-4" />
                     {event.date ? new Date(event.date).toLocaleDateString('es-AR', {
                       day: 'numeric',
@@ -844,40 +891,41 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             </div>
           </div>
 
+          {/* CONSOLIDACIÓN: Un solo botón inteligente que detecta contexto */}
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
-              onClick={handleViewClientGallery}
-              className="border-gray-300 hover:border-blue-400 hover:text-blue-600 transition-all"
+              onClick={selectedFolderId ? () => handleShareFolder() : handleShareEvent}
+              className="border-gray-300 hover:border-blue-400 hover:text-blue-600 dark:border-gray-600 dark:hover:border-blue-400 transition-all"
             >
-              <Eye className="h-4 w-4 mr-2" />
-              Vista Cliente
+              <Upload className="h-4 w-4 mr-2" />
+              {selectedFolderId ? 'Compartir Carpeta' : 'Compartir Evento'}
             </Button>
             
             <Button
               variant="default"
               size="sm"
-              onClick={handleShareEvent}
-              className="bg-blue-600 hover:bg-blue-700 transition-colors"
+              onClick={handleViewClientGallery}
+              className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
             >
-              <Upload className="h-4 w-4 mr-2" />
-              Compartir Evento
+              <Eye className="h-4 w-4 mr-2" />
+              Vista Cliente
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 🚀 FASE 1: Dashboard mejorado estilo PixieSet */}
-      <div className="px-8 py-6 bg-white/60 backdrop-blur-sm border-b border-gray-200/60">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Dashboard del Evento</h2>
+      {/* Dashboard - Improved Typography & Dark Mode */}
+      <div className="px-8 py-6 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm border-b border-gray-200/60 dark:border-gray-700/60">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">Métricas del Evento</h2>
           <Button
             variant="ghost"
             size="sm"
             onClick={refreshMetrics}
             disabled={metricsLoading}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <RefreshCw className={cn("h-4 w-4", metricsLoading && "animate-spin")} />
           </Button>
@@ -940,37 +988,37 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
         </div>
       </div>
 
-      {/* 🚀 FASE 1: Tabs de configuración estilo PixieSet */}
-      <div className="px-8 bg-white/80 backdrop-blur-sm border-b border-gray-200/60">
+      {/* Navigation Tabs - Improved Typography & Dark Mode */}
+      <div className="px-8 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200/60 dark:border-gray-700/60">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-          <TabsList className="h-12 bg-transparent p-0 border-b-0">
+          <TabsList className="h-14 bg-transparent p-0 border-b-0">
             <TabsTrigger 
               value="photos" 
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-6 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 dark:data-[state=active]:border-blue-400 rounded-none px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
             >
               <Camera className="h-4 w-4 mr-2" />
               Gestión de Fotos
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-6 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 dark:data-[state=active]:border-blue-400 rounded-none px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
             >
               <Settings className="h-4 w-4 mr-2" />
               Configuración
             </TabsTrigger>
             <TabsTrigger 
               value="store" 
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-6 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 dark:data-[state=active]:border-blue-400 rounded-none px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
             >
               <Package className="h-4 w-4 mr-2" />
               Tienda
             </TabsTrigger>
             <TabsTrigger 
               value="sharing" 
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none px-6 py-3"
+              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 dark:data-[state=active]:border-blue-400 rounded-none px-6 py-4 text-sm font-medium text-gray-600 dark:text-gray-400 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400"
             >
               <LinkIcon className="h-4 w-4 mr-2" />
-              Compartir
+              Enlaces
             </TabsTrigger>
           </TabsList>
           {/* 🚀 FASE 1: TabsContent para organizar el contenido */}
@@ -979,17 +1027,17 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <div className="flex-1">
               <ResizablePanelGroup direction="horizontal">
           {/* Left Panel - Event Navigation & Settings */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-            <div className="h-full bg-white/80 backdrop-blur-sm border-r border-gray-200/60">
-              {/* Navigation Section */}
-              <div className="border-b border-gray-200/60 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FolderOpen className="h-5 w-5 text-blue-600" />
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
+            <div className="h-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-r border-gray-200/60 dark:border-gray-700/60">
+              {/* Navigation Section - Improved Typography */}
+              <div className="border-b border-gray-200/60 dark:border-gray-700/60 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <FolderOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Estructura del Evento</h3>
-                    <p className="text-sm text-gray-500">Niveles y cursos organizados</p>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Estructura del Evento</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Niveles y cursos organizados</p>
                   </div>
                 </div>
                 
@@ -1098,45 +1146,25 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                 />
               </div>
 
-              {/* Quick Actions Section */}
-              <div className="border-t border-gray-200/60 p-4 bg-gray-50/50">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">Acciones Rápidas</h4>
+              {/* Simplified Quick Actions Section */}
+              <div className="border-t border-gray-200/60 dark:border-gray-700/60 p-4 bg-gray-50/50 dark:bg-gray-800/50">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Acciones</h4>
                 <div className="space-y-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all"
-                    onClick={handleViewClientGallery}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ver Galería Cliente
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-gray-700 hover:text-green-700 hover:bg-green-50 transition-all"
-                    onClick={handleShareFolder}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Compartir Álbum
-                  </Button>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-gray-700 hover:text-purple-700 hover:bg-purple-50 transition-all"
-                    onClick={() => {/* View shared albums */}}
+                    className="w-full justify-start text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all"
+                    onClick={() => setActiveTab('sharing')}
                   >
                     <Star className="h-4 w-4 mr-2" />
-                    Álbumes Compartidos
+                    Gestionar Enlaces
                   </Button>
                   
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-all"
-                    onClick={() => {/* Event settings */}}
+                    className="w-full justify-start text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                    onClick={() => setActiveTab('settings')}
                   >
                     <Settings className="h-4 w-4 mr-2" />
                     Configuración
@@ -1149,9 +1177,9 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
           <ResizableHandle />
 
           {/* Center Panel - Photo Gallery */}
-          <ResizablePanel defaultSize={50} minSize={30}>
+          <ResizablePanel defaultSize={70} minSize={30}>
             <div
-              className="relative h-full bg-white/80 backdrop-blur-sm"
+              className="relative h-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm"
               onDragOver={(e) => {
                 if (e.dataTransfer?.types?.includes('Files')) {
                   e.preventDefault();
@@ -1176,18 +1204,18 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               {/* Modern Toolbar */}
               <div
                 className={cn(
-                  'border-b border-gray-200/60 p-6 bg-white/60 backdrop-blur-sm',
-                  UI_ENHANCEMENTS.stickyTopBar && 'sticky top-0 z-20 bg-white supports-[backdrop-filter]:bg-white/60'
+                  'border-b border-gray-200/60 dark:border-gray-700/60 p-6 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm',
+                  UI_ENHANCEMENTS.stickyTopBar && 'sticky top-0 z-20 bg-white dark:bg-gray-900 supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60'
                 )}
                 role="toolbar"
                 aria-label="Barra de acciones de la galería"
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
                       {(enhancedFolders.find((f) => f.id === selectedFolderId)?.name) || selectedFolder?.name || 'Selecciona un nivel o curso'}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {selectedFolderId ? (
                         <span className="flex items-center gap-2">
                           <ImageIcon className="h-4 w-4" />
@@ -1199,31 +1227,25 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                     </p>
                   </div>
                   
+                  {/* Simplified Primary Actions */}
                   <div className="flex items-center gap-3">
                     <Button 
                       variant="default" 
                       size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 transition-colors"
+                      className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
                       onClick={() => handleUploadPhotos()}
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Subir Fotos
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => (selectedFolderId ? handleShareFolder() : handleShareEvent())}
-                    >
-                      <LinkIcon className="h-4 w-4 mr-2" />
-                      Compartir {selectedFolderId ? 'Carpeta' : 'Evento'}
-                    </Button>
                     
-                    <div className="flex rounded-lg border border-gray-300 bg-white shadow-sm">
+                    {/* Compact View Toggle */}
+                    <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-sm">
                       <Button
                         variant={viewMode === 'grid' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setViewMode('grid')}
-                        className="rounded-r-none border-r"
+                        className="rounded-r-none border-r dark:border-gray-600"
                       >
                         <Grid3X3 className="h-4 w-4" />
                       </Button>
@@ -1239,18 +1261,19 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                   </div>
                 </div>
                 
+                {/* Search & Filters - Improved Dark Mode */}
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
                     <Input
                       placeholder="Buscar fotografías por nombre de archivo..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
+                      className="pl-10 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500/20 dark:bg-gray-800 dark:text-gray-100"
                     />
                   </div>
                   
-                  <Button variant="outline" size="sm" className="border-gray-300">
+                  <Button variant="outline" size="sm" className="border-gray-300 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
                     <Filter className="h-4 w-4 mr-2" />
                     Filtros
                   </Button>
@@ -1366,7 +1389,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
           <ResizableHandle />
 
           {/* Right Panel - Settings & Inspector */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+          <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
             <div className="h-full bg-white/80 backdrop-blur-sm border-l border-gray-200/60">
               <Tabs defaultValue="inspector" className="h-full flex flex-col">
                 <TabsList className="grid w-full grid-cols-2 m-4 mb-0">
@@ -1787,7 +1810,14 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       )}
 
       {shareModal && (
-        <ShareModal url={shareModal.url} onClose={() => setShareModal(null)} />
+        <ProfessionalShareModal 
+          url={shareModal.url}
+          title={shareModal.title}
+          description={shareModal.description}
+          type={shareModal.type}
+          isOpen={true}
+          onClose={() => setShareModal(null)} 
+        />
       )}
 
       {/* Student Manager Modal */}
@@ -2020,34 +2050,4 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
   );
 }
 
-// Share Modal (QR + link)
-function ShareModal({ url, onClose }: { url: string; onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">Compartir enlace</h3>
-        <p className="mb-4 text-sm text-gray-600">Escaneá el QR o copiá el link para compartir la galería.</p>
-        <div className="mb-4 flex items-center justify-center">
-          <img
-            src={`/api/qr/url?url=${encodeURIComponent(url)}`}
-            alt="Código QR"
-            className="h-48 w-48 rounded-md border"
-          />
-        </div>
-        <div className="mb-3">
-          <input
-            readOnly
-            value={url}
-            className="w-full rounded-md border px-3 py-2 text-sm"
-            onFocus={(e) => e.currentTarget.select()}
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>Cerrar</Button>
-          <Button onClick={async () => { await navigator.clipboard.writeText(url); try { (await import('sonner')).toast.success('Link copiado'); } catch {} }}>Copiar</Button>
-        </div>
-      </div>
-      {/* Upload now handled by routing to library page */}
-    </div>
-  );
-}
+// Old ShareModal removed - now using ProfessionalShareModal

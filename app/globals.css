@@ -1424,3 +1424,117 @@ body.modal-open {
     scroll-behavior: auto !important;
   }
 }
+
+/* Global Admin Panel Consistency Fixes */
+.admin-panel {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.dark .admin-panel {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(71, 85, 105, 0.3);
+}
+
+/* Enhanced Button contrast improvements */
+.btn-outline, button[variant="outline"], .btn-ghost, button[variant="ghost"] {
+  border: 1px solid #d1d5db !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #374151 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-outline:hover, button[variant="outline"]:hover, .btn-ghost:hover, button[variant="ghost"]:hover {
+  background: rgba(249, 250, 251, 1) !important;
+  border-color: #9ca3af !important;
+}
+
+.dark .btn-outline, .dark button[variant="outline"], .dark .btn-ghost, .dark button[variant="ghost"] {
+  border: 1px solid #475569 !important;
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .btn-outline:hover, .dark button[variant="outline"]:hover, .dark .btn-ghost:hover, .dark button[variant="ghost"]:hover {
+  background: rgba(51, 65, 85, 1) !important;
+  border-color: #64748b !important;
+}
+
+/* Dark mode aggressive fixes for admin interface */
+.dark {
+  /* Force dark backgrounds on main containers */
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .bg-white {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #334155 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #475569 !important;
+}
+
+.dark .text-gray-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-gray-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+/* Force dark mode on cards and panels */
+.dark .card, .dark [data-radix-dialog-content], .dark .panel, .dark .modal {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode input fixes */
+.dark input, .dark textarea, .dark select {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  border-color: #64748b !important;
+  ring-color: #64748b !important;
+}
+
+/* Dark mode dropdown fixes */
+.dark .dropdown-content, .dark [data-radix-select-content], .dark [data-radix-dropdown-content] {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode navigation fixes */
+.dark .nav, .dark .sidebar, .dark .header {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* Force visibility of borders in dark mode */
+.dark .border, .dark .border-gray-200, .dark .border-gray-300 {
+  border-color: #475569 !important;
+}
