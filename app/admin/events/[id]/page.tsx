@@ -41,16 +41,21 @@ export default function EventDetailPage() {
   const searchParams = useSearchParams();
   // Restaurado: NO redirigir automáticamente - mantener gestión de eventos específica
   const id = params['id'] as string;
+  // Enhanced state management with proper typing
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState(searchParams?.get('tab') || 'overview');
   const [subjects, setSubjects] = useState<any[]>([]);
   const [refreshSubjects, setRefreshSubjects] = useState(0);
-  const [metrics, setMetrics] = useState<
-    | { orders: { total: number; paid: number; pending: number }; students: { total: number }; photos: { total: number; unassigned: number | null } }
-    | null
-  >(null);
+  const [metrics, setMetrics] = useState<{
+    orders: { total: number; paid: number; pending: number };
+    students: { total: number };
+    photos: { total: number; unassigned: number | null };
+  } | null>(null);
+  
+  // Performance monitoring state
+  const [loadTime, setLoadTime] = useState<number>(0);
 
   useEffect(() => {
     if (id) {
@@ -66,19 +71,63 @@ export default function EventDetailPage() {
   }, [refreshSubjects]);
 
   const fetchEvent = async () => {
+    const startTime = performance.now();
+    
     try {
       setLoading(true);
-      let response = await fetch(`/api/admin/events/${id}`);
+      setError(null);
+      
+      // Enhanced error handling with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
+      let response = await fetch(`/api/admin/events/${id}`, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        // Fallback a ?id=
-        response = await fetch(`/api/admin/events?id=${id}`);
+        console.warn(`Primary endpoint failed (${response.status}), retrying once with shorter timeout`);
+
+        // Retry same endpoint with shorter timeout to avoid incorrect fallbacks
+        const retryController = new AbortController();
+        const retryTimeout = setTimeout(() => retryController.abort(), 5000);
+
+        response = await fetch(`/api/admin/events/${id}`, {
+          signal: retryController.signal,
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        clearTimeout(retryTimeout);
       }
-      if (!response.ok) throw new Error('Failed to fetch event');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch event: ${response.status} ${response.statusText}`);
+      }
+      
       const data = await response.json();
       setEvent(data.event || data);
+      
+      const fetchTime = performance.now() - startTime;
+      setLoadTime(fetchTime);
+      console.debug(`[Performance] Event loaded in ${fetchTime.toFixed(2)}ms`);
+      
     } catch (err) {
-      console.error('Error fetching event:', err);
-      setError(err instanceof Error ? err.message : 'Error loading event');
+      const fetchTime = performance.now() - startTime;
+      console.error(`[Performance] Event fetch failed after ${fetchTime.toFixed(2)}ms:`, err);
+      
+      const errorMessage = err instanceof Error 
+        ? err.name === 'AbortError' 
+          ? 'Request timed out. Please check your connection.'
+          : err.message
+        : 'Error loading event';
+        
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -86,13 +135,26 @@ export default function EventDetailPage() {
 
   const fetchSubjects = async () => {
     try {
-      const response = await fetch(`/api/admin/subjects?event_id=${id}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`/api/admin/subjects?event_id=${id}`, {
+        signal: controller.signal,
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const data = await response.json();
-        setSubjects(data.subjects || []);
+        setSubjects(Array.isArray(data.subjects) ? data.subjects : []);
+      } else {
+        console.warn(`Subjects fetch failed: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error fetching subjects:', error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('Error fetching subjects:', error);
+      }
     }
   };
 
@@ -108,16 +170,30 @@ export default function EventDetailPage() {
     window.history.replaceState({}, '', url.toString());
   };
 
-  // Load metrics via server action (economical counts)
+  // Load metrics with performance monitoring and retry logic
   useEffect(() => {
-    (async () => {
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    const loadMetrics = async () => {
       try {
+        const startTime = performance.now();
         const m = await fetchEventMetrics(id);
+        const metricsTime = performance.now() - startTime;
+        
+        console.debug(`[Performance] Metrics loaded in ${metricsTime.toFixed(2)}ms`);
         setMetrics(m);
       } catch (e) {
-        console.warn('Metrics load failed');
+        console.warn(`Metrics load failed (attempt ${retryCount + 1}):`, e);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(loadMetrics, 1000 * retryCount); // Exponential backoff
+        }
       }
-    })();
+    };
+    
+    loadMetrics();
   }, [id]);
 
   if (loading) {

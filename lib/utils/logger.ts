@@ -202,6 +202,9 @@ class Logger {
 
   // Convenience methods
   debug(event: string, context?: LogContext, message?: string) {
+    // Only emit debug logs if explicitly enabled
+    const enabled = process.env['LOG_DEBUG'] === '1' || process.env['ENABLE_DEBUG_LOGS'] === 'true';
+    if (!enabled) return;
     this.log('debug', event, context, message);
   }
 

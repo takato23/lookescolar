@@ -28,18 +28,12 @@ export const GET = RateLimitMiddleware.withRateLimit(
     const startTime = Date.now();
 
     try {
-      // Validación de configuración crítica
-      if (
-        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        !process.env.SUPABASE_SERVICE_ROLE_KEY
-      ) {
-        console.error(
-          '[Service] Configuración Supabase faltante para creación de eventos'
-        );
+      // Validación mínima de configuración
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        console.error('[Service] Falta NEXT_PUBLIC_SUPABASE_URL');
         return NextResponse.json(
           {
-            error:
-              'Configuración de servidor incompleta. Verifica SUPABASE_SERVICE_ROLE_KEY y NEXT_PUBLIC_SUPABASE_URL.',
+            error: 'Configuración de servidor incompleta. Verifica NEXT_PUBLIC_SUPABASE_URL.',
           },
           { status: 500 }
         );
@@ -56,19 +50,22 @@ export const GET = RateLimitMiddleware.withRateLimit(
       // Log del acceso
       SecurityLogger.logResourceAccess('events_list', authContext, request);
 
-      // Usar service client para consultas
-      const serviceClient = await createServerSupabaseServiceClient();
+      // Usar service client para consultas, con fallback a SSR anon si falla
+      let dbClient = await createServerSupabaseServiceClient();
 
       // Obtener parámetros de query
       const { searchParams } = new URL(request.url);
       const status = searchParams.get('status'); // 'active', 'inactive', 'all'
-      const sortBy = searchParams.get('sort_by') || 'created_at';
-      const sortOrder = searchParams.get('sort_order') || 'desc';
+      const allowedSortFields = new Set(['created_at', 'date', 'name', 'status']);
+      const requestedSortBy = searchParams.get('sort_by') || 'created_at';
+      const sortBy = allowedSortFields.has(requestedSortBy) ? requestedSortBy : 'created_at';
+      const sortOrderParam = (searchParams.get('sort_order') || 'desc').toLowerCase();
+      const sortOrder = sortOrderParam === 'asc' || sortOrderParam === 'desc' ? sortOrderParam : 'desc';
       const includeStats = searchParams.get('include_stats') === 'true';
       const { page, limit, offset } = parsePaginationParams(searchParams);
       const paginated = searchParams.has('page') || searchParams.has('limit');
 
-      let query = serviceClient.from('events').select(
+      let query = dbClient.from('events').select(
         `
       id,
       name,
@@ -98,7 +95,40 @@ export const GET = RateLimitMiddleware.withRateLimit(
         query = query.range(offset, offset + limit - 1);
       }
 
-      const { data: events, error, count } = await query as any;
+      let { data: events, error, count } = (await query) as any;
+
+      // Fallback: si hay error de auth/clave, reintentar con SSR anon
+      if (error && (!('code' in error) || ['401', '403'].includes((error as any).code))) {
+        try {
+          dbClient = await createServerSupabaseClient();
+          // reconstruir query con nuevo cliente
+          let retryQuery = dbClient.from('events').select(
+            `
+            id,
+            name,
+            location,
+            description,
+            date,
+            status,
+            price_per_photo,
+            created_at,
+            updated_at
+          `,
+            { count: 'exact' }
+          );
+          if (status === 'active') retryQuery = retryQuery.eq('status', 'active');
+          else if (status === 'inactive') retryQuery = retryQuery.eq('status', 'inactive');
+          const ascending = sortOrder === 'asc';
+          retryQuery = retryQuery.order(sortBy, { ascending });
+          if (paginated) retryQuery = retryQuery.range(offset, offset + limit - 1);
+          const retryRes: any = await retryQuery;
+          events = retryRes.data;
+          error = retryRes.error;
+          count = retryRes.count;
+        } catch (e) {
+          // mantendremos el error original abajo
+        }
+      }
 
       if (error) {
         console.error('Error fetching events:', error);
@@ -114,7 +144,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
       if (includeStats && events && events.length > 0) {
         try {
           const eventIds = events.map((e) => e.id);
-          const { data: aggStats, error: aggError } = await serviceClient.rpc(
+          const { data: aggStats, error: aggError } = await dbClient.rpc(
             'get_event_stats',
             { event_ids: eventIds }
           );
@@ -147,7 +177,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
           const { UnifiedPhotoService } = await import(
             '@/lib/services/unified-photo.service'
           );
-          const photoService = new UnifiedPhotoService(serviceClient as any);
+          const photoService = new UnifiedPhotoService(dbClient as any);
 
           const batchSize = parseInt(
             process.env.EVENTS_STATS_BATCH_SIZE || '6',
@@ -160,12 +190,12 @@ export const GET = RateLimitMiddleware.withRateLimit(
             const batchResults = await Promise.all(
               batch.map(async (event) => {
                 const [subjectsStats, photoCount, ordersStats] = await Promise.all([
-                  serviceClient
+                  dbClient
                     .from('subjects')
                     .select('*', { count: 'exact', head: true })
                     .eq('event_id', event.id),
                   photoService.getEventPhotoCount(event.id),
-                  serviceClient
+                  dbClient
                     .from('orders')
                     .select('id, status, total_amount, created_at')
                     .eq('event_id', event.id),

@@ -147,9 +147,39 @@ class UrlBatchingService {
           const path = this.selectPath(request);
           const expirySeconds = expiryMinutes * 60;
 
-          const { data: signedUrlData, error } = await supabase.storage
-            .from('photos')
+          const ORIGINAL_BUCKET =
+            process.env['STORAGE_BUCKET_ORIGINAL'] ||
+            process.env['STORAGE_BUCKET'] ||
+            'photo-private';
+          const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
+          const pickBucket = (key: string) =>
+            /(^|\/)previews\//.test(key) || /watermark/i.test(key)
+              ? PREVIEW_BUCKET
+              : ORIGINAL_BUCKET;
+          let bucket = pickBucket(path);
+          let { data: signedUrlData, error } = await supabase.storage
+            .from(bucket)
             .createSignedUrl(path, expirySeconds);
+
+          // Fallback to opposite bucket if object not found
+          const isMissing =
+            error &&
+            ((error as any)?.status === 404 ||
+              (error as any)?.statusCode === '404' ||
+              String((error as any)?.message || '')
+                .toLowerCase()
+                .includes('not found'));
+          if (isMissing) {
+            const fallbackBucket = bucket === ORIGINAL_BUCKET ? PREVIEW_BUCKET : ORIGINAL_BUCKET;
+            const attempt = await supabase.storage
+              .from(fallbackBucket)
+              .createSignedUrl(path, expirySeconds);
+            if (!attempt.error && attempt.data?.signedUrl) {
+              signedUrlData = attempt.data;
+              error = undefined as any;
+              bucket = fallbackBucket;
+            }
+          }
 
           if (error) {
             logger.warn('Failed to generate signed URL', {

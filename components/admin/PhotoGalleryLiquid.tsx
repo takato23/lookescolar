@@ -41,66 +41,8 @@ import { PhotoModal as GalleryPhotoModal } from '@/components/gallery/PhotoModal
 import { SimpleTooltip } from '@/components/ui/tooltip';
 // Using CSS liquid glass styles instead of liquid-glass-react library
 
-// Theme Context
-import { createContext, useContext, ReactNode } from 'react';
-
-type Theme = 'light' | 'dark';
-
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
-
-interface ThemeProviderProps {
-  children: React.ReactNode;
-}
-
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light');
-
-  useEffect(() => {
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    } else {
-      // Check system preference
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        setTheme('dark');
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-    // Apply theme to document root for Tailwind dark mode
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      <div className={theme === 'dark' ? 'dark' : ''}>{children}</div>
-    </ThemeContext.Provider>
-  );
-};
+// Using the main theme provider from @/components/providers/theme-provider
+import { useTheme } from '@/components/providers/theme-provider';
 
 // Types adapted for LookEscolar
 interface PhotoItem {
@@ -452,7 +394,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   selectedPhotos: externalSelectedPhotos,
   onPhotosSelected,
 }) => {
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const [photos, setPhotos] = useState<PhotoItem[]>(initialPhotos);
   const [events, setEvents] = useState<FolderItem[]>(initialEvents);
   // Use external selectedPhotos if provided, otherwise use internal state
@@ -716,7 +658,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
 
   return (
     <div
-      className={`liquid-glass-app ${compact ? 'min-h-0' : 'min-h-screen'} ${theme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : compact ? 'bg-transparent' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'} transition-colors duration-500 ${compact ? '' : 'overflow-hidden'}`}
+      className={`liquid-glass-app ${compact ? 'min-h-0' : 'min-h-screen'} ${resolvedTheme === 'dark' ? 'bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900' : compact ? 'bg-transparent' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100'} transition-colors duration-500 ${compact ? '' : 'overflow-hidden'}`}
     >
       {!hideHeader && (
         <>
@@ -731,14 +673,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       <div className="flex h-8 w-8 items-center justify-center p-2">
                         <FolderIcon
                           className={`h-full w-full drop-shadow-sm ${
-                            theme === 'dark' ? 'text-slate-200' : 'text-white'
+                            resolvedTheme === 'dark' ? 'text-slate-200' : 'text-white'
                           }`}
                         />
                       </div>
                     </div>
                     <h1
                       className={`text-2xl font-bold drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-100' : 'text-white'
+                        resolvedTheme === 'dark' ? 'text-slate-100' : 'text-white'
                       }`}
                     >
                       Galería de Fotos ({filteredPhotos.length})
@@ -751,7 +693,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     onClick={toggleTheme}
                   >
                     <div className="flex h-10 w-10 items-center justify-center p-2">
-                      {theme === 'dark' ? (
+                      {resolvedTheme === 'dark' ? (
                         <Sun
                           size={20}
                           className="animate-pulse text-yellow-300 drop-shadow-md"
@@ -773,7 +715,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       <SearchIcon
                         size={20}
                         className={
-                          theme === 'dark' ? 'text-slate-300' : 'text-white/80'
+                          resolvedTheme === 'dark' ? 'text-slate-300' : 'text-white/80'
                         }
                       />
                     </div>
@@ -783,7 +725,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className={`w-full bg-transparent py-4 pl-14 pr-6 transition-all focus:outline-none ${
-                        theme === 'dark'
+                        resolvedTheme === 'dark'
                           ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500'
                           : 'text-white placeholder-white/70 focus:placeholder-white/50'
                       }`}
@@ -819,10 +761,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           <div
                             className={`px-4 py-2 text-sm font-medium transition-all ${
                               filterStatus === filter.value
-                                ? theme === 'dark'
+                                ? resolvedTheme === 'dark'
                                   ? 'font-semibold text-slate-100 drop-shadow-md'
                                   : 'font-semibold text-white drop-shadow-md'
-                                : theme === 'dark'
+                                : resolvedTheme === 'dark'
                                   ? 'text-slate-300 hover:text-slate-100'
                                   : 'text-white/90 hover:text-white'
                             }`}
@@ -882,7 +824,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                           className={`flex h-6 w-6 items-center justify-center transition-all ${
                             allVisibleSelected
                               ? 'text-purple-600'
-                              : theme === 'dark'
+                              : resolvedTheme === 'dark'
                                 ? 'border-2 border-slate-300'
                                 : 'border-2 border-white/50'
                           }`}
@@ -894,7 +836,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       </div>
                       <span
                         className={`font-medium drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                          resolvedTheme === 'dark' ? 'text-slate-200' : 'text-white'
                         }`}
                       >
                         Seleccionar todas
@@ -977,14 +919,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       </div>
                       <h3
                         className={`mb-2 text-xl font-semibold drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                          resolvedTheme === 'dark' ? 'text-slate-200' : 'text-white'
                         }`}
                       >
                         No se encontraron fotos
                       </h3>
                       <p
                         className={`drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-400' : 'text-white/80'
+                          resolvedTheme === 'dark' ? 'text-slate-400' : 'text-white/80'
                         }`}
                       >
                         {searchQuery
@@ -1025,14 +967,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       <div className="flex h-8 w-8 items-center justify-center p-2">
                         <FolderIcon
                           className={`h-full w-full drop-shadow-sm ${
-                            theme === 'dark' ? 'text-slate-200' : 'text-white'
+                            resolvedTheme === 'dark' ? 'text-slate-200' : 'text-white'
                           }`}
                         />
                       </div>
                     </div>
                     <h1
                       className={`text-lg font-semibold drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-100' : 'text-white'
+                        resolvedTheme === 'dark' ? 'text-slate-100' : 'text-white'
                       }`}
                     >
                       Fotos ({filteredPhotos.length})
@@ -1052,7 +994,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     className="transform cursor-pointer transition-transform duration-200 hover:scale-110"
                   >
                     <div className="flex h-8 w-8 items-center justify-center p-2">
-                      {theme === 'dark' ? (
+                      {resolvedTheme === 'dark' ? (
                         <Sun
                           size={16}
                           className="animate-pulse text-yellow-300 drop-shadow-md"
@@ -1081,7 +1023,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     <SearchIcon
                       size={16}
                       className={
-                        theme === 'dark' ? 'text-slate-300' : 'text-white/80'
+                        resolvedTheme === 'dark' ? 'text-slate-300' : 'text-white/80'
                       }
                     />
                   </div>
@@ -1091,7 +1033,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`w-full bg-transparent py-3 pl-12 pr-4 text-sm transition-all focus:outline-none ${
-                      theme === 'dark'
+                      resolvedTheme === 'dark'
                         ? 'text-slate-100 placeholder-slate-400 focus:placeholder-slate-500'
                         : 'text-white placeholder-white/70 focus:placeholder-white/50'
                     }`}
@@ -1134,10 +1076,10 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         <div
                           className={`px-3 py-2 text-xs font-medium transition-all ${
                             filterStatus === filter.value
-                              ? theme === 'dark'
+                              ? resolvedTheme === 'dark'
                                 ? 'font-semibold text-slate-100 drop-shadow-md'
                                 : 'font-semibold text-white drop-shadow-md'
-                              : theme === 'dark'
+                              : resolvedTheme === 'dark'
                                 ? 'text-slate-300 hover:text-slate-100'
                                 : 'text-white/90 hover:text-white'
                           }`}
@@ -1197,7 +1139,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                         className={`flex h-5 w-5 items-center justify-center transition-all ${
                           allVisibleSelected
                             ? 'text-purple-600'
-                            : theme === 'dark'
+                            : resolvedTheme === 'dark'
                               ? 'border-2 border-slate-300'
                               : 'border-2 border-white/50'
                         }`}
@@ -1209,7 +1151,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     </div>
                     <span
                       className={`text-sm font-medium drop-shadow-sm ${
-                        theme === 'dark' ? 'text-slate-200' : 'text-white'
+                        resolvedTheme === 'dark' ? 'text-slate-200' : 'text-white'
                       }`}
                     >
                       Seleccionar todas
@@ -1289,14 +1231,14 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                       </div>
                       <h3
                         className={`mb-2 font-medium drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-200' : 'text-white'
+                          resolvedTheme === 'dark' ? 'text-slate-200' : 'text-white'
                         }`}
                       >
                         No se encontraron fotos
                       </h3>
                       <p
                         className={`text-sm drop-shadow-sm ${
-                          theme === 'dark' ? 'text-slate-400' : 'text-white/80'
+                          resolvedTheme === 'dark' ? 'text-slate-400' : 'text-white/80'
                         }`}
                       >
                         {searchQuery

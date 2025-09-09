@@ -178,7 +178,13 @@ export async function authenticateAdmin(
         metadata: { env: 'development' },
       };
 
-      AdminSecurityLogger.logAdminAccess(endpoint, devUser, request, requestId);
+      // Avoid spamming logs for high-frequency preview requests in dev
+      if (
+        !endpoint.startsWith('/admin/previews') ||
+        process.env.ADMIN_LOG_PREVIEW_ACCESS === 'true'
+      ) {
+        AdminSecurityLogger.logAdminAccess(endpoint, devUser, request, requestId);
+      }
 
       return {
         authenticated: true,
@@ -237,12 +243,17 @@ export async function authenticateAdmin(
       metadata: user.user_metadata,
     };
 
-    AdminSecurityLogger.logAdminAccess(
-      endpoint,
-      authenticatedUser,
-      request,
-      requestId
-    );
+    if (
+      !endpoint.startsWith('/admin/previews') ||
+      process.env.ADMIN_LOG_PREVIEW_ACCESS === 'true'
+    ) {
+      AdminSecurityLogger.logAdminAccess(
+        endpoint,
+        authenticatedUser,
+        request,
+        requestId
+      );
+    }
 
     return {
       authenticated: true,

@@ -66,7 +66,7 @@ export async function resolveFriendlyEventId(identifier: string): Promise<string
     }
 
     // Build query
-    let query = supabase
+    const query = supabase
       .from('events')
       .select('id, name, date');
 

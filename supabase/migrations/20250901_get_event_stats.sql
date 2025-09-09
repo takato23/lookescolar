@@ -41,7 +41,8 @@ RETURNS TABLE (
          COALESCE(ROUND(o.revenue_cents / 100.0)::int, 0) AS revenue
   FROM public.events e
   LEFT JOIN subjects s ON s.event_id = e.id
-  LEFT JOIN assets a   ON a.event_id = e.id
+  LEFT JOIN folders f ON f.event_id = e.id
+  LEFT JOIN assets a   ON a.folder_id = f.id
   LEFT JOIN orders o   ON o.event_id = e.id
   WHERE e.id = ANY (event_ids);
 $$ LANGUAGE sql STABLE;

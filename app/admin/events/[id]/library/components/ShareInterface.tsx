@@ -166,7 +166,7 @@ export function ShareInterface({
         payload.photoIds = selectedItems.map((item) => item.id);
       }
 
-      const response = await fetch('/api/admin/share', {
+      const response = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

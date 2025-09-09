@@ -42,7 +42,7 @@ async function getOrdersFallback(
   // Build base query
   let query = supabase.from('orders').select(`
       *,
-      event:events(name, school, date),
+      event:events(name, school, school_name, date),
       subject:subjects(name, email, phone)
     `);
 
@@ -61,7 +61,8 @@ async function getOrdersFallback(
     count: 'exact',
     head: true,
   });
-  const total = count || 0;
+  // Some Supabase setups may return null count for complex policies; fallback to page size
+  const total = typeof count === 'number' ? count : 0;
 
   // Get paginated results
   const { data: orders, error } = await query
@@ -76,7 +77,7 @@ async function getOrdersFallback(
   const transformedOrders = orders.map((order) => ({
     ...order,
     event_name: order.event?.name || null,
-    event_school: order.event?.school || null,
+    event_school: (order.event?.school ?? order.event?.school_name) || null,
     event_date: order.event?.date || null,
     subject_name: order.subject?.name || null,
     subject_email: order.subject?.email || null,
@@ -108,15 +109,20 @@ async function getOrdersFallback(
     priority_distribution: {},
   };
 
+  // If count is unavailable (0) but we fetched items, approximate total using current page context
+  const effectiveTotal = total === 0 && transformedOrders.length > 0
+    ? page * limit - (limit - transformedOrders.length)
+    : total;
+
   return {
     orders: transformedOrders,
     stats,
     pagination: {
       page,
       limit,
-      total,
-      total_pages: Math.ceil(total / limit),
-      has_more: total > page * limit,
+      total: effectiveTotal,
+      total_pages: Math.ceil(effectiveTotal / limit),
+      has_more: effectiveTotal > page * limit,
     },
   };
 }
@@ -156,6 +162,7 @@ export async function GET(request: NextRequest) {
     }
 
     const params = validation.data;
+    const useEnhancedOverride = url.searchParams.get('enhanced') === 'true';
 
     // Build filters object
     const filters: OrderFilters = {
@@ -170,13 +177,14 @@ export async function GET(request: NextRequest) {
     };
 
     try {
-      // Try to use enhanced order service first
+      // Try to use enhanced order service first, only if available
       const service = getEnhancedOrderService();
-      const result = await service.getOrders(
-        filters,
-        params.page,
-        params.limit
-      );
+      if (useEnhancedOverride || (await service.isAvailable())) {
+        const result = await service.getOrders(
+          filters,
+          params.page,
+          params.limit
+        );
 
       const duration = Date.now() - startTime;
 
@@ -190,22 +198,28 @@ export async function GET(request: NextRequest) {
         duration,
       });
 
-      return NextResponse.json({
-        orders: result.orders,
-        stats: result.stats,
-        pagination: result.pagination,
-        performance: {
-          query_time_ms: duration,
-          cache_used: false,
-          optimized: true,
-        },
-        generated_at: new Date().toISOString(),
-      } satisfies OrdersResponse & { pagination: any; performance: any });
-    } catch (serviceError) {
-      console.warn(
-        '[Admin Orders API] Enhanced service failed, using fallback:',
-        serviceError
-      );
+        return NextResponse.json({
+          orders: result.orders,
+          stats: result.stats,
+          pagination: result.pagination,
+          performance: {
+            query_time_ms: duration,
+            cache_used: false,
+            optimized: true,
+          },
+          generated_at: new Date().toISOString(),
+        } satisfies OrdersResponse & { pagination: any; performance: any });
+      }
+      throw new Error('ENHANCED_ORDERS_DISABLED');
+    } catch (serviceError: any) {
+      if (String(serviceError?.message || serviceError).includes('ENHANCED_ORDERS_DISABLED')) {
+        // Silent fallback when enhanced service is intentionally disabled or unavailable
+      } else {
+        console.warn(
+          '[Admin Orders API] Enhanced service failed, using fallback:',
+          serviceError
+        );
+      }
 
       // Fallback to direct table query
       const result = await getOrdersFallback(

@@ -4,13 +4,14 @@ import {
   getEnhancedOrderService,
   type UpdateOrderRequest,
 } from '@/lib/services/enhanced-order.service';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // Validation schema for order updates
 const UpdateOrderSchema = z.object({
   status: z
     .enum(['pending', 'approved', 'delivered', 'failed', 'cancelled'])
     .optional(),
-  admin_notes: z.string().max(1000).optional(),
+  notes: z.string().max(1000).optional(),
   priority_level: z.number().min(1).max(5).optional(),
   estimated_delivery_date: z.string().datetime().optional(),
   delivery_method: z
@@ -36,12 +37,17 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
-    // Get order with full details and audit information
-    const enhancedOrderService = getEnhancedOrderService();
-    const order = await enhancedOrderService.getOrderById(id);
+    // Get order directly from database
+    const supabase = await createServerSupabaseServiceClient();
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    // Get audit trail
-    const auditTrail = await enhancedOrderService.getOrderAuditTrail(id);
+    if (error || !order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
 
     const duration = Date.now() - startTime;
 
@@ -49,10 +55,9 @@ export async function GET(
 
     return NextResponse.json({
       order,
-      audit_trail: auditTrail,
       performance: {
         query_time_ms: duration,
-        optimized: true,
+        optimized: false,
       },
       generated_at: new Date().toISOString(),
     });
@@ -63,10 +68,6 @@ export async function GET(
       order_id: id,
       duration,
     });
-
-    if (error instanceof Error && error.message === 'Order not found') {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
 
     return NextResponse.json(
       {
@@ -190,32 +191,27 @@ export async function DELETE(
     const reason =
       request.nextUrl.searchParams.get('reason') || 'Admin cancellation';
 
-    // Extract admin context
-    const adminId = request.headers.get('x-admin-id') || undefined;
-    const ipAddress =
-      request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      request.ip;
-    const userAgent = request.headers.get('user-agent') || undefined;
-
     // Cancel the order (update status to cancelled)
-    const enhancedOrderService = getEnhancedOrderService();
-    const cancelledOrder = await enhancedOrderService.updateOrder(
-      id,
-      {
+    const supabase = await createServerSupabaseServiceClient();
+    const { data: cancelledOrder, error } = await supabase
+      .from('orders')
+      .update({
         status: 'cancelled',
-        admin_notes: reason,
-      },
-      adminId,
-      ipAddress,
-      userAgent
-    );
+        notes: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error || !cancelledOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
 
     const duration = Date.now() - startTime;
 
     console.log(`[Admin Order Cancel] Order ${id} cancelled in ${duration}ms`, {
       reason,
-      admin_id: adminId,
       duration,
     });
 
@@ -233,10 +229,6 @@ export async function DELETE(
       order_id: id,
       duration,
     });
-
-    if (error instanceof Error && error.message === 'Order not found') {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
 
     return NextResponse.json(
       {

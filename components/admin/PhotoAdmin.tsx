@@ -20,22 +20,79 @@ import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { uploadFiles, createApiUrl } from '@/lib/utils/api-client';
 
-// Utility function to convert preview path to proxy URL (admin-only access)
-const getPreviewUrl = (previewPath: string | null): string | null => {
-  if (!previewPath) return null;
-  if (previewPath.startsWith('http')) return previewPath;
+// Enhanced utility function to convert preview path to proxy URL (admin-only access)
+const getPreviewUrl = (previewPath: string | null, originalPath?: string | null): string | null => {
+  // Try preview path first
+  if (previewPath) {
+    if (previewPath.startsWith('http')) return previewPath;
 
-  // Extract filename from path (e.g. "previews/filename_preview.webp" -> "filename_preview.webp")
-  const filename = previewPath.includes('/')
-    ? previewPath.split('/').pop()
-    : previewPath;
-  if (!filename || !filename.endsWith('_preview.webp')) {
-    console.warn('Invalid preview path format:', previewPath);
-    return null;
+    // Normalize to path relative to the previews/ folder
+    let relative = previewPath;
+    const idx = previewPath.indexOf('/previews/');
+    if (idx >= 0) {
+      relative = previewPath.slice(idx + '/previews/'.length);
+    } else if (previewPath.startsWith('previews/')) {
+      relative = previewPath.slice('previews/'.length);
+    }
+
+    // Basic guard: must look like an image path
+    if (/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(relative)) {
+      // Use admin proxy URL which handles multiple storage paths internally
+      return `/admin/previews/${relative}`;
+    }
   }
 
-  // Use admin proxy URL which handles Supabase signed URLs internally
-  return `/admin/previews/${filename}`;
+  // Fallback to original path if preview not available
+  if (originalPath) {
+    if (originalPath.startsWith('http')) return originalPath;
+    
+    // Extract filename from original path for preview lookup
+    const filename = originalPath.split('/').pop();
+    if (filename && /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(filename)) {
+      return `/admin/previews/${filename}`;
+    }
+  }
+
+  return null;
+};
+
+// Component to handle image loading with proper error handling to prevent loops
+const SafeImage: React.FC<{
+  src: string | null;
+  alt: string;
+  className?: string;
+  loading?: "lazy" | "eager";
+}> = ({ src, alt, className, loading = "lazy" }) => {
+  const [hasError, setHasError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(src);
+
+  // Reset error state when src changes
+  useEffect(() => {
+    if (src !== currentSrc) {
+      setHasError(false);
+      setCurrentSrc(src);
+    }
+  }, [src, currentSrc]);
+
+  if (!src || hasError) {
+    return <ImageIcon className="h-8 w-8 text-gray-400" />;
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading={loading}
+      decoding="async"
+      onError={(e) => {
+        console.warn(`Preview failed to load: ${src}`);
+        setHasError(true);
+        // Prevent browser from retrying the same URL
+        (e.target as HTMLImageElement).src = '';
+      }}
+    />
+  );
 };
 
 // DND Kit for drag & drop
@@ -139,6 +196,12 @@ interface OptimizedAsset {
   id: string;
   filename: string;
   preview_path: string | null;
+  // May be provided by server for convenience; optional in payloads
+  preview_url?: string | null;
+  // Some payloads won’t include original_path; keep optional for fallbacks only
+  original_path?: string | null;
+  // Optional watermark path from some payloads
+  watermark_path?: string | null;
   file_size: number;
   created_at: string;
   status?: 'pending' | 'processing' | 'ready' | 'error';
@@ -1268,7 +1331,7 @@ const PhotoGridPanel: React.FC<{
         : undefined,
     } as React.CSSProperties;
 
-    const previewUrl = getPreviewUrl(asset.preview_path);
+    const previewUrl = asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path);
 
     return (
       <div
@@ -1306,16 +1369,11 @@ const PhotoGridPanel: React.FC<{
         {/* Image preview */}
         <div className="relative flex aspect-square items-center justify-center bg-gray-100">
           {previewUrl ? (
-            <img
+            <SafeImage
               src={previewUrl}
               alt={asset.filename}
               className="h-full w-full object-cover"
               loading="lazy"
-              decoding="async"
-              onError={(e) => {
-                console.warn(`Preview failed to load: ${previewUrl}`);
-                (e.target as HTMLImageElement).style.visibility = 'hidden';
-              }}
             />
           ) : (
             <ImageIcon className="h-8 w-8 text-gray-400" />
@@ -1378,22 +1436,12 @@ const PhotoGridPanel: React.FC<{
               </div>
 
               <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
-                {getPreviewUrl(asset.preview_path) ? (
-                  <img
-                    src={getPreviewUrl(asset.preview_path)!}
-                    alt={asset.filename}
-                    className="h-full w-full rounded object-cover"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      console.warn(
-                        `List view preview failed: ${getPreviewUrl(asset.preview_path)}`
-                      );
-                    }}
-                  />
-                ) : (
-                  <ImageIcon className="h-6 w-6 text-gray-400" />
-                )}
+                <SafeImage
+                  src={asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path)}
+                  alt={asset.filename}
+                  className="h-full w-full rounded object-cover"
+                  loading="lazy"
+                />
               </div>
 
               <div className="min-w-0 flex-1">
@@ -1704,18 +1752,13 @@ const InspectorPanel: React.FC<{
                 <CardContent className="space-y-3 p-4">
                   <h4 className="font-medium">Detalles</h4>
 
-                  {getPreviewUrl(selectedAssets[0].preview_path) && (
+                  {(selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)) && (
                     <div className="aspect-square overflow-hidden rounded bg-gray-100">
-                      <img
-                        src={getPreviewUrl(selectedAssets[0].preview_path)!}
+                      <SafeImage
+                        src={selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)}
                         alt={selectedAssets[0].filename}
                         className="h-full w-full object-cover"
                         loading="lazy"
-                        onError={(e) => {
-                          console.warn(
-                            `Inspector preview failed: ${getPreviewUrl(selectedAssets[0].preview_path)}`
-                          );
-                        }}
                       />
                     </div>
                   )}
@@ -1975,7 +2018,7 @@ export default function PhotoAdmin({
         const result = await response.json();
         setUploadState((prev) => {
           if (!prev) return prev;
-          let batches = prev.batches.map((x, idx) => {
+          const batches = prev.batches.map((x, idx) => {
             if (idx !== bi) return x;
             if (result?.success) {
               const uploadedNow = result?.uploaded ?? files.length;
@@ -2007,7 +2050,7 @@ export default function PhotoAdmin({
       } catch (err: any) {
         setUploadState((prev) => {
           if (!prev) return prev;
-          let batches = prev.batches.map((x, idx) =>
+          const batches = prev.batches.map((x, idx) =>
             idx === bi
               ? {
                   ...x,
@@ -2344,13 +2387,15 @@ export default function PhotoAdmin({
         (sum, page) => sum + page.assets.length,
         0
       );
-      console.debug('Pagination debug:', {
-        hasMore: lastPage.hasMore,
-        lastPageAssets: lastPage.assets.length,
-        currentTotal,
-        totalCount: lastPage.count,
-        nextOffset: lastPage.hasMore ? currentTotal : undefined,
-      });
+      if (process.env.NEXT_PUBLIC_PAGINATION_DEBUG === '1') {
+        console.debug('Pagination debug:', {
+          hasMore: lastPage.hasMore,
+          lastPageAssets: lastPage.assets.length,
+          currentTotal,
+          totalCount: lastPage.count,
+          nextOffset: lastPage.hasMore ? currentTotal : undefined,
+        });
+      }
       if (!lastPage.hasMore) return undefined;
       return currentTotal;
     },
@@ -2970,7 +3015,7 @@ export default function PhotoAdmin({
       else payload.photoIds = Array.from(selectedAssetIds);
 
       setIsCreatingShare(true);
-      const res = await fetch('/api/admin/share', {
+      const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, password: sharePassword || undefined }),
@@ -3061,7 +3106,7 @@ export default function PhotoAdmin({
         return;
       }
       setLoadingShares(true);
-      const res = await fetch(`/api/admin/share?eventId=${encodeURIComponent(selectedEventId)}`);
+      const res = await fetch(`/api/share?eventId=${encodeURIComponent(selectedEventId)}`);
       if (!res.ok) {
         setShares([]);
         return;
@@ -3111,8 +3156,9 @@ export default function PhotoAdmin({
 
         // Create image element
         const img = document.createElement('img');
-        const previewUrl = getPreviewUrl(
-          draggedAsset.preview_path || draggedAsset.watermark_path
+        const previewUrl = draggedAsset.preview_url ?? getPreviewUrl(
+          draggedAsset.preview_path || draggedAsset.watermark_path,
+          draggedAsset.original_path
         );
         if (previewUrl) {
           img.src = previewUrl;
@@ -3578,6 +3624,7 @@ export default function PhotoAdmin({
         {/* Main Content - 3 Panel Layout */}
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Left Panel: Folder Tree */}
+          {/* Left: 25% default */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
             <FolderTreePanel
               folders={folders}
@@ -3593,7 +3640,7 @@ export default function PhotoAdmin({
 
           <ResizableHandle />
 
-          {/* Center Panel: Photo Grid */}
+          {/* Center Panel: Photo Grid (50% default) */}
           <ResizablePanel defaultSize={50} minSize={30}>
             {hasError ? (
               <div className="flex flex-1 flex-col items-center justify-center bg-red-50 text-red-600">
@@ -3718,7 +3765,7 @@ export default function PhotoAdmin({
 
           <ResizableHandle />
 
-          {/* Right Panel: Inspector */}
+          {/* Right Panel: Inspector (25% default) */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
             <InspectorPanel
               selectedAssets={selectedAssets}
@@ -3741,35 +3788,14 @@ export default function PhotoAdmin({
           <div className="relative">
             {/* Main drag preview */}
             <div className="h-24 w-24 overflow-hidden rounded-lg border-2 border-blue-500 bg-white shadow-xl">
-              {draggedAssetData.preview_path ||
-              draggedAssetData.watermark_path ? (
-                <img
-                  src={
-                    getPreviewUrl(
-                      draggedAssetData.preview_path ||
-                        draggedAssetData.watermark_path
-                    ) || ''
-                  }
-                  alt="Dragging"
-                  className="h-full w-full object-cover"
-                  onError={(e) => {
-                    // Fallback to icon if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.parentElement!.innerHTML = `
-                      <div class="w-full h-full flex items-center justify-center bg-gray-100">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                      </div>
-                    `;
-                  }}
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                  <ImageIcon className="h-8 w-8 text-gray-400" />
-                </div>
-              )}
+              <SafeImage
+                src={draggedAssetData.preview_url ?? getPreviewUrl(
+                  draggedAssetData.preview_path || draggedAssetData.watermark_path,
+                  draggedAssetData.original_path
+                )}
+                alt="Dragging"
+                className="h-full w-full object-cover"
+              />
             </div>
 
             {/* Count badge for multiple selections */}
@@ -4362,7 +4388,7 @@ export default function PhotoAdmin({
                           variant="destructive"
                           onClick={async () => {
                             if (!confirm('¿Desactivar este enlace?')) return;
-                            const r = await fetch(`/api/admin/share?id=${encodeURIComponent(s.id)}`, { method: 'DELETE' });
+                              const r = await fetch(`/api/share/${encodeURIComponent(s.id)}`, { method: 'DELETE' });
                             if (r.ok) {
                               toast.success('Enlace desactivado');
                               await loadShares();

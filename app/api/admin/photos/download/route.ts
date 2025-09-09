@@ -130,7 +130,7 @@ async function handlePOST(request: NextRequest) {
     await archive.finalize();
 
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
+       
       console.debug('download_zip', { requestId, files: photos.length });
     }
 

@@ -1,0 +1,4 @@
+/* Fallback stylesheet to avoid 404s when a root-level /page.css is requested.
+   This file intentionally left minimal. Real styles come from app/globals.css. */
+
+/* Silence-only placeholder */

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { withAuth } from '@/lib/middleware/auth.middleware';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const supabase = await createServerSupabaseServiceClient();
 
@@ -75,10 +76,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // Create a new event
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest) => {
   try {
     const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
@@ -129,4 +130,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

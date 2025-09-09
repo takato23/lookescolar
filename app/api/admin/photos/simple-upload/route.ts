@@ -326,7 +326,7 @@ async function handlePOST(request: NextRequest) {
         }
 
         // Prefer eventId enviado por el cliente (form), luego query param, luego QR si existe
-        let finalEventId: string | null = (formEventId && isValidUUID(formEventId))
+        const finalEventId: string | null = (formEventId && isValidUUID(formEventId))
           ? formEventId
           : (queryEventId && isValidUUID(queryEventId))
             ? queryEventId

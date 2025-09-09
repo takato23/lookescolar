@@ -1,0 +1,70 @@
+/* Admin Photos — Enhanced contrast and dark-mode overrides (scoped) */
+.admin-photos, .admin-photos * { 
+  -webkit-font-smoothing: antialiased; 
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Light mode base */
+.admin-photos { 
+  color: #111827; 
+  background: #ffffff; 
+}
+
+/* Light mode colors with enhanced contrast */
+.admin-photos .text-gray-500 { color: #6b7280 !important; }
+.admin-photos .text-gray-600 { color: #4b5563 !important; }
+.admin-photos .text-gray-700 { color: #374151 !important; }
+.admin-photos .text-gray-800 { color: #1f2937 !important; }
+.admin-photos .text-gray-900 { color: #111827 !important; }
+.admin-photos .border-gray-200 { border-color: #e5e7eb !important; }
+.admin-photos .border-gray-300 { border-color: #d1d5db !important; }
+.admin-photos .bg-gray-50 { background-color: #f9fafb !important; }
+.admin-photos .bg-gray-100 { background-color: #f3f4f6 !important; }
+.admin-photos .bg-white { background-color: #ffffff !important; }
+
+/* Button improvements */
+.admin-photos .bg-white.border { 
+  border-color: #d1d5db !important; 
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Dark mode with proper contrast */
+.dark .admin-photos { 
+  color: #e5e7eb; 
+  background: #0f172a; 
+}
+
+.dark .admin-photos .bg-white { background-color: #1e293b !important; }
+.dark .admin-photos .bg-gray-50 { background-color: #334155 !important; }
+.dark .admin-photos .bg-gray-100 { background-color: #475569 !important; }
+.dark .admin-photos .text-gray-700 { color: #e2e8f0 !important; }
+.dark .admin-photos .text-gray-600 { color: #cbd5e1 !important; }
+.dark .admin-photos .text-gray-500 { color: #94a3b8 !important; }
+.dark .admin-photos .text-gray-800 { color: #f1f5f9 !important; }
+.dark .admin-photos .text-gray-900 { color: #f8fafc !important; }
+.dark .admin-photos .border-gray-200 { border-color: #475569 !important; }
+.dark .admin-photos .border-gray-300 { border-color: #64748b !important; }
+.dark .admin-photos .hover\:bg-gray-50:hover { background-color: #374151 !important; }
+
+/* Dark mode button improvements */
+.dark .admin-photos .bg-white.border { 
+  background-color: #1e293b !important;
+  border-color: #475569 !important; 
+  color: #e2e8f0 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .admin-photos .bg-white.border:hover { 
+  background-color: #334155 !important;
+  border-color: #64748b !important;
+}
+
+/* Ensure preview placeholders have visible contrast */
+.admin-photos .preview-placeholder {
+  background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 10px, #e5e7eb 10px, #e5e7eb 20px);
+}
+@media (prefers-color-scheme: dark) {
+  .admin-photos .preview-placeholder {
+    background: repeating-linear-gradient(45deg, #1f2937, #1f2937 10px, #111827 10px, #111827 20px);
+  }
+}

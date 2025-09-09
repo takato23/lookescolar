@@ -8,8 +8,9 @@ const ALLOWED_ORIGINS = [
   'https://lookescolar.com',
   'https://www.lookescolar.com',
   'https://admin.lookescolar.com',
-  'https://lookescolar.vercel.app', // Añadir dominio de Vercel
-  'https://*.vercel.app', // Permitir subdominios de Vercel
+  'https://lookescolar.vercel.app', // Dominio de Vercel del proyecto
+  // Nota: sólo permitimos wildcard en entornos no productivos
+  ...(process.env.NODE_ENV !== 'production' ? ['https://*.vercel.app'] : []),
 ];
 
 // Configuración CSP según CLAUDE.md - TEMPORALMENTE DESHABILITADO PARA DESARROLLO
@@ -75,15 +76,25 @@ export async function middleware(request: NextRequest) {
     const referer = request.headers.get('referer');
     const clientIP = getClientIP(request);
 
-    // Log request básico
-    logger.info('Request received', {
-      requestId,
-      method,
-      pathname,
-      userAgent: maskUserAgent(userAgent),
-      clientIP: maskIP(clientIP),
-      referer: referer ? maskUrl(referer) : null,
-    });
+    // Log request básico (silenciar rutas ruidosas en desarrollo)
+    const NOISY_PATHS = [
+      '/admin/previews',
+      '/_next',
+      '/favicon',
+      '/images',
+      '/public',
+    ];
+    const isNoisy = NOISY_PATHS.some((p) => pathname.startsWith(p));
+    if (!(process.env.NODE_ENV === 'development' && isNoisy)) {
+      logger.info('Request received', {
+        requestId,
+        method,
+        pathname,
+        userAgent: maskUserAgent(userAgent),
+        clientIP: maskIP(clientIP),
+        referer: referer ? maskUrl(referer) : null,
+      });
+    }
 
     // 1. HTTPS Enforcement en producción
     if (process.env.NODE_ENV === 'production' && !request.headers.get('x-forwarded-proto')?.includes('https')) {
@@ -190,15 +201,17 @@ export async function middleware(request: NextRequest) {
       });
     }
 
-    // Log exitoso
+    // Log exitoso (silenciar rutas ruidosas en desarrollo)
     const duration = Date.now() - startTime;
-    logger.info('Request processed successfully', {
-      requestId,
-      pathname,
-      method,
-      duration,
-      status: 'allowed',
-    });
+    if (!(process.env.NODE_ENV === 'development' && NOISY_PATHS.some((p) => pathname.startsWith(p)))) {
+      logger.info('Request processed successfully', {
+        requestId,
+        pathname,
+        method,
+        duration,
+        status: 'allowed',
+      });
+    }
 
     return response;
 

@@ -1135,7 +1135,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
 
       try {
         if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
+           
           console.debug('[MOVE] payload', { photoId, codeId: targetCodeId });
         }
         const response = await fetch(`/api/admin/photos/${photoId}/move`, {
@@ -1168,7 +1168,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         onCountsChanged?.();
         toast.success('Foto movida');
       } catch (error) {
-        // eslint-disable-next-line no-console
+         
         console.error('Error moving photo:', error);
         toast.error('Error al mover la foto');
       } finally {
@@ -1283,7 +1283,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     if (!codeId || movePhotoIds.length === 0) return;
     try {
       if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
+         
         console.debug('[MOVE] payload', { photoIds: movePhotoIds, codeId });
       }
       // Process moves sequentially to surface first error clearly

@@ -21,7 +21,7 @@ export type AuditActionType =
 
 export interface UpdateOrderRequest {
   status?: OrderStatus;
-  admin_notes?: string;
+  notes?: string;
   priority_level?: number;
   estimated_delivery_date?: string;
   delivery_method?: DeliveryMethod;
@@ -52,6 +52,11 @@ export interface OrderStats {
 export class EnhancedOrderService {
   private supabase: any = null;
   private initializing: Promise<void> | null = null;
+  private static availability: {
+    available: boolean;
+    lastCheck: number;
+    disabledUntil?: number;
+  } = { available: true, lastCheck: 0 };
 
   constructor() {
     this.initialize();
@@ -83,6 +88,52 @@ export class EnhancedOrderService {
   }
 
   /**
+   * Check if the backing view exists. If it doesn't, disable enhanced service
+   * for a period to avoid noisy fallbacks.
+   */
+  async isAvailable(): Promise<boolean> {
+    // Allow explicit opt-out via env
+    if (process.env['ENHANCED_ORDERS'] === 'false') {
+      EnhancedOrderService.availability.available = false;
+      return false;
+    }
+
+    const now = Date.now();
+    const state = EnhancedOrderService.availability;
+    const isDev = process.env.NODE_ENV !== 'production';
+    // In dev, recheck aggressively and don't lock out for long
+    const ttl = isDev ? 15 * 1000 : 5 * 60 * 1000; // 15s dev, 5m prod
+    if (!isDev && state.disabledUntil && now < state.disabledUntil) return false;
+    if (now - state.lastCheck < ttl) return state.available;
+
+    try {
+      await this.ensureInitialized();
+      const probe = await this.supabase
+        .from('order_details_with_audit')
+        .select('id')
+        .limit(1);
+      state.available = !probe.error;
+      state.lastCheck = now;
+      return state.available;
+    } catch (e: any) {
+      const msg = String(e?.message || e).toLowerCase();
+      // Missing relation: back off for 6h
+      if (msg.includes('does not exist') || msg.includes('relation')) {
+        state.available = false;
+        // In dev, do not set long backoff; recheck on next ttl
+        state.disabledUntil = isDev ? undefined : now + 6 * 60 * 60 * 1000;
+        state.lastCheck = now;
+        return false;
+      }
+      // Unknown error: short backoff
+      state.available = false;
+      state.disabledUntil = isDev ? undefined : now + 30 * 60 * 1000; // 30 min in prod
+      state.lastCheck = now;
+      return false;
+    }
+  }
+
+  /**
    * Get orders with enhanced filtering and audit information
    */
   async getOrders(
@@ -100,6 +151,10 @@ export class EnhancedOrderService {
       has_more: boolean;
     };
   }> {
+    // If not available, short-circuit to let API choose fallback without noise
+    if (!(await this.isAvailable())) {
+      throw new Error('ENHANCED_ORDERS_DISABLED');
+    }
     await this.ensureInitialized();
     const offset = (page - 1) * limit;
 
@@ -181,6 +236,9 @@ export class EnhancedOrderService {
         },
       };
     } catch (error) {
+      if (String((error as any)?.message || '').includes('ENHANCED_ORDERS_DISABLED')) {
+        throw error;
+      }
       console.error('Error in getOrders:', error);
       // Re-throw to let the API route handle the fallback
       throw error;
@@ -231,18 +289,18 @@ export class EnhancedOrderService {
     }
 
     // Log admin action if there are significant changes
-    if (updates.status || updates.admin_notes || updates.priority_level) {
+    if (updates.status || updates.notes || updates.priority_level) {
       await this.logAuditEvent({
         order_id: orderId,
         action_type: 'admin_action',
         old_values: {
           status: currentOrder.status,
-          admin_notes: currentOrder.admin_notes,
+          notes: currentOrder.notes,
           priority_level: currentOrder.priority_level,
         },
         new_values: {
           status: updates.status || currentOrder.status,
-          admin_notes: updates.admin_notes || currentOrder.admin_notes,
+          notes: updates.notes || currentOrder.notes,
           priority_level: updates.priority_level || currentOrder.priority_level,
         },
         changed_by: adminId,
@@ -261,10 +319,13 @@ export class EnhancedOrderService {
    * Get order by ID with full details
    */
   async getOrderById(orderId: string): Promise<OrderWithDetails> {
-    await this.ensureInitialized();
     const { data: order, error } = await this.supabase
-      .from('order_details_with_audit')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        event:events(name, school, date),
+        subject:subjects(name, email, phone)
+      `)
       .eq('id', orderId)
       .single();
 
@@ -272,7 +333,23 @@ export class EnhancedOrderService {
       throw new Error('Order not found');
     }
 
-    return order as OrderWithDetails;
+    // Transform to OrderWithDetails format
+    const transformedOrder = {
+      ...order,
+      event_name: order.event?.name || null,
+      event_school: order.event?.school || null,
+      event_date: order.event?.date || null,
+      subject_name: order.subject?.name || null,
+      subject_email: order.subject?.email || null,
+      subject_phone: order.subject?.phone || null,
+      audit_log_count: 0,
+      recent_audit_events: null,
+      enhanced_status: order.status,
+      hours_since_created: null,
+      hours_since_status_change: null,
+    };
+
+    return transformedOrder as OrderWithDetails;
   }
 
   /**
@@ -455,3 +532,5 @@ export function getEnhancedOrderService(): EnhancedOrderService {
   }
   return enhancedOrderServiceInstance;
 }
+
+export const enhancedOrderService = getEnhancedOrderService();

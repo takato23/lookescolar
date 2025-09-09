@@ -89,10 +89,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
 
       const supabase = await createServerSupabaseServiceClient();
 
-      // Get photo storage paths
+      // Get asset storage paths (unified assets table)
       const { data: photos, error: photosError } = await supabase
-        .from('photos')
-        .select('id, storage_path, preview_path')
+        .from('assets')
+        .select('id, original_path, preview_path')
         .in('id', photoIds);
 
       if (photosError) {
@@ -127,9 +127,9 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       // Prepare batch requests
-      const urlRequests = photos.map((photo) => ({
+      const urlRequests = photos.map((photo: any) => ({
         photoId: photo.id,
-        storagePath: photo.storage_path,
+        storagePath: photo.original_path,
         previewPath: photo.preview_path,
         usePreview,
         expiryMinutes,

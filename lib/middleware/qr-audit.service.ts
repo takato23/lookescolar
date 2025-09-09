@@ -139,4 +139,5 @@ class QRAuditService {
 }
 
 export const qrAuditService = new QRAuditService();
+export const securityAuditService = qrAuditService;
 export default qrAuditService;

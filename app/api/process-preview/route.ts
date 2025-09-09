@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const { assetId } = ProcessPreviewSchema.parse(body);
 
     // Create Supabase client
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -69,8 +69,15 @@ export async function POST(request: NextRequest) {
 
     try {
       // Download original image
-      const { data: originalData, error: downloadError } =
-        await supabase.storage.from('originals').download(asset.original_path);
+      const ORIGINAL_BUCKET =
+        process.env['STORAGE_BUCKET_ORIGINAL'] ||
+        process.env['STORAGE_BUCKET'] ||
+        'photo-private';
+      const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
+
+      const { data: originalData, error: downloadError } = await supabase.storage
+        .from(ORIGINAL_BUCKET)
+        .download(asset.original_path);
 
       if (downloadError || !originalData) {
         throw new Error('Failed to download original image');
@@ -153,15 +160,16 @@ export async function POST(request: NextRequest) {
         attempts++;
       } while (attempts < maxAttempts);
 
-      // Generate preview path
-      const previewPath = asset.original_path.replace(
-        /\.[^.]+$/,
-        '_preview.webp'
-      );
+      // Generate preview path (standardized): previews/<basename>_preview.webp
+      const baseName = String(asset.original_path)
+        .split('/')
+        .pop()!
+        .replace(/\.[^.]+$/, '');
+      const previewPath = `previews/${baseName}_preview.webp`;
 
       // Upload preview to public bucket
       const { error: uploadError } = await supabase.storage
-        .from('previews')
+        .from(PREVIEW_BUCKET)
         .upload(previewPath, imageBuffer, {
           contentType: 'image/webp',
           cacheControl: '3600',

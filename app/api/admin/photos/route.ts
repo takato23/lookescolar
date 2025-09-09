@@ -94,7 +94,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
 
     if (process.env.NODE_ENV === 'development') {
       // Debug log solo en dev
-      // eslint-disable-next-line no-console
+       
       console.debug('photos_query', { eventId: eventId || 'ALL', codeId, page, limit, offset });
     }
 
@@ -102,7 +102,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
     const buildBaseQuery = () => serviceClient
       .from('assets')
       .select(
-        `id, folder_id, filename, original_path, preview_path, file_size, created_at`,
+        `id, folder_id, filename, original_path, preview_path, watermark_path, file_size, created_at, status`,
         { count: 'exact' }
       );
     let query = buildBaseQuery();
@@ -209,38 +209,44 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       'info'
     );
 
-    // MEMORY OPTIMIZATION: Process photos efficiently with conditional preview URL generation  
-    let processedPhotos = await Promise.all((photos || []).map(async (photo: any) => {
+    // MEMORY OPTIMIZATION: Process assets efficiently with conditional preview URL generation  
+    let processedPhotos = await Promise.all((photos || []).map(async (asset: any) => {
       // Generate preview URL conditionally based on request size to avoid OOM
       let preview_url = null;
       
-      if ((photos?.length || 0) <= 20 && photo.preview_path) {
+      if ((photos?.length || 0) <= 20 && asset.preview_path) {
         try {
-          const urlResult = await signedUrlForKey(photo.preview_path);
+          const urlResult = await signedUrlForKey(asset.preview_path);
           // Ensure we only accept valid string URLs
           if (typeof urlResult === 'string' && urlResult.length > 0) {
             preview_url = urlResult;
           }
         } catch (error) {
-          console.warn(`Failed to generate preview URL for photo ${photo.id}:`, error);
+          console.warn(`Failed to generate preview URL for asset ${asset.id}:`, error);
           preview_url = null;
         }
       }
       
+      // Map assets table fields to photos API response format
       return {
-        id: photo.id,
-        event_id: photo.event_id,
-        original_filename: photo.original_filename,
-        storage_path: photo.storage_path,
-        preview_path: photo.preview_path ?? null,
+        id: asset.id,
+        event_id: null, // assets table uses folder_id instead
+        folder_id: asset.folder_id,
+        filename: asset.filename,
+        original_filename: asset.filename, // Map filename to original_filename for compatibility
+        storage_path: asset.original_path, // Map original_path to storage_path for compatibility
+        original_path: asset.original_path,
+        preview_path: asset.preview_path ?? null,
+        watermark_path: asset.watermark_path ?? null, // Include watermark_path for fallback
         preview_url,
-        approved: photo.approved,
-        created_at: photo.created_at,
-        file_size: photo.file_size ?? null,
-        width: photo.width ?? null,
-        height: photo.height ?? null,
+        approved: true, // Default to approved since assets table doesn't have this field yet
+        created_at: asset.created_at,
+        file_size: asset.file_size ?? null,
+        width: null, // Not in current assets schema
+        height: null, // Not in current assets schema
         subjects: [], // Empty for now to save memory - can be loaded separately if needed
         tagged: false, // Simplified for memory - can be enhanced later
+        status: asset.status || 'ready', // Include status from assets table
       };
     }));
 

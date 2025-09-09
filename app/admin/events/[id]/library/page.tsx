@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import EventPhotoManager from '@/components/admin/EventPhotoManager';
 import { Skeleton } from '@/components/ui/skeleton';
+import EventPhotoManager from '@/components/admin/EventPhotoManager';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -16,11 +16,9 @@ export default async function EventLibraryPage({ params }: PageProps) {
   const { id: eventId } = await params;
   
   return (
-    <div className="h-screen flex flex-col">
-      <Suspense fallback={<EventPhotoManagerSkeleton />}>
-        <EventPhotoManager eventId={eventId} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<EventPhotoManagerSkeleton />}>
+      <EventPhotoManager eventId={eventId} />
+    </Suspense>
   );
 }
 

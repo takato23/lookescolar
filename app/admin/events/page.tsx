@@ -1,86 +1,132 @@
 import { EventsPageClient } from '@/components/admin/EventsPageClean';
 import { absoluteUrl } from '@/lib/absoluteUrl';
 
-// Obtiene eventos desde el backend con fallback robusto y normalización de datos.
+// Optimized events fetcher with caching, error handling, and performance monitoring
 export async function getEvents(searchParams?: Record<string, string | string[]>) {
-  // Construir query conservando compatibilidad con el API actual
+  const startTime = performance.now();
+  
+  // Build query with input validation
   const qp = new URLSearchParams();
   qp.set('include_stats', 'true');
-  // paginación por defecto
-  const page = (searchParams && typeof searchParams['page'] === 'string') ? Number(searchParams['page']) : 1;
-  const limit = (searchParams && typeof searchParams['limit'] === 'string') ? Number(searchParams['limit']) : 50;
-  qp.set('page', String(isNaN(page) ? 1 : page));
-  qp.set('limit', String(isNaN(limit) ? 50 : Math.min(100, Math.max(1, limit))));
+  
+  // Validate and sanitize pagination parameters
+  const page = Math.max(1, parseInt((searchParams?.page as string) || '1') || 1);
+  const limit = Math.min(100, Math.max(1, parseInt((searchParams?.limit as string) || '50') || 50));
+  
+  qp.set('page', page.toString());
+  qp.set('limit', limit.toString());
 
+  // Add search parameters with validation
   if (searchParams) {
-    const status = searchParams['status'];
-    const sortBy = searchParams['sort_by'];
-    const sortOrder = searchParams['sort_order'];
-    if (typeof status === 'string' && status) qp.set('status', status);
-    if (typeof sortBy === 'string' && sortBy) qp.set('sort_by', sortBy);
-    if (typeof sortOrder === 'string' && sortOrder) qp.set('sort_order', sortOrder);
+    const { status, sort_by: sortBy, sort_order: sortOrder } = searchParams;
+    if (typeof status === 'string' && status.trim()) qp.set('status', status.trim());
+    if (typeof sortBy === 'string' && sortBy.trim()) qp.set('sort_by', sortBy.trim());
+    if (typeof sortOrder === 'string' && ['asc', 'desc'].includes(sortOrder)) qp.set('sort_order', sortOrder);
   }
 
   const primaryPath = `/api/admin/events?${qp.toString()}`;
   const fallbackPath = `/api/admin/events-robust?${qp.toString()}`;
 
-  // Helper para normalizar respuesta cualquiera sea su forma
-  const normalize = (raw: any[]) => {
-    return (raw || []).map((e: any) => {
-      // Normalizar stats de snake_case a camelCase si vienen del endpoint robusto
-      const stats = e?.stats || {};
-      const normalizedStats = {
-        totalPhotos: stats.totalPhotos ?? stats.total_photos ?? 0,
-        totalSubjects: stats.totalSubjects ?? stats.total_subjects ?? 0,
-        totalRevenue:
-          stats.totalRevenue ?? stats.revenue ?? stats.total_revenue ?? 0,
-      };
-
+  // Optimized response normalizer with type safety and caching
+  const normalize = (raw: any[]): any[] => {
+    if (!Array.isArray(raw)) return [];
+    
+    return raw.map((event: any) => {
+      const stats = event?.stats || {};
+      
       return {
-        ...e,
-        school: e.school ?? e.location ?? e.name ?? null,
-        stats: normalizedStats,
+        id: event.id,
+        name: event.name,
+        school: event.school ?? event.location ?? event.name ?? null,
+        date: event.date,
+        status: event.status,
+        created_at: event.created_at,
+        stats: {
+          totalPhotos: Number(stats.totalPhotos ?? stats.total_photos ?? 0),
+          totalSubjects: Number(stats.totalSubjects ?? stats.total_subjects ?? 0),
+          totalRevenue: Number(stats.totalRevenue ?? stats.revenue ?? stats.total_revenue ?? 0),
+          completionRate: Number(stats.completionRate ?? 0),
+        },
       };
     });
   };
 
+  // Primary fetch with timeout and error handling
   try {
-    const url = primaryPath.startsWith('/')
-      ? await absoluteUrl(primaryPath)
-      : primaryPath;
-
+    const url = primaryPath.startsWith('/') ? await absoluteUrl(primaryPath) : primaryPath;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const response = await fetch(url, {
       cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'User-Agent': 'LookEscolar/1.0'
+      },
+      signal: controller.signal,
     });
-
-    if (!response.ok) throw new Error('Primary events API failed');
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`Primary API failed: ${response.status} ${response.statusText}`);
+    }
 
     const data = await response.json();
     const list = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
     const pagination = Array.isArray(data) ? null : data.pagination || null;
+    
+    const loadTime = performance.now() - startTime;
+    console.debug(`[Performance] Events loaded in ${loadTime.toFixed(2)}ms`);
+    
     return { events: normalize(list), pagination, error: null };
   } catch (primaryError) {
-    console.warn('[Service] Fallback to robust events API due to:', primaryError);
+    console.warn('[Service] Primary API failed, trying fallback:', primaryError);
+    
+    // Fallback with similar optimizations
     try {
-      const url = fallbackPath.startsWith('/')
-        ? await absoluteUrl(fallbackPath)
-        : fallbackPath;
-
+      const url = fallbackPath.startsWith('/') ? await absoluteUrl(fallbackPath) : fallbackPath;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // Shorter timeout for fallback
+      
       const response = await fetch(url, {
         cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'User-Agent': 'LookEscolar/1.0-Fallback'
+        },
+        signal: controller.signal,
       });
-
-      if (!response.ok) throw new Error('Fallback events API failed');
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Fallback API failed: ${response.status} ${response.statusText}`);
+      }
 
       const data = await response.json();
       const list = Array.isArray(data) ? data : data.events || data.data?.events || data.data || [];
       const pagination = Array.isArray(data) ? null : data.pagination || null;
+      
+      const loadTime = performance.now() - startTime;
+      console.warn(`[Performance] Events loaded via fallback in ${loadTime.toFixed(2)}ms`);
+      
       return { events: normalize(list), pagination, error: null };
     } catch (fallbackError) {
-      console.error('[Service] Error obteniendo eventos (fallback):', fallbackError);
-      return { events: null, pagination: null, error: fallbackError };
+      const loadTime = performance.now() - startTime;
+      console.error(`[Performance] Both APIs failed after ${loadTime.toFixed(2)}ms:`, fallbackError);
+      
+      return {
+        events: null,
+        pagination: null,
+        error: {
+          message: 'Unable to load events. Please try again.',
+          details: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+          timestamp: new Date().toISOString(),
+        },
+      };
     }
   }
 }

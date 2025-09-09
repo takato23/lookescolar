@@ -343,7 +343,7 @@ export function HierarchicalFolderTreeEnhanced({
         variant="outline"
         size="sm"
         className="w-full justify-start text-gray-600 hover:text-blue-600 hover:border-blue-300"
-        onClick={() => onAction('create_child', { 
+        onClick={() => onFolderAction('create_child', { 
           id: 'root', 
           name: 'Raíz',
           parent_id: null,
