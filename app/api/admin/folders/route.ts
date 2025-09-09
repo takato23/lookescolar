@@ -7,7 +7,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
-import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import {
+  createServerSupabaseServiceClient,
+  createServerSupabaseClient,
+} from '@/lib/supabase/server';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
 
@@ -64,11 +67,9 @@ interface CreateFolderResponse {
 async function handleGET(request: NextRequest) {
   try {
     // Validate environment variables
-    if (
-      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      !process.env.SUPABASE_SERVICE_ROLE_KEY
-    ) {
-      logger.error('Missing Supabase environment variables');
+    // Soft-check env: allow anon fallback if service key is missing in dev
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      logger.error('Missing NEXT_PUBLIC_SUPABASE_URL');
       return NextResponse.json(
         { success: false, error: 'Database configuration error' },
         { status: 500 }
@@ -111,7 +112,7 @@ async function handleGET(request: NextRequest) {
     // Direct table query (stable, avoids optional RPC)
     let folders: any[] | undefined, error: any;
     let usingLegacy = false;
-    const supabaseAdmin = await createServerSupabaseServiceClient();
+    let supabaseClient = await createServerSupabaseServiceClient();
 
     // Parse scopes
     const scopes = queryParams.scopes
@@ -133,15 +134,14 @@ async function handleGET(request: NextRequest) {
           // root only when no event filter
           q.is('parent_id', null);
         }
-        return q.order('created_at', { ascending: true });
+        // Order by name to be compatible with schemas missing created_at
+        return q.order('name', { ascending: true });
       };
 
       if (filter.event_id) {
-        let q = supabaseAdmin
+        let q = supabaseClient
           .from('folders')
-          .select(
-            'id, name, parent_id, created_at, photo_count, depth, event_id'
-          )
+          .select('id, name, parent_id, depth, event_id')
           .eq('event_id', filter.event_id);
         q = applyCommonFilters(q);
         let r = await q;
@@ -155,19 +155,17 @@ async function handleGET(request: NextRequest) {
       }
 
       if (!filter.event_id || filter.include_global) {
-        let qg = supabaseAdmin
+        let qg = supabaseClient
           .from('folders')
-          .select(
-            'id, name, parent_id, created_at, photo_count, depth, event_id'
-          )
+          .select('id, name, parent_id, depth, event_id')
           .is('event_id', null);
         qg = applyCommonFilters(qg);
         let rg = await qg;
         if (rg.error && rg.error.code === '42703') {
           // Re-run without referencing event_id at all
-          let qg2 = supabaseAdmin
+          let qg2 = supabaseClient
             .from('folders')
-            .select('id, name, parent_id, created_at, photo_count, depth');
+            .select('id, name, parent_id, depth');
           qg2 = applyCommonFilters(qg2);
           rg = await qg2;
         }
@@ -219,6 +217,21 @@ async function handleGET(request: NextRequest) {
         usingLegacy = true;
       } else {
         error = subjectsResult.error;
+      }
+    }
+
+    // If initial attempt failed due to auth/key issues, retry with anon SSR client
+    if (error && (!('code' in error) || ['401', '403'].includes((error as any).code))) {
+      try {
+        supabaseClient = await createServerSupabaseClient();
+        const retry = await fetchFromFolders({
+          event_id: queryParams.event_id,
+          include_global: queryParams.include_global,
+        });
+        folders = retry.data;
+        error = retry.error;
+      } catch (e) {
+        // keep original error handling below
       }
     }
 

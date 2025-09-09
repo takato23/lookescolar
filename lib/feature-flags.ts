@@ -11,6 +11,7 @@ export interface FeatureFlags {
   EVENT_PHOTO_LIBRARY_ENABLED: boolean;
   EVENT_PHOTO_LIBRARY_VIRTUALIZATION: boolean;
   EVENT_PHOTO_LIBRARY_DRAG_DROP: boolean;
+  EVENT_PHOTO_LIBRARY_PREFETCH: boolean;
 
   // Fallbacks de seguridad
   LEGACY_FALLBACK_ENABLED: boolean;
@@ -32,6 +33,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   EVENT_PHOTO_LIBRARY_ENABLED: true, // ✅ Activado para desarrollo
   EVENT_PHOTO_LIBRARY_VIRTUALIZATION: true, // ✅ Activado para performance
   EVENT_PHOTO_LIBRARY_DRAG_DROP: true, // ✅ Activado para UX
+  EVENT_PHOTO_LIBRARY_PREFETCH: false, // 🚫 Desactivado para evitar recargas duplicadas
   LEGACY_FALLBACK_ENABLED: true,
   DEBUG_MIGRATION: true, // ✅ Activado para debugging
   UNIFIED_CART_STORE: false,
@@ -60,6 +62,9 @@ const flags: FeatureFlags = {
   EVENT_PHOTO_LIBRARY_DRAG_DROP:
     process.env.FF_EVENT_PHOTO_LIBRARY_DRAG_DROP === 'true' ||
     DEFAULT_FLAGS.EVENT_PHOTO_LIBRARY_DRAG_DROP,
+  EVENT_PHOTO_LIBRARY_PREFETCH:
+    process.env.FF_EVENT_PHOTO_LIBRARY_PREFETCH === 'true' ||
+    DEFAULT_FLAGS.EVENT_PHOTO_LIBRARY_PREFETCH,
   LEGACY_FALLBACK_ENABLED: process.env.FF_LEGACY_FALLBACK_ENABLED !== 'false', // Default true
   DEBUG_MIGRATION:
     process.env.FF_DEBUG_MIGRATION === 'true' || DEFAULT_FLAGS.DEBUG_MIGRATION,

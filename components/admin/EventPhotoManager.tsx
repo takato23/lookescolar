@@ -152,6 +152,8 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
             src={photo.thumbnail_url || photo.preview_url} 
             alt={photo.original_filename}
             className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
               e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -240,6 +242,8 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
           src={photo.preview_url} 
           alt={photo.original_filename}
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
+          loading="lazy"
+          decoding="async"
           onError={(e) => {
             e.currentTarget.style.display = 'none';
             e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -321,6 +325,53 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   const [manualStudentName, setManualStudentName] = useState('');
   const [manualStudentCourseId, setManualStudentCourseId] = useState<string>('');
 
+  // Assets pagination and loading state
+  const ASSETS_PAGE_SIZE = 60;
+  const [assetsOffset, setAssetsOffset] = useState(0);
+  const [hasMoreAssets, setHasMoreAssets] = useState(true);
+  const [loadingMoreAssets, setLoadingMoreAssets] = useState(false);
+
+  // Helper: map raw asset to Photo
+  const mapAssets = (items: Array<any>): Photo[] =>
+    items.map((a) => ({
+      id: a.id,
+      original_filename: a.filename || 'archivo',
+      preview_url: a.preview_url || null,
+      thumbnail_url: a.preview_url || null,
+      file_size: a.file_size || 0,
+      created_at: a.created_at,
+      approved: true,
+      tagged: false,
+    }));
+
+  // Fetch assets page with light retry/backoff
+  const fetchAssetsPage = async (
+    folderId: string,
+    offset: number,
+    signal?: AbortSignal
+  ): Promise<Photo[]> => {
+    const params = new URLSearchParams({
+      folder_id: folderId,
+      limit: String(ASSETS_PAGE_SIZE),
+      offset: String(offset),
+    });
+    const attempt = async (delayMs: number) => {
+      const res = await fetch(`/api/admin/assets?${params.toString()}`, { signal });
+      if (!res.ok) throw new Error(`Error fetching assets: ${res.status} ${res.statusText}`);
+      const json = await res.json();
+      const items = (json.assets || []) as Array<any>;
+      return mapAssets(items);
+    };
+
+    try {
+      return await attempt(0);
+    } catch (e1) {
+      // One simple retry (backoff ~1s)
+      await new Promise((r) => setTimeout(r, 1000));
+      return await attempt(1000);
+    }
+  };
+
   // Helpers for folder tree
   const refreshEnhancedFolders = async () => {
     const limit = 50;
@@ -398,6 +449,10 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
 
   const handleApprovePhotos = async () => {
     if (selectedPhotoIds.length === 0) return;
+    const ok = typeof window !== 'undefined'
+      ? window.confirm(`¿Aprobar ${selectedPhotoIds.length} foto(s)?`)
+      : true;
+    if (!ok) return;
     
     try {
       setBulkActionLoading(true);
@@ -454,32 +509,28 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       return;
     }
     try {
-      const fd = new FormData();
-      for (const f of files) fd.append('files', f);
-      fd.append('folder_id', selectedFolderId);
-      const res = await fetch('/api/admin/assets/upload', { method: 'POST', body: fd });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json?.error || 'Fallo la carga');
+      // Subir en lotes pequeños para evitar picos de memoria
+      const CHUNK = 8;
+      let uploadedTotal = 0;
+      for (let i = 0; i < files.length; i += CHUNK) {
+        const slice = files.slice(i, i + CHUNK);
+        const fd = new FormData();
+        slice.forEach((f) => fd.append('files', f));
+        fd.append('folder_id', selectedFolderId);
+        const res = await fetch('/api/admin/assets/upload', { method: 'POST', body: fd });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          throw new Error(json?.error || 'Fallo la carga');
+        }
+        uploadedTotal += Number(json.uploaded || slice.length);
       }
-      try { (await import('sonner')).toast.success(`Subidas ${json.uploaded} imágenes`); } catch {}
-      
-      const params = new URLSearchParams({ folder_id: selectedFolderId, limit: '60' });
-      const list = await fetch(`/api/admin/assets?${params.toString()}`);
-      if (list.ok) {
-        const data = await list.json();
-        const mapped: Photo[] = (data.assets || []).map((a: any) => ({
-          id: a.id,
-          original_filename: a.filename || 'archivo',
-          preview_url: a.preview_url || null,
-          thumbnail_url: a.preview_url || null,
-          file_size: a.file_size || 0,
-          created_at: a.created_at,
-          approved: true,
-          tagged: false,
-        }));
-        setPhotos(mapped);
-      }
+      try { (await import('sonner')).toast.success(`Subidas ${uploadedTotal} imágenes`); } catch {}
+
+      // Refrescar primera página y resetear paginación
+      const first = await fetchAssetsPage(selectedFolderId, 0);
+      setPhotos(first);
+      setAssetsOffset(first.length);
+      setHasMoreAssets(first.length >= ASSETS_PAGE_SIZE);
     } catch (e) {
       console.error('Upload failed', e);
       try { (await import('sonner')).toast.error('No se pudieron subir las imágenes'); } catch {}
@@ -765,38 +816,51 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     }
   };
 
-  // Load assets when folder changes
+  // Load assets when folder changes (with cancellation)
   useEffect(() => {
-    const fetchAssets = async () => {
+    const controller = new AbortController();
+    const load = async () => {
       if (!selectedFolderId) {
         setPhotos([]);
+        setAssetsOffset(0);
+        setHasMoreAssets(true);
         return;
       }
       try {
-        const params = new URLSearchParams({ folder_id: selectedFolderId, limit: '60' });
-        const res = await fetch(`/api/admin/assets?${params.toString()}`);
-        if (!res.ok) throw new Error(`Error fetching assets: ${res.status} ${res.statusText}`);
-        const json = await res.json();
-        const items = (json.assets || []) as Array<any>;
-        
-        const mapped: Photo[] = items.map((a) => ({
-          id: a.id,
-          original_filename: a.filename || 'archivo',
-          preview_url: a.preview_url || null,
-          thumbnail_url: a.preview_url || null,
-          file_size: a.file_size || 0,
-          created_at: a.created_at,
-          approved: true,
-          tagged: false,
-        }));
-        setPhotos(mapped);
-      } catch (e) {
+        const firstPage = await fetchAssetsPage(selectedFolderId, 0, controller.signal);
+        setPhotos(firstPage);
+        setAssetsOffset(firstPage.length);
+        setHasMoreAssets(firstPage.length >= ASSETS_PAGE_SIZE);
+      } catch (e: any) {
+        if (e?.name === 'AbortError') return;
         console.error('Error loading assets', e);
         setPhotos([]);
+        setAssetsOffset(0);
+        setHasMoreAssets(true);
       }
     };
-    fetchAssets();
+    load();
+    return () => controller.abort();
   }, [selectedFolderId]);
+
+  const handleLoadMoreAssets = async () => {
+    if (!selectedFolderId || loadingMoreAssets || !hasMoreAssets) return;
+    setLoadingMoreAssets(true);
+    try {
+      const next = await fetchAssetsPage(selectedFolderId, assetsOffset);
+      // Dedup by id
+      const map = new Map<string, Photo>();
+      [...photos, ...next].forEach((p) => map.set(p.id, p));
+      const merged = Array.from(map.values());
+      setPhotos(merged);
+      setAssetsOffset(assetsOffset + next.length);
+      setHasMoreAssets(next.length >= ASSETS_PAGE_SIZE);
+    } catch (e) {
+      console.error('Load more assets failed', e);
+    } finally {
+      setLoadingMoreAssets(false);
+    }
+  };
 
   // Auto-select first available folder if none selected
   useEffect(() => {
@@ -1347,7 +1411,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                       />
                     ))}
                   </div>
-                ) : selectedFolderId ? (
+                ) : selectedFolderId && photos.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                     <ImageIcon className="h-16 w-16 mb-4 text-gray-300" />
                     <p className="text-lg font-medium mb-2">No hay fotos en esta carpeta</p>
@@ -1357,11 +1421,35 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                       Subir fotos
                     </Button>
                   </div>
+                ) : selectedFolderId ? (
+                  null
                 ) : (
                   <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                     <Folder className="h-16 w-16 mb-4 text-gray-300" />
                     <p className="text-lg font-medium mb-2">Selecciona una carpeta</p>
                     <p className="text-sm text-gray-400">Elige una carpeta de la barra lateral para ver las fotos</p>
+                  </div>
+                )}
+
+                {/* Load more button */}
+                {selectedFolderId && filteredPhotos.length > 0 && hasMoreAssets && (
+                  <div className="flex justify-center py-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLoadMoreAssets}
+                      disabled={loadingMoreAssets}
+                      className="px-6"
+                    >
+                      {loadingMoreAssets ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Cargando...
+                        </>
+                      ) : (
+                        'Cargar más'
+                      )}
+                    </Button>
                   </div>
                 )}
                 

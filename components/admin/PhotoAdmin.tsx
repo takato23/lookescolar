@@ -196,6 +196,12 @@ interface OptimizedAsset {
   id: string;
   filename: string;
   preview_path: string | null;
+  // May be provided by server for convenience; optional in payloads
+  preview_url?: string | null;
+  // Some payloads won’t include original_path; keep optional for fallbacks only
+  original_path?: string | null;
+  // Optional watermark path from some payloads
+  watermark_path?: string | null;
   file_size: number;
   created_at: string;
   status?: 'pending' | 'processing' | 'ready' | 'error';
@@ -1325,7 +1331,7 @@ const PhotoGridPanel: React.FC<{
         : undefined,
     } as React.CSSProperties;
 
-    const previewUrl = getPreviewUrl(asset.preview_path, asset.original_path);
+    const previewUrl = asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path);
 
     return (
       <div
@@ -1431,7 +1437,7 @@ const PhotoGridPanel: React.FC<{
 
               <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
                 <SafeImage
-                  src={getPreviewUrl(asset.preview_path, asset.original_path)}
+                  src={asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path)}
                   alt={asset.filename}
                   className="h-full w-full rounded object-cover"
                   loading="lazy"
@@ -1746,10 +1752,10 @@ const InspectorPanel: React.FC<{
                 <CardContent className="space-y-3 p-4">
                   <h4 className="font-medium">Detalles</h4>
 
-                  {getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path) && (
+                  {(selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)) && (
                     <div className="aspect-square overflow-hidden rounded bg-gray-100">
                       <SafeImage
-                        src={getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)}
+                        src={selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)}
                         alt={selectedAssets[0].filename}
                         className="h-full w-full object-cover"
                         loading="lazy"
@@ -2381,13 +2387,15 @@ export default function PhotoAdmin({
         (sum, page) => sum + page.assets.length,
         0
       );
-      console.debug('Pagination debug:', {
-        hasMore: lastPage.hasMore,
-        lastPageAssets: lastPage.assets.length,
-        currentTotal,
-        totalCount: lastPage.count,
-        nextOffset: lastPage.hasMore ? currentTotal : undefined,
-      });
+      if (process.env.NEXT_PUBLIC_PAGINATION_DEBUG === '1') {
+        console.debug('Pagination debug:', {
+          hasMore: lastPage.hasMore,
+          lastPageAssets: lastPage.assets.length,
+          currentTotal,
+          totalCount: lastPage.count,
+          nextOffset: lastPage.hasMore ? currentTotal : undefined,
+        });
+      }
       if (!lastPage.hasMore) return undefined;
       return currentTotal;
     },
@@ -3148,7 +3156,7 @@ export default function PhotoAdmin({
 
         // Create image element
         const img = document.createElement('img');
-        const previewUrl = getPreviewUrl(
+        const previewUrl = draggedAsset.preview_url ?? getPreviewUrl(
           draggedAsset.preview_path || draggedAsset.watermark_path,
           draggedAsset.original_path
         );
@@ -3616,7 +3624,8 @@ export default function PhotoAdmin({
         {/* Main Content - 3 Panel Layout */}
         <ResizablePanelGroup direction="horizontal" className="flex-1">
           {/* Left Panel: Folder Tree */}
-          <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
+          {/* Left: 25% default */}
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
             <FolderTreePanel
               folders={folders}
               selectedFolderId={selectedFolderId}
@@ -3631,8 +3640,8 @@ export default function PhotoAdmin({
 
           <ResizableHandle />
 
-          {/* Center Panel: Photo Grid */}
-          <ResizablePanel defaultSize={70} minSize={30}>
+          {/* Center Panel: Photo Grid (50% default) */}
+          <ResizablePanel defaultSize={50} minSize={30}>
             {hasError ? (
               <div className="flex flex-1 flex-col items-center justify-center bg-red-50 text-red-600">
                 <AlertCircle className="mb-4 h-12 w-12" />
@@ -3756,8 +3765,8 @@ export default function PhotoAdmin({
 
           <ResizableHandle />
 
-          {/* Right Panel: Inspector */}
-          <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
+          {/* Right Panel: Inspector (25% default) */}
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
             <InspectorPanel
               selectedAssets={selectedAssets}
               folders={folders}
@@ -3780,9 +3789,8 @@ export default function PhotoAdmin({
             {/* Main drag preview */}
             <div className="h-24 w-24 overflow-hidden rounded-lg border-2 border-blue-500 bg-white shadow-xl">
               <SafeImage
-                src={getPreviewUrl(
-                  draggedAssetData.preview_path ||
-                    draggedAssetData.watermark_path,
+                src={draggedAssetData.preview_url ?? getPreviewUrl(
+                  draggedAssetData.preview_path || draggedAssetData.watermark_path,
                   draggedAssetData.original_path
                 )}
                 alt="Dragging"

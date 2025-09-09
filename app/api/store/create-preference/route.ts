@@ -151,7 +151,26 @@ export async function POST(request: NextRequest) {
         requestId,
         hasAccessToken: !!accessToken,
         hasPublicKey: !!publicKey,
+        env: process.env.NODE_ENV,
       });
+      if (process.env.NODE_ENV !== 'production') {
+        // Dev fallback to allow end-to-end testing without MP keys
+        const devPreferenceId = `dev_${order.id}`;
+        const baseUrl =
+          request.headers.get('origin') ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          'http://localhost:3000';
+        const basePath = 'store-unified';
+        return NextResponse.json({
+          success: true,
+          preference_id: devPreferenceId,
+          init_point: `${baseUrl}/${basePath}/${order.token}/payment/success?pref_id=${devPreferenceId}`,
+          sandbox_init_point: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${devPreferenceId}`,
+          public_key: 'TEST_PUBLIC_KEY',
+          order_id: order.id,
+          warning: 'Using development fallback due to missing MP credentials',
+        });
+      }
       return NextResponse.json(
         { error: 'MercadoPago credentials not configured' },
         { status: 500 }
@@ -321,6 +340,26 @@ export async function POST(request: NextRequest) {
     if (!mpResponse.ok) {
       const mpError = await mpResponse.text();
       console.error('[MP][create-preference] API error', { requestId, mpError });
+      if (process.env.NODE_ENV !== 'production') {
+        const devPreferenceId = `dev_${order.id}`;
+        const baseUrl =
+          request.headers.get('origin') ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          'http://localhost:3000';
+        const basePath = 'store-unified';
+        return NextResponse.json(
+          {
+            success: true,
+            preference_id: devPreferenceId,
+            init_point: `${baseUrl}/${basePath}/${order.token}/payment/success?pref_id=${devPreferenceId}`,
+            sandbox_init_point: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${devPreferenceId}`,
+            public_key: publicKey,
+            order_id: order.id,
+            warning: 'Using development fallback due to MP error',
+          },
+          { status: 200 }
+        );
+      }
       return NextResponse.json(
         { error: 'Error creating payment preference' },
         { status: 500 }

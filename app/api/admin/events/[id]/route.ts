@@ -59,7 +59,7 @@ async function resolveFriendlyEventIdInline(identifier: string) {
 
 // Get a single event with stats
 export const GET = RateLimitMiddleware.withRateLimit(
-  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  withAuth(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     try {
       const supabase = await createServerSupabaseServiceClient();
       const { id } = await params;
@@ -133,7 +133,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
         { status: 500 }
       );
     }
-  }
+  })
 );
 
 export const PATCH = RateLimitMiddleware.withRateLimit(

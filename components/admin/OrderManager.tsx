@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -162,6 +162,10 @@ export default function OrderManager() {
   // Auto-refresh state
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const didInitialLoadRef = React.useRef(false);
+
+  // Performance diagnostics from API
+  const [perf, setPerf] = useState<{ query_time_ms?: number; optimized?: boolean; fallback_used?: boolean }>({});
 
   // Load orders with enhanced filtering
   const loadOrders = useCallback(
@@ -188,6 +192,15 @@ export default function OrderManager() {
         setOrders(data.orders || []);
         setStats(data.stats || null);
         setLastRefresh(new Date());
+        if (data.performance) {
+          setPerf({
+            query_time_ms: data.performance.query_time_ms,
+            optimized: data.performance.optimized,
+            fallback_used: data.performance.fallback_used,
+          });
+        } else {
+          setPerf({});
+        }
       } catch (error) {
         console.error('Error loading orders:', error);
         setError(error instanceof Error ? error.message : 'Unknown error');
@@ -202,6 +215,8 @@ export default function OrderManager() {
 
   // Auto-refresh logic
   useEffect(() => {
+    if (didInitialLoadRef.current) return; // avoid React 18 dev double effect
+    didInitialLoadRef.current = true;
     loadOrders();
   }, [loadOrders]);
 
@@ -1102,6 +1117,18 @@ export default function OrderManager() {
               {searchQuery && ` (filtrado por "${searchQuery}")`}
             </div>
             <div className="flex items-center gap-3">
+              {/* Performance status */}
+              {typeof perf.query_time_ms === 'number' && (
+                <div className="flex items-center gap-2 text-xs">
+                  <Badge
+                    variant={perf.optimized ? 'success' : perf.fallback_used ? 'destructive' : 'secondary'}
+                    className="rounded-full"
+                  >
+                    {perf.optimized ? 'Enhanced' : perf.fallback_used ? 'Fallback' : 'Normal'} • {perf.query_time_ms} ms
+                  </Badge>
+                  <span className="text-muted-foreground">{lastRefresh.toLocaleTimeString('es-AR')}</span>
+                </div>
+              )}
               <Button
                 onClick={() => loadOrders()}
                 variant="outline"
@@ -1113,6 +1140,35 @@ export default function OrderManager() {
               >
                 {loading ? 'Cargando...' : 'Actualizar'}
               </Button>
+              {process.env.NODE_ENV !== 'production' && (
+                <Button
+                  onClick={async () => {
+                    try {
+                      const params = new URLSearchParams({
+                        page: currentPage.toString(),
+                        limit: pageSize.toString(),
+                        status: filter,
+                        ...(eventId && { event_id: eventId }),
+                        ...(searchQuery && { search: searchQuery }),
+                        enhanced: 'true',
+                      });
+                      const res = await fetch(`/api/admin/orders?${params}`);
+                      const data = await res.json();
+                      setOrders(data.orders || []);
+                      setStats(data.stats || null);
+                      if (data.performance) setPerf(data.performance);
+                      setLastRefresh(new Date());
+                    } catch (e) {
+                      console.error('Enhanced test failed', e);
+                    }
+                  }}
+                  size="sm"
+                  variant="secondary"
+                  className="rounded-full"
+                >
+                  Probar Enhanced
+                </Button>
+              )}
             </div>
           </div>
 

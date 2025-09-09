@@ -403,12 +403,20 @@ const PhotoItemContent = memo<{ photo: Photo }>(({ photo }) => {
               ref={imgRef}
               src={
                 photo.signed_url || 
-                (photo.preview_path ? `/admin/previews/${photo.preview_path.split('/').pop()}` : 
-                 photo.storage_path ? `/admin/previews/${photo.storage_path.split('/').pop()}` : 
-                 photo.original_filename ? `/admin/previews/${photo.original_filename}` : '')
+                (photo.preview_path ? (() => {
+                  // Prefer path-based resolver when we know exact preview_path
+                  const rel = (photo.preview_path.includes('previews/')
+                    ? photo.preview_path.split('previews/')[1]
+                    : photo.preview_path
+                  ).replace(/^\/+/, '');
+                  return rel ? `/admin/previews/${rel}${cacheBust ? `?v=${cacheBust}` : ''}` : '';
+                })() : 
+                  photo.storage_path ? `/admin/previews/${photo.storage_path.split('/').pop()}${cacheBust ? `?v=${cacheBust}` : ''}` : 
+                  photo.original_filename ? `/admin/previews/${photo.original_filename}${cacheBust ? `?v=${cacheBust}` : ''}` : '')
               }
               alt={photo.original_filename}
               fill
+              unoptimized
               className={cn(
                 'object-cover transition-opacity duration-300',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -506,6 +514,8 @@ const ContentGridPanel = ({
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
     null
   );
+  // Cache-busting token for preview URLs when admin pulsa "Actualizar"
+  const [cacheBust, setCacheBust] = useState(0);
   const [dragState, setDragState] = useState({
     isDragging: false,
     draggedItems: [] as string[],
@@ -554,6 +564,8 @@ const ContentGridPanel = ({
   // Enhanced image preloading with concurrency control - stabilized to prevent infinite re-renders
   const preloadImages = useCallback(
     async (photoIds: string[]) => {
+      // Prefetch is optional; disabled by default to avoid duplicate network requests
+      if (!featureFlags.EVENT_PHOTO_LIBRARY_PREFETCH) return;
       if (
         !featureFlags.EVENT_PHOTO_LIBRARY_VIRTUALIZATION ||
         photoIds.length === 0
@@ -957,7 +969,10 @@ const ContentGridPanel = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={onRefresh}
+              onClick={() => {
+                setCacheBust((n) => n + 1);
+                onRefresh();
+              }}
               disabled={loading}
             >
               {loading ? (

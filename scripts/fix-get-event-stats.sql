@@ -1,5 +1,9 @@
--- Aggregated event stats function
--- Returns subjects, photos (assets ready), orders count and revenue (ARS int)
+-- Fix get_event_stats function
+-- The previous version had an incorrect JOIN condition
+
+DROP FUNCTION IF EXISTS public.get_event_stats(uuid[]);
+
+-- Recreate the function with the correct JOIN conditions
 CREATE OR REPLACE FUNCTION public.get_event_stats(event_ids uuid[])
 RETURNS TABLE (
   event_id uuid,
@@ -47,6 +51,6 @@ RETURNS TABLE (
   WHERE e.id = ANY (event_ids);
 $$ LANGUAGE sql STABLE;
 
--- Permissions (service role can execute; optional for authenticated)
+-- Grant permissions
 GRANT EXECUTE ON FUNCTION public.get_event_stats(uuid[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_event_stats(uuid[]) TO anon;

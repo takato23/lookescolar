@@ -26,6 +26,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { fetchCounter } from '@/lib/services/fetch-counter';
+import { extractTokenFromStoreUrl } from '@/lib/utils/store';
 
 type InitialData = {
   folders: Array<{
@@ -408,6 +409,8 @@ export default function PublishClient(props?: {
   };
 
   const [publicStoreUrl, setPublicStoreUrl] = useState<string>('');
+  const [creatingEventLink, setCreatingEventLink] = useState(false);
+  const [creatingTestPreference, setCreatingTestPreference] = useState(false);
 
   useEffect(() => {
     const loadPublicShare = async () => {
@@ -428,6 +431,89 @@ export default function PublishClient(props?: {
   }, [effectiveEvent?.id, selectedEventId]);
 
   const getPublicUrl = () => publicStoreUrl || '';
+  const getActiveToken = () => {
+    // Prefer selected folder token if exactly one folder selected and published
+    if (selectedFolders.length === 1) {
+      const f = effectiveFolders.find((x) => x.id === selectedFolders[0]);
+      if (f?.share_token) return f.share_token;
+      if (f?.unified_share_token) return f.unified_share_token;
+      if (f?.store_url) return extractTokenFromStoreUrl(f.store_url);
+    }
+    // Fallback to event-level store url
+    return extractTokenFromStoreUrl(publicStoreUrl);
+  };
+
+  const createEventShareLink = async () => {
+    const eventId = effectiveEvent?.id || selectedEventId;
+    if (!eventId) return;
+    setCreatingEventLink(true);
+    try {
+      const resp = await fetch('/api/admin/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareType: 'event', eventId }),
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json?.error || 'No se pudo crear el enlace');
+      const url = json?.links?.store || json?.share?.storeUrl;
+      if (url) setPublicStoreUrl(url);
+    } catch (e) {
+      console.error('Error creando enlace público del evento', e);
+    } finally {
+      setCreatingEventLink(false);
+    }
+  };
+
+  const createTestCheckoutPreference = async () => {
+    const token = getActiveToken();
+    if (!token) return;
+    setCreatingTestPreference(true);
+    try {
+      const orderId = `test_${Date.now().toString(36)}`;
+      // Mínimo payload válido acorde a /api/store/create-preference
+      const payload = {
+        order: {
+          id: orderId,
+          token,
+          basePackage: {
+            id: 'option_a',
+            name: 'OPCIÓN A',
+            basePrice: 8500,
+          },
+          selectedPhotos: { individual: [], group: [] },
+          additionalCopies: [],
+          contactInfo: {
+            name: 'Admin Test',
+            email: 'admin@example.com',
+            phone: '1100000000',
+            address: {
+              street: 'Calle Falsa 123',
+              city: 'CABA',
+              state: 'CABA',
+              zipCode: '1000',
+              country: 'Argentina',
+            },
+          },
+          totalPrice: 8500 + 1500, // paquete + envío
+        },
+        callbackBase: 'store-unified',
+      } as const;
+
+      const resp = await fetch('/api/store/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json?.error || 'No se pudo crear preferencia');
+      const url = json?.sandbox_init_point || json?.init_point;
+      if (url) window.open(url, '_blank');
+    } catch (e) {
+      console.error('Error creando preferencia de prueba', e);
+    } finally {
+      setCreatingTestPreference(false);
+    }
+  };
 
   // Simple performance stats displayed in UI
   const performanceMetrics = {
@@ -511,6 +597,68 @@ export default function PublishClient(props?: {
             Configuración
           </Button>
         </div>
+      </div>
+
+      {/* Enlace público del evento y Checkout de prueba */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="mb-1 text-sm font-medium">Enlace público del evento</div>
+              {getPublicUrl() ? (
+                <div className="text-sm text-gray-700 break-all">{getPublicUrl()}</div>
+              ) : (
+                <div className="text-sm text-gray-500">No hay enlace activo</div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!getPublicUrl()}
+                onClick={() => getPublicUrl() && copyToClipboard(getPublicUrl(), 'Copiado enlace público')}
+              >
+                <Copy className="mr-2 h-4 w-4" /> Copiar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!getPublicUrl()}
+                onClick={() => getPublicUrl() && window.open(getPublicUrl(), '_blank')}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" /> Abrir
+              </Button>
+              <Button
+                size="sm"
+                onClick={createEventShareLink}
+                disabled={!effectiveEvent?.id || creatingEventLink}
+              >
+                {creatingEventLink ? 'Creando…' : 'Crear enlace'}
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="mb-1 text-sm font-medium">Checkout de prueba (MercadoPago)</div>
+              <div className="text-xs text-gray-600">
+                Usa el token activo (carpeta seleccionada o enlace del evento) y abre el sandbox de MP.
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!getActiveToken() || creatingTestPreference}
+                onClick={createTestCheckoutPreference}
+              >
+                {creatingTestPreference ? 'Creando…' : 'Probar checkout'}
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
 
       {/* Error state */}

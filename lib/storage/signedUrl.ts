@@ -11,6 +11,8 @@ interface TransformOptions {
 interface SignedUrlOptions {
   expiresIn?: number;
   transform?: TransformOptions;
+  // When true, avoid warning logs for missing objects (useful for soft lookups)
+  quietMissing?: boolean;
 }
 
 export async function signedUrlForKey(
@@ -37,6 +39,7 @@ export async function signedUrlForKey(
 
   // Build signed URL with transform options if provided
   const transform = typeof options === 'object' ? options.transform : undefined;
+  const quietMissing = typeof options === 'object' && options.quietMissing === true;
   let { data, error } = await sb.storage
     .from(bucket)
     .createSignedUrl(key, expiresSec, {
@@ -92,11 +95,13 @@ export async function signedUrlForKey(
         .includes('not found');
 
     if (stillMissing) {
-      SecurityLogger.logSecurityEvent(
-        'signed_url_object_missing',
-        { requestId, bucket, key },
-        'warning'
-      );
+      if (!quietMissing) {
+        SecurityLogger.logSecurityEvent(
+          'signed_url_object_missing',
+          { requestId, bucket, key },
+          'warning'
+        );
+      }
     } else {
       SecurityLogger.logSecurityEvent(
         'signed_url_error',

@@ -52,6 +52,11 @@ export interface OrderStats {
 export class EnhancedOrderService {
   private supabase: any = null;
   private initializing: Promise<void> | null = null;
+  private static availability: {
+    available: boolean;
+    lastCheck: number;
+    disabledUntil?: number;
+  } = { available: true, lastCheck: 0 };
 
   constructor() {
     this.initialize();
@@ -83,6 +88,52 @@ export class EnhancedOrderService {
   }
 
   /**
+   * Check if the backing view exists. If it doesn't, disable enhanced service
+   * for a period to avoid noisy fallbacks.
+   */
+  async isAvailable(): Promise<boolean> {
+    // Allow explicit opt-out via env
+    if (process.env['ENHANCED_ORDERS'] === 'false') {
+      EnhancedOrderService.availability.available = false;
+      return false;
+    }
+
+    const now = Date.now();
+    const state = EnhancedOrderService.availability;
+    const isDev = process.env.NODE_ENV !== 'production';
+    // In dev, recheck aggressively and don't lock out for long
+    const ttl = isDev ? 15 * 1000 : 5 * 60 * 1000; // 15s dev, 5m prod
+    if (!isDev && state.disabledUntil && now < state.disabledUntil) return false;
+    if (now - state.lastCheck < ttl) return state.available;
+
+    try {
+      await this.ensureInitialized();
+      const probe = await this.supabase
+        .from('order_details_with_audit')
+        .select('id')
+        .limit(1);
+      state.available = !probe.error;
+      state.lastCheck = now;
+      return state.available;
+    } catch (e: any) {
+      const msg = String(e?.message || e).toLowerCase();
+      // Missing relation: back off for 6h
+      if (msg.includes('does not exist') || msg.includes('relation')) {
+        state.available = false;
+        // In dev, do not set long backoff; recheck on next ttl
+        state.disabledUntil = isDev ? undefined : now + 6 * 60 * 60 * 1000;
+        state.lastCheck = now;
+        return false;
+      }
+      // Unknown error: short backoff
+      state.available = false;
+      state.disabledUntil = isDev ? undefined : now + 30 * 60 * 1000; // 30 min in prod
+      state.lastCheck = now;
+      return false;
+    }
+  }
+
+  /**
    * Get orders with enhanced filtering and audit information
    */
   async getOrders(
@@ -100,6 +151,10 @@ export class EnhancedOrderService {
       has_more: boolean;
     };
   }> {
+    // If not available, short-circuit to let API choose fallback without noise
+    if (!(await this.isAvailable())) {
+      throw new Error('ENHANCED_ORDERS_DISABLED');
+    }
     await this.ensureInitialized();
     const offset = (page - 1) * limit;
 
@@ -181,6 +236,9 @@ export class EnhancedOrderService {
         },
       };
     } catch (error) {
+      if (String((error as any)?.message || '').includes('ENHANCED_ORDERS_DISABLED')) {
+        throw error;
+      }
       console.error('Error in getOrders:', error);
       // Re-throw to let the API route handle the fallback
       throw error;

@@ -92,18 +92,18 @@ export default function EventDetailPage() {
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        console.warn(`Primary endpoint failed (${response.status}), trying fallback`);
-        
-        // Fallback with timeout
-        const fallbackController = new AbortController();
-        const fallbackTimeout = setTimeout(() => fallbackController.abort(), 6000);
-        
-        response = await fetch(`/api/admin/events?id=${id}`, {
-          signal: fallbackController.signal,
+        console.warn(`Primary endpoint failed (${response.status}), retrying once with shorter timeout`);
+
+        // Retry same endpoint with shorter timeout to avoid incorrect fallbacks
+        const retryController = new AbortController();
+        const retryTimeout = setTimeout(() => retryController.abort(), 5000);
+
+        response = await fetch(`/api/admin/events/${id}`, {
+          signal: retryController.signal,
           headers: { 'Content-Type': 'application/json' },
         });
-        
-        clearTimeout(fallbackTimeout);
+
+        clearTimeout(retryTimeout);
       }
       
       if (!response.ok) {
