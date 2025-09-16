@@ -32,14 +32,14 @@ export function DashboardHeader({
   };
 
   return (
-    <div className="border-border bg-card px-6 py-4">
+    <div className="border-border bg-white dark:bg-gray-900 px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-foreground text-2xl font-bold">
               Dashboard Profesional
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               {currentTime.toLocaleDateString('es-ES', {
                 weekday: 'long',
                 year: 'numeric',

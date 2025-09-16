@@ -87,11 +87,11 @@ export function EventContextBanner({
 
   if (loading) {
     return (
-      <Card className={cn("border-blue-200 bg-blue-50/50", className)}>
+      <Card className={cn("border-border bg-muted/50", className)}>
         <CardContent className="p-3">
           <div className="flex items-center gap-3">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
-            <div className="text-sm text-blue-700">Cargando información del evento...</div>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Cargando información del evento...</div>
           </div>
         </CardContent>
       </Card>
@@ -100,12 +100,12 @@ export function EventContextBanner({
 
   if (error || !event) {
     return (
-      <Card className={cn("border-amber-200 bg-amber-50/50", className)}>
+  <Card className={cn("border-border bg-muted/50", className)}>
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-amber-600" />
-              <span className="text-sm text-amber-700">
+          <Info className="h-4 w-4 text-primary" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">
                 {error || 'Evento no encontrado'} (ID: {eventId})
               </span>
             </div>
@@ -114,7 +114,7 @@ export function EventContextBanner({
                 variant="ghost"
                 size="sm"
                 onClick={onRemoveContext}
-                className="h-6 w-6 p-0 text-amber-600 hover:text-amber-800"
+                className="h-6 w-6 p-0 text-gray-500 dark:text-gray-400 hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -127,18 +127,18 @@ export function EventContextBanner({
 
   if (compact) {
     return (
-      <Card className={cn("border-blue-200 bg-blue-50/50", className)}>
+      <Card className={cn("border-border bg-muted/50", className)}>
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 bg-blue-100 rounded-lg">
-                <Camera className="h-4 w-4 text-blue-600" />
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <Camera className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <div className="font-medium text-blue-900 text-sm">
+                <div className="font-medium text-foreground text-sm">
                   {event.school || event.name}
                 </div>
-                <div className="text-xs text-blue-600">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   Contexto de evento activo
                 </div>
               </div>
@@ -148,7 +148,7 @@ export function EventContextBanner({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 text-blue-600 hover:text-blue-800 hover:bg-blue-100"
+                  className="h-7 text-primary hover:text-primary/80 hover:bg-primary/10"
                 >
                   <ExternalLink className="h-3 w-3 mr-1" />
                   Gestor
@@ -159,7 +159,7 @@ export function EventContextBanner({
                   variant="ghost"
                   size="sm"
                   onClick={onRemoveContext}
-                  className="h-7 w-7 p-0 text-blue-600 hover:text-blue-800"
+                  className="h-7 w-7 p-0 text-gray-500 dark:text-gray-400 hover:text-foreground"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -172,25 +172,25 @@ export function EventContextBanner({
   }
 
   return (
-    <Card className={cn("border-blue-200 bg-gradient-to-r from-blue-50/50 to-indigo-50/50", className)}>
+    <Card className={cn("border-border bg-gradient-to-r from-muted/50 to-muted/30", className)}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-start gap-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Camera className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Camera className="h-5 w-5 text-primary" />
             </div>
             
             <div className="space-y-2">
               <div>
-                <h3 className="font-semibold text-blue-900">
+                <h3 className="font-semibold text-foreground">
                   {event.school || event.name}
                 </h3>
-                <p className="text-sm text-blue-600">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Navegando en contexto de evento específico
                 </p>
               </div>
               
-              <div className="flex items-center gap-4 text-xs text-blue-700">
+              <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                 {event.date && (
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
@@ -236,7 +236,7 @@ export function EventContextBanner({
             <Link href={`/admin/events/${eventId}/library`}>
               <Button
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <ArrowRight className="h-4 w-4 mr-2" />
                 Ir al Gestor del Evento
@@ -248,7 +248,7 @@ export function EventContextBanner({
                 variant="ghost"
                 size="sm"
                 onClick={onRemoveContext}
-                className="text-blue-600 hover:text-blue-800"
+                className="text-gray-500 dark:text-gray-400 hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </Button>

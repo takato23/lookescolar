@@ -262,7 +262,7 @@ export default function BulkDownload({
                 ? 'Generando archivo ZIP...'
                 : 'Generando enlaces de descarga...'}
             </p>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
               Esto puede tardar unos momentos
             </p>
           </div>
@@ -272,26 +272,26 @@ export default function BulkDownload({
             <h3 className="mb-2 text-lg font-medium">¡Descarga iniciada!</h3>
             {downloadType === 'zip' ? (
               <div className="text-center">
-                <p className="text-muted-foreground mb-4">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
                   La generación del archivo ZIP ha comenzado.
                 </p>
-                <p className="text-muted-foreground mb-4 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
                   En una implementación completa, recibirías un enlace de
                   descarga cuando el archivo esté listo.
                 </p>
                 {zipJobId && (
-                  <p className="text-muted-foreground mt-2 text-xs">
+                  <p className="text-gray-500 dark:text-gray-400 mt-2 text-xs">
                     ID del trabajo: {zipJobId}
                   </p>
                 )}
               </div>
             ) : (
               <>
-                <p className="text-muted-foreground mb-4 text-center">
+                <p className="text-gray-500 dark:text-gray-400 mb-4 text-center">
                   Se han abierto {downloadUrls.length} pestañas para descargar
                   las fotos.
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Si las descargas no comienzan automáticamente, haz clic en los
                   enlaces.
                 </p>
@@ -302,7 +302,7 @@ export default function BulkDownload({
           <div className="flex flex-col items-center justify-center py-8">
             <AlertCircle className="text-destructive mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-medium">Error en la descarga</h3>
-            <p className="text-muted-foreground mb-4 text-center">{error}</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4 text-center">{error}</p>
             <Button variant="outline" onClick={() => setError(null)}>
               Reintentar
             </Button>

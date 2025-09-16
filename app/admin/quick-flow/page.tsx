@@ -331,7 +331,7 @@ export default function QuickFlowPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Flujo rápido</h1>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Completa el proceso en 4 pasos
           </p>
         </div>
@@ -385,7 +385,7 @@ export default function QuickFlowPage() {
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" /> a) Generar tarjetas (PDF)
             <span
-              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${step1Status === 'Listo' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}
+              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${step1Status === 'Listo' ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-foreground'}`}
             >
               {step1Status === 'Listo' ? (
                 <CheckCircle2 className="h-3 w-3" />
@@ -405,7 +405,7 @@ export default function QuickFlowPage() {
             >
               <QrCode className="h-4 w-4" /> Abrir QR PDF
             </a>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-gray-500 dark:text-gray-400 text-xs">
               Se abrirá en una pestaña nueva
             </span>
           </div>
@@ -418,7 +418,7 @@ export default function QuickFlowPage() {
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" /> b) Subir fotos (+ watermark)
             <span
-              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${step2Status === 'Listo' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}
+              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${step2Status === 'Listo' ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-foreground'}`}
             >
               {step2Status === 'Listo' ? (
                 <CheckCircle2 className="h-3 w-3" />
@@ -460,7 +460,7 @@ export default function QuickFlowPage() {
               {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Iniciar watermark
             </Button>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-gray-500 dark:text-gray-400 text-xs">
               Sugerencia: watermark disponible
             </span>
           </div>
@@ -473,7 +473,7 @@ export default function QuickFlowPage() {
           <CardTitle className="flex items-center gap-2">
             <ScanLine className="h-5 w-5" /> c) Agrupar por QR
             <span
-              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${step3Status === 'Listo' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}
+              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${step3Status === 'Listo' ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-foreground'}`}
             >
               {step3Status === 'Listo' ? (
                 <CheckCircle2 className="h-3 w-3" />
@@ -530,7 +530,7 @@ export default function QuickFlowPage() {
             <LinkIcon className="h-5 w-5" /> d) Publicar y compartir
             {/* Badge simple de estado: si hay al menos un code publicado y con fotos asignadas */}
             <span
-              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${codes.some((c) => c.is_published) ? 'bg-emerald-100 text-emerald-700' : codes.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-700'}`}
+              className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${codes.some((c) => c.is_published) ? 'bg-emerald-100 text-emerald-700' : codes.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-muted text-foreground'}`}
             >
               {codes.some((c) => c.is_published)
                 ? 'Listo'
@@ -542,12 +542,12 @@ export default function QuickFlowPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="text-muted-foreground text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               Códigos del evento (si aplica):
             </div>
             <div className="divide-y rounded-md border">
               {codes.length === 0 ? (
-                <div className="text-muted-foreground p-3 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 p-3 text-sm">
                   Sin códigos cargados todavía.
                 </div>
               ) : (
@@ -566,7 +566,7 @@ export default function QuickFlowPage() {
                       <div className="col-span-2">{c.photos_count ?? '-'}</div>
                       <div className="col-span-2">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${c.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${c.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-foreground'}`}
                         >
                           {c.is_published ? 'Publicado' : 'No publicado'}
                         </span>

@@ -251,8 +251,8 @@ export default function PhotosSidebarFolders({
   return (
     <div className="space-y-4">
       {/* Nueva carpeta */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <h4 className="mb-2 text-sm font-semibold text-blue-800">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3">
+        <h4 className="mb-2 text-sm font-semibold text-blue-800 dark:text-blue-200">
           Nueva carpeta
         </h4>
         <div className="flex gap-2">
@@ -296,16 +296,16 @@ export default function PhotosSidebarFolders({
         <Input
           aria-label="Buscar carpeta"
           placeholder="Buscar carpeta o evento..."
-          className="pl-9 font-medium text-gray-900 placeholder:text-gray-500"
+          className="pl-9 font-medium text-foreground placeholder:text-gray-500"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
 
       {/* Sin carpeta option always at top */}
-      <Card className="border border-gray-200 p-0">
-        <div className="border-b border-gray-100 bg-gray-50 p-3">
-          <h4 className="text-sm font-semibold text-gray-800">
+      <Card className="border border-border p-0">
+        <div className="border-b border-gray-100 bg-muted p-3">
+          <h4 className="text-sm font-semibold text-foreground">
             Fotos sin carpeta
           </h4>
         </div>
@@ -315,8 +315,8 @@ export default function PhotosSidebarFolders({
             className={cn(
               'h-auto w-full justify-start p-3 text-left',
               selected.codeId === 'null'
-                ? 'border-orange-200 bg-orange-50 text-orange-900'
-                : 'hover:bg-gray-50'
+                ? 'border-primary-200 bg-primary-50 text-primary-900'
+                : 'hover:bg-muted'
             )}
             onClick={() =>
               onSelect({
@@ -328,16 +328,16 @@ export default function PhotosSidebarFolders({
             aria-label="Ver fotos sin carpeta"
           >
             <div className="flex w-full items-center gap-2">
-              <FolderIcon className="h-4 w-4 text-orange-600" />
+              <FolderIcon className="h-4 w-4 text-primary-600" />
               <div className="flex-1">
                 <div className="text-sm font-semibold">Sin carpeta</div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-gray-500 dark:text-gray-400 text-xs">
                   Fotos no organizadas
                 </div>
               </div>
               <Badge
                 variant="outline"
-                className="border-orange-200 bg-orange-50 text-orange-700"
+                className="border-primary-200 bg-primary-50 text-primary-700"
               >
                 📂 General
               </Badge>
@@ -348,10 +348,10 @@ export default function PhotosSidebarFolders({
 
       {/* Events List for Navigation */}
       {_events.length > 0 && (
-        <Card className="border border-gray-200 p-0">
-          <div className="border-b border-gray-100 bg-blue-50 p-3">
-            <h4 className="text-sm font-semibold text-blue-800">Eventos</h4>
-            <p className="mt-1 text-xs text-blue-600">
+        <Card className="border border-border p-0">
+          <div className="border-b border-gray-100 bg-blue-50 dark:bg-blue-950/20 p-3">
+            <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200">Eventos</h4>
+            <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
               {_events.length} eventos disponibles
             </p>
           </div>
@@ -370,7 +370,7 @@ export default function PhotosSidebarFolders({
                     'h-auto w-full justify-start p-3 text-left',
                     selected.eventId === event.id
                       ? 'border-blue-200 bg-blue-50 text-blue-900'
-                      : 'hover:bg-gray-50'
+                      : 'hover:bg-muted'
                   )}
                   onClick={() =>
                     onSelect({
@@ -382,7 +382,7 @@ export default function PhotosSidebarFolders({
                   aria-label={`Cambiar a evento ${event.name}`}
                 >
                   <div className="flex w-full items-center gap-2">
-                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <div className="min-w-0 flex-1">
                       <div
                         className="truncate text-sm font-semibold"
@@ -390,13 +390,13 @@ export default function PhotosSidebarFolders({
                       >
                         {event.name}
                       </div>
-                      <div className="text-muted-foreground text-xs">
+                      <div className="text-gray-500 dark:text-gray-400 text-xs">
                         {event.photo_count || 0} fotos
                       </div>
                     </div>
                     <Badge
                       variant="outline"
-                      className="border-blue-200 bg-blue-50 text-blue-700"
+                      className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 text-blue-700"
                     >
                       Evento
                     </Badge>
@@ -408,12 +408,12 @@ export default function PhotosSidebarFolders({
       )}
 
       {/* Events with their folders */}
-      <Card className="border border-gray-200 p-0">
-        <div className="border-b border-gray-100 bg-gray-50 p-3">
-          <h4 className="text-sm font-semibold text-gray-800">
+      <Card className="border border-border p-0">
+        <div className="border-b border-gray-100 bg-muted p-3">
+          <h4 className="text-sm font-semibold text-foreground">
             Carpetas por Evento
           </h4>
-          <p className="mt-1 text-xs text-gray-600">
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {Object.keys(codesByEvent).length} eventos con{' '}
             {filteredCodes.length} carpetas
           </p>
@@ -421,7 +421,7 @@ export default function PhotosSidebarFolders({
         <ScrollArea className="h-[calc(100vh-350px)]">
           <div className="space-y-3 p-2">
             {Object.keys(codesByEvent).length === 0 ? (
-              <div className="text-muted-foreground py-8 text-center">
+              <div className="text-gray-500 dark:text-gray-400 py-8 text-center">
                 <FolderIcon className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p className="text-sm">No hay carpetas creadas</p>
                 <p className="text-xs">Crea tu primera carpeta arriba</p>
@@ -436,7 +436,7 @@ export default function PhotosSidebarFolders({
                 return (
                   <div key={`event-${eventId}`} className="space-y-2">
                     {/* Event Header */}
-                    <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-2">
+                    <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-2">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
@@ -463,7 +463,7 @@ export default function PhotosSidebarFolders({
                       </div>
                       <Badge
                         variant="outline"
-                        className="border-blue-300 bg-blue-100 text-xs text-blue-700"
+                        className="border-blue-300 bg-blue-100 dark:bg-blue-950/30 text-xs text-blue-700"
                       >
                         {codes.length} carpetas
                       </Badge>
@@ -474,7 +474,7 @@ export default function PhotosSidebarFolders({
                       {codes.map((code) => (
                         <div
                           key={`folder-${code.id}`}
-                          className="group rounded-lg border border-gray-200 transition-all hover:border-blue-300 hover:shadow-sm"
+                          className="group rounded-lg border border-border transition-all hover:border-primary-300 hover:shadow-sm"
                         >
                           <div className="flex items-center p-2">
                             <Button
@@ -486,8 +486,8 @@ export default function PhotosSidebarFolders({
                               className={cn(
                                 'h-auto flex-1 justify-start p-2 text-left',
                                 selected.codeId === code.id
-                                  ? 'border-blue-200 bg-blue-50 text-blue-900'
-                                  : 'hover:bg-gray-50'
+                                  ? 'border-primary-200 bg-primary-50 text-primary-900'
+                                  : 'hover:bg-muted'
                               )}
                               onClick={() =>
                                 onSelect({
@@ -541,7 +541,7 @@ export default function PhotosSidebarFolders({
                                 <div className="mt-1 flex items-center gap-2">
                                   <Badge
                                     variant="secondary"
-                                    className="bg-gray-100 text-xs text-gray-700"
+                                    className="bg-muted text-xs text-foreground"
                                   >
                                     {code.photos_count} fotos
                                   </Badge>
@@ -552,7 +552,7 @@ export default function PhotosSidebarFolders({
                                   ) : (
                                     <Badge
                                       variant="outline"
-                                      className="border-gray-300 bg-gray-50 text-xs text-gray-600"
+                                      className="border-border bg-muted text-xs text-gray-500 dark:text-gray-400"
                                     >
                                       No publicado
                                     </Badge>

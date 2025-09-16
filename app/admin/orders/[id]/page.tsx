@@ -80,7 +80,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
           <div className="relative">
             {/* Breadcrumbs */}
-            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+            <nav className="text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2 text-sm">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-primary-600"
@@ -111,7 +111,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <h1 className="text-gradient-primary mb-2 text-3xl font-bold md:text-4xl">
                   Detalle del Pedido
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-gray-500 dark:text-gray-400">
                   Información completa y gestión del pedido #{orderId.slice(-8)}
                 </p>
               </div>

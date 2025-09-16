@@ -101,7 +101,7 @@ export default function NewEventPage() {
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
           <div className="relative">
             {/* Breadcrumbs */}
-            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+            <nav className="text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2 text-sm">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-primary-600"
@@ -133,7 +133,7 @@ export default function NewEventPage() {
                 <h1 className="text-gradient mb-2 text-3xl font-bold md:text-4xl">
                   Nuevo Evento
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-gray-500 dark:text-gray-400">
                   Crea una nueva sesión fotográfica
                 </p>
               </div>
@@ -155,7 +155,7 @@ export default function NewEventPage() {
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre del Evento *</Label>
                   <div className="relative">
-                    <Calendar className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <Calendar className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       id="name"
                       type="text"
@@ -173,7 +173,7 @@ export default function NewEventPage() {
                 <div className="space-y-2">
                   <Label htmlFor="location">Ubicación</Label>
                   <div className="relative">
-                    <MapPin className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <MapPin className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       id="location"
                       type="text"
@@ -203,7 +203,7 @@ export default function NewEventPage() {
                 <div className="space-y-2">
                   <Label htmlFor="theme">Tema Visual</Label>
                   <div className="relative">
-                    <Palette className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <Palette className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Select
                       value={formData.theme}
                       onValueChange={(value) =>
@@ -222,7 +222,7 @@ export default function NewEventPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Define el estilo visual de la galería y tienda para este
                     evento
                   </p>
@@ -231,7 +231,7 @@ export default function NewEventPage() {
                 <div className="space-y-2">
                   <Label htmlFor="photo_price">Precio por Foto</Label>
                   <div className="relative">
-                    <DollarSign className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                    <DollarSign className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <Input
                       id="photo_price"
                       type="number"
@@ -275,7 +275,7 @@ export default function NewEventPage() {
                     className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
                       formData.sharing_mode === 'public'
                         ? 'border-blue-500 bg-blue-50/50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border hover:border-border'
                     }`}
                     onClick={() =>
                       setFormData({ ...formData, sharing_mode: 'public' })
@@ -286,14 +286,14 @@ export default function NewEventPage() {
                         className={`rounded-full p-2 ${
                           formData.sharing_mode === 'public'
                             ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-600'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         <Users className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">Público</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="font-semibold text-foreground">Público</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Todas las familias ven las mismas fotos
                         </p>
                       </div>
@@ -304,7 +304,7 @@ export default function NewEventPage() {
                     className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
                       formData.sharing_mode === 'private'
                         ? 'border-orange-500 bg-orange-50/50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border hover:border-border'
                     }`}
                     onClick={() =>
                       setFormData({ ...formData, sharing_mode: 'private' })
@@ -315,16 +315,16 @@ export default function NewEventPage() {
                         className={`rounded-full p-2 ${
                           formData.sharing_mode === 'private'
                             ? 'bg-orange-500 text-white'
-                            : 'bg-gray-200 text-gray-600'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         <User className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold text-foreground">
                           Personalizado
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Cada familia ve solo sus fotos específicas
                         </p>
                       </div>

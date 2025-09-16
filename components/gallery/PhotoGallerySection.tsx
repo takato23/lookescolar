@@ -91,7 +91,7 @@ export function PhotoGallerySection({
           </div>
         </div>
 
-        <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 p-4">
+        <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50 p-4">
           <p className="text-sm text-gray-700">
             <span className="font-semibold">💡 Instrucciones:</span>
             <span className="ml-2">

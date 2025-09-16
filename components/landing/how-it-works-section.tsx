@@ -24,7 +24,7 @@ export function HowItWorksSection() {
           <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
             Cómo <span className="text-gradient">funciona</span>
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
+          <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-3xl text-xl">
             En solo 3 pasos simples, tendrás tu sistema funcionando.
           </p>
         </div>
@@ -36,7 +36,7 @@ export function HowItWorksSection() {
                 {step.step}
               </div>
               <h3 className="mb-4 text-xl font-bold">{step.title}</h3>
-              <p className="text-muted-foreground">{step.description}</p>
+              <p className="text-gray-500 dark:text-gray-400">{step.description}</p>
             </div>
           ))}
         </div>

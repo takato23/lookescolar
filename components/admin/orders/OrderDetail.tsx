@@ -140,23 +140,23 @@ export default function OrderDetail({
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Cliente
                     </label>
                     <p className="text-lg font-semibold">
                       {order.contact_name}
                     </p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       {order.contact_email}
                     </p>
                     {order.contact_phone && (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
                         {order.contact_phone}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Estado
                     </label>
                     <div className="flex items-center gap-2">
@@ -184,19 +184,19 @@ export default function OrderDetail({
                     </div>
                   </div>
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Total
                     </label>
                     <p className="text-xl font-bold">
                       {formatCurrency(order.total_amount_cents)}
                     </p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       {order.total_items}{' '}
                       {order.total_items === 1 ? 'item' : 'items'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Fecha
                     </label>
                     <p className="text-sm">
@@ -289,14 +289,14 @@ export default function OrderDetail({
                         <div>
                           <p className="font-medium">{item.label}</p>
                           {item.photo && (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">
                               Foto ID: {item.photo.id.slice(-8)}
                             </p>
                           )}
                         </div>
                         <div className="text-right">
                           <p className="font-medium">x {item.quantity}</p>
-                          <p className="text-muted-foreground text-sm">
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">
                             {formatCurrency(item.price_cents * item.quantity)}
                           </p>
                         </div>
@@ -316,7 +316,7 @@ export default function OrderDetail({
                 <CardContent className="space-y-3">
                   {order.notes && (
                     <div>
-                      <label className="text-muted-foreground text-sm font-medium">
+                      <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                         Notas del Cliente:
                       </label>
                       <p className="bg-muted/50 mt-1 rounded p-2 text-sm">
@@ -326,7 +326,7 @@ export default function OrderDetail({
                   )}
                   {order.admin_notes && (
                     <div>
-                      <label className="text-muted-foreground text-sm font-medium">
+                      <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                         Notas del Admin:
                       </label>
                       <p className="bg-muted/50 mt-1 rounded p-2 text-sm">

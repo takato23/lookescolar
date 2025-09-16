@@ -7,7 +7,7 @@ export function HeroSection() {
           <br />
           <span className="text-shadow-soft">que perduran</span>
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-xl leading-relaxed">
+        <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-2xl text-xl leading-relaxed">
           La plataforma más avanzada y segura para compartir recuerdos
           escolares.
         </p>

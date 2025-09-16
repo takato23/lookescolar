@@ -134,20 +134,20 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
     return (
       <div className={cn(
         "flex items-center gap-4 p-3 rounded-lg border transition-all hover:shadow-sm bg-white",
-        isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"
+        isSelected ? "border-blue-500 bg-blue-50" : "border-border hover:border-border"
       )}>
         <button
           onClick={() => onSelect(!isSelected)}
-          className="flex-shrink-0 p-1 rounded hover:bg-gray-100"
+          className="flex-shrink-0 p-1 rounded hover:bg-muted"
         >
           {isSelected ? (
-            <CheckSquare className="h-4 w-4 text-blue-600" />
+            <CheckSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           ) : (
             <Square className="h-4 w-4 text-gray-400" />
           )}
         </button>
         
-        <div className="h-14 w-14 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
+        <div className="h-14 w-14 rounded-lg bg-muted overflow-hidden flex-shrink-0">
           <img 
             src={photo.thumbnail_url || photo.preview_url} 
             alt={photo.original_filename}
@@ -165,7 +165,7 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
         </div>
         
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{photo.original_filename}</p>
+          <p className="text-sm font-medium text-foreground truncate">{photo.original_filename}</p>
           <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
             <span>{(photo.file_size / 1024 / 1024).toFixed(1)} MB</span>
             <span>•</span>
@@ -211,7 +211,7 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
     <div
       className={cn(
         "group relative aspect-square rounded-lg border transition-all hover:shadow-md cursor-pointer bg-white",
-        isSelected ? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-200 hover:border-gray-300"
+        isSelected ? "border-blue-500 ring-2 ring-blue-500/20" : "border-border hover:border-border"
       )}
       draggable
       onDragStart={(e) => {
@@ -230,14 +230,14 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
         className="absolute top-3 left-3 z-10 p-1 bg-white/90 backdrop-blur-sm rounded-md shadow-sm transition-all hover:bg-white"
       >
         {isSelected ? (
-          <CheckSquare className="h-4 w-4 text-blue-600" />
+          <CheckSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         ) : (
-          <Square className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+          <Square className="h-4 w-4 text-gray-400 group-hover:text-muted-foreground" />
         )}
       </button>
       
       {/* Image container */}
-      <div className="h-full w-full rounded-lg bg-gray-100 overflow-hidden">
+      <div className="h-full w-full rounded-lg bg-muted overflow-hidden">
         <img 
           src={photo.preview_url} 
           alt={photo.original_filename}
@@ -280,7 +280,7 @@ function PhotoCard({ photo, viewMode, isSelected, onSelect, selectedIds }: Photo
       
       {/* Action button */}
       <button className="absolute top-3 right-3 p-1.5 bg-white/90 backdrop-blur-sm rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-all hover:bg-white">
-        <Maximize2 className="h-4 w-4 text-gray-600" />
+        <Maximize2 className="h-4 w-4 text-gray-500 dark:text-gray-400" />
       </button>
     </div>
   );
@@ -901,10 +901,10 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // Loading state
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando evento...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">Cargando evento...</p>
         </div>
       </div>
     );
@@ -913,7 +913,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // Error state - only show if there's an actual error, not just loading
   if (error) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-muted">
         <div className="text-center max-w-md mx-auto">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <h3 className="text-lg font-medium text-red-800 mb-2">Error al cargar el evento</h3>
@@ -940,19 +940,19 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // Show loading if no event data yet
   if (!event) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando evento...</p>
+          <RefreshCw className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-500 dark:text-gray-400">Cargando evento...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-muted">
       {/* Clean Header - Simplified Design */}
-      <div className="border-b border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-border bg-white shadow-sm">
         <div className="px-6 py-4">
         <div className="flex items-center justify-between">
             {/* Left: Navigation and title */}
@@ -961,7 +961,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               variant="ghost"
               size="sm"
               onClick={() => router.push('/admin/events')}
-                className="shrink-0 text-gray-600 hover:text-gray-900"
+                className="shrink-0 text-gray-500 dark:text-gray-400 hover:text-foreground"
             >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Eventos
@@ -970,7 +970,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               <div className="h-4 w-px bg-gray-300" />
               
               <div className="min-w-0 flex-1">
-                <h1 className="text-lg font-semibold text-gray-900 truncate">
+                <h1 className="text-lg font-semibold text-foreground truncate">
                   {event.school || event.name}
                 </h1>
                 <div className="flex items-center gap-3 mt-0.5">
@@ -1002,13 +1002,23 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <Button
               variant="outline"
               size="sm"
+              onClick={() => router.push(`/admin/store-settings?eventId=${eventId}`)}
+                className="h-8 text-sm"
+            >
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Tienda
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={selectedFolderId ? () => handleShareFolder() : handleShareEvent}
                 className="h-8 text-sm"
             >
                 <LinkIcon className="h-3.5 w-3.5 mr-1.5" />
                 Compartir
             </Button>
-            
+
             <Button
               size="sm"
               onClick={handleViewClientGallery}
@@ -1022,29 +1032,29 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       </div>
 
         {/* Compact metrics bar */}
-        <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">
+        <div className="px-6 py-3 bg-muted border-t border-gray-100">
           <div className="flex items-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <Camera className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">
+              <span className="text-gray-500 dark:text-gray-400">
                 {metrics?.photos?.total || event.stats?.totalPhotos || 0} fotos
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">
+              <span className="text-gray-500 dark:text-gray-400">
                 {metrics?.folders?.familyFolders || event.stats?.totalSubjects || 0} familias
               </span>
             </div>
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">
+              <span className="text-gray-500 dark:text-gray-400">
                 {metrics?.sales?.orderCount || event.stats?.totalOrders || 0} pedidos
               </span>
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-600">
+              <span className="text-gray-500 dark:text-gray-400">
                 ${(metrics?.sales?.totalRevenue || event.stats?.totalRevenue || 0) > 0 
                   ? ((metrics?.sales?.totalRevenue || event.stats?.totalRevenue || 0) / 100).toLocaleString() 
                   : '0'}
@@ -1057,7 +1067,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             size="sm"
             onClick={refreshMetrics}
             disabled={metricsLoading}
-                className="h-7 text-xs text-gray-500 hover:text-gray-700"
+                className="h-7 text-xs text-gray-500 hover:text-foreground"
           >
                 <RefreshCw className={cn("h-3.5 w-3.5", metricsLoading && "animate-spin")} />
           </Button>
@@ -1069,11 +1079,11 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       {/* Main Content Area - Simplified 2-panel layout */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Folder Tree and Quick Actions */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className="w-80 bg-white border-r border-border flex flex-col">
           {/* Sidebar Header */}
           <div className="px-4 py-4 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-gray-900">Estructura</h2>
+              <h2 className="text-sm font-medium text-foreground">Estructura</h2>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -1183,7 +1193,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               </div>
 
           {/* Quick Actions */}
-          <div className="border-t border-gray-100 p-4 bg-gray-50/50">
+          <div className="border-t border-gray-100 p-4 bg-muted/50">
                 <div className="space-y-2">
                   <Button
                     size="sm"
@@ -1273,10 +1283,10 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             {/* Tab Content */}
             <TabsContent value="photos" className="flex-1 m-0 flex flex-col">
               {/* Photo Gallery Header */}
-              <div className="px-6 py-4 border-b border-gray-200 bg-white">
+              <div className="px-6 py-4 border-b border-border bg-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-lg font-medium text-foreground">
                       {(enhancedFolders.find((f) => f.id === selectedFolderId)?.name) || 'Selecciona una carpeta'}
                     </h3>
                     <p className="text-sm text-gray-500 mt-0.5">
@@ -1300,17 +1310,17 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                         placeholder="Buscar fotos..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-64 h-8 text-sm border-gray-300 focus:border-blue-500 focus:ring-blue-500/20"
+                        className="pl-10 w-64 h-8 text-sm border-border focus:border-blue-500 focus:ring-blue-500/20"
                       />
                     </div>
                     
                     {/* View toggle */}
-                    <div className="flex rounded-md border border-gray-300 bg-white">
+                    <div className="flex rounded-md border border-border bg-white">
                       <Button
                         variant={viewMode === 'grid' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setViewMode('grid')}
-                        className="rounded-r-none border-r border-gray-300 h-8 px-3"
+                        className="rounded-r-none border-r border-border h-8 px-3"
                       >
                         <Grid3X3 className="h-3.5 w-3.5" />
                       </Button>
@@ -1330,7 +1340,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                   {selectedPhotoIds.length > 0 && (
                   <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-2">
-                      <Badge variant="default" className="bg-blue-100 text-blue-700 border-blue-200">
+                      <Badge variant="default" className="bg-blue-100 dark:bg-blue-950/30 text-blue-700 border-blue-200">
                         {selectedPhotoIds.length} seleccionadas
                       </Badge>
                     </div>
@@ -1374,7 +1384,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               
               {/* Photo Grid Area */}
               <div 
-                className="flex-1 p-6 overflow-y-auto bg-gray-50"
+                className="flex-1 p-6 overflow-y-auto bg-muted"
                 onDragOver={(e) => {
                   if (e.dataTransfer?.types?.includes('Files')) {
                     e.preventDefault();
@@ -1457,9 +1467,9 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               {isDragOverUpload && (
                   <div className="absolute inset-0 bg-blue-50/80 flex items-center justify-center rounded-lg border-2 border-dashed border-blue-400">
                     <div className="text-center">
-                      <Upload className="h-12 w-12 text-blue-600 mx-auto mb-3" />
+                      <Upload className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-3" />
                       <p className="text-lg font-medium text-blue-900">Suelta las fotos aquí</p>
-                      <p className="text-sm text-blue-700">Se subirán a la carpeta seleccionada</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">Se subirán a la carpeta seleccionada</p>
                   </div>
                 </div>
               )}
@@ -1469,18 +1479,18 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <TabsContent value="settings" className="m-0 flex-1 p-6">
               <div className="max-w-4xl mx-auto space-y-8">
                               <div>
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">Configuración del Evento</h3>
-                  <p className="text-gray-600">Gestiona las opciones y configuración avanzada del evento</p>
+                  <h3 className="text-xl font-medium text-foreground mb-2">Configuración del Evento</h3>
+                  <p className="text-gray-500 dark:text-gray-400">Gestiona las opciones y configuración avanzada del evento</p>
                               </div>
                               
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* General Settings */}
                   <Card className="p-6">
                     <div className="flex items-center gap-3 mb-4">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                        <Settings className="h-5 w-5 text-blue-600" />
+                          <div className="p-2 bg-blue-100 dark:bg-blue-950/30 rounded-lg">
+                        <Settings className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           </div>
-                      <h4 className="text-lg font-medium text-gray-900">General</h4>
+                      <h4 className="text-lg font-medium text-foreground">General</h4>
                           </div>
                     <div className="space-y-3">
                       <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => setShowStudentModal(true)}>
@@ -1504,22 +1514,22 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                           <div className="p-2 bg-green-100 rounded-lg">
                         <Eye className="h-5 w-5 text-green-600" />
                           </div>
-                      <h4 className="text-lg font-medium text-gray-900">Privacidad</h4>
+                      <h4 className="text-lg font-medium text-foreground">Privacidad</h4>
                           </div>
                       <div className="space-y-4">
                       <div className="flex items-center justify-between">
                           <div>
-                          <p className="text-sm font-medium text-gray-900">Galería Pública</p>
+                          <p className="text-sm font-medium text-foreground">Galería Pública</p>
                           <p className="text-xs text-gray-500">Permitir acceso sin autenticación</p>
                           </div>
-                        <input type="checkbox" className="rounded border-gray-300" />
+                        <input type="checkbox" className="rounded border-border" />
                         </div>
                       <div className="flex items-center justify-between">
                           <div>
-                          <p className="text-sm font-medium text-gray-900">Requerir Token</p>
+                          <p className="text-sm font-medium text-foreground">Requerir Token</p>
                           <p className="text-xs text-gray-500">Usar tokens de acceso únicos</p>
                           </div>
-                        <input type="checkbox" className="rounded border-gray-300" defaultChecked />
+                        <input type="checkbox" className="rounded border-border" defaultChecked />
                         </div>
                           </div>
                   </Card>
@@ -1530,8 +1540,8 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <TabsContent value="store" className="m-0 flex-1 p-6">
               <div className="max-w-6xl mx-auto">
                 <div className="mb-6">
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">Configuración de Tienda</h3>
-                  <p className="text-gray-600">Gestiona productos, precios y configuración de ventas</p>
+                  <h3 className="text-xl font-medium text-foreground mb-2">Configuración de Tienda</h3>
+                  <p className="text-gray-500 dark:text-gray-400">Gestiona productos, precios y configuración de ventas</p>
               </div>
           
                 <div className="space-y-6">
@@ -1549,14 +1559,14 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <TabsContent value="sharing" className="m-0 flex-1 p-6">
               <div className="max-w-4xl mx-auto space-y-6">
                 <div>
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">Compartir</h3>
-                  <p className="text-gray-600">Genera enlaces públicos para compartir fotos con familias</p>
+                  <h3 className="text-xl font-medium text-foreground mb-2">Compartir</h3>
+                  <p className="text-gray-500 dark:text-gray-400">Genera enlaces públicos para compartir fotos con familias</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card className="p-6">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">Evento Completo</h4>
-                    <p className="text-sm text-gray-600 mb-4">Comparte todas las fotos del evento con un solo enlace</p>
+                    <h4 className="text-lg font-medium text-foreground mb-4">Evento Completo</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Comparte todas las fotos del evento con un solo enlace</p>
                     <Button onClick={handleShareEvent} className="w-full">
                       <LinkIcon className="mr-2 h-4 w-4" />
                       Generar enlace del Evento
@@ -1564,8 +1574,8 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                   </Card>
                   
                   <Card className="p-6">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">Carpeta Específica</h4>
-                    <p className="text-sm text-gray-600 mb-4">Comparte solo las fotos de una carpeta seleccionada</p>
+                    <h4 className="text-lg font-medium text-foreground mb-4">Carpeta Específica</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Comparte solo las fotos de una carpeta seleccionada</p>
                     <Button
                       variant={selectedFolderId ? 'default' : 'outline'}
                       disabled={!selectedFolderId}
@@ -1578,8 +1588,8 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                   </Card>
                   </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
                     <strong>💡 Tip:</strong> Los enlaces se copian automáticamente al portapapeles y incluyen códigos QR para compartir fácilmente.
                   </p>
               </div>
@@ -1638,7 +1648,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       {showAddLevelModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Agregar Nuevo Nivel</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-4">Agregar Nuevo Nivel</h3>
             <form onSubmit={(e) => {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
@@ -1649,7 +1659,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             }}>
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="levelName" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="levelName" className="block text-sm font-medium text-foreground mb-2">
                     Nombre del Nivel
                   </label>
                   <Input
@@ -1699,9 +1709,9 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
       {showStudentModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-900">Gestión de Estudiantes</h3>
-              <p className="text-sm text-gray-600 mt-1">
+            <div className="p-6 border-b border-border">
+              <h3 className="text-xl font-semibold text-foreground">Gestión de Estudiantes</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Carga y organiza la lista de estudiantes para este evento
               </p>
             </div>
@@ -1709,16 +1719,16 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <div className="p-6">
               <div className="space-y-6">
                 {/* AI-Assisted Import */}
-                <div className="bg-blue-50 rounded-lg p-4">
+                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
                   <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
                     <FileUser className="h-5 w-5 mr-2" />
                     Importación Inteligente
                   </h4>
-                  <p className="text-sm text-blue-700 mb-3">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                     Pega una lista de estudiantes en cualquier formato y la organizaremos automáticamente
                   </p>
                   <textarea
-                    className="w-full h-32 p-3 border border-blue-200 rounded-lg resize-none"
+                    className="w-full h-32 p-3 border border-blue-200 dark:border-blue-800 rounded-lg resize-none"
                     placeholder="Ejemplo:
 Juan Pérez - 6to A
 María González, Sala 3
@@ -1732,8 +1742,8 @@ Pedro López (4to B)
                 </div>
                 
                 {/* Manual Entry */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">Entrada Manual</h4>
+                <div className="border border-border rounded-lg p-4">
+                  <h4 className="font-semibold text-foreground mb-3">Entrada Manual</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <Input
                       placeholder="Nombre del estudiante"
@@ -1741,7 +1751,7 @@ Pedro López (4to B)
                       onChange={(e) => setManualStudentName(e.target.value)}
                     />
                     <select
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      className="px-3 py-2 border border-border rounded-lg"
                       value={manualStudentCourseId}
                       onChange={(e) => setManualStudentCourseId(e.target.value)}
                     >
@@ -1770,7 +1780,7 @@ Pedro López (4to B)
                 
                 {/* Current Students */}
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-3">
+                  <h4 className="font-semibold text-foreground mb-3">
                     Estudiantes Actuales (0)
                   </h4>
                   <div className="text-center py-8 text-gray-500">
@@ -1781,7 +1791,7 @@ Pedro López (4to B)
                 </div>
               </div>
               
-              <div className="flex gap-3 pt-6 border-t border-gray-200 mt-6">
+              <div className="flex gap-3 pt-6 border-t border-border mt-6">
                 <Button
                   variant="outline"
                   onClick={() => setShowStudentModal(false)}

@@ -255,7 +255,7 @@ export function StorageOptimizationMonitor({
               <span className="text-2xl font-bold">
                 {stats.freetierUsagePercent.toFixed(1)}%
               </span>
-              <span className="ml-2 text-sm text-gray-600">
+              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
                 del plan gratuito utilizado
               </span>
             </div>
@@ -263,11 +263,11 @@ export function StorageOptimizationMonitor({
 
           {/* Key Metrics */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {formatNumber(stats.totalPhotos)}
               </div>
-              <div className="flex items-center justify-center gap-1 text-xs text-blue-700">
+              <div className="flex items-center justify-center gap-1 text-xs text-blue-700 dark:text-blue-300">
                 <ImageIcon className="h-3 w-3" />
                 Total fotos
               </div>
@@ -293,11 +293,11 @@ export function StorageOptimizationMonitor({
               </div>
             </div>
 
-            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 text-center">
-              <div className="text-2xl font-bold text-orange-600">
+            <div className="rounded-lg border border-primary-200 bg-primary-50 p-4 text-center">
+              <div className="text-2xl font-bold text-primary">
                 {formatNumber(stats.estimatedPhotosRemaining)}
               </div>
-              <div className="flex items-center justify-center gap-1 text-xs text-orange-700">
+              <div className="flex items-center justify-center gap-1 text-xs text-primary-700">
                 <TrendingUp className="h-3 w-3" />
                 Fotos restantes
               </div>
@@ -355,11 +355,11 @@ export function StorageOptimizationMonitor({
               {monthlyStats.slice(-6).map((month, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                  className="flex items-center justify-between rounded-lg bg-muted p-3"
                 >
                   <div>
                     <div className="font-medium">{month.month}</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
                       {formatNumber(month.photosUploaded)} fotos •{' '}
                       {month.sizeUploadedMB.toFixed(1)} MB
                     </div>
@@ -376,38 +376,38 @@ export function StorageOptimizationMonitor({
 
       {/* Projections & Recommendations */}
       {projection && (
-        <Card className="border-blue-200">
+        <Card className="border-blue-200 dark:border-blue-800">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-blue-700">
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
               <Database className="h-5 w-5" />
               Proyecciones y Recomendaciones
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-lg bg-blue-50 p-3">
-                <div className="text-lg font-bold text-blue-600">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                   {formatNumber(projection.projectedMonthlyPhotos)}
                 </div>
-                <div className="text-xs text-blue-700">
+                <div className="text-xs text-blue-700 dark:text-blue-300">
                   Fotos/mes proyectadas
                 </div>
               </div>
 
-              <div className="rounded-lg bg-blue-50 p-3">
-                <div className="text-lg font-bold text-blue-600">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                   {projection.projectedMonthlySizeMB.toFixed(1)} MB
                 </div>
-                <div className="text-xs text-blue-700">Crecimiento/mes</div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">Crecimiento/mes</div>
               </div>
 
-              <div className="rounded-lg bg-blue-50 p-3">
-                <div className="text-lg font-bold text-blue-600">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                   {projection.monthsUntilFull > 12
                     ? '12+'
                     : projection.monthsUntilFull.toFixed(0)}
                 </div>
-                <div className="text-xs text-blue-700">Meses restantes</div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">Meses restantes</div>
               </div>
             </div>
 
@@ -432,7 +432,7 @@ export function StorageOptimizationMonitor({
       )}
 
       {/* Technical Details */}
-      <Card className="border-gray-200">
+      <Card className="border-border">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <School className="h-4 w-4" />
@@ -445,7 +445,7 @@ export function StorageOptimizationMonitor({
               <h5 className="mb-2 font-medium">
                 Configuración de Optimización
               </h5>
-              <ul className="space-y-1 text-gray-600">
+              <ul className="space-y-1 text-gray-500 dark:text-gray-400">
                 <li>• Objetivo: {TARGET_SIZE_KB} KB por foto</li>
                 <li>• Formato: WebP optimizado</li>
                 <li>• Watermarks: "LOOK ESCOLAR"</li>
@@ -455,7 +455,7 @@ export function StorageOptimizationMonitor({
 
             <div>
               <h5 className="mb-2 font-medium">Límites del Plan Gratuito</h5>
-              <ul className="space-y-1 text-gray-600">
+              <ul className="space-y-1 text-gray-500 dark:text-gray-400">
                 <li>• Almacenamiento: {FREE_TIER_LIMIT_GB} GB total</li>
                 <li>
                   • Capacidad estimada: ~{formatNumber(ESTIMATED_MAX_PHOTOS)}{' '}

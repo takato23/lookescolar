@@ -60,6 +60,24 @@ export const SECURITY_CONFIG = {
     HSTS_MAX_AGE: 31536000, // 1 año
   },
 
+  // Configuración de CORS
+  cors: {
+    origins: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'X-Request-ID',
+    ],
+  },
+
   // Configuración de anti-hotlinking
   ANTI_HOTLINKING: {
     ENABLED: true,

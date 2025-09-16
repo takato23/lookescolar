@@ -298,14 +298,14 @@ export function CheckoutModal({
             </div>
 
             {/* Payment Info */}
-            <div className="rounded-lg bg-blue-50 p-4">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="mt-0.5 h-5 w-5 text-blue-600" />
+                <AlertCircle className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <div className="text-sm text-blue-900">
                   <p className="mb-1 font-medium">
                     Pago Seguro con Mercado Pago
                   </p>
-                  <p className="text-blue-700">
+                  <p className="text-blue-700 dark:text-blue-300">
                     Serás redirigido a Mercado Pago para completar el pago de
                     forma segura. Aceptamos tarjetas de crédito, débito y otros
                     medios de pago.

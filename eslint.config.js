@@ -13,7 +13,9 @@ export default tseslint.config(
       "coverage",
       "test-reports",
       "supabase/.temp",
+      ".next.backup",
       "public",
+      "archive",
       // Temporary ignores to unblock CI; revisit later
       "components/admin/EventPhotoManager.tsx",
     ],
@@ -50,7 +52,7 @@ export default tseslint.config(
       "no-empty-pattern": "off",
       "@typescript-eslint/ban-ts-comment": "warn",
       // Relax strict TS rules to reduce CI noise
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-unsafe-function-type": "off",

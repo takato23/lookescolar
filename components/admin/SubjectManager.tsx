@@ -111,7 +111,7 @@ export default function SubjectManager({
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-lg font-semibold">Gestión de Sujetos</h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Total: {subjects.length} sujetos
             </p>
           </div>
@@ -244,7 +244,7 @@ export default function SubjectManager({
                 <div className="space-y-1">
                   <h3 className="font-semibold">{subject.name}</h3>
                   {subject.grade_section && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {subject.grade_section}
                     </p>
                   )}

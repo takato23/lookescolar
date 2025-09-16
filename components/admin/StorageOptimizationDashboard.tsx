@@ -105,8 +105,8 @@ export default function StorageOptimizationDashboard() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 animate-pulse rounded-lg bg-gray-100" />
-        <div className="h-48 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-32 animate-pulse rounded-lg bg-muted" />
+        <div className="h-48 animate-pulse rounded-lg bg-muted" />
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function StorageOptimizationDashboard() {
               Error cargando métricas: {error}
               <button
                 onClick={fetchMetrics}
-                className="ml-4 text-blue-600 underline"
+                className="ml-4 text-blue-600 dark:text-blue-400 underline"
               >
                 Reintentar
               </button>
@@ -200,36 +200,36 @@ export default function StorageOptimizationDashboard() {
         <CardContent>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <div className="rounded-lg bg-gray-50 p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
+              <div className="rounded-lg bg-muted p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {projectAnalysis.totalPhotos.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-600">Total de fotos</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Total de fotos</div>
               </div>
 
-              <div className="rounded-lg bg-gray-50 p-4 text-center">
+              <div className="rounded-lg bg-muted p-4 text-center">
                 <div className="text-2xl font-bold text-purple-600">
                   {projectAnalysis.estimatedStorageGB} GB
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Almacenamiento estimado
                 </div>
               </div>
 
-              <div className="rounded-lg bg-gray-50 p-4 text-center">
+              <div className="rounded-lg bg-muted p-4 text-center">
                 <div className="text-2xl font-bold text-green-600">
                   {optimizationMetrics.targetSizeKB} KB
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Tamaño objetivo por foto
                 </div>
               </div>
 
-              <div className="rounded-lg bg-gray-50 p-4 text-center">
-                <div className="text-2xl font-bold text-orange-600">
+              <div className="rounded-lg bg-muted p-4 text-center">
+                <div className="text-2xl font-bold text-primary">
                   {optimizationMetrics.maxDimension}px
                 </div>
-                <div className="text-sm text-gray-600">Dimensión máxima</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Dimensión máxima</div>
               </div>
             </div>
 
@@ -292,7 +292,7 @@ export default function StorageOptimizationDashboard() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <h4 className="font-semibold text-blue-700">
+                <h4 className="font-semibold text-blue-700 dark:text-blue-300">
                   📊 Métricas de Rendimiento
                 </h4>
                 <ul className="mt-2 space-y-1 text-sm">

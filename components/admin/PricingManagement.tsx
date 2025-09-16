@@ -174,8 +174,8 @@ export function PricingManagement() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="h-32 animate-pulse rounded-lg bg-gray-100" />
-        <div className="h-48 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-32 animate-pulse rounded-lg bg-muted" />
+        <div className="h-48 animate-pulse rounded-lg bg-muted" />
       </div>
     );
   }
@@ -184,7 +184,7 @@ export function PricingManagement() {
     return (
       <div className="p-8 text-center">
         <AlertCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-        <p className="text-gray-600">No se pudieron cargar los precios</p>
+        <p className="text-gray-500 dark:text-gray-400">No se pudieron cargar los precios</p>
         <Button onClick={loadPricing} className="mt-4">
           Reintentar
         </Button>
@@ -197,10 +197,10 @@ export function PricingManagement() {
       {/* Header with Save Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-foreground">
             Gestión de Precios
           </h1>
-          <p className="mt-1 text-gray-600">
+          <p className="mt-1 text-gray-500 dark:text-gray-400">
             Configura los precios de los paquetes y copias adicionales
           </p>
         </div>
@@ -209,7 +209,7 @@ export function PricingManagement() {
           {hasChanges && (
             <Badge
               variant="outline"
-              className="border-orange-600 text-orange-600"
+              className="border-primary-600 text-primary-600"
             >
               Cambios sin guardar
             </Badge>
@@ -230,7 +230,7 @@ export function PricingManagement() {
       {pricing.lastUpdated && (
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <AlertCircle className="h-4 w-4" />
               <span>
                 Última actualización:{' '}
@@ -264,14 +264,14 @@ export function PricingManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-foreground">
                       Incluye:
                     </p>
                     <ul className="space-y-1">
                       {pkg.includes.map((item, i) => (
                         <li
                           key={i}
-                          className="flex items-center gap-2 text-sm text-gray-600"
+                          className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400"
                         >
                           <div className="h-1.5 w-1.5 rounded-full bg-blue-500" />
                           {item}
@@ -314,7 +314,7 @@ export function PricingManagement() {
                     )}
                   </div>
 
-                  <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-500">
+                  <div className="rounded-lg bg-muted p-3 text-sm text-gray-500">
                     <p className="font-medium">Requisitos de fotos:</p>
                     <p>
                       • {pkg.photoRequirements.individual} foto(s)
@@ -351,7 +351,7 @@ export function PricingManagement() {
                 <div>
                   <h4 className="text-base font-medium">{extra.name}</h4>
                   {extra.description && (
-                    <p className="text-sm text-gray-600">{extra.description}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{extra.description}</p>
                   )}
                 </div>
 
@@ -395,11 +395,11 @@ export function PricingManagement() {
       {/* Help Section */}
       <Card>
         <CardContent className="pt-6">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
             <h4 className="mb-2 font-medium text-blue-900">
               💡 Consejos para configurar precios:
             </h4>
-            <ul className="space-y-1 text-sm text-blue-800">
+            <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
               <li>
                 • Los precios se muestran automáticamente a las familias en la
                 galería

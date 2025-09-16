@@ -178,7 +178,7 @@ export function PhotoPreviewModal({ folder, onClose }: PhotoPreviewModalProps) {
           {loading ? (
             <div className="flex h-96 items-center justify-center">
               <div className="space-y-3 text-center">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
                 <p className="text-slate-600">Cargando fotos...</p>
               </div>
             </div>
@@ -217,7 +217,7 @@ export function PhotoPreviewModal({ folder, onClose }: PhotoPreviewModalProps) {
                     {/* Loading state */}
                     {imageLoading[photos[selectedPhoto].id] !== false && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
                       </div>
                     )}
 

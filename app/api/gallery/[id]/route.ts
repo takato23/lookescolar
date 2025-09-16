@@ -5,10 +5,10 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 // Returns event info and paginated public-ready photos (watermarked/preview URLs)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = await params;
     const url = new URL(request.url);
     const page = Math.max(parseInt(url.searchParams.get('page') || '1', 10), 1);
     const limit = Math.min(

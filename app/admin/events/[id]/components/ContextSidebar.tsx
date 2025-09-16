@@ -158,7 +158,7 @@ export function ContextSidebar({
               <h3 className="mb-1 text-sm font-semibold">
                 Información del Evento
               </h3>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-gray-500 dark:text-gray-400 text-xs">
                 {new Date(eventInfo.date).toLocaleDateString('es-AR', {
                   day: 'numeric',
                   month: 'long',
@@ -182,8 +182,8 @@ export function ContextSidebar({
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs">
-              <Calendar className="text-muted-foreground h-3 w-3" />
-              <span className="text-muted-foreground">Creado hace</span>
+              <Calendar className="text-gray-500 dark:text-gray-400 h-3 w-3" />
+              <span className="text-gray-500 dark:text-gray-400">Creado hace</span>
               <span className="font-medium">
                 {Math.ceil(
                   (Date.now() - new Date(eventInfo.created_at).getTime()) /
@@ -195,16 +195,16 @@ export function ContextSidebar({
 
             {eventInfo.location && (
               <div className="flex items-center gap-2 text-xs">
-                <MapPin className="text-muted-foreground h-3 w-3" />
-                <span className="text-muted-foreground">
+                <MapPin className="text-gray-500 dark:text-gray-400 h-3 w-3" />
+                <span className="text-gray-500 dark:text-gray-400">
                   {eventInfo.location}
                 </span>
               </div>
             )}
 
             <div className="flex items-center gap-2 text-xs">
-              <Activity className="text-muted-foreground h-3 w-3" />
-              <span className="text-muted-foreground">Estado:</span>
+              <Activity className="text-gray-500 dark:text-gray-400 h-3 w-3" />
+              <span className="text-gray-500 dark:text-gray-400">Estado:</span>
               <span
                 className={`font-medium ${eventInfo.active ? 'text-green-600' : 'text-red-600'}`}
               >
@@ -223,7 +223,7 @@ export function ContextSidebar({
             </h3>
             <div className="flex items-center gap-1">
               <div className="h-2 w-2 animate-pulse rounded-full bg-green-500"></div>
-              <span className="text-muted-foreground text-xs">Tiempo real</span>
+              <span className="text-gray-500 dark:text-gray-400 text-xs">Tiempo real</span>
             </div>
           </div>
 
@@ -242,7 +242,7 @@ export function ContextSidebar({
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
                         {metric.label}
                       </p>
                       <p className="gradient-text-ios26 text-lg font-bold">
@@ -289,10 +289,10 @@ export function ContextSidebar({
                         {activity.message}
                       </p>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className="text-xs font-bold text-blue-600">
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
                           +{activity.count}
                         </span>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">
                           hace {activity.time}
                         </span>
                       </div>
@@ -317,7 +317,7 @@ export function ContextSidebar({
               <p className="gradient-text-ios26 text-lg font-bold">
                 {metrics.totalSubjects}
               </p>
-              <p className="text-muted-foreground text-xs">Familias</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Familias</p>
             </div>
 
             <div className="glass-stat-card-ios26 p-3 text-center">
@@ -325,7 +325,7 @@ export function ContextSidebar({
               <p className="gradient-text-ios26 text-lg font-bold">
                 {metrics.totalPhotos}
               </p>
-              <p className="text-muted-foreground text-xs">Fotos</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Fotos</p>
             </div>
 
             <div className="glass-stat-card-ios26 p-3 text-center">
@@ -333,7 +333,7 @@ export function ContextSidebar({
               <p className="gradient-text-ios26 text-lg font-bold">
                 {metrics.totalOrders}
               </p>
-              <p className="text-muted-foreground text-xs">Pedidos</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Pedidos</p>
             </div>
 
             <div className="glass-stat-card-ios26 p-3 text-center">
@@ -341,7 +341,7 @@ export function ContextSidebar({
               <p className="gradient-text-ios26 text-lg font-bold">
                 ${(metrics.revenue / 1000).toFixed(1)}k
               </p>
-              <p className="text-muted-foreground text-xs">Ingresos</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Ingresos</p>
             </div>
           </div>
         </div>
@@ -355,7 +355,7 @@ export function ContextSidebar({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
                 Base de datos
               </span>
               <div className="flex items-center gap-1">
@@ -365,7 +365,7 @@ export function ContextSidebar({
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
                 Almacenamiento
               </span>
               <div className="flex items-center gap-1">
@@ -375,7 +375,7 @@ export function ContextSidebar({
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-xs">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
                 Sincronización
               </span>
               <div className="flex items-center gap-1">
@@ -386,7 +386,7 @@ export function ContextSidebar({
 
             <div className="border-t border-white/10 pt-2">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">
+                <span className="text-gray-500 dark:text-gray-400 text-xs">
                   Última actualización
                 </span>
                 <span className="text-xs font-medium">

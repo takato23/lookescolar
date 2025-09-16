@@ -13,13 +13,13 @@ export default function CentralitaHeader() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             Centralita de Publicación
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-500 dark:text-gray-400">
             Centro de control para todas las actividades de publicación
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 text-xs text-gray-600">
-        <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-2 py-1">
+      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center gap-2 rounded-full border border-border bg-white px-2 py-1">
           <span className="h-2 w-2 rounded-full bg-green-500" />
           <span>Sistema operativo</span>
         </div>

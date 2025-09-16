@@ -1,17 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-  StatsCard,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { PremiumGlassButton, PremiumIconButton } from '@/components/ui/premium-glass-button';
 import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortcuts';
 import { QuickActions } from './QuickActions';
@@ -33,12 +25,15 @@ import {
   Activity,
   Monitor,
   Clock,
-  ArrowUpRight,
   Eye,
   Search,
-  Tag,
   AlertCircle,
   RefreshCw,
+  TrendingUp,
+  Zap,
+  BarChart3,
+  CloudUpload,
+  FolderOpen,
 } from 'lucide-react';
 
 // Lazy load performance monitor for better initial load
@@ -190,27 +185,28 @@ export function DashboardClient() {
   // Show error state
   if (error && !stats) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
-              <AlertCircle className="text-destructive mb-4 h-12 w-12" />
-              <h3 className="mb-2 text-lg font-semibold">
-                Error al cargar el dashboard
-              </h3>
-              <p className="text-muted-foreground mb-4 text-sm">
-                No se pudieron cargar las estadísticas del dashboard.
-              </p>
-              <Button
-                onClick={() => refetch()}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Reintentar
-              </Button>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="glass-card-ios26 w-full max-w-md rounded-3xl p-8">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="glass-button-ios26 rounded-full p-4">
+              <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
-          </CardContent>
-        </Card>
+            <h3 className="text-xl font-semibold">
+              Error al cargar el dashboard
+            </h3>
+            <p className="text-muted-foreground dark:text-gray-400">
+              No se pudieron cargar las estadísticas del dashboard.
+            </p>
+            <PremiumGlassButton
+              onClick={() => refetch()}
+              variant="primary"
+              size="lg"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reintentar
+            </PremiumGlassButton>
+          </div>
+        </div>
       </div>
     );
   }
@@ -246,240 +242,311 @@ export function DashboardClient() {
       />
       
       {/* Desktop Layout */}
-      <div className="container mx-auto hidden px-4 py-8 lg:block">
-      {/* Header */}
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-3xl font-bold text-transparent">
-            Estudio Fotográfico
-          </h1>
-          <p className="text-muted-foreground">
-            ¡Todo listo para capturar momentos increíbles! • {' '}
-            {currentTime.toLocaleDateString('es-ES', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="liquid-glass-button-ios26 rounded-lg px-4 py-2 text-sm">
-            {formatTime(currentTime)}
-          </div>
-          <Button
-            variant="glass-ios26"
-            onClick={() => refetch()}
-            aria-label="Actualizar datos"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          variant="glass-ios26"
-          title="Eventos Activos"
-          value={dashboardStats.activeEvents}
-          description="Eventos en curso"
-          icon={<Calendar className="h-6 w-6" />}
-          trend="up"
-          trendValue="+2"
-        />
-        <StatsCard
-          variant="glass-ios26"
-          title="Fotos Totales"
-          value={dashboardStats.totalPhotos.toLocaleString()}
-          description="Fotos procesadas"
-          icon={<Camera className="h-6 w-6" />}
-          trend="up"
-          trendValue="+12%"
-        />
-        <StatsCard
-          variant="glass-ios26"
-          title="Familias"
-          value={dashboardStats.registeredFamilies.toLocaleString()}
-          description="Familias registradas"
-          icon={<Users className="h-6 w-6" />}
-          trend="up"
-          trendValue="+8%"
-        />
-        <StatsCard
-          variant="glass-ios26"
-          title="Ventas"
-          value={`$${(dashboardStats.totalSales / 100).toLocaleString()}`}
-          description="Ingresos totales"
-          icon={<DollarSign className="h-6 w-6" />}
-          trend="up"
-          trendValue="+15%"
-        />
-      </div>
-
-      {/* Quick Actions and Performance */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Card variant="glass-ios26" className="h-full">
-            <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuickActions />
-            </CardContent>
-          </Card>
-        </div>
-        <div>
-          <Card variant="glass-ios26" className="h-full">
-            <CardHeader>
-              <CardTitle>Rendimiento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoy - Subidas</span>
-                  <span className="font-medium">
-                    {dashboardStats.todayUploads}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoy - Pedidos</span>
-                  <span className="font-medium">
-                    {dashboardStats.todayOrders}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoy - Pagos</span>
-                  <span className="font-medium">
-                    {dashboardStats.todayPayments}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Pedidos Pendientes</span>
-                  <span className="font-medium">
-                    {dashboardStats.pendingOrders}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Photography Specialized Widgets */}
-      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <EventProgressWidget />
-        <QuickAccessWidget />
-        <OrdersSummaryWidget />
-        <PhotoManagementWidget />
-        <BusinessMetricsWidget />
-      </div>
-
-      {/* Activity and Storage */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card variant="glass-ios26">
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dashboardStats.recentActivity.length > 0 ? (
-                dashboardStats.recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <div className="liquid-glass-button-ios26 mt-1 flex h-8 w-8 items-center justify-center rounded-full">
-                      {activity.type === 'event_created' && (
-                        <Calendar className="h-4 w-4" />
-                      )}
-                      {activity.type === 'photos_uploaded' && (
-                        <Camera className="h-4 w-4" />
-                      )}
-                      {activity.type === 'order_created' && (
-                        <Package className="h-4 w-4" />
-                      )}
-                      {activity.type === 'order_completed' && (
-                        <DollarSign className="h-4 w-4" />
-                      )}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20">
+        <div className="container mx-auto hidden px-6 py-8 lg:block">
+          {/* Enhanced Header */}
+          <div className="mb-10">
+            <div className="glass-card-ios26 rounded-3xl p-8 backdrop-blur-xl">
+              <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="glass-button-ios26 rounded-2xl p-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+                      <Camera className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm">{activity.message}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {formatTimeAgo(activity.timestamp)}
-                      </p>
-                    </div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      Panel de Control
+                    </h1>
                   </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground text-center">
-                  No hay actividad reciente
-                </p>
-              )}
+                  <p className="text-muted-foreground dark:text-gray-400 text-lg">
+                    Gestión completa de fotografía escolar
+                  </p>
+                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+                    <Calendar className="h-4 w-4" />
+                    {currentTime.toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-3">
+                  <div className="glass-button-ios26 rounded-xl px-6 py-3 text-lg font-medium">
+                    <Clock className="inline h-5 w-5 mr-2" />
+                    {formatTime(currentTime)}
+                  </div>
+                  <div className="flex gap-2">
+                    <PremiumGlassButton
+                      onClick={() => setShowCommandPalette(true)}
+                      variant="primary"
+                    >
+                      <Search className="h-4 w-4" />
+                      Buscar (⌘K)
+                    </PremiumGlassButton>
+                    <PremiumIconButton
+                      onClick={() => refetch()}
+                      variant="primary"
+                      aria-label="Actualizar datos"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </PremiumIconButton>
+                  </div>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card variant="glass-ios26">
-          <CardHeader>
-            <CardTitle>Uso de Almacenamiento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          {/* Enhanced Stats Grid */}
+          <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {/* Active Events Card */}
+            <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl hover:scale-105 transition-transform cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
+                <div className="glass-button-ios26 rounded-xl p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+                  <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm font-medium">
+                  <TrendingUp className="h-4 w-4" />
+                  +2
+                </div>
+              </div>
               <div>
-                <div className="mb-2 flex justify-between text-sm">
-                  <span>
-                    {Math.round(
-                      (dashboardStats.storageUsed / 1024 / 1024 / 1024) * 100
-                    ) / 100}{' '}
-                    GB
-                  </span>
-                  <span>
-                    {Math.round(
-                      (dashboardStats.storageLimit / 1024 / 1024 / 1024) * 100
-                    ) / 100}{' '}
-                    GB
-                  </span>
-                </div>
-                <div className="liquid-glass-button-ios26 h-2 rounded-full">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
-                    style={{
-                      width: `${Math.min(
-                        (dashboardStats.storageUsed /
-                          dashboardStats.storageLimit) *
-                          100,
-                        100
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="glass-ios26" className="w-full">
-                  <Monitor className="mr-2 h-4 w-4" />
-                  Monitorear
-                </Button>
-                <Button variant="glass-ios26" className="w-full">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Detalles
-                </Button>
+                <p className="text-3xl font-bold mb-1">{dashboardStats.activeEvents}</p>
+                <p className="text-muted-foreground dark:text-gray-400 text-sm">Eventos Activos</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Performance Monitor */}
-      {showPerformanceMonitor && (
-        <div className="mt-8">
-          <PerformanceMonitor
-            onClose={() => setShowPerformanceMonitor(false)}
-          />
+            {/* Total Photos Card */}
+            <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl hover:scale-105 transition-transform cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
+                <div className="glass-button-ios26 rounded-xl p-3 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+                  <Camera className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm font-medium">
+                  <TrendingUp className="h-4 w-4" />
+                  +12%
+                </div>
+              </div>
+              <div>
+                <p className="text-3xl font-bold mb-1">{dashboardStats.totalPhotos.toLocaleString()}</p>
+                <p className="text-muted-foreground dark:text-gray-400 text-sm">Fotos Totales</p>
+              </div>
+            </div>
+
+            {/* Families Card */}
+            <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl hover:scale-105 transition-transform cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
+                <div className="glass-button-ios26 rounded-xl p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                  <Users className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm font-medium">
+                  <TrendingUp className="h-4 w-4" />
+                  +8%
+                </div>
+              </div>
+              <div>
+                <p className="text-3xl font-bold mb-1">{dashboardStats.registeredFamilies.toLocaleString()}</p>
+                <p className="text-muted-foreground dark:text-gray-400 text-sm">Familias Registradas</p>
+              </div>
+            </div>
+
+            {/* Sales Card */}
+            <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl hover:scale-105 transition-transform cursor-pointer">
+              <div className="flex items-start justify-between mb-4">
+                <div className="glass-button-ios26 rounded-xl p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10">
+                  <DollarSign className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm font-medium">
+                  <TrendingUp className="h-4 w-4" />
+                  +15%
+                </div>
+              </div>
+              <div>
+                <p className="text-3xl font-bold mb-1">${(dashboardStats.totalSales / 100).toLocaleString()}</p>
+                <p className="text-muted-foreground dark:text-gray-400 text-sm">Ventas Totales</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions and Performance */}
+          <div className="mb-8 grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl h-full">
+                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  Acciones Rápidas
+                </h3>
+                <QuickActions />
+              </div>
+            </div>
+            <div>
+              <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl h-full">
+                <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  Actividad de Hoy
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 glass-button-ios26 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <CloudUpload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm">Fotos Subidas</span>
+                    </div>
+                    <span className="font-semibold text-lg">
+                      {dashboardStats.todayUploads}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 glass-button-ios26 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm">Pedidos</span>
+                    </div>
+                    <span className="font-semibold text-lg">
+                      {dashboardStats.todayOrders}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 glass-button-ios26 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <span className="text-sm">Pagos Recibidos</span>
+                    </div>
+                    <span className="font-semibold text-lg">
+                      {dashboardStats.todayPayments}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 glass-button-ios26 rounded-xl border-2 border-primary-200 dark:border-primary-800">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-primary-600 dark:text-primary-400" />
+                      <span className="text-sm">Pendientes</span>
+                    </div>
+                    <span className="font-semibold text-lg text-primary-600 dark:text-primary-400">
+                      {dashboardStats.pendingOrders}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Photography Specialized Widgets */}
+          <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <EventProgressWidget />
+            <QuickAccessWidget />
+            <OrdersSummaryWidget />
+            <PhotoManagementWidget />
+            <BusinessMetricsWidget />
+          </div>
+
+          {/* Activity and Storage */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl">
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                Actividad Reciente
+              </h3>
+              <div className="space-y-4">
+                {dashboardStats.recentActivity.length > 0 ? (
+                  dashboardStats.recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 p-3 glass-button-ios26 rounded-xl hover:scale-[1.02] transition-transform">
+                      <div className="glass-button-ios26 mt-1 flex h-10 w-10 items-center justify-center rounded-xl">
+                        {activity.type === 'event_created' && (
+                          <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        )}
+                        {activity.type === 'photos_uploaded' && (
+                          <Camera className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        )}
+                        {activity.type === 'order_created' && (
+                          <Package className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                        )}
+                        {activity.type === 'order_completed' && (
+                          <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{activity.message}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatTimeAgo(activity.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="glass-button-ios26 rounded-xl p-4 inline-block mb-3">
+                      <Activity className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No hay actividad reciente
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="glass-card-ios26 rounded-2xl p-6 backdrop-blur-xl">
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <FolderOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Almacenamiento
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span>
+                      {Math.round(
+                        (dashboardStats.storageUsed / 1024 / 1024 / 1024) * 100
+                      ) / 100}{' '}
+                      GB
+                    </span>
+                    <span>
+                      {Math.round(
+                        (dashboardStats.storageLimit / 1024 / 1024 / 1024) * 100
+                      ) / 100}{' '}
+                      GB
+                    </span>
+                  </div>
+                  <div className="h-3 glass-button-ios26 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          (dashboardStats.storageUsed /
+                            dashboardStats.storageLimit) *
+                            100,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <PremiumGlassButton variant="primary">
+                    <Monitor className="h-4 w-4" />
+                    Monitorear
+                  </PremiumGlassButton>
+                  <PremiumGlassButton variant="secondary">
+                    <Eye className="h-4 w-4" />
+                    Ver Detalles
+                  </PremiumGlassButton>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Monitor */}
+          {showPerformanceMonitor && (
+            <div className="mt-8">
+              <PerformanceMonitor
+                onClose={() => setShowPerformanceMonitor(false)}
+              />
+            </div>
+          )}
+
+          {/* Command Palette */}
+          {showCommandPalette && (
+            <CommandPalette 
+              isOpen={showCommandPalette}
+              onClose={() => setShowCommandPalette(false)} 
+            />
+          )}
         </div>
-      )}
-
-      {/* Command Palette */}
-      {showCommandPalette && (
-        <CommandPalette onClose={() => setShowCommandPalette(false)} />
-      )}
       </div>
     </>
   );

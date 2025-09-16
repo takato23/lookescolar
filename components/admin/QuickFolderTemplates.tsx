@@ -428,7 +428,7 @@ export default function QuickFolderTemplates({
                 template.color === 'blue' && 'bg-blue-100 text-blue-600',
                 template.color === 'purple' && 'bg-purple-100 text-purple-600',
                 template.color === 'green' && 'bg-green-100 text-green-600',
-                template.color === 'gray' && 'bg-gray-100 text-gray-600'
+                template.color === 'gray' && 'bg-muted text-muted-foreground'
               )}
             >
               <Icon className="h-6 w-6" />
@@ -444,7 +444,7 @@ export default function QuickFolderTemplates({
 
         <CardContent className="space-y-3">
           {/* Stats */}
-          <div className="text-muted-foreground flex items-center gap-4 text-sm">
+          <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
               <BookOpen className="h-4 w-4" />
               <span>{template.levels.length} niveles</span>
@@ -467,7 +467,7 @@ export default function QuickFolderTemplates({
           {/* Structure preview */}
           {template.levels.length > 0 && (
             <div className="space-y-2 border-t pt-3">
-              <p className="text-muted-foreground text-xs font-medium">
+              <p className="text-gray-500 dark:text-gray-400 text-xs font-medium">
                 Estructura:
               </p>
               {template.levels.slice(0, 2).map((level, levelIndex) => (
@@ -479,7 +479,7 @@ export default function QuickFolderTemplates({
                       {level.courses.length} cursos
                     </Badge>
                   </div>
-                  <div className="text-muted-foreground ml-4 text-xs">
+                  <div className="text-gray-500 dark:text-gray-400 ml-4 text-xs">
                     {level.courses
                       .slice(0, 3)
                       .map((course) => course.name)
@@ -490,7 +490,7 @@ export default function QuickFolderTemplates({
                 </div>
               ))}
               {template.levels.length > 2 && (
-                <div className="text-muted-foreground ml-4 text-xs">
+                <div className="text-gray-500 dark:text-gray-400 ml-4 text-xs">
                   +{template.levels.length - 2} niveles más...
                 </div>
               )}
@@ -524,9 +524,9 @@ export default function QuickFolderTemplates({
           // Creation progress
           <div className="space-y-6 py-8">
             <div className="text-center">
-              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-blue-600" />
+              <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-blue-600 dark:text-blue-400" />
               <h3 className="text-lg font-semibold">Creando estructura...</h3>
-              <p className="text-muted-foreground">{progress.message}</p>
+              <p className="text-gray-500 dark:text-gray-400">{progress.message}</p>
             </div>
 
             <div className="space-y-2">
@@ -548,14 +548,14 @@ export default function QuickFolderTemplates({
 
             {/* Actions */}
             {selectedTemplate && (
-              <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
+                  <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   <div>
                     <p className="font-medium text-blue-900">
                       {selectedTemplate.name} seleccionada
                     </p>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
                       Esta plantilla creará {selectedTemplate.levels.length}{' '}
                       niveles y aproximadamente{' '}
                       {selectedTemplate.estimatedStudents} estudiantes

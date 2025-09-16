@@ -515,7 +515,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
 
             {/* Photo Selection Status */}
             {selectedPackage && (
-              <div className="mb-6 rounded-xl bg-blue-50 p-4">
+              <div className="mb-6 rounded-xl bg-blue-50 dark:bg-blue-950/20 p-4">
                 <h4 className="mb-2 font-bold text-gray-900">
                   Selección de Fotos:
                 </h4>
@@ -549,7 +549,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
                     </span>
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-blue-600">
+                <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
                   Usa los botones{' '}
                   <span className="rounded bg-blue-600 px-1 text-white">I</span>{' '}
                   y{' '}

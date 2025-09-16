@@ -142,5 +142,5 @@ export default async function EventsPage({
 }) {
   const sp = await searchParams;
   const { events, pagination, error } = await getEvents(sp);
-  return <EventsPageClient events={events} error={error} pagination={pagination} />;
+  return <EventsPageClient events={events} error={error} />;
 }

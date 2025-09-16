@@ -204,7 +204,7 @@ export default function SecuencialPage() {
               <div className="text-center">
                 <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
                 <h3 className="mb-2 text-lg font-semibold">Error</h3>
-                <p className="text-muted-foreground">
+                <p className="text-gray-500 dark:text-gray-400">
                   {error || 'Evento no encontrado'}
                 </p>
                 <Button
@@ -229,7 +229,7 @@ export default function SecuencialPage() {
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
           <div className="relative">
             {/* Breadcrumbs */}
-            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+            <nav className="text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2 text-sm">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-primary-600"
@@ -271,7 +271,7 @@ export default function SecuencialPage() {
                   <h1 className="text-gradient mb-2 text-3xl font-bold md:text-4xl">
                     Asignación Secuencial
                   </h1>
-                  <p className="text-muted-foreground">
+                  <p className="text-gray-500 dark:text-gray-400">
                     Asigna fotos por alumno en orden cronológico sin QR
                   </p>
                 </div>
@@ -286,7 +286,7 @@ export default function SecuencialPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                     Total Fotos
                   </p>
                   <p className="text-2xl font-bold">{photoStats?.total || 0}</p>
@@ -300,7 +300,7 @@ export default function SecuencialPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                     Sin Asignar
                   </p>
                   <p className="text-2xl font-bold">
@@ -316,7 +316,7 @@ export default function SecuencialPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                     A Asignar
                   </p>
                   <p className="text-2xl font-bold text-primary-600">
@@ -359,7 +359,7 @@ export default function SecuencialPage() {
                   id="only-unassigned"
                   checked={onlyUnassigned}
                   onChange={(e) => setOnlyUnassigned(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-border"
                 />
                 <Label htmlFor="only-unassigned">Solo fotos sin asignar</Label>
               </div>
@@ -382,7 +382,7 @@ export default function SecuencialPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{subject.name}</p>
                     {subject.parent_name && (
-                      <p className="text-muted-foreground truncate text-sm">
+                      <p className="text-gray-500 dark:text-gray-400 truncate text-sm">
                         {subject.parent_name}
                       </p>
                     )}

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 // TEMP: Commented out missing popover component
 // import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -20,10 +22,12 @@ export default function EventSelector({
   value,
   onChange,
   className,
+  events: providedEvents,
 }: {
   value: string | null;
   onChange: (id: string) => void;
   className?: string;
+  events?: EventLite[];
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -44,23 +48,60 @@ export default function EventSelector({
   }, []);
 
   const fetchPage = async (reset = false) => {
-    if (loading) return;
+    if (loading && !reset) return;
     setLoading(true);
-    const params = new URLSearchParams();
-    if (debounced.length >= 2) params.set('q', debounced);
-    params.set('limit', '20');
-    params.set('offset', String(reset ? 0 : offset));
-    const res = await fetch(`/api/admin/events/search?${params}`);
-    const data = await res.json();
-    setItems((prev) => (reset ? data.events : [...prev, ...data.events]));
-    setOffset(data.nextOffset || 0);
-    setHasMore(Boolean(data.hasMore));
-    setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      if (debounced.length >= 2) params.set('q', debounced);
+      params.set('limit', '20');
+      params.set('offset', String(reset ? 0 : offset));
+      
+      const res = await fetch(`/api/admin/events/search?${params}`);
+      
+      if (!res.ok) {
+        console.error('Failed to fetch events:', res.status);
+        // Fallback: intentar con events-simple
+        const fallbackRes = await fetch('/api/admin/events-simple?limit=100');
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          setItems(fallbackData.events || []);
+          setHasMore(false);
+        }
+        setLoading(false);
+        return;
+      }
+      
+      const data = await res.json();
+      const events = data.events || [];
+      setItems((prev) => (reset ? events : [...prev, ...events]));
+      setOffset(data.nextOffset || 0);
+      setHasMore(Boolean(data.hasMore));
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setItems([]);
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Use provided events if available, otherwise fetch
   useEffect(() => {
-    fetchPage(true);
-  }, [debounced]);
+    if (providedEvents) {
+      setItems(providedEvents);
+      setHasMore(false);
+      setLoading(false);
+    } else {
+      fetchPage(true);
+    }
+  }, [providedEvents, debounced]);
+  
+  // Cargar eventos cuando el componente se monta (solo si no hay eventos proporcionados)
+  useEffect(() => {
+    if (!providedEvents) {
+      fetchPage(true);
+    }
+  }, [providedEvents]);
 
   useEffect(() => {
     if (!open) return;

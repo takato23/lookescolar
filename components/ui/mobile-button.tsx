@@ -52,11 +52,11 @@ export const MobileButton = forwardRef<HTMLButtonElement, MobileButtonProps>(
         case 'primary':
           return 'bg-primary-600 text-white border-primary-600 hover:bg-primary-700 hover:border-primary-700 active:bg-primary-800 shadow-lg hover:shadow-xl';
         case 'secondary':
-          return 'bg-gray-100 text-gray-900 border-gray-200 hover:bg-gray-200 hover:border-gray-300 active:bg-gray-300';
+          return 'bg-muted text-foreground border-border hover:bg-muted hover:border-border active:bg-gray-300';
         case 'outline':
           return 'bg-transparent text-primary-600 border-primary-600 hover:bg-primary-50 active:bg-primary-100';
         case 'ghost':
-          return 'bg-transparent text-gray-700 border-transparent hover:bg-gray-100 active:bg-gray-200';
+          return 'bg-transparent text-foreground border-transparent hover:bg-muted active:bg-muted';
         case 'destructive':
           return 'bg-red-600 text-white border-red-600 hover:bg-red-700 hover:border-red-700 active:bg-red-800 shadow-lg hover:shadow-xl';
         default:
@@ -173,7 +173,7 @@ export function MobileFAB({
       case 'primary':
         return 'bg-primary-600 text-white shadow-lg hover:bg-primary-700 active:bg-primary-800';
       case 'secondary':
-        return 'bg-white text-gray-900 shadow-lg hover:bg-gray-50 active:bg-gray-100 border border-gray-200';
+        return 'bg-white text-foreground shadow-lg hover:bg-muted active:bg-muted border border-border';
       default:
         return 'bg-primary-600 text-white shadow-lg hover:bg-primary-700 active:bg-primary-800';
     }
@@ -270,13 +270,13 @@ export const MobileIconButton = forwardRef<
     const getVariantClasses = () => {
       switch (variant) {
         case 'ghost':
-          return 'bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200';
+          return 'bg-transparent text-muted-foreground hover:bg-muted active:bg-muted';
         case 'outline':
-          return 'bg-transparent text-gray-600 border border-gray-300 hover:bg-gray-50 active:bg-gray-100';
+          return 'bg-transparent text-muted-foreground border border-border hover:bg-muted active:bg-muted';
         case 'filled':
-          return 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300';
+          return 'bg-muted text-foreground hover:bg-muted active:bg-gray-300';
         default:
-          return 'bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200';
+          return 'bg-transparent text-muted-foreground hover:bg-muted active:bg-muted';
       }
     };
 

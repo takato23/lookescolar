@@ -94,8 +94,8 @@ export function StudentList({
     return (
       <div className="rounded-2xl border border-white/20 bg-white/10 p-8 backdrop-blur-sm">
         <div className="py-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/20">
-            <span className="text-2xl text-orange-400">👥</span>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary-500/20">
+            <span className="text-2xl text-primary-400">👥</span>
           </div>
           <h3 className="mb-2 text-lg font-semibold text-white">
             No hay sujetos en este evento
@@ -219,7 +219,7 @@ export function StudentList({
                 {/* Indicador de estado */}
                 <div
                   className={`h-3 w-3 rounded-full ${
-                    subject.photoCount > 0 ? 'bg-green-400' : 'bg-orange-400'
+                    subject.photoCount > 0 ? 'bg-green-400' : 'bg-primary-400'
                   }`}
                 />
 

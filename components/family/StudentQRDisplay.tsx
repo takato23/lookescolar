@@ -180,7 +180,7 @@ export default function StudentQRDisplay({
       <Card className={className}>
         <CardContent className="p-6 text-center">
           <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading QR code...</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading QR code...</p>
         </CardContent>
       </Card>
     );
@@ -204,7 +204,7 @@ export default function StudentQRDisplay({
       <Card className={className}>
         <CardContent className="p-6 text-center">
           <QrCode className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             No QR code available for this student
           </p>
         </CardContent>
@@ -273,12 +273,12 @@ export default function StudentQRDisplay({
         </Alert>
 
         {/* Benefits Info */}
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
           <div className="flex items-start gap-3">
-            <CheckCircle className="mt-0.5 h-5 w-5 text-blue-600" />
+            <CheckCircle className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
             <div>
               <h4 className="font-semibold text-blue-900">QR Code Benefits</h4>
-              <ul className="mt-1 space-y-1 text-sm text-blue-700">
+              <ul className="mt-1 space-y-1 text-sm text-blue-700 dark:text-blue-300">
                 <li>• Faster photo identification and organization</li>
                 <li>• Reduces errors in photo classification</li>
                 <li>• More privacy-friendly than name tags</li>
@@ -290,7 +290,7 @@ export default function StudentQRDisplay({
 
         {/* Technical Info (for debugging) */}
         {process.env.NODE_ENV === 'development' && (
-          <details className="text-muted-foreground text-xs">
+          <details className="text-gray-500 dark:text-gray-400 text-xs">
             <summary className="cursor-pointer">Technical Details</summary>
             <div className="mt-2 space-y-1 font-mono">
               <p>QR ID: {qrInfo.qrCodeId}</p>

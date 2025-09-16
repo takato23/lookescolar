@@ -62,50 +62,94 @@ interface StoreConfigPanelProps {
 
 const defaultProducts: ProductConfig[] = [
   {
-    id: 'photo_a',
-    name: 'Foto Producto A',
+    id: 'opcionA',
+    name: 'Opción A',
     type: 'physical',
     enabled: true,
-    price: 1500, // centavos
-    description: 'Impresión estándar 10x15cm',
+    price: 200000, // $2,000.00 ARS
+    description: 'Carpeta impresa con diseño personalizado (20x30) Que contiene: 1 foto INDIVIDUAL (15x21)+ 4 fotos 4x5 (de la misma que la individual elegida) + foto grupal (15x21)',
     options: {
-      sizes: ['10x15cm', '13x18cm'],
+      sizes: ['20x30', '15x21', '4x5'],
+      formats: ['Carpeta Personalizada'],
+      quality: 'premium'
+    }
+  },
+  {
+    id: 'opcionB',
+    name: 'Opción B', 
+    type: 'physical',
+    enabled: true,
+    price: 250000, // $2,500.00 ARS
+    description: 'Carpeta impresa con diseño personalizado (20x30) Que contiene: 2 fotos INDIVIDUALES (15x21) + 8 fotos 4x5 (de las mismas que las individuales elegidas) + foto grupal (15x21)',
+    options: {
+      sizes: ['20x30', '15x21', '4x5'],
+      formats: ['Carpeta Personalizada'],
+      quality: 'premium'
+    }
+  },
+  // COPIAS ADICIONALES (disponibles después de comprar paquete)
+  {
+    id: 'copy_4x5',
+    name: '4x5 cm (4 fotitos)',
+    type: 'physical',
+    enabled: true,
+    price: 60000, // $600.00 ARS
+    description: 'Set de 4 fotos de la misma imagen en tamaño 4x5 cm',
+    options: {
+      sizes: ['4x5'],
+      formats: ['Set de 4'],
       quality: 'standard'
     }
   },
   {
-    id: 'photo_b',
-    name: 'Foto Producto B',
+    id: 'copy_10x15',
+    name: '10x15 cm',
     type: 'physical',
     enabled: true,
-    price: 2000,
-    description: 'Impresión premium 15x21cm',
+    price: 80000, // $800.00 ARS
+    description: 'Foto individual de 10x15 cm',
     options: {
-      sizes: ['15x21cm', '20x25cm'],
-      quality: 'premium'
+      sizes: ['10x15'],
+      formats: ['Impreso'],
+      quality: 'standard'
     }
   },
   {
-    id: 'photo_c',
-    name: 'Foto Producto C',
+    id: 'copy_13x18',
+    name: '13x18 cm',
     type: 'physical',
-    enabled: false,
-    price: 2500,
-    description: 'Impresión especial formato grande',
+    enabled: true,
+    price: 100000, // $1,000.00 ARS
+    description: 'Foto individual de 13x18 cm',
     options: {
-      sizes: ['20x30cm', '30x40cm'],
-      quality: 'premium'
+      sizes: ['13x18'],
+      formats: ['Impreso'],
+      quality: 'standard'
     }
   },
   {
-    id: 'digital_package',
-    name: 'Paquete Digital',
-    type: 'digital',
-    enabled: false,
-    price: 3000,
-    description: 'Descarga digital alta resolución',
+    id: 'copy_15x21',
+    name: '15x21 cm',
+    type: 'physical',
+    enabled: true,
+    price: 120000, // $1,200.00 ARS
+    description: 'Foto individual de 15x21 cm',
     options: {
-      formats: ['JPG', 'PNG'],
+      sizes: ['15x21'],
+      formats: ['Impreso'],
+      quality: 'standard'
+    }
+  },
+  {
+    id: 'copy_20x30',
+    name: '20x30 cm',
+    type: 'physical',
+    enabled: true,
+    price: 200000, // $2,000.00 ARS
+    description: 'Foto individual de 20x30 cm',
+    options: {
+      sizes: ['20x30'],
+      formats: ['Impreso'],
       quality: 'premium'
     }
   }
@@ -130,6 +174,55 @@ export function StoreConfigPanel({
 
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Cargar configuración existente al montar
+  useEffect(() => {
+    const loadExistingConfig = async () => {
+      if (!eventId) return;
+      
+      try {
+        const response = await fetch(`/api/admin/events/${eventId}/store-config`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.config) {
+            // Convertir de formato DB a formato UI
+            const uiConfig = convertDbToUiConfig(data.config);
+            setConfig(prev => ({ ...prev, ...uiConfig }));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading store config:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadExistingConfig();
+  }, [eventId]);
+
+  // Función para convertir formato DB a UI
+  const convertDbToUiConfig = (dbConfig: any): Partial<StoreConfig> => {
+    const uiProducts = Object.entries(dbConfig.products || {}).map(([id, product]: [string, any]) => ({
+      id,
+      name: product.name,
+      type: product.type === 'package' ? 'physical' as const : product.type as 'physical' | 'digital',
+      enabled: product.enabled,
+      price: product.price,
+      description: product.description,
+      options: product.features
+    }));
+
+    return {
+      enabled: dbConfig.enabled || false,
+      products: uiProducts,
+      currency: dbConfig.currency || 'ARS',
+      tax_rate: dbConfig.tax_rate || 0,
+      shipping_enabled: dbConfig.shipping_enabled !== false,
+      shipping_price: dbConfig.shipping_price || 150000,
+      payment_methods: Object.keys(dbConfig.payment_methods || { mercadopago: true })
+    };
+  };
 
   const updateConfig = (updates: Partial<StoreConfig>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -180,17 +273,28 @@ export function StoreConfigPanel({
     }
   };
 
+  if (initialLoading) {
+    return (
+      <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-gray-600">Cargando configuración...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">Configuración de Tienda</h3>
-          <p className="text-gray-600">Configura productos y precios para el evento</p>
+          <h3 className="text-xl font-semibold text-foreground">Configuración de Tienda</h3>
+          <p className="text-gray-500 dark:text-gray-400">Configura productos y precios para el evento</p>
         </div>
         <div className="flex items-center gap-3">
           {hasChanges && (
-            <Badge variant="outline" className="text-orange-600 border-orange-200">
+            <Badge variant="outline" className="text-primary-600 border-primary-200">
               Cambios sin guardar
             </Badge>
           )}

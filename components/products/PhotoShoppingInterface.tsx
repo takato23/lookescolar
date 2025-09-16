@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart,
@@ -422,10 +424,10 @@ export function PhotoShoppingInterface({
             </p>
 
             {selectedPhotos.size > 0 && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
                 <div className="flex items-center justify-center space-x-4">
                   <div className="flex items-center space-x-2">
-                    <Camera className="h-5 w-5 text-blue-600" />
+                    <Camera className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     <span className="font-medium text-blue-900">
                       {selectedPhotos.size} foto
                       {selectedPhotos.size !== 1 ? 's' : ''} seleccionada
@@ -437,7 +439,7 @@ export function PhotoShoppingInterface({
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentStep('select_photos')}
-                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                    className="border-blue-200 text-blue-600 dark:text-blue-400 hover:bg-blue-50"
                   >
                     Cambiar selección
                   </Button>

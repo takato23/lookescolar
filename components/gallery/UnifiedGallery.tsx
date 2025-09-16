@@ -185,7 +185,7 @@ export default function UnifiedGallery({
         {photos.length === 0 ? (
           <div className="py-20 text-center">
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-blue-100 to-indigo-100">
-              <Eye className="h-12 w-12 text-blue-600" />
+              <Eye className="h-12 w-12 text-blue-600 dark:text-blue-400" />
             </div>
             <h3 className="mb-3 text-2xl font-semibold text-gray-700">
               No hay fotos disponibles
@@ -253,7 +253,7 @@ export default function UnifiedGallery({
                         <span className="rounded-full bg-gray-100 px-3 py-1">
                           {Math.round(photo.size / 1024)} KB
                         </span>
-                        <span className="rounded-full bg-blue-100 px-3 py-1 text-blue-700">
+                        <span className="rounded-full bg-blue-100 dark:bg-blue-950/30 px-3 py-1 text-blue-700">
                           {photo.width} × {photo.height}
                         </span>
                       </div>
@@ -278,7 +278,7 @@ export default function UnifiedGallery({
                                   <Minus className="h-4 w-4" />
                                 </Button>
 
-                                <span className="min-w-[2rem] text-center text-lg font-bold text-blue-700">
+                                <span className="min-w-[2rem] text-center text-lg font-bold text-blue-700 dark:text-blue-300">
                                   {cartItem?.quantity || 1}
                                 </span>
 

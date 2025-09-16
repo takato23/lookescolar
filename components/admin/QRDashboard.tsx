@@ -236,13 +236,13 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                 <CardTitle className="text-sm font-medium">
                   Total Scans
                 </CardTitle>
-                <BarChart3 className="text-muted-foreground h-4 w-4" />
+                <BarChart3 className="text-gray-500 dark:text-gray-400 h-4 w-4" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {metrics?.totalScans.toLocaleString() || '0'}
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   +12% from last week
                 </p>
               </CardContent>
@@ -253,7 +253,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                 <CardTitle className="text-sm font-medium">
                   Success Rate
                 </CardTitle>
-                <CheckCircle className="text-muted-foreground h-4 w-4" />
+                <CheckCircle className="text-gray-500 dark:text-gray-400 h-4 w-4" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
@@ -261,7 +261,7 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                     ? `${(metrics.successRate * 100).toFixed(1)}%`
                     : '0%'}
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   +2.3% from last week
                 </p>
               </CardContent>
@@ -272,13 +272,13 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                 <CardTitle className="text-sm font-medium">
                   Avg Scan Time
                 </CardTitle>
-                <Clock className="text-muted-foreground h-4 w-4" />
+                <Clock className="text-gray-500 dark:text-gray-400 h-4 w-4" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {metrics ? `${metrics.avgScanTime}ms` : '0ms'}
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   -120ms from last week
                 </p>
               </CardContent>
@@ -289,13 +289,13 @@ export function QRDashboard({ className, eventId }: QRDashboardProps) {
                 <CardTitle className="text-sm font-medium">
                   Unique Users
                 </CardTitle>
-                <Users className="text-muted-foreground h-4 w-4" />
+                <Users className="text-gray-500 dark:text-gray-400 h-4 w-4" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
                   {metrics?.uniqueScans.toLocaleString() || '0'}
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <p className="text-gray-500 dark:text-gray-400 text-xs">
                   +8% from last week
                 </p>
               </CardContent>

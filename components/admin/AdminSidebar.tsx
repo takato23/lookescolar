@@ -12,6 +12,7 @@ import {
   BarChart3,
   PanelLeftClose,
   PanelLeftOpen,
+  ShoppingBag,
 } from 'lucide-react';
 import { useResolvedTheme } from '@/components/providers/theme-provider';
 import {
@@ -76,6 +77,14 @@ const mainNavItems: NavItem[] = [
     description: 'Compartir con familias',
     shortcut: '⌘5',
     isLiquidIcon: true,
+  },
+  {
+    href: '/admin/store-settings',
+    label: 'Tienda',
+    icon: ShoppingBag,
+    description: 'Configuración de tienda',
+    shortcut: '⌘7',
+    isLiquidIcon: false,
   },
   {
     href: '/admin/settings',
@@ -146,7 +155,7 @@ export default function AdminSidebar({
           'fixed inset-y-0 left-0 z-50 flex min-h-screen flex-col border-r transition-all duration-500 lg:static',
           // Tema claro
           theme === 'light' && [
-            'bg-white/95 border-gray-200/60 shadow-2xl shadow-gray-900/10',
+            'bg-white/95 border-border/60 shadow-2xl shadow-gray-900/10',
             'backdrop-blur-xl',
           ],
           // Tema oscuro
@@ -164,11 +173,11 @@ export default function AdminSidebar({
         {/* Mobile Header */}
         <div className={clsx(
           'flex items-center justify-between border-b p-4 lg:hidden',
-          theme === 'light' ? 'border-gray-200 bg-white' : 'border-gray-700 bg-gray-900'
+          theme === 'light' ? 'border-border bg-white' : 'border-gray-700 bg-gray-900'
         )}>
           <h2 className={clsx(
             'text-lg font-semibold',
-            theme === 'light' ? 'text-gray-900' : 'text-gray-100'
+            theme === 'light' ? 'text-foreground' : 'text-gray-100'
           )}>
             Navegación
           </h2>
@@ -177,7 +186,7 @@ export default function AdminSidebar({
             className={clsx(
               'rounded-lg p-2 transition-all duration-200',
               theme === 'light'
-                ? 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                ? 'text-gray-500 hover:bg-muted hover:text-foreground'
                 : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
             )}
             aria-label="Cerrar menú"
@@ -189,7 +198,7 @@ export default function AdminSidebar({
         {/* Header */}
         <div className={clsx(
           'border-b p-6 transition-all duration-300',
-          theme === 'light' ? 'border-gray-200 bg-white/80' : 'border-gray-700 bg-gray-900/80',
+          theme === 'light' ? 'border-border bg-white/80' : 'border-gray-700 bg-gray-900/80',
           isCollapsed ? 'px-3' : 'px-6'
         )}>
           <div className="mb-6 flex items-center justify-between">
@@ -201,7 +210,7 @@ export default function AdminSidebar({
               <div className={clsx(
                 'flex items-center justify-center rounded-xl transition-all duration-300',
                 theme === 'light'
-                  ? 'bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-muted hover:bg-muted'
                   : 'bg-gray-800 hover:bg-gray-700',
                 isCollapsed ? 'h-10 w-10' : 'h-12 w-12 lg:h-14 lg:w-14'
               )}>
@@ -216,7 +225,7 @@ export default function AdminSidebar({
                 <div className="flex-1 min-w-0">
                   <h1 className={clsx(
                     'font-bold tracking-tight transition-all duration-300',
-                    theme === 'light' ? 'text-gray-900' : 'text-gray-100',
+                    theme === 'light' ? 'text-foreground' : 'text-gray-100',
                     'text-xl lg:text-2xl'
                   )}>
                     LookEscolar
@@ -238,7 +247,7 @@ export default function AdminSidebar({
               className={clsx(
                 'hidden lg:flex items-center justify-center rounded-lg transition-all duration-200',
                 theme === 'light'
-                  ? 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
+                  ? 'text-gray-500 hover:bg-muted hover:text-foreground'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200',
                 isCollapsed ? 'h-8 w-8' : 'h-9 w-9'
               )}
@@ -258,20 +267,20 @@ export default function AdminSidebar({
               <div className={clsx(
                 'rounded-lg border p-3 transition-all duration-200',
                 theme === 'light'
-                  ? 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100'
+                  ? 'border-border bg-muted hover:border-border hover:bg-muted'
                   : 'border-gray-700 bg-gray-800 hover:border-gray-600 hover:bg-gray-700'
               )}>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className={clsx(
                       'text-2xl font-bold',
-                      theme === 'light' ? 'text-gray-900' : 'text-gray-100'
+                      theme === 'light' ? 'text-foreground' : 'text-gray-100'
                     )}>
                       12
                     </div>
                     <div className={clsx(
                       'text-xs font-medium uppercase tracking-wide',
-                      theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                      theme === 'light' ? 'text-muted-foreground' : 'text-gray-400'
                     )}>
                       Eventos
                     </div>
@@ -287,20 +296,20 @@ export default function AdminSidebar({
               <div className={clsx(
                 'rounded-lg border p-3 transition-all duration-200',
                 theme === 'light'
-                  ? 'border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100'
+                  ? 'border-border bg-muted hover:border-border hover:bg-muted'
                   : 'border-gray-700 bg-gray-800 hover:border-gray-600 hover:bg-gray-700'
               )}>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className={clsx(
                       'text-2xl font-bold',
-                      theme === 'light' ? 'text-gray-900' : 'text-gray-100'
+                      theme === 'light' ? 'text-foreground' : 'text-gray-100'
                     )}>
                       847
                     </div>
                     <div className={clsx(
                       'text-xs font-medium uppercase tracking-wide',
-                      theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                      theme === 'light' ? 'text-muted-foreground' : 'text-gray-400'
                     )}>
                       Fotos
                     </div>
@@ -352,7 +361,7 @@ export default function AdminSidebar({
                             ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
                             : 'bg-blue-900/30 text-blue-300 border border-blue-800 shadow-sm'
                           : theme === 'light'
-                            ? 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                            ? 'text-foreground hover:text-foreground hover:bg-muted'
                             : 'text-gray-300 hover:text-gray-100 hover:bg-gray-800/50'
                       )}
                       title={isCollapsed ? item.label : undefined}
@@ -376,7 +385,7 @@ export default function AdminSidebar({
                             ? 'bg-blue-100'
                             : 'bg-blue-800/50'
                           : theme === 'light'
-                            ? 'bg-gray-100 group-hover:bg-gray-200'
+                            ? 'bg-muted group-hover:bg-muted'
                             : 'bg-gray-700/50 group-hover:bg-gray-600/70'
                       )}>
                         {item.isLiquidIcon ? (
@@ -387,7 +396,7 @@ export default function AdminSidebar({
                               active
                                 ? 'text-blue-600 scale-110'
                                 : theme === 'light'
-                                  ? 'text-gray-500 group-hover:text-gray-700'
+                                  ? 'text-gray-500 group-hover:text-foreground'
                                   : 'text-gray-400 group-hover:text-gray-200'
                             )}
                           />
@@ -399,7 +408,7 @@ export default function AdminSidebar({
                               active
                                 ? 'text-blue-600 scale-110'
                                 : theme === 'light'
-                                  ? 'text-gray-500 group-hover:text-gray-700'
+                                  ? 'text-gray-500 group-hover:text-foreground'
                                   : 'text-gray-400 group-hover:text-gray-200'
                             )}
                           />
@@ -416,7 +425,7 @@ export default function AdminSidebar({
                                 active
                                   ? theme === 'light' ? 'text-blue-700' : 'text-blue-300'
                                   : theme === 'light'
-                                    ? 'text-gray-700 group-hover:text-gray-900'
+                                    ? 'text-foreground group-hover:text-foreground'
                                     : 'text-gray-300 group-hover:text-gray-100'
                               )}
                             >
@@ -426,7 +435,7 @@ export default function AdminSidebar({
                               <kbd className={clsx(
                                 'hidden items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] lg:inline-flex transition-all duration-200',
                                 theme === 'light'
-                                  ? 'bg-gray-200 text-gray-500'
+                                  ? 'bg-muted text-gray-500'
                                   : 'bg-gray-700 text-gray-400'
                               )}>
                                 {item.shortcut}
@@ -440,7 +449,7 @@ export default function AdminSidebar({
                                 active
                                   ? theme === 'light' ? 'text-blue-600' : 'text-blue-400'
                                   : theme === 'light'
-                                    ? 'text-gray-500 group-hover:text-gray-600'
+                                    ? 'text-gray-500 group-hover:text-muted-foreground'
                                     : 'text-gray-400 group-hover:text-gray-300'
                               )}
                             >
@@ -478,7 +487,7 @@ export default function AdminSidebar({
                 className={clsx(
                   'group mb-4 flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide transition-all duration-200',
                   theme === 'light'
-                    ? 'text-gray-400 hover:text-gray-600'
+                    ? 'text-gray-400 hover:text-muted-foreground'
                     : 'text-gray-500 hover:text-gray-300'
                 )}
               >
@@ -513,7 +522,7 @@ export default function AdminSidebar({
                                 ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-sm'
                                 : 'bg-indigo-900/30 text-indigo-300 border border-indigo-800 shadow-sm'
                               : theme === 'light'
-                                ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
                           )}
                         >
@@ -525,7 +534,7 @@ export default function AdminSidebar({
                                 ? 'bg-indigo-100'
                                 : 'bg-indigo-800/50'
                               : theme === 'light'
-                                ? 'bg-gray-100 group-hover:bg-gray-200'
+                                ? 'bg-muted group-hover:bg-muted'
                                 : 'bg-gray-700/50 group-hover:bg-gray-600/70'
                           )}>
                             {item.isLiquidIcon ? (
@@ -536,7 +545,7 @@ export default function AdminSidebar({
                                   active
                                     ? 'text-indigo-600 scale-110'
                                     : theme === 'light'
-                                      ? 'text-gray-500 group-hover:text-gray-700'
+                                      ? 'text-gray-500 group-hover:text-foreground'
                                       : 'text-gray-400 group-hover:text-gray-200'
                                 )}
                               />
@@ -547,7 +556,7 @@ export default function AdminSidebar({
                                   active
                                     ? 'text-indigo-600 scale-110'
                                     : theme === 'light'
-                                      ? 'text-gray-500 group-hover:text-gray-700'
+                                      ? 'text-gray-500 group-hover:text-foreground'
                                       : 'text-gray-400 group-hover:text-gray-200'
                                 )}
                               />
@@ -561,7 +570,7 @@ export default function AdminSidebar({
                                 active
                                   ? theme === 'light' ? 'text-indigo-700' : 'text-indigo-300'
                                   : theme === 'light'
-                                    ? 'text-gray-600 group-hover:text-gray-900'
+                                    ? 'text-muted-foreground group-hover:text-foreground'
                                     : 'text-gray-400 group-hover:text-gray-200'
                               )}
                             >
@@ -574,7 +583,7 @@ export default function AdminSidebar({
                                   active
                                     ? theme === 'light' ? 'text-indigo-600' : 'text-indigo-400'
                                     : theme === 'light'
-                                      ? 'text-gray-500 group-hover:text-gray-600'
+                                      ? 'text-gray-500 group-hover:text-muted-foreground'
                                       : 'text-gray-500 group-hover:text-gray-300'
                                 )}
                               >
@@ -623,10 +632,10 @@ export default function AdminSidebar({
                           'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200',
                           active
                             ? theme === 'light'
-                              ? 'bg-gray-100 text-gray-900 border border-gray-300 shadow-sm'
+                              ? 'bg-muted text-foreground border border-border shadow-sm'
                               : 'bg-gray-800/50 text-gray-200 border border-gray-600 shadow-sm'
                             : theme === 'light'
-                              ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                              ? 'text-muted-foreground hover:text-foreground hover:bg-muted'
                               : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'
                         )}
                       >
@@ -635,10 +644,10 @@ export default function AdminSidebar({
                           'flex-shrink-0 rounded-md p-1.5 transition-all duration-200',
                           active
                             ? theme === 'light'
-                              ? 'bg-gray-200'
+                              ? 'bg-muted'
                               : 'bg-gray-600/50'
                             : theme === 'light'
-                              ? 'bg-gray-100 group-hover:bg-gray-200'
+                              ? 'bg-muted group-hover:bg-muted'
                               : 'bg-gray-700/30 group-hover:bg-gray-600/50'
                         )}>
                           {item.isLiquidIcon ? (
@@ -647,9 +656,9 @@ export default function AdminSidebar({
                               className={clsx(
                                 'transition-all duration-200',
                                 active
-                                  ? theme === 'light' ? 'text-gray-700 scale-110' : 'text-gray-300 scale-110'
+                                  ? theme === 'light' ? 'text-foreground scale-110' : 'text-gray-300 scale-110'
                                   : theme === 'light'
-                                    ? 'text-gray-500 group-hover:text-gray-700'
+                                    ? 'text-gray-500 group-hover:text-foreground'
                                     : 'text-gray-400 group-hover:text-gray-200'
                               )}
                             />
@@ -658,9 +667,9 @@ export default function AdminSidebar({
                               className={clsx(
                                 'h-3.5 w-3.5 transition-all duration-200',
                                 active
-                                  ? theme === 'light' ? 'text-gray-700 scale-110' : 'text-gray-300 scale-110'
+                                  ? theme === 'light' ? 'text-foreground scale-110' : 'text-gray-300 scale-110'
                                   : theme === 'light'
-                                    ? 'text-gray-500 group-hover:text-gray-700'
+                                    ? 'text-gray-500 group-hover:text-foreground'
                                     : 'text-gray-400 group-hover:text-gray-200'
                               )}
                             />
@@ -671,9 +680,9 @@ export default function AdminSidebar({
                           <span className={clsx(
                             'truncate font-medium text-sm',
                             active
-                              ? theme === 'light' ? 'text-gray-900' : 'text-gray-200'
+                              ? theme === 'light' ? 'text-foreground' : 'text-gray-200'
                               : theme === 'light'
-                                ? 'text-gray-600 group-hover:text-gray-900'
+                                ? 'text-muted-foreground group-hover:text-foreground'
                                 : 'text-gray-400 group-hover:text-gray-200'
                           )}>
                             {item.label}
@@ -682,9 +691,9 @@ export default function AdminSidebar({
                             <p className={clsx(
                               'mt-0.5 truncate text-xs',
                               active
-                                ? theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+                                ? theme === 'light' ? 'text-foreground' : 'text-gray-300'
                                 : theme === 'light'
-                                  ? 'text-gray-500 group-hover:text-gray-600'
+                                  ? 'text-gray-500 group-hover:text-muted-foreground'
                                   : 'text-gray-500 group-hover:text-gray-300'
                             )}>
                               {item.description}
@@ -712,27 +721,27 @@ export default function AdminSidebar({
           <div className={clsx(
             'hidden border-t p-4 lg:block lg:p-6',
             theme === 'light'
-              ? 'border-gray-200 bg-white/80'
+              ? 'border-border bg-white/80'
               : 'border-gray-700 bg-gray-900/80'
           )}>
             <div className={clsx(
               'rounded-lg border p-4 text-center transition-all duration-200',
               theme === 'light'
-                ? 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                ? 'border-border bg-muted hover:bg-muted'
                 : 'border-gray-700 bg-gray-800/50 hover:bg-gray-800'
             )}>
               <div className="mb-2 flex items-center justify-center gap-2">
                 <div className="bg-green-500 h-2 w-2 rounded-full animate-pulse"></div>
                 <span className={clsx(
                   'text-sm font-medium',
-                  theme === 'light' ? 'text-gray-900' : 'text-gray-100'
+                  theme === 'light' ? 'text-foreground' : 'text-gray-100'
                 )}>
                   Sistema Activo
                 </span>
               </div>
               <p className={clsx(
                 'mb-3 text-xs',
-                theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                theme === 'light' ? 'text-muted-foreground' : 'text-gray-400'
               )}>
                 Fotografía Escolar Premium
               </p>
@@ -740,7 +749,7 @@ export default function AdminSidebar({
                 <span className={clsx(
                   'rounded px-2 py-1 border',
                   theme === 'light'
-                    ? 'bg-white text-gray-700 border-gray-300'
+                    ? 'bg-white text-foreground border-border'
                     : 'bg-gray-700 text-gray-300 border-gray-600'
                 )}>
                   v2.0.0
@@ -748,7 +757,7 @@ export default function AdminSidebar({
                 <span className="bg-green-50 text-green-700 rounded px-2 py-1 border border-green-200">
                   Seguro
                 </span>
-                <span className="bg-blue-50 text-blue-700 rounded px-2 py-1 border border-blue-200">
+                <span className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 rounded px-2 py-1 border border-blue-200">
                   Privado
                 </span>
               </div>

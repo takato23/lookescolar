@@ -238,7 +238,7 @@ export default function QRScanner({
       <Card className={className}>
         <CardContent className="p-6 text-center">
           <XCircle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             QR scanning is not supported in this browser. Please use a modern
             browser with camera support.
           </p>
@@ -277,7 +277,7 @@ export default function QRScanner({
               <div className="flex aspect-video items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-100">
                 <div className="text-center">
                   <Camera className="mx-auto mb-2 h-12 w-12 text-gray-400" />
-                  <p className="text-muted-foreground">
+                  <p className="text-gray-500 dark:text-gray-400">
                     Click Start Scanning to begin
                   </p>
                 </div>
@@ -344,7 +344,7 @@ export default function QRScanner({
             </div>
           )}
 
-          <div className="text-muted-foreground text-xs">
+          <div className="text-gray-500 dark:text-gray-400 text-xs">
             <p>• Point your camera at a student's QR code</p>
             <p>• Make sure the QR code is well-lit and in focus</p>
             <p>• The scanner will automatically detect and validate QR codes</p>

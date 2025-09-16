@@ -54,7 +54,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{event?.name || 'Evento'}</h1>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {event?.date ? new Date(event.date).toLocaleDateString() : ''}
           </p>
         </div>

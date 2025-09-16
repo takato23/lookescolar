@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { FixedSizeGrid as Grid, areEqual } from 'react-window';
 import {
@@ -273,7 +275,7 @@ const GridItemComponent = memo<GridItemComponentProps>(
             'hover:scale-[1.02] hover:shadow-md',
             isSelected
               ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-200 bg-white hover:border-gray-300',
+              : 'border-border bg-white hover:border-border',
             isDraggedItem && 'opacity-50',
             isDragOverFolder && 'scale-105 border-green-500 bg-green-50'
           )}
@@ -289,7 +291,7 @@ const GridItemComponent = memo<GridItemComponentProps>(
           {/* Selection checkbox */}
           <div className="absolute left-2 top-2 z-10">
             {isSelected ? (
-              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+              <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             ) : (
               <Circle className="h-5 w-5 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100" />
             )}
@@ -317,7 +319,7 @@ const FolderItemContent = memo<{ folder: Folder }>(({ folder }) => (
       <div className="text-center">
         <Folder className="mx-auto mb-2 h-12 w-12 text-blue-500" />
         {(folder.child_folder_count > 0 || folder.photo_count > 0) && (
-          <div className="text-xs font-medium text-blue-600">
+          <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
             {folder.child_folder_count + folder.photo_count} items
           </div>
         )}
@@ -326,7 +328,7 @@ const FolderItemContent = memo<{ folder: Folder }>(({ folder }) => (
 
     <div className="mt-2">
       <div
-        className="truncate text-center text-sm font-medium text-gray-900"
+        className="truncate text-center text-sm font-medium text-foreground"
         title={folder.name}
       >
         {folder.name}
@@ -394,7 +396,7 @@ const PhotoItemContent = memo<{ photo: Photo }>(({ photo }) => {
     <div className="flex h-full flex-col">
       {/* Image area with fixed aspect ratio for virtualization */}
       <div
-        className="relative flex-1 overflow-hidden rounded-t-lg bg-gray-100"
+        className="relative flex-1 overflow-hidden rounded-t-lg bg-muted"
         style={{ aspectRatio: '4/3' }}
       >
         {(photo.signed_url || photo.preview_path || photo.storage_path) && !imageError ? (
@@ -430,13 +432,13 @@ const PhotoItemContent = memo<{ photo: Photo }>(({ photo }) => {
             />
 
             {!imageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+              <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-blue-500" />
               </div>
             )}
           </>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
             {imageError ? (
               <div className="text-center">
                 <AlertCircle className="mx-auto mb-1 h-6 w-6 text-red-400" />
@@ -470,7 +472,7 @@ const PhotoItemContent = memo<{ photo: Photo }>(({ photo }) => {
       {/* Photo info with consistent height */}
       <div className="rounded-b-lg bg-white p-2" style={{ height: '60px' }}>
         <div
-          className="truncate text-xs font-medium text-gray-900"
+          className="truncate text-xs font-medium text-foreground"
           title={photo.original_filename}
         >
           {photo.original_filename}
@@ -908,7 +910,7 @@ const ContentGridPanel = ({
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
         <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
+        <h3 className="mb-2 text-lg font-medium text-foreground">
           Error al cargar el contenido
         </h3>
         <p className="mb-4 text-gray-500">{error}</p>
@@ -920,7 +922,7 @@ const ContentGridPanel = ({
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Enhanced header with selection tools */}
-      <div className="border-b border-gray-200 bg-white p-4">
+      <div className="border-b border-border bg-white p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-500">
@@ -947,7 +949,7 @@ const ContentGridPanel = ({
 
             {selectedItems.size > 0 && (
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-blue-600">
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                   {selectedItems.size} seleccionado
                   {selectedItems.size !== 1 ? 's' : ''}
                 </span>
@@ -997,7 +999,7 @@ const ContentGridPanel = ({
         {folders.length === 0 && photos.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center p-8 text-center">
             <ImageIcon className="mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="mb-2 text-lg font-medium text-gray-900">
+            <h3 className="mb-2 text-lg font-medium text-foreground">
               Carpeta vacía
             </h3>
             <p className="mb-4 text-gray-500">

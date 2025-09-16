@@ -336,7 +336,7 @@ export default function BulkActionsToolbar({
     <>
       <div
         className={cn(
-          'bulk-actions-toolbar rounded-lg border border-gray-200 bg-white p-3 shadow-sm',
+          'bulk-actions-toolbar rounded-lg border border-border bg-white p-3 shadow-sm',
           'flex items-center justify-between gap-4',
           className
         )}
@@ -350,7 +350,7 @@ export default function BulkActionsToolbar({
             variant="ghost"
             size="sm"
             onClick={onSelectionClear}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-gray-500 dark:text-gray-400 hover:text-foreground"
           >
             Clear selection
           </Button>
@@ -363,7 +363,7 @@ export default function BulkActionsToolbar({
               value={(progress.current / progress.total) * 100}
               className="flex-1"
             />
-            <span className="text-muted-foreground text-sm">
+            <span className="text-gray-500 dark:text-gray-400 text-sm">
               {progress.current}/{progress.total}
             </span>
           </div>
@@ -475,7 +475,7 @@ export default function BulkActionsToolbar({
                 {availableStudents.map((student) => (
                   <label
                     key={student.id}
-                    className="flex cursor-pointer items-center gap-2 rounded p-2 hover:bg-gray-50"
+                    className="flex cursor-pointer items-center gap-2 rounded p-2 hover:bg-muted"
                   >
                     <input
                       type="checkbox"

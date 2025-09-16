@@ -123,7 +123,7 @@ export default function DesignPanel({ eventId, initialDesign, currentTheme }: De
         <button
           onClick={() => setActive('cover')}
           className={`flex w-full items-center gap-2 rounded-md p-3 text-left transition ${
-            active === 'cover' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-50'
+            active === 'cover' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-muted'
           }`}
         >
           <ImageIcon className="h-4 w-4" /> Cover
@@ -131,7 +131,7 @@ export default function DesignPanel({ eventId, initialDesign, currentTheme }: De
         <button
           onClick={() => setActive('typography')}
           className={`flex w-full items-center gap-2 rounded-md p-3 text-left transition ${
-            active === 'typography' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-50'
+            active === 'typography' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-muted'
           }`}
         >
           <Type className="h-4 w-4" /> Typography
@@ -139,7 +139,7 @@ export default function DesignPanel({ eventId, initialDesign, currentTheme }: De
         <button
           onClick={() => setActive('color')}
           className={`flex w-full items-center gap-2 rounded-md p-3 text-left transition ${
-            active === 'color' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-50'
+            active === 'color' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-muted'
           }`}
         >
           <Palette className="h-4 w-4" /> Color
@@ -147,7 +147,7 @@ export default function DesignPanel({ eventId, initialDesign, currentTheme }: De
         <button
           onClick={() => setActive('grid')}
           className={`flex w-full items-center gap-2 rounded-md p-3 text-left transition ${
-            active === 'grid' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-gray-50'
+            active === 'grid' ? 'bg-emerald-50 text-emerald-700' : 'hover:bg-muted'
           }`}
         >
           <Grid3X3 className="h-4 w-4" /> Grid

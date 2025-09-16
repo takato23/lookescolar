@@ -148,7 +148,7 @@ export default function SubjectsPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Gestión de Tokens y QRs</h1>
-            <p className="text-gray-600">{selectedEvent.name}</p>
+            <p className="text-gray-500 dark:text-gray-400">{selectedEvent.name}</p>
           </div>
         </div>
 
@@ -168,7 +168,7 @@ export default function SubjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Gestión de Sujetos</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-500 dark:text-gray-400">
             Administre sujetos, tokens y códigos QR
           </p>
         </div>
@@ -236,17 +236,17 @@ export default function SubjectsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Sujetos</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Sujetos</p>
               <p className="text-2xl font-bold">{filteredSubjects.length}</p>
             </div>
-            <Users className="h-8 w-8 text-blue-600" />
+            <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
         </Card>
 
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Con Email</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Con Email</p>
               <p className="text-2xl font-bold">
                 {filteredSubjects.filter((s) => s.email).length}
               </p>
@@ -258,7 +258,7 @@ export default function SubjectsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Con Grado</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Con Grado</p>
               <p className="text-2xl font-bold">
                 {filteredSubjects.filter((s) => s.grade_section).length}
               </p>
@@ -270,7 +270,7 @@ export default function SubjectsPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Con Teléfono</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Con Teléfono</p>
               <p className="text-2xl font-bold">
                 {filteredSubjects.filter((s) => s.phone).length}
               </p>
@@ -293,12 +293,12 @@ export default function SubjectsPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{event.name}</h3>
                     {!event.active && (
-                      <span className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600">
+                      <span className="rounded bg-muted px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
                         Inactivo
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">{event.school}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{event.school}</p>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
                     <span>
                       Fecha: {new Date(event.date).toLocaleDateString('es-AR')}

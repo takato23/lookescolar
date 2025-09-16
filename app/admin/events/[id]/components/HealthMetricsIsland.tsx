@@ -180,7 +180,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
             <span className="gradient-text-ios26 text-2xl font-bold">
               {Math.round(healthScore)}
             </span>
-            <span className="text-muted-foreground text-sm">/100</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm">/100</span>
           </div>
           <Progress
             value={healthScore}
@@ -220,7 +220,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
               </div>
 
               <div className="mb-2">
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                   {metric.title}
                 </p>
                 <p className="gradient-text-ios26 text-2xl font-bold">
@@ -277,7 +277,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
         <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-            <span className="text-muted-foreground">
+            <span className="text-gray-500 dark:text-gray-400">
               Participación:{' '}
               <span className="text-foreground font-medium">
                 {Math.round(metrics.engagementRate * 100)}%
@@ -287,7 +287,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
 
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-green-500"></div>
-            <span className="text-muted-foreground">
+            <span className="text-gray-500 dark:text-gray-400">
               Eficiencia:{' '}
               <span className="text-foreground font-medium">
                 {metrics.totalPhotos > 0
@@ -305,7 +305,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
           {metrics.totalSubjects > 0 && (
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-purple-500"></div>
-              <span className="text-muted-foreground">
+              <span className="text-gray-500 dark:text-gray-400">
                 Fotos por familia:{' '}
                 <span className="text-foreground font-medium">
                   {Math.round(metrics.totalPhotos / metrics.totalSubjects)}
@@ -317,7 +317,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
           {metrics.revenue > 0 && (
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-              <span className="text-muted-foreground">
+              <span className="text-gray-500 dark:text-gray-400">
                 Ticket promedio:{' '}
                 <span className="text-foreground font-medium">
                   $

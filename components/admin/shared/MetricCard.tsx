@@ -29,31 +29,32 @@ interface MetricCardProps {
 
 const colorClasses = {
   blue: {
-    icon: 'text-blue-600 bg-blue-50',
-    border: 'border-blue-100',
-    hover: 'hover:bg-blue-50/50'
+    icon: 'text-blue-600 bg-blue-50 dark:bg-blue-950/30',
+    border: 'border-border',
+    hover: 'hover:bg-blue-50/50 dark:hover:bg-blue-950/30',
   },
   green: {
-    icon: 'text-green-600 bg-green-50',
-    border: 'border-green-100',
-    hover: 'hover:bg-green-50/50'
+    icon: 'text-green-600 bg-green-50 dark:bg-green-950/30',
+    border: 'border-border',
+    hover: 'hover:bg-green-50/50 dark:hover:bg-green-950/30',
   },
+  // Mapear variante naranja a la paleta de marca para evitar tonos marrones en dark
   orange: {
-    icon: 'text-orange-600 bg-orange-50',
-    border: 'border-orange-100',
-    hover: 'hover:bg-orange-50/50'
+    icon: 'text-primary-600 bg-primary-50 dark:bg-primary-950/30',
+    border: 'border-border',
+    hover: 'hover:bg-primary-50/50 dark:hover:bg-primary-950/30',
   },
   purple: {
-    icon: 'text-purple-600 bg-purple-50',
-    border: 'border-purple-100',
-    hover: 'hover:bg-purple-50/50'
+    icon: 'text-purple-600 bg-purple-50 dark:bg-purple-950/30',
+    border: 'border-border',
+    hover: 'hover:bg-purple-50/50 dark:hover:bg-purple-950/30',
   },
   gray: {
-    icon: 'text-gray-600 bg-gray-50',
-    border: 'border-gray-100',
-    hover: 'hover:bg-gray-50/50'
-  }
-};
+    icon: 'text-foreground/70 bg-muted/40',
+    border: 'border-border',
+    hover: 'hover:bg-muted/50',
+  },
+} as const;
 
 const sizeClasses = {
   sm: {
@@ -112,11 +113,11 @@ export function MetricCard({
         <CardContent className={sizeClass.card}>
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-16"></div>
-              <div className="h-6 bg-gray-200 rounded w-12"></div>
+              <div className="h-4 bg-muted rounded w-16"></div>
+              <div className="h-6 bg-muted rounded w-12"></div>
             </div>
             <div className={cn(
-              'rounded-lg bg-gray-200',
+              'rounded-lg bg-muted',
               sizeClass.icon
             )}></div>
           </div>
@@ -136,14 +137,14 @@ export function MetricCard({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className={cn(
-              'text-gray-600 uppercase tracking-wide',
+              'text-muted-foreground uppercase tracking-wide',
               sizeClass.label
             )}>
               {label}
             </p>
             <div className="flex items-baseline gap-2">
               <p className={cn(
-                'text-gray-900',
+                'text-foreground',
                 sizeClass.value
               )}>
                 {typeof value === 'number' && value >= 1000 

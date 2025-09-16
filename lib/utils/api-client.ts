@@ -8,10 +8,7 @@
  */
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    // In development, if running on port 3001, use port 3000 for API calls
-    if (window.location.origin.includes('localhost:3001')) {
-      return 'http://localhost:3000';
-    }
+    // Always use the same origin as the current page to avoid CORS issues
     return window.location.origin;
   }
   // Fallback for SSR

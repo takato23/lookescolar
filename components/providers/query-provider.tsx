@@ -15,6 +15,10 @@ function DevtoolsWrapper() {
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
+  // Avoid chunk/HMR issues when the page is opened on :3001 without a dev server there
+  if (typeof window !== 'undefined' && window.location.origin.includes('localhost:3001')) {
+    return null;
+  }
 
   return (
     <Suspense fallback={null}>

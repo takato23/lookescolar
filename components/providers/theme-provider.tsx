@@ -43,6 +43,7 @@ export function ThemeProvider({
 
   // Aplicar tema al DOM
   const applyTheme = (resolvedTheme: 'light' | 'dark') => {
+    console.log('🎨 Applying theme to DOM:', resolvedTheme);
     const html = document.documentElement;
 
     // Remover clases anteriores
@@ -51,6 +52,9 @@ export function ThemeProvider({
     // Aplicar nueva clase con transición suave
     html.style.transition = 'background-color 0.3s ease, color 0.3s ease';
     html.classList.add(resolvedTheme);
+
+    // Sincronizar atributo data-theme para estilos que lo consultan (admin)
+    html.setAttribute('data-theme', resolvedTheme);
 
     // Si el tema seleccionado es "night", agregar clase adicional
     if (theme === 'night') {
@@ -63,25 +67,32 @@ export function ThemeProvider({
       const color = resolvedTheme === 'dark' ? '#0a0a0a' : '#fafaff';
       metaThemeColor.setAttribute('content', color);
     }
+
+    console.log('✅ Theme applied to DOM. Current classes:', html.className);
   };
 
   // Setear tema con persistencia
   const setTheme = (newTheme: Theme) => {
+    console.log('⚙️ setTheme called with:', newTheme);
     setThemeState(newTheme);
 
     if (typeof window !== 'undefined') {
       localStorage.setItem(storageKey, newTheme);
+      console.log('💾 Saved to localStorage:', newTheme);
     }
 
     const resolved = resolveTheme(newTheme);
+    console.log('🔍 Resolved theme:', resolved);
     setResolvedTheme(resolved);
     applyTheme(resolved);
   };
 
   // Toggle entre light y dark (omite system)
   const toggleTheme = () => {
-    const current = resolvedTheme;
-    setTheme(current === 'light' ? 'dark' : 'light');
+    console.log('🔄 toggleTheme called - current theme:', theme, 'resolvedTheme:', resolvedTheme);
+    const newTheme = resolvedTheme === 'light' ? 'dark' : 'light';
+    console.log('🔄 Setting theme to:', newTheme);
+    setTheme(newTheme);
   };
 
   // Inicialización en mount
@@ -96,7 +107,9 @@ export function ThemeProvider({
       }
     }
 
+    console.log('🚀 ThemeProvider initialization - defaultTheme:', defaultTheme, 'storedTheme:', initialTheme);
     const resolved = resolveTheme(initialTheme);
+    console.log('🎯 Resolved theme on init:', resolved);
     setThemeState(initialTheme);
     setResolvedTheme(resolved);
     applyTheme(resolved);

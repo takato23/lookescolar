@@ -27,3 +27,6 @@ dist-ssr
 *.sln
 *.sw?
 /dist
+
+# Archive folder - local backups only
+/archive/

@@ -213,7 +213,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       <Card className="mx-4 w-full max-w-2xl shadow-2xl" variant="glass">
         {/* Search Input */}
         <div className="border-border flex items-center gap-3 border-b p-4">
-          <Search className="text-muted-foreground h-5 w-5" />
+          <Search className="text-gray-500 dark:text-gray-400 h-5 w-5" />
           <input
             ref={inputRef}
             type="text"
@@ -225,7 +225,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           />
           <div
             id="command-palette-hint"
-            className="text-muted-foreground bg-muted rounded px-2 py-1 text-xs"
+            className="text-gray-500 dark:text-gray-400 bg-muted rounded px-2 py-1 text-xs"
           >
             ESC para cerrar
           </div>
@@ -235,7 +235,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         <div className="max-h-96 overflow-y-auto">
           {Object.entries(groupedCommands).map(([category, commands]) => (
             <div key={category} className="p-2">
-              <div className="text-muted-foreground px-3 py-2 text-xs font-semibold uppercase tracking-wide">
+              <div className="text-gray-500 dark:text-gray-400 px-3 py-2 text-xs font-semibold uppercase tracking-wide">
                 {category}
               </div>
 
@@ -262,13 +262,13 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                     <div className="flex-1 text-left">
                       <div className="font-medium">{command.title}</div>
                       {command.subtitle && (
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-gray-500 dark:text-gray-400 text-sm">
                           {command.subtitle}
                         </div>
                       )}
                     </div>
 
-                    <div className="text-muted-foreground bg-muted rounded px-2 py-1 font-mono text-xs">
+                    <div className="text-gray-500 dark:text-gray-400 bg-muted rounded px-2 py-1 font-mono text-xs">
                       {command.shortcut}
                     </div>
                   </Button>
@@ -279,11 +279,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
           {filteredCommands.length === 0 && (
             <div className="p-8 text-center">
-              <Search className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
+              <Search className="text-gray-500 dark:text-gray-400 mx-auto mb-3 h-8 w-8" />
               <h3 className="text-foreground mb-1 font-medium">
                 No se encontraron resultados
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Intenta con otros términos de búsqueda
               </p>
             </div>
@@ -292,7 +292,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
         {/* Footer */}
         {filteredCommands.length > 0 && (
-          <div className="text-muted-foreground border-border bg-muted/30 flex items-center justify-between border-t p-3 text-xs">
+          <div className="text-gray-500 dark:text-gray-400 border-border bg-muted/30 flex items-center justify-between border-t p-3 text-xs">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">
                 <kbd className="bg-background rounded border px-1.5 py-0.5">

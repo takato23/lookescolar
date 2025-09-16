@@ -485,7 +485,7 @@ export function FolderTreePanel({
                   <div
             className={cn(
               'group flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 transition-colors',
-              'hover:bg-gray-100 dark:hover:bg-gray-700',
+              'hover:bg-muted dark:hover:bg-gray-700',
               isSelected && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
               isDragOver &&
                 !isDropDisabled &&
@@ -514,7 +514,7 @@ export function FolderTreePanel({
                   e.stopPropagation();
                   handleFolderToggle(folder.id, hasChildren);
                 }}
-                className="rounded p-0.5 transition-colors hover:bg-gray-200"
+                className="rounded p-0.5 transition-colors hover:bg-muted"
               >
                 {isLoading ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -544,7 +544,7 @@ export function FolderTreePanel({
           {/* Photo count (direct/total) */}
           {(folder.photo_count_total ?? folder.photo_count) > 0 && (
             <span
-              className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground dark:bg-gray-700 dark:text-gray-300"
               title={`${folder.photo_count_direct ?? folder.photo_count} directas • ${folder.photo_count_total ?? folder.photo_count} total (incl. subcarpetas)`}
             >
               {folder.photo_count_direct ?? folder.photo_count}
@@ -600,7 +600,7 @@ export function FolderTreePanel({
       <div className="p-4">
         <div className="mb-4 flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm text-gray-600">Cargando carpetas...</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">Cargando carpetas...</span>
         </div>
       </div>
     );
@@ -627,8 +627,8 @@ export function FolderTreePanel({
   return (
     <div className="flex h-full flex-col">
       {/* Panel header */}
-      <div className="border-b border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-800">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200">Carpetas</h3>
+      <div className="border-b border-border bg-muted p-3 dark:border-gray-600 dark:bg-gray-800">
+        <h3 className="text-sm font-medium text-foreground dark:text-gray-200">Carpetas</h3>
       </div>
 
       {/* Tree navigation */}
@@ -638,7 +638,7 @@ export function FolderTreePanel({
           <div
             className={cn(
               'mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 transition-colors',
-              'hover:bg-gray-100 dark:hover:bg-gray-700',
+              'hover:bg-muted dark:hover:bg-gray-700',
               currentFolderId === null && 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
               dragOverFolder === 'root' &&
                 'border-2 border-dashed border-green-400 bg-green-100 dark:bg-green-900'
@@ -696,7 +696,7 @@ export function FolderTreePanel({
       </div>
 
       {/* Quick actions */}
-      <div className="border-t border-gray-200 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-800">
+      <div className="border-t border-border bg-muted p-2 dark:border-gray-600 dark:bg-gray-800">
         <Button
           variant="ghost"
           size="sm"
@@ -732,7 +732,7 @@ export function FolderTreePanel({
             <div>
               <label
                 htmlFor="folder-name"
-                className="mb-1 block text-sm font-medium text-gray-700"
+                className="mb-1 block text-sm font-medium text-foreground"
               >
                 Nombre de la carpeta
               </label>

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   useState,
   useEffect,
@@ -764,7 +766,7 @@ const FolderTreePanel: React.FC<{
       <div>
         <div
           className={cn(
-            'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100',
+            'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted',
             isSelected && 'bg-blue-100 text-blue-700',
             isOver &&
               'scale-105 transform bg-blue-50 shadow-sm ring-2 ring-inset ring-blue-400',
@@ -780,7 +782,7 @@ const FolderTreePanel: React.FC<{
                 e.stopPropagation();
                 onToggleExpand(folder.id);
               }}
-              className="rounded p-0.5 hover:bg-gray-200"
+              className="rounded p-0.5 hover:bg-muted"
             >
               {isExpanded ? (
                 <ChevronDown className="h-3 w-3" />
@@ -793,7 +795,7 @@ const FolderTreePanel: React.FC<{
           )}
 
           {isOver ? (
-            <FolderOpen className="h-4 w-4 text-blue-600" />
+            <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           ) : (
             <Folder className="h-4 w-4 text-gray-500" />
           )}
@@ -808,8 +810,8 @@ const FolderTreePanel: React.FC<{
               className={cn(
                 'mr-1 px-1 text-[10px]',
                 folder.scope === 'event' && 'border-blue-200 text-blue-700',
-                folder.scope === 'global' && 'border-gray-300 text-gray-700',
-                folder.scope === 'legacy' && 'border-amber-200 text-amber-700',
+                folder.scope === 'global' && 'border-border text-foreground',
+                folder.scope === 'legacy' && 'border-primary-200 text-primary-700',
                 folder.scope === 'template' &&
                   'border-purple-200 text-purple-700'
               )}
@@ -833,7 +835,7 @@ const FolderTreePanel: React.FC<{
               e.stopPropagation();
               setIsCreating(folder.id);
             }}
-            className="rounded p-0.5 opacity-0 hover:bg-gray-200 group-hover:opacity-100"
+            className="rounded p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"
           >
             <Plus className="h-3 w-3" />
           </button>
@@ -1340,7 +1342,7 @@ const PhotoGridPanel: React.FC<{
           'min-h-[120px] sm:min-h-[140px]',
           isSelected
             ? 'border-blue-500 bg-blue-50 shadow-md'
-            : 'border-transparent bg-white hover:border-gray-300 hover:shadow-sm'
+            : 'border-transparent bg-white hover:border-border hover:shadow-sm'
         )}
         ref={draggable.setNodeRef}
         style={style}
@@ -1356,18 +1358,18 @@ const PhotoGridPanel: React.FC<{
             'absolute left-2 top-2 z-10 flex h-7 w-7 touch-manipulation items-center justify-center rounded border-2 shadow-sm transition-all sm:h-6 sm:w-6',
             isSelected
               ? 'scale-105 transform border-blue-500 bg-blue-500 text-white'
-              : 'border-gray-400 bg-white group-hover:border-gray-600 group-hover:bg-gray-50'
+              : 'border-gray-400 bg-white group-hover:border-gray-600 group-hover:bg-muted'
           )}
         >
           {isSelected ? (
             <CheckSquare className="h-4 w-4" />
           ) : (
-            <Square className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+            <Square className="h-4 w-4 text-gray-400 group-hover:text-muted-foreground" />
           )}
         </div>
 
         {/* Image preview */}
-        <div className="relative flex aspect-square items-center justify-center bg-gray-100">
+        <div className="relative flex aspect-square items-center justify-center bg-muted">
           {previewUrl ? (
             <SafeImage
               src={previewUrl}
@@ -1379,7 +1381,7 @@ const PhotoGridPanel: React.FC<{
             <ImageIcon className="h-8 w-8 text-gray-400" />
           )}
           {!previewUrl && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
               {asset.status === 'processing' && (
                 <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
               )}
@@ -1395,7 +1397,7 @@ const PhotoGridPanel: React.FC<{
 
         {/* Filename */}
         <div className="p-2">
-          <p className="truncate text-xs text-gray-600" title={asset.filename}>
+          <p className="truncate text-xs text-gray-500 dark:text-gray-400" title={asset.filename}>
             {asset.filename}
           </p>
         </div>
@@ -1412,7 +1414,7 @@ const PhotoGridPanel: React.FC<{
             <div
               key={asset.id}
               className={cn(
-                'flex cursor-pointer touch-manipulation items-center gap-3 p-3 hover:bg-gray-50',
+                'flex cursor-pointer touch-manipulation items-center gap-3 p-3 hover:bg-muted',
                 'min-h-[56px]', // Better mobile touch target
                 isSelected && 'bg-blue-50'
               )}
@@ -1425,7 +1427,7 @@ const PhotoGridPanel: React.FC<{
                   'flex h-7 w-7 touch-manipulation items-center justify-center rounded border-2 shadow-sm transition-all sm:h-6 sm:w-6',
                   isSelected
                     ? 'scale-105 transform border-blue-500 bg-blue-500 text-white'
-                    : 'border-gray-400 bg-white hover:border-gray-600 hover:bg-gray-50'
+                    : 'border-gray-400 bg-white hover:border-gray-600 hover:bg-muted'
                 )}
               >
                 {isSelected ? (
@@ -1435,7 +1437,7 @@ const PhotoGridPanel: React.FC<{
                 )}
               </div>
 
-              <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
                 <SafeImage
                   src={asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path)}
                   alt={asset.filename}
@@ -1445,7 +1447,7 @@ const PhotoGridPanel: React.FC<{
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">
+                <p className="truncate text-sm font-medium text-foreground">
                   {asset.filename}
                 </p>
                 <p className="text-xs text-gray-500">
@@ -1551,7 +1553,7 @@ const PhotoGridPanel: React.FC<{
             </Tabs>
             {/* Selection tip for new users */}
             {selectedAssetIds.size === 0 && assets.length > 0 && (
-              <div className="rounded bg-gray-50/90 px-2 py-1 text-xs text-gray-600 backdrop-blur">
+              <div className="rounded bg-muted/90 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 backdrop-blur">
                 <span className="hidden sm:inline">
                   💡 Clic • ESC limpiar • Shift rango
                 </span>
@@ -1568,9 +1570,9 @@ const PhotoGridPanel: React.FC<{
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="overflow-hidden rounded-lg border">
-                <div className="aspect-square animate-pulse bg-gray-100" />
+                <div className="aspect-square animate-pulse bg-muted" />
                 <div className="p-2">
-                  <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
+                  <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
                 </div>
               </div>
             ))}
@@ -1648,13 +1650,13 @@ const InspectorPanel: React.FC<{
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Selected:</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Selected:</span>
                     <span className="text-sm font-medium">
                       {selectedAssets.length} files
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Tamaño total:</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Tamaño total:</span>
                     <span className="text-sm font-medium">
                       {formatFileSize(totalSize)}
                     </span>
@@ -1663,7 +1665,7 @@ const InspectorPanel: React.FC<{
                     (a) => a.status && a.status !== 'ready'
                   ) && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Estado:</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Estado:</span>
                       <div className="flex gap-1">
                         {(
                           ['ready', 'processing', 'error', 'pending'] as const
@@ -1705,7 +1707,7 @@ const InspectorPanel: React.FC<{
                   </h4>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Sesión:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Sesión:</span>
                       <span
                         className={cn(
                           'font-medium',
@@ -1719,12 +1721,12 @@ const InspectorPanel: React.FC<{
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Solicitudes:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Solicitudes:</span>
                       <span className="font-medium">
                         {egressMetrics.totalRequests}
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
                       <div
                         className={cn(
                           'h-1.5 rounded-full transition-all',
@@ -1753,7 +1755,7 @@ const InspectorPanel: React.FC<{
                   <h4 className="font-medium">Detalles</h4>
 
                   {(selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)) && (
-                    <div className="aspect-square overflow-hidden rounded bg-gray-100">
+                    <div className="aspect-square overflow-hidden rounded bg-muted">
                       <SafeImage
                         src={selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)}
                         alt={selectedAssets[0].filename}
@@ -1765,7 +1767,7 @@ const InspectorPanel: React.FC<{
 
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Nombre de archivo:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Nombre de archivo:</span>
                       <span
                         className="max-w-24 truncate font-medium"
                         title={selectedAssets[0].filename}
@@ -1774,13 +1776,13 @@ const InspectorPanel: React.FC<{
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tamaño:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Tamaño:</span>
                       <span className="font-medium">
                         {formatFileSize(selectedAssets[0].file_size)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Creado:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Creado:</span>
                       <span className="font-medium">
                         {new Date(
                           selectedAssets[0].created_at
@@ -2151,11 +2153,6 @@ export default function PhotoAdmin({
     }
 
     const result = fromLocalStorage || fromParams || null;
-    console.debug('Initial selectedEventId:', {
-      fromLocalStorage,
-      fromParams,
-      result,
-    });
     return result;
   });
   const [eventsList, setEventsList] = useState<
@@ -2224,68 +2221,102 @@ export default function PhotoAdmin({
 
   // Auto-select first folder when list loads
   useEffect(() => {
-    console.debug('Folder auto-selection:', {
-      selectedFolderId,
-      foldersCount: folders?.length,
-      firstFolderId: folders?.[0]?.id,
-      firstFolderName: folders?.[0]?.name,
-    });
     if (!selectedFolderId && folders && folders.length > 0) {
-      console.log(
-        'Auto-selecting first folder:',
-        folders[0].name,
-        folders[0].id
-      );
       setSelectedFolderId(folders[0].id);
     }
   }, [folders, selectedFolderId]);
 
   // Load events for selector, memoize last event
   useEffect(() => {
+    let mounted = true;
+    
     (async () => {
       try {
         const list = await api.events.listSimple(100);
-        setEventsList(list);
+        if (!mounted) return;
+        
+        let finalList = [...list];
 
-        // Validate selectedEventId after events are loaded
+        // If we have a selectedEventId that's not in the list, try to fetch it
         if (
           selectedEventId &&
           !list.some((event) => event.id === selectedEventId)
         ) {
-          console.warn(
-            'Selected event ID is invalid, clearing localStorage and selecting first event',
-            {
-              invalidId: selectedEventId,
-              availableEvents: list.map((e) => e.id),
-            }
+          console.log(
+            'Selected event not in initial list, attempting to fetch event details',
+            selectedEventId
           );
 
-          // Force clear all related localStorage items
-          localStorage.removeItem('le:lastEventId');
-          localStorage.removeItem('photoAdminSettings');
-
-          // Clear React Query cache for invalid queries
-          if (typeof window !== 'undefined' && (window as any).queryClient) {
-            (window as any).queryClient.clear();
+          // Try to fetch the specific event details
+          try {
+            const response = await fetch(
+              createApiUrl(`/api/admin/events/${selectedEventId}`)
+            );
+            if (response.ok) {
+              const eventData = await response.json();
+              if (eventData.event) {
+                // Add the missing event to the list
+                const missingEvent = {
+                  id: eventData.event.id,
+                  name: eventData.event.name || 'Sin nombre',
+                };
+                finalList = [missingEvent, ...list];
+                console.log('Successfully added missing event to list', missingEvent);
+              }
+            }
+          } catch (fetchError) {
+            console.warn('Could not fetch specific event details:', fetchError);
+            // If we can't fetch the event, don't clear the selection
+            // The user explicitly passed this event ID
           }
+        }
 
-          // Select the first event if available
-          if (list.length > 0) {
-            setSelectedEventId(list[0].id);
-            localStorage.setItem('le:lastEventId', list[0].id);
-          } else {
-            setSelectedEventId(null);
-          }
-        } else if (!selectedEventId && list.length > 0) {
+        if (!mounted) return;
+        setEventsList(finalList);
+
+        // Only auto-select first event if no event is selected at all
+        if (!selectedEventId && finalList.length > 0) {
           // Auto-select first event if none is selected
-          setSelectedEventId(list[0].id);
-          localStorage.setItem('le:lastEventId', list[0].id);
+          setSelectedEventId(finalList[0].id);
+          localStorage.setItem('le:lastEventId', finalList[0].id);
         }
       } catch (e) {
-        console.warn('Failed to load events list');
+        console.warn('Failed to load events list:', e);
       }
     })();
-  }, [selectedEventId]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Remove selectedEventId from deps to avoid infinite loop
+
+  // Handle when selectedEventId changes - check if we need to fetch it
+  useEffect(() => {
+    if (selectedEventId && eventsList.length > 0 && !eventsList.some(e => e.id === selectedEventId)) {
+      // Event not in list, try to fetch it
+      (async () => {
+        try {
+          const response = await fetch(
+            createApiUrl(`/api/admin/events/${selectedEventId}`)
+          );
+          if (response.ok) {
+            const eventData = await response.json();
+            if (eventData.event) {
+              // Add the missing event to the list
+              const missingEvent = {
+                id: eventData.event.id,
+                name: eventData.event.name || 'Sin nombre',
+              };
+              setEventsList(prev => [missingEvent, ...prev.filter(e => e.id !== missingEvent.id)]);
+              console.log('Added missing event to list after selection change', missingEvent);
+            }
+          }
+        } catch (error) {
+          console.warn('Could not fetch event details after selection change:', error);
+        }
+      })();
+    }
+  }, [selectedEventId, eventsList]);
 
   useEffect(() => {
     if (selectedEventId) {
@@ -3301,7 +3332,7 @@ export default function PhotoAdmin({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className={cn('flex h-screen flex-col bg-gray-50', className)}>
+      <div className={cn('flex h-screen flex-col bg-muted', className)}>
         {/* Header */}
         <div className="border-b bg-white px-6 py-4">
           <div className="flex items-center justify-between">
@@ -3310,13 +3341,13 @@ export default function PhotoAdmin({
                 variant="ghost"
                 size="sm"
                 onClick={() => window.history.back()}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-foreground"
                 title="Volver atrás"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Volver</span>
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Photos</h1>
+              <h1 className="text-2xl font-bold text-foreground">Photos</h1>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -3326,6 +3357,7 @@ export default function PhotoAdmin({
                   value={selectedEventId}
                   onChange={(id) => setSelectedEventId(id)}
                   className="h-9"
+                  events={eventsList}
                 />
               </div>
 
@@ -3340,7 +3372,7 @@ export default function PhotoAdmin({
                 <div className="hidden items-center gap-2 md:flex">
                   <Label
                     htmlFor="desktop-status-filter"
-                    className="whitespace-nowrap text-sm text-gray-700"
+                    className="whitespace-nowrap text-sm text-foreground"
                   >
                     Estado
                   </Label>
@@ -3368,7 +3400,7 @@ export default function PhotoAdmin({
 
                 {/* Date range filter */}
                 <div className="hidden items-center gap-2 lg:flex">
-                  <Label className="whitespace-nowrap text-sm text-gray-700">
+                  <Label className="whitespace-nowrap text-sm text-foreground">
                     Fecha
                   </Label>
                   <Input
@@ -3396,7 +3428,7 @@ export default function PhotoAdmin({
               <div className="flex items-center gap-3">
                 {/* Page size selector */}
                 <div className="hidden items-center gap-2 md:flex">
-                  <Label className="whitespace-nowrap text-sm text-gray-700">
+                  <Label className="whitespace-nowrap text-sm text-foreground">
                     Página
                   </Label>
                   <Select
@@ -3414,7 +3446,7 @@ export default function PhotoAdmin({
                       <SelectItem value="100">100</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="whitespace-nowrap text-xs text-gray-600">
+                  <span className="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                     Total: {totalAssetsCount}
                   </span>
                 </div>
@@ -3471,7 +3503,7 @@ export default function PhotoAdmin({
                 {/* Upload progress (compact with ETA) */}
                 {uploadState && (
                   <div className="flex min-w-[210px] items-center gap-2">
-                    <div className="h-2 w-28 overflow-hidden rounded bg-gray-200">
+                    <div className="h-2 w-28 overflow-hidden rounded bg-muted">
                       <div
                         className="h-2 animate-pulse bg-gradient-to-r from-blue-500 to-indigo-500"
                         style={{
@@ -3479,7 +3511,7 @@ export default function PhotoAdmin({
                         }}
                       />
                     </div>
-                    <div className="whitespace-nowrap text-[11px] text-gray-600">
+                    <div className="whitespace-nowrap text-[11px] text-gray-500 dark:text-gray-400">
                       {uploadState.uploaded}/{uploadState.total}
                       {(() => {
                         const elapsed =
@@ -3555,7 +3587,7 @@ export default function PhotoAdmin({
           >
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm text-gray-700">Estado</Label>
+                <Label className="text-sm text-foreground">Estado</Label>
                 <Select
                   value={statusFilter}
                   onValueChange={(v) => setStatusFilter(v as any)}
@@ -3578,7 +3610,7 @@ export default function PhotoAdmin({
               {/* Min/Max MB removed by request */}
 
               <div>
-                <Label className="text-sm text-gray-700">Start</Label>
+                <Label className="text-sm text-foreground">Start</Label>
                 <Input
                   type="date"
                   value={startDate}
@@ -3587,7 +3619,7 @@ export default function PhotoAdmin({
                 />
               </div>
               <div>
-                <Label className="text-sm text-gray-700">End</Label>
+                <Label className="text-sm text-foreground">End</Label>
                 <Input
                   type="date"
                   value={endDate}
@@ -3668,7 +3700,7 @@ export default function PhotoAdmin({
             ) : (
               <div className="flex h-full flex-col">
                 {/* Context bar: current event and folder */}
-                <div className="relative sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2 text-[12px] text-gray-600">
+                <div className="relative sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2 text-[12px] text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-2">
                     <span className="mr-1">Evento:</span>
                     <span className="mr-3 font-medium">
@@ -3687,7 +3719,7 @@ export default function PhotoAdmin({
                           >
                             <button
                               onClick={() => handleSelectFolder(item.id)}
-                              className="text-blue-600 hover:underline"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
                               title={item.name}
                             >
                               {item.name}
@@ -3817,18 +3849,18 @@ export default function PhotoAdmin({
       {/* Floating Upload Panel */}
       {uploadState && showUploadPanel && (
         <div className="fixed bottom-4 right-4 z-50 w-[320px]">
-          <Card className="border-blue-200 shadow-lg">
+          <Card className="border-blue-200 dark:border-blue-800 shadow-lg">
             <CardContent className="p-4">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-900">
+                  <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-medium text-foreground">
                     Subiendo fotos
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Parallelism selector */}
-                  <div className="hidden items-center gap-1 text-[11px] text-gray-600 sm:flex">
+                  <div className="hidden items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 sm:flex">
                     <span>Paralelismo</span>
                     <Select
                       value={String(uploadParallelism)}
@@ -3847,7 +3879,7 @@ export default function PhotoAdmin({
                     </Select>
                   </div>
                   {/* Auto-retry count selector */}
-                  <div className="hidden items-center gap-1 text-[11px] text-gray-600 sm:flex">
+                  <div className="hidden items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 sm:flex">
                     <span>Reintentos</span>
                     <Select
                       value={String(autoRetryCount)}
@@ -3972,7 +4004,7 @@ export default function PhotoAdmin({
                   )}
                   <button
                     onClick={() => setShowUploadPanel(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-muted-foreground"
                     title="Ocultar panel"
                   >
                     <X className="h-4 w-4" />
@@ -3981,7 +4013,7 @@ export default function PhotoAdmin({
               </div>
 
               <div className="space-y-2">
-                <div className="h-2 w-full overflow-hidden rounded bg-gray-200">
+                <div className="h-2 w-full overflow-hidden rounded bg-muted">
                   <div
                     className="h-2 bg-gradient-to-r from-blue-500 to-indigo-500"
                     style={{
@@ -3989,7 +4021,7 @@ export default function PhotoAdmin({
                     }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>
                     {uploadState.uploaded}/{uploadState.total}
                     {uploadState.failed > 0 && (
@@ -4049,7 +4081,7 @@ export default function PhotoAdmin({
                 </div>
 
                 {showUploadDetails && uploadState && (
-                  <div className="mt-2 max-h-56 space-y-1 overflow-auto rounded border bg-gray-50 p-2">
+                  <div className="mt-2 max-h-56 space-y-1 overflow-auto rounded border bg-muted p-2">
                     {uploadState.batches.map((b, idx) => (
                       <div
                         key={b.index}
@@ -4060,7 +4092,7 @@ export default function PhotoAdmin({
                             <CheckSquare className="h-3 w-3 text-green-600" />
                           )}
                           {b.status === 'uploading' && (
-                            <RefreshCw className="h-3 w-3 animate-spin text-blue-600" />
+                            <RefreshCw className="h-3 w-3 animate-spin text-blue-600 dark:text-blue-400" />
                           )}
                           {b.status === 'pending' && (
                             <Square className="h-3 w-3 text-gray-400" />
@@ -4073,7 +4105,7 @@ export default function PhotoAdmin({
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="text-gray-600">
+                          <div className="text-gray-500 dark:text-gray-400">
                             {b.uploaded > 0 && (
                               <span className="mr-1 text-green-600">
                                 +{b.uploaded}
@@ -4275,7 +4307,7 @@ export default function PhotoAdmin({
               </div>
 
               <div className="space-y-6">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedFolderId
                     ? 'Se compartirá la carpeta seleccionada'
                     : `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''} seleccionada(s)`}
@@ -4357,13 +4389,13 @@ export default function PhotoAdmin({
                     <RefreshCw className="h-4 w-4 animate-spin" /> Cargando enlaces…
                   </div>
                 ) : shares.length === 0 ? (
-                  <div className="text-sm text-gray-600">No hay enlaces aún</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No hay enlaces aún</div>
                 ) : (
                   shares.map((s) => (
                     <div key={s.id} className="flex items-center justify-between rounded border p-3">
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium text-gray-900">{s.title || 'Enlace'}</div>
-                        <div className="text-xs text-gray-600">
+                        <div className="font-medium text-foreground">{s.title || 'Enlace'}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {s.share_type} • {new Date(s.created_at).toLocaleString('es-AR')}
                           {s.password_hash ? ' • 🔒 con contraseña' : ''}
                           {s.expires_at ? ` • expira ${new Date(s.expires_at).toLocaleString('es-AR')}` : ''}

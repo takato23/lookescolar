@@ -21,14 +21,12 @@
   const systemPrefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
   const shouldBeDark = () => {
     const stored = getStoredTheme();
-    return stored === 'dark' || (stored === 'system' && systemPrefersDark());
+    return stored === 'dark' || stored === 'night' || (stored === 'system' && systemPrefersDark());
   };
   const isDarkApplied = () => {
     const html = document.documentElement;
-    const body = document.body;
     return (
       html.classList.contains('dark') &&
-      body.classList.contains('dark') &&
       html.getAttribute('data-theme') === 'dark'
     );
   };
@@ -52,25 +50,18 @@
     isApplying = true;
     try {
       const html = document.documentElement;
-      const body = document.body;
+      const stored = getStoredTheme();
+      const wantNight = stored === 'night';
 
       if (wantDark) {
-        if (!html.classList.contains('dark')) html.classList.add('dark');
-        if (html.getAttribute('data-theme') !== 'dark') html.setAttribute('data-theme', 'dark');
-        if (!body.classList.contains('dark')) body.classList.add('dark');
-        if (html.style.backgroundColor !== '#0f172a') html.style.backgroundColor = '#0f172a';
-        if (html.style.color !== '#e2e8f0') html.style.color = '#e2e8f0';
-        if (body.style.backgroundColor !== '#0f172a') body.style.backgroundColor = '#0f172a';
-        if (body.style.color !== '#e2e8f0') body.style.color = '#e2e8f0';
+        html.classList.add('dark');
+        if (wantNight) html.classList.add('night'); else html.classList.remove('night');
+        html.setAttribute('data-theme', 'dark');
         log('Dark mode applied');
       } else {
-        if (html.classList.contains('dark')) html.classList.remove('dark');
-        if (html.getAttribute('data-theme') !== 'light') html.setAttribute('data-theme', 'light');
-        if (body.classList.contains('dark')) body.classList.remove('dark');
-        if (html.style.backgroundColor) html.style.backgroundColor = '';
-        if (html.style.color) html.style.color = '';
-        if (body.style.backgroundColor) body.style.backgroundColor = '';
-        if (body.style.color) body.style.color = '';
+        html.classList.remove('dark');
+        html.classList.remove('night');
+        html.setAttribute('data-theme', 'light');
         log('Light mode applied');
       }
     } finally {

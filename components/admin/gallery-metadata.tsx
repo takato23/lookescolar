@@ -240,7 +240,7 @@ export default function GalleryMetadata({
           <div className="flex flex-col items-center justify-center py-8">
             <CheckCircle className="mb-4 h-12 w-12 text-green-500" />
             <h3 className="mb-2 text-lg font-medium">¡Metadata guardada!</h3>
-            <p className="text-muted-foreground text-center">
+            <p className="text-gray-500 dark:text-gray-400 text-center">
               La metadata de la galería se ha actualizado correctamente.
             </p>
           </div>
@@ -248,7 +248,7 @@ export default function GalleryMetadata({
           <div className="flex flex-col items-center justify-center py-8">
             <AlertCircle className="text-destructive mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-medium">Error</h3>
-            <p className="text-muted-foreground mb-4 text-center">{error}</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4 text-center">{error}</p>
             <Button variant="outline" onClick={() => setError(null)}>
               Reintentar
             </Button>
@@ -354,7 +354,7 @@ export default function GalleryMetadata({
                 type="checkbox"
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
-                className="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                className="text-primary focus:ring-primary h-4 w-4 rounded border-border"
               />
               <label
                 htmlFor="active"

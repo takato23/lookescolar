@@ -135,14 +135,14 @@ export function BulkOperationsDebugPanel({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-full bg-blue-100 p-2">
-            <Bug className="h-5 w-5 text-blue-600" />
+          <div className="rounded-full bg-blue-100 dark:bg-blue-950/30 p-2">
+            <Bug className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <h3 className="text-lg font-semibold">
               Panel de Debug - Operaciones Bulk
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Monitoreo en tiempo real del sistema
             </p>
           </div>
@@ -185,7 +185,7 @@ export function BulkOperationsDebugPanel({
       {loading && !debugInfo && (
         <div className="py-8 text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">Obteniendo información de debug...</p>
+          <p className="text-gray-500 dark:text-gray-400">Obteniendo información de debug...</p>
         </div>
       )}
 
@@ -210,13 +210,13 @@ export function BulkOperationsDebugPanel({
           {/* Performance Stats */}
           <Card className="p-4">
             <h4 className="mb-4 flex items-center gap-2 font-medium">
-              <Activity className="h-4 w-4 text-blue-600" />
+              <Activity className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               Estadísticas de Performance
             </h4>
 
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Operaciones totales (última hora)
                 </span>
                 <Badge variant="outline">
@@ -225,7 +225,7 @@ export function BulkOperationsDebugPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Exitosas</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Exitosas</span>
                 <Badge className="bg-green-100 text-green-800">
                   {
                     debugInfo.performance_monitor.recent_stats
@@ -235,7 +235,7 @@ export function BulkOperationsDebugPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Fallidas</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Fallidas</span>
                 <Badge
                   variant={
                     debugInfo.performance_monitor.recent_stats
@@ -249,14 +249,14 @@ export function BulkOperationsDebugPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Tiempo promedio</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Tiempo promedio</span>
                 <Badge variant="outline">
                   {debugInfo.performance_monitor.recent_stats.averageDuration}ms
                 </Badge>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Ops/segundo</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Ops/segundo</span>
                 <Badge variant="outline">
                   {debugInfo.performance_monitor.recent_stats.operationsPerSecond.toFixed(
                     2
@@ -306,23 +306,23 @@ export function BulkOperationsDebugPanel({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Total de carpetas</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">Total de carpetas</span>
                 <Badge variant="outline">
                   {debugInfo.database_health.folders_total}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Carpetas publicadas
                 </span>
-                <Badge className="bg-blue-100 text-blue-800">
+                <Badge className="bg-blue-100 dark:bg-blue-950/30 text-blue-800">
                   {debugInfo.database_health.folders_published}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Función bulk disponible
                 </span>
                 <div className="flex items-center gap-1">
@@ -362,7 +362,7 @@ export function BulkOperationsDebugPanel({
 
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Memoria heap usada
                 </span>
                 <Badge variant="outline">
@@ -371,7 +371,7 @@ export function BulkOperationsDebugPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Memoria heap total
                 </span>
                 <Badge variant="outline">
@@ -380,7 +380,7 @@ export function BulkOperationsDebugPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
                   Uptime del proceso
                 </span>
                 <Badge variant="outline">

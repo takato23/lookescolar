@@ -332,7 +332,7 @@ export default function PhotoPreviewWithNameDetection({
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {Math.round(zoom * 100)}%
                 </span>
                 <Button
@@ -382,7 +382,7 @@ export default function PhotoPreviewWithNameDetection({
             </div>
 
             {/* Photo Display */}
-            <div className="relative flex-1 overflow-hidden rounded-lg bg-gray-100">
+            <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
               {photo.preview_path ? (
                 <div className="relative flex h-full w-full items-center justify-center">
                   <div
@@ -469,7 +469,7 @@ export default function PhotoPreviewWithNameDetection({
                 <div>
                   <Label htmlFor="student-search">Search Students</Label>
                   <div className="relative">
-                    <Search className="text-muted-foreground absolute left-3 top-3 h-4 w-4" />
+                    <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-3 h-4 w-4" />
                     <Input
                       id="student-search"
                       placeholder="Search by name or course..."
@@ -496,7 +496,7 @@ export default function PhotoPreviewWithNameDetection({
                           <div className="text-left">
                             <div className="font-medium">{student.name}</div>
                             {student.course_name && (
-                              <div className="text-muted-foreground text-xs">
+                              <div className="text-gray-500 dark:text-gray-400 text-xs">
                                 {student.course_name}
                               </div>
                             )}
@@ -523,7 +523,7 @@ export default function PhotoPreviewWithNameDetection({
                         >
                           <div className="flex-1 text-left">
                             <div className="font-medium">{student.name}</div>
-                            <div className="text-muted-foreground text-xs">
+                            <div className="text-gray-500 dark:text-gray-400 text-xs">
                               {student.course_name
                                 ? `${student.course_name} • ${student.photo_count} photos`
                                 : `No course • ${student.photo_count} photos`}

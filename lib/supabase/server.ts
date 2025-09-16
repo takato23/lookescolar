@@ -31,7 +31,7 @@ export async function createServerSupabaseClient(): Promise<
   }
 
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
       cookies: {
         get(name: string) {
@@ -84,7 +84,7 @@ export async function createServerSupabaseServiceClient(): Promise<
 
   const { createClient } = await import('@supabase/supabase-js');
 
-  // Prefer service role when available; gracefully fallback to anon for public APIs
+  // Prefer service role when available; gracefully fallback when missing
   const keyToUse = serviceRoleKey || anonKey;
   if (!keyToUse) {
     throw new Error(
@@ -93,8 +93,15 @@ export async function createServerSupabaseServiceClient(): Promise<
   }
 
   if (!serviceRoleKey) {
-     
-    console.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY ausente. Usando ANON como fallback para operaciones públicas.');
+    console.warn('[Supabase] SUPABASE_SERVICE_ROLE_KEY ausente. Intentando reutilizar la sesión actual antes de usar ANON.');
+
+    // Intentar usar el cliente server-side con cookies para mantener políticas RLS respetadas
+    try {
+      const sessionClient = await createServerSupabaseClient();
+      return sessionClient;
+    } catch (error) {
+      console.warn('[Supabase] No se pudo crear cliente con sesión. Usando ANON como último recurso.', error);
+    }
   }
 
   const client = createClient<Database>(supabaseUrl, keyToUse, {

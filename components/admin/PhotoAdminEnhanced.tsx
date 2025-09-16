@@ -14,6 +14,8 @@
 
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, { useState, useCallback } from 'react';
 import { 
   Button, Input, Badge, Card, CardContent,
@@ -281,7 +283,7 @@ export function PhotoAdminEnhancedFeatures({
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem 
           onClick={() => setFolderAction({ type: 'rename', folder })}
-          className="text-blue-600"
+          className="text-blue-600 dark:text-blue-400"
         >
           <Edit3 className="mr-2 h-4 w-4" />
           Renombrar
@@ -504,7 +506,7 @@ export function PhotoAdminEnhancedFeatures({
             <DialogTitle>Compartir: {shareLevel?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Se creará un enlace para compartir {shareLevel?.type === 'event' ? 'el evento' : 
               shareLevel?.photo_ids ? 'las fotos seleccionadas' : 'la carpeta'} "{shareLevel?.name}".
             </p>

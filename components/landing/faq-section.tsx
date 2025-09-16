@@ -39,7 +39,7 @@ export function FAQSection() {
           <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
             Preguntas <span className="text-gradient">frecuentes</span>
           </h2>
-          <p className="text-muted-foreground text-xl">
+          <p className="text-gray-500 dark:text-gray-400 text-xl">
             Encuentra respuestas a las preguntas más comunes.
           </p>
         </div>
@@ -63,7 +63,7 @@ export function FAQSection() {
               </button>
 
               {openIndex === index && (
-                <div className="text-muted-foreground px-6 pb-4">
+                <div className="text-gray-500 dark:text-gray-400 px-6 pb-4">
                   {faq.answer}
                 </div>
               )}

@@ -359,7 +359,7 @@ export const AppleGradePhotoGallery: React.FC<AppleGradePhotoGalleryProps> = ({
         {Array.from({ length: 12 }).map((_, i) => (
           <motion.div
             key={i}
-            className="aspect-square animate-pulse rounded-lg bg-gray-200"
+            className="aspect-square animate-pulse rounded-lg bg-muted"
             variants={listItemVariants}
             initial="initial"
             animate="animate"
@@ -377,10 +377,10 @@ export const AppleGradePhotoGallery: React.FC<AppleGradePhotoGalleryProps> = ({
         <div className="mb-4 text-gray-400">
           <ExclamationTriangleIcon className="h-12 w-12" />
         </div>
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
+        <h3 className="mb-2 text-lg font-medium text-foreground">
           Error al cargar fotos
         </h3>
-        <p className="text-gray-600">{error}</p>
+        <p className="text-gray-500 dark:text-gray-400">{error}</p>
       </div>
     );
   }
@@ -394,10 +394,10 @@ export const AppleGradePhotoGallery: React.FC<AppleGradePhotoGalleryProps> = ({
             <div className="mb-4 text-gray-400">
               <PhotoIcon className="h-12 w-12" />
             </div>
-            <h3 className="mb-2 text-lg font-medium text-gray-900">
+            <h3 className="mb-2 text-lg font-medium text-foreground">
               No hay fotos disponibles
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-500 dark:text-gray-400">
               Las fotos aparecerán aquí una vez que sean subidas.
             </p>
           </>

@@ -25,6 +25,8 @@ export interface SignedUrlOptions {
     width?: number;
     height?: number;
     resize?: 'cover' | 'contain' | 'fill';
+    quality?: number; // 1-100
+    format?: 'webp' | 'jpeg' | 'png';
   };
 }
 
@@ -43,6 +45,11 @@ export interface UploadResult {
   path: string;
   size: number;
   url?: string;
+  mimeType?: string;
+  dimensions?: {
+    width: number;
+    height: number;
+  };
 }
 
 /**

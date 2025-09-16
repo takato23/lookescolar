@@ -91,7 +91,7 @@ export function FamilyAccessForm() {
           <h3 className="text-foreground text-2xl font-bold">
             Encuentra tus fotos escolares
           </h3>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-gray-500 dark:text-gray-400 mt-2">
             Ingresa el código que recibiste del fotógrafo
           </p>
         </div>
@@ -114,7 +114,7 @@ export function FamilyAccessForm() {
               aria-describedby="code-help"
               disabled={loading}
             />
-            <p id="code-help" className="text-muted-foreground text-xs">
+            <p id="code-help" className="text-gray-500 dark:text-gray-400 text-xs">
               Revisa el volante o email que recibiste del fotógrafo
             </p>
           </div>
@@ -166,7 +166,7 @@ export function FamilyAccessForm() {
               <h4 className="text-foreground font-medium">
                 ¿No tienes un código?
               </h4>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Contacta con el fotógrafo de tu evento para obtener tu código de
                 acceso.
               </p>

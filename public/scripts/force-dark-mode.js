@@ -13,29 +13,24 @@
     (typeof location !== 'undefined' && location.search.includes('forceDarkDebug=1')) ||
     (typeof localStorage !== 'undefined' && localStorage.getItem('debug:force-dark-mode') === '1');
 
-  // Safe logger
   const log = (message, data) => {
     if (DEBUG) console.log(`[FORCE-DARK-MODE] ${message}`, data || '');
   };
 
-  // Helpers
   const getStoredTheme = () => localStorage.getItem('lookescolar-theme');
   const systemPrefersDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
   const shouldBeDark = () => {
     const stored = getStoredTheme();
-    return stored === 'dark' || (stored === 'system' && systemPrefersDark());
+    return stored === 'dark' || stored === 'night' || (stored === 'system' && systemPrefersDark());
   };
   const isDarkApplied = () => {
     const html = document.documentElement;
-    const body = document.body;
     return (
       html.classList.contains('dark') &&
-      body.classList.contains('dark') &&
       html.getAttribute('data-theme') === 'dark'
     );
   };
 
-  // Guard to avoid re-entrant loops and a debouncer
   let isApplying = false;
   let applyTimer = null;
   const scheduleApply = (delay = 50) => {
@@ -44,11 +39,9 @@
   };
 
   function applyDarkMode() {
-    if (isApplying) return; // prevent re-entrancy
+    if (isApplying) return;
     const wantDark = shouldBeDark();
     const hasDark = isDarkApplied();
-
-    // Nothing to do
     if ((wantDark && hasDark) || (!wantDark && !hasDark)) {
       log('No theme change needed', { wantDark, hasDark });
       return;
@@ -57,33 +50,19 @@
     isApplying = true;
     try {
       const html = document.documentElement;
-      const body = document.body;
-
-      log('Applying theme', { wantDark, htmlClass: html.className, bodyClass: body.className });
+      const stored = getStoredTheme();
+      const wantNight = stored === 'night';
 
       if (wantDark) {
-        // Only mutate when necessary to avoid mutation-observer loops
-        if (!html.classList.contains('dark')) html.classList.add('dark');
-        if (html.getAttribute('data-theme') !== 'dark') html.setAttribute('data-theme', 'dark');
-        if (!body.classList.contains('dark')) body.classList.add('dark');
-
-        if (html.style.backgroundColor !== '#0f172a') html.style.backgroundColor = '#0f172a';
-        if (html.style.color !== '#e2e8f0') html.style.color = '#e2e8f0';
-        if (body.style.backgroundColor !== '#0f172a') body.style.backgroundColor = '#0f172a';
-        if (body.style.color !== '#e2e8f0') body.style.color = '#e2e8f0';
-
+        // Normalize classes/attributes on html only (align with ThemeProvider)
+        html.classList.add('dark');
+        if (wantNight) html.classList.add('night'); else html.classList.remove('night');
+        html.setAttribute('data-theme', 'dark');
         log('Dark mode applied');
       } else {
-        // Remove only if present
-        if (html.classList.contains('dark')) html.classList.remove('dark');
-        if (html.getAttribute('data-theme') !== 'light') html.setAttribute('data-theme', 'light');
-        if (body.classList.contains('dark')) body.classList.remove('dark');
-
-        if (html.style.backgroundColor) html.style.backgroundColor = '';
-        if (html.style.color) html.style.color = '';
-        if (body.style.backgroundColor) body.style.backgroundColor = '';
-        if (body.style.color) body.style.color = '';
-
+        html.classList.remove('dark');
+        html.classList.remove('night');
+        html.setAttribute('data-theme', 'light');
         log('Light mode applied');
       }
     } finally {
@@ -91,7 +70,6 @@
     }
   }
 
-  // Observe relevant changes but only act on mismatches
   let htmlObserver = null;
   function startObserver() {
     if (htmlObserver) return;
@@ -101,7 +79,6 @@
           mutation.type === 'attributes' &&
           (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme')
         ) {
-          // Only schedule if current DOM does not match desired theme
           const mismatch = shouldBeDark() !== isDarkApplied();
           if (mismatch) {
             log('HTML attributes changed; scheduling theme reconcile');
@@ -117,14 +94,6 @@
     });
   }
 
-  function stopObserver() {
-    if (htmlObserver) {
-      htmlObserver.disconnect();
-      htmlObserver = null;
-    }
-  }
-
-  // Listen to storage and system preference changes
   function wireEvents() {
     window.addEventListener('storage', (e) => {
       if (e.key === 'lookescolar-theme') {
@@ -140,7 +109,6 @@
     });
   }
 
-  // Lightweight periodic check as a safety net
   function periodicThemeCheck() {
     setInterval(() => {
       const mismatch = shouldBeDark() !== isDarkApplied();
@@ -148,10 +116,9 @@
         log('Theme mismatch detected; correcting');
         applyDarkMode();
       }
-    }, 5000); // every 5s (less aggressive)
+    }, 5000);
   }
 
-  // Bootstrap
   scheduleApply(0);
   startObserver();
   wireEvents();
@@ -162,7 +129,6 @@
   }
   window.addEventListener('load', () => scheduleApply(0));
 
-  // Expose for manual trigger in console if needed
   window.forceDarkModeApplication = applyDarkMode;
   log('Force dark mode script initialized');
 })();

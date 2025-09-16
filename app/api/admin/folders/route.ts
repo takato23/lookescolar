@@ -230,7 +230,7 @@ async function handleGET(request: NextRequest) {
         });
         folders = retry.data;
         error = retry.error;
-      } catch (e) {
+      } catch {
         // keep original error handling below
       }
     }
@@ -477,7 +477,17 @@ async function handleGET(request: NextRequest) {
   }
 }
 
-export const GET = RateLimitMiddleware.withRateLimit(withAuth(handleGET));
+export const GET = RateLimitMiddleware.withRateLimit(
+  withAuth((request: NextRequest, ..._args: any[]) => {
+    return handleGET(request).then(response => {
+      // Add CORS headers
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+      response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Request-ID');
+      return response;
+    });
+  })
+);
 
 /**
  * POST /api/admin/folders
@@ -604,6 +614,19 @@ async function handlePOST(request: NextRequest) {
 }
 
 export const POST = RateLimitMiddleware.withRateLimit(withAuth(handlePOST));
+
+// Handle OPTIONS requests for CORS preflight
+export const OPTIONS = async (_request: NextRequest) => {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Request-ID',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+};
 
 // Apply auth middleware to all methods
 export const runtime = 'nodejs';

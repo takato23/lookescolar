@@ -105,17 +105,17 @@ export function HierarchicalFolderTreeEnhanced({
   const getFolderIcon = (folder: FolderTreeNode) => {
     switch (folder.level_type) {
       case 'event':
-        return <School className="h-4 w-4 text-blue-600" />;
+        return <School className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       case 'nivel':
         return <FolderOpen className="h-4 w-4 text-purple-600" />;
       case 'salon':
         return <Users className="h-4 w-4 text-green-600" />;
       case 'familia':
-        return <Hash className="h-4 w-4 text-orange-600" />;
+        return <Hash className="h-4 w-4 text-primary-600" />;
       default:
         return folder.isExpanded ? 
-          <FolderOpen className="h-4 w-4 text-gray-600" /> : 
-          <Folder className="h-4 w-4 text-gray-600" />;
+          <FolderOpen className="h-4 w-4 text-gray-500 dark:text-gray-400" /> : 
+          <Folder className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -137,7 +137,7 @@ export function HierarchicalFolderTreeEnhanced({
         <div 
           className={cn(
             "group flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-all",
-            isDragOver ? "bg-green-50 ring-1 ring-green-300" : "hover:bg-gray-50",
+            isDragOver ? "bg-green-50 ring-1 ring-green-300" : "hover:bg-muted",
             isSelected && "bg-blue-50 border border-blue-200"
           )}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
@@ -169,7 +169,7 @@ export function HierarchicalFolderTreeEnhanced({
             <Button
               variant="ghost"
               size="sm"
-              className="h-5 w-5 p-0 hover:bg-gray-200"
+              className="h-5 w-5 p-0 hover:bg-muted"
               onClick={(e) => {
                 e.stopPropagation();
                 onFolderToggle(folder.id);
@@ -195,7 +195,7 @@ export function HierarchicalFolderTreeEnhanced({
               <div className="flex items-center gap-2">
                 <span className={cn(
                   "text-sm font-medium truncate",
-                  isSelected ? "text-blue-900" : "text-gray-700"
+                  isSelected ? "text-blue-900" : "text-foreground"
                 )}>
                   {folder.name}
                 </span>
@@ -299,7 +299,7 @@ export function HierarchicalFolderTreeEnhanced({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
+            className="h-6 w-6 p-0 text-gray-500 hover:text-foreground"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreVertical className="h-3 w-3" />
@@ -308,7 +308,7 @@ export function HierarchicalFolderTreeEnhanced({
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem 
             onClick={() => onAction('rename', folder)}
-            className="text-blue-600"
+            className="text-blue-600 dark:text-blue-400"
           >
             <Edit3 className="mr-2 h-4 w-4" />
             Renombrar
@@ -338,11 +338,11 @@ export function HierarchicalFolderTreeEnhanced({
 
   // Botón para crear carpeta raíz
   const CreateRootFolderButton = () => (
-    <div className="p-2 border-t border-gray-200">
+    <div className="p-2 border-t border-border">
       <Button
         variant="outline"
         size="sm"
-        className="w-full justify-start text-gray-600 hover:text-blue-600 hover:border-blue-300"
+        className="w-full justify-start text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:border-blue-300"
         onClick={() => onFolderAction('create_child', { 
           id: 'root', 
           name: 'Raíz',
@@ -361,9 +361,9 @@ export function HierarchicalFolderTreeEnhanced({
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="p-3 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <FolderOpen className="h-4 w-4 text-blue-600" />
+      <div className="p-3 border-b border-border">
+        <h3 className="font-semibold text-foreground flex items-center gap-2">
+          <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           Estructura de Carpetas
         </h3>
         {showEventContext && (

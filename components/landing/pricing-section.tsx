@@ -49,7 +49,7 @@ export function PricingSection() {
           <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
             Precios <span className="text-gradient">simples</span>
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
+          <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-3xl text-xl">
             Elige el plan que mejor se adapte a tu negocio.
           </p>
         </div>
@@ -68,12 +68,12 @@ export function PricingSection() {
 
               <div className="mb-6">
                 <h3 className="text-2xl font-bold">{plan.name}</h3>
-                <p className="text-muted-foreground mt-2">{plan.description}</p>
+                <p className="text-gray-500 dark:text-gray-400 mt-2">{plan.description}</p>
               </div>
 
               <div className="mb-6">
                 <span className="text-4xl font-bold">{plan.price}</span>
-                <span className="text-muted-foreground">{plan.period}</span>
+                <span className="text-gray-500 dark:text-gray-400">{plan.period}</span>
               </div>
 
               <ul className="mb-8 space-y-3">

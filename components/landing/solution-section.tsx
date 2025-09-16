@@ -5,7 +5,7 @@ export function SolutionSection() {
         <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
           Nuestra <span className="text-gradient">solución</span>
         </h2>
-        <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
+        <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-3xl text-xl">
           Una plataforma segura, rápida y profesional diseñada específicamente
           para fotógrafos escolares.
         </p>

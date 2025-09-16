@@ -72,7 +72,7 @@ export function ShareButtons({
       {typeof window !== 'undefined' && navigator.share && (
         <button
           onClick={shareNative}
-          className="flex items-center space-x-1 rounded-md bg-blue-100 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
+          className="flex items-center space-x-1 rounded-md bg-blue-100 dark:bg-blue-950/30 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-200"
         >
           <svg
             className="h-4 w-4"

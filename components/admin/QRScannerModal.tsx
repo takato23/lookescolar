@@ -445,7 +445,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                 <QrCode className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-xl font-semibold text-foreground">
                   Escanear Estudiante
                 </h2>
                 <p className="text-sm text-gray-500">
@@ -457,7 +457,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-gray-400 hover:text-muted-foreground"
               aria-label="Cerrar scanner"
             >
               <X className="h-5 w-5" />
@@ -467,7 +467,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
           {/* Content */}
           <div className="p-6">
             {/* Scanner Area */}
-            <Card className="relative overflow-hidden rounded-xl border-2 border-dashed border-gray-300 bg-gray-900">
+            <Card className="relative overflow-hidden rounded-xl border-2 border-dashed border-border bg-gray-900">
               <div className="relative aspect-[4/3]">
                 {/* Video Element */}
                 <video
@@ -543,7 +543,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center"
                     >
                       <Loader2 className="mb-4 h-12 w-12 animate-spin text-purple-600" />
-                      <p className="text-gray-600">Procesando...</p>
+                      <p className="text-gray-500 dark:text-gray-400">Procesando...</p>
                     </motion.div>
                   )}
 
@@ -562,7 +562,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
                       >
                         <Zap className="h-8 w-8 text-purple-600" />
                       </motion.div>
-                      <p className="text-gray-600">¡QR detectado!</p>
+                      <p className="text-gray-500 dark:text-gray-400">¡QR detectado!</p>
                     </motion.div>
                   )}
 
@@ -621,7 +621,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
               {/* File Upload Alternative */}
               {(hasCamera === false || scannerState === 'error') && (
                 <div className="text-center">
-                  <p className="mb-3 text-sm text-gray-600">
+                  <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
                     ¿Sin cámara? Sube una imagen del código QR
                   </p>
                   <input

@@ -93,46 +93,4 @@ COMMENT ON COLUMN unified_orders.contact_info IS 'Información de contacto y dir
 COMMENT ON COLUMN unified_orders.status IS 'Estado del pedido: draft, pending_payment, paid, in_production, shipped, delivered, cancelled';
 COMMENT ON COLUMN unified_orders.production_status IS 'Estado de producción: pending, in_progress, printed, packaged, shipped, delivered';
 
--- Insertar algunos datos de ejemplo (solo en desarrollo)
--- Los precios están en pesos argentinos
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM unified_orders LIMIT 1) THEN
-    INSERT INTO unified_orders (
-      id,
-      token,
-      base_package,
-      selected_photos,
-      additional_copies,
-      contact_info,
-      base_price,
-      additions_price,
-      shipping_cost,
-      total_price,
-      status
-    ) VALUES (
-      'order_example_' || extract(epoch from now())::text,
-      'example_token_123',
-      '{"id": "option_a", "name": "Opción A", "basePrice": 8500}',
-      '{"individual": ["photo1", "photo2"], "group": ["group1"]}',
-      '[{"id": "copy1", "productId": "copy_10x15", "quantity": 2, "unitPrice": 600, "totalPrice": 1200}]',
-      '{
-        "name": "Juan Pérez",
-        "email": "juan@example.com",
-        "phone": "1123456789",
-        "address": {
-          "street": "Av. Corrientes 1234",
-          "city": "Buenos Aires",
-          "state": "CABA",
-          "zipCode": "1043",
-          "country": "Argentina"
-        }
-      }',
-      8500,
-      1200,
-      1500,
-      11200,
-      'draft'
-    );
-  END IF;
-END $$;
+-- Producción: no insertamos datos seed para evitar registros mock en el entorno final

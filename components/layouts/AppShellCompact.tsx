@@ -43,7 +43,7 @@ export default function AppShellCompact({
             </Link>
 
             {/* Context/Breadcrumb area */}
-            <div className="text-muted-foreground hidden text-sm md:block">
+            <div className="text-gray-500 dark:text-gray-400 hidden text-sm md:block">
               {title !== 'LookEscolar' && (
                 <span className="text-foreground font-medium">{title}</span>
               )}
@@ -54,7 +54,7 @@ export default function AppShellCompact({
           {showSearch && (
             <div className="mx-4 max-w-md flex-1">
               <div className="relative">
-                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                 <Input
                   type="search"
                   placeholder={searchPlaceholder}

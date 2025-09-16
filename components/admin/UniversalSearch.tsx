@@ -235,16 +235,16 @@ export default function UniversalSearch({
           case 'student':
             return 'bg-green-100 text-green-700';
           case 'photo':
-            return 'bg-orange-100 text-orange-700';
+            return 'bg-primary-50 text-primary-700';
           default:
-            return 'bg-gray-100 text-gray-700';
+            return 'bg-muted text-foreground';
         }
       };
 
       return (
         <div
           onClick={() => handleResultSelect(result)}
-          className="flex cursor-pointer items-start gap-3 p-3 hover:bg-gray-50"
+          className="flex cursor-pointer items-start gap-3 p-3 hover:bg-muted"
         >
           <div className={cn('rounded-lg p-1.5', getTypeColor())}>
             {getTypeIcon()}
@@ -261,20 +261,20 @@ export default function UniversalSearch({
             </div>
 
             {result.subtitle && (
-              <p className="text-muted-foreground truncate text-xs">
+              <p className="text-gray-500 dark:text-gray-400 truncate text-xs">
                 {result.highlighted?.subtitle || result.subtitle}
               </p>
             )}
 
             {result.description && (
-              <p className="text-muted-foreground line-clamp-2 text-xs">
+              <p className="text-gray-500 dark:text-gray-400 line-clamp-2 text-xs">
                 {result.highlighted?.description || result.description}
               </p>
             )}
 
             {/* Path breadcrumb */}
             {result.path.length > 0 && (
-              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs">
                 {result.path.slice(0, 3).map((pathItem, index) => (
                   <React.Fragment key={index}>
                     {index > 0 && <ArrowRight className="h-3 w-3" />}
@@ -292,7 +292,7 @@ export default function UniversalSearch({
 
             {/* Metadata */}
             {result.metadata && (
-              <div className="text-muted-foreground flex items-center gap-3 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-3 text-xs">
                 {result.metadata.photoCount !== undefined && (
                   <div className="flex items-center gap-1">
                     <Camera className="h-3 w-3" />
@@ -319,7 +319,7 @@ export default function UniversalSearch({
             )}
           </div>
 
-          <div className="text-muted-foreground text-xs">
+          <div className="text-gray-500 dark:text-gray-400 text-xs">
             {Math.round(result.score * 100)}%
           </div>
         </div>
@@ -379,7 +379,7 @@ export default function UniversalSearch({
     <div className={cn('relative', className)}>
       {/* TEMP: Simplified without popover until component is available */}
       <div className="relative">
-        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+        <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
         <Input
           ref={searchInputRef}
           value={query}
@@ -399,7 +399,7 @@ export default function UniversalSearch({
           </Button>
         )}
         {loading && (
-          <Loader2 className="text-muted-foreground absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform animate-spin" />
+          <Loader2 className="text-gray-500 dark:text-gray-400 absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform animate-spin" />
         )}
       </div>
 
@@ -413,7 +413,7 @@ export default function UniversalSearch({
               <>
                 <div className="border-b p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-muted-foreground text-xs font-medium">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs font-medium">
                       Filtros:
                     </span>
 
@@ -476,9 +476,9 @@ export default function UniversalSearch({
                   <div
                     key={index}
                     onClick={() => handleRecentSearchSelect(search)}
-                    className="flex cursor-pointer items-center gap-2 rounded p-2 hover:bg-gray-50"
+                    className="flex cursor-pointer items-center gap-2 rounded p-2 hover:bg-muted"
                   >
-                    <Clock className="text-muted-foreground h-4 w-4" />
+                    <Clock className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                     <span>{search}</span>
                   </div>
                 ))}
@@ -491,12 +491,12 @@ export default function UniversalSearch({
                 {loading ? (
                   <div className="text-center">
                     <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    <p className="text-muted-foreground text-sm">Buscando...</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Buscando...</p>
                   </div>
                 ) : results.length === 0 ? (
                   <div className="py-6 text-center">
-                    <Search className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
-                    <p className="text-muted-foreground text-sm">
+                    <Search className="text-gray-500 dark:text-gray-400 mx-auto mb-2 h-8 w-8" />
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       No se encontraron resultados para "{query}"
                     </p>
                   </div>
@@ -506,7 +506,7 @@ export default function UniversalSearch({
                       <ResultItem key={result.id} result={result} />
                     ))}
                     {results.length > 5 && (
-                      <div className="text-muted-foreground py-2 text-center text-xs">
+                      <div className="text-gray-500 dark:text-gray-400 py-2 text-center text-xs">
                         Y {results.length - 5} resultados más...
                       </div>
                     )}

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import PDFDocument from 'pdfkit';
 import { QRService } from './qr.service';
 import { createServerSupabaseClient } from '@/lib/supabase/server';

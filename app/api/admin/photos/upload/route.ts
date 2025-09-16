@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { processImageBatch, validateImage } from '@/lib/services/watermark';
 import { uploadToStorage } from '@/lib/services/storage';
 // Lazy import QR detection only when needed
-let qrDetectionService: any;
+let qrDetectionService: any = null;
+
 async function getQrService() {
   if (!qrDetectionService) {
     qrDetectionService = (await import('@/lib/services/qr-detection.service'))
@@ -29,7 +32,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 // Dynamic import for Sharp to prevent bundling issues
-let sharp: any;
+let sharp: any = null;
 
 async function getSharp() {
   if (!sharp) {
