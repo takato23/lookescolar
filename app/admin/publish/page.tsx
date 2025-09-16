@@ -2,7 +2,6 @@
 import PublishClient from './PublishClient';
 import { fetchCounter } from '@/lib/services/fetch-counter';
 import CentralitaPublishClient from '@/components/admin/centralita/centralita-publish-client';
-import ModernPublishClientWrapper from './ModernPublishClientWrapper';
 
 export default async function PublishPage(props: {
   searchParams?: Promise<{ event_id?: string; tab?: string }> | { event_id?: string; tab?: string };
@@ -15,8 +14,8 @@ export default async function PublishPage(props: {
     if (centralitaEnabled) {
       return <CentralitaPublishClient />;
     }
-    // Use modern design by default
-    return <ModernPublishClientWrapper />;
+    // Use default PublishClient
+    return <PublishClient />;
   }
 
   // Fetch event details (best-effort)
