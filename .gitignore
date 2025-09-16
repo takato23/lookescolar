@@ -30,4 +30,6 @@ dist-ssr
 
 # Archive folder - local backups only
 /archive/
+/backups/
+/contexts/
 .vercel
