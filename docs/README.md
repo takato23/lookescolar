@@ -31,6 +31,7 @@ Welcome to the LookEscolar documentation hub. This is the central location for a
 - [Quick Start Guide](../README.md#setup) - Getting started with development
 - [Security Checklist](../SECURITY.md#-critical-security-checklist) - Security verification checklist
 - [Environment Variables](../README.md#environment-variables) - Required configuration
+- [Vercel Environment Variables Template](../vercel-env.txt) - Template for adding environment variables in Vercel Settings
 - [Testing](../README.md#running-tests) - Running tests
 
 ## Contributing
