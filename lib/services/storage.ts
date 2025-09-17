@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { egressService } from './egress.service';
 import { logger } from '@/lib/utils/logger';
+import crypto from 'crypto';
 import 'server-only';
 
 const supabase = createClient(
@@ -368,4 +369,33 @@ if (process.env.NODE_ENV !== 'test') {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   });
+}
+
+// Convenience exports for backwards compatibility
+export async function getSignedUrl(
+  path: string,
+  expiresIn: number = DEFAULT_URL_EXPIRY,
+  download: boolean = false
+): Promise<string> {
+  return await storageService.createSignedUrl(path, {
+    expiresIn,
+    download,
+  });
+}
+
+export async function getSignedUrls(
+  paths: string[],
+  expiresIn: number = DEFAULT_URL_EXPIRY
+): Promise<Map<string, string>> {
+  const requests = paths.map(path => ({ path, options: { expiresIn } }));
+  const results = await storageService.createBatchSignedUrls(requests);
+
+  const urlMap = new Map<string, string>();
+  for (const result of results) {
+    if (result.url && !result.error) {
+      urlMap.set(result.path, result.url);
+    }
+  }
+
+  return urlMap;
 }
