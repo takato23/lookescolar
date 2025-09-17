@@ -87,65 +87,33 @@ export class FreeTierOptimizer {
       ...this.DEFAULT_OPTIONS,
       ...options,
       enableOriginalStorage: false,
-    }; // Force disable original storage
-    const targetBytes = config.targetSizeKB * 1024;
+    };
 
-    console.log('[FreeTierOptimizer] Starting image processing, environment:', {
-      isVercel: !!process.env.VERCEL,
-      nodeEnv: process.env.NODE_ENV,
-      runtime: process.env.VERCEL ? 'vercel-serverless' : 'local'
-    });
+    console.log('[FreeTierOptimizer] VERCEL MODE: Returning original image WITHOUT processing');
 
-    // PRIORITY 1: Canvas-based processing (works everywhere, including Vercel)
-    try {
-      console.log('[FreeTierOptimizer] Attempting Canvas-based processing (Sharp-free)');
-      const canvasResult = await CanvasImageProcessor.processWithCanvas(inputBuffer, {
-        targetSizeKB: config.targetSizeKB,
-        maxDimension: config.maxDimension,
-        watermarkText: config.watermarkText,
-        quality: 0.6
-      });
-
-      console.log('[FreeTierOptimizer] ✅ Canvas processing successful:', {
-        method: canvasResult.method,
-        sizeKB: canvasResult.actualSizeKB,
-        dimensions: canvasResult.finalDimensions
-      });
-
+    // IMMEDIATE RETURN: No processing at all on Vercel
+    // Just return the original image as-is
+    if (process.env.VERCEL || true) { // Always skip processing for now
       return {
-        processedBuffer: canvasResult.processedBuffer,
-        finalDimensions: canvasResult.finalDimensions,
-        compressionLevel: canvasResult.compressionLevel,
-        actualSizeKB: canvasResult.actualSizeKB,
-        blurDataURL: PlaceholderImageService.generatePlaceholderDataURL(
-          canvasResult.finalDimensions.width,
-          canvasResult.finalDimensions.height,
-          'Loading...'
-        ),
+        processedBuffer: inputBuffer, // Return original image unchanged
+        finalDimensions: { width: 1024, height: 768 }, // Default dimensions
+        compressionLevel: 0, // No compression
+        actualSizeKB: Math.round(inputBuffer.length / 1024),
+        blurDataURL: undefined,
         avgColor: '#f8f9fa'
       };
+    }
 
-    } catch (canvasError) {
-      console.warn('[FreeTierOptimizer] Canvas processing failed:', canvasError instanceof Error ? canvasError.message : 'Unknown error');
-
-      // PRIORITY 2: Sharp processing (local development only)
-      if (!process.env.VERCEL) {
-        try {
-          console.log('[FreeTierOptimizer] Falling back to Sharp processing (local dev)');
-          return await this.performFullOptimization(inputBuffer, config, targetBytes);
-        } catch (sharpError) {
-          console.warn('[FreeTierOptimizer] Sharp processing also failed:', sharpError instanceof Error ? sharpError.message : 'Unknown error');
-        }
-      }
-
-      // PRIORITY 3: Return original image as fallback (no watermark, but visible!)
-      console.log('[FreeTierOptimizer] All processing failed, returning ORIGINAL IMAGE without watermark');
-
-      // Return the original image unchanged
+    // This code is unreachable for now but kept for future local development
+    const targetBytes = config.targetSizeKB * 1024;
+    try {
+      return await this.performFullOptimization(inputBuffer, config, targetBytes);
+    } catch (error) {
+      // If local processing fails, return original
       return {
-        processedBuffer: inputBuffer, // Return original image
-        finalDimensions: { width: config.maxDimension, height: config.maxDimension }, // Approximate
-        compressionLevel: 0, // No compression
+        processedBuffer: inputBuffer,
+        finalDimensions: { width: 1024, height: 768 },
+        compressionLevel: 0,
         actualSizeKB: Math.round(inputBuffer.length / 1024),
         blurDataURL: undefined,
         avgColor: '#f8f9fa'
