@@ -6,7 +6,7 @@
 - app/admin/events/[id]/students/page.tsx — Alumnos del evento
 - app/admin/events/[id]/orders/page.tsx — Pedidos del evento
 - app/admin/events/[id]/settings/page.tsx — Ajustes (General/Privacy/Download/Store)
-- app/admin/store-settings/page.tsx — Configuración de Tienda Global
+- app/admin/store-settings/page.tsx — Configuración de Tienda Global (store-settings UI)
 
 Utilidades
 - lib/routes/admin.ts — computePhotoAdminUrl(eventId, folderId?)
