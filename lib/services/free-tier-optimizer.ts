@@ -77,7 +77,7 @@ export class FreeTierOptimizer {
    * Process image for free tier constraints with anti-theft protection
    * NEVER stores original images to maximize free tier space
    *
-   * Priority: Canvas API (Vercel-compatible) > Sharp (local dev) > Placeholder fallback
+   * Priority: Canvas API (Vercel-compatible) > Sharp (local dev) > Original image fallback
    */
   static async processForFreeTier(
     inputBuffer: Buffer,
@@ -138,9 +138,18 @@ export class FreeTierOptimizer {
         }
       }
 
-      // PRIORITY 3: Placeholder fallback
-      console.log('[FreeTierOptimizer] Using placeholder fallback');
-      return await this.performPlaceholderFallback(config);
+      // PRIORITY 3: Return original image as fallback (no watermark, but visible!)
+      console.log('[FreeTierOptimizer] All processing failed, returning ORIGINAL IMAGE without watermark');
+
+      // Return the original image unchanged
+      return {
+        processedBuffer: inputBuffer, // Return original image
+        finalDimensions: { width: config.maxDimension, height: config.maxDimension }, // Approximate
+        compressionLevel: 0, // No compression
+        actualSizeKB: Math.round(inputBuffer.length / 1024),
+        blurDataURL: undefined,
+        avgColor: '#f8f9fa'
+      };
     }
   }
 
