@@ -404,16 +404,29 @@ async function handlePOST(request: NextRequest) {
               environment: process.env.VERCEL ? 'vercel' : 'local'
             });
 
-            // All fallback processing is now handled by FreeTierOptimizer
-            throw optimizationError;
+            // CRITICAL FIX: Always upload SOMETHING to Supabase, even if it's the original
+            console.log(`[${requestId}] 🔥 FALLBACK: Using original image as preview for ${file.name}`);
+            previewBuffer = buffer; // Use original image if all processing fails
+
+            // Create a fake optimizedResult to continue flow
+            optimizedResult = {
+              processedBuffer: buffer,
+              finalDimensions: { width: 512, height: 512 }, // Approximate dimensions
+              compressionLevel: 0,
+              actualSizeKB: Math.round(buffer.length / 1024)
+            };
           }
           
           console.log(`[${requestId}] Uploading processed image for ${file.name}`);
-          
-          const finalPreviewPath = `${containerPrefix}/previews/${safeBase}.webp`;
+
+          // Determine content type based on whether we have processed image or original
+          const contentType = optimizedResult.compressionLevel > 0 ? 'image/webp' : file.type;
+          const uploadExt = optimizedResult.compressionLevel > 0 ? 'webp' : ext;
+          const finalPreviewPath = `${containerPrefix}/previews/${safeBase}.${uploadExt}`;
+
           const upPrev = await supabase.storage
             .from(PREVIEW_BUCKET)
-            .upload(finalPreviewPath, previewBuffer, { contentType: 'image/webp', upsert: true });
+            .upload(finalPreviewPath, previewBuffer, { contentType, upsert: true });
             
           if (upPrev.error) {
             console.error(`[${requestId}] Storage upload failed for ${file.name}:`, upPrev.error);
