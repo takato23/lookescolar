@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import sharp from 'sharp';
+
+// Dynamic import of Sharp to avoid Vercel issues
+let sharp: any = null;
+try {
+  sharp = require('sharp');
+} catch (error) {
+  console.log('[ProcessPreview] Sharp not available, will use fallback');
+}
 
 // Validation schema
 const ProcessPreviewSchema = z.object({

@@ -1,4 +1,10 @@
-import sharp from 'sharp';
+// Dynamic import of Sharp to avoid Vercel issues
+let sharp: any = null;
+try {
+  sharp = require('sharp');
+} catch (error) {
+  console.log('[QRDecoder] Sharp not available, QR detection disabled');
+}
 import * as exifr from 'exifr';
 
 type QRResult = { text: string } | null;
@@ -30,6 +36,12 @@ export async function extractEXIFDate(buffer: Buffer): Promise<Date | null> {
 
 export async function decodeQR(buffer: Buffer): Promise<QRResult> {
   try {
+    // Check if Sharp is available
+    if (!sharp) {
+      console.log('[QRDecoder] Sharp not available, skipping QR detection');
+      return null;
+    }
+
     // ZXing WASM inicialización diferida para evitar costo de import en RSC
     const {
       BrowserMultiFormatReader,
