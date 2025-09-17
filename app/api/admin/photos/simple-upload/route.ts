@@ -5,21 +5,8 @@ import { SecurityLogger, generateRequestId, withAuth } from '@/lib/middleware/au
 import { decodeQR, normalizeCode } from '@/lib/qr/decoder';
 import { tokenService } from '@/lib/services/token.service';
 import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
-import sharp from 'sharp';
 import crypto from 'crypto';
 export const runtime = 'nodejs';
-
-// Configure Sharp for Vercel serverless environment
-if (process.env.VERCEL) {
-  console.log('[simple-upload] Configuring Sharp for Vercel environment');
-  try {
-    // Reduce memory usage and optimize for serverless
-    sharp.cache({ items: 50, memory: 50 }); // Reduced cache
-    sharp.concurrency(1); // Single threaded processing for stability
-  } catch (error) {
-    console.warn('[simple-upload] Failed to configure Sharp for Vercel:', error);
-  }
-}
 
 // Expected QR format: STUDENT:ID:NAME:EVENT_ID
 const QR_PATTERN = /^STUDENT:([a-f0-9-]{36}):([^:]+):([a-f0-9-]{36})$/i;
@@ -356,7 +343,6 @@ async function handlePOST(request: NextRequest) {
 
           // Use separate buckets for previews (public) - NO originals stored
           const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
-          const sharp = (await import('sharp')).default;
           // Construir paths determinísticos
           const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
           const baseNoExt = file.name.replace(/\.[^.]+$/, '');
@@ -370,7 +356,6 @@ async function handlePOST(request: NextRequest) {
           // NO original path needed - we don't store originals
           const previewPath = `${containerPrefix}/previews/${safeBase}.webp`;
 
-          // Determinar tamaño y crear preview con watermark (esquina inferior derecha, 60% opacidad)
           // If we have an event, try to fetch name/school to include in watermark
           let wmLabel = 'Look Escolar';
           if (finalEventId) {
@@ -386,23 +371,6 @@ async function handlePOST(request: NextRequest) {
               }
             } catch {}
           }
-          const meta = await sharp(buffer).metadata();
-          const srcW = meta.width || 0;
-          const srcH = meta.height || 0;
-          const MAX_SIDE = 1200;
-          const scale = Math.min(1, MAX_SIDE / Math.max(srcW, srcH || 1));
-          const newW = Math.max(1, Math.round(srcW * scale));
-          const newH = Math.max(1, Math.round(srcH * scale));
-          const fontSize = Math.max(18, Math.floor(Math.min(newW, newH) / 20));
-          const margin = Math.max(12, Math.floor(fontSize * 0.6));
-          const wmSvg = Buffer.from(`
-            <svg width="${newW}" height="${newH}" xmlns="http://www.w3.org/2000/svg">
-              <text x="${newW - margin}" y="${newH - margin}" 
-                font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold"
-                fill="white" fill-opacity="0.6" stroke="black" stroke-width="2" stroke-opacity="0.3"
-                text-anchor="end" dominant-baseline="auto">${wmLabel}</text>
-            </svg>
-          `);
 
           // 🔥 UNIFIED QUALITY SETTINGS - Single source of truth for all uploads
           const UNIFIED_SETTINGS = {
@@ -436,67 +404,8 @@ async function handlePOST(request: NextRequest) {
               environment: process.env.VERCEL ? 'vercel' : 'local'
             });
 
-            // Enhanced fallback with proper watermarking for Vercel compatibility
-            try {
-              console.log(`[${requestId}] 🔄 Attempting enhanced fallback processing for ${file.name}`);
-
-              // Create simple watermark for fallback
-              const metadata = await sharp(buffer).metadata();
-              const targetWidth = Math.min(UNIFIED_SETTINGS.maxDimension, metadata.width || UNIFIED_SETTINGS.maxDimension);
-              const targetHeight = Math.min(UNIFIED_SETTINGS.maxDimension, metadata.height || UNIFIED_SETTINGS.maxDimension);
-
-              // Simple watermark SVG that should work on Vercel
-              const simpleWatermarkSvg = `
-                <svg width="${targetWidth}" height="${targetHeight}" xmlns="http://www.w3.org/2000/svg">
-                  <text x="${targetWidth / 2}" y="${targetHeight / 2}"
-                    font-family="Arial, sans-serif"
-                    font-size="${Math.max(14, Math.floor(Math.min(targetWidth, targetHeight) / 20))}"
-                    font-weight="bold"
-                    fill="white"
-                    fill-opacity="0.4"
-                    stroke="black"
-                    stroke-width="1"
-                    stroke-opacity="0.2"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    transform="rotate(-25 ${targetWidth / 2} ${targetHeight / 2})">
-                    MUESTRA - ${wmLabel}
-                  </text>
-                </svg>
-              `;
-
-              const fallbackBuffer = await sharp(buffer)
-                .resize(targetWidth, targetHeight, { fit: 'inside', withoutEnlargement: true })
-                .composite([{
-                  input: Buffer.from(simpleWatermarkSvg),
-                  gravity: 'center',
-                  blend: 'over'
-                }])
-                .webp({ quality: UNIFIED_SETTINGS.quality, effort: 3 })
-                .toBuffer();
-
-              const finalMetadata = await sharp(fallbackBuffer).metadata();
-              optimizedResult = {
-                processedBuffer: fallbackBuffer,
-                finalDimensions: {
-                  width: finalMetadata.width || targetWidth,
-                  height: finalMetadata.height || targetHeight
-                },
-                compressionLevel: -1, // Indicate fallback processing
-                actualSizeKB: Math.round(fallbackBuffer.length / 1024)
-              };
-              previewBuffer = fallbackBuffer;
-              console.log(`[${requestId}] ✅ Enhanced fallback processing completed for ${file.name}:`, {
-                finalSizeKB: optimizedResult.actualSizeKB,
-                dimensions: optimizedResult.finalDimensions
-              });
-            } catch (fallbackError) {
-              console.error(`[${requestId}] 🚨 Both optimization and enhanced fallback failed for ${file.name}:`, {
-                error: fallbackError instanceof Error ? fallbackError.message : 'Unknown error',
-                stack: fallbackError instanceof Error ? fallbackError.stack : undefined
-              });
-              throw new Error(`Complete image processing failure: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
-            }
+            // All fallback processing is now handled by FreeTierOptimizer
+            throw optimizationError;
           }
           
           console.log(`[${requestId}] Uploading processed image for ${file.name}`);

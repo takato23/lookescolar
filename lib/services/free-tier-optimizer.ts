@@ -12,7 +12,9 @@
  * - Apple-style progressive loading optimization
  */
 
-// Dynamic import for Sharp to prevent bundling issues
+import { CanvasImageProcessor, PlaceholderImageService } from './canvas-image-processor';
+
+// Dynamic import for Sharp to prevent bundling issues (only for local development)
 let sharp: any;
 
 async function getSharp() {
@@ -20,22 +22,20 @@ async function getSharp() {
     try {
       sharp = (await import('sharp')).default;
 
-      // Configure Sharp for Vercel serverless environment
-      if (process.env.VERCEL) {
-        console.log('[FreeTierOptimizer] Configuring Sharp for Vercel environment');
+      // Configure Sharp for local development
+      if (!process.env.VERCEL) {
+        console.log('[FreeTierOptimizer] Configuring Sharp for local development');
         try {
-          // Optimize for serverless constraints
-          sharp.cache({ items: 20, memory: 30 }); // Minimal cache for memory efficiency
-          sharp.concurrency(1); // Single threaded for stability
-
-          console.log('[FreeTierOptimizer] Sharp configured for Vercel environment');
+          sharp.cache({ items: 20, memory: 30 });
+          sharp.concurrency(1);
+          console.log('[FreeTierOptimizer] Sharp configured for local development');
         } catch (configError) {
-          console.warn('[FreeTierOptimizer] Failed to configure Sharp for Vercel:', configError);
+          console.warn('[FreeTierOptimizer] Failed to configure Sharp:', configError);
         }
       }
     } catch (error) {
-      console.error('[FreeTierOptimizer] Failed to load Sharp:', error);
-      throw new Error('Image processing unavailable');
+      console.error('[FreeTierOptimizer] Sharp not available:', error);
+      throw new Error('Sharp not available in this environment');
     }
   }
   return sharp;
@@ -76,7 +76,8 @@ export class FreeTierOptimizer {
   /**
    * Process image for free tier constraints with anti-theft protection
    * NEVER stores original images to maximize free tier space
-   * Enhanced with Vercel-compatible fallback processing
+   *
+   * Priority: Canvas API (Vercel-compatible) > Sharp (local dev) > Placeholder fallback
    */
   static async processForFreeTier(
     inputBuffer: Buffer,
@@ -89,21 +90,57 @@ export class FreeTierOptimizer {
     }; // Force disable original storage
     const targetBytes = config.targetSizeKB * 1024;
 
+    console.log('[FreeTierOptimizer] Starting image processing, environment:', {
+      isVercel: !!process.env.VERCEL,
+      nodeEnv: process.env.NODE_ENV,
+      runtime: process.env.VERCEL ? 'vercel-serverless' : 'local'
+    });
+
+    // PRIORITY 1: Canvas-based processing (works everywhere, including Vercel)
     try {
-      // Try the full optimization first
-      return await this.performFullOptimization(inputBuffer, config, targetBytes);
-    } catch (optimizationError) {
-      console.warn('[FreeTierOptimizer] Full optimization failed, falling back to Vercel-compatible processing:', optimizationError);
+      console.log('[FreeTierOptimizer] Attempting Canvas-based processing (Sharp-free)');
+      const canvasResult = await CanvasImageProcessor.processWithCanvas(inputBuffer, {
+        targetSizeKB: config.targetSizeKB,
+        maxDimension: config.maxDimension,
+        watermarkText: config.watermarkText,
+        quality: 0.6
+      });
 
-      try {
-        // Fallback to Vercel-compatible simple processing
-        return await this.performVercelCompatibleProcessing(inputBuffer, config, targetBytes);
-      } catch (vercelError) {
-        console.error('[FreeTierOptimizer] Vercel-compatible processing also failed, using emergency fallback:', vercelError);
+      console.log('[FreeTierOptimizer] ✅ Canvas processing successful:', {
+        method: canvasResult.method,
+        sizeKB: canvasResult.actualSizeKB,
+        dimensions: canvasResult.finalDimensions
+      });
 
-        // Emergency fallback - create minimal image response
-        return await this.performEmergencyFallback(config);
+      return {
+        processedBuffer: canvasResult.processedBuffer,
+        finalDimensions: canvasResult.finalDimensions,
+        compressionLevel: canvasResult.compressionLevel,
+        actualSizeKB: canvasResult.actualSizeKB,
+        blurDataURL: PlaceholderImageService.generatePlaceholderDataURL(
+          canvasResult.finalDimensions.width,
+          canvasResult.finalDimensions.height,
+          'Loading...'
+        ),
+        avgColor: '#f8f9fa'
+      };
+
+    } catch (canvasError) {
+      console.warn('[FreeTierOptimizer] Canvas processing failed:', canvasError instanceof Error ? canvasError.message : 'Unknown error');
+
+      // PRIORITY 2: Sharp processing (local development only)
+      if (!process.env.VERCEL) {
+        try {
+          console.log('[FreeTierOptimizer] Falling back to Sharp processing (local dev)');
+          return await this.performFullOptimization(inputBuffer, config, targetBytes);
+        } catch (sharpError) {
+          console.warn('[FreeTierOptimizer] Sharp processing also failed:', sharpError instanceof Error ? sharpError.message : 'Unknown error');
+        }
       }
+
+      // PRIORITY 3: Placeholder fallback
+      console.log('[FreeTierOptimizer] Using placeholder fallback');
+      return await this.performPlaceholderFallback(config);
     }
   }
 
@@ -354,51 +391,50 @@ export class FreeTierOptimizer {
   }
 
   /**
-   * Emergency fallback when all image processing fails
-   * Creates a minimal valid WebP image with text indicating an error
+   * Placeholder fallback when all image processing fails
+   * Creates a valid SVG-based placeholder that always works
    */
-  private static async performEmergencyFallback(
+  private static async performPlaceholderFallback(
     config: FreeTierProcessingOptions
   ): Promise<OptimizedResult> {
-    console.log('[FreeTierOptimizer] Using emergency fallback - creating minimal image');
+    console.log('[FreeTierOptimizer] Using placeholder fallback - creating SVG placeholder');
 
     try {
-      const sharpInstance = await getSharp();
-
-      // Create a minimal 200x100 red error image
-      const emergencyBuffer = await sharpInstance({
-        create: {
-          width: 200,
-          height: 100,
-          channels: 3,
-          background: { r: 220, g: 53, b: 69 } // Bootstrap danger color
-        }
-      })
-      .webp({ quality: 50 })
-      .toBuffer();
+      // Create a placeholder using SVG (no dependencies required)
+      const placeholderBuffer = PlaceholderImageService.createPlaceholderBuffer(
+        config.maxDimension,
+        Math.round(config.maxDimension * 0.75),
+        'Image Preview'
+      );
 
       return {
-        processedBuffer: emergencyBuffer,
-        finalDimensions: { width: 200, height: 100 },
-        compressionLevel: -2, // Indicate emergency fallback
-        actualSizeKB: Math.round(emergencyBuffer.length / 1024)
+        processedBuffer: placeholderBuffer,
+        finalDimensions: { width: config.maxDimension, height: Math.round(config.maxDimension * 0.75) },
+        compressionLevel: -1, // Indicate placeholder
+        actualSizeKB: Math.round(placeholderBuffer.length / 1024),
+        blurDataURL: PlaceholderImageService.generatePlaceholderDataURL(
+          config.maxDimension,
+          Math.round(config.maxDimension * 0.75),
+          'Loading...'
+        ),
+        avgColor: '#f8f9fa'
       };
-    } catch (emergencyError) {
-      console.error('[FreeTierOptimizer] Even emergency fallback failed:', emergencyError);
+    } catch (placeholderError) {
+      console.error('[FreeTierOptimizer] Even placeholder fallback failed:', placeholderError);
 
-      // Final fallback - create hardcoded minimal WebP
-      const hardcodedWebP = Buffer.from([
-        0x52, 0x49, 0x46, 0x46, 0x26, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
-        0x56, 0x50, 0x38, 0x20, 0x1A, 0x00, 0x00, 0x00, 0x30, 0x01, 0x00, 0x9D,
-        0x01, 0x2A, 0x01, 0x00, 0x01, 0x00, 0x02, 0x00, 0x34, 0x25, 0xA4, 0x00,
-        0x03, 0x70, 0x00, 0xFE, 0xFB, 0xFD, 0x50, 0x00
-      ]);
+      // Absolute final fallback - minimal SVG as buffer
+      const minimalSvg = `<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+        <text x="50%" y="50%" font-family="Arial" font-size="12" text-anchor="middle" fill="#6c757d">Preview Error</text>
+      </svg>`;
+
+      const minimalBuffer = Buffer.from(minimalSvg);
 
       return {
-        processedBuffer: hardcodedWebP,
-        finalDimensions: { width: 1, height: 1 },
-        compressionLevel: -3, // Indicate hardcoded fallback
-        actualSizeKB: 1
+        processedBuffer: minimalBuffer,
+        finalDimensions: { width: 200, height: 100 },
+        compressionLevel: -2, // Indicate minimal fallback
+        actualSizeKB: Math.round(minimalBuffer.length / 1024)
       };
     }
   }
