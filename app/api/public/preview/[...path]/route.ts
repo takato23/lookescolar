@@ -25,15 +25,21 @@ export async function GET(
       .download(path);
 
     if (error) {
-      console.error('Error downloading preview:', error);
+      console.error('Error downloading preview:', {
+        path,
+        error: error.message,
+        environment: process.env.VERCEL ? 'vercel' : 'local'
+      });
 
-      // Try fallback to watermark path if preview fails
+      // Try fallback strategies for missing previews
+      // 1. Try watermark path if preview fails
       const watermarkPath = path.replace('previews/', 'watermarks/');
       const { data: watermarkData, error: watermarkError } = await supabase.storage
         .from('photos')
         .download(watermarkPath);
 
       if (!watermarkError && watermarkData) {
+        console.log('Preview fallback: Using watermark path', watermarkPath);
         return new NextResponse(watermarkData, {
           headers: {
             'Content-Type': 'image/webp',
@@ -42,7 +48,41 @@ export async function GET(
         });
       }
 
-      return NextResponse.json({ error: 'Preview not found' }, { status: 404 });
+      // 2. Try original path as last resort (for debugging)
+      const originalPath = path.replace('previews/', '');
+      const { data: originalData, error: originalError } = await supabase.storage
+        .from('photos')
+        .download(originalPath);
+
+      if (!originalError && originalData) {
+        console.log('Preview fallback: Using original path', originalPath);
+        return new NextResponse(originalData, {
+          headers: {
+            'Content-Type': 'image/webp',
+            'Cache-Control': 'public, max-age=31536000, immutable',
+          },
+        });
+      }
+
+      // 3. Return proper error with debugging info
+      console.error('All preview fallback strategies failed:', {
+        originalPath: path,
+        watermarkPath,
+        originalFallbackPath: originalPath,
+        originalError: error.message,
+        watermarkError: watermarkError?.message,
+        originalFallbackError: originalError?.message
+      });
+
+      return NextResponse.json({
+        error: 'Preview not found',
+        debug: process.env.NODE_ENV === 'development' ? {
+          path,
+          watermarkPath,
+          originalFallbackPath: originalPath,
+          environment: process.env.VERCEL ? 'vercel' : 'local'
+        } : undefined
+      }, { status: 404 });
     }
 
     // Return image with proper headers
