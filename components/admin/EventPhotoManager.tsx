@@ -54,6 +54,7 @@ import {
   Link as LinkIcon,
   CheckCircle2,
   FileUser,
+  Share2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UploadInterface } from '@/app/admin/events/[id]/library/components/UploadInterface';
