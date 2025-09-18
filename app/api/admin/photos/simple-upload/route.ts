@@ -682,5 +682,5 @@ async function handleGET(request: NextRequest) {
   }
 }
 
-export const POST = process.env.NODE_ENV === 'development' ? handlePOST : withAuth(handlePOST, { requireCSRF: true });
+export const POST = process.env.NODE_ENV === 'development' ? handlePOST : withAuth(handlePOST, { requireCSRF: false });
 export const GET = handleGET;

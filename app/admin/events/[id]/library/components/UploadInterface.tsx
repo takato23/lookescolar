@@ -213,6 +213,7 @@ export function UploadInterface({
         const uploadResponse = await fetch('/api/admin/photos/simple-upload', {
           method: 'POST',
           body: formData,
+          credentials: 'include', // Important: include cookies for auth
         });
 
         if (!uploadResponse.ok) {
