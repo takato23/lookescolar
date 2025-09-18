@@ -14,8 +14,14 @@ export async function GET(
   try {
     const path = params.path.join('/');
 
-    // Security: Only allow preview paths
-    if (!path.startsWith('previews/')) {
+    // Security: Allow preview paths with event structure
+    // Accept: previews/*, events/*/previews/*, events/*/watermarks/*
+    const isValidPath = path.startsWith('previews/') ||
+                       path.includes('/previews/') ||
+                       path.includes('/watermarks/');
+
+    if (!isValidPath) {
+      console.error('Invalid preview path:', path);
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
 

@@ -701,6 +701,54 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
     })();
   };
 
+  const handleShareSelected = async () => {
+    try {
+      if (!selectedFolderId) {
+        try { (await import('sonner')).toast.error('Selecciona una carpeta primero'); } catch {}
+        return;
+      }
+      if (selectedPhotoIds.length === 0) {
+        try { (await import('sonner')).toast.error('Selecciona al menos una foto para compartir'); } catch {}
+        return;
+      }
+
+      // Share selected photos from folder
+      const res = await fetch('/api/admin/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          shareType: 'photos',
+          folderId: selectedFolderId,
+          photoIds: selectedPhotoIds,
+          eventId,
+          title: `${selectedPhotoIds.length} fotos seleccionadas`
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.share?.shareUrl) {
+        throw new Error(data?.error || 'No se pudo generar el enlace');
+      }
+
+      const shareUrl = (data.share.storeUrl as string) || (data.share.shareUrl as string);
+
+      setShareModal({
+        type: 'photos',
+        url: shareUrl,
+        title: `${selectedPhotoIds.length} fotos seleccionadas`,
+        description: `Fotos compartidas de ${enhancedFolders.find(f => f.id === selectedFolderId)?.name || 'carpeta'}`
+      });
+
+      // Clear selection after sharing
+      setSelectedPhotoIds([]);
+
+    } catch (error) {
+      console.error('Error sharing selected photos:', error);
+      try { (await import('sonner')).toast.error('No se pudo generar el enlace para las fotos seleccionadas'); } catch {}
+    }
+  };
+
   const handleShareEvent = async () => {
     try {
       const res = await fetch('/api/share', {
@@ -1281,9 +1329,9 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             </div>
 
             {/* Tab Content */}
-            <TabsContent value="photos" className="flex-1 m-0 flex flex-col">
+            <TabsContent value="photos" className="flex-1 m-0 flex flex-col overflow-hidden">
               {/* Photo Gallery Header */}
-              <div className="px-6 py-4 border-b border-border bg-white">
+              <div className="px-6 py-4 border-b border-border bg-white flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium text-foreground">
@@ -1346,9 +1394,20 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                     </div>
                     
                     <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleShareSelected}
+                          disabled={bulkActionLoading}
+                          className="h-7 text-xs text-green-600 hover:text-green-700"
+                        >
+                          <Share2 className="h-3.5 w-3.5 mr-1" />
+                          Compartir
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={handleApprovePhotos}
                           disabled={bulkActionLoading}
                         className="h-7 text-xs"
@@ -1356,10 +1415,10 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
                         <Star className="h-3.5 w-3.5 mr-1" />
                           Aprobar
                         </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleDeleteSelectedPhotos}
                         disabled={bulkActionLoading}
                         className="h-7 text-xs text-red-600 hover:text-red-700"
@@ -1383,8 +1442,8 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               </div>
               
               {/* Photo Grid Area */}
-              <div 
-                className="flex-1 p-6 overflow-y-auto bg-muted"
+              <div
+                className="flex-1 p-6 overflow-y-auto bg-muted min-h-0"
                 onDragOver={(e) => {
                   if (e.dataTransfer?.types?.includes('Files')) {
                     e.preventDefault();

@@ -205,6 +205,8 @@ export async function GET(
           }
         } else if (storeData.folder_id) {
           // Si no hay photo_ids específicos, buscar por folder_id
+          console.log('🔍 Filtering by folder_id:', storeData.folder_id);
+
           const assetsResult = await supabase
             .from('assets')
             .select('*', { count: 'exact' })
@@ -218,6 +220,8 @@ export async function GET(
             count = assetsResult.count || assetsResult.data.length;
           } else {
             // Fallback a photos si assets está vacío
+            console.log('📸 Fallback to photos table, filtering by folder_id:', storeData.folder_id);
+
             const photosResult = await supabase
               .from('photos')
               .select('*', { count: 'exact' })
@@ -226,6 +230,7 @@ export async function GET(
               .range(offset, offset + limit - 1);
 
             if (photosResult.data) {
+              console.log(`📸 Found ${photosResult.data.length} photos in folder ${storeData.folder_id}`);
               assetsData = photosResult.data;
               count = photosResult.count || photosResult.data.length;
             }
