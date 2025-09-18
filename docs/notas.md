@@ -1,17 +1,33 @@
-# Notas de trabajo
+1- el boton que esta aca:
 
-## Errores corregidos
-- ✅ La pantalla de `Configuración de Tienda` ya guarda sin el error 500. Se agregó un fallback para que la API use la sesión del administrador cuando falta `SUPABASE_SERVICE_ROLE_KEY`, así que no hace falta tocar variables locales para seguir editando.
 
-## Novedades relevantes
-- 🎨 Se sumaron estilos prearmados para la tienda pública. Podés sumarlos al link compartido con `?theme=` (`default`, `kids`, `teen`, `elegant`).
-- 🪄 Desde el modal de compartir ahora se elige el estilo antes de copiar el link. El enlace y el QR se actualizan automáticamente con el estilo seleccionado.
-- En la vista pública (`/store-unified/[token]`) la tienda aplica automáticamente el estilo según el parámetro del link.
+<div class="group flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-all hover:bg-muted bg-blue-50 border border-blue-200" style="padding-left: 24px;"><div class="w-5"></div><div class="flex-1 flex items-center gap-2 min-w-0"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"></path></svg><div class="flex-1 min-w-0"><div class="flex items-center gap-2"><span class="text-sm font-medium truncate text-blue-900">Abejitas TT 8</span><div class="inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors border-transparent bg-muted text-foreground hover:bg-muted dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 text-xs">1</div></div></div></div><div class="opacity-0 group-hover:opacity-100 transition-opacity"><div class="flex items-center gap-1"><button class="inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-out relative overflow-hidden group transform-gpu will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none touch-target text-center leading-tight tracking-normal active:scale-[0.98] active:transition-transform active:duration-75 bg-transparent text-neutral-800 dark:text-neutral-200 border border-transparent hover:bg-neutral-100/70 hover:text-neutral-900 active:bg-neutral-200 focus-visible:ring-neutral-500 px-3 py-2 text-sm rounded-md gap-1.5 min-h-[40px] h-6 w-6 p-0 text-gray-500 hover:text-blue-600" title="Ver carpeta"><span class="min-w-0 flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye h-3 w-3" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg></span></button><button class="inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-out relative overflow-hidden group transform-gpu will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none touch-target text-center leading-tight tracking-normal active:scale-[0.98] active:transition-transform active:duration-75 bg-transparent text-neutral-800 dark:text-neutral-200 border border-transparent hover:bg-neutral-100/70 hover:text-neutral-900 active:bg-neutral-200 focus-visible:ring-neutral-500 px-3 py-2 text-sm rounded-md gap-1.5 min-h-[40px] h-6 w-6 p-0 text-gray-500 hover:text-green-600" title="Compartir"><span class="min-w-0 flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-share2 lucide-share-2 h-3 w-3" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg></span></button><button class="inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-out relative overflow-hidden group transform-gpu will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none touch-target text-center leading-tight tracking-normal active:scale-[0.98] active:transition-transform active:duration-75 bg-transparent text-neutral-800 dark:text-neutral-200 border border-transparent hover:bg-neutral-100/70 hover:text-neutral-900 active:bg-neutral-200 focus-visible:ring-neutral-500 px-3 py-2 text-sm rounded-md gap-1.5 min-h-[40px] h-6 w-6 p-0 text-gray-500 hover:text-indigo-600" title="Crear subcarpeta"><span class="min-w-0 flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus h-3 w-3" aria-hidden="true"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></span></button><div class="relative inline-block"><button class="inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-out relative overflow-hidden group transform-gpu will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none touch-target text-center leading-tight tracking-normal active:scale-[0.98] active:transition-transform active:duration-75 bg-transparent text-neutral-800 dark:text-neutral-200 border border-transparent hover:bg-neutral-100/70 hover:text-neutral-900 active:bg-neutral-200 focus-visible:ring-neutral-500 px-3 py-2 text-sm rounded-md gap-1.5 min-h-[40px] h-6 w-6 p-0 text-gray-500 hover:text-foreground" aria-expanded="false" aria-haspopup="true"><span class="min-w-0 flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis-vertical h-3 w-3" aria-hidden="true"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg></span></button></div></div></div></div>
 
-## Cómo usar
-1. Generá o abrí el modal de compartir en `Fotos > Compartir`.
-2. Elegí "Infantil", "Joven" o "Elegante" según el público. Copiá o compartí el enlace actualizado.
-3. El link queda, por ejemplo: `https://…/store-unified/<token>?theme=kids`.
+----
 
----
-Pendiente: validar con datos reales que cada preset tenga los colores finales deseados.
+No es un boton, sino que esta en la "estructura de carpteas" y es donde te muestra el nombre de la carpeta, un menu de ... , compartir , ver y +. Al tener tantas cosas,on se lee el nombbre.
+debemos hacer qeu selea el nombre. pone todos los botones en el menu "..." y ya
+
+---------
+
+2-Estoy en https://lookescolar-git-production-january-2025-baloskys-projects.vercel.app/admin/events/c1b522cf-f586-4024-ac96-fc18aa171c2b/library
+
+subi 20 fotos, no puedo scrollear totalmente hasta abajo.
+
+-----
+
+3---- elegi 2 fotos, en https://lookescolar-git-production-january-2025-baloskys-projects.vercel.app/store-unified/477cd2b8311e7e668d7c8a14e7d4b4eb5efb645d7b1119bde3486ea162840503
+
+puse "compartir" , me creo este link https://lookescolar-git-production-january-2025-baloskys-projects.vercel.app/store-unified/6a9fd74d80ce4420ab675b15e6e6a1c5e916dc22b365f29b080abe02b2b85bb0
+
+
+entro y dice 
+
+"galeria no disponible".
+
+Hay que linkear bien las cosas para que cada boton comparta a la tienda de las fotos que elegimos y ya.
+
+
+-----
+
+

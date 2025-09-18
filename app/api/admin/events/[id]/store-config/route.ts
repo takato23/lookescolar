@@ -34,30 +34,30 @@ export async function GET(
     const eventId = (await params).id;
     const supabase = await createServerSupabaseServiceClient();
 
-    // Buscar configuración específica del evento
-    const { data: eventConfig, error: eventError } = await supabase
-      .from('store_settings')
-      .select('*')
+    // Buscar carpetas del evento que tengan configuración de tienda
+    const { data: folders, error: foldersError } = await supabase
+      .from('folders')
+      .select('id, name, store_settings, is_published, share_token')
       .eq('event_id', eventId)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
 
-    if (eventError && eventError.code !== 'PGRST116') {
-      console.error('Error fetching event store config:', eventError);
+    if (foldersError) {
+      console.error('Error fetching event folders:', foldersError);
       return NextResponse.json({ error: 'Error fetching store config' }, { status: 500 });
     }
 
-    // Si no hay configuración específica, usar la global
-    let config = eventConfig;
-    if (!config) {
-      const { data: globalConfig } = await supabase
-        .from('store_settings')
-        .select('*')
-        .is('event_id', null)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      config = globalConfig;
+    // Buscar la primera carpeta con configuración o usar valores por defecto
+    let config = null;
+    if (folders && folders.length > 0) {
+      const folderWithSettings = folders.find(f => f.store_settings && Object.keys(f.store_settings).length > 0);
+      if (folderWithSettings) {
+        config = {
+          ...folderWithSettings.store_settings,
+          enabled: folderWithSettings.is_published || false,
+          folder_id: folderWithSettings.id,
+          share_token: folderWithSettings.share_token
+        };
+      }
     }
 
     return NextResponse.json({
@@ -103,97 +103,92 @@ export async function PATCH(
       return NextResponse.json({ error: 'Event not found' }, { status: 404 });
     }
 
-    // Convertir la estructura del StoreConfigPanel al formato de StoreSettings
-    const storeSettings = {
-      enabled: body.enabled || false,
-      template: 'pixieset',
-      currency: body.currency || 'ARS',
-      
-      // Convertir productos array a object con keys
-      products: body.products ? body.products.reduce((acc: any, product: any) => {
-        acc[product.id] = {
-          name: product.name,
-          description: product.description,
-          price: product.price,
-          enabled: product.enabled,
-          type: product.type === 'physical' ? 'package' : product.type,
-          features: product.options
-        };
-        return acc;
-      }, {}) : {},
+    // Obtener o crear una carpeta principal para el evento
+    const { data: folders } = await supabase
+      .from('folders')
+      .select('id, name, store_settings')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: true })
+      .limit(1);
 
-      payment_methods: {
-        mercadopago: {
-          enabled: body.payment_methods?.includes('mercadopago') || true,
-          name: 'MercadoPago',
-          description: 'Pago con MercadoPago'
+    let targetFolderId = body.folder_id;
+
+    // Si no hay carpeta especificada, usar la primera del evento o crear una
+    if (!targetFolderId) {
+      if (folders && folders.length > 0) {
+        targetFolderId = folders[0].id;
+      } else {
+        // Crear carpeta principal para el evento si no existe
+        const { data: newFolder, error: folderError } = await supabase
+          .from('folders')
+          .insert({
+            name: 'Galería Principal',
+            event_id: eventId,
+            parent_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (folderError) {
+          console.error('Error creating folder:', folderError);
+          return NextResponse.json({ error: 'Failed to create folder for store' }, { status: 500 });
         }
-      },
+        targetFolderId = newFolder.id;
+      }
+    }
 
-      colors: {
-        primary: '#d97706',
-        secondary: '#374151',
-        accent: '#f59e0b',
-        background: '#ffffff',
-        surface: '#f9fafb',
-        text: '#111827',
-        text_secondary: '#6b7280'
+    // Preparar la configuración de tienda para guardar en folders.store_settings
+    const storeSettings = {
+      allow_download: false,
+      watermark_enabled: true,
+      store_title: event.name || 'Evento Escolar',
+      store_description: 'Galería Fotográfica Escolar',
+      contact_info: {
+        email: 'info@ejemplo.com',
+        phone: '+54 11 1234-5678'
       },
-      
-      texts: {
-        hero_title: event.name || 'Evento Escolar',
-        hero_subtitle: 'Galería Fotográfica Escolar',
-        footer_text: 'BALOSKIER © 2025',
-        contact_email: 'info@ejemplo.com',
-        contact_phone: '+54 11 1234-5678',
-        terms_url: '',
-        privacy_url: ''
-      },
-
-      logo_url: '',
-      banner_url: '',
-      event_id: eventId,
-      updated_at: new Date().toISOString()
+      currency: body.currency || 'ARS',
+      products: body.products || [],
+      payment_methods: body.payment_methods || ['mercadopago'],
+      tax_rate: body.tax_rate || 0,
+      shipping_enabled: body.shipping_enabled || false,
+      shipping_price: body.shipping_price || 0
     };
 
-    // Buscar configuración existente del evento
-    const { data: existingConfig } = await supabase
-      .from('store_settings')
-      .select('id')
-      .eq('event_id', eventId)
-      .maybeSingle();
+    // Actualizar la carpeta con la configuración de tienda
+    const { data: updatedFolder, error: updateError } = await supabase
+      .from('folders')
+      .update({
+        store_settings: storeSettings,
+        is_published: body.enabled || false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', targetFolderId)
+      .select()
+      .single();
 
-    let result;
-    if (existingConfig) {
-      // Actualizar existente
-      const { data, error } = await supabase
-        .from('store_settings')
-        .update(storeSettings)
-        .eq('id', existingConfig.id)
-        .select()
-        .single();
+    if (updateError) {
+      console.error('Error updating folder store settings:', updateError);
+      return NextResponse.json({ error: 'Failed to update store settings' }, { status: 500 });
+    }
 
-      if (error) {
-        console.error('Error updating store settings:', error);
-        return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
+    // Si se habilitó la tienda y no tiene token, generar uno
+    let result = updatedFolder;
+    if (body.enabled && !updatedFolder.share_token) {
+      const { data: tokenResult } = await supabase.rpc('publish_store', {
+        p_folder_id: targetFolderId,
+        p_store_settings: storeSettings
+      });
+
+      if (tokenResult && tokenResult[0]) {
+        result = {
+          ...updatedFolder,
+          share_token: tokenResult[0].token,
+          store_url: tokenResult[0].store_url
+        };
       }
-      result = data;
-    } else {
-      // Crear nuevo
-      const { data, error } = await supabase
-        .from('store_settings')
-        .insert({
-          ...storeSettings,
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating store settings:', error);
-        return NextResponse.json({ error: 'Failed to create settings' }, { status: 500 });
-      }
-      result = data;
     }
 
     console.log('✅ Store settings saved for event:', eventId);
