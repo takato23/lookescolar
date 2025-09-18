@@ -151,7 +151,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
       {/* Priority Actions */}
       {nextActions.length > 0 && (
         <div className="mb-6 space-y-3">
-          <h4 className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+          <h4 className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm font-medium">
             <Star className="h-4 w-4" />
             Acciones Prioritarias
           </h4>
@@ -194,13 +194,13 @@ export const ActionHubPanel = memo(function ActionHubPanel({
                         </Badge>
                       </div>
 
-                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 line-clamp-2 text-xs">
                         {action.description}
                       </p>
 
                       <div className="mt-1 flex items-center gap-2">
-                        <Clock className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-xs">
+                        <Clock className="text-gray-500 dark:text-gray-400 h-3 w-3" />
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">
                           ~{action.estimatedTime} min
                         </span>
                         {action.automatable && (
@@ -211,7 +211,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
                       </div>
                     </div>
 
-                    <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                    <ChevronRight className="text-gray-500 dark:text-gray-400 h-4 w-4 flex-shrink-0" />
                   </div>
                 </Button>
               </MotionDiv>
@@ -222,7 +222,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
 
       {/* Quick Actions Grid */}
       <div className="space-y-3">
-        <h4 className="text-muted-foreground text-sm font-medium">
+        <h4 className="text-gray-500 dark:text-gray-400 text-sm font-medium">
           Acciones Rápidas
         </h4>
 
@@ -261,7 +261,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
               IA puede automatizar esta acción
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 text-xs">
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
             {nextActions.find((action) => action.aiSuggestion)?.aiSuggestion}
           </p>
         </MotionDiv>

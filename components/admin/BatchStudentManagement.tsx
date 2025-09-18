@@ -345,7 +345,7 @@ export default function BatchStudentManagement({
         <h3 className="text-lg font-semibold">
           Batch Student & Course Management
         </h3>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
           Manage courses and students for {eventName}
         </p>
       </div>
@@ -378,7 +378,7 @@ export default function BatchStudentManagement({
                         <AlertCircle className="h-4 w-4 text-red-500" />
                       )}
                       {operation.status === 'pending' && (
-                        <div className="h-4 w-4 rounded-full border-2 border-gray-300" />
+                        <div className="h-4 w-4 rounded-full border-2 border-border" />
                       )}
                     </div>
 
@@ -387,7 +387,7 @@ export default function BatchStudentManagement({
                         {operation.operation} {operation.type}
                       </span>
                       {operation.result && (
-                        <span className="text-muted-foreground ml-2">
+                        <span className="text-gray-500 dark:text-gray-400 ml-2">
                           ({operation.result.summary?.successful || 0}{' '}
                           successful, {operation.result.summary?.failed || 0}{' '}
                           failed)
@@ -451,7 +451,7 @@ export default function BatchStudentManagement({
                 </CardHeader>
                 <CardContent>
                   {newCourses.length === 0 ? (
-                    <div className="text-muted-foreground py-8 text-center">
+                    <div className="text-gray-500 dark:text-gray-400 py-8 text-center">
                       <GraduationCap className="mx-auto mb-4 h-12 w-12 opacity-50" />
                       <p>No courses added yet. Click "Add Course" to start.</p>
                     </div>
@@ -665,7 +665,7 @@ export default function BatchStudentManagement({
                 </CardHeader>
                 <CardContent>
                   {newStudents.length === 0 ? (
-                    <div className="text-muted-foreground py-8 text-center">
+                    <div className="text-gray-500 dark:text-gray-400 py-8 text-center">
                       <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
                       <p>
                         No students added yet. Click "Add Student" to start.

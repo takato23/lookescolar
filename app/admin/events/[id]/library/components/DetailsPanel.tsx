@@ -82,8 +82,8 @@ export function DetailsPanel({
     return (
       <div className="flex h-full flex-col">
         {/* Panel header */}
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-3">
-          <h3 className="text-sm font-medium text-gray-700">Detalles</h3>
+        <div className="flex items-center justify-between border-b border-border bg-muted p-3">
+          <h3 className="text-sm font-medium text-foreground">Detalles</h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -93,7 +93,7 @@ export function DetailsPanel({
         <div className="flex flex-1 items-center justify-center p-6">
           <div className="text-center">
             <Camera className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <div className="mb-2 text-sm font-medium text-gray-900">
+            <div className="mb-2 text-sm font-medium text-foreground">
               Selecciona una foto
             </div>
             <div className="text-xs text-gray-500">
@@ -110,8 +110,8 @@ export function DetailsPanel({
   return (
     <div className="flex h-full flex-col bg-white">
       {/* Panel header */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-3">
-        <h3 className="text-sm font-medium text-gray-700">
+      <div className="flex items-center justify-between border-b border-border bg-muted p-3">
+        <h3 className="text-sm font-medium text-foreground">
           Detalles de la foto
         </h3>
         <Button variant="ghost" size="sm" onClick={onClose}>
@@ -120,8 +120,8 @@ export function DetailsPanel({
       </div>
 
       {/* Photo preview */}
-      <div className="border-b border-gray-200">
-        <div className="relative aspect-square bg-gray-100">
+      <div className="border-b border-border">
+        <div className="relative aspect-square bg-muted">
           {selectedPhoto.signed_url && !imageError ? (
             <Image
               src={selectedPhoto.signed_url}
@@ -171,14 +171,14 @@ export function DetailsPanel({
         <div className="space-y-4 p-4">
           {/* File info */}
           <div>
-            <h4 className="mb-2 text-sm font-medium text-gray-900">
+            <h4 className="mb-2 text-sm font-medium text-foreground">
               Información del archivo
             </h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Nombre:</span>
+                <span className="text-gray-500 dark:text-gray-400">Nombre:</span>
                 <span
-                  className="ml-2 truncate font-mono text-xs text-gray-900"
+                  className="ml-2 truncate font-mono text-xs text-foreground"
                   title={selectedPhoto.original_filename}
                 >
                   {selectedPhoto.original_filename}
@@ -186,22 +186,22 @@ export function DetailsPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Dimensiones:</span>
-                <span className="text-gray-900">
+                <span className="text-gray-500 dark:text-gray-400">Dimensiones:</span>
+                <span className="text-foreground">
                   {selectedPhoto.width} × {selectedPhoto.height}
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Tamaño:</span>
-                <span className="text-gray-900">
+                <span className="text-gray-500 dark:text-gray-400">Tamaño:</span>
+                <span className="text-foreground">
                   {formatFileSize(selectedPhoto.file_size)}
                 </span>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Formato:</span>
-                <span className="text-gray-900">
+                <span className="text-gray-500 dark:text-gray-400">Formato:</span>
+                <span className="text-foreground">
                   {selectedPhoto.original_filename
                     .split('.')
                     .pop()
@@ -215,10 +215,10 @@ export function DetailsPanel({
 
           {/* Status info */}
           <div>
-            <h4 className="mb-2 text-sm font-medium text-gray-900">Estado</h4>
+            <h4 className="mb-2 text-sm font-medium text-foreground">Estado</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Procesamiento:</span>
+                <span className="text-gray-500 dark:text-gray-400">Procesamiento:</span>
                 <Badge
                   variant={
                     selectedPhoto.processing_status === 'completed'
@@ -234,7 +234,7 @@ export function DetailsPanel({
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Aprobación:</span>
+                <span className="text-gray-500 dark:text-gray-400">Aprobación:</span>
                 <Badge
                   variant={selectedPhoto.approved ? 'default' : 'secondary'}
                   className={cn(
@@ -254,22 +254,22 @@ export function DetailsPanel({
 
           {/* Timestamps */}
           <div>
-            <h4 className="mb-2 text-sm font-medium text-gray-900">Fechas</h4>
+            <h4 className="mb-2 text-sm font-medium text-foreground">Fechas</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-start justify-between">
-                <span className="flex items-center text-gray-600">
+                <span className="flex items-center text-gray-500 dark:text-gray-400">
                   <Calendar className="mr-1 h-3 w-3" />
                   Subida:
                 </span>
-                <span className="text-right text-xs text-gray-900">
+                <span className="text-right text-xs text-foreground">
                   {formatDate(selectedPhoto.created_at)}
                 </span>
               </div>
 
               {selectedPhoto.updated_at !== selectedPhoto.created_at && (
                 <div className="flex items-start justify-between">
-                  <span className="text-gray-600">Actualizada:</span>
-                  <span className="text-right text-xs text-gray-900">
+                  <span className="text-gray-500 dark:text-gray-400">Actualizada:</span>
+                  <span className="text-right text-xs text-foreground">
                     {formatDate(selectedPhoto.updated_at)}
                   </span>
                 </div>
@@ -283,17 +283,17 @@ export function DetailsPanel({
               <>
                 <Separator />
                 <div>
-                  <h4 className="mb-2 text-sm font-medium text-gray-900">
+                  <h4 className="mb-2 text-sm font-medium text-foreground">
                     Metadatos
                   </h4>
                   <div className="space-y-1 text-xs">
                     {Object.entries(selectedPhoto.metadata).map(
                       ([key, value]) => (
                         <div key={key} className="flex justify-between">
-                          <span className="capitalize text-gray-600">
+                          <span className="capitalize text-gray-500 dark:text-gray-400">
                             {key.replace(/_/g, ' ')}:
                           </span>
-                          <span className="ml-2 truncate text-gray-900">
+                          <span className="ml-2 truncate text-foreground">
                             {typeof value === 'object'
                               ? JSON.stringify(value)
                               : String(value)}
@@ -309,7 +309,7 @@ export function DetailsPanel({
       </div>
 
       {/* Action buttons */}
-      <div className="space-y-2 border-t border-gray-200 p-4">
+      <div className="space-y-2 border-t border-border p-4">
         {/* Primary actions */}
         <div className="grid grid-cols-2 gap-2">
           <Button

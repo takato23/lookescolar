@@ -273,7 +273,7 @@ export function StudentManagement({
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
-              <span className="ml-2 text-sm text-gray-600">Cargando estudiantes...</span>
+              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">Cargando estudiantes...</span>
             </div>
           ) : filteredStudents.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-8 text-gray-500">
@@ -285,14 +285,14 @@ export function StudentManagement({
           ) : (
             <div className="divide-y">
               {filteredStudents.map(student => (
-                <div key={student.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div key={student.id} className="p-4 hover:bg-muted transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-green-100 rounded-lg">
                         <FileUser className="h-4 w-4 text-green-600" />
                       </div>
                       <div>
-                        <div className="font-medium text-gray-900">{student.name}</div>
+                        <div className="font-medium text-foreground">{student.name}</div>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
                           {student.code && (
                             <div className="flex items-center gap-1">

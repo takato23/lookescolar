@@ -28,7 +28,7 @@ export function FeaturesSection() {
           <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
             ¿Por qué <span className="text-gradient">elegirnos?</span>
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
+          <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-3xl text-xl">
             Características diseñadas para fotógrafos escolares profesionales.
           </p>
         </div>
@@ -43,7 +43,7 @@ export function FeaturesSection() {
                 <feature.icon className="h-12 w-12 text-primary-500" />
               </div>
               <h3 className="mb-4 text-2xl font-bold">{feature.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                 {feature.description}
               </p>
             </Card>

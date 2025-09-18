@@ -65,11 +65,11 @@ const FloatingCartButton = styled(Fab)({
 const ContactSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   email: z.string().email('Email inválido'),
-  phone: z.string().min(8, 'Teléfono inválido').optional(),
-  street: z.string().min(5, 'La dirección debe tener al menos 5 caracteres'),
-  city: z.string().min(2, 'La ciudad es requerida'),
-  state: z.string().min(2, 'La provincia es requerida'),
-  zipCode: z.string().min(4, 'Código postal inválido'),
+  phone: z.string().min(6, 'Teléfono inválido'),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
 });
 
 interface EcommerceFlowProps {
@@ -151,10 +151,10 @@ export function EcommerceFlow({ token, onComplete }: EcommerceFlowProps) {
         name: contactInfo.name,
         email: contactInfo.email,
         phone: contactInfo.phone,
-        street: contactInfo.address.street,
-        city: contactInfo.address.city,
-        state: contactInfo.address.state,
-        zipCode: contactInfo.address.zipCode,
+        street: contactInfo.address.street || undefined,
+        city: contactInfo.address.city || undefined,
+        state: contactInfo.address.state || undefined,
+        zipCode: contactInfo.address.zipCode || undefined,
       });
       setContactErrors({});
       return true;

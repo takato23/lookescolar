@@ -161,7 +161,7 @@ const PhotoCard = memo<{
               <>
                 {!imageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <ImageIcon className="text-muted-foreground h-6 w-6" />
+                    <ImageIcon className="text-gray-500 dark:text-gray-400 h-6 w-6" />
                   </div>
                 )}
                 <img
@@ -203,7 +203,7 @@ const PhotoCard = memo<{
             </div>
 
             {showMetadata && (
-              <div className="text-muted-foreground flex items-center gap-4 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-xs">
                 <span>{formatFileSize(photo.file_size)}</span>
                 <span>{formatDate(photo.created_at)}</span>
                 {photo.width && photo.height && (
@@ -268,7 +268,7 @@ const PhotoCard = memo<{
             <>
               {!imageLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <ImageIcon className="text-muted-foreground h-8 w-8" />
+                  <ImageIcon className="text-gray-500 dark:text-gray-400 h-8 w-8" />
                 </div>
               )}
               <img
@@ -356,7 +356,7 @@ const PhotoCard = memo<{
             <h3 className="mb-1 truncate text-sm font-medium">
               {photo.original_filename}
             </h3>
-            <div className="text-muted-foreground flex items-center justify-between text-xs">
+            <div className="text-gray-500 dark:text-gray-400 flex items-center justify-between text-xs">
               <span>{formatFileSize(photo.file_size)}</span>
               <span>{formatDate(photo.created_at)}</span>
             </div>

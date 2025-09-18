@@ -326,7 +326,7 @@ export function AdvancedSearch({
               size="sm"
               variant="ghost"
               onClick={clearSearch}
-              className="h-6 w-6 p-0 hover:bg-gray-200/70"
+              className="h-6 w-6 p-0 hover:bg-muted/70"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -336,7 +336,7 @@ export function AdvancedSearch({
             size="sm"
             variant="ghost"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="h-6 w-6 p-0 hover:bg-gray-200/70"
+            className="h-6 w-6 p-0 hover:bg-muted/70"
           >
             <Filter className="h-3 w-3" />
           </Button>
@@ -357,7 +357,7 @@ export function AdvancedSearch({
             <div className="border-b border-gray-100 p-3">
               <div className="mb-2 flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Búsquedas recientes
                 </span>
               </div>
@@ -370,7 +370,7 @@ export function AdvancedSearch({
                       onSearch(search);
                       setShowSuggestions(false);
                     }}
-                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100/70"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted/70"
                   >
                     {search}
                   </button>
@@ -401,7 +401,7 @@ export function AdvancedSearch({
                         'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200',
                         selectedIndex === index
                           ? 'bg-blue-100/70 text-blue-800'
-                          : 'text-gray-700 hover:bg-gray-100/70'
+                          : 'text-foreground hover:bg-muted/70'
                       )}
                     >
                       <div
@@ -409,7 +409,7 @@ export function AdvancedSearch({
                           'rounded-lg p-1.5',
                           selectedIndex === index
                             ? 'bg-blue-200/70'
-                            : 'bg-gray-100/70'
+                            : 'bg-muted/70'
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -421,7 +421,7 @@ export function AdvancedSearch({
                             {suggestion.label}
                           </span>
                           {suggestion.count !== undefined && (
-                            <span className="ml-2 rounded-full bg-gray-200/70 px-2 py-0.5 text-xs text-gray-500">
+                            <span className="ml-2 rounded-full bg-muted/70 px-2 py-0.5 text-xs text-gray-500">
                               {suggestion.count}
                             </span>
                           )}
@@ -458,7 +458,7 @@ export function AdvancedSearch({
       {showAdvanced && (
         <div className="neural-glass-card absolute left-0 right-0 top-full z-40 mt-2 rounded-xl border border-white/20 bg-white/95 p-4 shadow-lg backdrop-blur-md">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-800">
+            <h3 className="text-sm font-semibold text-foreground">
               Filtros avanzados
             </h3>
             <Button

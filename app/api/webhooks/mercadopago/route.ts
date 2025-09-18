@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
+import { logger, generateRequestId } from '@/lib/utils/logger';
 
 /**
  * MercadoPago Webhook Handler
@@ -157,21 +158,30 @@ interface MercadoPagoPayment {
 }
 
 export async function POST(request: NextRequest) {
+  const requestId = generateRequestId();
+  const log = logger.child({ requestId });
+  
   try {
-    const requestId = crypto.randomUUID();
-    console.log('🔔 [WEBHOOK] Notificación recibida de MercadoPago', { requestId });
+    log.info('webhook_notification_received', { 
+      source: 'mercadopago',
+      path: '/api/webhooks/mercadopago' 
+    });
 
     const body = await request.json();
-    console.log('📋 [WEBHOOK] Datos recibidos:', JSON.stringify(body, null, 2));
+    log.debug('webhook_payload_received', { 
+      type: body.type,
+      action: body.action,
+      dataId: body.data?.id 
+    });
 
     // Verificar que sea una notificación válida
     if (!body.data || !body.data.id) {
-      console.log('❌ [WEBHOOK] Datos inválidos');
+      log.warn('webhook_invalid_data', { body });
       return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     }
 
     const paymentId = body.data.id;
-    console.log('💰 [WEBHOOK] Procesando pago:', paymentId);
+    log.info('payment_processing_started', { paymentId });
 
     // Obtener detalles del pago desde MercadoPago
     const response = await fetch(
@@ -184,7 +194,10 @@ export async function POST(request: NextRequest) {
     );
 
     if (!response.ok) {
-      console.error('❌ [WEBHOOK] Error obteniendo detalles del pago');
+      log.error('payment_details_fetch_failed', { 
+        paymentId,
+        statusCode: response.status 
+      });
       return NextResponse.json(
         { error: 'Error obteniendo detalles' },
         { status: 500 }
@@ -192,53 +205,88 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = await response.json();
-    const maskedToken = payment?.metadata?.token
-      ? String(payment.metadata.token).slice(0, 8) + '...'
-      : 'n/a';
-    console.log(
-      '📊 [WEBHOOK] Detalles del pago:',
-      JSON.stringify(
-        {
-          id: payment?.id,
-          status: payment?.status,
-          external_reference: payment?.external_reference,
-          metadata: { ...payment?.metadata, token: maskedToken },
-        },
-        null,
-        2
-      ),
-      { requestId }
-    );
+    log.info('payment_details_retrieved', {
+      paymentId: payment?.id,
+      status: payment?.status,
+      external_reference: payment?.external_reference,
+      token: payment?.metadata?.token,
+      amount: payment?.transaction_amount
+    });
 
-    // Actualizar orden en la base de datos
+    // Actualizar orden en la base de datos (unified_orders preferido; fallback a orders)
     const supabase = await createServerSupabaseServiceClient();
 
-    // Buscar por external_reference (que es el order.id)
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        status: payment.status === 'approved' ? 'paid' : 'pending',
-        mp_payment_id: payment.id,
-        mp_status: payment.status,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', payment.external_reference);
+    const externalRef = payment.external_reference || payment?.metadata?.order_id;
+    const isApproved = payment.status === 'approved';
 
-    if (updateError) {
-      console.error('❌ [WEBHOOK] Error actualizando orden:', updateError);
-      return NextResponse.json(
-        { error: 'Error actualizando orden' },
-        { status: 500 }
-      );
+    // Try unified_orders first
+    let updatedUnified = false;
+    if (externalRef) {
+      const { error: uniErr } = await supabase
+        .from('unified_orders')
+        .update({
+          status: isApproved ? 'paid' : 'pending_payment',
+          mercadopago_payment_id: String(payment.id),
+          mercadopago_status: payment.status,
+          payment_method: payment.payment_method_id || payment.payment_type_id || null,
+          payment_details: payment,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', externalRef);
+
+      if (!uniErr) {
+        updatedUnified = true;
+        log.info('order_updated', { 
+          orderId: externalRef,
+          table: 'unified_orders',
+          status: isApproved ? 'paid' : 'pending_payment' 
+        });
+      } else {
+        log.warn('unified_orders_update_failed', { 
+          orderId: externalRef,
+          error: uniErr 
+        });
+      }
     }
 
-    console.log('✅ [WEBHOOK] Orden actualizada correctamente', { requestId });
+    // Fallback to legacy orders table if unified not updated
+    if (!updatedUnified && externalRef) {
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          status: isApproved ? 'paid' : 'pending',
+          mp_payment_id: payment.id,
+          mp_status: payment.status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', externalRef);
+
+      if (updateError) {
+        log.error('order_update_failed', { 
+          orderId: externalRef,
+          table: 'orders',
+          error: updateError 
+        });
+        return NextResponse.json(
+          { error: 'Error actualizando orden' },
+          { status: 500 }
+        );
+      }
+      log.info('order_updated', { 
+        orderId: externalRef,
+        table: 'orders',
+        status: isApproved ? 'paid' : 'pending' 
+      });
+    }
 
     const resp = NextResponse.json({ success: true });
     resp.headers.set('X-Request-ID', requestId);
     return resp;
   } catch (error) {
-    console.error('❌ [WEBHOOK] Error general:', error);
+    log.logError(error as Error, { 
+      operation: 'webhook_processing',
+      path: '/api/webhooks/mercadopago' 
+    });
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }

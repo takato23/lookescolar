@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Subject } from '@/lib/services/family.service';
 import { VirtualPhotoGrid } from '@/components/ui/virtual-photo-grid';

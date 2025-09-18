@@ -143,16 +143,16 @@ export class AdminErrorBoundary extends Component<Props, State> {
         this.props.showErrorDetails ?? process.env.NODE_ENV === 'development';
 
       return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="flex min-h-screen items-center justify-center bg-muted p-4">
           <Card className="w-full max-w-2xl">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="h-8 w-8 text-red-600" />
               </div>
-              <CardTitle className="text-xl font-bold text-gray-900">
+              <CardTitle className="text-xl font-bold text-foreground">
                 Something went wrong
               </CardTitle>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-gray-500 dark:text-gray-400">
                 We encountered an unexpected error in the application. This has
                 been reported to our team.
               </p>
@@ -160,11 +160,11 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
             <CardContent className="space-y-6">
               {/* Error ID for support */}
-              <div className="rounded-lg border bg-gray-50 p-4">
-                <h4 className="mb-2 font-medium text-gray-900">
+              <div className="rounded-lg border bg-muted p-4">
+                <h4 className="mb-2 font-medium text-foreground">
                   Error Reference
                 </h4>
-                <p className="rounded border bg-white px-3 py-2 font-mono text-sm text-gray-600">
+                <p className="rounded border bg-white px-3 py-2 font-mono text-sm text-gray-500 dark:text-gray-400">
                   {errorId}
                 </p>
                 <p className="mt-2 text-xs text-gray-500">
@@ -245,11 +245,11 @@ export class AdminErrorBoundary extends Component<Props, State> {
               </div>
 
               {/* Tips for users */}
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
                 <h4 className="mb-2 font-medium text-blue-900">
                   What you can try:
                 </h4>
-                <ul className="space-y-1 text-sm text-blue-800">
+                <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
                   <li>• Refresh the page to reload the component</li>
                   <li>• Clear your browser cache and try again</li>
                   <li>• Contact support if the problem persists</li>

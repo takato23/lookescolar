@@ -276,13 +276,13 @@ export default function VirtualizedPhotoGrid({
             'h-full cursor-pointer overflow-hidden border-2 transition-all hover:shadow-lg',
             isSelected
               ? 'border-blue-500 ring-2 ring-blue-200'
-              : 'border-transparent hover:border-gray-300'
+              : 'border-transparent hover:border-border'
           )}
           onClick={() => onPhotoSelect?.(photo)}
         >
           <CardContent className="flex h-full flex-col p-0">
             {/* Image container */}
-            <div className="relative flex-1 bg-gray-100">
+            <div className="relative flex-1 bg-muted">
               {!imageLoaded && !imageError && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -290,7 +290,7 @@ export default function VirtualizedPhotoGrid({
               )}
 
               {imageError ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="absolute inset-0 flex items-center justify-center bg-muted">
                   <ImageIcon className="h-8 w-8 text-gray-400" />
                 </div>
               ) : (
@@ -383,18 +383,18 @@ export default function VirtualizedPhotoGrid({
                 <span className="flex-1 truncate text-xs font-medium">
                   {photo.filename}
                 </span>
-                <span className="text-muted-foreground ml-1 text-xs">
+                <span className="text-gray-500 dark:text-gray-400 ml-1 text-xs">
                   {(photo.fileSize / 1024 / 1024).toFixed(1)}MB
                 </span>
               </div>
 
               {photo.studentNames.length > 0 && (
-                <div className="text-muted-foreground truncate text-xs">
+                <div className="text-gray-500 dark:text-gray-400 truncate text-xs">
                   {photo.studentNames.join(', ')}
                 </div>
               )}
 
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 {new Date(photo.uploadDate).toLocaleDateString('es-AR')}
               </div>
             </div>
@@ -422,7 +422,7 @@ export default function VirtualizedPhotoGrid({
       if (!photo) {
         return (
           <div style={style}>
-            <div className="m-1 h-full animate-pulse rounded bg-gray-100" />
+            <div className="m-1 h-full animate-pulse rounded bg-muted" />
           </div>
         );
       }
@@ -463,11 +463,11 @@ export default function VirtualizedPhotoGrid({
     <div className="space-y-4">
       {/* Toolbar */}
       {(enableSelection || enableBulkActions) && (
-        <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+        <div className="flex items-center justify-between rounded-lg bg-muted p-3">
           <div className="flex items-center gap-3">
             {enableSelection && (
               <>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {selectedPhotos.size} de {photos.length} seleccionadas
                 </span>
                 {selectedPhotos.size > 0 ? (
@@ -511,7 +511,7 @@ export default function VirtualizedPhotoGrid({
       )}
 
       {/* Stats */}
-      <div className="text-muted-foreground flex items-center justify-between text-sm">
+      <div className="text-gray-500 dark:text-gray-400 flex items-center justify-between text-sm">
         <span>
           {photos.length} fotos cargadas {hasMore && '(cargando más...)'}
         </span>
@@ -572,8 +572,8 @@ export default function VirtualizedPhotoGrid({
         ) : !loading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <ImageIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <p className="text-muted-foreground">No hay fotos disponibles</p>
+              <ImageIcon className="text-gray-500 dark:text-gray-400 mx-auto mb-4 h-12 w-12" />
+              <p className="text-gray-500 dark:text-gray-400">No hay fotos disponibles</p>
             </div>
           </div>
         ) : null}

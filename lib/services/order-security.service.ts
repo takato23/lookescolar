@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { z } from 'zod';

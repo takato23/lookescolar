@@ -274,7 +274,7 @@ export function PerformanceMonitorEnhanced() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Monitor de Rendimiento</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Métricas en tiempo real del sistema LookEscolar
           </p>
         </div>
@@ -288,7 +288,7 @@ export function PerformanceMonitorEnhanced() {
 
       {/* Last updated */}
       {lastUpdated && (
-        <div className="text-muted-foreground text-sm">
+        <div className="text-gray-500 dark:text-gray-400 text-sm">
           Última actualización: {lastUpdated.toLocaleTimeString('es-AR')}
         </div>
       )}
@@ -338,7 +338,7 @@ export function PerformanceMonitorEnhanced() {
                     )}
                     className="mt-2"
                   />
-                  <div className="text-muted-foreground mt-1 flex justify-between text-xs">
+                  <div className="text-gray-500 dark:text-gray-400 mt-1 flex justify-between text-xs">
                     <span>
                       Bueno: &lt;
                       {formatValue(metric.threshold.good, metric.unit)}
@@ -370,7 +370,7 @@ export function PerformanceMonitorEnhanced() {
                         .length
                     }
                   </div>
-                  <div className="text-muted-foreground text-sm">Buenas</div>
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">Buenas</div>
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold text-yellow-500">
@@ -380,7 +380,7 @@ export function PerformanceMonitorEnhanced() {
                       ).length
                     }
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">
                     Mejorables
                   </div>
                 </div>
@@ -391,7 +391,7 @@ export function PerformanceMonitorEnhanced() {
                         .length
                     }
                   </div>
-                  <div className="text-muted-foreground text-sm">Pobres</div>
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">Pobres</div>
                 </div>
               </div>
             </CardContent>
@@ -407,7 +407,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Tiempo de Query
                   </CardTitle>
-                  <Clock className="text-muted-foreground h-4 w-4" />
+                  <Clock className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -428,7 +428,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Conexiones Activas
                   </CardTitle>
-                  <Activity className="text-muted-foreground h-4 w-4" />
+                  <Activity className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -446,7 +446,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Cache Hit Ratio
                   </CardTitle>
-                  <Zap className="text-muted-foreground h-4 w-4" />
+                  <Zap className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -467,7 +467,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Queries Lentas
                   </CardTitle>
-                  <AlertTriangle className="text-muted-foreground h-4 w-4" />
+                  <AlertTriangle className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -495,7 +495,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Uso de CPU
                   </CardTitle>
-                  <Activity className="text-muted-foreground h-4 w-4" />
+                  <Activity className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -510,7 +510,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Uso de Memoria
                   </CardTitle>
-                  <Database className="text-muted-foreground h-4 w-4" />
+                  <Database className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -528,7 +528,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Tiempo de Respuesta
                   </CardTitle>
-                  <Clock className="text-muted-foreground h-4 w-4" />
+                  <Clock className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -549,7 +549,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Conexiones Activas
                   </CardTitle>
-                  <Activity className="text-muted-foreground h-4 w-4" />
+                  <Activity className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -563,7 +563,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Tasa de Error
                   </CardTitle>
-                  <AlertTriangle className="text-muted-foreground h-4 w-4" />
+                  <AlertTriangle className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -591,7 +591,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Tamaño Total
                   </CardTitle>
-                  <Download className="text-muted-foreground h-4 w-4" />
+                  <Download className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -616,7 +616,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     JavaScript
                   </CardTitle>
-                  <Activity className="text-muted-foreground h-4 w-4" />
+                  <Activity className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -634,7 +634,7 @@ export function PerformanceMonitorEnhanced() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">CSS</CardTitle>
-                  <Activity className="text-muted-foreground h-4 w-4" />
+                  <Activity className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -654,7 +654,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Imágenes
                   </CardTitle>
-                  <Activity className="text-muted-foreground h-4 w-4" />
+                  <Activity className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -674,7 +674,7 @@ export function PerformanceMonitorEnhanced() {
                   <CardTitle className="text-sm font-medium">
                     Tiempo de Carga
                   </CardTitle>
-                  <Clock className="text-muted-foreground h-4 w-4" />
+                  <Clock className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">

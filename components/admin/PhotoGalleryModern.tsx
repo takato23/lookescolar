@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   useState,
   useRef,
@@ -213,7 +215,7 @@ const PhotoCard: React.FC<{
 
         {/* Loading State */}
         {imageLoadState === 'loading' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-purple-600"></div>
           </div>
         )}
@@ -221,7 +223,7 @@ const PhotoCard: React.FC<{
         {/* Error State */}
         {imageLoadState === 'error' ||
           (!imageSrc && (
-            <div className="bg-muted text-muted-foreground absolute inset-0 flex flex-col items-center justify-center">
+            <div className="bg-muted text-gray-500 dark:text-gray-400 absolute inset-0 flex flex-col items-center justify-center">
               <ImageIcon className="mb-2 h-8 w-8" />
               <span className="px-2 text-center text-xs">Sin preview</span>
             </div>
@@ -241,7 +243,7 @@ const PhotoCard: React.FC<{
           'flex items-center gap-4 rounded-lg border p-3 transition-all duration-200',
           isSelected
             ? 'border-purple-500 bg-purple-50'
-            : 'bg-white hover:bg-gray-50',
+            : 'bg-white hover:bg-muted',
           photo.approved ? 'border-l-4 border-l-green-500' : ''
         )}
       >
@@ -343,7 +345,7 @@ const PhotoCard: React.FC<{
         handleDragEnd?.();
       }}
       className={cn(
-        'bg-card text-card-foreground group relative cursor-pointer overflow-hidden rounded-xl border transition-all duration-200 hover:shadow-lg',
+        'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 group relative cursor-pointer overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg',
         'mobile:rounded-lg mobile:border-2', // Simpler styling on mobile
         isSelected
           ? 'ring-primary border-primary shadow-lg ring-2'
@@ -353,7 +355,7 @@ const PhotoCard: React.FC<{
       )}
       onClick={onOpenPreview}
     >
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-square bg-muted">
         <OptimizedImage className="h-full w-full" />
         <div className="absolute inset-0 bg-black/0 transition-all duration-200 group-hover:bg-black/20" />
         {/* 3-dot menu */}
@@ -522,7 +524,7 @@ const PhotoCard: React.FC<{
       </div>
 
       {/* Photo info */}
-      <div className="text-muted-foreground truncate p-2 text-xs">
+      <div className="text-gray-500 dark:text-gray-400 truncate p-2 text-xs">
         <h3 className="truncate text-sm font-medium">
           {photo.original_filename}
         </h3>
@@ -1434,7 +1436,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                   variant="secondary"
                   size="xs"
                   onClick={handleToggleSessionMode}
-                  className="bg-orange-100 text-orange-700 hover:bg-orange-200"
+                  className="bg-primary-50 text-primary-700 hover:bg-primary-100"
                 >
                   <UserIcon className="mr-2 h-4 w-4" />
                   Modo Sesión
@@ -1559,7 +1561,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
               <Button
                 variant="outline"
                 size="xs"
-                className="h-8 border-gray-300 bg-white text-xs hover:bg-gray-50"
+                className="h-8 border-border bg-white text-xs hover:bg-muted"
                 onClick={handleToggleSessionMode}
               >
                 <UserIcon className="mr-1 h-3 w-3" />
@@ -1636,8 +1638,8 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           </div>
 
           {currentStudent && selectedPhotos.length === 0 && (
-            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <p className="flex items-center gap-2 text-sm text-blue-800">
+            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3">
+              <p className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-200">
                 <ImageIcon className="h-4 w-4" />
                 Selecciona las fotos que deseas asignar a{' '}
                 <strong>{currentStudent.name}</strong>
@@ -1659,7 +1661,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={cn(
-                  'border-gray-300 pl-9 focus:border-blue-500 focus:ring-blue-500',
+                  'border-border pl-9 focus:border-blue-500 focus:ring-blue-500',
                   compact ? 'h-8 text-sm' : 'h-10'
                 )}
               />
@@ -1667,7 +1669,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           </div>
 
           {/* Vista toggle */}
-          <div className="flex items-center rounded-lg border border-gray-300 bg-white p-1">
+          <div className="flex items-center rounded-lg border border-border bg-white p-1">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="xs"
@@ -1676,7 +1678,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 'h-7 rounded-r-none',
                 viewMode === 'grid'
                   ? 'bg-blue-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-muted-foreground hover:bg-muted'
               )}
               aria-label="Vista en grilla"
             >
@@ -1690,7 +1692,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 '-ml-px h-7 rounded-l-none',
                 viewMode === 'list'
                   ? 'bg-blue-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-muted-foreground hover:bg-muted'
               )}
               aria-label="Vista en lista"
             >
@@ -1702,8 +1704,8 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         {/* Filtros y acciones */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Filtros:</span>
-            <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
+            <span className="text-sm font-medium text-foreground">Filtros:</span>
+            <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
               <Button
                 variant={filterStatus === 'all' ? 'default' : 'ghost'}
                 size="xs"
@@ -1711,7 +1713,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                   'h-7 font-medium',
                   filterStatus === 'all'
                     ? 'bg-gray-800 text-white'
-                    : 'text-gray-600 hover:bg-gray-200'
+                    : 'text-muted-foreground hover:bg-muted'
                 )}
                 onClick={() => setFilterStatus('all')}
               >
@@ -1724,7 +1726,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                   'h-7 font-medium',
                   filterStatus === 'approved'
                     ? 'bg-green-600 text-white'
-                    : 'text-gray-600 hover:bg-green-100'
+                    : 'text-muted-foreground hover:bg-green-100'
                 )}
                 onClick={() => setFilterStatus('approved')}
               >
@@ -1736,8 +1738,8 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 className={cn(
                   'h-7 font-medium',
                   filterStatus === 'pending'
-                    ? 'bg-orange-600 text-white'
-                    : 'text-gray-600 hover:bg-orange-100'
+                    ? 'bg-primary-600 text-white'
+                    : 'text-muted-foreground hover:bg-primary-50'
                 )}
                 onClick={() => setFilterStatus('pending')}
               >
@@ -1750,7 +1752,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                   'h-7 font-medium',
                   filterStatus === 'tagged'
                     ? 'bg-purple-600 text-white'
-                    : 'text-gray-600 hover:bg-purple-100'
+                    : 'text-muted-foreground hover:bg-purple-100'
                 )}
                 onClick={() => setFilterStatus('tagged')}
               >
@@ -1762,7 +1764,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
           {/* Selección masiva */}
           {filteredPhotos.length > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {selectedPhotos.length > 0 &&
                   `${selectedPhotos.length} seleccionadas`}
               </span>
@@ -1770,7 +1772,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 variant="outline"
                 size="xs"
                 onClick={handleSelectAll}
-                className="border-blue-200 bg-blue-50 font-medium text-blue-700 hover:bg-blue-100"
+                className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 font-medium text-blue-700 hover:bg-blue-100"
               >
                 <CheckIcon className="mr-1 h-4 w-4" />
                 {selectedPhotos.length === filteredPhotos.length
@@ -1876,7 +1878,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 <div className="space-y-1">
                   <Button
                     variant={selectedEvent === null ? 'default' : 'ghost'}
-                    className="min-h-[28px] w-full justify-start py-1 text-xs font-medium text-gray-900"
+                    className="min-h-[28px] w-full justify-start py-1 text-xs font-medium text-foreground"
                     onClick={() => setSelectedEvent(null)}
                   >
                     <ImageIcon className="mr-2 h-4 w-4" />
@@ -1900,7 +1902,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                             selectedEvent === event.id ? 'default' : 'ghost'
                           }
                           className={cn(
-                            'min-h-[28px] w-full justify-start py-1 text-left text-xs font-medium text-gray-900 transition-all duration-200',
+                            'min-h-[28px] w-full justify-start py-1 text-left text-xs font-medium text-foreground transition-all duration-200',
                             isDragMode ? '' : ''
                           )}
                           onClick={() => setSelectedEvent(event.id)}
@@ -2053,7 +2055,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Etiquetadas:</span>
-                  <span className="font-medium text-blue-600">
+                  <span className="font-medium text-blue-600 dark:text-blue-400">
                     {photos.filter((p) => p.tagged).length}
                   </span>
                 </div>
@@ -2156,7 +2158,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
                   'cursor-default rounded-md border px-2 py-1 text-xs',
                   dropTargetCode === c.id && isDragMode
                     ? 'border-purple-500 bg-purple-100'
-                    : 'border-gray-200 bg-white'
+                    : 'border-border bg-white'
                 )}
                 onDragOver={(e) => handleDragOverCode(c.id, e)}
                 onDragLeave={handleDragLeave}

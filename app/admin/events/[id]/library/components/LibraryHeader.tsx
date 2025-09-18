@@ -117,7 +117,7 @@ export function LibraryHeader({
   }, [currentFolderId]);
 
   return (
-    <div className="border-b border-gray-200 bg-white px-6 py-4">
+    <div className="border-b border-border bg-white px-6 py-4">
       <div className="flex items-center justify-between">
         {/* Left side - Back button and breadcrumb */}
         <div className="flex min-w-0 flex-1 items-center gap-4">
@@ -134,7 +134,7 @@ export function LibraryHeader({
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Folder className="h-5 w-5 flex-shrink-0 text-gray-500" />
 
-            <div className="truncate text-lg font-semibold text-gray-900">
+            <div className="truncate text-lg font-semibold text-foreground">
               {event.school} - {event.name}
             </div>
 
@@ -143,7 +143,7 @@ export function LibraryHeader({
             {/* Breadcrumb */}
             <nav className="flex min-w-0 flex-1 items-center gap-1">
               {loading ? (
-                <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
               ) : (
                 breadcrumb.map((item, index) => (
                   <div
@@ -158,8 +158,8 @@ export function LibraryHeader({
                       onClick={() => onFolderNavigate(item.id)}
                       className={`truncate text-sm transition-colors hover:text-blue-600 ${
                         index === breadcrumb.length - 1
-                          ? 'font-medium text-gray-900'
-                          : 'text-gray-600 hover:underline'
+                          ? 'font-medium text-foreground'
+                          : 'text-muted-foreground hover:underline'
                       }`}
                       title={item.path}
                     >
@@ -183,7 +183,7 @@ export function LibraryHeader({
         <div className="flex flex-shrink-0 items-center gap-2">
           {/* Selection info */}
           {selectedItemsCount > 0 && (
-            <div className="rounded-full bg-blue-50 px-3 py-1 text-sm text-gray-600">
+            <div className="rounded-full bg-blue-50 px-3 py-1 text-sm text-gray-500 dark:text-gray-400">
               {selectedItemsCount} seleccionado
               {selectedItemsCount !== 1 ? 's' : ''}
             </div>
@@ -224,7 +224,7 @@ export function LibraryHeader({
             variant="outline"
             size="sm"
             onClick={onAssignPhotos}
-            className="flex-shrink-0 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+            className="flex-shrink-0 border-blue-200 bg-blue-50 dark:bg-blue-950/20 text-blue-700 hover:bg-blue-100"
           >
             <Users className="mr-2 h-4 w-4" />
             Asignar a estudiantes
@@ -252,7 +252,7 @@ export function LibraryHeader({
 
               <DropdownMenuItem
                 onClick={() => onFolderNavigate(null)}
-                className="text-gray-600"
+                className="text-gray-500 dark:text-gray-400"
               >
                 <Home className="mr-2 h-4 w-4" />
                 Ir a carpeta raíz

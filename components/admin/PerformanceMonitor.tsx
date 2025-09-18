@@ -260,7 +260,7 @@ export function PerformanceMonitor() {
       <Card>
         <CardContent className="p-8 text-center">
           <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"></div>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Cargando métricas del sistema...
           </p>
         </CardContent>
@@ -289,7 +289,7 @@ export function PerformanceMonitor() {
                     isMonitoring ? 'bg-green-500' : 'bg-gray-400'
                   )}
                 />
-                <span className="text-muted-foreground text-sm">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {isMonitoring ? 'Monitoreando' : 'Pausado'}
                 </span>
               </div>
@@ -357,16 +357,16 @@ export function PerformanceMonitor() {
                         <AlertTriangle className="h-4 w-4 text-yellow-600" />
                       )}
                       {alert.type === 'info' && (
-                        <CheckCircle className="h-4 w-4 text-blue-600" />
+                        <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       )}
                     </div>
 
                     <div className="flex-1">
                       <h4 className="text-sm font-medium">{alert.title}</h4>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
                         {alert.message}
                       </p>
-                      <p className="text-muted-foreground mt-1 text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
                         {alert.timestamp.toLocaleTimeString()}
                       </p>
                     </div>
@@ -392,7 +392,7 @@ export function PerformanceMonitor() {
           <CardContent className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-blue-600" />
+                <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <span className="font-medium">CPU</span>
               </div>
               {getStatusIcon(metrics.system.cpuUsage, {
@@ -414,7 +414,7 @@ export function PerformanceMonitor() {
                     {metrics.system.cpuUsage.toFixed(1)}%
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-gray-200">
+                <div className="h-2 w-full rounded-full bg-muted">
                   <div
                     className={cn(
                       'h-2 rounded-full transition-all duration-500',
@@ -431,7 +431,7 @@ export function PerformanceMonitor() {
                 </div>
               </div>
 
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 Load:{' '}
                 {metrics.system.loadAverage.map((l) => l.toFixed(2)).join(', ')}
               </div>
@@ -466,7 +466,7 @@ export function PerformanceMonitor() {
                     {metrics.system.memoryUsage.toFixed(1)}%
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-gray-200">
+                <div className="h-2 w-full rounded-full bg-muted">
                   <div
                     className={cn(
                       'h-2 rounded-full transition-all duration-500',
@@ -510,7 +510,7 @@ export function PerformanceMonitor() {
                     {storageUsagePercent.toFixed(1)}%
                   </span>
                 </div>
-                <div className="h-2 w-full rounded-full bg-gray-200">
+                <div className="h-2 w-full rounded-full bg-muted">
                   <div
                     className={cn(
                       'h-2 rounded-full transition-all duration-500',
@@ -525,7 +525,7 @@ export function PerformanceMonitor() {
                 </div>
               </div>
 
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 {formatBytes(metrics.storage.usedSize)} /{' '}
                 {formatBytes(metrics.storage.totalSize)}
               </div>
@@ -538,7 +538,7 @@ export function PerformanceMonitor() {
           <CardContent className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Network className="h-5 w-5 text-orange-600" />
+                <Network className="h-5 w-5 text-primary-600" />
                 <span className="font-medium">Red</span>
               </div>
               {getStatusIcon(metrics.network.latency, {
@@ -562,7 +562,7 @@ export function PerformanceMonitor() {
                 </div>
               </div>
 
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 <div className="flex items-center justify-between">
                   <span>Calidad:</span>
                   <span
@@ -603,7 +603,7 @@ export function PerformanceMonitor() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Tiempo de Respuesta
                 </div>
                 <div className="flex items-center gap-2">
@@ -626,7 +626,7 @@ export function PerformanceMonitor() {
               </div>
 
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Tasa de Errores
                 </div>
                 <div className="flex items-center gap-2">
@@ -649,7 +649,7 @@ export function PerformanceMonitor() {
               </div>
 
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Requests/min
                 </div>
                 <div className="text-foreground text-lg font-semibold">
@@ -658,7 +658,7 @@ export function PerformanceMonitor() {
               </div>
 
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Usuarios Activos
                 </div>
                 <div className="text-foreground text-lg font-semibold">
@@ -668,7 +668,7 @@ export function PerformanceMonitor() {
             </div>
 
             <div className="border-t pt-4">
-              <div className="text-muted-foreground mb-1 text-sm">
+              <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                 Uptime del Sistema
               </div>
               <div className="text-lg font-semibold text-green-600">
@@ -688,7 +688,7 @@ export function PerformanceMonitor() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Conexiones
                 </div>
                 <div className="text-foreground text-lg font-semibold">
@@ -697,7 +697,7 @@ export function PerformanceMonitor() {
               </div>
 
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Queries Activas
                 </div>
                 <div className="text-foreground text-lg font-semibold">
@@ -706,16 +706,16 @@ export function PerformanceMonitor() {
               </div>
 
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Tiempo de Query
                 </div>
-                <div className="text-lg font-semibold text-blue-600">
+                <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                   {metrics.database.queryTime.toFixed(0)}ms
                 </div>
               </div>
 
               <div>
-                <div className="text-muted-foreground mb-1 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Cache Hit Rate
                 </div>
                 <div className="text-lg font-semibold text-green-600">
@@ -725,12 +725,12 @@ export function PerformanceMonitor() {
             </div>
 
             <div className="border-t pt-4">
-              <div className="text-muted-foreground mb-2 text-sm">
+              <div className="text-gray-500 dark:text-gray-400 mb-2 text-sm">
                 Velocidades de Transfer
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <TrendingUp className="mr-1 inline h-4 w-4 text-blue-600" />
+                  <TrendingUp className="mr-1 inline h-4 w-4 text-blue-600 dark:text-blue-400" />
                   Upload: {metrics.storage.uploadSpeed.toFixed(1)} MB/s
                 </div>
                 <div>

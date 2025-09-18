@@ -43,7 +43,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
                 <h1 className="text-gradient text-2xl font-bold">
                   LookEscolar
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Galería por código
                 </p>
               </div>
@@ -55,7 +55,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
                 <div className="text-foreground text-sm font-semibold">
                   {eventInfo.name ?? 'Evento'}
                 </div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-gray-500 dark:text-gray-400 text-xs">
                   {eventInfo.school_name ?? 'Escuela'}
                   {eventInfo.date ? (
                     <>
@@ -92,7 +92,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
             </div>
             <div>
               <h1 className="text-gradient text-2xl font-bold">LookEscolar</h1>
-              <p className="text-muted-foreground text-sm">Portal de Familia</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Portal de Familia</p>
             </div>
           </div>
 
@@ -105,7 +105,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
               <div className="text-foreground text-sm font-semibold">
                 {subject.name}
               </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 {subject.event ? (
                   <>
                     {subject.event.school_name}

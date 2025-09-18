@@ -283,9 +283,9 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="max-w-md text-center">
           <div className="bg-muted rounded-lg p-6">
-            <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <ImageIcon className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-3" />
             <h3 className="text-xl font-medium mb-2">Galería no encontrada</h3>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               Es posible que el enlace haya expirado o sea inválido.
             </p>
           </div>
@@ -353,15 +353,15 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       <div className="p-2">
         <p className="text-xs font-medium truncate">{photo.filename}</p>
         <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
             {new Date(photo.created_at).toLocaleDateString()}
           </span>
           <div className="flex items-center gap-1">
             {photo.tagged_students && photo.tagged_students.length > 0 && (
-              <Users className="w-3 h-3 text-muted-foreground" />
+              <Users className="w-3 h-3 text-gray-500 dark:text-gray-400" />
             )}
             {photo.tagged_courses && photo.tagged_courses.length > 0 && (
-              <BookOpen className="w-3 h-3 text-muted-foreground" />
+              <BookOpen className="w-3 h-3 text-gray-500 dark:text-gray-400" />
             )}
           </div>
         </div>
@@ -417,7 +417,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           )}
         </div>
         
-        <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
           <span>{new Date(photo.created_at).toLocaleDateString()}</span>
           <span>{Math.round(photo.file_size / 1024)} KB</span>
           <div className="flex items-center gap-1">
@@ -446,7 +446,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
                  level ? `Galería de ${level.name}` : 
                  `Galería de ${event.name}`}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-gray-500 dark:text-gray-400">
                 {event.school} - {new Date(event.date).toLocaleDateString()}
               </p>
               {share.custom_message && (
@@ -520,7 +520,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           </div>
           
           {/* Share info */}
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4" />
               <span>Vistas: {share.view_count}</span>
@@ -581,9 +581,9 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-12 text-center">
-            <ImageIcon className="h-16 w-16 text-muted-foreground mb-4" />
+            <ImageIcon className="h-16 w-16 text-gray-500 dark:text-gray-400 mb-4" />
             <h3 className="text-xl font-medium mb-2">No hay fotos en esta galería</h3>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               Aún no se han subido fotos para esta galería.
             </p>
           </div>
@@ -601,7 +601,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       
       {/* Footer */}
       <footer className="border-t mt-8">
-        <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
             Galería compartida de {event.school} - {new Date(event.date).toLocaleDateString()}
           </p>

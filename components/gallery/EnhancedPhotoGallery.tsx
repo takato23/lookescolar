@@ -67,26 +67,34 @@ interface EnhancedPhotoGalleryProps {
   onCartAdd?: (photoId: string) => void;
 }
 
-// Responsive breakpoints
+// Responsive breakpoints with debounce for better performance
 const useBreakpoint = () => {
   const [breakpoint, setBreakpoint] = useState<'mobile' | 'tablet' | 'desktop'>(
     'desktop'
   );
 
-  useLayoutEffect(() => {
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const updateBreakpoint = () => {
-      if (window.innerWidth < 768) {
-        setBreakpoint('mobile');
-      } else if (window.innerWidth < 1024) {
-        setBreakpoint('tablet');
-      } else {
-        setBreakpoint('desktop');
-      }
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        if (window.innerWidth < 768) {
+          setBreakpoint('mobile');
+        } else if (window.innerWidth < 1024) {
+          setBreakpoint('tablet');
+        } else {
+          setBreakpoint('desktop');
+        }
+      }, 150); // Debounce resize events
     };
 
     updateBreakpoint();
     window.addEventListener('resize', updateBreakpoint);
-    return () => window.removeEventListener('resize', updateBreakpoint);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateBreakpoint);
+    };
   }, []);
 
   return breakpoint;
@@ -212,7 +220,7 @@ const PhotoCard = React.memo<{
                 <>
                   {!imageLoaded && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+                      <Loader2 className="text-gray-500 dark:text-gray-400 h-4 w-4 animate-spin" />
                     </div>
                   )}
                   <img
@@ -234,7 +242,7 @@ const PhotoCard = React.memo<{
                 </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <ImageIcon className="text-muted-foreground h-4 w-4" />
+                  <ImageIcon className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </div>
               )}
             </div>
@@ -244,11 +252,11 @@ const PhotoCard = React.memo<{
                 {photo.original_filename}
               </h3>
               <div className="mt-1 flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">
+                <span className="text-gray-500 dark:text-gray-400 text-xs">
                   {formatFileSize(photo.file_size)}
                 </span>
                 {photo.width && photo.height && (
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">
                     {photo.width} × {photo.height}
                   </span>
                 )}
@@ -302,7 +310,7 @@ const PhotoCard = React.memo<{
               <>
                 {!imageLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+                    <Loader2 className="text-gray-500 dark:text-gray-400 h-8 w-8 animate-spin" />
                   </div>
                 )}
                 <img
@@ -325,7 +333,7 @@ const PhotoCard = React.memo<{
               </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
-                <ImageIcon className="text-muted-foreground h-8 w-8" />
+                <ImageIcon className="text-gray-500 dark:text-gray-400 h-8 w-8" />
               </div>
             )}
 
@@ -373,7 +381,7 @@ const PhotoCard = React.memo<{
             <h3 className="truncate text-sm font-medium">
               {photo.original_filename}
             </h3>
-            <div className="text-muted-foreground mt-1 flex items-center justify-between text-xs">
+            <div className="text-gray-500 dark:text-gray-400 mt-1 flex items-center justify-between text-xs">
               <span>{formatFileSize(photo.file_size)}</span>
               {photo.width && photo.height && (
                 <span>
@@ -493,7 +501,7 @@ export function EnhancedPhotoGallery({
         <h3 className="mb-2 text-lg font-semibold">
           Error al cargar las fotos
         </h3>
-        <p className="text-muted-foreground mb-4">
+        <p className="text-gray-500 dark:text-gray-400 mb-4">
           {error?.message || 'Ocurrió un error inesperado'}
         </p>
         <Button onClick={() => window.location.reload()}>
@@ -511,7 +519,7 @@ export function EnhancedPhotoGallery({
           {/* Search and view controls */}
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Buscar fotos..."
                 value={filters.search}
@@ -544,7 +552,7 @@ export function EnhancedPhotoGallery({
           </div>
 
           {/* Results info */}
-          <div className="text-muted-foreground flex items-center justify-between text-sm">
+          <div className="text-gray-500 dark:text-gray-400 flex items-center justify-between text-sm">
             <span>
               {isLoading ? (
                 <Skeleton className="h-4 w-24" />
@@ -577,11 +585,11 @@ export function EnhancedPhotoGallery({
           </div>
         ) : photos.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center">
-            <ImageIcon className="text-muted-foreground mb-4 h-16 w-16" />
+            <ImageIcon className="text-gray-500 dark:text-gray-400 mb-4 h-16 w-16" />
             <h3 className="mb-2 text-lg font-semibold">
               No se encontraron fotos
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               Intenta ajustar los filtros de búsqueda
             </p>
           </div>
@@ -643,7 +651,7 @@ export function EnhancedPhotoGallery({
 
               <div className="bg-background border-t p-4">
                 <div className="flex items-center justify-between">
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">
                     {selectedPhoto.width && selectedPhoto.height && (
                       <span>
                         {selectedPhoto.width} × {selectedPhoto.height} •{' '}

@@ -201,7 +201,7 @@ export default function AdminSettingsPage() {
       <div className="bg-background/50 flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-card-foreground mt-2">Cargando configuración...</p>
+          <p className="text-gray-900 dark:text-gray-100 mt-2">Cargando configuración...</p>
         </div>
       </div>
     );
@@ -228,8 +228,8 @@ export default function AdminSettingsPage() {
         <div className="flex flex-col gap-8 lg:flex-row">
           {/* Sidebar */}
           <div className="space-y-2 lg:w-80">
-            <div className="bg-card border-border rounded-lg border p-4">
-              <h3 className="text-card-foreground mb-3 font-semibold">
+            <div className="bg-white dark:bg-gray-900 border-border rounded-lg border p-4">
+              <h3 className="text-gray-900 dark:text-gray-100 mb-3 font-semibold">
                 Secciones
               </h3>
               {sections.map((section) => {
@@ -263,18 +263,18 @@ export default function AdminSettingsPage() {
 
           {/* Main Content */}
           <div className="flex-1">
-            <div className="bg-card border-border rounded-lg border">
+            <div className="bg-white dark:bg-gray-900 border-border rounded-lg border">
               {/* Business Info Section */}
               {activeSection === 'business' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <Building2 className="h-5 w-5" />
                     Información del Negocio
                   </h2>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Nombre del Negocio
                       </label>
                       <input
@@ -289,7 +289,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Email de Contacto
                       </label>
                       <input
@@ -304,7 +304,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Teléfono
                       </label>
                       <input
@@ -319,7 +319,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Sitio Web
                       </label>
                       <input
@@ -335,7 +335,7 @@ export default function AdminSettingsPage() {
                   </div>
 
                   <div>
-                    <label className="text-card-foreground mb-2 block text-sm font-medium">
+                    <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                       Dirección
                     </label>
                     <textarea
@@ -354,14 +354,14 @@ export default function AdminSettingsPage() {
               {/* Appearance Section */}
               {activeSection === 'appearance' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <Palette className="h-5 w-5" />
                     Apariencia
                   </h2>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-card-foreground mb-3 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-3 block text-sm font-medium">
                         Tema de la Aplicación
                       </label>
                       <div className="border-border rounded-lg border bg-surface/50 p-4">
@@ -376,7 +376,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Logo del Negocio
                       </label>
                       <div className="border-border rounded-lg border-2 border-dashed p-6 text-center">
@@ -396,14 +396,14 @@ export default function AdminSettingsPage() {
               {/* Watermark Section */}
               {activeSection === 'watermark' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <ImageIcon className="h-5 w-5" />
                     Marca de Agua
                   </h2>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Texto del Watermark
                       </label>
                       <input
@@ -419,7 +419,7 @@ export default function AdminSettingsPage() {
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <div>
-                        <label className="text-card-foreground mb-2 block text-sm font-medium">
+                        <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                           Posición
                         </label>
                         <select
@@ -440,7 +440,7 @@ export default function AdminSettingsPage() {
                       </div>
 
                       <div>
-                        <label className="text-card-foreground mb-2 block text-sm font-medium">
+                        <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                           Opacidad (%)
                         </label>
                         <input
@@ -458,7 +458,7 @@ export default function AdminSettingsPage() {
                       </div>
 
                       <div>
-                        <label className="text-card-foreground mb-2 block text-sm font-medium">
+                        <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                           Tamaño
                         </label>
                         <select
@@ -483,14 +483,14 @@ export default function AdminSettingsPage() {
               {/* Upload Section */}
               {activeSection === 'upload' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <Upload className="h-5 w-5" />
                     Subida de Archivos
                   </h2>
 
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Tamaño máximo por foto (MB)
                       </label>
                       <input
@@ -508,7 +508,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Uploads simultáneos máximos
                       </label>
                       <input
@@ -526,7 +526,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Calidad de imagen (%)
                       </label>
                       <input
@@ -544,7 +544,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Resolución máxima (px)
                       </label>
                       <select
@@ -568,14 +568,14 @@ export default function AdminSettingsPage() {
               {/* Pricing Section */}
               {activeSection === 'pricing' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <DollarSign className="h-5 w-5" />
                     Precios por Defecto
                   </h2>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Precio por foto digital (ARS)
                       </label>
                       <input
@@ -593,7 +593,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Descuento por cantidad (%)
                       </label>
                       <input
@@ -611,7 +611,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Mínimo para descuento
                       </label>
                       <input
@@ -628,7 +628,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Precio pack completo (ARS)
                       </label>
                       <input
@@ -651,7 +651,7 @@ export default function AdminSettingsPage() {
               {/* Notifications Section */}
               {activeSection === 'notifications' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <Bell className="h-5 w-5" />
                     Notificaciones
                   </h2>
@@ -684,7 +684,7 @@ export default function AdminSettingsPage() {
                         className="border-border flex items-center justify-between rounded-lg border p-4"
                       >
                         <div>
-                          <h4 className="text-card-foreground font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 font-medium">
                             {notification.label}
                           </h4>
                           <p className="text-card-foreground/70 text-sm">
@@ -710,14 +710,14 @@ export default function AdminSettingsPage() {
               {/* Localization Section */}
               {activeSection === 'localization' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <Globe className="h-5 w-5" />
                     Localización
                   </h2>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Zona Horaria
                       </label>
                       <select
@@ -740,7 +740,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Formato de Fecha
                       </label>
                       <select
@@ -757,7 +757,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Moneda
                       </label>
                       <select
@@ -774,7 +774,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                      <label className="text-card-foreground mb-2 block text-sm font-medium">
+                      <label className="text-gray-900 dark:text-gray-100 mb-2 block text-sm font-medium">
                         Idioma
                       </label>
                       <select
@@ -795,14 +795,14 @@ export default function AdminSettingsPage() {
               {/* Backup Section */}
               {activeSection === 'backup' && (
                 <div className="space-y-6 p-6">
-                  <h2 className="text-card-foreground flex items-center gap-2 text-xl font-semibold">
+                  <h2 className="text-gray-900 dark:text-gray-100 flex items-center gap-2 text-xl font-semibold">
                     <Download className="h-5 w-5" />
                     Backup y Exportación
                   </h2>
 
                   <div className="space-y-4">
                     <div className="border-border rounded-lg border bg-surface/50 p-4">
-                      <h4 className="text-card-foreground mb-2 font-medium">
+                      <h4 className="text-gray-900 dark:text-gray-100 mb-2 font-medium">
                         Exportar Datos
                       </h4>
                       <p className="text-card-foreground/70 mb-4 text-sm">
@@ -815,7 +815,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="border-border rounded-lg border bg-surface/50 p-4">
-                      <h4 className="text-card-foreground mb-2 font-medium">
+                      <h4 className="text-gray-900 dark:text-gray-100 mb-2 font-medium">
                         Limpieza Automática
                       </h4>
                       <p className="text-card-foreground/70 mb-4 text-sm">
@@ -839,7 +839,7 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className="border-error bg-error/5 rounded-lg border p-4">
-                      <h4 className="text-card-foreground mb-2 font-medium">
+                      <h4 className="text-gray-900 dark:text-gray-100 mb-2 font-medium">
                         Zona de Peligro
                       </h4>
                       <p className="text-card-foreground/70 mb-4 text-sm">

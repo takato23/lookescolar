@@ -39,7 +39,7 @@ export function ScrollHeader({
     // Base glass for readability
     'backdrop-blur-xl',
     // Depth when scrolled
-    scrolled ? 'bg-card/85 shadow-3d ring-1 ring-white/10' : 'bg-transparent',
+    scrolled ? 'bg-white/85 dark:bg-gray-800/85 shadow-3d ring-1 ring-white/10' : 'bg-transparent',
     className
   );
 

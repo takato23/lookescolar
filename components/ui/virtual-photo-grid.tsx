@@ -128,7 +128,7 @@ function PhotoCard({
     <div
       className={`group relative h-full overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-md ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
     >
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-square bg-muted">
         {!imageError ? (
           <img
             src={currentUrl}
@@ -144,7 +144,7 @@ function PhotoCard({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-200">
+          <div className="flex h-full w-full items-center justify-center bg-muted">
             <svg
               className="h-8 w-8 text-gray-400"
               fill="none"
@@ -160,7 +160,7 @@ function PhotoCard({
         )}
 
         {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 flex animate-pulse items-center justify-center bg-gray-200">
+          <div className="absolute inset-0 flex animate-pulse items-center justify-center bg-muted">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent"></div>
           </div>
         )}
@@ -178,7 +178,7 @@ function PhotoCard({
               aria-label={`Ver foto ${photo.filename}`}
             >
               <svg
-                className="h-5 w-5 text-gray-700"
+                className="h-5 w-5 text-foreground"
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -204,7 +204,7 @@ function PhotoCard({
             className={`flex h-6 w-6 transform items-center justify-center rounded-full border-2 transition-all duration-200 hover:scale-110 ${
               isFavorite
                 ? 'border-red-500 bg-red-500 text-white shadow-lg'
-                : 'border-gray-300 bg-white/90 text-gray-600 shadow-sm hover:border-red-400 hover:bg-white'
+                : 'border-border bg-white/90 text-muted-foreground shadow-sm hover:border-red-400 hover:bg-white'
             }`}
             aria-label={
               isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'
@@ -235,7 +235,7 @@ function PhotoCard({
             className={`flex h-6 w-6 transform items-center justify-center rounded-full border-2 transition-all duration-200 hover:scale-110 ${
               isSelected
                 ? 'border-purple-600 bg-purple-600 text-white shadow-lg'
-                : 'border-gray-300 bg-white/90 shadow-sm hover:border-purple-400'
+                : 'border-border bg-white/90 shadow-sm hover:border-purple-400'
             }`}
             aria-label={isSelected ? 'Deseleccionar foto' : 'Seleccionar foto'}
           >
@@ -356,7 +356,7 @@ export function VirtualPhotoGrid({
       <div
         className={`flex flex-col items-center justify-center py-12 ${className}`}
       >
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <svg
             className="h-8 w-8 text-gray-400"
             fill="none"
@@ -369,7 +369,7 @@ export function VirtualPhotoGrid({
             <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-600">
+        <h3 className="mb-2 text-lg font-semibold text-gray-500 dark:text-gray-400">
           No hay fotos disponibles
         </h3>
         <p className="max-w-md text-center text-sm text-gray-500">
@@ -387,7 +387,7 @@ export function VirtualPhotoGrid({
     <div className={`w-full ${className}`}>
       {/* Stats bar */}
       <div className="mb-6 flex items-center justify-between text-sm">
-        <div className="text-gray-600">
+        <div className="text-gray-500 dark:text-gray-400">
           <span className="font-medium">{photos.length}</span> fotos disponibles
           {favorites.size > 0 && (
             <span className="ml-3 text-red-600">
@@ -419,7 +419,7 @@ export function VirtualPhotoGrid({
       </div>
 
       {/* Virtual Grid */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+      <div className="overflow-hidden rounded-lg border border-border bg-muted">
         <Grid
           ref={gridRef}
           height={gridHeight}

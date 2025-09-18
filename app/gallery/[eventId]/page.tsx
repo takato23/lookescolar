@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import PublicEventGallery from '@/components/public/PublicEventGallery';
+import { PublicGallery } from '@/components/gallery/PublicGallery';
 import { Camera } from 'lucide-react';
 
 interface PublicGalleryPageProps {
@@ -21,10 +21,10 @@ export default async function PublicGalleryPage({ params }: PublicGalleryPagePro
     return <InvalidEventError message="ID de evento inválido" />;
   }
 
-  // 🚀 NEW: Use the PixieSet-style gallery
+  // Use public gallery component
   return (
     <Suspense fallback={<LoadingSkeleton />}>
-      <PublicEventGallery eventId={eventId} />
+      <PublicGallery eventId={eventId} />
     </Suspense>
   );
 }

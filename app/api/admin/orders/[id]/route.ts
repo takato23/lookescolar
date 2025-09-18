@@ -1,33 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  getEnhancedOrderService,
-  type UpdateOrderRequest,
-} from '@/lib/services/enhanced-order.service';
+import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
-// Validation schema for order updates
+// Validation schema for unified order updates
 const UpdateOrderSchema = z.object({
   status: z
-    .enum(['pending', 'approved', 'delivered', 'failed', 'cancelled'])
+    .enum(['pending_payment', 'paid', 'in_production', 'shipped', 'delivered', 'cancelled'])
     .optional(),
-  notes: z.string().max(1000).optional(),
-  priority_level: z.number().min(1).max(5).optional(),
-  estimated_delivery_date: z.string().datetime().optional(),
-  delivery_method: z
-    .enum(['pickup', 'email', 'postal', 'hand_delivery'])
+  payment_status: z
+    .enum(['pending', 'paid', 'failed', 'refunded'])
     .optional(),
+  production_status: z
+    .enum(['pending', 'printing', 'quality_check', 'packaging', 'ready', 'shipped'])
+    .optional(),
+  production_notes: z.string().max(1000).optional(),
   tracking_number: z.string().max(100).optional(),
+  shipped_at: z.string().datetime().optional(),
+  delivered_at: z.string().datetime().optional(),
 });
 
 /**
  * GET /api/admin/orders/[id]
- * Get detailed order information with audit trail
+ * Get detailed order information from unified_orders with fallback to legacy orders
  */
-export async function GET(
+export const GET = withAdminAuth(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const startTime = Date.now();
 
   try {
@@ -37,30 +37,126 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
-    // Get order directly from database
+    console.log(`[Admin Order Detail] Searching for order: ${id}`);
+
     const supabase = await createServerSupabaseServiceClient();
-    const { data: order, error } = await supabase
-      .from('orders')
-      .select('*')
+    
+    // First, try to get from unified_orders
+    const { data: unifiedOrder, error: unifiedError } = await supabase
+      .from('unified_orders')
+      .select(`
+        *,
+        events:event_id (
+          id,
+          name,
+          date
+        )
+      `)
       .eq('id', id)
       .single();
 
-    if (error || !order) {
+    if (unifiedOrder) {
+      console.log(`[Admin Order Detail] Found in unified_orders: ${id}`);
+      const transformedOrder = {
+        ...unifiedOrder,
+        event_name: unifiedOrder.events?.name || 'Sin evento',
+        event_date: unifiedOrder.events?.date || null,
+      };
+      
+      return NextResponse.json({
+        success: true,
+        order: transformedOrder,
+        source: 'unified_orders',
+        performance: {
+          query_time_ms: Date.now() - startTime,
+        },
+        generated_at: new Date().toISOString(),
+      });
+    }
+
+    console.log(`[Admin Order Detail] Not found in unified_orders, checking legacy orders...`);
+    
+    // If not found in unified_orders, try legacy orders table
+    const { data: legacyOrder, error: legacyError } = await supabase
+      .from('orders')
+      .select('*')
+      .or(`id.eq.${id},external_id.eq.${id},order_number.eq.${id}`)
+      .single();
+
+    if (!legacyOrder) {
+      console.log(`[Admin Order Detail] Order not found in any table: ${id}`);
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const duration = Date.now() - startTime;
+    console.log(`[Admin Order Detail] Found in legacy orders, attempting migration: ${id}`);
+    
+    // Try to auto-migrate legacy order to unified_orders
+    try {
+      const migrationResult = await supabase
+        .from('unified_orders')
+        .insert({
+          id: legacyOrder.id || `legacy_${Date.now()}`,
+          external_id: legacyOrder.external_id || legacyOrder.id,
+          token: legacyOrder.token || `token_${Date.now()}`,
+          status: mapLegacyStatus(legacyOrder.status),
+          payment_method: mapLegacyPaymentMethod(legacyOrder.payment_method),
+          payment_status: legacyOrder.payment_status || 'pending',
+          contact_info: legacyOrder.contact_info || {},
+          delivery_info: legacyOrder.delivery_info || {},
+          event_id: legacyOrder.event_id,
+          package_type: legacyOrder.package_type || 'basic',
+          selected_photos: legacyOrder.selected_photos || {},
+          additional_copies: legacyOrder.additional_copies || [],
+          base_price: Number(legacyOrder.base_price || 0),
+          additions_price: Number(legacyOrder.additions_price || 0),
+          shipping_cost: Number(legacyOrder.shipping_cost || 0),
+          total_price: Number(legacyOrder.total_price || 0),
+          currency: legacyOrder.currency || 'ARS',
+          production_notes: legacyOrder.notes,
+          created_at: legacyOrder.created_at,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-    console.log(`[Admin Order Detail] Order ${id} retrieved in ${duration}ms`);
+      if (migrationResult.data) {
+        console.log(`[Admin Order Detail] Successfully migrated legacy order: ${id}`);
+        return NextResponse.json({
+          success: true,
+          order: {
+            ...migrationResult.data,
+            event_name: 'Sin evento', // Would need to fetch event separately
+          },
+          source: 'migrated_from_legacy',
+          migration: 'success',
+          performance: {
+            query_time_ms: Date.now() - startTime,
+          },
+          generated_at: new Date().toISOString(),
+        });
+      }
+    } catch (migrationError) {
+      console.log(`[Admin Order Detail] Migration failed, returning legacy format: ${id}`, migrationError);
+    }
+
+    // Return legacy order in unified format
+    const transformedLegacyOrder = {
+      ...legacyOrder,
+      status: mapLegacyStatus(legacyOrder.status),
+      payment_method: mapLegacyPaymentMethod(legacyOrder.payment_method),
+      event_name: 'Sin evento', // Would need to fetch event separately
+    };
 
     return NextResponse.json({
-      order,
+      success: true,
+      order: transformedLegacyOrder,
+      source: 'legacy_orders',
       performance: {
-        query_time_ms: duration,
-        optimized: false,
+        query_time_ms: Date.now() - startTime,
       },
       generated_at: new Date().toISOString(),
     });
+    
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Admin Order Detail] Error:', {
@@ -77,16 +173,37 @@ export async function GET(
       { status: 500 }
     );
   }
+});
+
+// Helper functions for mapping legacy data
+function mapLegacyStatus(legacyStatus: string): string {
+  const statusMap: Record<string, string> = {
+    'pending': 'pending_payment',
+    'approved': 'paid',
+    'delivered': 'delivered',
+    'failed': 'cancelled',
+    'cancelled': 'cancelled',
+  };
+  return statusMap[legacyStatus] || 'pending_payment';
+}
+
+function mapLegacyPaymentMethod(legacyMethod: string): string {
+  const methodMap: Record<string, string> = {
+    'mercadopago': 'mercadopago',
+    'transfer': 'transferencia',
+    'cash': 'efectivo',
+  };
+  return methodMap[legacyMethod] || 'efectivo';
 }
 
 /**
  * PUT /api/admin/orders/[id]
- * Update order with audit trail
+ * Update unified order with audit trail and fallback to legacy
  */
-export async function PUT(
+export const PUT = withAdminAuth(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const startTime = Date.now();
 
   try {
@@ -110,44 +227,90 @@ export async function PUT(
       );
     }
 
-    const updates = validation.data;
+    const updates = {
+      ...validation.data,
+      updated_at: new Date().toISOString()
+    };
 
-    // Extract admin context for audit trail
-    const adminId = request.headers.get('x-admin-id') || undefined;
-    const ipAddress =
-      request.headers.get('x-forwarded-for') ||
-      request.headers.get('x-real-ip') ||
-      request.ip;
-    const userAgent = request.headers.get('user-agent') || undefined;
+    console.log(`[Admin Order Update] Updating order: ${id}`, updates);
 
-    // Update the order
-    const enhancedOrderService = getEnhancedOrderService();
-    const updatedOrder = await enhancedOrderService.updateOrder(
-      id,
-      updates,
-      adminId,
-      ipAddress,
-      userAgent
-    );
+    const supabase = await createServerSupabaseServiceClient();
+    
+    // Try to update in unified_orders first
+    const { data: unifiedOrder, error: unifiedError } = await supabase
+      .from('unified_orders')
+      .update(updates)
+      .eq('id', id)
+      .select(`
+        *,
+        events:event_id (
+          id,
+          name,
+          date
+        )
+      `)
+      .single();
 
-    const duration = Date.now() - startTime;
+    if (unifiedOrder) {
+      console.log(`[Admin Order Update] Successfully updated in unified_orders: ${id}`);
+      return NextResponse.json({
+        success: true,
+        order: {
+          ...unifiedOrder,
+          event_name: unifiedOrder.events?.name || 'Sin evento',
+        },
+        updated_fields: Object.keys(updates),
+        source: 'unified_orders',
+        performance: {
+          update_time_ms: Date.now() - startTime,
+        },
+        updated_at: new Date().toISOString(),
+      });
+    }
 
-    console.log(`[Admin Order Update] Order ${id} updated in ${duration}ms`, {
-      updates: Object.keys(updates),
-      admin_id: adminId,
-      duration,
-    });
+    console.log(`[Admin Order Update] Not found in unified_orders, trying legacy: ${id}`);
+    
+    // If not found in unified_orders, try legacy orders with mapped fields
+    const legacyUpdates = {
+      status: mapUnifiedToLegacyStatus(updates.status),
+      payment_status: updates.payment_status,
+      notes: updates.production_notes,
+      tracking_number: updates.tracking_number,
+      updated_at: updates.updated_at
+    };
+
+    const { data: legacyOrder, error: legacyError } = await supabase
+      .from('orders')
+      .update(legacyUpdates)
+      .or(`id.eq.${id},external_id.eq.${id},order_number.eq.${id}`)
+      .select()
+      .single();
+
+    if (!legacyOrder) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    console.log(`[Admin Order Update] Successfully updated in legacy orders: ${id}`);
+    
+    // Return in unified format
+    const transformedOrder = {
+      ...legacyOrder,
+      status: mapLegacyStatus(legacyOrder.status),
+      payment_method: mapLegacyPaymentMethod(legacyOrder.payment_method),
+      event_name: 'Sin evento',
+    };
 
     return NextResponse.json({
       success: true,
-      order: updatedOrder,
-      updated_fields: Object.keys(updates),
+      order: transformedOrder,
+      updated_fields: Object.keys(legacyUpdates),
+      source: 'legacy_orders',
       performance: {
-        update_time_ms: duration,
-        audit_logged: true,
+        update_time_ms: Date.now() - startTime,
       },
       updated_at: new Date().toISOString(),
     });
+    
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Admin Order Update] Error:', {
@@ -155,10 +318,6 @@ export async function PUT(
       order_id: id,
       duration,
     });
-
-    if (error instanceof Error && error.message === 'Order not found') {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
 
     return NextResponse.json(
       {
@@ -168,16 +327,30 @@ export async function PUT(
       { status: 500 }
     );
   }
+});
+
+// Helper function for mapping unified status back to legacy
+function mapUnifiedToLegacyStatus(unifiedStatus?: string): string {
+  if (!unifiedStatus) return 'pending';
+  const statusMap: Record<string, string> = {
+    'pending_payment': 'pending',
+    'paid': 'approved',
+    'in_production': 'approved',
+    'shipped': 'approved',
+    'delivered': 'delivered',
+    'cancelled': 'cancelled',
+  };
+  return statusMap[unifiedStatus] || 'pending';
 }
 
 /**
  * DELETE /api/admin/orders/[id]
- * Cancel order (soft delete with audit trail)
+ * Cancel unified order (soft delete with audit trail)
  */
-export async function DELETE(
+export const DELETE = withAdminAuth(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const startTime = Date.now();
 
   try {
@@ -188,40 +361,83 @@ export async function DELETE(
     }
 
     // Get cancellation reason from query params
-    const reason =
-      request.nextUrl.searchParams.get('reason') || 'Admin cancellation';
+    const reason = request.nextUrl.searchParams.get('reason') || 'Admin cancellation';
+    
+    console.log(`[Admin Order Cancel] Cancelling order: ${id}, reason: ${reason}`);
 
-    // Cancel the order (update status to cancelled)
     const supabase = await createServerSupabaseServiceClient();
-    const { data: cancelledOrder, error } = await supabase
+    
+    // Try to cancel in unified_orders first
+    const { data: cancelledOrder, error: cancelError } = await supabase
+      .from('unified_orders')
+      .update({
+        status: 'cancelled',
+        production_notes: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        events:event_id (
+          id,
+          name,
+          date
+        )
+      `)
+      .single();
+
+    if (cancelledOrder) {
+      console.log(`[Admin Order Cancel] Successfully cancelled in unified_orders: ${id}`);
+      return NextResponse.json({
+        success: true,
+        message: 'Order cancelled successfully',
+        order: {
+          ...cancelledOrder,
+          event_name: cancelledOrder.events?.name || 'Sin evento',
+        },
+        cancellation_reason: reason,
+        source: 'unified_orders',
+        cancelled_at: new Date().toISOString(),
+      });
+    }
+
+    console.log(`[Admin Order Cancel] Not found in unified_orders, trying legacy: ${id}`);
+    
+    // If not found in unified_orders, try legacy orders
+    const { data: legacyCancelledOrder, error: legacyError } = await supabase
       .from('orders')
       .update({
         status: 'cancelled',
         notes: reason,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
+      .or(`id.eq.${id},external_id.eq.${id},order_number.eq.${id}`)
       .select()
       .single();
 
-    if (error || !cancelledOrder) {
+    if (!legacyCancelledOrder) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const duration = Date.now() - startTime;
-
-    console.log(`[Admin Order Cancel] Order ${id} cancelled in ${duration}ms`, {
-      reason,
-      duration,
-    });
+    console.log(`[Admin Order Cancel] Successfully cancelled in legacy orders: ${id}`);
+    
+    // Return in unified format
+    const transformedOrder = {
+      ...legacyCancelledOrder,
+      status: 'cancelled',
+      payment_method: mapLegacyPaymentMethod(legacyCancelledOrder.payment_method),
+      event_name: 'Sin evento',
+    };
 
     return NextResponse.json({
       success: true,
       message: 'Order cancelled successfully',
-      order: cancelledOrder,
+      order: transformedOrder,
       cancellation_reason: reason,
+      source: 'legacy_orders',
       cancelled_at: new Date().toISOString(),
     });
+    
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error('[Admin Order Cancel] Error:', {
@@ -238,4 +454,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+});

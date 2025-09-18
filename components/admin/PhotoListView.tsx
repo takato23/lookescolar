@@ -106,7 +106,7 @@ export function PhotoListView({
               'hover:border-primary/20 hover:shadow-md',
               isSelected
                 ? 'border-primary bg-primary/5 shadow-md'
-                : 'border-border bg-card'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
             )}
           >
             {/* Checkbox */}
@@ -117,7 +117,7 @@ export function PhotoListView({
             />
 
             {/* Image Thumbnail */}
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted dark:bg-gray-800">
               {!hasImageError && photo.preview_url ? (
                 <Image
                   src={photo.preview_url}
@@ -168,7 +168,7 @@ export function PhotoListView({
                   {photo.tagged && (
                     <Badge
                       variant="outline"
-                      className="bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800"
+                      className="bg-blue-100 dark:bg-blue-950/30 px-1.5 py-0.5 text-xs text-blue-800"
                     >
                       <TagIcon className="mr-1 h-3 w-3" />
                       Etiquetada
@@ -177,7 +177,7 @@ export function PhotoListView({
                 </div>
               </div>
 
-              <div className="text-muted-foreground flex items-center gap-4 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-xs">
                 <span>{formatFileSize(photo.file_size)}</span>
                 <span>{formatDate(photo.created_at)}</span>
                 {photo.width && photo.height && (

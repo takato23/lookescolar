@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect } from 'react';
 import {
   X,
@@ -168,7 +170,7 @@ export function EventPreviewModal({
       {/* Modal */}
       <div className="neural-glass-card animate-modal-enter relative max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+        <div className="flex items-center justify-between border-b border-border/50 p-6">
           <div className="flex items-center gap-4">
             {/* Navigation */}
             <div className="flex items-center gap-2">
@@ -196,10 +198,10 @@ export function EventPreviewModal({
 
             {/* Title */}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-foreground">
                 {event.school}
               </h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {eventDate.toLocaleDateString('es-AR', {
                   weekday: 'long',
                   year: 'numeric',
@@ -216,7 +218,7 @@ export function EventPreviewModal({
                 'neural-glass-card',
                 event.active
                   ? 'border-green-200 bg-green-100 text-green-800'
-                  : 'border-gray-200 bg-gray-100 text-gray-800'
+                  : 'border-border bg-muted text-foreground'
               )}
             >
               {event.active ? (
@@ -273,7 +275,7 @@ export function EventPreviewModal({
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200/50">
+        <div className="border-b border-border/50">
           <nav className="flex space-x-8 px-6">
             {[
               { id: 'overview', label: 'Resumen', icon: Eye },
@@ -290,7 +292,7 @@ export function EventPreviewModal({
                     'flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors',
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      : 'border-transparent text-gray-500 hover:border-border hover:text-foreground'
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -308,43 +310,43 @@ export function EventPreviewModal({
               {/* Quick Stats Grid */}
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 <div className="neural-glass-card p-4 text-center">
-                  <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                    <ImageIcon className="h-6 w-6 text-blue-600" />
+                  <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950/30">
+                    <ImageIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-foreground">
                     {event.stats?.totalPhotos || 0}
                   </div>
-                  <div className="text-sm text-gray-600">Fotos</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Fotos</div>
                 </div>
 
                 <div className="neural-glass-card p-4 text-center">
                   <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100">
                     <Users className="h-6 w-6 text-purple-600" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-foreground">
                     {event.stats?.totalSubjects || 0}
                   </div>
-                  <div className="text-sm text-gray-600">Familias</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Familias</div>
                 </div>
 
                 <div className="neural-glass-card p-4 text-center">
                   <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
                     <ShoppingCart className="h-6 w-6 text-green-600" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-foreground">
                     {event.stats?.totalOrders || 0}
                   </div>
-                  <div className="text-sm text-gray-600">Pedidos</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Pedidos</div>
                 </div>
 
                 <div className="neural-glass-card p-4 text-center">
                   <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-100">
                     <TrendingUp className="h-6 w-6 text-yellow-600" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-foreground">
                     ${(event.stats?.revenue || 0).toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600">Ingresos</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Ingresos</div>
                 </div>
               </div>
 
@@ -352,7 +354,7 @@ export function EventPreviewModal({
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="neural-glass-card p-4">
                   <h4 className="mb-3 flex items-center gap-2 font-semibold">
-                    <Target className="h-5 w-5 text-blue-600" />
+                    <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     Progreso del Evento
                   </h4>
                   <div className="space-y-3">
@@ -361,7 +363,7 @@ export function EventPreviewModal({
                         <span>Completado</span>
                         <span>{Math.round(completionRate)}%</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-gray-200">
+                      <div className="h-2 w-full rounded-full bg-muted">
                         <div
                           className="h-2 rounded-full bg-blue-500 transition-all duration-500"
                           style={{ width: `${completionRate}%` }}
@@ -374,7 +376,7 @@ export function EventPreviewModal({
                         <span>Fotos etiquetadas</span>
                         <span>{photoTaggingProgress}%</span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-gray-200">
+                      <div className="h-2 w-full rounded-full bg-muted">
                         <div
                           className="h-2 rounded-full bg-green-500 transition-all duration-500"
                           style={{ width: `${photoTaggingProgress}%` }}
@@ -391,13 +393,13 @@ export function EventPreviewModal({
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Precio por foto:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Precio por foto:</span>
                       <span className="font-medium">
                         ${event.photo_price?.toLocaleString() || 'No definido'}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Creado:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Creado:</span>
                       <span className="font-medium">
                         {event.created_at
                           ? new Date(event.created_at).toLocaleDateString(
@@ -407,7 +409,7 @@ export function EventPreviewModal({
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">
+                      <span className="text-gray-500 dark:text-gray-400">
                         Última actualización:
                       </span>
                       <span className="font-medium">
@@ -505,16 +507,16 @@ export function EventPreviewModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between border-t border-gray-200/50 bg-gray-50/50 px-6 py-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center justify-between border-t border-border/50 bg-muted/50 px-6 py-4">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <span>Navegación:</span>
-              <kbd className="rounded bg-gray-200 px-2 py-0.5 text-xs">←</kbd>
-              <kbd className="rounded bg-gray-200 px-2 py-0.5 text-xs">→</kbd>
+              <kbd className="rounded bg-muted px-2 py-0.5 text-xs">←</kbd>
+              <kbd className="rounded bg-muted px-2 py-0.5 text-xs">→</kbd>
             </div>
             <div className="flex items-center gap-1">
               <span>Editar:</span>
-              <kbd className="rounded bg-gray-200 px-2 py-0.5 text-xs">⌘E</kbd>
+              <kbd className="rounded bg-muted px-2 py-0.5 text-xs">⌘E</kbd>
             </div>
           </div>
 

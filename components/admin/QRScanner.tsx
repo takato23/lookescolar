@@ -537,7 +537,7 @@ export function QRScanner({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600">
+          <p className="text-gray-500 dark:text-gray-400">
             No se pudo acceder a la cámara. Puedes ingresar tokens manualmente.
           </p>
           <AccessibleButton
@@ -583,7 +583,7 @@ export function QRScanner({
 
             {/* Scanner Stats Badge */}
             {scanStats.totalScans > 0 && (
-              <div className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
+              <div className="rounded-full bg-blue-100 dark:bg-blue-950/30 px-2 py-1 text-xs text-blue-700">
                 {scanStats.successfulScans}/{scanStats.totalScans}
                 {scanStats.scanRate > 0 &&
                   ` • ${scanStats.scanRate.toFixed(1)}/min`}
@@ -794,7 +794,7 @@ export function QRScanner({
         {scanResults.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <ScanLine className="h-4 w-4" />
                 Historial de Escaneos ({scanResults.length})
               </h4>
@@ -827,7 +827,7 @@ export function QRScanner({
                     result.status === 'duplicate' &&
                       'border-yellow-200 bg-yellow-50 text-yellow-800',
                     result.status === 'invalid' &&
-                      'border-gray-200 bg-gray-50 text-gray-800'
+                      'border-border bg-muted text-foreground'
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -848,7 +848,7 @@ export function QRScanner({
                         </span>
                       </div>
 
-                      <div className="mb-1 truncate font-mono text-xs text-gray-600">
+                      <div className="mb-1 truncate font-mono text-xs text-gray-500 dark:text-gray-400">
                         {result.token.slice(0, 12)}...{result.token.slice(-12)}
                       </div>
 
@@ -895,7 +895,7 @@ export function QRScanner({
                 <div className="text-xs text-gray-500">Errores</div>
               </div>
               <div className="text-center">
-                <div className="text-sm font-semibold text-blue-600">
+                <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                   {scanStats.scanRate > 0 ? scanStats.scanRate.toFixed(1) : '0'}
                 </div>
                 <div className="text-xs text-gray-500">Por min</div>

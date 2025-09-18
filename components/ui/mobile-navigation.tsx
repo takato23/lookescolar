@@ -87,27 +87,27 @@ export function MobileNavigation({
   return (
     <>
       {/* Apple-grade Mobile Header with enhanced clarity */}
-      <header className="mobile-header bg-white/98 fixed left-0 right-0 top-0 z-50 border-b border-gray-200/80 shadow-sm backdrop-blur-xl">
+      <header className="mobile-header bg-white/98 fixed left-0 right-0 top-0 z-50 border-b border-border/80 shadow-sm backdrop-blur-xl">
         <div className="safe-area-padding flex items-center justify-between px-4 py-3.5">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setIsMenuOpen(true)}
-              className="mobile-touch-target rounded-xl bg-gray-50/80 p-2.5 shadow-sm ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-gray-100 active:bg-gray-200"
+              className="mobile-touch-target rounded-xl bg-muted/80 p-2.5 shadow-sm ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-muted active:bg-muted"
               aria-label="Abrir menú"
             >
-              <Menu className="h-6 w-6 text-gray-800" />
+              <Menu className="h-6 w-6 text-foreground" />
             </button>
-            <h1 className="text-lg font-bold tracking-tight text-gray-900">
+            <h1 className="text-lg font-bold tracking-tight text-foreground">
               LookEscolar
             </h1>
           </div>
 
           <div className="flex items-center space-x-2">
-            <button className="mobile-touch-target rounded-xl bg-gray-50/80 p-2.5 ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-gray-100 active:bg-gray-200">
-              <Search className="h-5 w-5 text-gray-700" />
+            <button className="mobile-touch-target rounded-xl bg-muted/80 p-2.5 ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-muted active:bg-muted">
+              <Search className="h-5 w-5 text-foreground" />
             </button>
-            <button className="mobile-touch-target relative rounded-xl bg-gray-50/80 p-2.5 ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-gray-100 active:bg-gray-200">
-              <Bell className="h-5 w-5 text-gray-700" />
+            <button className="mobile-touch-target relative rounded-xl bg-muted/80 p-2.5 ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-muted active:bg-muted">
+              <Bell className="h-5 w-5 text-foreground" />
               <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500 shadow-sm ring-2 ring-white"></span>
             </button>
           </div>
@@ -115,7 +115,7 @@ export function MobileNavigation({
       </header>
 
       {/* Apple-grade Bottom Navigation with enhanced visibility */}
-      <nav className="mobile-nav bg-white/98 fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200/80 shadow-lg backdrop-blur-xl">
+      <nav className="mobile-nav bg-white/98 fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 shadow-lg backdrop-blur-xl">
         <div className="flex items-center justify-around px-2 py-2.5 pb-safe-bottom">
           {items.slice(0, 4).map((item, index) => {
             const Icon = item.icon;
@@ -130,7 +130,7 @@ export function MobileNavigation({
                   'min-w-0 flex-1 px-2 py-2.5',
                   isActive
                     ? 'bg-primary-50/60 text-primary-600'
-                    : 'text-gray-600 hover:bg-gray-50/60 hover:text-gray-800 active:text-primary-600'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground active:text-primary-600'
                 )}
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => setActiveTab(index)}
@@ -153,7 +153,7 @@ export function MobileNavigation({
                     'mt-1.5 max-w-full truncate text-xs font-medium',
                     isActive
                       ? 'font-semibold text-primary-700'
-                      : 'text-gray-600'
+                      : 'text-muted-foreground'
                   )}
                 >
                   {item.label}
@@ -204,7 +204,7 @@ export function MobileNavigation({
               className="bg-white/98 fixed left-0 top-0 z-50 h-full w-80 max-w-[85vw] shadow-2xl ring-1 ring-gray-200/50 backdrop-blur-xl"
             >
               {/* Enhanced Menu Header */}
-              <div className="border-b border-gray-200/80 bg-gradient-to-b from-gray-50/30 to-transparent p-6 pt-16">
+              <div className="border-b border-border/80 bg-gradient-to-b from-gray-50/30 to-transparent p-6 pt-16">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     {user?.avatar ? (
@@ -219,20 +219,20 @@ export function MobileNavigation({
                       </div>
                     )}
                     <div>
-                      <p className="text-base font-semibold text-gray-900">
+                      <p className="text-base font-semibold text-foreground">
                         {user?.name || 'Usuario'}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {user?.email || 'Sin cuenta'}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setIsMenuOpen(false)}
-                    className="mobile-touch-target -m-2 rounded-xl bg-gray-50/80 p-2.5 ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-gray-100"
+                    className="mobile-touch-target -m-2 rounded-xl bg-muted/80 p-2.5 ring-1 ring-gray-200/50 transition-all duration-200 hover:bg-muted"
                     aria-label="Cerrar menú"
                   >
-                    <X className="h-6 w-6 text-gray-700" />
+                    <X className="h-6 w-6 text-foreground" />
                   </button>
                 </div>
               </div>
@@ -254,7 +254,7 @@ export function MobileNavigation({
                           'mobile-touch-target group flex items-center justify-between rounded-xl px-4 py-3.5 transition-all duration-200',
                           isActive
                             ? 'border-l-4 border-primary-600 bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-100'
-                            : 'text-gray-700 hover:bg-gray-50 hover:shadow-sm active:bg-gray-100'
+                            : 'text-foreground hover:bg-muted hover:shadow-sm active:bg-muted'
                         )}
                         aria-current={isActive ? 'page' : undefined}
                       >
@@ -264,7 +264,7 @@ export function MobileNavigation({
                               'h-6 w-6 transition-all duration-200',
                               isActive
                                 ? 'text-primary-600'
-                                : 'text-gray-500 group-hover:text-gray-700'
+                                : 'text-gray-500 group-hover:text-foreground'
                             )}
                           />
                           <span
@@ -272,7 +272,7 @@ export function MobileNavigation({
                               'font-medium transition-colors duration-200',
                               isActive
                                 ? 'text-primary-700'
-                                : 'text-gray-700 group-hover:text-gray-900'
+                                : 'text-foreground group-hover:text-foreground'
                             )}
                           >
                             {item.label}
@@ -288,7 +288,7 @@ export function MobileNavigation({
                             'h-5 w-5 transition-all duration-200',
                             isActive
                               ? 'text-primary-500'
-                              : 'text-gray-400 group-hover:text-gray-600'
+                              : 'text-gray-400 group-hover:text-muted-foreground'
                           )}
                         />
                       </Link>
@@ -297,8 +297,8 @@ export function MobileNavigation({
                 </nav>
 
                 {/* Settings & Logout */}
-                <div className="mt-6 space-y-1 border-t border-gray-200 px-4 pt-6">
-                  <button className="mobile-touch-target flex w-full items-center space-x-3 rounded-xl px-4 py-3 text-gray-700 transition-all duration-200 hover:bg-gray-50 active:bg-gray-100">
+                <div className="mt-6 space-y-1 border-t border-border px-4 pt-6">
+                  <button className="mobile-touch-target flex w-full items-center space-x-3 rounded-xl px-4 py-3 text-foreground transition-all duration-200 hover:bg-muted active:bg-muted">
                     <Settings className="h-6 w-6 text-gray-500" />
                     <span className="font-medium">Configuración</span>
                   </button>

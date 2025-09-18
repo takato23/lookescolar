@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Camera, Users, Package, Zap, QrCode, BarChart3 } from 'lucide-react';
+import { Calendar, Camera, Users, Package, Zap, QrCode, BarChart3, ShoppingBag, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickAction {
@@ -76,6 +76,24 @@ const actions: QuickAction[] = [
     title: 'Estadísticas',
     subtitle: 'Ver rendimiento',
     gradient: 'from-teal-500 to-teal-600',
+    iconBg: 'bg-white/20',
+    textColor: 'text-white',
+  },
+  {
+    href: '/admin/products',
+    icon: ShoppingBag,
+    title: 'Productos',
+    subtitle: 'Gestionar catálogo',
+    gradient: 'from-purple-500 to-pink-500',
+    iconBg: 'bg-white/20',
+    textColor: 'text-white',
+  },
+  {
+    href: '/admin/store-settings',
+    icon: Settings,
+    title: 'Configurar Tienda',
+    subtitle: 'Ajustes y precios',
+    gradient: 'from-blue-500 to-cyan-500',
     iconBg: 'bg-white/20',
     textColor: 'text-white',
   },
@@ -176,7 +194,7 @@ const QuickActionCard = React.memo(function QuickActionCard({
             className={cn('text-xs', {
               'text-blue-100': gradient.includes('blue'),
               'text-purple-100': gradient.includes('purple'),
-              'text-amber-100': gradient.includes('amber'),
+              'text-primary-100': gradient.includes('amber'),
               'text-green-100': gradient.includes('green'),
               'text-pink-100': gradient.includes('pink'),
               'text-indigo-100': gradient.includes('indigo'),

@@ -87,7 +87,7 @@ export function BrutalistLabel({ children, className }: BrutalistLabelProps) {
   return (
     <span
       className={cn(
-        'font-mono text-xs uppercase tracking-widest text-gray-600',
+        'font-mono text-xs uppercase tracking-widest text-muted-foreground',
         className
       )}
     >

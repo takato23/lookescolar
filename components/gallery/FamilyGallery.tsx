@@ -279,9 +279,9 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
               <span className="text-green-700 font-semibold">{photos.length} fotos disponibles</span>
             </div>
             {selectedPhotos.size > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
-                <ShoppingCartIcon className="h-4 w-4 text-blue-600" />
-                <span className="font-semibold text-blue-600">{selectedPhotos.size} para comprar</span>
+              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 px-4 py-2 rounded-full">
+                <ShoppingCartIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="font-semibold text-blue-600 dark:text-blue-400">{selectedPhotos.size} para comprar</span>
               </div>
             )}
             {favorites.size > 0 && (

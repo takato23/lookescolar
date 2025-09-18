@@ -286,3 +286,68 @@ export function DropdownMenuSeparator({
     />
   );
 }
+
+// Additional components for compatibility
+export function DropdownMenuLabel({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn('px-2.5 py-1.5 text-sm font-semibold', className)}>
+      {children}
+    </div>
+  );
+}
+
+export function DropdownMenuShortcut({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span className={cn('ml-auto text-xs tracking-widest opacity-60', className)}>
+      {children}
+    </span>
+  );
+}
+
+export function DropdownMenuSub({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}
+
+export function DropdownMenuSubTrigger({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <DropdownMenuItem className={cn('cursor-pointer', className)}>
+      {children}
+    </DropdownMenuItem>
+  );
+}
+
+export function DropdownMenuSubContent({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <DropdownMenuContent className={className}>
+      {children}
+    </DropdownMenuContent>
+  );
+}

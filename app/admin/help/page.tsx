@@ -258,8 +258,8 @@ export default function AdminHelpPage() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-card border-border sticky top-6 rounded-lg border p-4">
-              <h3 className="text-card-foreground mb-4 font-semibold">
+            <div className="bg-white dark:bg-gray-900 border-border sticky top-6 rounded-lg border p-4">
+              <h3 className="text-gray-900 dark:text-gray-100 mb-4 font-semibold">
                 Secciones
               </h3>
               <div className="space-y-1">
@@ -295,7 +295,7 @@ export default function AdminHelpPage() {
 
               {/* Quick Links */}
               <div className="border-border mt-6 border-t pt-6">
-                <h4 className="text-card-foreground mb-3 font-medium">
+                <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
                   Enlaces Rápidos
                 </h4>
                 <div className="space-y-2">
@@ -329,13 +329,13 @@ export default function AdminHelpPage() {
               return (
                 <div key={section.id} className="space-y-6">
                   {/* Section Header */}
-                  <div className="bg-card border-border rounded-lg border p-6">
+                  <div className="bg-white dark:bg-gray-900 border-border rounded-lg border p-6">
                     <div className="flex items-start gap-4">
                       <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-3">
                         <section.icon className="text-primary h-6 w-6" />
                       </div>
                       <div>
-                        <h2 className="text-card-foreground mb-2 text-2xl font-bold">
+                        <h2 className="text-gray-900 dark:text-gray-100 mb-2 text-2xl font-bold">
                           {section.title}
                         </h2>
                         <p className="text-card-foreground/70">
@@ -350,12 +350,12 @@ export default function AdminHelpPage() {
                     {section.articles.map((article) => (
                       <div
                         key={article.id}
-                        className="bg-card border-border hover:border-primary/20 cursor-pointer rounded-lg border p-6 transition-colors"
+                        className="bg-white dark:bg-gray-900 border-border hover:border-primary/20 cursor-pointer rounded-lg border p-6 transition-colors"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <div className="mb-2 flex items-center gap-2">
-                              <h3 className="text-card-foreground font-semibold">
+                              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">
                                 {article.title}
                               </h3>
                               <span
@@ -392,8 +392,8 @@ export default function AdminHelpPage() {
 
                   {/* Special content for key sections */}
                   {section.id === 'subjects-flow' && (
-                    <div className="bg-card border-border rounded-lg border p-6">
-                      <h3 className="text-card-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+                    <div className="bg-white dark:bg-gray-900 border-border rounded-lg border p-6">
+                      <h3 className="text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg font-semibold">
                         <Users className="h-5 w-5" />
                         Flujo Completo de Estudiantes
                       </h3>
@@ -401,7 +401,7 @@ export default function AdminHelpPage() {
                       <div className="space-y-6">
                         {/* Digital Flow */}
                         <div>
-                          <h4 className="text-card-foreground mb-3 flex items-center gap-2 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2 font-medium">
                             <Settings className="h-4 w-4" />
                             Flujo Digital (En la App)
                           </h4>
@@ -411,7 +411,7 @@ export default function AdminHelpPage() {
                                 1
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Admin crea evento
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -426,7 +426,7 @@ export default function AdminHelpPage() {
                                 2
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Genera lista de alumnos
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -441,7 +441,7 @@ export default function AdminHelpPage() {
                                 3
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Sistema genera tokens
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -456,7 +456,7 @@ export default function AdminHelpPage() {
                                 4
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Genera QRs
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -469,7 +469,7 @@ export default function AdminHelpPage() {
 
                         {/* Real Life Flow */}
                         <div>
-                          <h4 className="text-card-foreground mb-3 flex items-center gap-2 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2 font-medium">
                             <Camera className="h-4 w-4" />
                             Flujo en la Vida Real
                           </h4>
@@ -479,7 +479,7 @@ export default function AdminHelpPage() {
                                 1
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Imprimir QRs
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -494,7 +494,7 @@ export default function AdminHelpPage() {
                                 2
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Entregar QRs
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -509,7 +509,7 @@ export default function AdminHelpPage() {
                                 3
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Día de fotos
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -524,7 +524,7 @@ export default function AdminHelpPage() {
                                 4
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Acceso familiar
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -562,8 +562,8 @@ export default function AdminHelpPage() {
                   )}
 
                   {section.id === 'tagging-flow' && (
-                    <div className="bg-card border-border rounded-lg border p-6">
-                      <h3 className="text-card-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+                    <div className="bg-white dark:bg-gray-900 border-border rounded-lg border p-6">
+                      <h3 className="text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg font-semibold">
                         <Tag className="h-5 w-5" />
                         Para Qué Sirve el Tagging
                       </h3>
@@ -591,14 +591,14 @@ export default function AdminHelpPage() {
 
                         {/* Methods */}
                         <div>
-                          <h4 className="text-card-foreground mb-3 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
                             Métodos de Etiquetado
                           </h4>
 
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             {/* Manual */}
                             <div className="border-border rounded-lg border p-4">
-                              <h5 className="text-card-foreground mb-2 flex items-center gap-2 font-medium">
+                              <h5 className="text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2 font-medium">
                                 <Settings className="h-4 w-4" />
                                 Método Manual (Digital)
                               </h5>
@@ -612,7 +612,7 @@ export default function AdminHelpPage() {
 
                             {/* QR */}
                             <div className="border-border rounded-lg border p-4">
-                              <h5 className="text-card-foreground mb-2 flex items-center gap-2 font-medium">
+                              <h5 className="text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2 font-medium">
                                 <QrCode className="h-4 w-4" />
                                 Método QR (En el Evento)
                               </h5>
@@ -628,7 +628,7 @@ export default function AdminHelpPage() {
 
                         {/* Workflow */}
                         <div>
-                          <h4 className="text-card-foreground mb-3 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
                             Flujo Completo en el Evento
                           </h4>
                           <div className="space-y-3">
@@ -637,7 +637,7 @@ export default function AdminHelpPage() {
                                 1
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Subir fotos al sistema
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -652,7 +652,7 @@ export default function AdminHelpPage() {
                                 2
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Asignar fotos (tagging)
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -667,7 +667,7 @@ export default function AdminHelpPage() {
                                 3
                               </div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Acceso familiar
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -682,8 +682,8 @@ export default function AdminHelpPage() {
                   )}
 
                   {section.id === 'orders-sync' && (
-                    <div className="bg-card border-border rounded-lg border p-6">
-                      <h3 className="text-card-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+                    <div className="bg-white dark:bg-gray-900 border-border rounded-lg border p-6">
+                      <h3 className="text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg font-semibold">
                         <ShoppingCart className="h-5 w-5" />
                         Sincronización de Pedidos
                       </h3>
@@ -706,14 +706,14 @@ export default function AdminHelpPage() {
                         </div>
 
                         <div>
-                          <h4 className="text-card-foreground mb-3 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
                             Estados de Pedidos
                           </h4>
                           <div className="space-y-3">
                             <div className="border-border flex items-center gap-3 rounded-lg border p-3">
                               <div className="h-3 w-3 rounded-full bg-gray-400"></div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Pending
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -725,7 +725,7 @@ export default function AdminHelpPage() {
                             <div className="border-border flex items-center gap-3 rounded-lg border p-3">
                               <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Processing
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -737,7 +737,7 @@ export default function AdminHelpPage() {
                             <div className="border-border flex items-center gap-3 rounded-lg border p-3">
                               <div className="h-3 w-3 rounded-full bg-green-400"></div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Approved
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -749,7 +749,7 @@ export default function AdminHelpPage() {
                             <div className="border-border flex items-center gap-3 rounded-lg border p-3">
                               <div className="h-3 w-3 rounded-full bg-blue-400"></div>
                               <div>
-                                <p className="text-card-foreground font-medium">
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
                                   Delivered
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
@@ -761,7 +761,7 @@ export default function AdminHelpPage() {
                         </div>
 
                         <div>
-                          <h4 className="text-card-foreground mb-2 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-2 font-medium">
                             Proceso de Sincronización
                           </h4>
                           <ul className="text-card-foreground/70 space-y-1 text-sm">
@@ -781,15 +781,15 @@ export default function AdminHelpPage() {
                   )}
 
                   {section.id === 'shortcuts' && (
-                    <div className="bg-card border-border rounded-lg border p-6">
-                      <h3 className="text-card-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+                    <div className="bg-white dark:bg-gray-900 border-border rounded-lg border p-6">
+                      <h3 className="text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg font-semibold">
                         <Zap className="h-5 w-5" />
                         Atajos de Teclado
                       </h3>
 
                       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                          <h4 className="text-card-foreground mb-3 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
                             Navegación General
                           </h4>
                           <div className="space-y-2">
@@ -827,7 +827,7 @@ export default function AdminHelpPage() {
                         </div>
 
                         <div>
-                          <h4 className="text-card-foreground mb-3 font-medium">
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
                             Tagging
                           </h4>
                           <div className="space-y-2">
@@ -871,8 +871,8 @@ export default function AdminHelpPage() {
             })}
 
             {/* FAQ Section */}
-            <div className="bg-card border-border mt-8 rounded-lg border p-6">
-              <h3 className="text-card-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+            <div className="bg-white dark:bg-gray-900 border-border mt-8 rounded-lg border p-6">
+              <h3 className="text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 text-lg font-semibold">
                 <MessageCircle className="h-5 w-5" />
                 Preguntas Frecuentes
               </h3>
@@ -886,7 +886,7 @@ export default function AdminHelpPage() {
                       }
                       className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-surface"
                     >
-                      <span className="text-card-foreground font-medium">
+                      <span className="text-gray-900 dark:text-gray-100 font-medium">
                         {faq.question}
                       </span>
                       <ChevronRight

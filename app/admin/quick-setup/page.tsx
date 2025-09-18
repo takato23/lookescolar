@@ -42,19 +42,19 @@ export default function QuickSetupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-8 text-4xl font-bold text-gray-800">
+        <h1 className="mb-8 text-4xl font-bold text-foreground">
           🚀 Setup Rápido - Sistema de Fotografía
         </h1>
 
         <div className="rounded-xl bg-white p-8 shadow-lg">
-          <h2 className="mb-6 text-2xl font-semibold text-gray-700">
+          <h2 className="mb-6 text-2xl font-semibold text-foreground">
             Crear Datos de Prueba
           </h2>
 
-          <p className="mb-6 text-gray-600">
+          <p className="mb-6 text-gray-500 dark:text-gray-400">
             Este botón creará automáticamente:
           </p>
-          <ul className="mb-6 list-inside list-disc space-y-2 text-gray-600">
+          <ul className="mb-6 list-inside list-disc space-y-2 text-gray-500 dark:text-gray-400">
             <li>1 Evento: "Graduación 2024"</li>
             <li>4 Alumnos con sus tokens únicos</li>
             <li>Todo listo para empezar a subir fotos</li>
@@ -76,13 +76,13 @@ export default function QuickSetupPage() {
           )}
 
           {eventId && (
-            <div className="rounded-lg bg-blue-50 p-6">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-6">
               <h3 className="mb-4 text-lg font-semibold text-blue-900">
                 ✅ Evento Creado - ID: {eventId}
               </h3>
 
               <div className="mb-4">
-                <p className="mb-2 font-semibold text-gray-700">
+                <p className="mb-2 font-semibold text-foreground">
                   Ahora puedes:
                 </p>
                 <div className="space-y-2">
@@ -103,7 +103,7 @@ export default function QuickSetupPage() {
               <h3 className="mb-4 text-lg font-semibold text-yellow-900">
                 🔑 Tokens de Acceso Familiar
               </h3>
-              <p className="mb-4 text-sm text-gray-600">
+              <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 Guarda estos enlaces. Cada familia accede con su link único:
               </p>
               <div className="space-y-3">
@@ -112,7 +112,7 @@ export default function QuickSetupPage() {
                     key={idx}
                     className="rounded-lg border border-yellow-200 bg-white p-4"
                   >
-                    <p className="mb-2 font-semibold text-gray-800">
+                    <p className="mb-2 font-semibold text-foreground">
                       {item.name}
                     </p>
                     <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export default function QuickSetupPage() {
                         type="text"
                         readOnly
                         value={`http://localhost:3000/f/${item.token}`}
-                        className="flex-1 rounded border bg-gray-50 p-2 text-sm"
+                        className="flex-1 rounded border bg-muted p-2 text-sm"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <button
@@ -153,11 +153,11 @@ export default function QuickSetupPage() {
         </div>
 
         <div className="mt-8 rounded-xl bg-white p-8 shadow-lg">
-          <h2 className="mb-4 text-2xl font-semibold text-gray-700">
+          <h2 className="mb-4 text-2xl font-semibold text-foreground">
             📋 Instrucciones Paso a Paso
           </h2>
 
-          <ol className="list-inside list-decimal space-y-4 text-gray-600">
+          <ol className="list-inside list-decimal space-y-4 text-gray-500 dark:text-gray-400">
             <li>
               <strong>Crear Datos:</strong> Click en el botón "Crear Evento y
               Alumnos de Prueba"
@@ -176,9 +176,9 @@ export default function QuickSetupPage() {
             </li>
           </ol>
 
-          <div className="mt-6 rounded-lg bg-amber-50 p-4">
+          <div className="mt-6 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-4">
             <p className="text-sm font-semibold text-amber-900">💡 Tip:</p>
-            <p className="text-sm text-amber-700">
+            <p className="text-sm text-amber-700 dark:text-amber-300">
               Las fotos se procesan con marca de agua "MUESTRA" automáticamente.
               Las familias solo verán las fotos que les asignes.
             </p>

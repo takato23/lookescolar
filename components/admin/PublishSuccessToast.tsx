@@ -151,11 +151,11 @@ export function PublishSuccessToast({
       case 'published':
         return 'text-emerald-800 bg-emerald-50/90 border-emerald-200';
       case 'unpublished':
-        return 'text-orange-800 bg-orange-50/90 border-orange-200';
+        return 'text-primary-800 bg-primary-50/90 border-primary-200';
       case 'rotated':
         return 'text-blue-800 bg-blue-50/90 border-blue-200';
       default:
-        return 'text-gray-800 bg-gray-50/90 border-gray-200';
+        return 'text-foreground bg-muted/90 border-border';
     }
   };
 
@@ -164,11 +164,11 @@ export function PublishSuccessToast({
       case 'published':
         return <CheckCircle2 className="h-6 w-6 text-emerald-600" />;
       case 'unpublished':
-        return <Clock className="h-6 w-6 text-orange-600" />;
+        return <Clock className="h-6 w-6 text-primary-600" />;
       case 'rotated':
-        return <Link2 className="h-6 w-6 text-blue-600" />;
+        return <Link2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />;
       default:
-        return <CheckCircle2 className="h-6 w-6 text-gray-600" />;
+        return <CheckCircle2 className="h-6 w-6 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -445,16 +445,16 @@ export function usePublishSuccessToast() {
 export function PublishSuccessToastSkeleton() {
   return (
     <div className="fixed bottom-4 right-4 z-50 w-full max-w-md">
-      <div className="neural-glass-card rounded-xl border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-md">
+      <div className="neural-glass-card rounded-xl border border-border bg-white/90 p-4 shadow-lg backdrop-blur-md">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 h-6 w-6 flex-shrink-0 animate-pulse rounded-full bg-gray-200" />
+          <div className="mt-0.5 h-6 w-6 flex-shrink-0 animate-pulse rounded-full bg-muted" />
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="h-4 animate-pulse rounded bg-gray-200" />
-            <div className="h-3 w-3/4 animate-pulse rounded bg-gray-100" />
+            <div className="h-4 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
             <div className="flex gap-2">
-              <div className="h-8 flex-1 animate-pulse rounded bg-gray-100" />
-              <div className="h-8 w-8 animate-pulse rounded bg-gray-100" />
-              <div className="h-8 w-8 animate-pulse rounded bg-gray-100" />
+              <div className="h-8 flex-1 animate-pulse rounded bg-muted" />
+              <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+              <div className="h-8 w-8 animate-pulse rounded bg-muted" />
             </div>
           </div>
         </div>

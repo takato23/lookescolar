@@ -64,7 +64,7 @@ export default function PhotoMigrationDashboard() {
   const getPhaseColor = (phase: string) => {
     switch (phase) {
       case 'planning':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
       case 'soft-launch':
         return 'bg-blue-100 text-blue-800';
       case 'gradual-rollout':
@@ -74,7 +74,7 @@ export default function PhotoMigrationDashboard() {
       case 'legacy-deprecation':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -83,10 +83,10 @@ export default function PhotoMigrationDashboard() {
       <div className="p-6">
         <div className="mx-auto max-w-7xl">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 w-1/3 rounded bg-gray-200"></div>
+            <div className="h-8 w-1/3 rounded bg-muted"></div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 rounded bg-gray-200"></div>
+                <div key={i} className="h-32 rounded bg-muted"></div>
               ))}
             </div>
           </div>
@@ -101,10 +101,10 @@ export default function PhotoMigrationDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Dashboard de Migración - Gestión de Fotos
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-gray-500 dark:text-gray-400">
               Monitoreo del proceso de unificación entre sistema tradicional y
               biblioteca avanzada
             </p>
@@ -125,7 +125,7 @@ export default function PhotoMigrationDashboard() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Progreso General</span>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {currentMigrationStatus.currentProgress}%
               </span>
             </div>
@@ -136,14 +136,14 @@ export default function PhotoMigrationDashboard() {
 
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
-                <h4 className="mb-2 text-sm font-medium text-gray-900">
+                <h4 className="mb-2 text-sm font-medium text-foreground">
                   Bloqueadores Actuales
                 </h4>
                 <ul className="space-y-1">
                   {currentMigrationStatus.blockers.map((blocker, index) => (
                     <li
                       key={index}
-                      className="flex items-start gap-2 text-sm text-gray-600"
+                      className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400"
                     >
                       <AlertTriangleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
                       {blocker}
@@ -152,14 +152,14 @@ export default function PhotoMigrationDashboard() {
                 </ul>
               </div>
               <div>
-                <h4 className="mb-2 text-sm font-medium text-gray-900">
+                <h4 className="mb-2 text-sm font-medium text-foreground">
                   Próximos Pasos
                 </h4>
                 <ul className="space-y-1">
                   {currentMigrationStatus.nextSteps.map((step, index) => (
                     <li
                       key={index}
-                      className="flex items-start gap-2 text-sm text-gray-600"
+                      className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400"
                     >
                       <ArrowRightIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
                       {step}
@@ -175,13 +175,13 @@ export default function PhotoMigrationDashboard() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Usuarios Activos
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <UsersIcon className="h-8 w-8 text-blue-600" />
+                <UsersIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 <div>
                   <div className="text-2xl font-bold">
                     {usageStats?.totalUsers}
@@ -196,7 +196,7 @@ export default function PhotoMigrationDashboard() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Eventos Migrados
               </CardTitle>
             </CardHeader>
@@ -222,7 +222,7 @@ export default function PhotoMigrationDashboard() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Fotos en Nueva Biblioteca
               </CardTitle>
             </CardHeader>
@@ -248,7 +248,7 @@ export default function PhotoMigrationDashboard() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+              <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Adopción
               </CardTitle>
             </CardHeader>
@@ -402,7 +402,7 @@ export default function PhotoMigrationDashboard() {
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Lanzamiento Suave</h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Sistema avanzado disponible para eventos específicos
                   </p>
                   <p className="text-xs text-gray-500">
@@ -412,12 +412,12 @@ export default function PhotoMigrationDashboard() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                  <ClockIcon className="h-5 w-5 text-blue-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30">
+                  <ClockIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Rollout Gradual (Actual)</h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Migración progresiva con feedback de usuarios
                   </p>
                   <p className="text-xs text-gray-500">
@@ -428,12 +428,12 @@ export default function PhotoMigrationDashboard() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                  <ClockIcon className="h-5 w-5 text-gray-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                  <ClockIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-medium">Migración Completa</h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Todos los eventos usando biblioteca avanzada
                   </p>
                   <p className="text-xs text-gray-500">

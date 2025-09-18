@@ -250,7 +250,7 @@ export default function QRManagement({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">QR Code Management</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Manage student QR codes for {eventName}
           </p>
         </div>
@@ -307,7 +307,7 @@ export default function QRManagement({
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
-                <Users className="h-4 w-4 text-orange-500" />
+                <Users className="h-4 w-4 text-primary-600" />
                 <div>
                   <p className="text-sm font-medium">Students without QR</p>
                   <p className="text-2xl font-bold">
@@ -372,8 +372,8 @@ export default function QRManagement({
             </CardHeader>
             <CardContent className="space-y-4">
               {studentsWithoutQR.length > 0 && (
-                <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-                  <p className="text-sm text-orange-700">
+                <div className="rounded-lg border border-primary-200 bg-primary-50 p-4">
+                  <p className="text-sm text-primary-700">
                     {studentsWithoutQR.length} students don't have QR codes yet.
                   </p>
                   <Button
@@ -417,8 +417,8 @@ export default function QRManagement({
               </div>
 
               {selectedStudents.length > 0 && (
-                <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-sm text-blue-700">
+                <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
                     {selectedStudents.length} students selected
                   </p>
                   <div className="flex gap-2">
@@ -455,7 +455,7 @@ export default function QRManagement({
                   {filteredStudents.map((student) => (
                     <div
                       key={student.id}
-                      className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50"
+                      className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted"
                     >
                       <div className="flex items-center space-x-3">
                         <input
@@ -480,7 +480,7 @@ export default function QRManagement({
                         <div>
                           <p className="font-medium">{student.name}</p>
                           {student.courseId && (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">
                               Course: {student.courseId}
                             </p>
                           )}
@@ -532,10 +532,10 @@ export default function QRManagement({
                         <p className="font-medium">
                           {qr.metadata?.studentName}
                         </p>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
                           Token: {qr.token.substring(0, 8)}...
                         </p>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
                           Created:{' '}
                           {qr.metadata?.createdAt
                             ? new Date(
@@ -562,7 +562,7 @@ export default function QRManagement({
                               <div className="text-center">
                                 <div className="inline-block rounded-lg border bg-white p-4">
                                   {/* QR Code would be displayed here */}
-                                  <div className="flex h-48 w-48 items-center justify-center rounded bg-gray-100">
+                                  <div className="flex h-48 w-48 items-center justify-center rounded bg-muted">
                                     <QrCode className="h-16 w-16 text-gray-400" />
                                   </div>
                                 </div>
@@ -612,9 +612,9 @@ export default function QRManagement({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
                   <h4 className="font-semibold text-blue-900">Testing Setup</h4>
-                  <p className="mt-1 text-sm text-blue-700">
+                  <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
                     Compare QR code classification vs traditional photo-name
                     method for secondary school students.
                   </p>
@@ -659,9 +659,9 @@ export default function QRManagement({
                     </CardContent>
                   </Card>
 
-                  <Card className="border-orange-200">
+                  <Card className="border-primary-200">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg text-orange-700">
+                      <CardTitle className="text-lg text-primary-700">
                         Traditional Method
                       </CardTitle>
                     </CardHeader>

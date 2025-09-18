@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import {
@@ -240,8 +242,8 @@ export function EventCard({
     return {
       primary: 'from-gray-400 to-gray-500',
       secondary: 'from-gray-300 to-gray-400',
-      accent: 'text-gray-600',
-      badge: 'bg-gray-100 text-gray-800 border-gray-200',
+      accent: 'text-muted-foreground',
+      badge: 'bg-muted text-foreground border-border',
       statIcon: 'text-gray-500',
       gradient: 'bg-gradient-to-br from-gray-50/50 to-gray-100/50',
       glow: 'shadow-gray-200/50',
@@ -321,7 +323,7 @@ export function EventCard({
             stroke="currentColor"
             strokeWidth={strokeWidth}
             fill="transparent"
-            className="text-gray-200 dark:text-gray-700"
+            className="text-gray-200 dark:text-foreground"
           />
           <circle
             cx={size / 2}
@@ -399,7 +401,7 @@ export function EventCard({
               'neural-glass-card flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-200',
               isSelected
                 ? `${colorScheme.badge} scale-110`
-                : 'border border-gray-200 bg-white/80 hover:border-gray-300 hover:bg-white'
+                : 'border border-border bg-white/80 hover:border-border hover:bg-white'
             )}
           >
             {isSelected && <CheckCircle2 className="h-4 w-4" />}
@@ -443,7 +445,7 @@ export function EventCard({
               {isUpcoming && (
                 <Badge
                   variant="outline"
-                  className="neural-glass-card border-orange-200 bg-orange-50/50 text-xs text-orange-600"
+                  className="neural-glass-card border-primary-200 bg-primary-50/50 text-xs text-primary-600"
                 >
                   <Clock className="mr-1 h-3 w-3" />
                   Próximo
@@ -453,7 +455,7 @@ export function EventCard({
                 event.stats.untaggedPhotos > 0 && (
                   <Badge
                     variant="outline"
-                    className="neural-glass-card border-amber-200 bg-amber-50/50 text-xs text-amber-600"
+                    className="neural-glass-card border-primary-200 bg-primary-50/50 text-xs text-primary-600"
                   >
                     <Hash className="mr-1 h-3 w-3" />
                     {event.stats.untaggedPhotos} pendientes
@@ -481,7 +483,7 @@ export function EventCard({
               </h3>
               {!compact && (
                 <div className="space-y-1">
-                  <p className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300">
                     <Calendar className="h-4 w-4" />
                     {eventDate.toLocaleDateString('es-AR', {
                       day: 'numeric',
@@ -495,13 +497,13 @@ export function EventCard({
                       {event.metadata.tags.slice(0, 3).map((tag, index) => (
                         <span
                           key={index}
-                          className="rounded-full border bg-gray-100/80 px-2 py-1 text-xs text-gray-600"
+                          className="rounded-full border bg-muted/80 px-2 py-1 text-xs text-gray-500 dark:text-gray-400"
                         >
                           {tag}
                         </span>
                       ))}
                       {event.metadata.tags.length > 3 && (
-                        <span className="rounded-full bg-gray-100/80 px-2 py-1 text-xs text-gray-500">
+                        <span className="rounded-full bg-muted/80 px-2 py-1 text-xs text-gray-500">
                           +{event.metadata.tags.length - 3}
                         </span>
                       )}
@@ -520,7 +522,7 @@ export function EventCard({
                 onClick={(e) => e.stopPropagation()}
                 disabled={isLoading}
               >
-                <MoreVertical className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                <MoreVertical className="h-4 w-4 text-foreground dark:text-gray-300" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -581,10 +583,10 @@ export function EventCard({
         {/* Quick Info Section */}
         {!compact && (
           <div className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-            <div className="flex items-center text-gray-600 dark:text-gray-300">
+            <div className="flex items-center text-muted-foreground dark:text-gray-300">
               <Calendar className="mr-2 h-4 w-4 shrink-0" />
               <div>
-                <div className="font-medium text-gray-900 dark:text-white">
+                <div className="font-medium text-foreground dark:text-white">
                   {eventDate.toLocaleDateString('es-AR', {
                     day: 'numeric',
                     month: 'short',
@@ -597,10 +599,10 @@ export function EventCard({
             </div>
 
             {event.photo_price && (
-              <div className="flex items-center text-gray-600 dark:text-gray-300">
+              <div className="flex items-center text-muted-foreground dark:text-gray-300">
                 <DollarSign className="mr-2 h-4 w-4 shrink-0" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">
+                  <div className="font-medium text-foreground dark:text-white">
                     ${event.photo_price.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -614,7 +616,7 @@ export function EventCard({
 
         {/* Compact Date Info */}
         {compact && (
-          <div className="mb-3 flex items-center text-sm text-gray-600 dark:text-gray-300">
+          <div className="mb-3 flex items-center text-sm text-muted-foreground dark:text-gray-300">
             <Calendar className="mr-2 h-4 w-4" />
             <span className="font-medium">
               {eventDate.toLocaleDateString('es-AR', {
@@ -640,13 +642,13 @@ export function EventCard({
               </div>
               <div
                 className={cn(
-                  'font-bold text-gray-900 dark:text-white',
+                  'font-bold text-foreground dark:text-white',
                   compact ? 'text-sm' : 'text-lg'
                 )}
               >
                 {event.stats.totalPhotos || 0}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-300">
+              <div className="text-xs text-muted-foreground dark:text-gray-300">
                 Fotos
               </div>
             </div>
@@ -657,13 +659,13 @@ export function EventCard({
               </div>
               <div
                 className={cn(
-                  'font-bold text-gray-900 dark:text-white',
+                  'font-bold text-foreground dark:text-white',
                   compact ? 'text-sm' : 'text-lg'
                 )}
               >
                 {event.stats.totalSubjects || 0}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-300">
+              <div className="text-xs text-muted-foreground dark:text-gray-300">
                 Familias
               </div>
             </div>
@@ -674,13 +676,13 @@ export function EventCard({
               </div>
               <div
                 className={cn(
-                  'font-bold text-gray-900 dark:text-white',
+                  'font-bold text-foreground dark:text-white',
                   compact ? 'text-sm' : 'text-lg'
                 )}
               >
                 {event.stats.totalOrders || 0}
               </div>
-              <div className="text-xs text-gray-600 dark:text-gray-300">
+              <div className="text-xs text-muted-foreground dark:text-gray-300">
                 Pedidos
               </div>
             </div>
@@ -700,14 +702,14 @@ export function EventCard({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-foreground dark:text-gray-300">
                       Etiquetado
                     </span>
                     <span className="text-xs font-bold">
                       {photoTaggingProgress}%
                     </span>
                   </div>
-                  <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-muted dark:bg-gray-700">
                     <div
                       className={`h-1.5 rounded-full bg-gradient-to-r ${colorScheme.primary} transition-all duration-700 ease-out`}
                       style={{ width: `${photoTaggingProgress}%` }}
@@ -727,14 +729,14 @@ export function EventCard({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-foreground dark:text-gray-300">
                       Meta de ingresos
                     </span>
                     <span className="text-xs font-bold">
                       {Math.round(revenueProgress)}%
                     </span>
                   </div>
-                  <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-muted dark:bg-gray-700">
                     <div
                       className="h-1.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-700 ease-out"
                       style={{ width: `${revenueProgress}%` }}
@@ -754,14 +756,14 @@ export function EventCard({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-foreground dark:text-gray-300">
                       Completado
                     </span>
                     <span className="text-xs font-bold">
                       {Math.round(completionRate)}%
                     </span>
                   </div>
-                  <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                  <div className="mt-1 h-1.5 w-full rounded-full bg-muted dark:bg-gray-700">
                     <div
                       className="h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-700 ease-out"
                       style={{ width: `${completionRate}%` }}
@@ -779,7 +781,7 @@ export function EventCard({
           event.stats.photoPreview.length > 0 && (
             <div className="mb-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span className="text-xs font-medium text-foreground dark:text-gray-300">
                   Vista previa
                 </span>
                 <span className="text-xs text-gray-500">
@@ -790,7 +792,7 @@ export function EventCard({
                 {event.stats.photoPreview.slice(0, 4).map((photo, index) => (
                   <div
                     key={photo.id}
-                    className="group aspect-square cursor-pointer overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800"
+                    className="group aspect-square cursor-pointer overflow-hidden rounded-lg bg-muted dark:bg-gray-800"
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <img
@@ -818,7 +820,7 @@ export function EventCard({
         {showAnalytics && event.stats && showMicroChart && (
           <div className="mb-4 space-y-3 border-t border-white/20 pt-4">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-xs font-medium text-foreground dark:text-gray-300">
                 Tendencia
               </span>
               <Activity className="h-4 w-4 text-gray-500" />
@@ -832,7 +834,7 @@ export function EventCard({
                   color="bg-green-500"
                   className="mb-2 justify-center"
                 />
-                <div className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-muted-foreground dark:text-gray-400">
                   Ingresos
                 </div>
                 <div className="text-sm font-bold text-green-600">
@@ -847,7 +849,7 @@ export function EventCard({
                   color="bg-purple-500"
                   className="mb-2 justify-center"
                 />
-                <div className="text-xs text-gray-600 dark:text-gray-400">
+                <div className="text-xs text-muted-foreground dark:text-gray-400">
                   Engagement
                 </div>
                 <div className="text-sm font-bold text-purple-600">
@@ -861,7 +863,7 @@ export function EventCard({
               <div className="rounded-lg bg-gradient-to-r from-blue-50/50 to-purple-50/50 p-3 dark:from-blue-900/20 dark:to-purple-900/20">
                 <div className="mb-2 flex items-center gap-2">
                   <Zap className="h-3 w-3 text-blue-500" />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-medium text-foreground dark:text-gray-300">
                     Actividad reciente
                   </span>
                 </div>
@@ -869,7 +871,7 @@ export function EventCard({
                   {event.stats.recentActivity.photosThisWeek && (
                     <div className="flex items-center gap-1">
                       <Camera className="h-3 w-3 text-blue-500" />
-                      <span className="text-gray-600 dark:text-gray-400">
+                      <span className="text-muted-foreground dark:text-gray-400">
                         {event.stats.recentActivity.photosThisWeek} esta semana
                       </span>
                     </div>
@@ -877,7 +879,7 @@ export function EventCard({
                   {event.stats.recentActivity.ordersThisWeek && (
                     <div className="flex items-center gap-1">
                       <ShoppingCart className="h-3 w-3 text-green-500" />
-                      <span className="text-gray-600 dark:text-gray-400">
+                      <span className="text-muted-foreground dark:text-gray-400">
                         {event.stats.recentActivity.ordersThisWeek} pedidos
                       </span>
                     </div>

@@ -207,8 +207,8 @@ export default function MobileOptimizedNavigation({
               {/* Icon based on type */}
               <div className="shrink-0">
                 {item.type === 'level' && (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                    <GraduationCap className="h-4 w-4 text-blue-600" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30">
+                    <GraduationCap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   </div>
                 )}
                 {item.type === 'course' && (
@@ -231,13 +231,13 @@ export default function MobileOptimizedNavigation({
                 <div className="mt-1 flex items-center gap-3">
                   {item.student_count !== undefined &&
                     item.student_count > 0 && (
-                      <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                      <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs">
                         <Users className="h-3 w-3" />
                         <span>{item.student_count}</span>
                       </div>
                     )}
                   {item.photo_count !== undefined && item.photo_count > 0 && (
-                    <div className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs">
                       <Camera className="h-3 w-3" />
                       <span>{item.photo_count}</span>
                     </div>
@@ -254,7 +254,7 @@ export default function MobileOptimizedNavigation({
             {/* Actions */}
             <div className="flex shrink-0 items-center gap-2">
               {isInteractive && (
-                <ChevronRight className="text-muted-foreground h-4 w-4" />
+                <ChevronRight className="text-gray-500 dark:text-gray-400 h-4 w-4" />
               )}
 
               {enableActions && (
@@ -321,7 +321,7 @@ export default function MobileOptimizedNavigation({
           {/* Icon */}
           <div className="shrink-0">
             {item.type === 'level' && (
-              <GraduationCap className="h-4 w-4 text-blue-600" />
+              <GraduationCap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             )}
             {item.type === 'course' && (
               <BookOpen className="h-4 w-4 text-purple-600" />
@@ -337,12 +337,12 @@ export default function MobileOptimizedNavigation({
             {(item.student_count || item.photo_count) && (
               <div className="mt-1 flex items-center gap-2">
                 {item.student_count !== undefined && item.student_count > 0 && (
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">
                     {item.student_count} estudiantes
                   </span>
                 )}
                 {item.photo_count !== undefined && item.photo_count > 0 && (
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">
                     {item.photo_count} fotos
                   </span>
                 )}
@@ -359,7 +359,7 @@ export default function MobileOptimizedNavigation({
             </Badge>
           )}
           {isInteractive && (
-            <ChevronRight className="text-muted-foreground h-4 w-4" />
+            <ChevronRight className="text-gray-500 dark:text-gray-400 h-4 w-4" />
           )}
         </div>
       </div>
@@ -381,7 +381,7 @@ export default function MobileOptimizedNavigation({
               {breadcrumbs[breadcrumbs.length - 1]?.name}
             </h2>
             {breadcrumbs.length > 1 && (
-              <p className="text-muted-foreground truncate text-sm">
+              <p className="text-gray-500 dark:text-gray-400 truncate text-sm">
                 {breadcrumbs
                   .slice(0, -1)
                   .map((b) => b.name)
@@ -428,7 +428,7 @@ export default function MobileOptimizedNavigation({
         <Card>
           <CardContent className="p-3 text-center">
             <div className="text-lg font-bold">{levelStats.totalItems}</div>
-            <div className="text-muted-foreground text-xs">
+            <div className="text-gray-500 dark:text-gray-400 text-xs">
               {currentPath.length === 0
                 ? 'Niveles'
                 : currentPath.length === 1
@@ -440,19 +440,19 @@ export default function MobileOptimizedNavigation({
 
         <Card>
           <CardContent className="p-3 text-center">
-            <div className="text-lg font-bold text-blue-600">
+            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
               {levelStats.totalStudents}
             </div>
-            <div className="text-muted-foreground text-xs">Estudiantes</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">Estudiantes</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-3 text-center">
-            <div className="text-lg font-bold text-orange-600">
+            <div className="text-lg font-bold text-primary-600">
               {levelStats.totalPhotos}
             </div>
-            <div className="text-muted-foreground text-xs">Fotos</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs">Fotos</div>
           </CardContent>
         </Card>
       </div>
@@ -460,7 +460,7 @@ export default function MobileOptimizedNavigation({
       {/* Search and Filters (Mobile Optimized) */}
       <div className="space-y-3">
         <div className="relative">
-          <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+          <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
           <Input
             placeholder="Buscar..."
             value={searchTerm}
@@ -545,7 +545,7 @@ export default function MobileOptimizedNavigation({
         ) : (
           <Card>
             <CardContent className="py-8 text-center">
-              <div className="text-muted-foreground mb-4">
+              <div className="text-gray-500 dark:text-gray-400 mb-4">
                 {searchTerm
                   ? 'No se encontraron resultados'
                   : 'No hay elementos disponibles'}

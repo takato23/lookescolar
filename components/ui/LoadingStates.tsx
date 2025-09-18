@@ -47,9 +47,9 @@ export function LoadingCard({ className }: LoadingCardProps) {
   return (
     <div className={cn('space-y-3 rounded-lg border p-4', className)}>
       <div className="animate-pulse space-y-3">
-        <div className="h-4 w-3/4 rounded bg-gray-200"></div>
-        <div className="h-3 w-1/2 rounded bg-gray-200"></div>
-        <div className="h-20 rounded bg-gray-200"></div>
+        <div className="h-4 w-3/4 rounded bg-muted"></div>
+        <div className="h-3 w-1/2 rounded bg-muted"></div>
+        <div className="h-20 rounded bg-muted"></div>
       </div>
     </div>
   );
@@ -71,7 +71,7 @@ export function LoadingGallery({ count = 12, className }: LoadingGalleryProps) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="aspect-square animate-pulse rounded-lg bg-gray-200"
+          className="aspect-square animate-pulse rounded-lg bg-muted"
         />
       ))}
     </div>
@@ -154,16 +154,16 @@ export function LoadingScreen({
 
         {/* Text */}
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl font-semibold text-foreground">
             {title || getDefaultTitle()}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-500 dark:text-gray-400">
             {description || getDefaultDescription()}
           </p>
         </div>
 
         {/* Progress bar (animated) */}
-        <div className="h-1 w-full rounded-full bg-gray-200">
+        <div className="h-1 w-full rounded-full bg-muted">
           <div className="bg-primary h-1 animate-pulse rounded-full"></div>
         </div>
       </div>
@@ -190,15 +190,15 @@ export function ProgressBar({
     <div className={cn('space-y-2', className)}>
       {(label || showPercentage) && (
         <div className="flex justify-between text-sm">
-          {label && <span className="text-gray-600">{label}</span>}
+          {label && <span className="text-gray-500 dark:text-gray-400">{label}</span>}
           {showPercentage && (
-            <span className="font-medium text-gray-800">
+            <span className="font-medium text-foreground">
               {clampedValue.toFixed(0)}%
             </span>
           )}
         </div>
       )}
-      <div className="h-2 w-full rounded-full bg-gray-200">
+      <div className="h-2 w-full rounded-full bg-muted">
         <div
           className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
           style={{ width: `${clampedValue}%` }}
@@ -236,7 +236,7 @@ export function StepIndicator({
                   isCompleted && 'bg-primary text-white',
                   isCurrent &&
                     'bg-primary/20 text-primary border-primary border-2',
-                  isUpcoming && 'bg-gray-200 text-gray-400'
+                  isUpcoming && 'bg-muted text-gray-400'
                 )}
               >
                 {isCompleted ? (
@@ -274,7 +274,7 @@ export function StepIndicator({
               <div
                 className={cn(
                   'h-0.5 w-8 transition-all duration-300',
-                  isCompleted ? 'bg-primary' : 'bg-gray-200'
+                  isCompleted ? 'bg-primary' : 'bg-muted'
                 )}
               />
             )}

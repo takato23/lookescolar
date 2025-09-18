@@ -27,12 +27,12 @@ export default function ErrorDashboardPro({
             <CardTitle>Ocurrió un error</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               Intenta recargar la página. Si el problema persiste, contacta al
               soporte.
             </p>
             {error?.message && (
-              <pre className="text-muted-foreground bg-muted whitespace-pre-wrap rounded p-3 text-xs">
+              <pre className="text-gray-500 dark:text-gray-400 bg-muted whitespace-pre-wrap rounded p-3 text-xs">
                 {error.message}
               </pre>
             )}

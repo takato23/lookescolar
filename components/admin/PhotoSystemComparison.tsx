@@ -74,10 +74,10 @@ export function PhotoSystemComparison({
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2 text-center">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-foreground">
           Comparación de Sistemas de Gestión de Fotos
         </h3>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Elige el sistema que mejor se adapte a tus necesidades
         </p>
       </div>
@@ -91,13 +91,13 @@ export function PhotoSystemComparison({
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-gray-600" />
+                <ImageIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 <CardTitle className="text-base">Sistema Tradicional</CardTitle>
               </div>
               {currentSystem === 'legacy' && (
                 <Badge
                   variant="secondary"
-                  className="bg-blue-100 text-blue-800"
+                  className="bg-blue-100 dark:bg-blue-950/30 text-blue-800"
                 >
                   Actual
                 </Badge>
@@ -157,7 +157,7 @@ export function PhotoSystemComparison({
                 )}
                 <Badge
                   variant="secondary"
-                  className="bg-amber-100 text-amber-800"
+                  className="bg-primary-50 text-primary-800"
                 >
                   <StarIcon className="mr-1 h-3 w-3" />
                   Nuevo
@@ -200,37 +200,37 @@ export function PhotoSystemComparison({
       {/* Feature Comparison Table */}
       {!compact && (
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-900">
+          <h4 className="text-sm font-semibold text-foreground">
             Comparación Detallada
           </h4>
-          <div className="overflow-hidden rounded-lg border border-gray-200">
+          <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-muted">
                 <tr>
-                  <th className="px-3 py-2 text-left font-medium text-gray-900">
+                  <th className="px-3 py-2 text-left font-medium text-foreground">
                     Característica
                   </th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-900">
+                  <th className="px-3 py-2 text-left font-medium text-foreground">
                     Tradicional
                   </th>
-                  <th className="px-3 py-2 text-left font-medium text-gray-900">
+                  <th className="px-3 py-2 text-left font-medium text-foreground">
                     Avanzada
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {systemComparison.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 font-medium text-gray-900">
+                  <tr key={index} className="hover:bg-muted">
+                    <td className="px-3 py-2 font-medium text-foreground">
                       {item.feature}
                     </td>
                     <td
-                      className={`px-3 py-2 ${item.advantage === 'legacy' ? 'font-medium text-green-700' : 'text-gray-600'}`}
+                      className={`px-3 py-2 ${item.advantage === 'legacy' ? 'font-medium text-green-700' : 'text-muted-foreground'}`}
                     >
                       {item.legacy}
                     </td>
                     <td
-                      className={`px-3 py-2 ${item.advantage === 'advanced' ? 'font-medium text-green-700' : 'text-gray-600'}`}
+                      className={`px-3 py-2 ${item.advantage === 'advanced' ? 'font-medium text-green-700' : 'text-muted-foreground'}`}
                     >
                       {item.advanced}
                     </td>
@@ -243,14 +243,14 @@ export function PhotoSystemComparison({
       )}
 
       {/* Migration Status */}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+      <div className="rounded-lg border border-primary-200 bg-primary-50 p-3">
         <div className="flex items-start gap-2">
-          <ClockIcon className="mt-0.5 h-4 w-4 text-amber-600" />
+          <ClockIcon className="mt-0.5 h-4 w-4 text-primary-600" />
           <div className="text-sm">
-            <p className="mb-1 font-medium text-amber-900">
+            <p className="mb-1 font-medium text-primary-900">
               Estado de Migración
             </p>
-            <p className="text-amber-700">
+            <p className="text-primary-700">
               Estamos en fase de lanzamiento gradual. Ambos sistemas están
               disponibles mientras recopilamos feedback y completamos las
               funciones faltantes.

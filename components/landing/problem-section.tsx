@@ -5,7 +5,7 @@ export function ProblemSection() {
         <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
           El <span className="text-gradient">problema</span>
         </h2>
-        <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
+        <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-3xl text-xl">
           Los métodos tradicionales de gestión de fotografía escolar son lentos,
           inseguros y poco eficientes.
         </p>

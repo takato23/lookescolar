@@ -186,7 +186,7 @@ export default function ProgressIndicators({
               </div>
               <div>
                 <CardTitle className="text-lg">{level.name}</CardTitle>
-                <p className="text-muted-foreground text-sm capitalize">
+                <p className="text-gray-500 dark:text-gray-400 text-sm capitalize">
                   {level.type}
                 </p>
               </div>
@@ -208,11 +208,11 @@ export default function ProgressIndicators({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <Camera className="h-4 w-4 text-blue-600" />
+                <Camera className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="font-medium">Fotos Subidas</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">
+                <span className="text-gray-500 dark:text-gray-400">
                   {level.photos.completed} / {level.photos.total}
                 </span>
                 <span
@@ -236,7 +236,7 @@ export default function ProgressIndicators({
                 <span className="font-medium">Etiquetado</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">
+                <span className="text-gray-500 dark:text-gray-400">
                   {level.tagging.completed} / {level.tagging.total}
                 </span>
                 <span
@@ -260,7 +260,7 @@ export default function ProgressIndicators({
                 <span className="font-medium">Aprobación</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">
+                <span className="text-gray-500 dark:text-gray-400">
                   {level.approval.completed} / {level.approval.total}
                 </span>
                 <span
@@ -281,11 +281,11 @@ export default function ProgressIndicators({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-orange-600" />
+                  <User className="h-4 w-4 text-primary-600" />
                   <span className="font-medium">Estudiantes con Fotos</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">
+                  <span className="text-gray-500 dark:text-gray-400">
                     {level.students.completed} / {level.students.total}
                   </span>
                   <span
@@ -304,7 +304,7 @@ export default function ProgressIndicators({
 
           {/* Status summary */}
           <div className="flex items-center justify-between border-t pt-2">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm">
               {level.lastActivity && (
                 <>
                   <Clock className="h-3 w-3" />
@@ -337,10 +337,10 @@ export default function ProgressIndicators({
     if (!overallProgress) return null;
 
     return (
-      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+      <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-purple-50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-blue-600" />
+            <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Progreso General del Evento
           </CardTitle>
         </CardHeader>
@@ -368,17 +368,17 @@ export default function ProgressIndicators({
                     fill="transparent"
                     strokeDasharray={`${2 * Math.PI * 30}`}
                     strokeDashoffset={`${2 * Math.PI * 30 * (1 - overallProgress.photos.percentage / 100)}`}
-                    className="text-blue-600 transition-all duration-500"
+                    className="text-blue-600 dark:text-blue-400 transition-all duration-500"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-blue-600">
+                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {Math.round(overallProgress.photos.percentage)}%
                   </span>
                 </div>
               </div>
               <h3 className="font-medium text-blue-900">Fotos Subidas</h3>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
                 {overallProgress.photos.completed} /{' '}
                 {overallProgress.photos.total}
               </p>
@@ -471,10 +471,10 @@ export default function ProgressIndicators({
         {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="mb-4 h-4 w-3/4 rounded bg-gray-200"></div>
+              <div className="mb-4 h-4 w-3/4 rounded bg-muted"></div>
               <div className="space-y-2">
-                <div className="h-2 rounded bg-gray-200"></div>
-                <div className="h-2 w-5/6 rounded bg-gray-200"></div>
+                <div className="h-2 rounded bg-muted"></div>
+                <div className="h-2 w-5/6 rounded bg-muted"></div>
               </div>
             </CardContent>
           </Card>
@@ -489,7 +489,7 @@ export default function ProgressIndicators({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Progreso del Evento</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Última actualización: {lastUpdate.toLocaleTimeString('es-AR')}
           </p>
         </div>

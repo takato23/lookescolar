@@ -358,7 +358,7 @@ export const SocialButton = forwardRef<
   }
 >(({ provider, children, className, ...props }, ref) => {
   const providerStyles = {
-    google: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
+    google: 'bg-white border-border text-foreground hover:bg-muted',
     facebook: 'bg-blue-600 text-white hover:bg-blue-700',
     apple: 'bg-black text-white hover:bg-gray-900',
     github: 'bg-gray-900 text-white hover:bg-gray-800',

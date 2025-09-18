@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -157,6 +159,42 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = handlePOST;
+async function handleGET(request: NextRequest) {
+  const supabase = await createServerSupabaseServiceClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // En desarrollo, permitir sin autenticación
+  if (!user && process.env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
 
+  const requestId = request.headers.get('x-request-id') || 'unknown';
+  const searchParams = request.nextUrl.searchParams;
+  const photoIdsParam = searchParams.get('photoIds');
+  
+  if (!photoIdsParam) {
+    return NextResponse.json({ error: 'photoIds parameter required' }, { status: 400 });
+  }
+  
+  const photoIds = photoIdsParam.split(',').filter(id => id.length > 0);
+  
+  if (photoIds.length === 0) {
+    return NextResponse.json({ error: 'At least one photoId required' }, { status: 400 });
+  }
+
+  // Create a POST request with the data from query params
+  const postRequest = new NextRequest(request.url, {
+    method: 'POST',
+    headers: request.headers,
+    body: JSON.stringify({
+      photoIds,
+      as: photoIds.length > 1 ? 'zip' : 'single'
+    })
+  });
+  
+  return handlePOST(postRequest);
+}
+
+export const POST = handlePOST;
+export const GET = handleGET;
 

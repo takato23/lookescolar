@@ -103,8 +103,8 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
   const icons = {
     success: <CheckCircle className="h-5 w-5 text-green-600" />,
     error: <XCircle className="h-5 w-5 text-red-600" />,
-    warning: <AlertTriangle className="h-5 w-5 text-amber-600" />,
-    info: <Info className="h-5 w-5 text-blue-600" />,
+    warning: <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
+    info: <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
   };
 
   const backgrounds = {
@@ -127,9 +127,9 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
         <div className="flex-shrink-0">{icons[toast.type]}</div>
 
         <div className="min-w-0 flex-1">
-          <h4 className="font-medium text-gray-900">{toast.title}</h4>
+          <h4 className="font-medium text-foreground">{toast.title}</h4>
           {toast.description && (
-            <p className="mt-1 text-sm text-gray-600">{toast.description}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{toast.description}</p>
           )}
           {toast.action && (
             <div className="mt-2">
@@ -145,7 +145,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
 
         <button
           onClick={() => onRemove(toast.id)}
-          className="flex-shrink-0 rounded-md p-1 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex-shrink-0 rounded-md p-1 text-gray-400 hover:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
           aria-label="Cerrar notificación"
         >
           <X className="h-4 w-4" />
@@ -198,7 +198,7 @@ export function LoadingSkeleton({
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
-          className="h-4 rounded bg-gray-200"
+          className="h-4 rounded bg-muted"
           style={{ width: `${80 + Math.random() * 20}%` }}
         />
       ))}
@@ -230,18 +230,18 @@ export function ErrorFallback({
       </div>
 
       <div>
-        <h2 className="mb-2 text-lg font-semibold text-gray-900">
+        <h2 className="mb-2 text-lg font-semibold text-foreground">
           Algo salió mal
         </h2>
-        <p className="mb-4 text-gray-600">
+        <p className="mb-4 text-gray-500 dark:text-gray-400">
           Ocurrió un error inesperado. Por favor, intenta nuevamente.
         </p>
 
         <details className="text-left">
-          <summary className="cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+          <summary className="cursor-pointer text-sm text-gray-500 hover:text-foreground">
             Detalles técnicos
           </summary>
-          <pre className="mt-2 overflow-auto rounded bg-gray-100 p-2 text-xs text-red-600">
+          <pre className="mt-2 overflow-auto rounded bg-muted p-2 text-xs text-red-600">
             {error.message}
           </pre>
         </details>
@@ -285,8 +285,8 @@ export function EmptyState({
       {icon && <div className="flex justify-center text-gray-400">{icon}</div>}
 
       <div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="text-gray-600">{description}</p>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
+        <p className="text-gray-500 dark:text-gray-400">{description}</p>
       </div>
 
       {action && (
@@ -295,7 +295,7 @@ export function EmptyState({
           className={cn(
             'inline-flex items-center rounded-md px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2',
             action.variant === 'secondary'
-              ? 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500'
+              ? 'bg-muted text-foreground hover:bg-muted focus:ring-gray-500'
               : 'bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500'
           )}
         >
@@ -337,16 +337,16 @@ export function ProgressBar({
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
         {label && (
-          <span className="text-sm font-medium text-gray-700">{label}</span>
+          <span className="text-sm font-medium text-foreground">{label}</span>
         )}
         {showValue && (
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {Math.round(percentage)}%
           </span>
         )}
       </div>
 
-      <div className="h-2 w-full rounded-full bg-gray-200">
+      <div className="h-2 w-full rounded-full bg-muted">
         <div
           className={cn(
             'h-2 rounded-full transition-all duration-300',

@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Camera, ShoppingCart, User, Settings } from 'lucide-react';
+import { Home, Camera, ShoppingCart, User, Settings, ShoppingBag } from 'lucide-react';
 
 export type NavigationItem = {
   href: string;
@@ -44,6 +44,11 @@ export const adminNavigationItems: NavigationItem[] = [
     href: '/admin/photos',
     label: 'Fotos',
     icon: Camera,
+  },
+  {
+    href: '/admin/store-settings',
+    label: 'Tienda',
+    icon: ShoppingBag,
   },
   {
     href: '/admin/orders',

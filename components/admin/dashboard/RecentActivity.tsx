@@ -32,7 +32,7 @@ interface RecentActivityProps {
 const activityConfig = {
   event_created: {
     icon: Calendar,
-    color: 'text-orange-600 bg-orange-50',
+    color: 'text-primary-600 bg-primary-50',
   },
   photos_uploaded: {
     icon: Camera,
@@ -80,11 +80,11 @@ export function RecentActivity({ activities }: RecentActivityProps) {
   if (activities.length === 0) {
     return (
       <div className="py-12 text-center">
-        <ActivityIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+        <ActivityIcon className="text-gray-500 dark:text-gray-400 mx-auto mb-4 h-12 w-12" />
         <h3 className="text-foreground mb-2 font-medium">
           Sin actividad reciente
         </h3>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
           Cuando uses el sistema, aquí verás tu actividad reciente.
         </p>
       </div>
@@ -110,7 +110,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
               <p className="text-foreground mb-1 text-sm font-medium">
                 {activity.message}
               </p>
-              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-xs">
                 <Clock className="h-3 w-3" />
                 {formatTimeAgo(activity.timestamp)}
               </div>

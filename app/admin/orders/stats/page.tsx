@@ -68,7 +68,7 @@ export default function OrderStatsPage() {
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-primary-500/10 to-secondary-500/10 blur-3xl" />
           <div className="relative">
             {/* Breadcrumbs */}
-            <nav className="text-muted-foreground mb-4 flex items-center gap-2 text-sm">
+            <nav className="text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2 text-sm">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-primary-600"
@@ -97,7 +97,7 @@ export default function OrderStatsPage() {
                 <h1 className="text-gradient-primary mb-2 text-3xl font-bold md:text-4xl">
                   Estadísticas de Pedidos
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-gray-500 dark:text-gray-400">
                   Análisis detallado de ventas y rendimiento
                 </p>
               </div>
@@ -168,12 +168,12 @@ export default function OrderStatsPage() {
             ) : (
               <Card variant="glass" className="p-12 text-center">
                 <div className="flex flex-col items-center gap-4">
-                  <BarChart3 className="text-muted-foreground h-16 w-16" />
+                  <BarChart3 className="text-gray-500 dark:text-gray-400 h-16 w-16" />
                   <div>
                     <h3 className="text-foreground mb-2 text-xl font-semibold">
                       No hay datos para mostrar
                     </h3>
-                    <p className="text-muted-foreground mb-4">
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
                       Aún no hay pedidos registrados en el sistema
                     </p>
                     <Link href="/admin/orders">

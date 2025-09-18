@@ -175,7 +175,7 @@ export function OperationalDashboard() {
       case 'unhealthy':
         return 'text-red-600';
       default:
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 
@@ -188,7 +188,7 @@ export function OperationalDashboard() {
       case 'unhealthy':
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
-        return <Clock className="h-4 w-4 text-gray-600" />;
+        return <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -197,7 +197,7 @@ export function OperationalDashboard() {
       <Card>
         <CardContent className="p-8 text-center">
           <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-t-transparent"></div>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Cargando dashboard operacional...
           </p>
         </CardContent>
@@ -226,7 +226,7 @@ export function OperationalDashboard() {
                         : 'bg-red-500'
                   }`}
                 />
-                <span className="text-muted-foreground text-sm">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
                   Sistema {systemHealth?.overall || 'desconocido'}
                 </span>
               </div>
@@ -274,7 +274,7 @@ export function OperationalDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                   Estado General
                 </p>
                 <p
@@ -292,7 +292,7 @@ export function OperationalDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                   Uptime
                 </p>
                 <p className="text-2xl font-bold text-green-600">
@@ -308,14 +308,14 @@ export function OperationalDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                   Cache Hit Rate
                 </p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {cacheStats ? `${cacheStats.hitRate.toFixed(1)}%` : '0%'}
                 </p>
               </div>
-              <Zap className="h-8 w-8 text-blue-600" />
+              <Zap className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -324,7 +324,7 @@ export function OperationalDashboard() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                   Alertas Activas
                 </p>
                 <p
@@ -365,7 +365,7 @@ export function OperationalDashboard() {
                     alert.severity === 'critical'
                       ? 'border-red-200 bg-red-50'
                       : alert.severity === 'high'
-                        ? 'border-orange-200 bg-orange-50'
+                        ? 'border-primary-200 bg-primary-50'
                         : alert.severity === 'medium'
                           ? 'border-yellow-200 bg-yellow-50'
                           : 'border-blue-200 bg-blue-50'
@@ -376,19 +376,19 @@ export function OperationalDashboard() {
                       <AlertCircle className="h-4 w-4 text-red-600" />
                     )}
                     {alert.severity === 'high' && (
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
+                      <AlertTriangle className="h-4 w-4 text-primary-600" />
                     )}
                     {alert.severity === 'medium' && (
                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
                     )}
                     {alert.severity === 'low' && (
-                      <CheckCircle className="h-4 w-4 text-blue-600" />
+                      <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     )}
                   </div>
 
                   <div className="flex-1">
                     <h4 className="text-sm font-medium">{alert.message}</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
                       {new Date(alert.timestamp).toLocaleString()}
                     </p>
                   </div>
@@ -398,7 +398,7 @@ export function OperationalDashboard() {
                       alert.severity === 'critical'
                         ? 'bg-red-100 text-red-800'
                         : alert.severity === 'high'
-                          ? 'bg-orange-100 text-orange-800'
+                          ? 'bg-primary-50 text-primary-800'
                           : alert.severity === 'medium'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-blue-100 text-blue-800'
@@ -421,7 +421,7 @@ export function OperationalDashboard() {
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {check.name === 'database' && (
-                    <Database className="h-5 w-5 text-blue-600" />
+                    <Database className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   )}
                   {check.name === 'storage' && (
                     <HardDrive className="h-5 w-5 text-purple-600" />
@@ -430,7 +430,7 @@ export function OperationalDashboard() {
                     <Network className="h-5 w-5 text-green-600" />
                   )}
                   {check.name === 'memory' && (
-                    <Server className="h-5 w-5 text-orange-600" />
+                    <Server className="h-5 w-5 text-primary-600" />
                   )}
                   {check.name === 'cache' && (
                     <Zap className="h-5 w-5 text-yellow-600" />
@@ -485,7 +485,7 @@ export function OperationalDashboard() {
               </div>
 
               {check.message && (
-                <div className="mt-4 rounded bg-gray-50 p-2 text-xs text-gray-600">
+                <div className="mt-4 rounded bg-muted p-2 text-xs text-gray-500 dark:text-gray-400">
                   {check.message}
                 </div>
               )}
@@ -506,16 +506,16 @@ export function OperationalDashboard() {
           <CardContent>
             <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-4">
               <div>
-                <p className="text-muted-foreground mb-1 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Total Transferido
                 </p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {formatBytes(egressMetrics.totalBytes)}
                 </p>
               </div>
 
               <div>
-                <p className="text-muted-foreground mb-1 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Total Requests
                 </p>
                 <p className="text-2xl font-bold text-green-600">
@@ -524,7 +524,7 @@ export function OperationalDashboard() {
               </div>
 
               <div>
-                <p className="text-muted-foreground mb-1 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Cache Hit Rate
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
@@ -533,10 +533,10 @@ export function OperationalDashboard() {
               </div>
 
               <div>
-                <p className="text-muted-foreground mb-1 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                   Avg per Request
                 </p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-2xl font-bold text-primary">
                   {formatBytes(
                     egressMetrics.totalBytes / egressMetrics.totalRequests || 0
                   )}
@@ -550,11 +550,11 @@ export function OperationalDashboard() {
               {egressMetrics.topOperations.slice(0, 5).map((op) => (
                 <div
                   key={op.operation}
-                  className="flex items-center justify-between rounded bg-gray-50 p-3"
+                  className="flex items-center justify-between rounded bg-muted p-3"
                 >
                   <div className="flex items-center gap-2">
                     {op.operation === 'photo_view' && (
-                      <Eye className="h-4 w-4 text-blue-600" />
+                      <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     )}
                     {op.operation === 'photo_download' && (
                       <Download className="h-4 w-4 text-green-600" />
@@ -563,7 +563,7 @@ export function OperationalDashboard() {
                       <FileText className="h-4 w-4 text-purple-600" />
                     )}
                     {op.operation === 'admin_export' && (
-                      <Upload className="h-4 w-4 text-orange-600" />
+                      <Upload className="h-4 w-4 text-primary-600" />
                     )}
                     <span className="font-medium capitalize">
                       {op.operation.replace(/_/g, ' ')}
@@ -572,7 +572,7 @@ export function OperationalDashboard() {
 
                   <div className="text-right">
                     <div className="font-medium">{formatBytes(op.bytes)}</div>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-gray-500 dark:text-gray-400 text-sm">
                       {op.requests} requests ({op.percentage.toFixed(1)}%)
                     </div>
                   </div>
@@ -594,12 +594,12 @@ export function OperationalDashboard() {
         <CardContent>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
-              <p className="text-muted-foreground mb-1 text-sm">Versión</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">Versión</p>
               <p className="font-medium">{systemHealth?.version || '1.0.0'}</p>
             </div>
 
             <div>
-              <p className="text-muted-foreground mb-1 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                 Última Verificación
               </p>
               <p className="font-medium">
@@ -610,7 +610,7 @@ export function OperationalDashboard() {
             </div>
 
             <div>
-              <p className="text-muted-foreground mb-1 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mb-1 text-sm">
                 Servicios Monitoreados
               </p>
               <p className="font-medium">{systemHealth?.checks.length || 0}</p>

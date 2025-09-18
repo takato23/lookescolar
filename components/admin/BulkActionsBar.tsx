@@ -72,7 +72,7 @@ function MoveModal({ isOpen, onClose, onMove, folders, selectedCount, isLoading 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
             Mover {selectedCount} foto{selectedCount !== 1 ? 's' : ''} a carpeta
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -93,8 +93,8 @@ function MoveModal({ isOpen, onClose, onMove, folders, selectedCount, isLoading 
                 onClick={() => handleMove(folder.id)}
                 disabled={isLoading || movingToId !== null}
                 className={cn(
-                  "w-full text-left p-3 border border-gray-200 dark:border-gray-700 rounded-lg transition-all duration-200",
-                  "hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600",
+                  "w-full text-left p-3 border border-border dark:border-gray-700 rounded-lg transition-all duration-200",
+                  "hover:bg-muted dark:hover:bg-gray-800 hover:border-border dark:hover:border-gray-600",
                   "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                   movingToId === folder.id && "bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
@@ -102,7 +102,7 @@ function MoveModal({ isOpen, onClose, onMove, folders, selectedCount, isLoading 
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-gray-100">
+                    <div className="font-medium text-foreground dark:text-gray-100">
                       {folder.name}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -110,7 +110,7 @@ function MoveModal({ isOpen, onClose, onMove, folders, selectedCount, isLoading 
                     </div>
                   </div>
                   {movingToId === folder.id && (
-                    <Loader2Icon className="h-4 w-4 animate-spin text-blue-600" />
+                    <Loader2Icon className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
                   )}
                 </div>
               </button>
@@ -221,7 +221,7 @@ export default function BulkActionsBar({
             className={cn(
               "fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40",
               "bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm",
-              "border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg",
+              "border border-border dark:border-gray-700 rounded-lg shadow-lg",
               "px-6 py-4 flex items-center gap-4",
               "min-w-[600px] max-w-[90vw]",
               className
@@ -245,7 +245,7 @@ export default function BulkActionsBar({
                   "transition-all duration-200",
                   allSelected 
                     ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "hover:bg-muted dark:hover:bg-gray-800"
                 )}
               >
                 <CheckSquareIcon className="h-4 w-4 mr-2" />
@@ -325,7 +325,7 @@ export default function BulkActionsBar({
               size="sm"
               onClick={onDeselectAll}
               disabled={isActionLoading}
-              className="ml-auto text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="ml-auto text-gray-500 hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200"
             >
               <XIcon className="h-4 w-4" />
             </Button>

@@ -181,7 +181,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   // Loading progress indicator
   const LoadingProgress = () =>
     showLoadingProgress && !isLoaded && !isError ? (
-      <div className="absolute inset-0 flex animate-pulse items-center justify-center bg-gray-100">
+      <div className="absolute inset-0 flex animate-pulse items-center justify-center bg-muted">
         <div className="text-sm text-gray-400">Cargando...</div>
       </div>
     ) : null;
@@ -189,7 +189,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   // Error state
   const ErrorState = () =>
     isError ? (
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+      <div className="absolute inset-0 flex items-center justify-center bg-muted">
         <div className="text-center text-gray-500">
           <svg
             className="mx-auto mb-2 h-8 w-8"

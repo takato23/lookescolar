@@ -165,7 +165,7 @@ export default function PublishPage() {
       <div className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Publicación</h1>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Dos tipos de compartir: público general y personalizado por familia
           </p>
         </div>
@@ -176,17 +176,17 @@ export default function PublishPage() {
 
       {/* SECCIÓN: COMPARTIR PÚBLICO */}
       {selectedEvent && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50">
           <div className="p-6">
             <div className="mb-4 flex items-center gap-3">
-              <div className="rounded-full bg-blue-100 p-2">
-                <Users className="h-5 w-5 text-blue-600" />
+              <div className="rounded-full bg-blue-100 dark:bg-blue-950/30 p-2">
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-blue-900">
                   Compartir Público
                 </h2>
-                <p className="text-sm text-blue-700">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
                   Evento: {selectedEvent.name} -{' '}
                   <strong>Todas las familias ven las mismas fotos</strong>
                 </p>
@@ -210,14 +210,14 @@ export default function PublishPage() {
                   href={getPublicUrl()}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center rounded-md border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                  className="inline-flex items-center rounded-md border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-300 hover:bg-blue-50"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Ver Galería Pública
                 </a>
               </Tooltip>
 
-              <div className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-600">
+              <div className="rounded bg-blue-100 dark:bg-blue-950/30 px-2 py-1 font-mono text-xs text-blue-600">
                 {getPublicUrl()}
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function PublishPage() {
       <Card className="border-orange-200 bg-orange-50/50">
         <div className="border-b border-orange-200 bg-orange-100/50 p-4">
           <div className="mb-3 flex items-center gap-3">
-            <div className="rounded-full bg-orange-100 p-2">
+            <div className="rounded-full bg-orange-100 dark:bg-orange-950/30 p-2">
               <User className="h-5 w-5 text-orange-600" />
             </div>
             <div>
@@ -262,9 +262,9 @@ export default function PublishPage() {
           </div>
           <div>
             {loading ? (
-              <div className="text-muted-foreground p-6 text-sm">Cargando…</div>
+              <div className="text-gray-500 dark:text-gray-400 p-6 text-sm">Cargando…</div>
             ) : filtered.length === 0 ? (
-              <div className="text-muted-foreground p-6 text-sm">
+              <div className="text-gray-500 dark:text-gray-400 p-6 text-sm">
                 Sin resultados
               </div>
             ) : (
@@ -281,7 +281,7 @@ export default function PublishPage() {
                     <div className="col-span-2">{r.photos_count}</div>
                     <div className="col-span-2">
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${r.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${r.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-muted text-foreground'}`}
                       >
                         {r.is_published ? 'Publicado' : 'No publicado'}
                       </span>
@@ -337,7 +337,7 @@ export default function PublishPage() {
                                   target="_blank"
                                   rel="noreferrer"
                                   aria-label={`Abrir enlace personalizado ${r.code_value}`}
-                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-muted"
                                 >
                                   <ExternalLink className="mr-1 h-4 w-4" /> Ver
                                   galería
@@ -352,7 +352,7 @@ export default function PublishPage() {
                                   target="_blank"
                                   rel="noreferrer"
                                   aria-label={`Ver QR ${r.code_value}`}
-                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-gray-50"
+                                  className="inline-flex items-center rounded-md border px-2 py-1 text-sm hover:bg-muted"
                                 >
                                   <QrCode className="mr-1 h-4 w-4" /> QR
                                 </a>

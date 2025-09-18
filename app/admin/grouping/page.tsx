@@ -72,15 +72,15 @@ export default function GroupingPage() {
     <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Agrupar (por QR)</h1>
-        <p className="text-muted-foreground">
+        <p className="text-gray-500 dark:text-gray-400">
           Agrupa de ancla a ancla. Ajustes manuales por arrastre
         </p>
       </div>
 
-      <div className="bg-card rounded-lg border p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label htmlFor="event" className="text-muted-foreground text-sm">
+            <label htmlFor="event" className="text-gray-500 dark:text-gray-400 text-sm">
               ID de evento
             </label>
             <Input
@@ -90,7 +90,7 @@ export default function GroupingPage() {
               placeholder="UUID del evento"
             />
           </div>
-          <label className="text-muted-foreground flex items-center gap-2 text-sm">
+          <label className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               checked={dryRun}
@@ -106,7 +106,7 @@ export default function GroupingPage() {
             {loading ? 'Agrupando…' : 'Agrupar ahora'}
           </Button>
         </div>
-        <div className="text-muted-foreground mt-4 text-sm">
+        <div className="text-gray-500 dark:text-gray-400 mt-4 text-sm">
           Si hay anchors sin code, verificar que el código exista en Códigos o
           crearlo.
         </div>
@@ -119,26 +119,26 @@ export default function GroupingPage() {
       )}
 
       {result && (
-        <div className="bg-card mt-4 rounded-lg border p-6">
+        <div className="bg-white dark:bg-gray-900 mt-4 rounded-lg border p-6">
           <h2 className="mb-2 text-xl font-semibold">Resumen</h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">{result.assigned ?? 0}</div>
-              <div className="text-muted-foreground text-xs">Asignadas</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Asignadas</div>
             </div>
             <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">{result.untouched ?? 0}</div>
-              <div className="text-muted-foreground text-xs">Sin cambios</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">Sin cambios</div>
             </div>
             <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">{result.unassigned ?? 0}</div>
-              <div className="text-muted-foreground text-xs">No asignadas</div>
+              <div className="text-gray-500 dark:text-gray-400 text-xs">No asignadas</div>
             </div>
             <div className="bg-muted rounded-md p-3">
               <div className="text-2xl font-bold">
                 {result.anchors_unmatched?.length ?? 0}
               </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 Anclas sin code
               </div>
             </div>
@@ -180,7 +180,7 @@ export default function GroupingPage() {
       )}
 
       {showUnassigned && (
-        <div className="bg-card mt-6 rounded-lg border p-6">
+        <div className="bg-white dark:bg-gray-900 mt-6 rounded-lg border p-6">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="font-semibold">Sin asignar</h3>
             <button
@@ -191,17 +191,17 @@ export default function GroupingPage() {
               Cerrar
             </button>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
             Usa los filtros de fotos para ver únicamente las no asignadas.
           </p>
         </div>
       )}
 
-      <div className="bg-card mt-8 rounded-lg border p-6">
+      <div className="bg-white dark:bg-gray-900 mt-8 rounded-lg border p-6">
         <h2 className="mb-2 text-xl font-semibold">Corrección manual</h2>
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
-            <label className="text-muted-foreground text-sm">
+            <label className="text-gray-500 dark:text-gray-400 text-sm">
               Código origen
             </label>
             <Input
@@ -211,7 +211,7 @@ export default function GroupingPage() {
             />
           </div>
           <div>
-            <label className="text-muted-foreground text-sm">
+            <label className="text-gray-500 dark:text-gray-400 text-sm">
               Destino codeId
             </label>
             <Input
@@ -229,7 +229,7 @@ export default function GroupingPage() {
             </Button>
           </div>
         </div>
-        <div className="text-muted-foreground text-sm">
+        <div className="text-gray-500 dark:text-gray-400 text-sm">
           MVP: la selección y vista de thumbnails se agregará en la próxima
           tarea.
         </div>

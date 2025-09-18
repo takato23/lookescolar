@@ -26,7 +26,7 @@ export function AdminLoginModal({ onLogin }: AdminLoginModalProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="rounded-none border border-gray-300 font-mono text-xs uppercase tracking-wider hover:border-gray-400 hover:bg-gray-100"
+          className="rounded-none border border-border font-mono text-xs uppercase tracking-wider hover:border-gray-400 hover:bg-muted"
         >
           <User className="mr-2 h-4 w-4" />
           Admin

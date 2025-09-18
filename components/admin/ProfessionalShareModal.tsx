@@ -1,8 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -17,8 +25,9 @@ import {
   MessageCircle,
   Mail,
   CheckCircle2,
-  X
+  Sparkles
 } from 'lucide-react';
+import { STORE_THEME_PRESETS, STORE_THEME_PRESET_LIST } from '@/lib/config/store-theme-presets';
 
 interface ProfessionalShareModalProps {
   url: string;
@@ -39,6 +48,40 @@ export function ProfessionalShareModal({
 }: ProfessionalShareModalProps) {
   const [copied, setCopied] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<string>('default');
+
+  const selectedThemeMeta = STORE_THEME_PRESETS[selectedTheme]?.meta || STORE_THEME_PRESETS.default.meta;
+  const themeActivated = selectedTheme !== 'default';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+      const themeFromUrl = parsed.searchParams.get('theme');
+      if (themeFromUrl && STORE_THEME_PRESETS[themeFromUrl]) {
+        setSelectedTheme(themeFromUrl);
+      } else {
+        setSelectedTheme('default');
+      }
+    } catch {
+      setSelectedTheme('default');
+    }
+  }, [isOpen, url]);
+
+  const themedUrl = useMemo(() => {
+    if (typeof window === 'undefined') return url;
+    try {
+      const parsed = new URL(url, window.location.origin);
+      if (themeActivated) {
+        parsed.searchParams.set('theme', selectedTheme);
+      } else {
+        parsed.searchParams.delete('theme');
+      }
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }, [url, selectedTheme, themeActivated]);
 
   // Reset copied state when modal opens
   useEffect(() => {
@@ -48,11 +91,15 @@ export function ProfessionalShareModal({
     }
   }, [isOpen]);
 
-  const shareText = `Mira las fotos de este ${type === 'event' ? 'evento' : 'álbum'}: ${title}`;
+  const shareText = useMemo(() => {
+    const baseLabel = type === 'event' ? 'evento' : 'álbum';
+    const themeLabel = themeActivated ? ` (${selectedThemeMeta.name})` : '';
+    return `Mira las fotos de este ${baseLabel}${themeLabel}: ${title}`;
+  }, [type, title, selectedThemeMeta.name, themeActivated]);
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(themedUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       
@@ -65,7 +112,7 @@ export function ProfessionalShareModal({
       console.error('Error copying to clipboard:', error);
       // Fallback for older browsers
       const textArea = document.createElement('textarea');
-      textArea.value = url;
+      textArea.value = themedUrl;
       document.body.appendChild(textArea);
       textArea.select();
       document.execCommand('copy');
@@ -80,19 +127,16 @@ export function ProfessionalShareModal({
     }
   };
 
-  const openInNewTab = () => {
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   const shareWhatsApp = () => {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} Ver aquí: ${url}`)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} Ver aquí: ${themedUrl}`)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const shareEmail = () => {
-    const subject = encodeURIComponent(`${title} - ${description}`);
+    const themeSuffix = themeActivated ? ` · ${selectedThemeMeta.name}` : '';
+    const subject = encodeURIComponent(`${title}${themeSuffix} - ${description}`);
     const body = encodeURIComponent(
-      `${shareText}\n\nPuedes ver las fotos aquí: ${url}\n\n---\nCompartido desde LookEscolar`
+      `${shareText}\n\nPuedes ver las fotos aquí: ${themedUrl}\n\n---\nCompartido desde LookEscolar`
     );
     const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
     window.location.href = mailtoUrl;
@@ -104,7 +148,7 @@ export function ProfessionalShareModal({
         await navigator.share({
           title,
           text: shareText,
-          url,
+          url: themedUrl,
         });
       } catch (error) {
         // User cancelled or error occurred
@@ -120,7 +164,7 @@ export function ProfessionalShareModal({
 
   const generateQRUrl = () => {
     // Using a reliable QR code service
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(themedUrl)}`;
   };
 
   return (
@@ -128,7 +172,7 @@ export function ProfessionalShareModal({
       <DialogContent className="sm:max-w-[500px] backdrop-blur-2xl bg-white/80 border border-white/30 shadow-2xl ring-1 ring-black/5 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent before:backdrop-blur-3xl before:-z-10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-blue-600" />
+            <Share2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Compartir {type === 'event' ? 'Evento' : 'Álbum'}
           </DialogTitle>
         </DialogHeader>
@@ -136,8 +180,45 @@ export function ProfessionalShareModal({
         <div className="space-y-6 py-4">
           {/* Title and Description */}
           <div className="text-center">
-            <h3 className="font-semibold text-lg text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-600 mt-1">{description}</p>
+            <h3 className="font-semibold text-lg text-foreground">{title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
+          </div>
+
+          {/* Theme Selector */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-blue-500" />
+                Estilo de la tienda
+              </Label>
+              {themeActivated && (
+                <span className="text-[11px] uppercase tracking-wide text-blue-600 dark:text-blue-300">{selectedThemeMeta.name}</span>
+              )}
+            </div>
+            <Select value={selectedTheme} onValueChange={setSelectedTheme}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Elegí el estilo para este link" />
+              </SelectTrigger>
+              <SelectContent>
+                {STORE_THEME_PRESET_LIST.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2.5 w-2.5 rounded-full bg-gradient-to-br ${preset.previewGradient}`} />
+                      <span className="text-sm">{preset.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="rounded-md border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 px-3 py-2">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {selectedThemeMeta.description}
+                <br />
+                <span className="text-[11px] text-blue-600 dark:text-blue-300 font-medium">
+                  El enlace se actualiza automáticamente con este estilo.
+                </span>
+              </p>
+            </div>
           </div>
 
           {/* URL Display */}
@@ -145,8 +226,8 @@ export function ProfessionalShareModal({
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-sm">
                 <ExternalLink className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                <code className="flex-1 text-gray-800 break-all font-mono text-xs bg-white/70 backdrop-blur-sm border border-white/60 px-2 py-1 rounded shadow-sm">
-                  {url}
+                <code className="flex-1 text-foreground break-all font-mono text-xs bg-white/70 backdrop-blur-sm border border-white/60 px-2 py-1 rounded shadow-sm">
+                  {themedUrl}
                 </code>
               </div>
             </CardContent>
@@ -181,9 +262,9 @@ export function ProfessionalShareModal({
 
             {/* Open in Same Tab */}
             <Button
-              onClick={() => window.location.href = url}
+              onClick={() => window.location.href = themedUrl}
               variant="outline"
-              className="flex items-center gap-2 h-12 font-semibold border-blue-300/60 text-blue-700 hover:bg-blue-50/80 backdrop-blur-sm shadow-lg bg-white/10"
+              className="flex items-center gap-2 h-12 font-semibold border-blue-300/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50/80 backdrop-blur-sm shadow-lg bg-white/10"
               style={{
                 backdropFilter: 'blur(8px)',
                 boxShadow: '0 4px 16px 0 rgba(59, 130, 246, 0.1)'
@@ -196,7 +277,7 @@ export function ProfessionalShareModal({
 
           {/* Secondary Actions */}
           <div className="space-y-3">
-            <p className="text-sm text-gray-600 font-medium">Compartir en:</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Compartir en:</p>
             
             <div className="grid grid-cols-2 gap-3">
               {/* WhatsApp */}
@@ -217,7 +298,7 @@ export function ProfessionalShareModal({
               <Button
                 onClick={shareEmail}
                 variant="outline"
-                className="flex items-center gap-2 h-10 font-semibold border-blue-300/60 text-blue-700 hover:bg-blue-50/80 hover:border-blue-400/80 backdrop-blur-sm shadow-md bg-white/5"
+                className="flex items-center gap-2 h-10 font-semibold border-blue-300/60 text-blue-700 dark:text-blue-300 hover:bg-blue-50/80 hover:border-blue-400/80 backdrop-blur-sm shadow-md bg-white/5"
                 style={{
                   backdropFilter: 'blur(6px)',
                   boxShadow: '0 2px 12px 0 rgba(59, 130, 246, 0.08)'
@@ -250,7 +331,7 @@ export function ProfessionalShareModal({
             <Button
               onClick={() => setShowQR(!showQR)}
               variant="ghost"
-              className="w-full flex items-center gap-2 font-semibold text-gray-700 hover:bg-gray-100/60 backdrop-blur-sm bg-white/5"
+              className="w-full flex items-center gap-2 font-semibold text-foreground hover:bg-muted/60 backdrop-blur-sm bg-white/5"
               style={{
                 backdropFilter: 'blur(6px)',
                 boxShadow: '0 1px 8px 0 rgba(0, 0, 0, 0.04)'
@@ -278,7 +359,7 @@ export function ProfessionalShareModal({
 
           {/* Professional Note */}
           <div className="bg-blue-50/60 backdrop-blur-lg border border-blue-200/70 rounded-lg p-3 shadow-lg ring-1 ring-blue-100/50">
-            <p className="text-xs text-blue-700">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
               💡 <strong>Para fotógrafos:</strong> Este enlace es ideal para compartir con múltiples familias. 
               Puedes enviarlo por WhatsApp, email o imprimirlo con el código QR.
             </p>

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useMemo, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -388,7 +390,7 @@ export function HierarchicalFolderManager({
             className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${
               isSelected
                 ? 'border-blue-200 bg-blue-50'
-                : 'border-gray-200 bg-white hover:bg-gray-50'
+                : 'border-border bg-white hover:bg-muted'
             } `}
             style={{ marginLeft: depth * 20 }}
           >
@@ -424,18 +426,18 @@ export function HierarchicalFolderManager({
               <div className="flex-shrink-0">
                 {hasChildren ? (
                   isExpanded ? (
-                    <FolderOpen className="h-5 w-5 text-blue-600" />
+                    <FolderOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   ) : (
-                    <Folder className="h-5 w-5 text-blue-600" />
+                    <Folder className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   )
                 ) : (
-                  <Folder className="h-5 w-5 text-gray-600" />
+                  <Folder className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 )}
               </div>
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="truncate font-medium text-gray-900">
+                  <h3 className="truncate font-medium text-foreground">
                     {folder.name}
                   </h3>
                   {folder.photo_count > 0 && (
@@ -463,14 +465,14 @@ export function HierarchicalFolderManager({
                     Publicado
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-gray-600">
+                  <Badge variant="outline" className="text-gray-500 dark:text-gray-400">
                     <EyeOff className="mr-1 h-3 w-3" />
                     Privado
                   </Badge>
                 )}
 
                 {folder.published_at && (
-                  <Badge variant="outline" className="text-blue-600">
+                  <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
                     <Clock className="mr-1 h-3 w-3" />
                     {new Date(folder.published_at).toLocaleDateString()}
                   </Badge>
@@ -541,7 +543,7 @@ export function HierarchicalFolderManager({
                       variant="ghost"
                       size="sm"
                       onClick={() => onRotateToken(folder.id)}
-                      className="h-8 w-8 p-0 text-orange-600"
+                      className="h-8 w-8 p-0 text-primary-600"
                       title="Rotar token"
                     >
                       <RotateCcw className="h-4 w-4" />
@@ -621,7 +623,7 @@ export function HierarchicalFolderManager({
       <Card className="p-6">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">Cargando carpetas...</p>
+          <p className="text-gray-500 dark:text-gray-400">Cargando carpetas...</p>
         </div>
       </Card>
     );
@@ -635,10 +637,10 @@ export function HierarchicalFolderManager({
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-foreground">
                 {stats.total}
               </div>
-              <div className="text-sm text-gray-600">Total carpetas</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Total carpetas</div>
             </div>
           </Card>
 
@@ -647,25 +649,25 @@ export function HierarchicalFolderManager({
               <div className="text-2xl font-bold text-green-600">
                 {stats.published}
               </div>
-              <div className="text-sm text-gray-600">Publicadas</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Publicadas</div>
             </div>
           </Card>
 
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-primary">
                 {stats.unpublished}
               </div>
-              <div className="text-sm text-gray-600">Privadas</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Privadas</div>
             </div>
           </Card>
 
           <Card className="p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {stats.totalPhotos}
               </div>
-              <div className="text-sm text-gray-600">Fotos totales</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Fotos totales</div>
             </div>
           </Card>
         </div>
@@ -688,7 +690,7 @@ export function HierarchicalFolderManager({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+              className="rounded-md border border-border bg-white px-3 py-2 text-sm"
             >
               <option value="all">Todas</option>
               <option value="published">Publicadas</option>
@@ -698,7 +700,7 @@ export function HierarchicalFolderManager({
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+              className="rounded-md border border-border bg-white px-3 py-2 text-sm"
             >
               <option value="name">Por nombre</option>
               <option value="photos">Por fotos</option>
@@ -727,7 +729,7 @@ export function HierarchicalFolderManager({
 
           {stats.selectedCount > 0 && (
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-blue-600">
+              <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
                 {stats.selectedCount} seleccionadas
               </Badge>
               <Button

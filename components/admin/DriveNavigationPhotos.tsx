@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -183,7 +185,7 @@ export default function DriveNavigationPhotos({
 
         {currentPath.map((pathItem, index) => (
           <React.Fragment key={pathItem}>
-            <ChevronRight className="text-muted-foreground h-4 w-4 shrink-0" />
+            <ChevronRight className="text-gray-500 dark:text-gray-400 h-4 w-4 shrink-0" />
             <Button
               variant="ghost"
               size="sm"
@@ -221,7 +223,7 @@ export default function DriveNavigationPhotos({
                 <ImageIcon className="h-5 w-5 text-green-600" />
               )}
               {item.type === 'student' && (
-                <Users className="h-5 w-5 text-blue-600" />
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               )}
               <span className="truncate text-sm font-medium">{item.name}</span>
             </div>
@@ -231,7 +233,7 @@ export default function DriveNavigationPhotos({
           </div>
 
           {item.thumbnailUrl && (
-            <div className="mb-2 h-24 w-full overflow-hidden rounded bg-gray-100">
+            <div className="mb-2 h-24 w-full overflow-hidden rounded bg-muted">
               <img
                 src={item.thumbnailUrl}
                 alt={item.name}
@@ -242,21 +244,21 @@ export default function DriveNavigationPhotos({
 
           <div className="mt-auto space-y-1">
             {item.photoCount && (
-              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs">
                 <Camera className="h-3 w-3" />
                 <span>{item.photoCount} fotos</span>
               </div>
             )}
 
             {item.studentCount && (
-              <div className="text-muted-foreground flex items-center gap-1 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-1 text-xs">
                 <Users className="h-3 w-3" />
                 <span>{item.studentCount} estudiantes</span>
               </div>
             )}
 
             {item.metadata?.uploadDate && (
-              <div className="text-muted-foreground text-xs">
+              <div className="text-gray-500 dark:text-gray-400 text-xs">
                 {new Date(item.metadata.uploadDate).toLocaleDateString('es-AR')}
               </div>
             )}
@@ -294,7 +296,7 @@ export default function DriveNavigationPhotos({
 
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Buscar..."
                 value={searchTerm}
@@ -324,7 +326,7 @@ export default function DriveNavigationPhotos({
 
       {/* Create folder modal */}
       {showCreateFolder && (
-        <Card className="border-blue-200 bg-blue-50 p-4">
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
           <div className="flex items-center gap-2">
             <Input
               placeholder="Nombre de la carpeta"
@@ -356,7 +358,7 @@ export default function DriveNavigationPhotos({
             <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="text-muted-foreground flex h-48 flex-col items-center justify-center">
+          <div className="text-gray-500 dark:text-gray-400 flex h-48 flex-col items-center justify-center">
             <Folder className="mb-4 h-12 w-12" />
             <p>No hay elementos en esta carpeta</p>
           </div>

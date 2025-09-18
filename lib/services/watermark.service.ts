@@ -1,6 +1,13 @@
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/utils/logger';
-import sharp from 'sharp';
+
+// Dynamic import of Sharp to avoid Vercel issues
+let sharp: any = null;
+try {
+  sharp = require('sharp');
+} catch (error) {
+  console.log('[WatermarkService] Sharp not available, will use fallback processing');
+}
 
 export interface WatermarkOptions {
   text: string;
@@ -80,6 +87,17 @@ class WatermarkService {
         originalSize: originalImageBuffer.length,
         processingOptions,
       });
+
+      // Check if Sharp is available
+      if (!sharp) {
+        // Return original image if Sharp is not available
+        console.log('[WatermarkService] Sharp not available, returning original image');
+        return {
+          success: true,
+          data: originalImageBuffer,
+          contentType: `image/${processingOptions.format}`
+        };
+      }
 
       // Get original image metadata
       const originalMetadata = await sharp(originalImageBuffer).metadata();

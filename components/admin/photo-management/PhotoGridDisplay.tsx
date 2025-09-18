@@ -90,7 +90,7 @@ const PhotoGridItem = memo(
           exit={{ opacity: 0, y: -10 }}
           className={cn(
             'flex items-center gap-4 rounded-lg border p-4 transition-colors',
-            'hover:bg-gray-50',
+            'hover:bg-muted',
             isSelected && 'border-blue-200 bg-blue-50'
           )}
         >
@@ -226,7 +226,7 @@ const PhotoGridItem = memo(
           'hover:border-blue-300',
           isSelected
             ? 'border-blue-500 ring-2 ring-blue-200'
-            : 'border-gray-200'
+            : 'border-border'
         )}
       >
         {/* Selection checkbox */}
@@ -344,7 +344,7 @@ const PhotoGridDisplayComponent = ({
       <div className={cn('flex items-center justify-center py-12', className)}>
         <div className="text-center">
           <ImageIcon className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-          <h3 className="mb-2 text-lg font-medium text-gray-900">
+          <h3 className="mb-2 text-lg font-medium text-foreground">
             No photos found
           </h3>
           <p className="text-gray-500">Upload photos to get started</p>

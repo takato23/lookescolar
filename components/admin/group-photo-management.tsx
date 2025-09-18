@@ -382,14 +382,14 @@ export default function GroupPhotoManagement({
             {/* File info */}
             <div>
               <h4 className="truncate text-sm font-medium">{photo.filename}</h4>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-gray-500 dark:text-gray-400 text-xs">
                 {(photo.file_size_bytes / (1024 * 1024)).toFixed(1)} MB
               </p>
             </div>
 
             {/* Course info */}
             <div className="flex items-center gap-2 text-xs">
-              <BookOpen className="text-muted-foreground h-3 w-3 shrink-0" />
+              <BookOpen className="text-gray-500 dark:text-gray-400 h-3 w-3 shrink-0" />
               <span className="truncate">{photo.course_name}</span>
               {photo.level_name && (
                 <Badge variant="outline" className="text-xs">
@@ -399,7 +399,7 @@ export default function GroupPhotoManagement({
             </div>
 
             {/* Date */}
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-xs">
               <Calendar className="h-3 w-3 shrink-0" />
               <span>
                 {new Date(photo.created_at).toLocaleDateString('es-AR')}
@@ -408,7 +408,7 @@ export default function GroupPhotoManagement({
 
             {/* Tagged info */}
             {photo.tagged_at && (
-              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-xs">
                 <Tag className="h-3 w-3 shrink-0" />
                 <span>
                   Etiquetada:{' '}
@@ -450,7 +450,7 @@ export default function GroupPhotoManagement({
       <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h2 className="text-2xl font-bold">Fotos Grupales</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             {eventName} - {filteredPhotos.length} fotos encontradas
           </p>
         </div>
@@ -492,7 +492,7 @@ export default function GroupPhotoManagement({
                     }
                   />
                   {uploadFiles.length > 0 && (
-                    <p className="text-muted-foreground mt-1 text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
                       {uploadFiles.length} archivo
                       {uploadFiles.length !== 1 ? 's' : ''} seleccionado
                       {uploadFiles.length !== 1 ? 's' : ''}
@@ -537,7 +537,7 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Cursos Totales</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Cursos Totales</p>
                 <p className="text-2xl font-bold">{courseStats.total}</p>
               </div>
               <BookOpen className="h-8 w-8 text-blue-500 opacity-50" />
@@ -549,7 +549,7 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Con Fotos</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Con Fotos</p>
                 <p className="text-2xl font-bold">{courseStats.withPhotos}</p>
               </div>
               <Camera className="h-8 w-8 text-green-500 opacity-50" />
@@ -561,10 +561,10 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Total Fotos</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Fotos</p>
                 <p className="text-2xl font-bold">{courseStats.totalPhotos}</p>
               </div>
-              <ImageIcon className="h-8 w-8 text-orange-500 opacity-50" />
+              <ImageIcon className="h-8 w-8 text-primary-600 opacity-50" />
             </div>
           </CardContent>
         </Card>
@@ -573,7 +573,7 @@ export default function GroupPhotoManagement({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Completado</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Completado</p>
                 <p className="text-2xl font-bold">
                   {courseStats.completionRate}%
                 </p>
@@ -609,7 +609,7 @@ export default function GroupPhotoManagement({
 
         <div className="flex flex-wrap gap-2">
           <div className="relative">
-            <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+            <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Buscar fotos..."
               value={searchTerm}
@@ -729,7 +729,7 @@ export default function GroupPhotoManagement({
                 <p className="text-destructive font-medium">
                   Error al cargar las fotos
                 </p>
-                <p className="text-muted-foreground text-sm">{error}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">{error}</p>
               </div>
             </div>
           </CardContent>
@@ -753,11 +753,11 @@ export default function GroupPhotoManagement({
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
-                <Camera className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <Camera className="text-gray-500 dark:text-gray-400 mx-auto mb-4 h-12 w-12" />
                 <h3 className="mb-2 text-lg font-medium">
                   No hay fotos grupales
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
                   {selectedCourse
                     ? 'Este curso no tiene fotos grupales aún.'
                     : searchTerm
@@ -800,13 +800,13 @@ export default function GroupPhotoManagement({
                   <h4 className="mb-2 font-medium">Información del Archivo</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Nombre:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Nombre:</span>
                       <span className="font-mono">
                         {selectedPhotoDetails.filename}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tamaño:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Tamaño:</span>
                       <span>
                         {(
                           selectedPhotoDetails.file_size_bytes /
@@ -816,7 +816,7 @@ export default function GroupPhotoManagement({
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tipo:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Tipo:</span>
                       <Badge variant="outline">
                         {selectedPhotoDetails.photo_type === 'group'
                           ? 'Grupal'
@@ -826,7 +826,7 @@ export default function GroupPhotoManagement({
                       </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Estado:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Estado:</span>
                       <Badge
                         variant={
                           selectedPhotoDetails.approved
@@ -846,12 +846,12 @@ export default function GroupPhotoManagement({
                   <h4 className="mb-2 font-medium">Información del Curso</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Curso:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Curso:</span>
                       <span>{selectedPhotoDetails.course_name}</span>
                     </div>
                     {selectedPhotoDetails.level_name && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Nivel:</span>
+                        <span className="text-gray-500 dark:text-gray-400">Nivel:</span>
                         <span>{selectedPhotoDetails.level_name}</span>
                       </div>
                     )}
@@ -862,7 +862,7 @@ export default function GroupPhotoManagement({
                   <h4 className="mb-2 font-medium">Fechas</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Subida:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Subida:</span>
                       <span>
                         {new Date(
                           selectedPhotoDetails.created_at
@@ -871,7 +871,7 @@ export default function GroupPhotoManagement({
                     </div>
                     {selectedPhotoDetails.tagged_at && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">
+                        <span className="text-gray-500 dark:text-gray-400">
                           Etiquetada:
                         </span>
                         <span>

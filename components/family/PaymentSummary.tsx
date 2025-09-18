@@ -118,10 +118,10 @@ export default function PaymentSummary({
         </div>
 
         {/* Detalles del pago */}
-        <div className="mt-4 rounded-lg bg-blue-50 p-3">
+        <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3">
           <div className="flex items-center space-x-2">
-            <span className="text-blue-600">💳</span>
-            <span className="text-sm text-blue-800">
+            <span className="text-blue-600 dark:text-blue-400">💳</span>
+            <span className="text-sm text-blue-800 dark:text-blue-200">
               Pago seguro con Mercado Pago
             </span>
           </div>
@@ -162,11 +162,11 @@ export default function PaymentSummary({
         <div className="space-y-1 text-sm">
           <p className="flex items-center space-x-2">
             <span>📧</span>
-            <span className="text-blue-600">contacto@lookescolar.com</span>
+            <span className="text-blue-600 dark:text-blue-400">contacto@lookescolar.com</span>
           </p>
           <p className="flex items-center space-x-2">
             <span>📱</span>
-            <span className="text-blue-600">+54 11 1234-5678</span>
+            <span className="text-blue-600 dark:text-blue-400">+54 11 1234-5678</span>
           </p>
         </div>
       </Card>

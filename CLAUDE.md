@@ -215,6 +215,8 @@ Required environment variables (see `.env.example`):
 ## Mobile and Performance
 
 The app is mobile-first with:
+
+
 - Responsive design using Tailwind breakpoints
 - Touch-optimized interactions
 - Virtual scrolling for large galleries

@@ -37,7 +37,7 @@ export function TestimonialsSection() {
             Lo que dicen{' '}
             <span className="text-gradient">nuestros usuarios</span>
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-3xl text-xl">
+          <p className="text-gray-500 dark:text-gray-400 mx-auto max-w-3xl text-xl">
             Miles de fotógrafos y familias confían en nuestra plataforma.
           </p>
         </div>
@@ -60,7 +60,7 @@ export function TestimonialsSection() {
 
               <div>
                 <div className="font-semibold">{testimonial.name}</div>
-                <div className="text-muted-foreground text-sm">
+                <div className="text-gray-500 dark:text-gray-400 text-sm">
                   {testimonial.role}
                   {testimonial.company && ` • ${testimonial.company}`}
                 </div>

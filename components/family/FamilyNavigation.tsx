@@ -51,7 +51,7 @@ export async function FamilyNavigation({ token }: FamilyNavigationProps) {
 
           <div className="flex items-center space-x-4">
             {activeOrder && (
-              <div className="hidden items-center space-x-2 rounded-full bg-blue-100 px-3 py-1 text-xs text-blue-800 sm:flex">
+              <div className="hidden items-center space-x-2 rounded-full bg-blue-100 dark:bg-blue-950/30 px-3 py-1 text-xs text-blue-800 sm:flex">
                 <span>📋</span>
                 <span className="font-medium">
                   Pedido{' '}

@@ -4,34 +4,42 @@
    ================================================================= */
 
 /* =================================================================
+   THEME SYSTEM INTEGRATION
+   Works with the app's theme provider for proper dark/light mode
+   ================================================================= */
+
+/* Store components inherit theme colors from CSS variables */
+
+/* =================================================================
    FONDOS Y EFECTOS VISUALES MINIMALISTAS
    ================================================================= */
 
-/* Fondo principal ultra-simple */
+/* Fondo principal usando variables de tema */
 .store-background {
-  background: #fafafa;
+  background: hsl(var(--background));
   position: relative;
 }
 
 /* Fondo de contenido principal minimalista */
 .store-content-background {
-  background: #ffffff;
+  background: hsl(var(--card));
   border: none;
   box-shadow: none;
 }
 
-/* Fondo de cards ultra-simple */
+/* Fondo de cards usando variables de tema */
 .store-card-background {
-  background: #ffffff;
-  border: 1px solid #f0f0f0;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .store-card-background:hover {
-  border-color: #e0e0e0;
+  border-color: hsl(var(--border));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  filter: brightness(1.05);
 }
 
 /* =================================================================
@@ -78,7 +86,7 @@
 
 .package-card:hover {
   transform: translateY(-2px);
-  border-color: #d0d0d0;
+  border-color: hsl(var(--border));
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
@@ -91,11 +99,11 @@
 
 .photo-selection-card:hover {
   transform: translateY(-1px);
-  border-color: #d0d0d0;
+  border-color: hsl(var(--border));
 }
 
 .photo-selection-card.selected {
-  border-color: #000000;
+  border-color: hsl(var(--primary));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -113,14 +121,15 @@
   position: relative;
   transition: all 0.2s ease;
   animation: naturalFadeIn 0.3s ease-out;
-  background: #000000;
-  color: #ffffff;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   border: none;
   border-radius: 6px;
 }
 
 .enhanced-button:hover {
-  background: #333333;
+  background: hsl(var(--primary));
+  filter: brightness(0.9);
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -128,15 +137,16 @@
 /* Animación sutil para los inputs */
 .enhanced-input {
   transition: all 0.2s ease;
-  border: 1px solid #e0e0e0;
-  background: #ffffff;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--input));
+  color: hsl(var(--foreground));
   border-radius: 6px;
   animation: naturalFadeIn 0.3s ease-out;
 }
 
 .enhanced-input:focus {
-  border-color: #000000;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
   outline: none;
 }
 
@@ -144,21 +154,22 @@
 .enhanced-badge {
   position: relative;
   animation: naturalFadeIn 0.3s ease-out;
-  background: #f5f5f5;
-  color: #333333;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
   border: none;
   border-radius: 4px;
 }
 
 .enhanced-badge:hover {
-  background: #e8e8e8;
+  background: hsl(var(--muted));
+  filter: brightness(0.95);
 }
 
 /* Animación sutil para la barra de progreso */
 .progress-bar {
   position: relative;
   animation: naturalFadeIn 0.4s ease-out;
-  background: #f0f0f0;
+  background: hsl(var(--muted));
   border-radius: 2px;
   height: 2px;
 }
@@ -170,23 +181,25 @@
   left: 0;
   height: 100%;
   width: 0%;
-  background: #000000;
+  background: hsl(var(--primary));
   border-radius: 2px;
   transition: width 0.3s ease;
 }
 
 /* Animación sutil para las cards de resumen */
 .summary-card {
-  background: #ffffff;
-  border: 1px solid #f0f0f0;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--card-foreground));
   transition: all 0.2s ease;
   animation: naturalFadeIn 0.3s ease-out;
   border-radius: 8px;
 }
 
 .summary-card:hover {
-  border-color: #e0e0e0;
+  border-color: hsl(var(--border));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  filter: brightness(1.02);
 }
 
 /* Animación sutil para los iconos */
@@ -194,12 +207,13 @@
   position: relative;
   transition: all 0.2s ease;
   animation: naturalFadeIn 0.3s ease-out;
-  background: #f5f5f5;
+  background: hsl(var(--muted));
   border-radius: 50%;
 }
 
 .icon-container:hover {
-  background: #e8e8e8;
+  background: hsl(var(--muted));
+  filter: brightness(0.95);
 }
 
 /* Animación sutil para los botones de navegación */
@@ -207,40 +221,41 @@
   position: relative;
   transition: all 0.2s ease;
   animation: naturalFadeIn 0.3s ease-out;
-  background: #ffffff;
-  color: #333333;
-  border: 1px solid #e0e0e0;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
   border-radius: 6px;
 }
 
 .nav-button:hover {
-  background: #f8f8f8;
-  border-color: #d0d0d0;
+  background: hsl(var(--secondary));
+  border-color: hsl(var(--border));
   transform: translateY(-1px);
+  filter: brightness(1.05);
 }
 
 /* Animación sutil para los separadores */
 .enhanced-separator {
   position: relative;
   height: 1px;
-  background: #f0f0f0;
+  background: hsl(var(--border));
   animation: naturalFadeIn 0.4s ease-out;
 }
 
 /* Animación sutil para los mensajes de error */
 .error-message {
   animation: naturalFadeIn 0.3s ease-out;
-  color: #dc2626;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: hsl(var(--destructive-foreground));
+  background: hsl(var(--destructive) / 0.1);
+  border: 1px solid hsl(var(--destructive) / 0.3);
   border-radius: 4px;
   padding: 8px 12px;
 }
 
 /* Animación sutil para el header sticky */
 .sticky-header {
-  background: #ffffff;
-  border-bottom: 1px solid #f0f0f0;
+  background: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
   animation: naturalFadeIn 0.3s ease-out;
 }
 
@@ -317,69 +332,11 @@
   }
   
   .store-background {
-    background: #fafafa;
+    background: hsl(var(--background));
   }
 }
 
-/* Soporte para modo oscuro minimalista */
-@media (prefers-color-scheme: dark) {
-  .store-background {
-    background: #0a0a0a;
-  }
-  
-  .store-content-background {
-    background: #1a1a1a;
-    border-color: #2a2a2a;
-  }
-  
-  .store-card-background {
-    background: #1a1a1a;
-    border-color: #2a2a2a;
-  }
-  
-  .store-card-background:hover {
-    border-color: #3a3a3a;
-  }
-  
-  .enhanced-input {
-    background: #1a1a1a;
-    border-color: #2a2a2a;
-    color: #ffffff;
-  }
-  
-  .enhanced-input:focus {
-    border-color: #ffffff;
-  }
-  
-  .summary-card {
-    background: #1a1a1a;
-    border-color: #2a2a2a;
-  }
-  
-  .summary-card:hover {
-    border-color: #3a3a3a;
-  }
-  
-  .enhanced-button {
-    background: #ffffff;
-    color: #000000;
-  }
-  
-  .enhanced-button:hover {
-    background: #e0e0e0;
-  }
-  
-  .nav-button {
-    background: #1a1a1a;
-    color: #ffffff;
-    border-color: #2a2a2a;
-  }
-  
-  .nav-button:hover {
-    background: #2a2a2a;
-    border-color: #3a3a3a;
-  }
-}
+/* Theme-aware styling is now handled automatically via CSS variables */
 
 /* Estilos para impresión */
 @media print {
@@ -396,11 +353,11 @@
   .photo-selection-card,
   .summary-card {
     box-shadow: none !important;
-    border: 1px solid #000 !important;
+    border: 1px solid hsl(var(--foreground)) !important;
     animation: none !important;
   }
-  
+
   .store-background {
-    background: white !important;
+    background: hsl(var(--background)) !important;
   }
 }

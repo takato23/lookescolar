@@ -13,14 +13,6 @@ Specialist in initial configuration, CI/CD, deployment, and infrastructure maint
 - Environment management
 - Monitoring & Logging
 
-## Specialties
-- Zero-downtime deployments
-- Database migrations
-- Secret management
-- Performance monitoring
-- Backup strategies
-- Local development setup
-
 ## Initial Project Setup
 
 ### Setup Script
@@ -60,6 +52,10 @@ npm run db:types
 
 echo "✅ Setup complete! Run 'npm run dev' to start"
 ```
+
+### Vercel Environment Variables
+
+After setting up your local environment, you need to configure the same environment variables in Vercel for each Deployment environment (Preview, Production, etc.). In the project root, there is a file named `vercel-env.txt`. Copy its contents and paste them into Vercel Dashboard under **Settings > Environment Variables**.
 
 ## Supabase Configuration
 

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   DragDropContext,
@@ -348,7 +350,7 @@ export default function PhotoClassificationWorkflow({
         >
           <CardContent className="p-2">
             <div className="relative">
-              <div className="mb-2 flex aspect-square items-center justify-center rounded bg-gray-100">
+              <div className="mb-2 flex aspect-square items-center justify-center rounded bg-muted">
                 {photo.preview_path ? (
                   <Image
                     src={photo.preview_path}
@@ -426,7 +428,7 @@ export default function PhotoClassificationWorkflow({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Photo Classification</h2>
-          <p className="text-muted-foreground">Event: {eventName}</p>
+          <p className="text-gray-500 dark:text-gray-400">Event: {eventName}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -448,16 +450,16 @@ export default function PhotoClassificationWorkflow({
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-muted-foreground text-sm">Total Photos</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Photos</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-primary">
                 {stats.unclassified}
               </div>
-              <p className="text-muted-foreground text-sm">Unclassified</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Unclassified</p>
             </CardContent>
           </Card>
 
@@ -466,16 +468,16 @@ export default function PhotoClassificationWorkflow({
               <div className="text-2xl font-bold text-green-600">
                 {stats.in_courses}
               </div>
-              <p className="text-muted-foreground text-sm">In Courses</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">In Courses</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {stats.by_type.individual}
               </div>
-              <p className="text-muted-foreground text-sm">Individual</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Individual</p>
             </CardContent>
           </Card>
         </div>
@@ -484,7 +486,7 @@ export default function PhotoClassificationWorkflow({
       {/* Controls */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Search className="text-muted-foreground h-4 w-4" />
+          <Search className="text-gray-500 dark:text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search photos..."
             value={searchTerm}
@@ -494,7 +496,7 @@ export default function PhotoClassificationWorkflow({
         </div>
 
         <div className="flex items-center gap-2">
-          <Filter className="text-muted-foreground h-4 w-4" />
+          <Filter className="text-gray-500 dark:text-gray-400 h-4 w-4" />
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -593,7 +595,7 @@ export default function PhotoClassificationWorkflow({
                                     {course.name}
                                   </h4>
                                   {course.grade && course.section && (
-                                    <p className="text-muted-foreground text-sm">
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                                       {course.grade} - {course.section}
                                     </p>
                                   )}
@@ -610,7 +612,7 @@ export default function PhotoClassificationWorkflow({
                                 )}
                               </div>
 
-                              <div className="text-muted-foreground flex items-center gap-4 text-xs">
+                              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-xs">
                                 <span className="flex items-center gap-1">
                                   <Users className="h-3 w-3" />
                                   {course.student_count} students
@@ -656,7 +658,7 @@ export default function PhotoClassificationWorkflow({
                                     {student.name}
                                   </h4>
                                   {student.grade && student.section && (
-                                    <p className="text-muted-foreground text-sm">
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                                       {student.grade} - {student.section}
                                     </p>
                                   )}
@@ -673,7 +675,7 @@ export default function PhotoClassificationWorkflow({
                                 )}
                               </div>
 
-                              <div className="text-muted-foreground flex items-center gap-4 text-xs">
+                              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-xs">
                                 {student.qr_code && (
                                   <span className="flex items-center gap-1">
                                     <QrCode className="h-3 w-3" />
@@ -714,7 +716,7 @@ export default function PhotoClassificationWorkflow({
 
           {previewPhoto && (
             <div className="space-y-4">
-              <div className="flex aspect-video items-center justify-center rounded bg-gray-100">
+              <div className="flex aspect-video items-center justify-center rounded bg-muted">
                 {previewPhoto.preview_path ? (
                   <Image
                     src={previewPhoto.preview_path}

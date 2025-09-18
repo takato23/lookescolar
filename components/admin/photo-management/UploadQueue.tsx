@@ -61,7 +61,7 @@ const UploadQueueItemComponent = memo(
         case 'error':
           return 'text-red-600 bg-red-50';
         default:
-          return 'text-gray-600 bg-gray-50';
+          return 'text-muted-foreground bg-muted';
       }
     };
 
@@ -209,8 +209,8 @@ const UploadQueueComponent = ({
 
       {/* Footer stats */}
       {hasItems && (
-        <div className="border-t bg-gray-50 p-3">
-          <div className="flex justify-between text-xs text-gray-600">
+        <div className="border-t bg-muted p-3">
+          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>
               {uploadQueue.filter((i) => i.status === 'pending').length} pending
             </span>

@@ -14,6 +14,7 @@ export default async function PublishPage(props: {
     if (centralitaEnabled) {
       return <CentralitaPublishClient />;
     }
+    // Use default PublishClient
     return <PublishClient />;
   }
 
@@ -91,5 +92,6 @@ export default async function PublishPage(props: {
     );
   }
 
-  return <PublishClient initialSelectedEventId={eventId} initialData={initialData} />;
+  // Use modern design with initial data
+  return <ModernPublishClientWrapper initialSelectedEventId={eventId} initialData={initialData} />;
 }

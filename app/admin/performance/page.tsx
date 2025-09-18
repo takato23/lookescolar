@@ -28,7 +28,7 @@ export default function PerformancePage() {
                 <h1 className="text-gradient mb-2 text-3xl font-bold md:text-4xl">
                   Monitor de Performance
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-gray-500 dark:text-gray-400">
                   Sistema de monitoreo operacional avanzado con métricas en
                   tiempo real
                 </p>

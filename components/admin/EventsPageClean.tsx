@@ -17,6 +17,7 @@ import {
   Filter,
   RefreshCw,
   Trash2,
+  Settings,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -215,11 +216,11 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
       active: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
       draft: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800',
       completed: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800',
-      archived: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
+      archived: 'bg-muted text-foreground border-border dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
     };
 
     return statusColors[status as keyof typeof statusColors] || 
-           'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
+           'bg-muted text-muted-foreground border-border dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800';
   }, []);
   
   // Enhanced currency formatter with locale support
@@ -421,8 +422,8 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Eventos</h1>
-          <p className="mt-1 text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground">Eventos</h1>
+          <p className="mt-1 text-gray-500 dark:text-gray-400">
             Gestiona tus eventos escolares y fotografías
           </p>
         </div>
@@ -441,12 +442,12 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Eventos</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Eventos</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.total}
                 </p>
               </div>
-              <Calendar className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-8 w-8 text-blue-600 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
@@ -455,8 +456,8 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Fotografías</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Fotografías</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.totalPhotos.toLocaleString()}
                 </p>
               </div>
@@ -469,8 +470,8 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Estudiantes</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Estudiantes</p>
+                <p className="text-2xl font-bold text-foreground">
                   {stats.totalSubjects.toLocaleString()}
                 </p>
               </div>
@@ -483,12 +484,12 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Ingresos</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Ingresos</p>
+                <p className="text-2xl font-bold text-foreground">
                   {formatCurrency(stats.totalRevenue)}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-amber-600" />
+              <DollarSign className="h-8 w-8 text-primary-600" />
             </div>
           </CardContent>
         </Card>
@@ -560,12 +561,12 @@ function EventsPageClientBase({ events, error, pagination: initialPagination }: 
           <CardContent className="py-12">
             <div className="text-center">
               <Calendar className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <h3 className="mb-2 text-lg font-medium text-gray-900">
+              <h3 className="mb-2 text-lg font-medium text-foreground">
                 {searchQuery
                   ? 'No se encontraron eventos'
                   : 'No hay eventos todavía'}
               </h3>
-              <p className="mb-4 text-gray-600">
+              <p className="mb-4 text-gray-500 dark:text-gray-400">
                 {searchQuery
                   ? 'Intenta con otros términos de búsqueda'
                   : 'Comienza creando tu primer evento escolar'}
@@ -674,20 +675,20 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
       case 'completed':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'archived':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
       default:
-        return 'bg-gray-100 text-gray-600 border-gray-200';
+        return 'bg-muted text-muted-foreground border-border';
     }
   };
 
   if (viewMode === 'list') {
     return (
-      <Card className="border border-gray-200 transition-shadow hover:shadow-md">
+      <Card className="border border-border transition-shadow hover:shadow-md">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex items-center gap-3">
-                <h3 className="truncate font-medium text-gray-900">
+                <h3 className="truncate font-medium text-foreground">
                   {event.school || event.name || 'Sin nombre'}
                 </h3>
                 {event.status && (
@@ -697,7 +698,7 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-4 text-sm text-gray-600 sm:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 text-sm text-gray-500 dark:text-gray-400 sm:grid-cols-4">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   {formatDate(event.date)}
@@ -734,6 +735,12 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
                   <DropdownMenuItem asChild>
                     <Link href={`/admin/events/${event.id}`}>Ver detalles</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/admin/store-settings?eventId=${event.id}`}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Configurar tienda
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onDelete(event)}
                     className="text-red-600"
@@ -754,11 +761,11 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
   // Grid view
 
   return (
-    <Card className="border border-gray-200 bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+    <Card className="border border-border bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <CardContent className="p-4">
         <div className="mb-3 flex items-start justify-between">
           <div className="min-w-0 flex-1">
-            <h3 className="mb-1 truncate text-sm font-semibold leading-tight text-gray-900">
+            <h3 className="mb-1 truncate text-sm font-semibold leading-tight text-foreground">
               {event.school || event.name || 'Sin nombre'}
             </h3>
             <p className="mb-2 text-xs text-gray-500">
@@ -790,6 +797,12 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
                   Gestionar fotos
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/store-settings?eventId=${event.id}`}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurar tienda
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => onDelete(event)}
                 className="text-red-600"
@@ -810,25 +823,25 @@ function EventCard({ event, viewMode, onDelete, isDeleting }: EventCardProps) {
 
         {/* Stats Grid */}
         <div className="mb-4 grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-gray-50 p-2 text-center">
-            <Image className="mx-auto mb-1 h-4 w-4 text-blue-600" />
-            <p className="text-xs font-medium text-gray-900">
+          <div className="rounded-lg bg-muted p-2 text-center">
+            <Image className="mx-auto mb-1 h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <p className="text-xs font-medium text-foreground">
               {event.stats?.totalPhotos || 0}
             </p>
             <p className="text-xs text-gray-500">Fotos</p>
           </div>
 
-          <div className="rounded-lg bg-gray-50 p-2 text-center">
+          <div className="rounded-lg bg-muted p-2 text-center">
             <Users className="mx-auto mb-1 h-4 w-4 text-green-600" />
-            <p className="text-xs font-medium text-gray-900">
+            <p className="text-xs font-medium text-foreground">
               {event.stats?.totalSubjects || 0}
             </p>
             <p className="text-xs text-gray-500">Estudiantes</p>
           </div>
 
-          <div className="col-span-2 rounded-lg bg-gray-50 p-2 text-center">
-            <DollarSign className="mx-auto mb-1 h-4 w-4 text-amber-600" />
-            <p className="text-xs font-medium text-gray-900">
+          <div className="col-span-2 rounded-lg bg-muted p-2 text-center">
+            <DollarSign className="mx-auto mb-1 h-4 w-4 text-primary-600" />
+            <p className="text-xs font-medium text-foreground">
               ${(event.stats?.totalRevenue || 0).toLocaleString()}
             </p>
             <p className="text-xs text-gray-500">Ingresos</p>

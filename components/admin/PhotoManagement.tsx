@@ -401,7 +401,7 @@ const PhotoManagementComponent = ({
   }, []);
 
   return (
-    <div className={cn('flex h-full bg-gray-50', className)}>
+    <div className={cn('flex h-full bg-muted', className)}>
       {/* Sidebar */}
       <div className="w-64 border-r bg-white">
         <FolderSidebar

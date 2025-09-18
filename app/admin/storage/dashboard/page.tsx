@@ -232,7 +232,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="text-muted-foreground h-4 w-4"
+              className="text-gray-500 dark:text-gray-400 h-4 w-4"
             >
               <rect width="18" height="18" x="3" y="3" rx="2" />
               <circle cx="9" cy="9" r="2" />
@@ -243,7 +243,7 @@ export default function StorageDashboard() {
             <div className="text-2xl font-bold">
               {stats.totalPhotos.toLocaleString()}
             </div>
-            <p className="text-muted-foreground text-xs">Photos optimized</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">Photos optimized</p>
           </CardContent>
         </Card>
 
@@ -258,7 +258,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="text-muted-foreground h-4 w-4"
+              className="text-gray-500 dark:text-gray-400 h-4 w-4"
             >
               <path d="M3 6h18" />
               <path d="M7 12h10" />
@@ -269,7 +269,7 @@ export default function StorageDashboard() {
             <div className="text-2xl font-bold">
               {stats.totalSizeMB.toLocaleString()} MB
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
               <span className="font-medium text-green-600">
                 {stats.savingsPercentage.toFixed(1)}% savings
               </span>
@@ -290,7 +290,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="text-muted-foreground h-4 w-4"
+              className="text-gray-500 dark:text-gray-400 h-4 w-4"
             >
               <path d="M12 2v20" />
               <path d="m19 9-7 7-7-7" />
@@ -300,8 +300,8 @@ export default function StorageDashboard() {
             <div className="text-2xl font-bold">
               {stats.freeTierUsagePercentage.toFixed(1)}%
             </div>
-            <p className="text-muted-foreground text-xs">of 1GB limit</p>
-            <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
+            <p className="text-gray-500 dark:text-gray-400 text-xs">of 1GB limit</p>
+            <div className="mt-2 h-2 w-full rounded-full bg-muted">
               <div
                 className="h-2 rounded-full bg-blue-600"
                 style={{
@@ -325,7 +325,7 @@ export default function StorageDashboard() {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              className="text-muted-foreground h-4 w-4"
+              className="text-gray-500 dark:text-gray-400 h-4 w-4"
             >
               <path d="M7 12l5 5 5-5" />
               <path d="M7 7l5 5 5-5" />
@@ -333,7 +333,7 @@ export default function StorageDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">98.7%</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
               Average optimization ratio
             </p>
           </CardContent>
@@ -417,7 +417,7 @@ export default function StorageDashboard() {
               >
                 <div className="flex-1">
                   <div className="font-medium">{photo.filename}</div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">
                     {photo.eventName}
                   </div>
                 </div>
@@ -426,7 +426,7 @@ export default function StorageDashboard() {
                     <div className="font-medium">
                       {photo.optimizedSizeKB} KB
                     </div>
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-gray-500 dark:text-gray-400 text-sm">
                       <span className="text-green-600">
                         {photo.optimizationRatio.toFixed(1)}% saved
                       </span>

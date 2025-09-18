@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -868,7 +870,7 @@ export function EventLibraryMain({
   ]);
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
+    <div className="flex h-screen flex-col bg-muted">
       {/* Header */}
       <LibraryHeader
         event={event}
@@ -887,7 +889,7 @@ export function EventLibraryMain({
       <div className="flex flex-1 overflow-hidden">
         {/* Left Panel - Folder Tree */}
         <div
-          className="flex-shrink-0 overflow-hidden border-r border-gray-200 bg-white"
+          className="flex-shrink-0 overflow-hidden border-r border-border bg-white"
           style={{ width: leftPanelWidth }}
         >
           <FolderTreePanel
@@ -902,7 +904,7 @@ export function EventLibraryMain({
 
         {/* Resizer for left panel */}
         <div
-          className="w-1 cursor-col-resize bg-gray-200 transition-colors hover:bg-gray-300"
+          className="w-1 cursor-col-resize bg-muted transition-colors hover:bg-gray-300"
           onMouseDown={(e) => {
             const startX = e.clientX;
             const startWidth = leftPanelWidth;
@@ -973,7 +975,7 @@ export function EventLibraryMain({
 
           {isDragOverUpload && (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded bg-blue-50/70">
-              <div className="rounded-xl border-2 border-dashed border-blue-400 bg-white/80 px-6 py-4 text-blue-700 shadow">
+              <div className="rounded-xl border-2 border-dashed border-blue-400 bg-white/80 px-6 py-4 text-blue-700 dark:text-blue-300 shadow">
                 Suelta archivos para subir a esta carpeta
               </div>
             </div>
@@ -985,7 +987,7 @@ export function EventLibraryMain({
           <>
             {/* Resizer for right panel */}
             <div
-              className="w-1 cursor-col-resize bg-gray-200 transition-colors hover:bg-gray-300"
+              className="w-1 cursor-col-resize bg-muted transition-colors hover:bg-gray-300"
               onMouseDown={(e) => {
                 const startX = e.clientX;
                 const startWidth = rightPanelWidth;
@@ -1009,7 +1011,7 @@ export function EventLibraryMain({
             />
 
             <div
-              className="flex-shrink-0 overflow-hidden border-l border-gray-200 bg-white"
+              className="flex-shrink-0 overflow-hidden border-l border-border bg-white"
               style={{ width: rightPanelWidth }}
             >
               <DetailsPanel
@@ -1062,9 +1064,9 @@ export function EventLibraryMain({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-auto">
             <div className="rounded-lg bg-white shadow-xl">
-              <div className="border-b border-gray-200 p-4">
+              <div className="border-b border-border p-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-foreground">
                     Asignar Fotos a Estudiantes
                   </h2>
                   <Button

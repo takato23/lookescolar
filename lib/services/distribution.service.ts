@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
   enhancedTokenService,

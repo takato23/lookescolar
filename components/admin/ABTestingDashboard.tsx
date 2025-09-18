@@ -171,7 +171,7 @@ export default function ABTestingDashboard({
       <Card className={className}>
         <CardContent className="p-6 text-center">
           <Target className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-          <p className="text-muted-foreground">No A/B testing data available</p>
+          <p className="text-gray-500 dark:text-gray-400">No A/B testing data available</p>
           <Button onClick={startNewTest} className="mt-4">
             Start New A/B Test
           </Button>
@@ -187,7 +187,7 @@ export default function ABTestingDashboard({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">A/B Testing Dashboard</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             QR Code vs Traditional Photo Classification
           </p>
         </div>
@@ -238,23 +238,23 @@ export default function ABTestingDashboard({
               >
                 {testData.status.toUpperCase()}
               </Badge>
-              <p className="text-muted-foreground text-sm">Test Status</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Test Status</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">{testData.participantCount}</p>
-              <p className="text-muted-foreground text-sm">Total Students</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Total Students</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">
                 {testConfig.qrParticipation}%
               </p>
-              <p className="text-muted-foreground text-sm">Using QR Method</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Using QR Method</p>
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold">
                 {Math.round(metrics.comparison.confidenceInterval)}%
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Confidence Interval
               </p>
             </div>
@@ -295,9 +295,9 @@ export default function ABTestingDashboard({
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200">
+        <Card className="border-blue-200 dark:border-blue-800">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg text-blue-700">
+            <CardTitle className="flex items-center gap-2 text-lg text-blue-700 dark:text-blue-300">
               <CheckCircle className="h-5 w-5" />
               Accuracy Rate
             </CardTitle>
@@ -316,11 +316,11 @@ export default function ABTestingDashboard({
                   {metrics.traditionalMethod.successRate}%
                 </Badge>
               </div>
-              <div className="rounded-lg bg-blue-50 p-3 text-center">
-                <p className="text-2xl font-bold text-blue-700">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3 text-center">
+                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
                   {Math.round(metrics.comparison.errorReduction)}%
                 </p>
-                <p className="text-sm text-blue-600">Error Reduction</p>
+                <p className="text-sm text-blue-600 dark:text-blue-400">Error Reduction</p>
               </div>
             </div>
           </CardContent>
@@ -376,7 +376,7 @@ export default function ABTestingDashboard({
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Total Students
                     </p>
                     <p className="text-2xl font-bold">
@@ -384,7 +384,7 @@ export default function ABTestingDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Photos with QR
                     </p>
                     <p className="text-2xl font-bold">
@@ -392,7 +392,7 @@ export default function ABTestingDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Auto-classified
                     </p>
                     <p className="text-2xl font-bold">
@@ -400,7 +400,7 @@ export default function ABTestingDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Success Rate
                     </p>
                     <p className="text-2xl font-bold">
@@ -436,14 +436,14 @@ export default function ABTestingDashboard({
             {/* Traditional Method Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-orange-700">
+                <CardTitle className="text-primary-700">
                   Traditional Method
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Total Students
                     </p>
                     <p className="text-2xl font-bold">
@@ -451,7 +451,7 @@ export default function ABTestingDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Photos Tagged
                     </p>
                     <p className="text-2xl font-bold">
@@ -459,7 +459,7 @@ export default function ABTestingDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Avg Time/Photo
                     </p>
                     <p className="text-2xl font-bold">
@@ -467,7 +467,7 @@ export default function ABTestingDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Success Rate
                     </p>
                     <p className="text-2xl font-bold">
@@ -500,11 +500,11 @@ export default function ABTestingDashboard({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
                   <p className="font-semibold text-blue-900">
                     Timeline visualization coming soon
                   </p>
-                  <p className="text-sm text-blue-700">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
                     This will show metrics over time, adoption rates, and key
                     milestones.
                   </p>
@@ -525,7 +525,7 @@ export default function ABTestingDashboard({
                   <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-semibold">Significant Time Savings</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       QR method is{' '}
                       {Math.round(metrics.comparison.timeImprovement)}% faster
                       per photo
@@ -536,7 +536,7 @@ export default function ABTestingDashboard({
                   <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-semibold">Improved Accuracy</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       {Math.round(metrics.comparison.errorReduction)}% reduction
                       in classification errors
                     </p>
@@ -546,7 +546,7 @@ export default function ABTestingDashboard({
                   <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
                   <div>
                     <p className="font-semibold">High Adoption</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       {testConfig.qrParticipation}% of students successfully
                       using QR codes
                     </p>
@@ -557,34 +557,34 @@ export default function ABTestingDashboard({
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-orange-700">
+                <CardTitle className="text-primary-700">
                   Recommendations
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <Target className="mt-0.5 h-5 w-5 text-orange-600" />
+                  <Target className="mt-0.5 h-5 w-5 text-primary-600" />
                   <div>
                     <p className="font-semibold">Scale QR Implementation</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Results justify full QR rollout for secondary schools
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Eye className="mt-0.5 h-5 w-5 text-orange-600" />
+                  <Eye className="mt-0.5 h-5 w-5 text-primary-600" />
                   <div>
                     <p className="font-semibold">Improve QR Visibility</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Enhance QR code positioning guidelines for photographers
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Users className="mt-0.5 h-5 w-5 text-orange-600" />
+                  <Users className="mt-0.5 h-5 w-5 text-primary-600" />
                   <div>
                     <p className="font-semibold">Train Staff</p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Provide QR-focused training for photo session staff
                     </p>
                   </div>

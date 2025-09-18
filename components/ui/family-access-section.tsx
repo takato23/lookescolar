@@ -49,7 +49,7 @@ export function FamilyAccessSection({ onAccess }: FamilyAccessSectionProps) {
             ACCESO FAMILIAR
           </BrutalistSectionHeader>
 
-          <BrutalistText className="mb-8 text-gray-600">
+          <BrutalistText className="mb-8 text-gray-500 dark:text-gray-400">
             Ingresá tu código para ver las fotos de tu hijo/a
           </BrutalistText>
         </div>
@@ -91,7 +91,7 @@ export function FamilyAccessSection({ onAccess }: FamilyAccessSectionProps) {
           </Button>
         </form>
 
-        <div className="mt-12 border-t border-gray-200 pt-8">
+        <div className="mt-12 border-t border-border pt-8">
           <BrutalistText className="mb-4 text-sm text-gray-500">
             ¿No tenés tu código?
           </BrutalistText>

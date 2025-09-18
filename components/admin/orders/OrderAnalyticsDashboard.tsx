@@ -10,7 +10,7 @@ export default function OrderAnalyticsDashboard() {
           <CardTitle>Analytics Dashboard</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Order analytics coming soon...
           </p>
         </CardContent>

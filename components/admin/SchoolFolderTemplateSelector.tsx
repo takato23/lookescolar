@@ -268,7 +268,7 @@ export function SchoolFolderTemplateSelector({
             key={index}
             className={cn(
               'flex items-center gap-2 py-1 text-sm',
-              'rounded px-2 hover:bg-gray-50'
+              'rounded px-2 hover:bg-muted'
             )}
             style={{ paddingLeft: `${folder.depth * 16 + 8}px` }}
           >

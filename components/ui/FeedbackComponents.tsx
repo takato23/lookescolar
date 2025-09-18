@@ -61,7 +61,7 @@ export function Toast({
       case 'warning':
         return <AlertCircle className="h-5 w-5 text-yellow-600" />;
       case 'info':
-        return <Info className="h-5 w-5 text-blue-600" />;
+        return <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
     }
   };
 
@@ -94,9 +94,9 @@ export function Toast({
           {getIcon()}
 
           <div className="min-w-0 flex-1">
-            <h4 className="text-sm font-medium text-gray-900">{title}</h4>
+            <h4 className="text-sm font-medium text-foreground">{title}</h4>
             {description && (
-              <p className="mt-1 text-sm text-gray-600">{description}</p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
             )}
           </div>
 
@@ -105,7 +105,7 @@ export function Toast({
               setIsVisible(false);
               setTimeout(() => onClose?.(), 300);
             }}
-            className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600"
+            className="ml-2 flex-shrink-0 text-gray-400 hover:text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -158,7 +158,7 @@ export function PhotoActionFeedback({
       case 'remove':
         return <X className="h-4 w-4 text-red-600" />;
       case 'view':
-        return <Eye className="h-4 w-4 text-blue-600" />;
+        return <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       case 'download':
         return <Download className="h-4 w-4 text-purple-600" />;
     }
@@ -180,7 +180,7 @@ export function PhotoActionFeedback({
         {getIcon()}
 
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-900">{getActionText()}</p>
+          <p className="text-sm font-medium text-foreground">{getActionText()}</p>
           {photoName && <p className="text-xs text-gray-500">{photoName}</p>}
         </div>
 
@@ -243,8 +243,8 @@ export function ConfirmationDialog({
       >
         <div className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <p className="mt-2 text-sm text-gray-600">{description}</p>
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{description}</p>
           </div>
 
           <div className="flex justify-end space-x-3">
@@ -274,7 +274,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   const getStyles = () => {
     switch (status) {
       case 'draft':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-muted text-foreground border-border';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'processing':
@@ -378,9 +378,9 @@ export function EmptyState({
     >
       {icon && <div className="mb-4 text-gray-400">{icon}</div>}
 
-      <h3 className="mb-2 text-lg font-medium text-gray-900">{title}</h3>
+      <h3 className="mb-2 text-lg font-medium text-foreground">{title}</h3>
 
-      <p className="mb-6 max-w-sm text-gray-600">{description}</p>
+      <p className="mb-6 max-w-sm text-gray-500 dark:text-gray-400">{description}</p>
 
       {action && <Button onClick={action.onClick}>{action.label}</Button>}
     </div>
@@ -409,14 +409,14 @@ export function QuickActions({ actions, className }: QuickActionsProps) {
             'flex flex-col items-center justify-center p-4',
             'rounded-lg border bg-white',
             'transition-all duration-200',
-            'hover:border-primary hover:bg-gray-50',
+            'hover:border-primary hover:bg-muted',
             'focus:ring-primary focus:outline-none focus:ring-2 focus:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',
             !action.disabled && 'active:scale-95'
           )}
         >
-          <div className="mb-2 text-gray-600">{action.icon}</div>
-          <span className="text-xs font-medium text-gray-900">
+          <div className="mb-2 text-gray-500 dark:text-gray-400">{action.icon}</div>
+          <span className="text-xs font-medium text-foreground">
             {action.label}
           </span>
         </button>

@@ -121,7 +121,7 @@ export default function PhotosOptimizedPage() {
         <div className="flex items-center gap-4">
           <Link 
             href="/admin"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-foreground"
           >
             ← Volver al Dashboard
           </Link>
@@ -144,7 +144,7 @@ export default function PhotosOptimizedPage() {
         <h1 className="text-2xl font-bold text-foreground mb-2">
           📸 Fotos (Optimizado)
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-gray-500 dark:text-gray-400">
           Sistema optimizado con paginación para evitar errores de memoria. Carga {photosPerPage} fotos por página.
         </p>
       </div>
@@ -175,7 +175,7 @@ export default function PhotosOptimizedPage() {
       {/* Pagination Info */}
       {totalPhotos > 0 && (
         <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             Mostrando {startPhoto}-{endPhoto} de {totalPhotos} fotos
           </div>
           <div className="flex items-center gap-2">
@@ -207,8 +207,8 @@ export default function PhotosOptimizedPage() {
       {/* Loading state */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <RefreshCwIcon className="h-8 w-8 animate-spin text-muted-foreground mr-3" />
-          <span className="text-muted-foreground">Cargando página {currentPage}...</span>
+          <RefreshCwIcon className="h-8 w-8 animate-spin text-gray-500 dark:text-gray-400 mr-3" />
+          <span className="text-gray-500 dark:text-gray-400">Cargando página {currentPage}...</span>
         </div>
       )}
 
@@ -217,7 +217,7 @@ export default function PhotosOptimizedPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
           {photos.map((photo) => (
             <Card key={photo.id} className="p-3">
-              <div className="aspect-square bg-gray-100 rounded-md mb-3 flex items-center justify-center overflow-hidden">
+              <div className="aspect-square bg-muted rounded-md mb-3 flex items-center justify-center overflow-hidden">
                 {photo.preview_url ? (
                   <img 
                     src={photo.preview_url} 
@@ -230,15 +230,15 @@ export default function PhotosOptimizedPage() {
                     }}
                   />
                 ) : (
-                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                  <ImageIcon className="h-12 w-12 text-gray-500 dark:text-gray-400" />
                 )}
-                <ImageIcon className="h-12 w-12 text-muted-foreground hidden" />
+                <ImageIcon className="h-12 w-12 text-gray-500 dark:text-gray-400 hidden" />
               </div>
               <div className="space-y-1">
                 <div className="font-medium text-sm truncate" title={photo.original_filename}>
                   {photo.original_filename}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <span className={`px-2 py-1 rounded ${photo.approved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                     {photo.approved ? 'Aprobada' : 'Pendiente'}
                   </span>
@@ -246,7 +246,7 @@ export default function PhotosOptimizedPage() {
                     <span>{Math.round(photo.file_size / 1024)}KB</span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                   {new Date(photo.created_at).toLocaleDateString()}
                 </div>
               </div>
@@ -258,11 +258,11 @@ export default function PhotosOptimizedPage() {
       {/* Empty state */}
       {!loading && !error && photos.length === 0 && (
         <div className="text-center py-12">
-          <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <ImageIcon className="h-16 w-16 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">
             No hay fotos disponibles
           </h3>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
             No se encontraron fotos en la base de datos.
           </p>
           <Button onClick={() => loadPhotos(1)} variant="outline">
@@ -300,8 +300,8 @@ export default function PhotosOptimizedPage() {
       )}
 
       {/* Debug info */}
-      <Card className="mt-8 p-4 bg-gray-50">
-        <div className="text-sm text-muted-foreground space-y-1">
+      <Card className="mt-8 p-4 bg-muted">
+        <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
           <div><strong>Endpoint:</strong> /api/admin/photos (optimizado)</div>
           <div><strong>Estado:</strong> {loading ? 'Cargando...' : error ? '❌ Error' : '✅ OK'}</div>
           <div><strong>Página actual:</strong> {currentPage} de {totalPages}</div>

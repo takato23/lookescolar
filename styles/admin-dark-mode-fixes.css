@@ -346,7 +346,233 @@ html.dark body {
   border-color: #475569 !important;
 }
 
+/* ===================== COLOR REMAP TO PRIMARY (ADMIN SCOPE) ===================== */
+/* Replace warm amber/orange accents with primary-blue scheme within admin UI */
+.liquid-glass-app,
+.admin-photos,
+.dark {
+  /* Text colors */
+}
+
+.liquid-glass-app .text-orange-400,
+.admin-photos .text-orange-400,
+.liquid-glass-app .text-amber-400,
+.admin-photos .text-amber-400,
+.liquid-glass-app .text-orange-500,
+.admin-photos .text-orange-500,
+.liquid-glass-app .text-amber-500,
+.admin-photos .text-amber-500,
+.liquid-glass-app .text-orange-600,
+.admin-photos .text-orange-600,
+.liquid-glass-app .text-amber-600,
+.admin-photos .text-amber-600,
+.liquid-glass-app .text-orange-700,
+.admin-photos .text-orange-700,
+.liquid-glass-app .text-amber-700,
+.admin-photos .text-amber-700,
+.liquid-glass-app .text-orange-800,
+.admin-photos .text-orange-800,
+.liquid-glass-app .text-amber-800,
+.admin-photos .text-amber-800 {
+  color: hsl(var(--primary)) !important;
+}
+
+/* Background tints */
+.liquid-glass-app .bg-orange-50,
+.admin-photos .bg-orange-50,
+.liquid-glass-app .bg-amber-50,
+.admin-photos .bg-amber-50 {
+  background-color: hsl(var(--primary) / 0.08) !important;
+}
+
+.liquid-glass-app .bg-orange-100,
+.admin-photos .bg-orange-100,
+.liquid-glass-app .bg-amber-100,
+.admin-photos .bg-amber-100 {
+  background-color: hsl(var(--primary) / 0.12) !important;
+}
+
+/* Translucent utility fallbacks (e.g., bg-orange-100/50) */
+.liquid-glass-app [class*="bg-orange-100/"],
+.admin-photos [class*="bg-orange-100/"],
+.liquid-glass-app [class*="bg-amber-100/"],
+.admin-photos [class*="bg-amber-100/"],
+.liquid-glass-app [class*="bg-orange-50/"],
+.admin-photos [class*="bg-orange-50/"],
+.liquid-glass-app [class*="bg-amber-50/"],
+.admin-photos [class*="bg-amber-50/"] {
+  background-color: hsl(var(--primary) / 0.12) !important;
+}
+
+/* Borders */
+.liquid-glass-app .border-orange-200,
+.admin-photos .border-orange-200,
+.liquid-glass-app .border-amber-200,
+.admin-photos .border-amber-200,
+.liquid-glass-app .border-orange-300,
+.admin-photos .border-orange-300,
+.liquid-glass-app .border-amber-300,
+.admin-photos .border-amber-300 {
+  border-color: hsl(var(--primary) / 0.2) !important;
+}
+
+/* Fallback for other border weights */
+.liquid-glass-app [class*="border-orange-1"],
+.admin-photos [class*="border-orange-1"],
+.liquid-glass-app [class*="border-amber-1"],
+.admin-photos [class*="border-amber-1"],
+.liquid-glass-app [class*="border-orange-4"],
+.admin-photos [class*="border-orange-4"],
+.liquid-glass-app [class*="border-amber-4"],
+.admin-photos [class*="border-amber-4"] {
+  border-color: hsl(var(--primary) / 0.2) !important;
+}
+
+/* Hover states using warm backgrounds */
+.liquid-glass-app .hover\:bg-orange-50:hover,
+.admin-photos .hover\:bg-orange-50:hover,
+.liquid-glass-app .hover\:bg-amber-50:hover,
+.admin-photos .hover\:bg-amber-50:hover {
+  background-color: hsl(var(--primary) / 0.08) !important;
+}
+
+/* Hover border fallbacks */
+.liquid-glass-app .hover\:border-orange-300:hover,
+.admin-photos .hover\:border-orange-300:hover,
+.liquid-glass-app .hover\:border-amber-300:hover,
+.admin-photos .hover\:border-amber-300:hover {
+  border-color: hsl(var(--primary) / 0.3) !important;
+}
+
+/* Dark mode specific warm backgrounds */
+.dark .liquid-glass-app .dark\:bg-orange-900\/20,
+.dark .admin-photos .dark\:bg-orange-900\/20,
+.dark .liquid-glass-app .dark\:bg-amber-900\/20,
+.dark .admin-photos .dark\:bg-amber-900\/20 {
+  background-color: hsl(var(--primary) / 0.15) !important;
+}
+
 .dark .theme-toggle:hover,
 .dark [data-theme-toggle]:hover {
   background-color: #475569 !important;
+}
+
+/* ===================== CARD BACKGROUND FIXES ===================== */
+/* Force card backgrounds to use proper dark mode colors */
+.dark .bg-card {
+  background-color: rgb(31, 41, 55) !important; /* gray-800 */
+}
+
+.dark [class*='bg-card'] {
+  background-color: rgb(31, 41, 55) !important; /* gray-800 */
+}
+
+/* Handle card with opacity modifiers */
+.dark .bg-card\/80 {
+  background-color: rgba(31, 41, 55, 0.8) !important; /* gray-800 with 80% opacity */
+}
+
+.dark .bg-card\/85 {
+  background-color: rgba(31, 41, 55, 0.85) !important; /* gray-800 with 85% opacity */
+}
+
+.dark .bg-card\/90 {
+  background-color: rgba(31, 41, 55, 0.9) !important; /* gray-800 with 90% opacity */
+}
+
+.dark .text-card-foreground {
+  color: rgb(243, 244, 246) !important; /* gray-100 */
+}
+
+/* ===================== AMBER/ORANGE DARK MODE FIXES ===================== */
+/* Fix amber and orange backgrounds in dark mode */
+.dark .bg-amber-50 {
+  background-color: rgba(251, 191, 36, 0.1) !important;
+}
+
+.dark .bg-amber-100 {
+  background-color: rgba(251, 191, 36, 0.15) !important;
+}
+
+.dark .bg-orange-50 {
+  background-color: rgba(251, 146, 60, 0.1) !important;
+}
+
+.dark .bg-orange-100 {
+  background-color: rgba(251, 146, 60, 0.15) !important;
+}
+
+/* Fix amber and orange text colors in dark mode */
+.dark .text-amber-600 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-amber-700 {
+  color: #f59e0b !important;
+}
+
+.dark .text-amber-800 {
+  color: #fbbf24 !important;
+}
+
+.dark .text-orange-600 {
+  color: #fb923c !important;
+}
+
+.dark .text-orange-700 {
+  color: #f97316 !important;
+}
+
+.dark .text-orange-800 {
+  color: #fb923c !important;
+}
+
+/* Fix amber and orange borders in dark mode */
+.dark .border-amber-200 {
+  border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+.dark .border-amber-300 {
+  border-color: rgba(251, 191, 36, 0.4) !important;
+}
+
+.dark .border-orange-200 {
+  border-color: rgba(251, 146, 60, 0.3) !important;
+}
+
+.dark .border-orange-300 {
+  border-color: rgba(251, 146, 60, 0.4) !important;
+}
+
+/* Fix blue backgrounds in dark mode */
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.dark .bg-blue-100 {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+}
+
+.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+.dark .text-blue-700 {
+  color: #3b82f6 !important;
+}
+
+.dark .text-blue-800 {
+  color: #60a5fa !important;
+}
+
+.dark .border-blue-200 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .border-blue-300 {
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+.dark .hover\:bg-blue-100:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
 }

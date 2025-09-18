@@ -142,7 +142,7 @@ export default function AdminHeader({
             aria-label="Notificaciones"
           >
             <Bell className="h-4 w-4 transition-colors sm:h-5 sm:w-5" />
-            <span className="absolute right-1 top-1 h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+            <span className="absolute right-1 top-1 h-2 w-2 animate-pulse rounded-full bg-primary-500" />
           </button>
 
           {/* Settings - Hidden on mobile */}

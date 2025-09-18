@@ -816,7 +816,7 @@ export function ProductManagementPanel({
       <div className="flex items-center justify-center py-16">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-purple-500"></div>
-          <p className="text-gray-600">Cargando productos...</p>
+          <p className="text-gray-500 dark:text-gray-400">Cargando productos...</p>
         </div>
       </div>
     );
@@ -844,10 +844,10 @@ export function ProductManagementPanel({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-foreground">
             Gestión de Productos
           </h2>
-          <p className="text-gray-600">Administra productos y paquetes combo</p>
+          <p className="text-gray-500 dark:text-gray-400">Administra productos y paquetes combo</p>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -973,7 +973,7 @@ export function ProductManagementPanel({
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           {formatProductSpecs(product)}
                         </div>
                       </TableCell>
@@ -988,7 +988,7 @@ export function ProductManagementPanel({
                           className={`${
                             product.is_active
                               ? 'text-green-600 hover:bg-green-50'
-                              : 'text-gray-400 hover:bg-gray-50'
+                              : 'text-gray-400 hover:bg-muted'
                           }`}
                         >
                           {product.is_active ? (
@@ -1069,7 +1069,7 @@ export function ProductManagementPanel({
                                         : combo.badge_color === 'purple'
                                           ? 'bg-purple-500'
                                           : combo.badge_color === 'orange'
-                                            ? 'bg-orange-500'
+                                            ? 'bg-primary-600'
                                             : 'bg-blue-500'
                                   }`}
                                 >
@@ -1110,7 +1110,7 @@ export function ProductManagementPanel({
                           className={`${
                             combo.is_active
                               ? 'text-green-600 hover:bg-green-50'
-                              : 'text-gray-400 hover:bg-gray-50'
+                              : 'text-gray-400 hover:bg-muted'
                           }`}
                         >
                           {combo.is_active ? (

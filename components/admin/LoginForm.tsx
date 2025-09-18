@@ -140,7 +140,7 @@ export default function LoginForm({
       )}
 
       {rateLimitReached && (
-        <div className="rounded-lg border border-orange-500/50 bg-orange-500/20 p-3 text-sm text-orange-200">
+        <div className="rounded-lg border border-primary-500/50 bg-primary-500/20 p-3 text-sm text-primary-200">
           Se ha alcanzado el límite de intentos. Refresca la página y espera un
           momento antes de intentar nuevamente.
         </div>

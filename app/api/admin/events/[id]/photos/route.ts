@@ -3,6 +3,8 @@ import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/utils/logger';
+import { normalizePhotosUrls } from '@/lib/utils/photo-urls';
+import crypto from 'crypto';
 
 // GET /admin/events/{eventId}/photos?folderId={folderId}&page={page}&limit={limit}
 export const GET = RateLimitMiddleware.withRateLimit(
@@ -182,7 +184,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
             });
 
             // Process orphaned photos the same way as folder photos
-            const processedOrphanedPhotos = orphanedAssets.map((asset: any) => ({
+            const processedOrphanedPhotos = normalizePhotosUrls(orphanedAssets.map((asset: any) => ({
               id: asset.id,
               event_id: eventId,
               subject_id: asset.metadata?.subject_id || null,
@@ -199,7 +201,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
               file_size: asset.file_size,
               mime_type: asset.mime_type,
               status: asset.status,
-            }));
+            })));
 
             return NextResponse.json({
               success: true,
@@ -299,8 +301,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
           );
         }
 
-        // Map assets to legacy photo format for compatibility
-        let processedPhotos = (assets || []).map((asset: any) => ({
+        // Map assets to legacy photo format for compatibility and normalize URLs
+        let processedPhotos = normalizePhotosUrls((assets || []).map((asset: any) => ({
           id: asset.id,
           event_id: eventId, // Derived from folder relationship
           subject_id: asset.metadata?.subject_id || null,
@@ -318,7 +320,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
           file_size: asset.file_size,
           mime_type: asset.mime_type,
           status: asset.status,
-        }));
+        })));
 
         // Generate signed URLs if requested
         if (includeSignedUrls && processedPhotos.length > 0) {

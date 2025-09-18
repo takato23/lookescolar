@@ -98,7 +98,7 @@ function DraggablePhoto({
     >
       <Card className="h-full transition-shadow hover:shadow-lg">
         <CardContent className="p-2">
-          <div className="mb-2 aspect-square overflow-hidden rounded bg-gray-100">
+          <div className="mb-2 aspect-square overflow-hidden rounded bg-muted">
             <img
               src={photoUrl}
               alt={filename}
@@ -115,7 +115,7 @@ function DraggablePhoto({
 
           {isDragging && (
             <div className="absolute inset-0 flex items-center justify-center rounded border-2 border-dashed border-blue-500 bg-blue-500/20">
-              <Move className="h-6 w-6 text-blue-600" />
+              <Move className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
           )}
         </CardContent>
@@ -183,8 +183,8 @@ function DroppableFolder({
           'border-green-500 bg-green-50',
         folder.canAcceptPhotos &&
           !isOverCurrent &&
-          'border-gray-300 hover:border-blue-400',
-        !folder.canAcceptPhotos && 'border-gray-200 bg-gray-50 opacity-50'
+          'border-border hover:border-blue-400',
+        !folder.canAcceptPhotos && 'border-border bg-muted opacity-50'
       )}
     >
       <Card
@@ -207,7 +207,7 @@ function DroppableFolder({
             </div>
             <div className="flex-1">
               <h4 className="text-sm font-medium">{folder.name}</h4>
-              <p className="text-muted-foreground text-xs capitalize">
+              <p className="text-gray-500 dark:text-gray-400 text-xs capitalize">
                 {folder.type === 'level' && 'Nivel escolar'}
                 {folder.type === 'course' && 'Curso/Salón'}
                 {folder.type === 'student' && 'Estudiante'}
@@ -215,7 +215,7 @@ function DroppableFolder({
             </div>
           </div>
 
-          <div className="text-muted-foreground flex items-center gap-4 text-xs">
+          <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
               <Camera className="h-3 w-3" />
               <span>{folder.photoCount} fotos</span>
@@ -284,7 +284,7 @@ function OperationStatus({
         {operation.status === 'processing' && (
           <div className="space-y-2">
             <Progress value={operation.progress} className="h-2" />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
               {operation.progress}% completado
             </p>
           </div>
@@ -431,13 +431,13 @@ export default function DragDropPhotoManager({
         </div>
 
         {/* Instructions */}
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
-              <Upload className="mt-0.5 h-5 w-5 text-blue-600" />
+              <Upload className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
               <div className="space-y-1">
                 <h4 className="font-medium text-blue-900">Cómo usar</h4>
-                <ul className="space-y-1 text-sm text-blue-700">
+                <ul className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
                   <li>
                     • Arrastra fotos individuales o selecciona múltiples fotos
                   </li>

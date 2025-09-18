@@ -69,22 +69,22 @@ export default function LegacyPhotosRedirect() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="mx-auto max-w-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-            <Camera className="h-8 w-8 text-blue-600" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30">
+            <Camera className="h-8 w-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <CardTitle className="text-xl font-bold text-gray-900">
+          <CardTitle className="text-xl font-bold text-foreground">
             Gallery System Updated!
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
-          <p className="text-gray-600">
+          <p className="text-gray-500 dark:text-gray-400">
             We've upgraded to a new unified photo gallery system with better
             organization and performance.
           </p>
 
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
             <h4 className="mb-2 font-medium text-blue-900">What's New:</h4>
-            <ul className="space-y-1 text-left text-sm text-blue-800">
+            <ul className="space-y-1 text-left text-sm text-blue-800 dark:text-blue-200">
               <li>• Unified interface for all photo management</li>
               <li>• Clear hierarchy: Event → Level → Course → Student</li>
               <li>• Bulk operations for efficient workflow</li>

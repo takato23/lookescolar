@@ -174,7 +174,7 @@ async function importStudents(students: any[], eventId: string | null) {
       const qrCode = `${validatedStudent.class}-${validatedStudent.name.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
 
       // Insert into subjects table (students are stored as subjects)
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('subjects')
         .insert({
           name: `${validatedStudent.name} ${validatedStudent.lastname}`,

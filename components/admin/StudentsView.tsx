@@ -170,10 +170,10 @@ export default function StudentsView({
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <RefreshCw className="mx-auto mb-4 h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-lg font-medium text-gray-900">
+          <p className="text-lg font-medium text-foreground">
             Cargando estudiantes...
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Obteniendo lista de estudiantes
           </p>
         </div>
@@ -212,11 +212,11 @@ export default function StudentsView({
             Volver al Dashboard
           </Button>
           <div>
-            <h1 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground">
               <Users className="h-6 w-6" />
               Estudiantes del Evento
             </h1>
-            {eventName && <p className="text-gray-600">{eventName}</p>}
+            {eventName && <p className="text-gray-500 dark:text-gray-400">{eventName}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -249,11 +249,11 @@ export default function StudentsView({
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <GraduationCap className="h-5 w-5 text-blue-600" />
+                    <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     {student.name}
                   </CardTitle>
                   {(student.grade || student.section) && (
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       {[student.grade, student.section]
                         .filter(Boolean)
                         .join(' - ')}
@@ -269,7 +269,7 @@ export default function StudentsView({
                     }
                     className={
                       isTokenExpiringSoon(student.token_expires_at)
-                        ? 'border-amber-500 text-amber-700'
+                        ? 'border-primary-500 text-primary-700'
                         : 'bg-green-100 text-green-800'
                     }
                   >
@@ -281,7 +281,7 @@ export default function StudentsView({
                 ) : (
                   <Badge
                     variant="secondary"
-                    className="bg-gray-100 text-gray-700"
+                    className="bg-muted text-foreground"
                   >
                     <AlertCircle className="mr-1 h-3 w-3" />
                     Sin token
@@ -295,13 +295,13 @@ export default function StudentsView({
               {(student.email || student.phone) && (
                 <div className="space-y-2">
                   {student.email && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <Mail className="h-4 w-4" />
                       <span className="truncate">{student.email}</span>
                     </div>
                   )}
                   {student.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <Phone className="h-4 w-4" />
                       <span>{student.phone}</span>
                     </div>
@@ -311,9 +311,9 @@ export default function StudentsView({
 
               {/* QR Code */}
               {student.qr_code && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <QrCode className="h-4 w-4" />
-                  <code className="rounded bg-gray-100 px-2 py-1 font-mono text-xs">
+                  <code className="rounded bg-muted px-2 py-1 font-mono text-xs">
                     {student.qr_code}
                   </code>
                 </div>
@@ -321,7 +321,7 @@ export default function StudentsView({
 
               {/* Token Info */}
               {student.token_expires_at && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                   <Clock className="h-4 w-4" />
                   <span>
                     Token expira: {formatDate(student.token_expires_at)}
@@ -366,12 +366,12 @@ export default function StudentsView({
         <Card>
           <CardContent className="py-12 text-center">
             <Users className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="mb-2 text-lg font-medium text-gray-900">
+            <h3 className="mb-2 text-lg font-medium text-foreground">
               {searchQuery
                 ? 'No se encontraron estudiantes'
                 : 'No hay estudiantes registrados'}
             </h3>
-            <p className="mb-6 text-gray-600">
+            <p className="mb-6 text-gray-500 dark:text-gray-400">
               {searchQuery
                 ? 'Intenta con otros términos de búsqueda.'
                 : 'Agrega estudiantes a este evento para comenzar.'}

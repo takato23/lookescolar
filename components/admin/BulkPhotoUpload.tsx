@@ -279,7 +279,7 @@ export default function BulkPhotoUpload({
   const getStatusColor = (status: UploadFile['status']) => {
     switch (status) {
       case 'pending':
-        return 'bg-gray-50 border-gray-200';
+        return 'bg-muted border-border';
       case 'uploading':
         return 'bg-blue-50 border-blue-200';
       case 'success':
@@ -298,7 +298,7 @@ export default function BulkPhotoUpload({
       {/* Header */}
       <div>
         <h3 className="text-lg font-semibold">Bulk Photo Upload</h3>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">
           Upload multiple photos to {eventName}
         </p>
       </div>
@@ -381,7 +381,7 @@ export default function BulkPhotoUpload({
       <Card>
         <CardContent className="p-6">
           <div
-            className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-gray-400"
+            className="rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-gray-400"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
           >
@@ -389,7 +389,7 @@ export default function BulkPhotoUpload({
             <h4 className="mb-2 text-lg font-medium">
               Drop photos here or click to browse
             </h4>
-            <p className="text-muted-foreground mb-4 text-sm">
+            <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
               Supports JPEG, PNG, WebP. Maximum 10MB per file.
             </p>
 
@@ -455,7 +455,7 @@ export default function BulkPhotoUpload({
                   >
                     {/* Preview */}
                     <div className="flex-shrink-0">
-                      <div className="h-12 w-12 overflow-hidden rounded bg-gray-100">
+                      <div className="h-12 w-12 overflow-hidden rounded bg-muted">
                         <img
                           src={uploadFile.preview}
                           alt={uploadFile.file.name}
@@ -469,7 +469,7 @@ export default function BulkPhotoUpload({
                       <p className="truncate text-sm font-medium">
                         {uploadFile.file.name}
                       </p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
                         {(uploadFile.file.size / 1024 / 1024).toFixed(1)} MB
                       </p>
 
@@ -484,7 +484,7 @@ export default function BulkPhotoUpload({
                           0 && (
                           <div className="mt-1 flex items-center gap-1">
                             <QrCode className="h-3 w-3 text-blue-500" />
-                            <span className="text-xs text-blue-600">
+                            <span className="text-xs text-blue-600 dark:text-blue-400">
                               {uploadFile.uploadResult.detected_qr_codes.length}{' '}
                               QR codes detected
                             </span>

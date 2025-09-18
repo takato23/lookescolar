@@ -127,12 +127,12 @@ export function MobileModal({
             >
               {title && (
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-foreground">
                     {title}
                   </h2>
                   <button
                     onClick={onClose}
-                    className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    className="rounded-lg p-2 text-gray-400 hover:bg-muted hover:text-muted-foreground"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -191,11 +191,11 @@ export function MobileModal({
 
             {/* Header */}
             {title && (
-              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                <h2 className="text-lg font-semibold text-foreground">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="mobile-touch-target rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                  className="mobile-touch-target rounded-xl p-2 text-gray-400 hover:bg-muted hover:text-muted-foreground"
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -265,7 +265,7 @@ export function MobileActionSheet({
             {/* Title */}
             {title && (
               <div className="px-6 py-2">
-                <h3 className="text-center text-sm font-medium text-gray-600">
+                <h3 className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
                   {title}
                 </h3>
               </div>
@@ -287,7 +287,7 @@ export function MobileActionSheet({
                       'mb-2 last:mb-0',
                       action.variant === 'destructive'
                         ? 'text-red-600 hover:bg-red-50 active:bg-red-100'
-                        : 'text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                        : 'text-foreground hover:bg-muted active:bg-muted'
                     )}
                   >
                     {Icon && (
@@ -308,7 +308,7 @@ export function MobileActionSheet({
               {/* Cancel button */}
               <button
                 onClick={onClose}
-                className="mobile-touch-target mt-4 flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-4 text-base font-semibold text-gray-900 transition-colors hover:bg-gray-200 active:bg-gray-300"
+                className="mobile-touch-target mt-4 flex w-full items-center justify-center rounded-xl bg-muted px-4 py-4 text-base font-semibold text-foreground transition-colors hover:bg-muted active:bg-gray-300"
               >
                 Cancelar
               </button>
@@ -390,11 +390,11 @@ export function MobileDrawer({
           >
             {/* Header */}
             {title && (
-              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 pt-12">
-                <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+              <div className="flex items-center justify-between border-b border-border px-6 py-4 pt-12">
+                <h2 className="text-lg font-semibold text-foreground">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="mobile-touch-target rounded-xl p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                  className="mobile-touch-target rounded-xl p-2 text-gray-400 hover:bg-muted hover:text-muted-foreground"
                 >
                   <X className="h-6 w-6" />
                 </button>

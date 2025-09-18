@@ -28,13 +28,13 @@ export function TaggingPreview({
       <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-800">
+          <h3 className="text-xl font-bold text-foreground">
             Confirmar Asignación
           </h3>
           {!processing && (
             <button
               onClick={onCancel}
-              className="text-2xl leading-none text-gray-400 hover:text-gray-600"
+              className="text-2xl leading-none text-gray-400 hover:text-muted-foreground"
             >
               ✕
             </button>
@@ -48,10 +48,10 @@ export function TaggingPreview({
             <div className="flex items-center justify-center space-x-4">
               {/* Fotos */}
               <div className="text-center">
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30">
                   <span className="text-2xl">📷</span>
                 </div>
-                <div className="text-sm font-medium text-gray-600">
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   {photoCount} foto{photoCount !== 1 ? 's' : ''}
                 </div>
               </div>
@@ -66,7 +66,7 @@ export function TaggingPreview({
                 <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                   <span className="text-2xl">👤</span>
                 </div>
-                <div className="text-sm font-medium text-gray-600">Alumno</div>
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Alumno</div>
               </div>
             </div>
           </div>
@@ -74,19 +74,19 @@ export function TaggingPreview({
           {/* Detalles */}
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-gray-100 py-2">
-              <span className="text-gray-600">Fotos a asignar:</span>
-              <span className="font-medium text-gray-800">{photoCount}</span>
+              <span className="text-gray-500 dark:text-gray-400">Fotos a asignar:</span>
+              <span className="font-medium text-foreground">{photoCount}</span>
             </div>
 
             <div className="flex items-start justify-between border-b border-gray-100 py-2">
-              <span className="text-gray-600">Alumno:</span>
-              <span className="max-w-48 break-words text-right font-medium text-gray-800">
+              <span className="text-gray-500 dark:text-gray-400">Alumno:</span>
+              <span className="max-w-48 break-words text-right font-medium text-foreground">
                 {assignment.subjectName}
               </span>
             </div>
 
             <div className="flex items-center justify-between py-2">
-              <span className="text-gray-600">ID de fotos:</span>
+              <span className="text-gray-500 dark:text-gray-400">ID de fotos:</span>
               <div className="max-w-48 text-right text-xs text-gray-500">
                 {assignment.photoIds
                   .slice(0, 3)
@@ -104,7 +104,7 @@ export function TaggingPreview({
           <button
             onClick={onCancel}
             disabled={processing}
-            className="flex-1 rounded-xl bg-gray-100 px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex-1 rounded-xl bg-muted px-4 py-3 font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
             Cancelar
           </button>

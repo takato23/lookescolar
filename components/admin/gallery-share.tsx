@@ -209,7 +209,7 @@ export default function GalleryShare({
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-gray-500 dark:text-gray-400 text-xs">
                 Este enlace es único y seguro. Solo las personas con el enlace
                 pueden acceder.
               </p>

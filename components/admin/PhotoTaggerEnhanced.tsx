@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   useState,
   useEffect,
@@ -1007,8 +1009,8 @@ function PhotoTaggerHeader({
 
         {/* Stats Bar */}
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-          <div className="rounded-lg bg-blue-50 p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3 text-center">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {stats.totalPhotos}
             </div>
             <div className="text-xs text-blue-500">Total Fotos</div>
@@ -1021,11 +1023,11 @@ function PhotoTaggerHeader({
             <div className="text-xs text-green-500">Asignadas</div>
           </div>
 
-          <div className="rounded-lg bg-orange-50 p-3 text-center">
-            <div className="text-2xl font-bold text-orange-600">
+          <div className="rounded-lg bg-primary-50 p-3 text-center">
+            <div className="text-2xl font-bold text-primary">
               {stats.untaggedPhotos}
             </div>
-            <div className="text-xs text-orange-500">Pendientes</div>
+            <div className="text-xs text-primary-600">Pendientes</div>
           </div>
 
           <div className="rounded-lg bg-purple-50 p-3 text-center">
@@ -1035,8 +1037,8 @@ function PhotoTaggerHeader({
             <div className="text-xs text-purple-500">Seleccionadas</div>
           </div>
 
-          <div className="rounded-lg bg-gray-50 p-3 text-center">
-            <div className="text-2xl font-bold text-gray-600">
+          <div className="rounded-lg bg-muted p-3 text-center">
+            <div className="text-2xl font-bold text-gray-500 dark:text-gray-400">
               {stats.averagePhotosPerSubject}
             </div>
             <div className="text-xs text-gray-500">Promedio/Sujeto</div>
@@ -1052,11 +1054,11 @@ function PhotoTaggerHeader({
 
         {/* Progress Bar */}
         <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between text-sm text-gray-600">
+          <div className="mb-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <span>Progreso de Asignación</span>
             <span>{stats.progressPercentage}%</span>
           </div>
-          <div className="h-3 w-full rounded-full bg-gray-200">
+          <div className="h-3 w-full rounded-full bg-muted">
             <div
               className="h-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300"
               style={{ width: `${stats.progressPercentage}%` }}

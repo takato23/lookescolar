@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   createContext,
   useContext,
@@ -285,10 +287,10 @@ function KeyboardHelpModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="neural-glass-card max-h-[80vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
+        <div className="flex items-center justify-between border-b border-border/50 p-6">
           <div className="flex items-center gap-3">
-            <Keyboard className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">
+            <Keyboard className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-xl font-bold text-foreground">
               Atajos de Teclado
             </h2>
           </div>
@@ -316,8 +318,8 @@ function KeyboardHelpModal() {
 
                 return (
                   <div key={category} className="space-y-3">
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                      <Icon className="h-5 w-5 text-blue-600" />
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                      <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       {categoryName}
                     </h3>
                     <div className="grid gap-2">
@@ -327,7 +329,7 @@ function KeyboardHelpModal() {
                           className="neural-glass-card flex items-center justify-between rounded-lg p-3"
                         >
                           <div>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-foreground">
                               {shortcut.description}
                             </div>
                             {shortcut.context && (
@@ -344,7 +346,7 @@ function KeyboardHelpModal() {
                                   {keyIndex > 0 && (
                                     <span className="text-gray-400">+</span>
                                   )}
-                                  <kbd className="rounded bg-gray-200/70 px-2 py-1 font-mono text-xs">
+                                  <kbd className="rounded bg-muted/70 px-2 py-1 font-mono text-xs">
                                     {key}
                                   </kbd>
                                 </React.Fragment>
@@ -368,10 +370,10 @@ function KeyboardHelpModal() {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200/50 bg-gray-50/50 px-6 py-4">
-          <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="border-t border-border/50 bg-muted/50 px-6 py-4">
+          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div>
-              Presiona <kbd className="rounded bg-gray-200 px-2 py-1">?</kbd>{' '}
+              Presiona <kbd className="rounded bg-muted px-2 py-1">?</kbd>{' '}
               para mostrar/ocultar esta ayuda
             </div>
             <div>{shortcuts.length} atajos disponibles</div>
@@ -404,9 +406,9 @@ function AccessibilityPanel() {
       {/* Accessibility panel */}
       {showPanel && (
         <div className="neural-glass-card fixed bottom-20 left-6 z-50 w-80 rounded-xl border border-white/20 bg-white/95 shadow-lg backdrop-blur-md">
-          <div className="border-b border-gray-200/50 p-4">
+          <div className="border-b border-border/50 p-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Accesibilidad</h3>
+              <h3 className="font-semibold text-foreground">Accesibilidad</h3>
               <Button
                 size="sm"
                 variant="ghost"
@@ -421,7 +423,7 @@ function AccessibilityPanel() {
           <div className="space-y-4 p-4">
             {/* High Contrast */}
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 Alto contraste
               </label>
               <input
@@ -430,13 +432,13 @@ function AccessibilityPanel() {
                 onChange={(e) =>
                   updateAccessibility({ highContrast: e.target.checked })
                 }
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
               />
             </div>
 
             {/* Reduced Motion */}
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 Reducir animaciones
               </label>
               <input
@@ -445,13 +447,13 @@ function AccessibilityPanel() {
                 onChange={(e) =>
                   updateAccessibility({ reducedMotion: e.target.checked })
                 }
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
               />
             </div>
 
             {/* Focus Visible */}
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-foreground">
                 Resaltar foco
               </label>
               <input
@@ -460,13 +462,13 @@ function AccessibilityPanel() {
                 onChange={(e) =>
                   updateAccessibility({ focusVisible: e.target.checked })
                 }
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
               />
             </div>
 
             {/* Font Size */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium text-foreground">
                 Tamaño de fuente
               </label>
               <select
@@ -474,7 +476,7 @@ function AccessibilityPanel() {
                 onChange={(e) =>
                   updateAccessibility({ fontSize: e.target.value as any })
                 }
-                className="w-full rounded-lg border border-gray-300 p-2 text-sm"
+                className="w-full rounded-lg border border-border p-2 text-sm"
               >
                 <option value="small">Pequeño</option>
                 <option value="medium">Mediano</option>

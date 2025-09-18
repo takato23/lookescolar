@@ -15,7 +15,7 @@ interface SkeletonItemProps {
 // Skeleton for individual grid items
 export const SkeletonGridItem = memo<SkeletonItemProps>(({ style, type }) => (
   <div style={style} className="p-2">
-    <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="relative overflow-hidden rounded-lg border border-border bg-white">
       {type === 'folder' ? <SkeletonFolderContent /> : <SkeletonPhotoContent />}
     </div>
   </div>
@@ -43,7 +43,7 @@ SkeletonFolderContent.displayName = 'SkeletonFolderContent';
 const SkeletonPhotoContent = memo(() => (
   <div className="flex h-full flex-col">
     {/* Image area */}
-    <div className="relative flex-1 overflow-hidden rounded-t-lg bg-gray-100">
+    <div className="relative flex-1 overflow-hidden rounded-t-lg bg-muted">
       <div className={cn(skeletonBaseClass, 'absolute inset-0')} />
     </div>
 

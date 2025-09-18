@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   createContext,
   useContext,
@@ -195,9 +197,9 @@ function NotificationToast({
       case 'warning':
         return <AlertTriangle className="h-5 w-5 text-yellow-600" />;
       case 'info':
-        return <Info className="h-5 w-5 text-blue-600" />;
+        return <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
       default:
-        return <Bell className="h-5 w-5 text-gray-600" />;
+        return <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -212,7 +214,7 @@ function NotificationToast({
       case 'info':
         return 'border-blue-200 bg-blue-50/90 text-blue-800';
       default:
-        return 'border-gray-200 bg-white/90 text-gray-800';
+        return 'border-border bg-white/90 text-foreground';
     }
   };
 
@@ -324,9 +326,9 @@ export function NotificationBell() {
 
       {showPanel && (
         <div className="neural-glass-card absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-white/20 bg-white/95 shadow-lg backdrop-blur-md">
-          <div className="border-b border-gray-200/50 p-4">
+          <div className="border-b border-border/50 p-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Notificaciones</h3>
+              <h3 className="font-semibold text-foreground">Notificaciones</h3>
               {notifications.length > 0 && (
                 <Button
                   size="sm"
@@ -351,21 +353,21 @@ export function NotificationBell() {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className="rounded-lg p-3 transition-colors hover:bg-gray-50/50"
+                    className="rounded-lg p-3 transition-colors hover:bg-muted/50"
                   >
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex-shrink-0">
                         {notification.icon ? (
-                          <notification.icon className="h-4 w-4 text-gray-600" />
+                          <notification.icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         ) : (
-                          <Bell className="h-4 w-4 text-gray-600" />
+                          <Bell className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-foreground">
                           {notification.title}
                         </p>
-                        <p className="mt-1 text-xs text-gray-600">
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {notification.message}
                         </p>
                         <p className="mt-1 text-xs text-gray-500">

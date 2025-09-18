@@ -287,7 +287,7 @@ Pedro Martínez,pedro.martinez@email.com,5to B`;
             Agregar Estudiantes
           </h3>
           {eventName && (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               Evento: <Badge variant="outline">{eventName}</Badge>
             </p>
           )}
@@ -361,16 +361,16 @@ Pedro Martínez,pedro.martinez@email.com,5to B`;
                     />
                   </label>
                 </div>
-                <p className="text-muted-foreground mt-2 text-xs">
+                <p className="text-gray-500 dark:text-gray-400 mt-2 text-xs">
                   Formatos: Nombre, Email, Grado (opcional)
                 </p>
               </div>
             </div>
 
             {csvFile && (
-              <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   <span className="text-sm font-medium">{csvFile.name}</span>
                 </div>
                 <Button

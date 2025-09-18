@@ -129,12 +129,12 @@ export function TempPhotoTagger({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Tag className="h-4 w-4 text-orange-600" />
+          <Tag className="h-4 w-4 text-primary-600" />
           <h4 className="text-sm font-semibold">Etiquetas Temporales</h4>
           {tags.length > 0 && (
             <Badge
               variant="outline"
-              className="border-orange-200 bg-orange-50 text-orange-700"
+              className="border-primary-200 bg-primary-50 text-primary-700"
             >
               {tags.length}
             </Badge>
@@ -146,7 +146,7 @@ export function TempPhotoTagger({
             <Button
               size="sm"
               variant="outline"
-              className="border-orange-200 text-orange-700 hover:bg-orange-50"
+              className="border-primary-200 text-primary-700 hover:bg-primary-50"
             >
               <Plus className="mr-1 h-3 w-3" />
               Agregar
@@ -160,7 +160,7 @@ export function TempPhotoTagger({
                 Etiqueta Temporal
               </DialogTitle>
               {photoName && (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
                   Para: {photoName}
                 </p>
               )}
@@ -200,8 +200,8 @@ export function TempPhotoTagger({
                 />
               </div>
 
-              <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
-                <div className="flex items-start gap-2 text-xs text-orange-700">
+              <div className="rounded-lg border border-primary-200 bg-primary-50 p-3">
+                <div className="flex items-start gap-2 text-xs text-primary-700">
                   <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" />
                   <div>
                     <strong>Etiqueta temporal:</strong> Se puede vincular
@@ -222,7 +222,7 @@ export function TempPhotoTagger({
                 <Button
                   onClick={handleAddTag}
                   disabled={!formData.tempName.trim() || isLoading}
-                  className="bg-orange-600 hover:bg-orange-700"
+                  className="bg-primary-600 hover:bg-primary-700"
                 >
                   {isLoading ? (
                     <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -239,7 +239,7 @@ export function TempPhotoTagger({
 
       {/* Tags List */}
       {tags.length === 0 ? (
-        <div className="text-muted-foreground py-6 text-center">
+        <div className="text-gray-500 dark:text-gray-400 py-6 text-center">
           <Tag className="mx-auto mb-2 h-6 w-6 opacity-50" />
           <p className="text-xs">Sin etiquetas temporales</p>
           <p className="text-xs">Útil cuando no tienes la lista oficial</p>
@@ -249,27 +249,27 @@ export function TempPhotoTagger({
           {tags.map((tag) => (
             <Card
               key={tag.id}
-              className="border-orange-200/50 bg-orange-50/50 p-3"
+              className="border-primary-200/50 bg-primary-50/50 p-3"
             >
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2">
-                    <User className="h-3 w-3 text-orange-600" />
+                    <User className="h-3 w-3 text-primary-600" />
                     <span className="truncate text-sm font-medium">
                       {tag.temp_name}
                     </span>
                   </div>
                   {tag.temp_email && (
                     <div className="mb-1 flex items-center gap-2">
-                      <Mail className="h-3 w-3 text-orange-600" />
-                      <span className="text-muted-foreground truncate text-xs">
+                      <Mail className="h-3 w-3 text-primary-600" />
+                      <span className="text-gray-500 dark:text-gray-400 truncate text-xs">
                         {tag.temp_email}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <Clock className="h-3 w-3 text-orange-500" />
-                    <span className="text-muted-foreground text-xs">
+                    <Clock className="h-3 w-3 text-primary-600" />
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">
                       {new Date(tag.created_at).toLocaleDateString('es-AR', {
                         day: 'numeric',
                         month: 'short',
@@ -284,7 +284,7 @@ export function TempPhotoTagger({
                   size="sm"
                   variant="ghost"
                   onClick={() => handleRemoveTag(tag.id)}
-                  className="text-orange-600 hover:bg-orange-100 hover:text-orange-700"
+                  className="text-primary-600 hover:bg-primary-50 hover:text-primary-700"
                   aria-label={`Eliminar etiqueta ${tag.temp_name}`}
                 >
                   <X className="h-3 w-3" />

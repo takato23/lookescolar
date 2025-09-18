@@ -137,7 +137,7 @@ export function EventFilters({ events, onFilteredEventsChange, className }: Even
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted dark:hover:bg-gray-800 rounded-full transition-colors"
               aria-label="Limpiar búsqueda"
             >
               <X className="h-3 w-3 text-gray-400" />
@@ -154,7 +154,7 @@ export function EventFilters({ events, onFilteredEventsChange, className }: Even
                 <Filter className="h-4 w-4" />
                 <span className="hidden sm:inline">Estado</span>
                 {statusFilter !== 'all' && (
-                  <Badge variant="outline" className="liquid-label bg-blue-50 text-blue-700 text-xs">
+                  <Badge variant="outline" className="liquid-label bg-blue-50 dark:bg-blue-950/20 text-blue-700 text-xs">
                     {statusOptions.find(opt => opt.value === statusFilter)?.label}
                   </Badge>
                 )}
@@ -171,7 +171,7 @@ export function EventFilters({ events, onFilteredEventsChange, className }: Even
                         'w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center justify-between',
                         statusFilter === option.value
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                          : 'hover:bg-muted dark:hover:bg-gray-800'
                       )}
                     >
                       <span>{option.label}</span>
@@ -206,7 +206,7 @@ export function EventFilters({ events, onFilteredEventsChange, className }: Even
                           'w-full text-left px-3 py-2 text-sm rounded-lg transition-colors flex items-center gap-2',
                           sortBy === option.value
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                            : 'hover:bg-muted dark:hover:bg-gray-800'
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -249,7 +249,7 @@ export function EventFilters({ events, onFilteredEventsChange, className }: Even
               <span className="liquid-description text-xs">Filtros activos:</span>
               <div className="flex gap-1">
                 {searchQuery && (
-                  <Badge variant="outline" className="liquid-label bg-blue-50 text-blue-700 text-xs">
+                  <Badge variant="outline" className="liquid-label bg-blue-50 dark:bg-blue-950/20 text-blue-700 text-xs">
                     "{searchQuery}"
                   </Badge>
                 )}
@@ -284,7 +284,7 @@ export function EventFilters({ events, onFilteredEventsChange, className }: Even
       {/* No results state */}
       {resultsCount === 0 && hasActiveFilters && (
         <div className="text-center py-8">
-          <div className="liquid-card bg-gray-50/50 dark:bg-gray-800/50 p-6 rounded-xl">
+          <div className="liquid-card bg-muted/50 dark:bg-gray-800/50 p-6 rounded-xl">
             <Filter className="h-8 w-8 text-gray-400 mx-auto mb-3" />
             <h3 className="liquid-nav-text font-medium mb-2">No se encontraron eventos</h3>
             <p className="liquid-description text-sm mb-4">

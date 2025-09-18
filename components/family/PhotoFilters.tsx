@@ -262,7 +262,7 @@ export function PhotoFilters({
                 )}
 
                 {filters.dateRange.from && (
-                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 dark:bg-blue-950/30 px-3 py-1 text-xs font-medium text-blue-700">
                     <span>Desde: {formatDate(filters.dateRange.from)}</span>
                     <button
                       onClick={() =>
@@ -278,7 +278,7 @@ export function PhotoFilters({
                 )}
 
                 {filters.dateRange.to && (
-                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 dark:bg-blue-950/30 px-3 py-1 text-xs font-medium text-blue-700">
                     <span>Hasta: {formatDate(filters.dateRange.to)}</span>
                     <button
                       onClick={() =>

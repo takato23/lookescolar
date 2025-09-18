@@ -24,10 +24,10 @@ export default function OptimizationPage() {
         <div className="flex items-center gap-3">
           <Zap className="h-8 w-8 text-yellow-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Free Tier Optimization
             </h1>
-            <p className="mt-1 text-gray-600">
+            <p className="mt-1 text-gray-500 dark:text-gray-400">
               Sistema de optimización para el plan gratuito de Supabase (1GB de
               almacenamiento)
             </p>
@@ -51,7 +51,7 @@ export default function OptimizationPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Cómo Funciona:</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
+              <ul className="space-y-2 text-sm text-foreground">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500" />
                   <span>
@@ -81,15 +81,15 @@ export default function OptimizationPage() {
 
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">Capacidad Estimada:</h3>
-              <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+              <div className="space-y-2 rounded-lg bg-muted p-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     1000 estudiantes
                   </span>
                   <Badge variant="outline">×</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
                     20 fotos cada uno
                   </span>
                   <Badge variant="outline">=</Badge>
@@ -102,8 +102,8 @@ export default function OptimizationPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg bg-blue-50 p-3">
-                <p className="text-sm text-blue-800">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
                   <strong>Perfecto para tienda física:</strong> Los clientes ven
                   previews con watermark y compran copias físicas que entregas
                   sin marca de agua.
@@ -124,11 +124,11 @@ export default function OptimizationPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h4 className="mb-2 text-sm font-semibold text-gray-700">
+            <div className="rounded-lg bg-muted p-4">
+              <h4 className="mb-2 text-sm font-semibold text-foreground">
                 Compresión
               </h4>
-              <ul className="space-y-1 text-xs text-gray-600">
+              <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                 <li>• Formato WebP optimizado</li>
                 <li>• Calidad progresiva (40% a 20%)</li>
                 <li>• Redimensionado inteligente</li>
@@ -136,11 +136,11 @@ export default function OptimizationPage() {
               </ul>
             </div>
 
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h4 className="mb-2 text-sm font-semibold text-gray-700">
+            <div className="rounded-lg bg-muted p-4">
+              <h4 className="mb-2 text-sm font-semibold text-foreground">
                 Watermark
               </h4>
-              <ul className="space-y-1 text-xs text-gray-600">
+              <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                 <li>• Patrón diagonal repetitivo</li>
                 <li>• Texto personalizable</li>
                 <li>• 60% de opacidad</li>
@@ -148,11 +148,11 @@ export default function OptimizationPage() {
               </ul>
             </div>
 
-            <div className="rounded-lg bg-gray-50 p-4">
-              <h4 className="mb-2 text-sm font-semibold text-gray-700">
+            <div className="rounded-lg bg-muted p-4">
+              <h4 className="mb-2 text-sm font-semibold text-foreground">
                 Almacenamiento
               </h4>
-              <ul className="space-y-1 text-xs text-gray-600">
+              <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                 <li>• Solo bucket de previews</li>
                 <li>• Sin archivos originales</li>
                 <li>• Limpieza automática</li>
@@ -189,11 +189,11 @@ export default function OptimizationPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg bg-blue-50 p-3">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center gap-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 p-3">
+              <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <p className="font-medium text-blue-800">Galerías Temáticas</p>
-                <p className="text-sm text-blue-700">
+                <p className="font-medium text-blue-800 dark:text-blue-200">Galerías Temáticas</p>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
                   Las galerías automáticamente detectan el nivel escolar y
                   aplican temas visuales apropiados
                 </p>

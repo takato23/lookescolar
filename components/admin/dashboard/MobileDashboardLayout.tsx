@@ -65,7 +65,7 @@ export function MobileDashboardLayout({
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Estudio</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {currentTime.toLocaleDateString('es-ES', {
                 weekday: 'short',
                 month: 'short',
@@ -84,11 +84,11 @@ export function MobileDashboardLayout({
         <Card variant="glass-ios26" className="p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-500/10 p-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
+              <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <div className="text-xl font-bold">{stats.activeEvents}</div>
-              <div className="text-xs text-muted-foreground">Eventos</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Eventos</div>
             </div>
           </div>
         </Card>
@@ -100,7 +100,7 @@ export function MobileDashboardLayout({
             </div>
             <div>
               <div className="text-xl font-bold">{stats.todayUploads}</div>
-              <div className="text-xs text-muted-foreground">Hoy</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Hoy</div>
             </div>
           </div>
         </Card>

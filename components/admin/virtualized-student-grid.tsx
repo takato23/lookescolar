@@ -317,7 +317,7 @@ export default function VirtualizedStudentGrid({
               <div className="min-w-0 flex-1">
                 <h4 className="truncate text-sm font-medium">{student.name}</h4>
                 {(student.grade || student.section) && (
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs">
                     {student.grade} {student.section && `- ${student.section}`}
                   </p>
                 )}
@@ -363,17 +363,17 @@ export default function VirtualizedStudentGrid({
             {/* Course info */}
             {student.course_name && (
               <div className="flex items-center gap-2 text-xs">
-                <User className="text-muted-foreground h-3 w-3 shrink-0" />
+                <User className="text-gray-500 dark:text-gray-400 h-3 w-3 shrink-0" />
                 <span className="truncate">{student.course_name}</span>
               </div>
             )}
 
             {/* Photo count */}
             <div className="flex items-center gap-2 text-xs">
-              <Camera className="text-muted-foreground h-3 w-3 shrink-0" />
+              <Camera className="text-gray-500 dark:text-gray-400 h-3 w-3 shrink-0" />
               <span>{student.photo_count || 0} fotos</span>
               {student.last_photo_tagged && (
-                <span className="text-muted-foreground">
+                <span className="text-gray-500 dark:text-gray-400">
                   (última:{' '}
                   {new Date(student.last_photo_tagged).toLocaleDateString(
                     'es-AR'
@@ -386,7 +386,7 @@ export default function VirtualizedStudentGrid({
             {/* Parent info */}
             {student.parent_name && (
               <div className="flex items-center gap-2 text-xs">
-                <User className="text-muted-foreground h-3 w-3 shrink-0" />
+                <User className="text-gray-500 dark:text-gray-400 h-3 w-3 shrink-0" />
                 <span className="truncate">{student.parent_name}</span>
               </div>
             )}
@@ -396,13 +396,13 @@ export default function VirtualizedStudentGrid({
               <div className="flex items-center gap-3 text-xs">
                 {student.parent_email && (
                   <div className="flex items-center gap-1">
-                    <Mail className="text-muted-foreground h-3 w-3" />
+                    <Mail className="text-gray-500 dark:text-gray-400 h-3 w-3" />
                     <span className="truncate">{student.parent_email}</span>
                   </div>
                 )}
                 {student.parent_phone && (
                   <div className="flex items-center gap-1">
-                    <Phone className="text-muted-foreground h-3 w-3" />
+                    <Phone className="text-gray-500 dark:text-gray-400 h-3 w-3" />
                     <span>{student.parent_phone}</span>
                   </div>
                 )}
@@ -412,7 +412,7 @@ export default function VirtualizedStudentGrid({
             {/* QR Code */}
             {student.qr_code && (
               <div className="flex items-center gap-2 text-xs">
-                <QrCode className="text-muted-foreground h-3 w-3 shrink-0" />
+                <QrCode className="text-gray-500 dark:text-gray-400 h-3 w-3 shrink-0" />
                 <code className="bg-muted truncate rounded px-1 py-0.5 font-mono text-xs">
                   {student.qr_code}
                 </code>
@@ -422,7 +422,7 @@ export default function VirtualizedStudentGrid({
 
           {/* Footer */}
           <div className="mt-3 border-t pt-2">
-            <div className="text-muted-foreground flex items-center justify-between text-xs">
+            <div className="text-gray-500 dark:text-gray-400 flex items-center justify-between text-xs">
               <span>
                 Creado:{' '}
                 {new Date(student.created_at).toLocaleDateString('es-AR')}
@@ -509,7 +509,7 @@ export default function VirtualizedStudentGrid({
         {/* Search and Filters */}
         <div className="flex flex-1 items-center gap-3">
           <div className="relative">
-            <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+            <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Buscar estudiantes..."
               value={localSearchTerm}
@@ -544,7 +544,7 @@ export default function VirtualizedStudentGrid({
           <div className="flex items-center gap-3">
             {selectedStudents.size > 0 && (
               <>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
                   {selectedStudents.size} seleccionados
                 </span>
                 {enableBulkActions && (
@@ -604,7 +604,7 @@ export default function VirtualizedStudentGrid({
       </div>
 
       {/* Stats */}
-      <div className="text-muted-foreground flex items-center gap-4 text-sm">
+      <div className="text-gray-500 dark:text-gray-400 flex items-center gap-4 text-sm">
         <span>
           Mostrando {filteredStudents.length} de {totalCount} estudiantes
         </span>
@@ -642,8 +642,8 @@ export default function VirtualizedStudentGrid({
         ) : (
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <User className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <p className="text-muted-foreground mb-4">
+              <User className="text-gray-500 dark:text-gray-400 mx-auto mb-4 h-12 w-12" />
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 {localSearchTerm
                   ? 'No se encontraron estudiantes'
                   : 'No hay estudiantes'}

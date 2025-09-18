@@ -61,7 +61,7 @@ export function TaggingStats({
         </div>
 
         <div className="text-center">
-          <div className="text-2xl font-bold text-orange-400">
+          <div className="text-2xl font-bold text-primary-400">
             {stats.untaggedPhotos}
           </div>
           <div className="text-sm text-white/70">Sin Asignar</div>

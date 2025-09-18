@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -192,7 +194,7 @@ export default function MobilePhotographerInterface({
           onClick={() => handlePhotoSelect(photo, index)}
         >
           <CardContent className="relative p-0">
-            <div className="aspect-square overflow-hidden rounded-t bg-gray-100">
+            <div className="aspect-square overflow-hidden rounded-t bg-muted">
               <img
                 src={photo.thumbnailUrl}
                 alt={photo.filename}
@@ -246,7 +248,7 @@ export default function MobilePhotographerInterface({
             <div className="p-2">
               <p className="truncate text-xs font-medium">{photo.filename}</p>
               {photo.studentNames.length > 0 && (
-                <p className="text-muted-foreground truncate text-xs">
+                <p className="text-gray-500 dark:text-gray-400 truncate text-xs">
                   {photo.studentNames.join(', ')}
                 </p>
               )}
@@ -459,14 +461,14 @@ export default function MobilePhotographerInterface({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Mobile header */}
       <div className="sticky top-0 z-40 border-b bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">Gestión de Fotos</h1>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+              <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
               <Input placeholder="Buscar..." className="w-48 pl-9" />
             </div>
           </div>
