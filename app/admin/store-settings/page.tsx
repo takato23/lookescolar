@@ -27,7 +27,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useStoreSettings } from '@/lib/hooks/useStoreSettings';
+import type { PaymentMethod } from '@/lib/hooks/useStoreSettings';
 import { cn } from '@/lib/utils';
+
+const PAYMENT_CONFIG_LABELS: Record<string, string> = {
+  accountNumber: 'Número de cuenta',
+  account_number: 'Número de cuenta',
+  accountHolder: 'Titular de la cuenta',
+  account_holder: 'Titular de la cuenta',
+  bankName: 'Nombre del banco',
+  bank_name: 'Nombre del banco',
+  cbu: 'CBU',
+  alias: 'Alias',
+  contactPhone: 'Teléfono de contacto',
+  contact_phone: 'Teléfono de contacto',
+};
+
+const formatConfigLabel = (key: string) => {
+  if (PAYMENT_CONFIG_LABELS[key]) {
+    return PAYMENT_CONFIG_LABELS[key];
+  }
+
+  const spaced = key
+    .replace(/[_-]/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2');
+
+  return spaced
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
 
 function StoreSettingsView() {
   const search = useSearchParams();
@@ -157,6 +187,45 @@ function StoreSettingsView() {
       });
     },
     [settings.payment_methods, updateSettings]
+  );
+
+  const handlePaymentMethodChange = useCallback(
+    (methodId: string, updates: Partial<PaymentMethod>) => {
+      updateSettings({
+        payment_methods: {
+          ...(settings.payment_methods || {}),
+          [methodId]: {
+            ...(settings.payment_methods?.[methodId] || {}),
+            ...updates,
+          },
+        },
+      });
+    },
+    [settings.payment_methods, updateSettings]
+  );
+
+  const handlePaymentConfigChange = useCallback(
+    (methodId: string, key: string, value: string) => {
+      const current = settings.payment_methods?.[methodId] || {};
+      handlePaymentMethodChange(methodId, {
+        config: {
+          ...(current.config || {}),
+          [key]: value,
+        },
+      });
+    },
+    [settings.payment_methods, handlePaymentMethodChange]
+  );
+
+  const handlePaymentInstructionsChange = useCallback(
+    (methodId: string, value: string) => {
+      const instructions = value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      handlePaymentMethodChange(methodId, { instructions });
+    },
+    [handlePaymentMethodChange]
   );
 
   if (loading) {
@@ -609,37 +678,120 @@ function StoreSettingsView() {
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                  {Object.entries(paymentMethods).map(([methodId, method]) => (
-                    <div key={methodId} className="flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {method?.name || methodId}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {method?.description || 'Método de pago personalizado'}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={Boolean(method?.enabled)}
-                          onCheckedChange={(checked) => handlePaymentToggle(methodId, checked)}
-                        />
-                      </div>
+                  {Object.entries(paymentMethods).map(([methodId, method]) => {
+                    const configEntries = Object.entries(method?.config || {});
+                    const instructionsValue = method?.instructions?.join('\n') ?? '';
 
-                      {method?.instructions ? (
-                        <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-                          <p className="mb-1 font-medium">Instrucciones</p>
-                          <ul className="space-y-1">
-                            {method.instructions.map((instruction, index) => (
-                              <li key={index} className="leading-snug">
-                                • {instruction}
-                              </li>
-                            ))}
-                          </ul>
+                    return (
+                      <div key={methodId} className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {method?.name || methodId}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {method?.description || 'Método de pago personalizado'}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={Boolean(method?.enabled)}
+                            onCheckedChange={(checked) => handlePaymentToggle(methodId, checked)}
+                          />
                         </div>
-                      ) : null}
-                    </div>
-                  ))}
+
+                        <div className="space-y-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor={`${methodId}-name`}>Nombre visible</Label>
+                            <Input
+                              id={`${methodId}-name`}
+                              value={method?.name ?? ''}
+                              onChange={(event) =>
+                                handlePaymentMethodChange(methodId, { name: event.target.value })
+                              }
+                              placeholder="Nombre mostrado al cliente"
+                            />
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label htmlFor={`${methodId}-description`}>Descripción</Label>
+                            <Input
+                              id={`${methodId}-description`}
+                              value={method?.description ?? ''}
+                              onChange={(event) =>
+                                handlePaymentMethodChange(methodId, { description: event.target.value })
+                              }
+                              placeholder="Resumen breve del método de pago"
+                            />
+                          </div>
+
+                          {typeof method?.account_details === 'string' ? (
+                            <div className="grid gap-2">
+                              <Label htmlFor={`${methodId}-account-details`}>
+                                Detalles de la cuenta
+                              </Label>
+                              <Textarea
+                                id={`${methodId}-account-details`}
+                                value={method?.account_details ?? ''}
+                                onChange={(event) =>
+                                  handlePaymentMethodChange(methodId, {
+                                    account_details: event.target.value,
+                                  })
+                                }
+                                placeholder="Información adicional que se muestra al cliente"
+                                rows={3}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Se mostrará junto a las instrucciones del método.
+                              </p>
+                            </div>
+                          ) : null}
+
+                          {configEntries.length > 0 ? (
+                            <div className="space-y-3">
+                              <Separator />
+                              <div className="space-y-3">
+                                {configEntries.map(([key, value]) => (
+                                  <div key={key} className="grid gap-2">
+                                    <Label htmlFor={`${methodId}-config-${key}`}>
+                                      {formatConfigLabel(key)}
+                                    </Label>
+                                    <Input
+                                      id={`${methodId}-config-${key}`}
+                                      value={String(value ?? '')}
+                                      onChange={(event) =>
+                                        handlePaymentConfigChange(methodId, key, event.target.value)
+                                      }
+                                    />
+                                    {key === 'alias' ? (
+                                      <p className="text-xs text-muted-foreground">
+                                        Alias bancario para transferencias.
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+
+                          <div className="grid gap-2">
+                            <Label htmlFor={`${methodId}-instructions`}>Instrucciones</Label>
+                            <Textarea
+                              id={`${methodId}-instructions`}
+                              value={instructionsValue}
+                              onChange={(event) =>
+                                handlePaymentInstructionsChange(methodId, event.target.value)
+                              }
+                              placeholder="Escribe cada instrucción en una línea nueva"
+                              rows={4}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Se mostrarán al cliente como lista paso a paso.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

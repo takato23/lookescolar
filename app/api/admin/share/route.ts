@@ -31,58 +31,110 @@ export const POST = withAuth(async (req: NextRequest) => {
 
     const supabase = await createServerSupabaseServiceClient();
 
-    // Handle folder-specific validation
-    if (input.shareType === 'folder') {
+    // Handle folder-specific validation (folder + photo shares)
+    let targetFolder: { id: string; event_id: string; name?: string } | null = null;
+    if (input.shareType === 'folder' || input.shareType === 'photos') {
       if (!input.folderId) {
         return NextResponse.json(
-          { error: 'folderId requerido para shareType folder' },
+          { error: 'folderId requerido para compartir carpetas o fotos seleccionadas' },
           { status: 400 }
         );
       }
-      
-      // Validate folder exists and belongs to event
+
       const { data: folder, error: folderError } = await supabase
         .from('folders')
-        .select('id, event_id')
+        .select('id, event_id, name')
         .eq('id', input.folderId)
         .single();
-        
+
       if (folderError || !folder || folder.event_id !== input.eventId) {
         return NextResponse.json(
           { error: 'Carpeta no encontrada o no pertenece al evento' },
           { status: 400 }
         );
       }
+
+      targetFolder = folder;
     }
 
-    // Use the current folder-based sharing system
-    let data, error;
-    
-    if ((input.shareType === 'folder' || input.shareType === 'photos') && input.folderId) {
+    // Use the appropriate sharing strategy
+    let data;
+
+    if (input.shareType === 'photos') {
+      if (!input.photoIds || input.photoIds.length === 0) {
+        return NextResponse.json(
+          { error: 'Debes seleccionar al menos una foto para compartir' },
+          { status: 400 }
+        );
+      }
+
+      // Generate a long-lived token so it cannot collide with folder tokens (16 chars)
+      const shareToken = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const title = input.title ?? `${input.photoIds.length} fotos seleccionadas`;
+
+      const { data: shareResult, error: shareError } = await supabase
+        .from('share_tokens')
+        .insert({
+          token: shareToken,
+          event_id: input.eventId,
+          folder_id: input.folderId,
+          photo_ids: input.photoIds,
+          share_type: 'photos',
+          title,
+          description: targetFolder?.name ?? undefined,
+          is_active: true,
+          expires_at: input.expiresAt,
+          allow_download: input.allowDownload ?? false,
+          allow_comments: input.allowComments ?? false,
+          metadata: {
+            title,
+            share_type: 'photos',
+            selected_photo_ids: input.photoIds,
+            folder_id: input.folderId,
+            folder_name: targetFolder?.name,
+            allow_download: input.allowDownload ?? false,
+            created_by: req.headers.get('x-user-id') ?? null,
+          },
+        })
+        .select()
+        .single();
+
+      if (shareError || !shareResult) {
+        console.error('[share] share_tokens insert error (photos)', shareError);
+        return NextResponse.json(
+          { error: 'No se pudo crear el enlace de las fotos seleccionadas' },
+          { status: 500 }
+        );
+      }
+
+      data = {
+        id: shareResult.id,
+        token: shareResult.token,
+        custom_message: title,
+        created_at: shareResult.created_at,
+        expires_at: shareResult.expires_at,
+      };
+    } else if (input.shareType === 'folder' && input.folderId) {
       // Generate a unique share token for the folder (16 chars alphanumeric)
       const shareToken = Array.from(crypto.getRandomValues(new Uint8Array(12)))
-        .map(b => b.toString(16).padStart(2, '0'))
+        .map((b) => b.toString(16).padStart(2, '0'))
         .join('')
         .slice(0, 16);
 
-      // Update the folder directly with share token
       console.log('🔍 [SHARE API] Updating folder with share token:', {
         folderId: input.folderId,
         shareToken: shareToken.slice(0, 8) + '...',
         title: input.title,
-        photoIds: input.photoIds?.length || 0
       });
 
-      // Store selected photo IDs if sharing specific photos
       const publishSettings: any = {
         published_by: req.headers.get('x-user-id'),
-        publish_method: input.shareType === 'photos' ? 'selected_photos' : 'folder_share',
-        title: input.title ?? 'Galería de Carpeta'
+        publish_method: 'folder_share',
+        title: input.title ?? 'Galería de Carpeta',
       };
-
-      if (input.photoIds && input.photoIds.length > 0) {
-        publishSettings.selected_photo_ids = input.photoIds;
-      }
 
       const { data: folderResult, error: folderError } = await supabase
         .from('folders')
@@ -90,19 +142,19 @@ export const POST = withAuth(async (req: NextRequest) => {
           share_token: shareToken,
           is_published: true,
           published_at: new Date().toISOString(),
-          publish_settings: publishSettings
+          publish_settings: publishSettings,
         })
         .eq('id', input.folderId)
         .select()
         .single();
-      
-      console.log('📡 [SHARE API] Folder update result:', { 
-        success: !folderError && folderResult, 
+
+      console.log('📡 [SHARE API] Folder update result:', {
+        success: !folderError && folderResult,
         error: folderError,
         folderId: folderResult?.id,
-        shareToken: folderResult?.share_token?.slice(0, 8) + '...'
+        shareToken: folderResult?.share_token?.slice(0, 8) + '...',
       });
-      
+
       if (folderError || !folderResult) {
         console.error('[share] folder update error', folderError);
         return NextResponse.json(
@@ -110,23 +162,20 @@ export const POST = withAuth(async (req: NextRequest) => {
           { status: 500 }
         );
       }
-      
-      // Transform the result to match expected format
+
       data = {
         id: folderResult.id,
         token: folderResult.share_token,
         custom_message: input.title ?? 'Galería de Carpeta',
         created_at: folderResult.published_at,
-        expires_at: input.expiresAt || null
+        expires_at: input.expiresAt || null,
       };
     } else {
-      // For non-folder shares, fall back to creating a share token manually
-      // Generate a unique token for the share
+      // For event-wide shares, use the share_tokens table
       const shareToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-        .map(b => b.toString(16).padStart(2, '0'))
+        .map((b) => b.toString(16).padStart(2, '0'))
         .join('');
-      
-      // Insert into share_tokens table if it exists, otherwise use folders approach
+
       const { data: shareResult, error: shareError } = await supabase
         .from('share_tokens')
         .insert({
@@ -134,30 +183,32 @@ export const POST = withAuth(async (req: NextRequest) => {
           event_id: input.eventId,
           is_active: true,
           expires_at: input.expiresAt,
+          share_type: input.shareType,
+          title: input.title ?? 'Galería del Evento',
           metadata: {
             title: input.title ?? 'Galería del Evento',
             share_type: input.shareType,
             allow_download: input.allowDownload ?? true,
-            created_by: req.headers.get('x-user-id')
-          }
+            created_by: req.headers.get('x-user-id'),
+          },
         })
         .select()
         .single();
-      
-      if (shareError) {
+
+      if (shareError || !shareResult) {
         console.error('[share] share_tokens insert error', shareError);
         return NextResponse.json(
           { error: 'No se pudo crear el enlace' },
           { status: 500 }
         );
       }
-      
+
       data = {
         id: shareResult.id,
         token: shareResult.token,
         custom_message: input.title ?? 'Galería del Evento',
         created_at: shareResult.created_at,
-        expires_at: shareResult.expires_at
+        expires_at: shareResult.expires_at,
       };
     }
 

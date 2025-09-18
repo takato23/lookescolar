@@ -129,6 +129,7 @@ export function ContactForm({
               onChange={(e) => handleChange('phone', e.target.value)}
               error={!!errors.phone}
               helperText={errors.phone}
+              required
               fullWidth
               placeholder="+54 9 11 1234-5678"
               InputProps={{
@@ -152,7 +153,7 @@ export function ContactForm({
               Dirección de Envío
             </Typography>
             <Typography variant="body2" sx={{ color: '#6b7280' }}>
-              Donde enviaremos tu pedido
+              Opcional: completala si querés coordinar entrega a domicilio
             </Typography>
           </Box>
         </SectionHeader>
@@ -164,7 +165,6 @@ export function ContactForm({
             onChange={(e) => handleChange('street', e.target.value)}
             error={!!errors.street}
             helperText={errors.street}
-            required
             fullWidth
             placeholder="Av. Corrientes 1234"
           />
@@ -176,7 +176,6 @@ export function ContactForm({
               onChange={(e) => handleChange('city', e.target.value)}
               error={!!errors.city}
               helperText={errors.city}
-              required
               fullWidth
             />
 
@@ -186,7 +185,6 @@ export function ContactForm({
               onChange={(e) => handleChange('state', e.target.value)}
               error={!!errors.state}
               helperText={errors.state}
-              required
               fullWidth
             />
 
@@ -196,7 +194,6 @@ export function ContactForm({
               onChange={(e) => handleChange('zipCode', e.target.value)}
               error={!!errors.zipCode}
               helperText={errors.zipCode}
-              required
               fullWidth
             />
           </Stack>

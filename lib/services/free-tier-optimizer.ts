@@ -93,6 +93,7 @@ export class FreeTierOptimizer {
 
     // IMMEDIATE RETURN: No processing at all on Vercel
     // Just return the original image as-is
+    // eslint-disable-next-line no-constant-condition
     if (process.env.VERCEL || true) { // Always skip processing for now
       return {
         processedBuffer: inputBuffer, // Return original image unchanged

@@ -147,7 +147,7 @@ export interface CartItem {
 export interface ContactInfo {
   name: string;
   email: string;
-  phone?: string;
+  phone: string;
   address: {
     street: string;
     city: string;
