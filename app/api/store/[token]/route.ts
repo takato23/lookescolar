@@ -157,6 +157,11 @@ export async function GET(
       }
 
       storeData = folderData;
+
+      // Check for selected photo IDs in publish_settings
+      if (folderData.publish_settings?.selected_photo_ids) {
+        storeData.selected_photo_ids = folderData.publish_settings.selected_photo_ids;
+      }
     }
 
     let assets = [];

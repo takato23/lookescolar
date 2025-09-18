@@ -1020,13 +1020,14 @@ const ContentGridPanel = ({
                 ref={gridInstanceRef}
                 columnCount={columnCount}
                 columnWidth={itemWidth}
-                height={gridRef.current?.clientHeight || 600}
+                height={Math.min(gridRef.current?.clientHeight || 800, Math.max(600, rowCount * ITEM_HEIGHT + 100))}
                 rowCount={rowCount}
                 rowHeight={ITEM_HEIGHT}
                 width={gridWidth}
                 itemData={gridItemData}
                 overscanRowCount={OVERSCAN_COUNT}
                 className="w-full"
+                style={{ minHeight: '100%' }}
                 onScroll={handleScroll}
               >
                 {GridItemComponent}

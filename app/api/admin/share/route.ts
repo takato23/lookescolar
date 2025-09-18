@@ -58,30 +58,39 @@ export const POST = withAuth(async (req: NextRequest) => {
     // Use the current folder-based sharing system
     let data, error;
     
-    if (input.shareType === 'folder' && input.folderId) {
-      // Generate a unique share token for the folder
-      const shareToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    if ((input.shareType === 'folder' || input.shareType === 'photos') && input.folderId) {
+      // Generate a unique share token for the folder (16 chars alphanumeric)
+      const shareToken = Array.from(crypto.getRandomValues(new Uint8Array(12)))
         .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-      
+        .join('')
+        .slice(0, 16);
+
       // Update the folder directly with share token
-      console.log('🔍 [SHARE API] Updating folder with share token:', { 
-        folderId: input.folderId, 
+      console.log('🔍 [SHARE API] Updating folder with share token:', {
+        folderId: input.folderId,
         shareToken: shareToken.slice(0, 8) + '...',
-        title: input.title 
+        title: input.title,
+        photoIds: input.photoIds?.length || 0
       });
-      
+
+      // Store selected photo IDs if sharing specific photos
+      const publishSettings: any = {
+        published_by: req.headers.get('x-user-id'),
+        publish_method: input.shareType === 'photos' ? 'selected_photos' : 'folder_share',
+        title: input.title ?? 'Galería de Carpeta'
+      };
+
+      if (input.photoIds && input.photoIds.length > 0) {
+        publishSettings.selected_photo_ids = input.photoIds;
+      }
+
       const { data: folderResult, error: folderError } = await supabase
         .from('folders')
         .update({
           share_token: shareToken,
           is_published: true,
           published_at: new Date().toISOString(),
-          publish_settings: {
-            published_by: req.headers.get('x-user-id'),
-            publish_method: 'folder_share',
-            title: input.title ?? 'Galería de Carpeta'
-          }
+          publish_settings: publishSettings
         })
         .eq('id', input.folderId)
         .select()

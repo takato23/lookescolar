@@ -242,58 +242,16 @@ export function HierarchicalFolderTreeEnhanced({
     );
   };
 
-  // Menú de acciones para cada carpeta
-  const FolderActionsMenu = ({ 
-    folder, 
-    onAction 
-  }: { 
+  // Menú de acciones para cada carpeta - TODOS en el menú desplegable para no tapar el nombre
+  const FolderActionsMenu = ({
+    folder,
+    onAction
+  }: {
     folder: FolderTreeNode;
     onAction: (action: string, folder: EnhancedFolder) => void;
   }) => (
-    <div className="flex items-center gap-1">
-      {/* Acción rápida: Ver */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          onFolderSelect(folder.id);
-        }}
-        title="Ver carpeta"
-      >
-        <Eye className="h-3 w-3" />
-      </Button>
-
-      {/* Acción rápida: Compartir */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 text-gray-500 hover:text-green-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAction('share', folder);
-        }}
-        title="Compartir"
-      >
-        <Share2 className="h-3 w-3" />
-      </Button>
-
-      {/* Acción rápida: Crear subcarpeta */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 text-gray-500 hover:text-indigo-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAction('create_child', folder);
-        }}
-        title="Crear subcarpeta"
-      >
-        <Plus className="h-3 w-3" />
-      </Button>
-
-      {/* Menú desplegable para más acciones */}
+    <div className="flex items-center">
+      {/* Solo menú desplegable con TODAS las acciones */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -306,25 +264,60 @@ export function HierarchicalFolderTreeEnhanced({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem 
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onFolderSelect(folder.id);
+            }}
+            className="text-blue-600"
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            Ver carpeta
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction('share', folder);
+            }}
+            className="text-green-600"
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Compartir
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction('create_child', folder);
+            }}
+            className="text-indigo-600"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Crear subcarpeta
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
             onClick={() => onAction('rename', folder)}
             className="text-blue-600 dark:text-blue-400"
           >
             <Edit3 className="mr-2 h-4 w-4" />
             Renombrar
           </DropdownMenuItem>
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             onClick={() => onAction('move', folder)}
             className="text-purple-600"
           >
             <Move className="mr-2 h-4 w-4" />
             Mover
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             onClick={() => onAction('delete', folder)}
             className="text-red-600"
           >
