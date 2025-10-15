@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface PWAInstallPrompt extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: { outcome: 'accepted' | 'dismissed' };
 }
 
 interface PWAState {

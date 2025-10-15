@@ -322,8 +322,8 @@ export function ExportSystem({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="neural-glass-card w-full max-w-2xl rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur-md">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-200/50 p-6">
-              <h2 className="text-xl font-bold text-gray-900">
+            <div className="flex items-center justify-between border-b border-border/50 p-6">
+              <h2 className="text-xl font-bold text-foreground">
                 Exportar Datos
               </h2>
               <Button
@@ -340,7 +340,7 @@ export function ExportSystem({
             <div className="space-y-6 p-6">
               {/* Format Selection */}
               <div>
-                <label className="mb-3 block text-sm font-medium text-gray-700">
+                <label className="mb-3 block text-sm font-medium text-foreground">
                   Formato
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -359,16 +359,16 @@ export function ExportSystem({
                           'rounded-lg border-2 p-3 text-left transition-all hover:border-blue-400',
                           exportOptions.format === format.id
                             ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200'
+                            : 'border-border'
                         )}
                       >
                         <div className="flex items-center gap-3">
-                          <Icon className="h-5 w-5 text-blue-600" />
+                          <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className="font-medium text-foreground">
                               {format.name}
                             </h4>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
                               {format.description}
                             </p>
                           </div>
@@ -381,7 +381,7 @@ export function ExportSystem({
 
               {/* Date Range */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-medium text-foreground">
                   Rango de fechas
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -412,22 +412,22 @@ export function ExportSystem({
 
               {/* Field Selection */}
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-medium text-foreground">
                   Campos a incluir
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {availableFields.map((field) => (
                     <label
                       key={field.id}
-                      className="flex items-center gap-2 rounded p-2 hover:bg-gray-50"
+                      className="flex items-center gap-2 rounded p-2 hover:bg-muted"
                     >
                       <input
                         type="checkbox"
                         checked={exportOptions.fields.includes(field.id)}
                         onChange={() => handleFieldToggle(field.id)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
                       />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-foreground">
                         {field.name}
                       </span>
                     </label>
@@ -436,7 +436,7 @@ export function ExportSystem({
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 border-t border-gray-200/50 pt-4">
+              <div className="flex justify-end gap-3 border-t border-border/50 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setIsOpen(false)}

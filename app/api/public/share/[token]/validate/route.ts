@@ -6,10 +6,10 @@ import crypto from 'crypto';
 // POST /public/share/[token]/validate
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ) {
   const requestId = crypto.randomUUID();
-  const { token } = await params;
+  const { token } = params;
 
   try {
     if (!token || typeof token !== 'string') {
@@ -121,10 +121,10 @@ export async function POST(
 // GET /public/share/[token]/validate - Alternative endpoint for password-less validation
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ) {
   const requestId = crypto.randomUUID();
-  const { token } = await params;
+  const { token } = params;
 
   try {
     if (!token || typeof token !== 'string') {

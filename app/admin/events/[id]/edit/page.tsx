@@ -110,7 +110,7 @@ export default function EditEventPage() {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando información del evento...</p>
+          <p className="text-gray-500 dark:text-gray-400">Cargando información del evento...</p>
         </div>
       </div>
     );
@@ -130,8 +130,8 @@ export default function EditEventPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Editar Evento</h1>
-            <p className="text-gray-600">Modifica la información del evento</p>
+            <h1 className="text-3xl font-bold text-foreground">Editar Evento</h1>
+            <p className="text-gray-500 dark:text-gray-400">Modifica la información del evento</p>
           </div>
         </div>
 
@@ -141,7 +141,7 @@ export default function EditEventPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
+                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 Información Básica
               </CardTitle>
             </CardHeader>
@@ -209,10 +209,10 @@ export default function EditEventPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div className="space-y-1">
                   <Label htmlFor="active">Evento Activo</Label>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Los eventos inactivos no aparecen en la galería pública
                   </p>
                 </div>

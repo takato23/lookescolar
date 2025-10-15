@@ -207,7 +207,9 @@ async function handleGET(request: NextRequest): Promise<NextResponse> {
             store_url: unifiedShareToken ? `${siteUrl}/store-unified/${unifiedShareToken}` : null,
             published_at: f.published_at || null,
             family_url: shareToken ? `${siteUrl}/s/${shareToken}` : null,
-            qr_url: shareToken ? `${siteUrl}/api/qr?token=${shareToken}` : null,
+            qr_url: shareToken
+              ? `${siteUrl}/access?token=${encodeURIComponent(shareToken)}`
+              : null,
             event_name: f.events?.name || 'Unknown Event',
             event_date: f.events?.date || null,
           };

@@ -102,20 +102,60 @@ export function HierarchicalFolderTreeEnhanced({
   }, [folders, expandedFolders]);
 
   // Iconos por tipo de carpeta
-  const getFolderIcon = (folder: FolderTreeNode) => {
+  const getFolderIcon = (folder: FolderTreeNode, isSelected: boolean) => {
     switch (folder.level_type) {
       case 'event':
-        return <School className="h-4 w-4 text-blue-600" />;
+        return (
+          <School
+            className={cn(
+              'h-4 w-4',
+              isSelected ? 'text-white' : 'text-blue-600 dark:text-blue-400'
+            )}
+          />
+        );
       case 'nivel':
-        return <FolderOpen className="h-4 w-4 text-purple-600" />;
+        return (
+          <FolderOpen
+            className={cn(
+              'h-4 w-4',
+              isSelected ? 'text-white' : 'text-purple-600'
+            )}
+          />
+        );
       case 'salon':
-        return <Users className="h-4 w-4 text-green-600" />;
+        return (
+          <Users
+            className={cn(
+              'h-4 w-4',
+              isSelected ? 'text-white' : 'text-green-600'
+            )}
+          />
+        );
       case 'familia':
-        return <Hash className="h-4 w-4 text-orange-600" />;
+        return (
+          <Hash
+            className={cn(
+              'h-4 w-4',
+              isSelected ? 'text-white' : 'text-primary-600'
+            )}
+          />
+        );
       default:
-        return folder.isExpanded ? 
-          <FolderOpen className="h-4 w-4 text-gray-600" /> : 
-          <Folder className="h-4 w-4 text-gray-600" />;
+        return folder.isExpanded ? (
+          <FolderOpen
+            className={cn(
+              'h-4 w-4',
+              isSelected ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+            )}
+          />
+        ) : (
+          <Folder
+            className={cn(
+              'h-4 w-4',
+              isSelected ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+            )}
+          />
+        );
     }
   };
 
@@ -134,11 +174,15 @@ export function HierarchicalFolderTreeEnhanced({
     return (
       <div className="select-none">
         {/* Nodo principal */}
-        <div 
+        <div
           className={cn(
-            "group flex items-center gap-2 py-1.5 px-2 rounded-lg cursor-pointer transition-all",
-            isDragOver ? "bg-green-50 ring-1 ring-green-300" : "hover:bg-gray-50",
-            isSelected && "bg-blue-50 border border-blue-200"
+            'group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-all',
+            isSelected
+              ? 'border border-blue-600 bg-blue-600 text-white shadow-sm dark:bg-blue-500'
+              : 'text-slate-700 hover:bg-slate-100/80 dark:text-slate-200 dark:hover:bg-slate-800/80',
+            isDragOver &&
+              'border-2 border-dashed border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100',
+            level > 0 && 'ml-4'
           )}
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onDragOver={(e) => {
@@ -169,7 +213,10 @@ export function HierarchicalFolderTreeEnhanced({
             <Button
               variant="ghost"
               size="sm"
-              className="h-5 w-5 p-0 hover:bg-gray-200"
+              className={cn(
+                'h-6 w-6 min-h-0 p-0 transition-colors',
+                isSelected ? 'text-white hover:bg-blue-500/60' : 'text-gray-500 hover:bg-muted'
+              )}
               onClick={(e) => {
                 e.stopPropagation();
                 onFolderToggle(folder.id);
@@ -189,20 +236,32 @@ export function HierarchicalFolderTreeEnhanced({
             className="flex-1 flex items-center gap-2 min-w-0"
             onClick={() => onFolderSelect(folder.id)}
           >
-            {getFolderIcon(folder)}
+            {getFolderIcon(folder, isSelected)}
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className={cn(
-                  "text-sm font-medium truncate",
-                  isSelected ? "text-blue-900" : "text-gray-700"
-                )}>
+                <span
+                  className={cn(
+                    'truncate text-sm font-semibold transition-colors',
+                isSelected
+                      ? 'text-white'
+                      : 'text-slate-800 dark:text-slate-100'
+                  )}
+                >
                   {folder.name}
                 </span>
                 
                 {/* Badge de cantidad de fotos */}
                 {folder.photo_count > 0 && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'text-xs font-semibold border border-transparent',
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200'
+                    )}
+                  >
                     {folder.photo_count}
                   </Badge>
                 )}
@@ -210,7 +269,12 @@ export function HierarchicalFolderTreeEnhanced({
               
               {/* Contexto del evento si es cross-eventos */}
               {showEventContext && folder.event_name && (
-                <p className="text-xs text-gray-500 truncate">
+                <p
+                  className={cn(
+                    'truncate text-xs',
+                    isSelected ? 'text-white/90' : 'text-gray-500'
+                  )}
+                >
                   {folder.event_name}
                 </p>
               )}
@@ -222,6 +286,7 @@ export function HierarchicalFolderTreeEnhanced({
             <FolderActionsMenu 
               folder={folder} 
               onAction={onFolderAction}
+              isActive={isSelected}
             />
           </div>
         </div>
@@ -243,106 +308,84 @@ export function HierarchicalFolderTreeEnhanced({
   };
 
   // Menú de acciones para cada carpeta
-  const FolderActionsMenu = ({ 
-    folder, 
-    onAction 
-  }: { 
+  const FolderActionsMenu = ({
+    folder,
+    onAction,
+    isActive = false,
+  }: {
     folder: FolderTreeNode;
     onAction: (action: string, folder: EnhancedFolder) => void;
+    isActive?: boolean;
   }) => (
-    <div className="flex items-center gap-1">
-      {/* Acción rápida: Ver */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 text-gray-500 hover:text-blue-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          onFolderSelect(folder.id);
-        }}
-        title="Ver carpeta"
-      >
-        <Eye className="h-3 w-3" />
-      </Button>
-
-      {/* Acción rápida: Compartir */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 text-gray-500 hover:text-green-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAction('share', folder);
-        }}
-        title="Compartir"
-      >
-        <Share2 className="h-3 w-3" />
-      </Button>
-
-      {/* Acción rápida: Crear subcarpeta */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0 text-gray-500 hover:text-indigo-600"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAction('create_child', folder);
-        }}
-        title="Crear subcarpeta"
-      >
-        <Plus className="h-3 w-3" />
-      </Button>
-
-      {/* Menú desplegable para más acciones */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreVertical className="h-3 w-3" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem 
-            onClick={() => onAction('rename', folder)}
-            className="text-blue-600"
-          >
-            <Edit3 className="mr-2 h-4 w-4" />
-            Renombrar
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem 
-            onClick={() => onAction('move', folder)}
-            className="text-purple-600"
-          >
-            <Move className="mr-2 h-4 w-4" />
-            Mover
-          </DropdownMenuItem>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
-            onClick={() => onAction('delete', folder)}
-            className="text-red-600"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Eliminar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            'h-6 w-6 min-h-0 p-0 transition-colors rounded-md',
+            isActive ? 'text-white hover:bg-white/20 hover:text-white' : 'text-gray-500 hover:bg-muted hover:text-foreground'
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MoreVertical className="h-3 w-3" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem
+          onClick={() => {
+            onFolderSelect(folder.id);
+          }}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          Ver carpeta
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onAction('share', folder)}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Compartir
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onAction('create_child', folder)}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Crear subcarpeta
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onAction('rename', folder)}
+          className="text-blue-600 dark:text-blue-400"
+        >
+          <Edit3 className="mr-2 h-4 w-4" />
+          Renombrar
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onAction('move', folder)}
+          className="text-purple-600"
+        >
+          <Move className="mr-2 h-4 w-4" />
+          Mover
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => onAction('delete', folder)}
+          className="text-red-600"
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Eliminar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   // Botón para crear carpeta raíz
   const CreateRootFolderButton = () => (
-    <div className="p-2 border-t border-gray-200">
+    <div className="p-2 border-t border-border">
       <Button
         variant="outline"
         size="sm"
-        className="w-full justify-start text-gray-600 hover:text-blue-600 hover:border-blue-300"
+        className="w-full justify-start text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:border-blue-300"
         onClick={() => onFolderAction('create_child', { 
           id: 'root', 
           name: 'Raíz',
@@ -361,9 +404,9 @@ export function HierarchicalFolderTreeEnhanced({
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="p-3 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <FolderOpen className="h-4 w-4 text-blue-600" />
+      <div className="p-3 border-b border-border">
+        <h3 className="font-semibold text-foreground flex items-center gap-2">
+          <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           Estructura de Carpetas
         </h3>
         {showEventContext && (

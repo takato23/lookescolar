@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
+import { SecurityLogger } from '@/lib/middleware/auth.middleware';
+import { withRobustAuth } from '@/lib/middleware/auth-robust.middleware';
 import {
   photoUpdateSchema,
   SecurityValidator,
@@ -10,10 +11,10 @@ import {
 // PATCH - Edit photo
 async function handlePATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string }; user: any; requestId: string }
 ) {
-  const requestId = request.headers.get('x-request-id') || 'unknown';
-  const userId = request.headers.get('x-user-id') || 'unknown';
+  const { params, user, requestId } = context;
+  const userId = user?.id || 'unknown';
 
   try {
     const { id } = params;
@@ -81,8 +82,13 @@ async function handlePATCH(
       return NextResponse.json({ error: 'Photo not found' }, { status: 404 });
     }
 
-    // TODO: Verify user has access to this photo's event
-    // This would involve checking if the user owns the event or has permission
+    const targetEventId = existingPhoto.event_id;
+    if (!targetEventId) {
+      return NextResponse.json(
+        { error: 'Photo is not associated with an event' },
+        { status: 400 }
+      );
+    }
 
     // Update the photo
     const { data, error } = await supabase
@@ -99,6 +105,7 @@ async function handlePATCH(
           requestId,
           userId,
           photoId: id,
+          eventId: targetEventId,
           error: error.message,
         },
         'error'
@@ -116,11 +123,12 @@ async function handlePATCH(
         requestId,
         userId,
         photoId: id,
+        eventId: targetEventId,
       },
       'info'
     );
 
-    return NextResponse.json({ success: true, photo: data });
+    return NextResponse.json({ success: true, eventId: targetEventId, photo: data });
   } catch (error) {
     SecurityLogger.logSecurityEvent(
       'photo_update_exception',
@@ -141,10 +149,10 @@ async function handlePATCH(
 // DELETE - Delete photo
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string }; user: any; requestId: string }
 ) {
-  const requestId = request.headers.get('x-request-id') || 'unknown';
-  const userId = request.headers.get('x-user-id') || 'unknown';
+  const { params, user, requestId } = context;
+  const userId = user?.id || 'unknown';
 
   try {
     const { id } = params;
@@ -156,16 +164,6 @@ async function handleDELETE(
         { status: 400 }
       );
     }
-
-    SecurityLogger.logSecurityEvent(
-      'photo_deletion_attempt',
-      {
-        requestId,
-        userId,
-        photoId: id,
-      },
-      'info'
-    );
 
     const supabase = await createServerSupabaseServiceClient();
 
@@ -180,8 +178,23 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Photo not found' }, { status: 404 });
     }
 
-    // TODO: Verify user has access to delete this photo
-    // This would involve checking if the user owns the event
+    if (!photo.event_id) {
+      return NextResponse.json(
+        { error: 'Photo is not associated with an event' },
+        { status: 400 }
+      );
+    }
+
+    SecurityLogger.logSecurityEvent(
+      'photo_deletion_attempt',
+      {
+        requestId,
+        userId,
+        photoId: id,
+        eventId: photo.event_id,
+      },
+      'info'
+    );
 
     // Validate and collect storage paths
     const filesToDelete: string[] = [];
@@ -260,6 +273,7 @@ async function handleDELETE(
           requestId,
           userId,
           photoId: id,
+          eventId: photo.event_id,
           error: deleteError.message,
         },
         'error'
@@ -278,6 +292,7 @@ async function handleDELETE(
         userId,
         photoId: id,
         filesDeleted: filesToDelete.length,
+        eventId: photo.event_id,
       },
       'info'
     );
@@ -285,6 +300,7 @@ async function handleDELETE(
     return NextResponse.json({
       success: true,
       message: 'Photo deleted successfully',
+      eventId: photo.event_id,
     });
   } catch (error) {
     SecurityLogger.logSecurityEvent(
@@ -304,5 +320,5 @@ async function handleDELETE(
 }
 
 // Export wrapped with authentication
-export const PATCH = handlePATCH;
-export const DELETE = handleDELETE;
+export const PATCH = withRobustAuth(handlePATCH);
+export const DELETE = withRobustAuth(handleDELETE);

@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { X, CreditCard, AlertCircle, Loader2 } from 'lucide-react';
-import { useCartStore } from '@/lib/stores/cart-store';
+import { useFamilyCartStore } from '@/lib/stores/unified-cart-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,8 +36,9 @@ export function CheckoutModal({
   token,
   eventTheme = 'default',
 }: CheckoutModalProps) {
-  const router = useRouter();
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const items = useFamilyCartStore((state) => state.items);
+  const getTotalPrice = useFamilyCartStore((state) => state.getTotalPrice);
+  const clearCart = useFamilyCartStore((state) => state.clearCart);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     contactName: '',
@@ -298,14 +298,14 @@ export function CheckoutModal({
             </div>
 
             {/* Payment Info */}
-            <div className="rounded-lg bg-blue-50 p-4">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="mt-0.5 h-5 w-5 text-blue-600" />
+                <AlertCircle className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
                 <div className="text-sm text-blue-900">
                   <p className="mb-1 font-medium">
                     Pago Seguro con Mercado Pago
                   </p>
-                  <p className="text-blue-700">
+                  <p className="text-blue-700 dark:text-blue-300">
                     Serás redirigido a Mercado Pago para completar el pago de
                     forma segura. Aceptamos tarjetas de crédito, débito y otros
                     medios de pago.

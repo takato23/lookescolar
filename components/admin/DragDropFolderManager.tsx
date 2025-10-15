@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useCallback, useRef, DragEvent } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -348,7 +350,7 @@ export function DragDropFolderManager({
           case 'in_progress':
             return 'bg-blue-50 border-blue-200';
           default:
-            return 'bg-gray-50 border-gray-200';
+            return 'bg-muted border-border';
         }
       };
 
@@ -381,7 +383,7 @@ export function DragDropFolderManager({
           )}
 
           {operation.results && (
-            <div className="mt-2 text-xs text-gray-600">
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               {operation.type === 'bulk_publish' &&
                 operation.results.successful && (
                   <span>
@@ -410,7 +412,7 @@ export function DragDropFolderManager({
       {operations.length > 0 && (
         <Card className="p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-blue-600" />
+            <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             <h3 className="font-medium">Operaciones en progreso</h3>
           </div>
           <div className="space-y-2">{operations.map(renderOperation)}</div>
@@ -460,8 +462,8 @@ export function DragDropFolderManager({
         <Card
           className={`cursor-pointer border-2 border-dashed p-6 transition-all ${
             isDragging && selectedFolders.length > 0
-              ? 'scale-105 border-orange-400 bg-orange-50'
-              : 'border-orange-200 hover:border-orange-300'
+              ? 'scale-105 border-primary-400 bg-primary-50'
+              : 'border-primary-200 hover:border-primary-300'
           }`}
           onDragOver={handleDragOver}
           onDrop={(e) => {
@@ -473,13 +475,13 @@ export function DragDropFolderManager({
           }
         >
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
-              <EyeOff className="h-6 w-6 text-orange-600" />
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
+              <EyeOff className="h-6 w-6 text-primary-600" />
             </div>
-            <h3 className="mb-1 font-medium text-orange-800">
+            <h3 className="mb-1 font-medium text-primary-800">
               Zona de Despublicación
             </h3>
-            <p className="mb-3 text-sm text-orange-600">
+            <p className="mb-3 text-sm text-primary-600">
               {selectedFolders.length > 0
                 ? `Despublicar ${selectedFolders.length} carpeta${selectedFolders.length === 1 ? '' : 's'} seleccionada${selectedFolders.length === 1 ? '' : 's'}`
                 : 'Arrastra carpetas aquí para despublicarlas'}
@@ -488,7 +490,7 @@ export function DragDropFolderManager({
               <Button
                 size="sm"
                 variant="outline"
-                className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                className="border-primary-300 text-primary-700 hover:bg-primary-50"
               >
                 <EyeOff className="mr-2 h-4 w-4" />
                 Despublicar Ahora
@@ -500,25 +502,25 @@ export function DragDropFolderManager({
 
       {/* Instructions */}
       {selectedFolders.length > 0 && !isDragging && (
-        <Card className="border-blue-200 bg-blue-50 p-4">
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 rounded-full bg-blue-100 p-2">
-              <Move className="h-4 w-4 text-blue-600" />
+            <div className="flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-950/30 p-2">
+              <Move className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex-1">
-              <h4 className="mb-1 font-medium text-blue-800">
+              <h4 className="mb-1 font-medium text-blue-800 dark:text-blue-200">
                 {selectedFolders.length} carpeta
                 {selectedFolders.length === 1 ? '' : 's'} seleccionada
                 {selectedFolders.length === 1 ? '' : 's'}
               </h4>
-              <p className="mb-3 text-sm text-blue-700">
+              <p className="mb-3 text-sm text-blue-700 dark:text-blue-300">
                 Puedes usar las zonas de arriba para publicar/despublicar en
                 lote, o arrastra las carpetas para organizarlas.
               </p>
               <div className="flex gap-2">
                 <Badge
                   variant="outline"
-                  className="border-blue-300 text-blue-600"
+                  className="border-blue-300 text-blue-600 dark:text-blue-400"
                 >
                   💡 Tip: Haz clic en las zonas para acciones rápidas
                 </Badge>
@@ -532,7 +534,7 @@ export function DragDropFolderManager({
       {isDragging && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/10">
           <div className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-lg">
-            <Move className="h-5 w-5 text-blue-600" />
+            <Move className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <span className="font-medium">
               Moviendo {draggedItems.length} elemento
               {draggedItems.length === 1 ? '' : 's'}

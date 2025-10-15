@@ -141,7 +141,7 @@ export class TokenService {
     options: TokenGenerationOptions = {}
   ): Promise<Map<string, TokenGenerationResult>> {
     const results = new Map<string, TokenGenerationResult>();
-    const errors: { subjectId: string; error: string }[] = [];
+    const errors: Array<{ subjectId: string; error: string }> = [];
 
     // Procesar en lotes pequeños para evitar sobrecarga
     const batchSize = 5;

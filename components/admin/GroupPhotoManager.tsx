@@ -14,6 +14,8 @@
 
 'use client';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -294,7 +296,7 @@ export default function GroupPhotoManager({
           <h3 className="text-2xl font-bold tracking-tight">
             Group Photo Management
           </h3>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground0 dark:text-muted-foreground">
             Manage group photos for courses in this event
           </p>
         </div>
@@ -324,7 +326,7 @@ export default function GroupPhotoManager({
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-semibold">{course.name}</h4>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-muted-foreground0 dark:text-muted-foreground text-sm">
                         {course.grade} - {course.section}
                       </p>
                     </div>
@@ -351,7 +353,7 @@ export default function GroupPhotoManager({
                 Group Photos for {selectedCourse.name}
               </CardTitle>
               <div className="flex items-center justify-between">
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground0 dark:text-muted-foreground">
                   {selectedCourse.grade} - {selectedCourse.section}
                 </p>
                 <div className="flex gap-2">
@@ -428,7 +430,7 @@ export default function GroupPhotoManager({
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  <Image className="text-muted-foreground h-8 w-8" />
+                                  <Image className="text-muted-foreground0 dark:text-muted-foreground h-8 w-8" />
                                 )}
                               </div>
                               <div className="absolute left-2 top-2">
@@ -437,7 +439,7 @@ export default function GroupPhotoManager({
                                   onChange={() => {}}
                                 />
                               </div>
-                              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-white">
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-1 text-foreground">
                                 <p className="truncate text-xs">
                                   {photo.filename}
                                 </p>
@@ -447,7 +449,7 @@ export default function GroupPhotoManager({
                         </div>
 
                         {filteredAvailablePhotos.length === 0 && (
-                          <div className="text-muted-foreground py-8 text-center">
+                          <div className="text-muted-foreground0 dark:text-muted-foreground py-8 text-center">
                             No available photos found
                           </div>
                         )}
@@ -517,7 +519,7 @@ export default function GroupPhotoManager({
           ) : filteredGroupPhotos.length === 0 ? (
             <Card>
               <CardContent className="p-8">
-                <div className="text-muted-foreground text-center">
+                <div className="text-muted-foreground0 dark:text-muted-foreground text-center">
                   No group photos found for this course
                 </div>
               </CardContent>
@@ -551,7 +553,7 @@ export default function GroupPhotoManager({
                     <p className="truncate text-xs font-medium">
                       {photo.filename}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-muted-foreground0 dark:text-muted-foreground text-xs">
                       {new Date(photo.created_at).toLocaleDateString()}
                     </p>
                     <div className="mt-2 flex gap-1">

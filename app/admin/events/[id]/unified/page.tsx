@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 /**
@@ -11,7 +11,7 @@ interface PageProps {
  * que proporciona el contexto completo y gestión integrada.
  */
 export default async function UnifiedEventRedirect({ params }: PageProps) {
-  const { id: eventId } = await params;
+  const { id: eventId } = params;
   
   // Redirigir al gestor específico del evento 
   redirect(`/admin/events/${eventId}/library`);

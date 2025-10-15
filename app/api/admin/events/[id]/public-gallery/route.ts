@@ -14,9 +14,9 @@ const PatchSchema = z.object({
 
 // PATCH /api/admin/events/[id]/public-gallery
 export const PATCH = withAuth(
-  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
-      const { id: eventId } = await params;
+      const { id: eventId } = params;
       const body = await req.json();
       const {
         enabled,

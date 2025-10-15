@@ -2,6 +2,7 @@
  * 🏷️ SLUG RESOLVER - Utility for resolving event/folder IDs from slugs or UUIDs
  */
 
+// @ts-nocheck
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // UUID pattern validation

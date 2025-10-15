@@ -175,7 +175,7 @@ export function ResponsiveFolderGrid({
         ? `${window.location.origin}/public/gallery/${code.token}`
         : '';
       const qrUrl = code.token
-        ? `/api/qr?token=${encodeURIComponent(code.token)}`
+        ? `/access?token=${encodeURIComponent(code.token)}`
         : '';
 
       return (
@@ -197,7 +197,7 @@ export function ResponsiveFolderGrid({
             isSelected && 'bg-primary-50/50 ring-2 ring-primary-500',
             code.is_published
               ? 'border-emerald-200 bg-emerald-50/30'
-              : 'border-gray-200 bg-white',
+              : 'border-border bg-white',
             'min-h-[200px] sm:min-h-[240px]' // Minimum height for consistent layout
           )}
         >
@@ -208,7 +208,7 @@ export function ResponsiveFolderGrid({
                 type="checkbox"
                 checked={isSelected}
                 onChange={() => handleToggleSelection(code.id)}
-                className="h-4 min-h-[16px] w-4 min-w-[16px] rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="h-4 min-h-[16px] w-4 min-w-[16px] rounded border-border text-primary-600 focus:ring-primary-500"
                 aria-label={`Seleccionar ${code.code_value}`}
               />
             </div>
@@ -227,7 +227,7 @@ export function ResponsiveFolderGrid({
             ) : (
               <Badge
                 variant="outline"
-                className="bg-gray-100 text-xs font-medium text-gray-700"
+                className="bg-muted text-xs font-medium text-foreground"
               >
                 <EyeOff className="mr-1 h-3 w-3" />
                 Privado
@@ -238,7 +238,7 @@ export function ResponsiveFolderGrid({
           {/* Photo preview */}
           <div className="mb-4 mt-8">
             {code.preview_photos && code.preview_photos.length > 0 ? (
-              <div className="relative h-32 w-full overflow-hidden rounded-lg bg-gray-100">
+              <div className="relative h-32 w-full overflow-hidden rounded-lg bg-muted">
                 {!isImageLoaded && !hasImageError && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -259,7 +259,7 @@ export function ResponsiveFolderGrid({
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                  <div className="absolute inset-0 flex items-center justify-center bg-muted">
                     <Camera className="h-8 w-8 text-gray-400" />
                   </div>
                 )}
@@ -283,7 +283,7 @@ export function ResponsiveFolderGrid({
                 )}
               </div>
             ) : (
-              <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gray-100">
+              <div className="flex h-32 w-full items-center justify-center rounded-lg bg-muted">
                 <Camera className="h-8 w-8 text-gray-400" />
                 <span className="ml-2 text-sm text-gray-500">Sin fotos</span>
               </div>
@@ -293,10 +293,10 @@ export function ResponsiveFolderGrid({
           {/* Card header */}
           <div className="space-y-3">
             <div>
-              <h3 className="truncate text-lg font-semibold text-gray-900">
+              <h3 className="truncate text-lg font-semibold text-foreground">
                 {code.code_value}
               </h3>
-              <div className="mt-1 flex items-center gap-3 text-sm text-gray-600">
+              <div className="mt-1 flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
                   <span>{code.photos_count} fotos</span>
@@ -375,7 +375,7 @@ export function ResponsiveFolderGrid({
 
               {/* Expanded actions */}
               {isExpanded && code.is_published && (
-                <div className="space-y-2 border-t border-gray-200 pt-2">
+                <div className="space-y-2 border-t border-border pt-2">
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       onClick={() => window.open(qrUrl, '_blank')}
@@ -412,7 +412,7 @@ export function ResponsiveFolderGrid({
                       disabled={actionLoading[`${code.id}_rotate`]}
                       variant="ghost"
                       size="sm"
-                      className="min-h-[40px] justify-start text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                      className="min-h-[40px] justify-start text-blue-700 dark:text-blue-300 hover:bg-blue-50 hover:text-blue-800"
                       aria-label={`Rotar token de ${code.code_value}`}
                     >
                       {actionLoading[`${code.id}_rotate`] ? (
@@ -451,7 +451,7 @@ export function ResponsiveFolderGrid({
 
             {/* Last accessed info */}
             {code.last_accessed && code.is_published && (
-              <div className="border-t border-gray-200 pt-2">
+              <div className="border-t border-border pt-2">
                 <div className="flex items-center gap-2 text-xs text-gray-500">
                   <Clock className="h-3 w-3" />
                   <span>Último acceso: {formatDate(code.last_accessed)}</span>
@@ -492,7 +492,7 @@ export function ResponsiveFolderGrid({
     return (
       <div className="py-16 text-center">
         <Camera className="mx-auto mb-4 h-16 w-16 text-gray-400" />
-        <h3 className="mb-2 text-lg font-medium text-gray-900">
+        <h3 className="mb-2 text-lg font-medium text-foreground">
           No hay códigos disponibles
         </h3>
         <p className="text-gray-500">

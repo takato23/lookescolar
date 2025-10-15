@@ -9,12 +9,12 @@ export const GET = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
       const requestId = crypto.randomUUID();
 
       try {
-        const { id: folderId } = await params;
+        const { id: folderId } = params;
 
         logger.info('Fetching folder by ID', {
           requestId,
@@ -75,12 +75,12 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
       const requestId = crypto.randomUUID();
 
       try {
-        const { id: folderId } = await params;
+        const { id: folderId } = params;
 
         if (!folderId) {
           return NextResponse.json(
@@ -189,12 +189,12 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
       const requestId = crypto.randomUUID();
 
       try {
-        const { id: folderId } = await params;
+        const { id: folderId } = params;
         const url = new URL(req.url);
         const moveContentsTo = url.searchParams.get('moveContentsTo');
         const force = url.searchParams.get('force') === 'true';

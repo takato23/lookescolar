@@ -453,8 +453,11 @@ function maskIP(ip: string): string {
 }
 
 // Limpieza periódica cada 5 minutos
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
+// Edge-safe: no usar APIs de Node (process.on). El runtime liberará timers al finalizar.
+let cleanupIntervalId: ReturnType<typeof setInterval> | undefined;
+
+if (typeof globalThis !== 'undefined' && typeof globalThis.setInterval === 'function') {
+  cleanupIntervalId = setInterval(cleanupExpiredEntries, 5 * 60 * 1000);
 }
 
 // Rate limit para configuraciones específicas de endpoints

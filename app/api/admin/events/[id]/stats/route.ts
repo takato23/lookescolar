@@ -4,16 +4,9 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // GET /api/admin/events/[id]/stats
 export const GET = withAuth(
-  async (
-    req: NextRequest,
-    { params }: { params: Promise<{ id: string }> } | { params: { id: string } }
-  ) => {
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
-      // Support Next.js async params
-      const resolved = (params as any)?.then
-        ? await (params as Promise<{ id: string }>)
-        : (params as { id: string });
-      const eventId = resolved.id;
+      const eventId = params.id;
       const supabase = await createServerSupabaseServiceClient();
 
       // Optimized counts with minimal payload

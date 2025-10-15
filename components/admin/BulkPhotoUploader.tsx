@@ -449,7 +449,7 @@ export function BulkPhotoUploader({
       case 'paused':
         return 'text-yellow-600';
       default:
-        return 'text-gray-600';
+        return 'text-muted-foreground';
     }
   };
 
@@ -460,7 +460,7 @@ export function BulkPhotoUploader({
       case 'error':
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       case 'uploading':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />;
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />;
       case 'paused':
         return <Pause className="h-4 w-4 text-yellow-600" />;
       default:
@@ -500,7 +500,7 @@ export function BulkPhotoUploader({
               Subida Masiva de Fotos
             </CardTitle>
             {eventName && (
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
                 Evento: {eventName}
               </p>
             )}
@@ -542,30 +542,30 @@ export function BulkPhotoUploader({
 
         {/* Upload Stats */}
         {stats.total > 0 && (
-          <div className="grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted p-4 md:grid-cols-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {stats.total}
               </div>
-              <div className="text-xs text-gray-600">Total</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
                 {stats.completed}
               </div>
-              <div className="text-xs text-gray-600">Completadas</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Completadas</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">
                 {stats.failed}
               </div>
-              <div className="text-xs text-gray-600">Fallidas</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Fallidas</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {Math.round(stats.avgCompressionRatio)}%
               </div>
-              <div className="text-xs text-gray-600">Compresión</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Compresión</div>
             </div>
           </div>
         )}
@@ -591,13 +591,13 @@ export function BulkPhotoUploader({
 
         {/* Drop Zone */}
         <div
-          className="cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-blue-400"
+          className="cursor-pointer rounded-lg border-2 border-dashed border-border p-8 text-center transition-colors hover:border-blue-400"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-          <p className="mb-2 text-lg font-medium text-gray-700">
+          <p className="mb-2 text-lg font-medium text-foreground">
             Arrastra fotos aquí o haz clic para seleccionar
           </p>
           <p className="text-sm text-gray-500">
@@ -727,26 +727,26 @@ export function BulkPhotoUploader({
 
         {/* Storage Optimization Info */}
         {stats.totalSizeKB > 0 && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <div className="mb-2 flex items-center gap-2 font-medium text-blue-700">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3">
+            <div className="mb-2 flex items-center gap-2 font-medium text-blue-700 dark:text-blue-300">
               <HardDrive className="h-4 w-4" />
               Optimización de Almacenamiento
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600">Original: </span>
+                <span className="text-gray-500 dark:text-gray-400">Original: </span>
                 <span className="font-medium">
                   {Math.round((stats.totalSizeKB / 1024) * 10) / 10} MB
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Optimizado: </span>
+                <span className="text-gray-500 dark:text-gray-400">Optimizado: </span>
                 <span className="font-medium text-green-600">
                   {Math.round((stats.optimizedSizeKB / 1024) * 10) / 10} MB
                 </span>
               </div>
             </div>
-            <div className="mt-2 text-xs text-blue-600">
+            <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
               💡 Ahorro de{' '}
               {Math.round(
                 (1 - stats.optimizedSizeKB / stats.totalSizeKB) * 100

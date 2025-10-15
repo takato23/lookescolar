@@ -318,7 +318,7 @@ export default function QuickPublishButton({
                       </Button>
                     </div>
                   </div>
-                  <div className="text-muted-foreground break-all text-xs">
+                  <div className="text-gray-500 dark:text-gray-400 break-all text-xs">
                     {result.link}
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export default function QuickPublishButton({
             </div>
 
             {publishResults.length === 0 && (
-              <div className="text-muted-foreground py-8 text-center">
+              <div className="text-gray-500 dark:text-gray-400 py-8 text-center">
                 No se encontraron códigos publicados. Verifica que las fotos
                 tengan códigos QR asignados.
               </div>

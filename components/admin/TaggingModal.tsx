@@ -210,7 +210,7 @@ const TaggingModal: React.FC<TaggingModalProps> = ({
                         'cursor-pointer rounded-lg border p-3 transition-all duration-200',
                         selectedStudent?.id === student.id
                           ? 'border-purple-500 bg-purple-50'
-                          : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                          : 'border-border hover:border-purple-300 hover:bg-muted'
                       )}
                       onClick={() => handleSelectStudent(student)}
                     >

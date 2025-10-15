@@ -1,19 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-  StatsCard,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { PremiumGlassButton, PremiumIconButton } from '@/components/ui/premium-glass-button';
 import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortcuts';
+import { formatCurrency } from '@/lib/utils';
 import { QuickActions } from './QuickActions';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import {
@@ -33,13 +26,13 @@ import {
   Activity,
   Monitor,
   Clock,
-  ArrowUpRight,
-  Eye,
   Search,
-  Tag,
   AlertCircle,
   RefreshCw,
+  CloudUpload,
+  FolderOpen,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // Lazy load performance monitor for better initial load
 const PerformanceMonitor = dynamic(
@@ -78,6 +71,42 @@ interface Activity {
   timestamp: string;
   eventId?: string;
   count?: number;
+}
+
+interface StatCardConfig {
+  id: string;
+  label: string;
+  value: string;
+  description: string;
+  chip: string;
+  icon: LucideIcon;
+  accent: string;
+}
+
+type FocusTone = 'success' | 'warning' | 'alert' | 'info' | 'muted';
+
+interface FocusArea {
+  id: string;
+  title: string;
+  description: string;
+  badge: string;
+  tone: FocusTone;
+  icon: LucideIcon;
+}
+
+interface TodayHighlight {
+  id: string;
+  label: string;
+  value: string;
+  helper: string;
+  icon: LucideIcon;
+}
+
+interface UpcomingMilestone {
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
 }
 
 // Fetch dashboard stats from unified Admin Stats API and map to expected shape
@@ -150,6 +179,20 @@ export function DashboardClient() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  const dashboardStats = stats || {
+    activeEvents: 0,
+    totalPhotos: 0,
+    registeredFamilies: 0,
+    totalSales: 0,
+    todayUploads: 0,
+    todayOrders: 0,
+    todayPayments: 0,
+    pendingOrders: 0,
+    storageUsed: 0,
+    storageLimit: 5 * 1024 * 1024 * 1024,
+    recentActivity: [],
+  };
+
   // Format time functions
   const formatTime = useMemo(
     () => (date: Date) => {
@@ -182,6 +225,256 @@ export function DashboardClient() {
     []
   );
 
+  const formatTodayLabel = (value: number, singular: string, plural: string) => {
+    if (!value) {
+      return 'Sin actividad';
+    }
+    return `${value.toLocaleString()} ${value === 1 ? singular : plural}`;
+  };
+
+  const storageUsagePercent = useMemo(() => {
+    if (!dashboardStats.storageLimit) {
+      return 0;
+    }
+    return Math.min(
+      100,
+      Math.round((dashboardStats.storageUsed / dashboardStats.storageLimit) * 100)
+    );
+  }, [dashboardStats.storageLimit, dashboardStats.storageUsed]);
+
+  const storageUsedGb = useMemo(() => {
+    return dashboardStats.storageUsed / 1024 / 1024 / 1024;
+  }, [dashboardStats.storageUsed]);
+
+  const storageLimitGb = useMemo(() => {
+    return dashboardStats.storageLimit / 1024 / 1024 / 1024;
+  }, [dashboardStats.storageLimit]);
+
+  const kpiCards = useMemo(() => {
+    return [
+      {
+        id: 'events',
+        label: 'Eventos activos',
+        value: dashboardStats.activeEvents.toLocaleString(),
+        description: 'Seguimiento de sesiones coordinadas con las escuelas.',
+        chip: formatTodayLabel(dashboardStats.todayUploads, 'carga', 'cargas'),
+        icon: Calendar,
+        accent: 'from-sky-500/15 via-blue-500/10 to-indigo-500/20',
+      },
+      {
+        id: 'photos',
+        label: 'Fotos totales',
+        value: dashboardStats.totalPhotos.toLocaleString(),
+        description: 'Incluye galerías publicadas y en revisión.',
+        chip: formatTodayLabel(
+          dashboardStats.todayUploads,
+          'nueva foto',
+          'nuevas fotos'
+        ),
+        icon: Camera,
+        accent: 'from-purple-500/15 via-fuchsia-500/10 to-pink-500/20',
+      },
+      {
+        id: 'families',
+        label: 'Familias registradas',
+        value: dashboardStats.registeredFamilies.toLocaleString(),
+        description: 'Contactos listos para recibir campañas y recordatorios.',
+        chip: formatTodayLabel(dashboardStats.todayOrders, 'pedido', 'pedidos'),
+        icon: Users,
+        accent: 'from-emerald-500/15 via-teal-500/10 to-green-500/20',
+      },
+      {
+        id: 'sales',
+        label: 'Ventas acumuladas',
+        value: formatCurrency(dashboardStats.totalSales / 100),
+        description: `Pedidos pendientes: ${dashboardStats.pendingOrders}`,
+        chip: formatTodayLabel(dashboardStats.todayPayments, 'pago', 'pagos'),
+        icon: DollarSign,
+        accent: 'from-amber-500/15 via-orange-500/10 to-yellow-500/20',
+      },
+    ] satisfies StatCardConfig[];
+  }, [
+    dashboardStats.activeEvents,
+    dashboardStats.pendingOrders,
+    dashboardStats.registeredFamilies,
+    dashboardStats.todayOrders,
+    dashboardStats.todayPayments,
+    dashboardStats.todayUploads,
+    dashboardStats.totalPhotos,
+    dashboardStats.totalSales,
+  ]);
+
+  const focusAreas = useMemo(() => {
+    const pendingTone: FocusTone =
+      dashboardStats.pendingOrders > 5
+        ? 'alert'
+        : dashboardStats.pendingOrders > 0
+        ? 'warning'
+        : 'success';
+
+    const uploadsTone: FocusTone = dashboardStats.todayUploads ? 'info' : 'muted';
+    const paymentsTone: FocusTone = dashboardStats.todayPayments ? 'success' : 'muted';
+    const storageTone: FocusTone =
+      storageUsagePercent > 92
+        ? 'alert'
+        : storageUsagePercent > 80
+        ? 'warning'
+        : 'info';
+
+    return [
+      {
+        id: 'orders',
+        title: 'Pedidos para revisar',
+        description:
+          dashboardStats.pendingOrders > 0
+            ? `Tenés ${dashboardStats.pendingOrders} pedidos que necesitan seguimiento.`
+            : 'No hay pedidos en espera de revisión.',
+        badge:
+          dashboardStats.pendingOrders > 0
+            ? `${dashboardStats.pendingOrders} pendientes`
+            : 'Al día',
+        tone: pendingTone,
+        icon: Package,
+      },
+      {
+        id: 'uploads',
+        title: 'Subidas del día',
+        description:
+          dashboardStats.todayUploads > 0
+            ? `${dashboardStats.todayUploads.toLocaleString()} fotos se cargaron en las últimas horas.`
+            : 'Aún no se registraron subidas hoy.',
+        badge: formatTodayLabel(dashboardStats.todayUploads, 'carga', 'cargas'),
+        tone: uploadsTone,
+        icon: CloudUpload,
+      },
+      {
+        id: 'payments',
+        title: 'Pagos confirmados',
+        description:
+          dashboardStats.todayPayments > 0
+            ? `${dashboardStats.todayPayments.toLocaleString()} pagos acreditados hoy.`
+            : 'Sin acreditaciones recientes.',
+        badge: formatTodayLabel(dashboardStats.todayPayments, 'pago', 'pagos'),
+        tone: paymentsTone,
+        icon: DollarSign,
+      },
+      {
+        id: 'storage',
+        title: 'Capacidad utilizada',
+        description:
+          storageUsagePercent > 90
+            ? 'Se acerca al límite. Considerá archivar galerías antiguas.'
+            : storageUsagePercent > 75
+            ? 'Buen ritmo: vigila que las próximas subidas no excedan el límite.'
+            : 'Tenés espacio disponible para nuevas sesiones.',
+        badge: `${storageUsagePercent}% usado`,
+        tone: storageTone,
+        icon: FolderOpen,
+      },
+    ] satisfies FocusArea[];
+  }, [
+    dashboardStats.pendingOrders,
+    dashboardStats.todayPayments,
+    dashboardStats.todayUploads,
+    storageUsagePercent,
+  ]);
+
+  const todayHighlights = useMemo(() => {
+    return [
+      {
+        id: 'uploads',
+        label: 'Fotos subidas',
+        value: dashboardStats.todayUploads.toLocaleString(),
+        helper:
+          dashboardStats.todayUploads > 0
+            ? 'Sincronizadas durante el día.'
+            : 'Coordina con los fotógrafos.',
+        icon: CloudUpload,
+      },
+      {
+        id: 'orders',
+        label: 'Pedidos nuevos',
+        value: dashboardStats.todayOrders.toLocaleString(),
+        helper:
+          dashboardStats.todayOrders > 0
+            ? 'Listos para seguimiento de tienda.'
+            : 'Promociona las galerías activas.',
+        icon: Package,
+      },
+      {
+        id: 'payments',
+        label: 'Pagos confirmados',
+        value: dashboardStats.todayPayments.toLocaleString(),
+        helper:
+          dashboardStats.todayPayments > 0
+            ? 'Pagos acreditados en las últimas horas.'
+            : 'Revisa métodos de pago si sigue en cero.',
+        icon: DollarSign,
+      },
+      {
+        id: 'pending',
+        label: 'Pedidos pendientes',
+        value: dashboardStats.pendingOrders.toLocaleString(),
+        helper:
+          dashboardStats.pendingOrders > 0
+            ? 'Revisa aprobaciones y envíos.'
+            : 'Todo al día.',
+        icon: AlertCircle,
+      },
+    ] satisfies TodayHighlight[];
+  }, [
+    dashboardStats.pendingOrders,
+    dashboardStats.todayOrders,
+    dashboardStats.todayPayments,
+    dashboardStats.todayUploads,
+  ]);
+
+  const upcomingMilestones = useMemo(() => {
+    return [
+      {
+        id: 'orders',
+        title: 'Confirmar pedidos pendientes',
+        description:
+          dashboardStats.pendingOrders > 0
+            ? `Quedan ${dashboardStats.pendingOrders} pedidos por confirmar y entregar.`
+            : 'Todos los pedidos están confirmados.',
+        icon: Package,
+      },
+      {
+        id: 'events',
+        title: 'Coordinar próximas sesiones',
+        description: `Hay ${dashboardStats.activeEvents.toLocaleString()} eventos activos esta semana.`,
+        icon: Calendar,
+      },
+      {
+        id: 'storage',
+        title: 'Liberar espacio de almacenamiento',
+        description:
+          storageUsagePercent > 80
+            ? 'Estás por encima del 80% de capacidad, revisa galerías antiguas.'
+            : 'Aprovechá el espacio disponible para subir nuevas fotos.',
+        icon: FolderOpen,
+      },
+    ] satisfies UpcomingMilestone[];
+  }, [
+    dashboardStats.activeEvents,
+    dashboardStats.pendingOrders,
+    storageUsagePercent,
+  ]);
+
+  const toneStyles: Record<FocusTone, string> = {
+    success:
+      'border-green-200/80 bg-green-500/10 text-green-700 dark:border-green-500/40 dark:text-green-300',
+    warning:
+      'border-amber-200/80 bg-amber-500/10 text-amber-700 dark:border-amber-500/40 dark:text-amber-300',
+    alert:
+      'border-red-200/80 bg-red-500/10 text-red-700 dark:border-red-500/40 dark:text-red-300',
+    info:
+      'border-blue-200/80 bg-blue-500/10 text-blue-700 dark:border-blue-500/40 dark:text-blue-300',
+    muted:
+      'border-slate-200/60 bg-slate-500/10 text-slate-600 dark:border-slate-500/40 dark:text-slate-300',
+  };
+
   // Show loading skeleton
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -190,45 +483,31 @@ export function DashboardClient() {
   // Show error state
   if (error && !stats) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center text-center">
-              <AlertCircle className="text-destructive mb-4 h-12 w-12" />
-              <h3 className="mb-2 text-lg font-semibold">
-                Error al cargar el dashboard
-              </h3>
-              <p className="text-muted-foreground mb-4 text-sm">
-                No se pudieron cargar las estadísticas del dashboard.
-              </p>
-              <Button
-                onClick={() => refetch()}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Reintentar
-              </Button>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="glass-card-ios26 w-full max-w-md rounded-3xl p-8">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="glass-button-ios26 rounded-full p-4">
+              <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
-          </CardContent>
-        </Card>
+            <h3 className="text-xl font-semibold">
+              Error al cargar el dashboard
+            </h3>
+            <p className="text-muted-foreground dark:text-gray-400">
+              No se pudieron cargar las estadísticas del dashboard.
+            </p>
+            <PremiumGlassButton
+              onClick={() => refetch()}
+              variant="primary"
+              size="lg"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reintentar
+            </PremiumGlassButton>
+          </div>
+        </div>
       </div>
     );
   }
-
-  // Use fallback data if no stats
-  const dashboardStats = stats || {
-    activeEvents: 0,
-    totalPhotos: 0,
-    registeredFamilies: 0,
-    totalSales: 0,
-    todayUploads: 0,
-    todayOrders: 0,
-    todayPayments: 0,
-    pendingOrders: 0,
-    storageUsed: 0,
-    storageLimit: 5 * 1024 * 1024 * 1024,
-    recentActivity: [],
-  };
 
   return (
     <>
@@ -245,242 +524,370 @@ export function DashboardClient() {
         currentTime={currentTime}
       />
       
+
       {/* Desktop Layout */}
-      <div className="container mx-auto hidden px-4 py-8 lg:block">
-      {/* Header */}
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-3xl font-bold text-transparent">
-            Estudio Fotográfico
-          </h1>
-          <p className="text-muted-foreground">
-            ¡Todo listo para capturar momentos increíbles! • {' '}
-            {currentTime.toLocaleDateString('es-ES', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="liquid-glass-button-ios26 rounded-lg px-4 py-2 text-sm">
-            {formatTime(currentTime)}
-          </div>
-          <Button
-            variant="glass-ios26"
-            onClick={() => refetch()}
-            aria-label="Actualizar datos"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          variant="glass-ios26"
-          title="Eventos Activos"
-          value={dashboardStats.activeEvents}
-          description="Eventos en curso"
-          icon={<Calendar className="h-6 w-6" />}
-          trend="up"
-          trendValue="+2"
-        />
-        <StatsCard
-          variant="glass-ios26"
-          title="Fotos Totales"
-          value={dashboardStats.totalPhotos.toLocaleString()}
-          description="Fotos procesadas"
-          icon={<Camera className="h-6 w-6" />}
-          trend="up"
-          trendValue="+12%"
-        />
-        <StatsCard
-          variant="glass-ios26"
-          title="Familias"
-          value={dashboardStats.registeredFamilies.toLocaleString()}
-          description="Familias registradas"
-          icon={<Users className="h-6 w-6" />}
-          trend="up"
-          trendValue="+8%"
-        />
-        <StatsCard
-          variant="glass-ios26"
-          title="Ventas"
-          value={`$${(dashboardStats.totalSales / 100).toLocaleString()}`}
-          description="Ingresos totales"
-          icon={<DollarSign className="h-6 w-6" />}
-          trend="up"
-          trendValue="+15%"
-        />
-      </div>
-
-      {/* Quick Actions and Performance */}
-      <div className="mb-8 grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Card variant="glass-ios26" className="h-full">
-            <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QuickActions />
-            </CardContent>
-          </Card>
-        </div>
-        <div>
-          <Card variant="glass-ios26" className="h-full">
-            <CardHeader>
-              <CardTitle>Rendimiento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoy - Subidas</span>
-                  <span className="font-medium">
-                    {dashboardStats.todayUploads}
-                  </span>
+      <div className="hidden min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20 lg:block">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-8 py-10">
+          <section className="grid gap-6 xl:grid-cols-[1.5fr,1fr]">
+            <div className="glass-card-ios26 relative overflow-hidden rounded-3xl border border-white/10 p-8">
+              <div className="flex flex-col justify-between gap-6 lg:flex-row">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="glass-button-ios26 rounded-2xl p-3">
+                      <Camera className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+                    </div>
+                    <h1 className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                      Panel de Operaciones
+                    </h1>
+                  </div>
+                  <p className="mt-3 max-w-xl text-base text-muted-foreground">
+                    Visualiza el rendimiento diario, detecta bloqueos y activa los próximos pasos sin salir del dashboard.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-300/40 bg-white/60 px-4 py-2 backdrop-blur dark:border-white/20 dark:bg-white/10">
+                      <Calendar className="h-4 w-4" />
+                      {currentTime.toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-300/40 bg-white/60 px-4 py-2 backdrop-blur dark:border-white/20 dark:bg-white/10">
+                      <Clock className="h-4 w-4" />
+                      {formatTime(currentTime)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoy - Pedidos</span>
-                  <span className="font-medium">
-                    {dashboardStats.todayOrders}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Hoy - Pagos</span>
-                  <span className="font-medium">
-                    {dashboardStats.todayPayments}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Pedidos Pendientes</span>
-                  <span className="font-medium">
-                    {dashboardStats.pendingOrders}
-                  </span>
+                <div className="flex flex-col gap-3">
+                  <div className="glass-button-ios26 inline-flex items-center justify-between rounded-2xl px-6 py-4 text-sm font-medium">
+                    <div className="flex flex-col">
+                      <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                        Estado general
+                      </span>
+                      <span className="text-lg font-semibold text-slate-900 dark:text-white">
+                        {dashboardStats.recentActivity.length > 0
+                          ? 'Actividad en curso'
+                          : 'Esperando novedades'}
+                      </span>
+                    </div>
+                    <Activity className="h-5 w-5 text-primary-500" />
+                  </div>
+                  <PremiumGlassButton
+                    onClick={() => setShowCommandPalette(true)}
+                    className="justify-between rounded-2xl px-6 py-4 text-sm font-medium"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Search className="h-4 w-4" />
+                      Abrir buscador inteligente
+                    </span>
+                    <span className="text-xs text-white/80">⌘K</span>
+                  </PremiumGlassButton>
+                  <PremiumGlassButton
+                    onClick={() => refetch()}
+                    className="justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-medium"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Actualizar datos
+                  </PremiumGlassButton>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              <div className="pointer-events-none absolute -right-32 -top-32 aspect-square w-72 rounded-full bg-gradient-to-tr from-blue-500/20 via-purple-500/10 to-transparent blur-3xl" />
+            </div>
 
-      {/* Photography Specialized Widgets */}
-      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <EventProgressWidget />
-        <QuickAccessWidget />
-        <OrdersSummaryWidget />
-        <PhotoManagementWidget />
-        <BusinessMetricsWidget />
-      </div>
-
-      {/* Activity and Storage */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card variant="glass-ios26">
-          <CardHeader>
-            <CardTitle>Actividad Reciente</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dashboardStats.recentActivity.length > 0 ? (
-                dashboardStats.recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <div className="liquid-glass-button-ios26 mt-1 flex h-8 w-8 items-center justify-center rounded-full">
-                      {activity.type === 'event_created' && (
-                        <Calendar className="h-4 w-4" />
-                      )}
-                      {activity.type === 'photos_uploaded' && (
-                        <Camera className="h-4 w-4" />
-                      )}
-                      {activity.type === 'order_created' && (
-                        <Package className="h-4 w-4" />
-                      )}
-                      {activity.type === 'order_completed' && (
-                        <DollarSign className="h-4 w-4" />
-                      )}
+            <div className="glass-card-ios26 relative rounded-3xl border border-white/10 p-6">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Próximos hitos</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Mantén la operación alineada con los objetivos diarios.
+              </p>
+              <div className="mt-5 space-y-4">
+                {upcomingMilestones.map((milestone) => {
+                  const Icon = milestone.icon;
+                  return (
+                    <div
+                      key={milestone.id}
+                      className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-all"
+                    >
+                      <div className="glass-button-ios26 flex h-10 w-10 items-center justify-center rounded-xl">
+                        <Icon className="h-5 w-5 text-primary-500 dark:text-primary-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          {milestone.title}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {milestone.description}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm">{activity.message}</p>
-                      <p className="text-muted-foreground text-xs">
-                        {formatTimeAgo(activity.timestamp)}
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {kpiCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.id}
+                  className="glass-card-ios26 group rounded-3xl border border-white/10 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div
+                      className={`glass-button-ios26 rounded-2xl bg-gradient-to-br ${card.accent} p-3`}
+                    >
+                      <Icon className="h-5 w-5 text-slate-900 dark:text-white" />
+                    </div>
+                    <span className="rounded-full border border-white/40 bg-white/60 px-3 py-1 text-xs font-medium text-slate-700 backdrop-blur dark:border-white/20 dark:bg-white/10 dark:text-white/80">
+                      {card.chip}
+                    </span>
+                  </div>
+                  <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    {card.label}
+                  </p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    {card.value}
+                  </p>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {card.description}
+                  </p>
+                </div>
+              );
+            })}
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[1.7fr,1fr]">
+            <div className="space-y-6">
+              <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Tablero operativo
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Revisa los puntos críticos y resuelve bloqueos con un vistazo.
+                    </p>
+                  </div>
+                  <PremiumGlassButton
+                    onClick={() => setShowPerformanceMonitor((prev) => !prev)}
+                    className="gap-2 rounded-2xl px-4 py-2 text-sm font-medium"
+                  >
+                    <Monitor className="h-4 w-4" />
+                    {showPerformanceMonitor ? 'Ocultar monitor' : 'Ver monitor'}
+                  </PremiumGlassButton>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {focusAreas.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={item.id}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-colors"
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="glass-button-ios26 flex h-10 w-10 items-center justify-center rounded-xl">
+                              <Icon className="h-5 w-5 text-primary-500 dark:text-primary-400" />
+                            </div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {item.title}
+                            </p>
+                          </div>
+                          <span
+                            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${toneStyles[item.tone]}`}
+                          >
+                            {item.badge}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {item.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
+                <div className="mb-6 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Acciones rápidas
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    Mantiene la operación en marcha
+                  </span>
+                </div>
+                <QuickActions className="!mb-0" />
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-3">
+                <EventProgressWidget />
+                <QuickAccessWidget />
+                <PhotoManagementWidget />
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <OrdersSummaryWidget />
+                <BusinessMetricsWidget />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                      Hoy en números
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Refresca para asegurarte de que el equipo está al día.
+                    </p>
+                  </div>
+                  <PremiumIconButton onClick={() => refetch()} aria-label="Actualizar datos">
+                    <RefreshCw className="h-4 w-4" />
+                  </PremiumIconButton>
+                </div>
+                <div className="space-y-3">
+                  {todayHighlights.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="glass-button-ios26 flex h-10 w-10 items-center justify-center rounded-xl">
+                            <Icon className="h-5 w-5 text-primary-500 dark:text-primary-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                              {item.label}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.helper}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-lg font-semibold text-slate-900 dark:text-white">
+                          {item.value}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Actividad reciente
+                </h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Últimas acciones registradas en la plataforma.
+                </p>
+                <div className="space-y-4">
+                  {dashboardStats.recentActivity.length > 0 ? (
+                    dashboardStats.recentActivity.map((activity) => (
+                      <div
+                        key={activity.id}
+                        className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur"
+                      >
+                        <div className="glass-button-ios26 mt-1 flex h-10 w-10 items-center justify-center rounded-xl">
+                          {activity.type === 'event_created' && (
+                            <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          )}
+                          {activity.type === 'photos_uploaded' && (
+                            <Camera className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          )}
+                          {activity.type === 'order_created' && (
+                            <Package className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                          )}
+                          {activity.type === 'order_completed' && (
+                            <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">
+                            {activity.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatTimeAgo(activity.timestamp)}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center text-muted-foreground">
+                      No hay actividad reciente registrada.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Uso de almacenamiento
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Controla la capacidad antes de cada jornada de fotos.
+                </p>
+                <div className="mt-5 space-y-4">
+                  <div className="flex items-center justify-between text-sm text-slate-700 dark:text-slate-200">
+                    <span>Usado</span>
+                    <span>
+                      {storageUsedGb.toFixed(2)} GB / {storageLimitGb.toFixed(2)} GB
+                    </span>
+                  </div>
+                  <div className="h-3 rounded-full border border-white/10 bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500"
+                      style={{ width: `${storageUsagePercent}%` }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur">
+                      <p className="font-semibold text-slate-900 dark:text-white">
+                        {storageUsagePercent}%
                       </p>
+                      <p className="mt-1">Capacidad utilizada</p>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur">
+                      <p className="font-semibold text-slate-900 dark:text-white">
+                        {(storageLimitGb - storageUsedGb).toFixed(2)} GB
+                      </p>
+                      <p className="mt-1">Espacio disponible</p>
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground text-center">
-                  No hay actividad reciente
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card variant="glass-ios26">
-          <CardHeader>
-            <CardTitle>Uso de Almacenamiento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="mb-2 flex justify-between text-sm">
-                  <span>
-                    {Math.round(
-                      (dashboardStats.storageUsed / 1024 / 1024 / 1024) * 100
-                    ) / 100}{' '}
-                    GB
-                  </span>
-                  <span>
-                    {Math.round(
-                      (dashboardStats.storageLimit / 1024 / 1024 / 1024) * 100
-                    ) / 100}{' '}
-                    GB
-                  </span>
-                </div>
-                <div className="liquid-glass-button-ios26 h-2 rounded-full">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary-500 to-secondary-500"
-                    style={{
-                      width: `${Math.min(
-                        (dashboardStats.storageUsed /
-                          dashboardStats.storageLimit) *
-                          100,
-                        100
-                      )}%`,
-                    }}
-                  />
+                  <div className="flex flex-wrap gap-2">
+                    <PremiumGlassButton className="gap-2 rounded-2xl px-4 py-2 text-sm font-medium">
+                      <FolderOpen className="h-4 w-4" />
+                      Revisar galerías
+                    </PremiumGlassButton>
+                    <PremiumGlassButton className="gap-2 rounded-2xl px-4 py-2 text-sm font-medium">
+                      <CloudUpload className="h-4 w-4" />
+                      Planificar subidas
+                    </PremiumGlassButton>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="glass-ios26" className="w-full">
-                  <Monitor className="mr-2 h-4 w-4" />
-                  Monitorear
-                </Button>
-                <Button variant="glass-ios26" className="w-full">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Ver Detalles
-                </Button>
-              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </section>
 
-      {/* Performance Monitor */}
-      {showPerformanceMonitor && (
-        <div className="mt-8">
-          <PerformanceMonitor
-            onClose={() => setShowPerformanceMonitor(false)}
-          />
+          {showPerformanceMonitor && (
+            <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
+              <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Command Palette */}
-      {showCommandPalette && (
-        <CommandPalette onClose={() => setShowCommandPalette(false)} />
-      )}
       </div>
+
+      {showCommandPalette && (
+        <CommandPalette
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+        />
+      )}
     </>
   );
 }

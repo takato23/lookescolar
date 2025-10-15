@@ -5,10 +5,10 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 // GET /api/public/share/[token]/preview/[assetId]
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string; assetId: string }> }
+  { params }: { params: { token: string; assetId: string } }
 ) {
   try {
-    const { token, assetId } = await params;
+    const { token, assetId } = params;
     if (!token || token.length !== 64 || !assetId) {
       return NextResponse.json({ success: false, error: 'Invalid params' }, { status: 400 });
     }

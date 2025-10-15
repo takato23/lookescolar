@@ -3,10 +3,10 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     if (!id) return NextResponse.json({ success: false, error: 'id requerido' }, { status: 400 });
     const body = await request.json();
     const {

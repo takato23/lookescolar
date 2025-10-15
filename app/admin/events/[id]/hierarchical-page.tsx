@@ -226,7 +226,7 @@ export default function HierarchicalEventPage() {
             {/* Performance Overview - Mobile first */}
             <Card
               variant="glass"
-              className="glass-card mb-6 border border-white/20"
+              className="glass-card mb-6 border border-border/20"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -306,7 +306,7 @@ export default function HierarchicalEventPage() {
                 </div>
 
                 {/* Progress Indicators - Mobile responsive */}
-                <div className="mt-4 grid grid-cols-1 gap-3 border-t border-white/20 pt-4 sm:grid-cols-3">
+                <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border/20 pt-4 sm:grid-cols-3">
                   <div>
                     <div className="mb-1 flex justify-between text-sm">
                       <span>Progreso de etiquetado</span>
@@ -314,7 +314,7 @@ export default function HierarchicalEventPage() {
                         {stats.photo_tagging_progress || 0}%
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-200/30 dark:bg-gray-700/50">
+                    <div className="h-2 rounded-full bg-muted/30 dark:bg-secondary/50">
                       <div
                         className="h-2 rounded-full bg-blue-500 transition-all"
                         style={{
@@ -331,7 +331,7 @@ export default function HierarchicalEventPage() {
                         {stats.order_conversion_rate || 0}%
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-200/30 dark:bg-gray-700/50">
+                    <div className="h-2 rounded-full bg-muted/30 dark:bg-secondary/50">
                       <div
                         className="h-2 rounded-full bg-green-500 transition-all"
                         style={{
@@ -355,7 +355,7 @@ export default function HierarchicalEventPage() {
                         %
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-200/30 dark:bg-gray-700/50">
+                    <div className="h-2 rounded-full bg-muted/30 dark:bg-secondary/50">
                       <div
                         className="h-2 rounded-full bg-purple-500 transition-all"
                         style={{
@@ -380,7 +380,7 @@ export default function HierarchicalEventPage() {
             {stats.recent_activity && (
               <Card
                 variant="glass"
-                className="glass-card mb-6 border border-white/20"
+                className="glass-card mb-6 border border-border/20"
               >
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base sm:text-lg">
@@ -426,6 +426,8 @@ export default function HierarchicalEventPage() {
             eventId={id}
             eventName={event.school || event.name}
             initialView="overview"
+            eventSnapshot={event}
+            analytics={stats}
           />
         </div>
       </div>

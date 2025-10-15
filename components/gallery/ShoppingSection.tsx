@@ -260,7 +260,7 @@ export function ShoppingSection({
             )}
 
             {getSelectedPhotosCount() < getRequiredPhotosForPackage() && (
-              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <div className="rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-4">
                 <p className="text-sm text-orange-800">
                   Necesitas seleccionar{' '}
                   {getRequiredPhotosForPackage() - getSelectedPhotosCount()}{' '}

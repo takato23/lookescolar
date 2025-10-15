@@ -3,12 +3,34 @@ import { NextRequest } from 'next/server';
 
 // Import the API handlers
 import { GET as photosGET } from '@/app/api/admin/events/[id]/photos/route';
+import { DELETE as adminPhotosDELETE } from '@/app/api/admin/photos/route';
+import {
+  PATCH as photoByIdPATCH,
+  DELETE as photoByIdDELETE,
+} from '@/app/api/admin/photos/[id]/route';
 import { PATCH as batchMovePATCH } from '@/app/api/admin/photos/batch-move/route';
 import { POST as signUrlsPOST } from '@/app/api/admin/photos/sign-urls/route';
 
 // Mock dependencies
+const mockSecurityLogger = vi.hoisted(() => ({
+  logSecurityEvent: vi.fn(),
+}));
+
 vi.mock('@/lib/middleware/auth.middleware', () => ({
   withAuth: vi.fn((handler) => handler),
+  SecurityLogger: mockSecurityLogger,
+  generateRequestId: vi.fn(() => 'test-request'),
+}));
+
+vi.mock('@/lib/middleware/auth-robust.middleware', () => ({
+  withRobustAuth: vi.fn((handler) =>
+    (request: NextRequest, context: Record<string, any> = {}) =>
+      handler(request, {
+        ...context,
+        user: context.user || { id: 'test-admin', email: 'admin@example.com' },
+        requestId: context.requestId || 'test-request',
+      })
+  ),
 }));
 
 vi.mock('@/lib/middleware/rate-limit.middleware', () => ({
@@ -26,16 +48,17 @@ vi.mock('@/lib/utils/logger', () => ({
 }));
 
 // Mock Supabase client
-const mockSupabaseClient = {
+const mockSupabaseClient = vi.hoisted(() => ({
   from: vi.fn(),
   storage: {
     from: vi.fn().mockReturnValue({
       createSignedUrl: vi.fn(),
+      remove: vi.fn().mockResolvedValue({ error: null }),
     }),
   },
-};
+}));
 
-const mockFrom = {
+const mockFrom = vi.hoisted(() => ({
   select: vi.fn().mockReturnThis(),
   insert: vi.fn().mockReturnThis(),
   update: vi.fn().mockReturnThis(),
@@ -47,7 +70,7 @@ const mockFrom = {
   range: vi.fn().mockReturnThis(),
   single: vi.fn(),
   count: vi.fn(),
-};
+}));
 
 vi.mock('@/lib/supabase/server', () => ({
   createServerSupabaseServiceClient: vi
@@ -58,12 +81,16 @@ vi.mock('@/lib/supabase/server', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mockSupabaseClient.from.mockReturnValue(mockFrom);
+  mockSupabaseClient.storage.from.mockReturnValue({
+    createSignedUrl: vi.fn(),
+    remove: vi.fn().mockResolvedValue({ error: null }),
+  });
 });
 
 describe('Event Photo Library - Photos API Integration Tests', () => {
   const mockEventId = 'event-123';
   const mockFolderId = 'folder-456';
-  const mockPhotoId = 'photo-789';
+  const mockPhotoId = '33333333-3333-3333-3333-333333333333';
 
   const mockEvent = {
     id: mockEventId,
@@ -502,6 +529,218 @@ describe('Event Photo Library - Photos API Integration Tests', () => {
       expect(responseData.error).toBe(
         'All photos must belong to the same event'
       );
+    });
+  });
+
+  describe('DELETE /admin/photos', () => {
+    it('should delete photos when all belong to the same event', async () => {
+      const photoIds = ['11111111-1111-1111-1111-111111111111'];
+      const photos = [
+        {
+          id: '11111111-1111-1111-1111-111111111111',
+          event_id: 'event-1',
+          storage_path: 'events/event-1/photo-1.jpg',
+          preview_path: 'events/event-1/previews/photo-1.jpg',
+        },
+      ];
+
+      const selectPhotosMock = {
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        }),
+      } as any;
+
+      const selectEventMock = {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: { id: 'event-1' }, error: null }),
+          }),
+        }),
+      } as any;
+
+      const deleteMock = {
+        delete: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ error: null }),
+        }),
+      } as any;
+
+      mockSupabaseClient.from
+        .mockReturnValueOnce(selectPhotosMock)
+        .mockReturnValueOnce(selectEventMock)
+        .mockReturnValueOnce(deleteMock);
+
+      const request = new NextRequest('http://localhost/api/admin/photos', {
+        method: 'DELETE',
+        body: JSON.stringify({ photoIds }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const response = await adminPhotosDELETE(request);
+      const payload = await response.json();
+
+      expect(mockSecurityLogger.logSecurityEvent).toHaveBeenCalledWith(
+        'photo_deletion_attempt',
+        expect.objectContaining({
+          count: 1,
+          eventId: null,
+          userId: 'test-admin',
+        }),
+        'info'
+      );
+      expect(mockSecurityLogger.logSecurityEvent).toHaveBeenCalledWith(
+        'photos_deleted',
+        expect.objectContaining({
+          count: 1,
+          eventId: 'event-1',
+          userId: 'test-admin',
+        }),
+        'info'
+      );
+      expect(response.status).toBe(200);
+      expect(payload.success).toBe(true);
+      expect(payload.deleted).toBe(1);
+      expect(payload.eventId).toBe('event-1');
+    });
+
+    it('should reject deletion when photos span multiple events', async () => {
+      const photoIds = [
+        '11111111-1111-1111-1111-111111111111',
+        '22222222-2222-2222-2222-222222222222',
+      ];
+      const photos = [
+        {
+          id: '11111111-1111-1111-1111-111111111111',
+          event_id: 'event-1',
+          storage_path: 'events/event-1/photo-1.jpg',
+          preview_path: null,
+        },
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          event_id: 'event-2',
+          storage_path: 'events/event-2/photo-2.jpg',
+          preview_path: null,
+        },
+      ];
+
+      const selectPhotosMock = {
+        select: vi.fn().mockReturnValue({
+          in: vi.fn().mockResolvedValue({ data: photos, error: null }),
+        }),
+      } as any;
+
+      mockSupabaseClient.from.mockReturnValueOnce(selectPhotosMock);
+
+      const request = new NextRequest('http://localhost/api/admin/photos', {
+        method: 'DELETE',
+        body: JSON.stringify({ photoIds }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const response = await adminPhotosDELETE(request);
+      const payload = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(payload.error).toContain('multiple events');
+      expect(mockSupabaseClient.storage.from).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Photo by ID routes', () => {
+    it('should update photo metadata and return event context', async () => {
+      const requestBody = { original_filename: 'updated-name.jpg' };
+
+      const fetchPhotoMock = {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { id: mockPhotoId, event_id: mockEventId },
+              error: null,
+            }),
+          }),
+        }),
+      } as any;
+
+      const updatePhotoMock = {
+        update: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { ...mockPhoto, original_filename: requestBody.original_filename },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      } as any;
+
+      mockSupabaseClient.from
+        .mockReturnValueOnce(fetchPhotoMock)
+        .mockReturnValueOnce(updatePhotoMock);
+
+      const request = new NextRequest(
+        `http://localhost/api/admin/photos/${mockPhotoId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(requestBody),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const response = await photoByIdPATCH(request, {
+        params: { id: mockPhotoId },
+        user: { id: 'admin-user' },
+        requestId: 'req-123',
+      });
+
+      const payload = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(payload.success).toBe(true);
+      expect(payload.photo.original_filename).toBe(
+        requestBody.original_filename
+      );
+      expect(payload.eventId).toBe(mockEventId);
+    });
+
+    it('should block deletion when photo lacks event context', async () => {
+      const fetchPhotoMock = {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                id: mockPhotoId,
+                event_id: null,
+                storage_path: 'path.jpg',
+                preview_path: null,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      } as any;
+
+      mockSupabaseClient.from.mockReturnValueOnce(fetchPhotoMock);
+
+      const request = new NextRequest(
+        `http://localhost/api/admin/photos/${mockPhotoId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const response = await photoByIdDELETE(request, {
+        params: { id: mockPhotoId },
+        user: { id: 'admin-user' },
+        requestId: 'req-456',
+      });
+
+      const payload = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(payload.error).toContain('not associated with an event');
+      expect(mockSupabaseClient.storage.from).not.toHaveBeenCalled();
     });
   });
 

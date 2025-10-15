@@ -137,7 +137,7 @@ export default function GroupPhotosSection({
   if (!course) {
     return (
       <Card>
-        <CardContent className="text-muted-foreground p-8 text-center">
+        <CardContent className="text-gray-500 dark:text-gray-400 p-8 text-center">
           <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
           <p>No course information available for group photos</p>
         </CardContent>
@@ -154,7 +154,7 @@ export default function GroupPhotosSection({
             <Users className="h-5 w-5" />
             Group Photos - {course.name}
           </CardTitle>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Photos of your class and group activities
           </p>
         </CardHeader>
@@ -195,7 +195,7 @@ export default function GroupPhotosSection({
       ) : filteredPhotos.length === 0 ? (
         <Card>
           <CardContent className="p-8">
-            <div className="text-muted-foreground text-center">
+            <div className="text-gray-500 dark:text-gray-400 text-center">
               <Camera className="mx-auto mb-4 h-12 w-12 opacity-50" />
               <p>No group photos available yet</p>
               <p className="mt-2 text-sm">
@@ -247,7 +247,7 @@ export default function GroupPhotosSection({
                     {photo.filename}
                   </p>
                 </div>
-                <div className="text-muted-foreground mb-3 flex items-center justify-between text-xs">
+                <div className="text-gray-500 dark:text-gray-400 mb-3 flex items-center justify-between text-xs">
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     {new Date(photo.created_at).toLocaleDateString()}
@@ -339,7 +339,7 @@ export default function GroupPhotosSection({
                   </Button>
                 </div>
 
-                <div className="text-muted-foreground text-center text-sm">
+                <div className="text-gray-500 dark:text-gray-400 text-center text-sm">
                   <p>
                     Taken on{' '}
                     {new Date(selectedPhoto.created_at).toLocaleDateString()}

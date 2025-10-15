@@ -421,6 +421,8 @@ const LuminaStateTransition = {
 
 ## PLAN DE IMPLEMENTACIÓN DETALLADO
 
+> ✳️ **Referencias vivas**: el plan específico del nuevo checkout unificado vive en `docs/checkout-refresh-plan.md`; mantener ambos documentos sincronizados en cada iteración.
+
 ### 🚀 **FASE 1: FUNDACIÓN LUMINA (Semana 1-2)**
 
 #### **Día 1-5: Design System Setup**

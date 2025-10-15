@@ -1,2315 +1,586 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import {
+  AlertCircle,
+  Camera,
+  ExternalLink,
+  FolderTree,
+  GraduationCap,
+  LineChart,
+  RefreshCw,
+  Users,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import VirtualizedStudentGrid from './virtualized-student-grid';
-import { useMediaQuery } from '@/hooks/use-media-query';
-import MobileOptimizedNavigation from '@/components/admin/mobile-optimized-navigation';
-import {
-  ChevronRight,
-  Search,
-  Filter,
-  Users,
-  GraduationCap,
-  Camera,
-  BookOpen,
-  MoreHorizontal,
-  Grid3X3,
-  List,
-  Plus,
-  Download,
-  Upload,
-  Settings,
-  Archive,
-  Eye,
-  Edit,
-  Trash2,
-  RefreshCw,
-  ImageIcon,
-  Home,
-  ArrowLeft,
-  Layers,
-  School,
-  UserCircle,
-  Folder,
-  Navigation,
-  Menu,
-  TrendingUp,
-  CheckCircle,
-  AlertTriangle,
-} from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from 'recharts';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { HierarchicalFolderTreeEnhanced } from '@/components/admin/HierarchicalFolderTreeEnhanced';
 
-interface EventLevel {
+const NAVIGATION_VIEWS = ['overview', 'folders', 'students', 'analytics'] as const;
+type NavigationView = (typeof NAVIGATION_VIEWS)[number];
+
+type FolderNode = {
   id: string;
   name: string;
-  description?: string;
-  sort_order: number;
-  active: boolean;
-  course_count?: number;
-  student_count?: number;
-}
-
-interface Course {
-  id: string;
-  name: string;
-  grade?: string;
-  section?: string;
-  level_id?: string;
-  description?: string;
-  sort_order: number;
-  active: boolean;
-  is_folder?: boolean;
-  parent_course_id?: string;
-  parent_course_name?: string;
-  student_count?: number;
-  photo_count?: number;
-  group_photo_count?: number;
-  created_at: string;
-  updated_at: string;
-  // Add progress indicators
-  tagging_progress?: number;
-  approval_progress?: number;
-  completion_rate?: number;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  grade?: string;
-  section?: string;
-  course_id?: string;
-  qr_code?: string;
-  email?: string;
-  phone?: string;
-  parent_name?: string;
-  parent_email?: string;
-  photo_count?: number;
-  last_photo_tagged?: string;
-  active: boolean;
-  created_at: string;
-}
+  parent_id: string | null;
+  depth: number;
+  photo_count: number;
+  has_children: boolean;
+  event_id?: string | null;
+  level_type?: 'event' | 'nivel' | 'salon' | 'familia';
+};
 
 interface HierarchicalNavigationProps {
   eventId: string;
-  eventName: string;
-  initialView?: 'overview' | 'levels' | 'courses' | 'students';
+  eventName?: string;
+  initialView?: NavigationView | string;
+  eventSnapshot?: Record<string, any> | null;
+  analytics?: Record<string, any> | null;
 }
+
+const formatNumber = (value: number | undefined | null, options?: Intl.NumberFormatOptions) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+  return value.toLocaleString('es-AR', { maximumFractionDigits: 1, ...options });
+};
+
+const formatPercent = (value: number | undefined | null) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+  return `${Math.round(value)}%`;
+};
 
 export default function HierarchicalNavigation({
   eventId,
   eventName,
-  initialView = 'overview',
+  initialView = 'folders',
+  eventSnapshot,
+  analytics,
 }: HierarchicalNavigationProps) {
-  // State
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  const [activeView, setActiveView] = useState(initialView);
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [loading, setLoading] = useState(false);
+  const defaultView: NavigationView = NAVIGATION_VIEWS.includes(initialView as NavigationView)
+    ? (initialView as NavigationView)
+    : 'folders';
+
+  const [activeView, setActiveView] = useState<NavigationView>(defaultView);
+  const [folders, setFolders] = useState<FolderNode[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentMobilePath, setCurrentMobilePath] = useState<string[]>([]);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
 
-  // Data
-  const [levels, setLevels] = useState<EventLevel[]>([]);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [stats, setStats] = useState({
-    total_levels: 0,
-    total_courses: 0,
-    total_students: 0,
-    total_photos: 0,
-    untagged_photos: 0,
-  });
+  useEffect(() => {
+    const controller = new AbortController();
 
-  // Mobile navigation items
-  const mobileNavItems = useMemo(() => {
-    const items: any[] = [];
+    const loadFolders = async () => {
+      setLoading(true);
+      setError(null);
 
-    // Add levels
-    levels.forEach((level) => {
-      items.push({
-        id: level.id,
-        name: level.name,
-        type: 'level' as const,
-        student_count: level.student_count,
-        active: level.active,
-      });
-    });
+      try {
+        const limit = 50;
+        let offset = 0;
+        let total = Number.POSITIVE_INFINITY;
+        const aggregated: FolderNode[] = [];
 
-    // Add courses
-    courses.forEach((course) => {
-      items.push({
-        id: course.id,
-        name: course.name,
-        type: 'course' as const,
-        parent_id: course.level_id || course.parent_course_id,
-        student_count: course.student_count,
-        photo_count: course.photo_count,
-        active: course.active,
-        metadata: {
-          grade: course.grade,
-          section: course.section,
-          is_folder: course.is_folder,
-        },
-      });
-    });
+        while (offset < total) {
+          const response = await fetch(
+            `/api/admin/folders?event_id=${encodeURIComponent(eventId)}&limit=${limit}&offset=${offset}`,
+            { signal: controller.signal }
+          );
 
-    // Add students
-    students.forEach((student) => {
-      items.push({
-        id: student.id,
-        name: student.name,
-        type: 'student' as const,
-        parent_id: student.course_id,
-        photo_count: student.photo_count,
-        active: student.active,
-        metadata: {
-          grade: student.grade,
-          section: student.section,
-          parent_name: student.parent_name,
-        },
-      });
-    });
-
-    return items;
-  }, [levels, courses, students]);
-
-  // Handle mobile item actions
-  const handleMobileItemAction = (action: string, item: any) => {
-    switch (action) {
-      case 'view':
-        if (item.type === 'level') {
-          handleLevelSelect(item.id);
-        } else if (item.type === 'course') {
-          if (item.metadata?.is_folder) {
-            handleFolderSelect(item.id);
-          } else {
-            handleCourseSelect(item.id);
+          if (!response.ok) {
+            throw new Error(`Error fetching folders: ${response.status}`);
           }
-        } else if (item.type === 'student') {
-          // Navigate to student gallery
-          router.push(`/admin/events/${eventId}/students/${item.id}/gallery`);
+
+          const json = await response.json();
+          const batch: FolderNode[] = Array.isArray(json.folders) ? json.folders : [];
+          aggregated.push(...batch);
+
+          const reportedCount = typeof json.count === 'number' ? json.count : undefined;
+          if (typeof reportedCount === 'number' && Number.isFinite(reportedCount) && reportedCount >= 0) {
+            total = reportedCount;
+          } else if (batch.length < limit) {
+            total = offset + batch.length;
+          }
+
+          offset += limit;
+          if (batch.length < limit) break;
         }
-        break;
-      case 'edit':
-        // Handle edit action
-        console.log('Edit item:', item);
-        break;
-      default:
-        console.log('Unhandled action:', action, item);
-    }
-  };
 
-  // Initialize from URL params
-  useEffect(() => {
-    const level = searchParams?.get('level');
-    const course = searchParams?.get('course');
-    const folder = searchParams?.get('folder');
-    const view = searchParams?.get('view') as typeof activeView;
+        if (controller.signal.aborted) return;
 
-    if (level) setSelectedLevel(level);
-    if (course) setSelectedCourse(course);
-    if (folder) setSelectedFolder(folder);
-    if (view) setActiveView(view);
-  }, [searchParams]);
-
-  // Load initial data
-  useEffect(() => {
-    loadHierarchyData();
-  }, [eventId]);
-
-  // Load data based on current selection
-  useEffect(() => {
-    if (activeView === 'courses' || selectedLevel || selectedFolder) {
-      loadCourses();
-    }
-    if (activeView === 'students' || selectedCourse) {
-      loadStudents();
-    }
-  }, [activeView, selectedLevel, selectedFolder, selectedCourse]);
-
-  const loadHierarchyData = async () => {
-    setLoading(true);
-    try {
-      const [levelsRes, statsRes] = await Promise.all([
-        fetch(`/api/admin/events/${eventId}/levels`),
-        fetch(`/api/admin/events/${eventId}/stats`),
-      ]);
-
-      if (levelsRes.ok) {
-        const levelsData = await levelsRes.json();
-        setLevels(levelsData.levels || []);
+        setFolders(aggregated);
+        setExpandedFolders((prev) => {
+          if (prev.length > 0) return prev;
+          const roots = aggregated.filter((folder) => !folder.parent_id).map((folder) => folder.id);
+          return roots.length > 0 ? roots : prev;
+        });
+        setSelectedFolderId((current) => {
+          if (current) return current;
+          const first = aggregated[0]?.id;
+          return first || null;
+        });
+      } catch (fetchError) {
+        if (controller.signal.aborted) return;
+        console.error('[HierarchicalNavigation] Failed to load folders', fetchError);
+        setError('No pudimos cargar la estructura de carpetas. Intentá nuevamente.');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
+    };
 
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData.stats || {});
-      }
-    } catch (err) {
-      console.error('Error loading hierarchy data:', err);
-      setError('Error loading data');
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadFolders();
 
-  const loadCourses = async () => {
-    try {
-      const url = new URL(
-        `/api/admin/events/${eventId}/courses`,
-        window.location.origin
-      );
-      if (selectedLevel) url.searchParams.set('level_id', selectedLevel);
-      if (selectedFolder)
-        url.searchParams.set('parent_course_id', selectedFolder);
+    return () => {
+      controller.abort();
+    };
+  }, [eventId, reloadKey]);
 
-      const res = await fetch(url.toString());
-      if (res.ok) {
-        const data = await res.json();
-        setCourses(data.courses || []);
-      }
-    } catch (err) {
-      console.error('Error loading courses:', err);
-    }
-  };
-
-  const loadStudents = async (page = 0, append = false) => {
-    try {
-      const url = new URL(
-        `/api/admin/events/${eventId}/students`,
-        window.location.origin
-      );
-      if (selectedCourse) url.searchParams.set('course_id', selectedCourse);
-      if (searchTerm) url.searchParams.set('search', searchTerm);
-
-      // Add pagination for large datasets
-      url.searchParams.set('page', page.toString());
-      url.searchParams.set('limit', '100'); // Reasonable chunk size
-
-      const res = await fetch(url.toString());
-      if (res.ok) {
-        const data = await res.json();
-        const newStudents = data.students || [];
-        setStudents((prevStudents) =>
-          append ? [...prevStudents, ...newStudents] : newStudents
-        );
-      }
-    } catch (err) {
-      console.error('Error loading students:', err);
-    }
-  };
-
-  // Update URL when navigation changes
-  const updateURL = (updates: Record<string, string | null>) => {
-    const url = new URL(window.location.href);
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
-      } else {
-        url.searchParams.delete(key);
-      }
+  const folderMap = useMemo(() => {
+    const map = new Map<string, FolderNode>();
+    folders.forEach((folder) => {
+      map.set(folder.id, folder);
     });
-    window.history.replaceState({}, '', url.toString());
-  };
+    return map;
+  }, [folders]);
 
-  const handleViewChange = (view: typeof activeView) => {
-    setActiveView(view);
-    updateURL({ view });
-  };
+  const selectedFolder = useMemo(() => {
+    if (!selectedFolderId) return null;
+    return folderMap.get(selectedFolderId) || null;
+  }, [folderMap, selectedFolderId]);
 
-  const handleLevelSelect = (levelId: string | null) => {
-    setSelectedLevel(levelId);
-    setSelectedCourse(null);
-    updateURL({ level: levelId, course: null });
+  const selectedFolderBreadcrumb = useMemo(() => {
+    if (!selectedFolderId) return [] as FolderNode[];
+    const trail: FolderNode[] = [];
+    const visited = new Set<string>();
+    let currentId: string | null = selectedFolderId;
 
-    // Switch to courses view when a level is selected
-    if (levelId) {
-      setActiveView('courses');
-      updateURL({ view: 'courses' });
-    }
-  };
-
-  const handleCourseClick = (courseId: string) => {
-    const course = courses.find((c) => c.id === courseId);
-
-    if (course?.is_folder) {
-      // Handle folder click - navigate into the folder
-      setSelectedFolder(courseId);
-      updateURL({ folder: courseId });
-      handleViewChange('courses');
-    } else {
-      // Handle regular course click - navigate to students
-      setSelectedCourse(courseId);
-      updateURL({ course: courseId });
-      handleViewChange('students');
-    }
-  };
-
-  // Add the missing handleCourseSelect function
-  const handleCourseSelect = (courseId: string) => {
-    const course = courses.find((c) => c.id === courseId);
-
-    if (course?.is_folder) {
-      // Handle folder selection - navigate into the folder
-      setSelectedFolder(courseId);
-      updateURL({ folder: courseId });
-      handleViewChange('courses');
-    } else {
-      // Handle regular course selection - navigate to students
-      setSelectedCourse(courseId);
-      updateURL({ course: courseId });
-      handleViewChange('students');
-    }
-  };
-
-  const handleFolderSelect = (folderId: string | null) => {
-    setSelectedFolder(folderId);
-    updateURL({ folder: folderId });
-
-    // Switch to courses view when a folder is selected
-    if (folderId) {
-      setActiveView('courses');
-      updateURL({ view: 'courses' });
-    }
-  };
-
-  // Filtered data
-  const filteredCourses = useMemo(() => {
-    let filtered = courses;
-
-    if (selectedLevel) {
-      filtered = filtered.filter((c) => c.level_id === selectedLevel);
+    while (currentId) {
+      if (visited.has(currentId)) break;
+      visited.add(currentId);
+      const node = folderMap.get(currentId);
+      if (!node) break;
+      trail.unshift(node);
+      currentId = node.parent_id;
     }
 
-    if (selectedFolder) {
-      filtered = filtered.filter((c) => c.parent_course_id === selectedFolder);
-    } else if (!selectedFolder) {
-      // Only show root courses/folders (no parent)
-      filtered = filtered.filter((c) => !c.parent_course_id);
-    }
+    return trail;
+  }, [folderMap, selectedFolderId]);
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          c.name.toLowerCase().includes(term) ||
-          (c.grade && c.grade.toLowerCase().includes(term)) ||
-          (c.section && c.section.toLowerCase().includes(term))
-      );
-    }
+  const childFolders = useMemo(() => {
+    if (!selectedFolderId) return [] as FolderNode[];
+    return folders.filter((folder) => folder.parent_id === selectedFolderId);
+  }, [folders, selectedFolderId]);
 
-    return filtered.sort((a, b) => a.sort_order - b.sort_order);
-  }, [courses, selectedLevel, selectedFolder, searchTerm]);
-
-  const filteredStudents = useMemo(() => {
-    let filtered = students;
-
-    if (selectedCourse) {
-      filtered = filtered.filter((s) => s.course_id === selectedCourse);
-    }
-
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.name.toLowerCase().includes(term) ||
-          (s.parent_name && s.parent_name.toLowerCase().includes(term))
-      );
-    }
-
-    return filtered.sort((a, b) => a.name.localeCompare(b.name));
-  }, [students, selectedCourse, searchTerm]);
-
-  // Breadcrumb navigation
-  const breadcrumbs = useMemo(() => {
-    const crumbs = [
-      {
-        label: 'Eventos',
-        onClick: () => router.push('/admin/events'),
-        icon: Home,
-      },
-      {
-        label: eventName,
-        onClick: () => {
-          handleViewChange('overview');
-          setSelectedLevel(null);
-          setSelectedCourse(null);
-          setSelectedFolder(null);
-          updateURL({ level: null, course: null, folder: null });
-        },
-        icon: School,
-      },
-    ];
-
-    if (selectedLevel) {
-      const level = levels.find((l) => l.id === selectedLevel);
-      if (level) {
-        crumbs.push({
-          label: level.name,
-          onClick: () => {
-            handleLevelSelect(selectedLevel);
-            handleViewChange('courses');
-          },
-          icon: Layers,
-        });
-      }
-    }
-
-    if (selectedFolder) {
-      const folder = courses.find(
-        (c) => c.id === selectedFolder && c.is_folder
-      );
-      if (folder) {
-        crumbs.push({
-          label: folder.name,
-          onClick: () => {
-            handleFolderSelect(selectedFolder);
-            handleViewChange('courses');
-          },
-          icon: Folder,
-        });
-      }
-    }
-
-    if (selectedCourse) {
-      const course = courses.find((c) => c.id === selectedCourse);
-      if (course) {
-        crumbs.push({
-          label: course.name,
-          onClick: () => {
-            handleCourseSelect(selectedCourse);
-            handleViewChange('students');
-          },
-          icon: BookOpen,
-        });
-      }
-    }
-
-    return crumbs;
-  }, [
-    eventName,
-    selectedLevel,
-    selectedFolder,
-    selectedCourse,
-    levels,
-    courses,
-    router,
-  ]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="text-primary h-8 w-8 animate-spin" />
-        <span className="ml-2 text-lg">Cargando...</span>
-      </div>
+  const handleFolderToggle = (folderId: string) => {
+    setExpandedFolders((prev) =>
+      prev.includes(folderId)
+        ? prev.filter((id) => id !== folderId)
+        : [...prev, folderId]
     );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Mobile Optimized Navigation */}
-      {isMobile ? (
-        <MobileOptimizedNavigation
-          eventId={eventId}
-          eventName={eventName}
-          items={mobileNavItems}
-          currentPath={currentMobilePath}
-          onNavigate={setCurrentMobilePath}
-          onItemAction={handleMobileItemAction}
-          loading={loading}
-        />
-      ) : (
-        <>
-          {/* Enhanced Breadcrumb Navigation - Mobile Optimized */}
-          <nav className="text-muted-foreground flex touch-pan-x items-center overflow-x-auto rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
-            {breadcrumbs.map((crumb, index) => {
-              const Icon = crumb.icon;
-              return (
-                <div key={index} className="flex flex-shrink-0 items-center">
-                  {index > 0 && (
-                    <ChevronRight className="text-muted-foreground/50 mx-2 h-4 w-4 flex-shrink-0" />
-                  )}
-                  <button
-                    onClick={crumb.onClick}
-                    className="hover:text-primary flex flex-shrink-0 touch-pan-y items-center gap-1 font-medium transition-colors"
-                    style={{ minHeight: '44px', minWidth: '44px' }} // Minimum touch target size
-                  >
-                    {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
-                    <span
-                      className={`${index === breadcrumbs.length - 1 ? 'text-foreground' : ''} max-w-[120px] truncate sm:max-w-[200px]`}
-                    >
-                      {crumb.label}
-                    </span>
-                  </button>
-                </div>
-              );
-            })}
-          </nav>
-
-          {/* Stats Overview - Mobile Optimized */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <Card className="glass-card border border-white/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Niveles</p>
-                    <p className="text-2xl font-bold">{stats.total_levels}</p>
-                  </div>
-                  <GraduationCap className="h-8 w-8 text-blue-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card border border-white/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Cursos</p>
-                    <p className="text-2xl font-bold">{stats.total_courses}</p>
-                  </div>
-                  <BookOpen className="h-8 w-8 text-purple-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card border border-white/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Estudiantes</p>
-                    <p className="text-2xl font-bold">{stats.total_students}</p>
-                  </div>
-                  <Users className="h-8 w-8 text-green-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card border border-white/20">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Fotos</p>
-                    <p className="text-2xl font-bold">{stats.total_photos}</p>
-                    {stats.untagged_photos > 0 && (
-                      <p className="text-xs text-amber-600">
-                        {stats.untagged_photos} sin etiquetar
-                      </p>
-                    )}
-                  </div>
-                  <Camera className="h-8 w-8 text-orange-500 opacity-50" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="glass-card border border-white/20">
-              <CardContent className="p-4">
-                <div className="flex h-full items-center justify-center">
-                  <Button
-                    onClick={() =>
-                      router.push(`/admin/events/${eventId}/manage`)
-                    }
-                    className="glass-button w-full"
-                    variant="outline"
-                    style={{ minHeight: '44px' }} // Minimum touch target size
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Gestionar</span>
-                    <span className="sm:hidden">Gestión</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Navigation Tabs - Mobile Optimized */}
-          <Tabs value={activeView} onValueChange={handleViewChange}>
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-              <TabsList className="glass-card grid w-full grid-cols-4 border border-white/20 sm:w-auto">
-                <TabsTrigger value="overview" style={{ minHeight: '44px' }}>
-                  <span className="hidden sm:inline">Resumen</span>
-                  <span className="sm:hidden">Res</span>
-                </TabsTrigger>
-                <TabsTrigger value="levels" style={{ minHeight: '44px' }}>
-                  <span className="hidden sm:inline">Niveles</span>
-                  <span className="sm:hidden">Niv</span>
-                  {levels.length > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 hidden text-xs sm:inline"
-                    >
-                      {levels.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="courses" style={{ minHeight: '44px' }}>
-                  <span className="hidden sm:inline">Cursos</span>
-                  <span className="sm:hidden">Cur</span>
-                  {filteredCourses.length > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 hidden text-xs sm:inline"
-                    >
-                      {filteredCourses.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="students" style={{ minHeight: '44px' }}>
-                  <span className="hidden sm:inline">Estudiantes</span>
-                  <span className="sm:hidden">Est</span>
-                  {filteredStudents.length > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-1 hidden text-xs sm:inline"
-                    >
-                      {filteredStudents.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Search and Filters - Mobile Optimized */}
-              <div className="flex w-full items-center gap-2 sm:w-auto">
-                <div className="relative flex-1 sm:flex-none">
-                  <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
-                  <Input
-                    placeholder="Buscar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="glass-input w-full pl-9 sm:w-64"
-                    style={{ minHeight: '44px' }} // Minimum touch target size
-                  />
-                </div>
-
-                {(activeView === 'courses' || activeView === 'students') && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant={viewMode === 'grid' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setViewMode('grid')}
-                      className="glass-button p-2 sm:p-3"
-                      style={{ minHeight: '44px', minWidth: '44px' }} // Minimum touch target size
-                    >
-                      <Grid3X3 className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">
-                        Grid
-                      </span>
-                    </Button>
-                    <Button
-                      variant={viewMode === 'list' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                      className="glass-button p-2 sm:p-3"
-                      style={{ minHeight: '44px', minWidth: '44px' }} // Minimum touch target size
-                    >
-                      <List className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">
-                        Lista
-                      </span>
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Tab Contents */}
-            <TabsContent value="overview">
-              <OverviewContent
-                eventId={eventId}
-                levels={levels}
-                onLevelClick={handleLevelSelect}
-                onQuickJumpToCourse={handleCourseSelect}
-                onQuickJumpToStudent={quickJumpToStudent}
-                onQuickJumpToPhoto={quickJumpToPhoto}
-              />
-            </TabsContent>
-
-            <TabsContent value="levels">
-              <LevelsContent
-                eventId={eventId}
-                levels={levels}
-                onLevelClick={handleLevelSelect}
-                onRefresh={loadHierarchyData}
-              />
-            </TabsContent>
-
-            <TabsContent value="courses">
-              <CoursesContent
-                eventId={eventId}
-                courses={filteredCourses}
-                viewMode={viewMode}
-                selectedLevel={selectedLevel}
-                selectedFolder={selectedFolder}
-                onCourseClick={handleCourseClick}
-                onRefresh={loadCourses}
-                onBack={() => {
-                  if (selectedFolder) {
-                    setSelectedFolder(null);
-                    updateURL({ folder: null });
-                  } else {
-                    setSelectedLevel(null);
-                    handleViewChange('overview');
-                    updateURL({ level: null });
-                  }
-                }}
-              />
-            </TabsContent>
-
-            <TabsContent value="students">
-              <StudentsContent
-                eventId={eventId}
-                students={filteredStudents}
-                viewMode={viewMode}
-                selectedCourse={selectedCourse}
-                searchTerm={searchTerm}
-                onRefresh={loadStudents}
-                onBack={() => {
-                  setSelectedCourse(null);
-                  handleViewChange('courses');
-                  updateURL({ course: null });
-                }}
-              />
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
-    </div>
-  );
-}
-
-// Overview Content Component
-function OverviewContent({
-  eventId,
-  levels,
-  onLevelClick,
-  onQuickJumpToCourse,
-  onQuickJumpToStudent,
-  onQuickJumpToPhoto,
-}: {
-  eventId: string;
-  levels: EventLevel[];
-  onLevelClick: (levelId: string) => void;
-  onQuickJumpToCourse: (courseId: string) => void;
-  onQuickJumpToStudent: (studentId: string) => void;
-  onQuickJumpToPhoto: (photoId: string) => void;
-}) {
-  // State for quick jump functionality
-  const [quickJumpValue, setQuickJumpValue] = useState('');
-  const [quickJumpResults, setQuickJumpResults] = useState<
-    Array<{ id: string; name: string; type: 'course' | 'student' | 'photo' }>
-  >([]);
-  const [showQuickJump, setShowQuickJump] = useState(false);
-
-  // Function to search for courses, students, or photos by name
-  const searchEntities = async (searchTerm: string) => {
-    if (searchTerm.length < 2) {
-      setQuickJumpResults([]);
-      return;
-    }
-
-    try {
-      const results = [];
-
-      // Search courses
-      const coursesResponse = await fetch(
-        `/api/admin/events/${eventId}/courses?search=${encodeURIComponent(searchTerm)}&limit=5`
-      );
-      if (coursesResponse.ok) {
-        const coursesData = await coursesResponse.json();
-        coursesData.courses.forEach((course: any) => {
-          results.push({
-            id: course.id,
-            name: course.name,
-            type: 'course',
-          });
-        });
-      }
-
-      // Search students
-      const studentsResponse = await fetch(
-        `/api/admin/events/${eventId}/students?search=${encodeURIComponent(searchTerm)}&limit=5`
-      );
-      if (studentsResponse.ok) {
-        const studentsData = await studentsResponse.json();
-        studentsData.students.forEach((student: any) => {
-          results.push({
-            id: student.id,
-            name: student.name,
-            type: 'student',
-          });
-        });
-      }
-
-      setQuickJumpResults(results);
-    } catch (error) {
-      console.error('Error searching entities for quick jump:', error);
-    }
   };
 
-  // Debounce search to avoid too many API calls
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (quickJumpValue) {
-        searchEntities(quickJumpValue);
-      } else {
-        setQuickJumpResults([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [quickJumpValue, eventId]);
-
-  // Handle quick jump selection
-  const handleQuickJumpSelect = (
-    id: string,
-    type: 'course' | 'student' | 'photo'
+  const handleFolderAction = (
+    action: 'delete' | 'rename' | 'move' | 'share' | 'create_child',
+    folder: FolderNode
   ) => {
-    switch (type) {
-      case 'course':
-        onQuickJumpToCourse(id);
-        break;
-      case 'student':
-        onQuickJumpToStudent(id);
-        break;
-      case 'photo':
-        onQuickJumpToPhoto(id);
-        break;
-    }
-    setQuickJumpValue('');
-    setQuickJumpResults([]);
-    setShowQuickJump(false);
+    console.info('[HierarchicalNavigation] Action triggered', action, folder);
   };
 
-  // Prepare data for charts
-  const levelChartData = useMemo(() => {
-    return levels.map((level) => ({
-      name: level.name,
-      courses: level.course_count || 0,
-      students: level.student_count || 0,
-    }));
-  }, [levels]);
-
-  const courseDistributionData = useMemo(() => {
-    const distribution: Record<string, number> = {};
-
-    levels.forEach((level) => {
-      const key = level.name || 'Sin nivel';
-      distribution[key] = (distribution[key] || 0) + (level.course_count || 0);
-    });
-
-    return Object.entries(distribution).map(([name, count]) => ({
-      name,
-      value: count,
-    }));
-  }, [levels]);
-
-  const studentDistributionData = useMemo(() => {
-    const distribution: Record<string, number> = {};
-
-    levels.forEach((level) => {
-      const key = level.name || 'Sin nivel';
-      distribution[key] = (distribution[key] || 0) + (level.student_count || 0);
-    });
-
-    return Object.entries(distribution).map(([name, count]) => ({
-      name,
-      value: count,
-    }));
-  }, [levels]);
-
-  // Colors for charts
-  const COLORS = [
-    '#0088FE',
-    '#00C49F',
-    '#FFBB28',
-    '#FF8042',
-    '#8884D8',
-    '#82CA9D',
-  ];
-
-  // Calculate progress percentages for visual indicators
-  const maxCourses = Math.max(...levels.map((l) => l.course_count || 0), 1);
-  const maxStudents = Math.max(...levels.map((l) => l.student_count || 0), 1);
-
-  // Calculate additional metrics
-  const totalCourses = levels.reduce(
-    (sum, level) => sum + (level.course_count || 0),
-    0
-  );
-  const totalStudents = levels.reduce(
-    (sum, level) => sum + (level.student_count || 0),
-    0
-  );
-  const activeLevels = levels.filter((level) => level.active).length;
-  const levelCompletionRate =
-    levels.length > 0 ? Math.round((activeLevels / levels.length) * 100) : 0;
+  const metrics = analytics || eventSnapshot?.stats || null;
+  const performance = metrics?.performance;
+  const recentActivity = metrics?.recent_activity;
 
   return (
-    <div className="space-y-6">
-      {/* Enhanced Stats Overview */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <Card className="glass-card border border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Niveles Activos</p>
-                <p className="text-2xl font-bold">{activeLevels}</p>
-              </div>
-              <GraduationCap className="h-8 w-8 text-blue-500 opacity-50" />
-            </div>
-            <div className="mt-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {levelCompletionRate}% completado
-                </span>
-                <span className="text-muted-foreground">
-                  {levels.length} total
-                </span>
-              </div>
-              <Progress value={levelCompletionRate} className="mt-1 h-2" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Total Cursos</p>
-                <p className="text-2xl font-bold">{totalCourses}</p>
-              </div>
-              <BookOpen className="h-8 w-8 text-purple-500 opacity-50" />
-            </div>
-            <div className="mt-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  Distribución por nivel
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">
-                  Total Estudiantes
-                </p>
-                <p className="text-2xl font-bold">{totalStudents}</p>
-              </div>
-              <Users className="h-8 w-8 text-green-500 opacity-50" />
-            </div>
-            <div className="mt-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  Promedio por curso
-                </span>
-                <span className="text-muted-foreground">
-                  {totalCourses > 0
-                    ? Math.round(totalStudents / totalCourses)
-                    : 0}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border border-white/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-muted-foreground text-sm">Eficiencia</p>
-                <p className="text-2xl font-bold">92%</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-orange-500 opacity-50" />
-            </div>
-            <div className="mt-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">
-                  Tasa de crecimiento
-                </span>
-                <span className="text-green-500">+5.2%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions and Quick Jump */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="glass-card border border-white/20">
-          <CardHeader>
-            <CardTitle>Acciones Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                className="glass-button h-auto flex-col py-4"
-              >
-                <Plus className="mb-2 h-5 w-5" />
-                Nuevo Curso
-              </Button>
-              <Button
-                variant="outline"
-                className="glass-button h-auto flex-col py-4"
-              >
-                <Users className="mb-2 h-5 w-5" />
-                Agregar Estudiantes
-              </Button>
-              <Button
-                variant="outline"
-                className="glass-button h-auto flex-col py-4"
-              >
-                <Upload className="mb-2 h-5 w-5" />
-                Importar CSV
-              </Button>
-              <Button
-                variant="outline"
-                className="glass-button h-auto flex-col py-4"
-              >
-                <Download className="mb-2 h-5 w-5" />
-                Exportar Datos
-              </Button>
-            </div>
-
-            {/* Quick Jump Navigation */}
-            <div className="mt-6">
-              <h4 className="mb-2 text-sm font-medium">Navegación Rápida</h4>
-              <div className="relative">
-                <Input
-                  placeholder="Buscar curso, estudiante o foto..."
-                  value={quickJumpValue}
-                  onChange={(e) => setQuickJumpValue(e.target.value)}
-                  onFocus={() => setShowQuickJump(true)}
-                  onBlur={() => setTimeout(() => setShowQuickJump(false), 200)}
-                  className="glass-input"
+    <Tabs
+      value={activeView}
+      onValueChange={(view) => setActiveView(view as NavigationView)}
+      className="w-full"
+    >
+      <Card className="border-border/30 bg-background/60 backdrop-blur-xl">
+        <CardHeader className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="text-xl font-semibold">
+              Exploración jerárquica{eventName ? ` · ${eventName}` : ''}
+            </CardTitle>
+            <Badge variant="outline" className="font-normal">
+              {formatNumber(folders.length, { maximumFractionDigits: 0 })} carpetas
+            </Badge>
+          </div>
+          <TabsList className="bg-background/60 text-muted-foreground flex w-full flex-wrap gap-2 rounded-full p-1">
+            <TabsTrigger
+              value="overview"
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary flex items-center gap-2 rounded-full px-3 py-2 text-sm"
+            >
+              <GraduationCap className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger
+              value="folders"
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary flex items-center gap-2 rounded-full px-3 py-2 text-sm"
+            >
+              <FolderTree className="h-4 w-4" />
+              Carpetas
+            </TabsTrigger>
+            <TabsTrigger
+              value="students"
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary flex items-center gap-2 rounded-full px-3 py-2 text-sm"
+            >
+              <Users className="h-4 w-4" />
+              Estudiantes
+            </TabsTrigger>
+            <TabsTrigger
+              value="analytics"
+              className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary flex items-center gap-2 rounded-full px-3 py-2 text-sm"
+            >
+              <LineChart className="h-4 w-4" />
+              Analítica
+            </TabsTrigger>
+          </TabsList>
+        </CardHeader>
+        <CardContent>
+          <TabsContent value="overview" className="space-y-4">
+            {metrics ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <OverviewMetricCard
+                  label="Niveles"
+                  value={metrics.total_levels}
+                  helper="Organización académica"
+                  icon={<GraduationCap className="h-5 w-5 text-blue-500" />}
                 />
-                {showQuickJump && quickJumpResults.length > 0 && (
-                  <Card className="glass-card absolute left-0 right-0 top-full z-50 mt-1 border border-white/20 shadow-lg">
-                    <CardContent className="p-2">
-                      {quickJumpResults.map((result) => (
-                        <div
-                          key={`${result.type}-${result.id}`}
-                          className="cursor-pointer rounded-md px-3 py-2 text-sm hover:bg-white/10"
-                          onClick={() =>
-                            handleQuickJumpSelect(result.id, result.type)
-                          }
-                        >
-                          <div className="flex items-center">
-                            {result.type === 'course' && (
-                              <BookOpen className="mr-2 h-4 w-4 text-blue-500" />
-                            )}
-                            {result.type === 'student' && (
-                              <UserCircle className="mr-2 h-4 w-4 text-green-500" />
-                            )}
-                            {result.type === 'photo' && (
-                              <ImageIcon className="mr-2 h-4 w-4 text-purple-500" />
-                            )}
-                            <span>{result.name}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Levels Overview with Progress Indicators */}
-        <Card className="glass-card border border-white/20">
-          <CardHeader>
-            <CardTitle>Niveles Educativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {levels.length > 0 ? (
-              <div className="space-y-4">
-                {levels.map((level) => {
-                  const courseProgress =
-                    ((level.course_count || 0) / maxCourses) * 100;
-                  const studentProgress =
-                    ((level.student_count || 0) / maxStudents) * 100;
-
-                  return (
-                    <div
-                      key={level.id}
-                      className="glass-card cursor-pointer rounded-lg border border-white/20 p-4 transition-colors hover:bg-white/10"
-                      onClick={() => onLevelClick(level.id)}
-                    >
-                      <div className="mb-2 flex items-start justify-between">
-                        <h3 className="font-medium">{level.name}</h3>
-                        <Badge variant={level.active ? 'default' : 'secondary'}>
-                          {level.active ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </div>
-
-                      {level.description && (
-                        <p className="text-muted-foreground mb-3 text-sm">
-                          {level.description}
-                        </p>
-                      )}
-
-                      <div className="space-y-2">
-                        <div>
-                          <div className="mb-1 flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Cursos
-                            </span>
-                            <span className="font-medium">
-                              {level.course_count || 0}
-                            </span>
-                          </div>
-                          <div className="h-2 w-full rounded-full bg-gray-200">
-                            <div
-                              className="h-2 rounded-full bg-blue-600"
-                              style={{ width: `${courseProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="mb-1 flex justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Estudiantes
-                            </span>
-                            <span className="font-medium">
-                              {level.student_count || 0}
-                            </span>
-                          </div>
-                          <div className="h-2 w-full rounded-full bg-gray-200">
-                            <div
-                              className="h-2 rounded-full bg-green-600"
-                              style={{ width: `${studentProgress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                <OverviewMetricCard
+                  label="Cursos"
+                  value={metrics.total_courses}
+                  helper={`${formatNumber(metrics.active_courses, { maximumFractionDigits: 0 })} activos`}
+                  icon={<Users className="h-5 w-5 text-purple-500" />}
+                />
+                <OverviewMetricCard
+                  label="Estudiantes"
+                  value={metrics.total_students}
+                  helper={`${formatNumber(metrics.active_students, { maximumFractionDigits: 0 })} activos`}
+                  icon={<Users className="h-5 w-5 text-emerald-500" />}
+                />
+                <OverviewMetricCard
+                  label="Fotos totales"
+                  value={metrics.total_photos}
+                  helper={`${formatNumber(metrics.approved_photos, { maximumFractionDigits: 0 })} aprobadas`}
+                  icon={<Camera className="h-5 w-5 text-orange-500" />}
+                />
               </div>
             ) : (
-              <p className="text-muted-foreground py-8 text-center">
-                No hay niveles configurados
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Data Visualization Section */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Courses by Level */}
-        <Card className="glass-card border border-white/20">
-          <CardHeader>
-            <CardTitle>Distribución de Cursos por Nivel</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={levelChartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                <XAxis
-                  dataKey="name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="courses" name="Cursos" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Students by Level */}
-        <Card className="glass-card border border-white/20">
-          <CardHeader>
-            <CardTitle>Distribución de Estudiantes por Nivel</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={levelChartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
-                <XAxis
-                  dataKey="name"
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="students" name="Estudiantes" fill="#82ca9d" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Course Distribution Pie Chart */}
-        <Card className="glass-card border border-white/20">
-          <CardHeader>
-            <CardTitle>Distribución de Cursos</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={courseDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  {courseDistributionData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Student Distribution Pie Chart */}
-        <Card className="glass-card border border-white/20">
-          <CardHeader>
-            <CardTitle>Distribución de Estudiantes</CardTitle>
-          </CardHeader>
-          <CardContent className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={studentDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={true}
-                  outerRadius={80}
-                  fill="#82ca9d"
-                  dataKey="value"
-                  nameKey="name"
-                  label={({ name, percent }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  {studentDistributionData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-// Levels Content Component
-function LevelsContent({
-  eventId,
-  levels,
-  onLevelClick,
-  onRefresh,
-}: {
-  eventId: string;
-  levels: EventLevel[];
-  onLevelClick: (levelId: string) => void;
-  onRefresh: () => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Niveles Educativos</h3>
-        <div className="flex gap-2">
-          <Button
-            onClick={onRefresh}
-            variant="outline"
-            size="sm"
-            className="glass-button"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar
-          </Button>
-          <Button size="sm" className="glass-button">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Nivel
-          </Button>
-        </div>
-      </div>
-
-      {levels.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {levels.map((level) => (
-            <Card
-              key={level.id}
-              className="glass-card border border-white/20 transition-shadow hover:shadow-md"
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span
-                    className="cursor-pointer hover:underline"
-                    onClick={() => onLevelClick(level.id)}
-                  >
-                    {level.name}
-                  </span>
-                  <Badge variant={level.active ? 'default' : 'secondary'}>
-                    {level.active ? 'Activo' : 'Inactivo'}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">
-                      Cursos:
-                    </span>
-                    <span className="font-medium">
-                      {level.course_count || 0}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground text-sm">
-                      Estudiantes:
-                    </span>
-                    <span className="font-medium">
-                      {level.student_count || 0}
-                    </span>
-                  </div>
-                  {level.description && (
-                    <p className="text-muted-foreground mt-2 text-sm">
-                      {level.description}
-                    </p>
-                  )}
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="glass-button flex-1"
-                    onClick={() =>
-                      router.push(
-                        `/admin/events/${eventId}/levels/${level.id}/gallery`
-                      )
-                    }
-                  >
-                    <ImageIcon className="mr-1 h-4 w-4" />
-                    Galería
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="glass-button"
-                    onClick={() => onLevelClick(level.id)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card className="glass-card border border-white/20">
-          <CardContent className="py-8 text-center">
-            <GraduationCap className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-muted-foreground mb-4">
-              No hay niveles configurados
-            </p>
-            <Button className="glass-button">
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Primer Nivel
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Folders Sheet (mobile) */}
-      <Sheet open={showFoldersSheet} onOpenChange={setShowFoldersSheet}>
-        <SheetContent side="left" className="sm:max-w-sm">
-          <SheetHeader>
-            <SheetTitle>Carpetas</SheetTitle>
-            <SheetDescription>
-              Explorá y abrí carpetas rápidamente
-            </SheetDescription>
-          </SheetHeader>
-          <div className="mt-4 space-y-2">
-            {courses.filter((c) => c.is_folder).length === 0 ? (
-              <div className="text-muted-foreground text-sm">
-                No hay carpetas
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-32 rounded-2xl" />
+                ))}
               </div>
-            ) : (
-              courses
-                .filter((c) => c.is_folder)
-                .map((folder) => (
-                  <Button
-                    key={folder.id}
-                    variant="ghost"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      onCourseClick(folder.id);
-                      setShowFoldersSheet(false);
-                    }}
-                  >
-                    <Folder className="mr-2 h-4 w-4 text-yellow-600" />
-                    <span className="break-words text-left">{folder.name}</span>
-                    <Badge className="ml-auto" variant="secondary">
-                      {folder.photo_count || 0}
-                    </Badge>
-                  </Button>
-                ))
             )}
-          </div>
-        </SheetContent>
-      </Sheet>
-    </div>
-  );
-}
-
-// Courses Content Component
-function CoursesContent({
-  eventId,
-  courses,
-  viewMode,
-  selectedLevel,
-  selectedFolder,
-  onCourseClick,
-  onRefresh,
-  onBack,
-}: {
-  eventId: string;
-  courses: Course[];
-  viewMode: 'grid' | 'list';
-  selectedLevel: string | null;
-  selectedFolder: string | null;
-  onCourseClick: (courseId: string) => void;
-  onRefresh: () => void;
-  onBack: () => void;
-}) {
-  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
-  const [showFoldersSheet, setShowFoldersSheet] = useState(false);
-  const [folderForm, setFolderForm] = useState({
-    name: '',
-    description: '',
-    level_id: selectedLevel || '',
-  });
-  const [creatingFolder, setCreatingFolder] = useState(false);
-
-  const handleCreateFolder = async () => {
-    if (!folderForm.name.trim()) return;
-
-    setCreatingFolder(true);
-    try {
-      const response = await fetch(`/api/admin/events/${eventId}/courses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: folderForm.name,
-          description: folderForm.description,
-          level_id: folderForm.level_id || undefined,
-          parent_course_id: selectedFolder || undefined,
-          is_folder: true,
-          active: true,
-        }),
-      });
-
-      if (response.ok) {
-        setShowCreateFolderDialog(false);
-        setFolderForm({
-          name: '',
-          description: '',
-          level_id: selectedLevel || '',
-        });
-        onRefresh();
-      } else {
-        const error = await response.json();
-        console.error('Error creating folder:', error);
-      }
-    } catch (error) {
-      console.error('Error creating folder:', error);
-    } finally {
-      setCreatingFolder(false);
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="glass-button flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Volver</span>
-          </Button>
-          {/* Mobile-only: open folders drawer */}
-          <div className="sm:hidden">
-            <Button
-              variant="outline"
-              className="glass-button"
-              onClick={() => setShowFoldersSheet(true)}
-              aria-haspopup="dialog"
-              aria-expanded={showFoldersSheet}
-            >
-              <Folder className="mr-2 h-4 w-4" /> Carpetas
-            </Button>
-          </div>
-          <h3 className="text-lg font-medium">
-            {selectedFolder ? 'Contenido de la Carpeta' : 'Cursos'}{' '}
-            {selectedLevel && '(Filtrado por nivel)'}
-          </h3>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={onRefresh}
-            variant="outline"
-            size="sm"
-            className="glass-button"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar
-          </Button>
-          <Button
-            size="sm"
-            className="glass-button"
-            onClick={() => setShowCreateFolderDialog(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva Carpeta
-          </Button>
-          <Button size="sm" className="glass-button">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Curso
-          </Button>
-        </div>
-      </div>
-
-      {/* Create Folder Dialog */}
-      <Dialog
-        open={showCreateFolderDialog}
-        onOpenChange={setShowCreateFolderDialog}
-      >
-        <DialogContent className="glass-card border border-white/20">
-          <DialogHeader>
-            <DialogTitle>Crear Nueva Carpeta</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Nombre de la Carpeta
-              </label>
-              <Input
-                value={folderForm.name}
-                onChange={(e) =>
-                  setFolderForm({ ...folderForm, name: e.target.value })
-                }
-                placeholder="Nombre de la carpeta"
-                className="glass-input"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">
-                Descripción (Opcional)
-              </label>
-              <Input
-                value={folderForm.description}
-                onChange={(e) =>
-                  setFolderForm({ ...folderForm, description: e.target.value })
-                }
-                placeholder="Descripción de la carpeta"
-                className="glass-input"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowCreateFolderDialog(false)}
-                className="glass-button"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreateFolder}
-                disabled={creatingFolder || !folderForm.name.trim()}
-                className="glass-button"
-              >
-                {creatingFolder ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Creando...
-                  </>
-                ) : (
-                  'Crear Carpeta'
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {courses.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {courses.map((course) => (
-              <Card
-                key={course.id}
-                className={`glass-card cursor-pointer border border-white/20 transition-shadow hover:shadow-md ${
-                  course.is_folder ? 'border-yellow-500/50' : ''
-                }`}
-                onClick={() => onCourseClick(course.id)}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span
-                      className="line-clamp-2 cursor-pointer break-words hover:underline md:line-clamp-1 md:truncate"
-                      onClick={() => onCourseClick(course.id)}
-                    >
-                      {course.name}
-                    </span>
-                    <Badge variant={course.active ? 'default' : 'secondary'}>
-                      {course.active ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </CardTitle>
-                  {course.is_folder && (
-                    <p className="flex items-center text-sm text-yellow-500">
-                      <Folder className="mr-1 h-4 w-4" />
-                      Carpeta
-                    </p>
-                  )}
-                  {course.grade && (
-                    <p className="text-muted-foreground text-sm">
-                      {course.grade} {course.section && `- ${course.section}`}
-                    </p>
-                  )}
+            {metrics && recentActivity ? (
+              <Card className="border-border/40 bg-background/80">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-semibold">Actividad reciente (7 días)</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground text-sm">
-                        {course.is_folder
-                          ? 'Subcarpetas/Cursos:'
-                          : 'Estudiantes:'}
-                      </span>
-                      <span className="font-medium">
-                        {course.is_folder
-                          ? course.student_count || 0
-                          : course.student_count || 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground text-sm">
-                        Fotos:
-                      </span>
-                      <span className="font-medium">
-                        {course.photo_count || 0}
-                      </span>
-                    </div>
-                    {course.group_photo_count &&
-                      course.group_photo_count > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">
-                            Grupales:
-                          </span>
-                          <span className="font-medium">
-                            {course.group_photo_count}
-                          </span>
-                        </div>
-                      )}
-
-                    {/* Completion Progress Bar */}
-                    {course.completion_rate !== undefined && (
-                      <div className="pt-2">
-                        <div className="mb-1 flex justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            Progreso
-                          </span>
-                          <span className="font-medium">
-                            {course.completion_rate}%
-                          </span>
-                        </div>
-                        <Progress
-                          value={course.completion_rate}
-                          className="h-2"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="glass-button flex-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(
-                          `/admin/events/${eventId}/courses/${course.id}/gallery`
-                        );
-                      }}
-                    >
-                      <ImageIcon className="mr-1 h-4 w-4" />
-                      <span className="hidden xs:inline">Galería</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="glass-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCourseClick(course.id);
-                      }}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">
-                        Ver
-                      </span>
-                    </Button>
-                    {/* Quick Navigation Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="glass-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Quick navigation to related entities
-                        console.log(`Quick nav from course ${course.id}`);
-                      }}
-                    >
-                      <Navigation className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:ml-1">
-                        Nav
-                      </span>
-                    </Button>
-                  </div>
+                <CardContent className="grid gap-4 sm:grid-cols-3">
+                  <ActivitySummary label="Nuevos estudiantes" value={recentActivity.new_students} />
+                  <ActivitySummary label="Fotos subidas" value={recentActivity.new_photos} />
+                  <ActivitySummary label="Pedidos nuevos" value={recentActivity.new_orders} />
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="glass-card border border-white/20">
-            <CardContent className="p-0">
-              <div className="divide-y divide-white/20">
-                {courses.map((course) => (
-                  <div
-                    key={course.id}
-                    className={`cursor-pointer p-4 transition-colors hover:bg-white/10 ${
-                      course.is_folder ? 'border-l-4 border-yellow-500/50' : ''
-                    }`}
-                    onClick={() => onCourseClick(course.id)}
+            ) : null}
+          </TabsContent>
+
+          <TabsContent value="folders" className="space-y-4">
+            {error ? (
+              <Alert variant="destructive" className="border-red-200 bg-red-50/80">
+                <AlertCircle className="h-5 w-5" />
+                <AlertTitle>Error al cargar carpetas</AlertTitle>
+                <AlertDescription className="mt-1 space-y-3">
+                  <p>{error}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReloadKey((key) => key + 1)}
+                    className="gap-2"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <h4
-                            className="cursor-pointer font-medium hover:underline"
-                            onClick={() => onCourseClick(course.id)}
-                          >
-                            {course.name}
-                          </h4>
-                          {course.is_folder && (
-                            <Badge
-                              variant="outline"
-                              className="border-yellow-500/50 text-yellow-500"
-                            >
-                              Carpeta
-                            </Badge>
-                          )}
-                          <Badge
-                            variant={course.active ? 'default' : 'secondary'}
-                            size="sm"
-                          >
-                            {course.active ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                          {course.grade && (
-                            <span className="text-muted-foreground text-sm">
-                              {course.grade}{' '}
-                              {course.section && `- ${course.section}`}
-                            </span>
-                          )}
-                        </div>
-                        {course.description && (
-                          <p className="text-muted-foreground mt-1 text-sm">
-                            {course.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-6 text-sm">
-                        <div className="text-center">
-                          <p className="font-medium">
-                            {course.student_count || 0}
-                          </p>
-                          <p className="text-muted-foreground">
-                            {course.is_folder ? 'Elementos' : 'Estudiantes'}
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="font-medium">
-                            {course.photo_count || 0}
-                          </p>
-                          <p className="text-muted-foreground">Fotos</p>
-                        </div>
-                        {course.group_photo_count &&
-                          course.group_photo_count > 0 && (
-                            <div className="text-center">
-                              <p className="font-medium">
-                                {course.group_photo_count}
-                              </p>
-                              <p className="text-muted-foreground">Grupales</p>
-                            </div>
-                          )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="glass-button"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                        {/* Quick Navigation Button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="glass-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Quick navigation to related entities
-                            console.log(`Quick nav from course ${course.id}`);
-                          }}
-                        >
-                          <Navigation className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    <RefreshCw className="h-4 w-4" /> Reintentar
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            ) : loading ? (
+              <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+                <Skeleton className="h-80 rounded-2xl" />
+                <Skeleton className="h-80 rounded-2xl" />
               </div>
-            </CardContent>
-          </Card>
-        )
-      ) : (
-        <Card className="glass-card border border-white/20">
-          <CardContent className="py-8 text-center">
-            <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-muted-foreground mb-4">
-              {selectedFolder
-                ? 'Esta carpeta está vacía'
-                : 'No hay cursos disponibles'}
-            </p>
-            <div className="flex justify-center gap-2">
-              <Button
-                className="glass-button"
-                onClick={() => setShowCreateFolderDialog(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Crear Carpeta
-              </Button>
-              <Button className="glass-button">
-                <Plus className="mr-2 h-4 w-4" />
-                Crear Primer Curso
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
+            ) : folders.length === 0 ? (
+              <Card className="border-dashed border-border/40 bg-background/70">
+                <CardContent className="flex flex-col items-center gap-3 py-12 text-center text-sm text-muted-foreground">
+                  <FolderTree className="h-8 w-8 text-muted-foreground" />
+                  <p>No encontramos carpetas para este evento todavía.</p>
+                  <Link href={`/admin/events/${eventId}/library`}>
+                    <Button className="gap-2" variant="default">
+                      <ExternalLink className="h-4 w-4" /> Gestionar en el editor completo
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+                <div className="rounded-2xl border border-border/30 bg-background/80 p-4 shadow-sm">
+                  <div className="mb-4 flex items-center justify-between text-sm text-muted-foreground">
+                    <span>Estructura</span>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      {formatNumber(folders.length, { maximumFractionDigits: 0 })} carpetas
+                    </Badge>
+                  </div>
+                  <div className="max-h-[520px] overflow-y-auto pr-2">
+                    <HierarchicalFolderTreeEnhanced
+                      folders={folders}
+                      selectedFolderId={selectedFolderId}
+                      expandedFolders={expandedFolders}
+                      showEventContext={false}
+                      onFolderSelect={setSelectedFolderId}
+                      onFolderToggle={handleFolderToggle}
+                      onFolderAction={handleFolderAction}
+                    />
+                  </div>
+                </div>
 
-// Students Content Component
-function StudentsContent({
-  eventId,
-  students,
-  viewMode,
-  selectedCourse,
-  searchTerm,
-  onRefresh,
-  onBack,
-}: {
-  eventId: string;
-  students: Student[];
-  viewMode: 'grid' | 'list';
-  selectedCourse: string | null;
-  searchTerm?: string;
-  onRefresh: () => void;
-  onBack: () => void;
-}) {
-  // For large student volumes (>50 students), use VirtualizedStudentGrid for optimal performance
-  const useVirtualizedGrid = students.length > 50;
+                <div className="space-y-4">
+                  {selectedFolder ? (
+                    <Card className="border-border/30 bg-background/80">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-semibold">
+                          {selectedFolder.name}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4 text-sm">
+                        {selectedFolderBreadcrumb.length > 1 ? (
+                          <div className="flex flex-wrap items-center gap-1 text-muted-foreground">
+                            {selectedFolderBreadcrumb.map((folder, index) => (
+                              <span key={folder.id} className="flex items-center gap-1">
+                                {index > 0 ? <span className="text-muted-foreground/40">/</span> : null}
+                                <span>{folder.name}</span>
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="glass-button flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Volver</span>
-          </Button>
-          <h3 className="text-lg font-medium">
-            Estudiantes {selectedCourse && '(Filtrado por curso)'}
-          </h3>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={onRefresh}
-            variant="outline"
-            size="sm"
-            className="glass-button"
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Actualizar
-          </Button>
-          <Button variant="outline" size="sm" className="glass-button">
-            <Upload className="mr-2 h-4 w-4" />
-            Importar
-          </Button>
-          <Button size="sm" className="glass-button">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Estudiante
-          </Button>
-        </div>
-      </div>
-
-      {useVirtualizedGrid ? (
-        // Use virtualized grid for large datasets
-        <VirtualizedStudentGrid
-          eventId={eventId}
-          courseId={selectedCourse}
-          searchTerm={searchTerm}
-          initialPageSize={100}
-          enableSelection={true}
-          enableBulkActions={true}
-          onBulkAction={(action, studentIds) => {
-            console.log(`Bulk action ${action} on students:`, studentIds);
-            // Handle bulk actions here
-          }}
-        />
-      ) : (
-        // Use traditional rendering for smaller datasets
-        <>
-          {students.length > 0 ? (
-            viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {students.map((student) => (
-                  <Card
-                    key={student.id}
-                    className="glass-card border border-white/20 transition-shadow hover:shadow-md"
-                  >
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span className="truncate">{student.name}</span>
-                        <Badge
-                          variant={student.active ? 'default' : 'secondary'}
-                        >
-                          {student.active ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                      </CardTitle>
-                      {(student.grade || student.section) && (
-                        <p className="text-muted-foreground text-sm">
-                          {student.grade}{' '}
-                          {student.section && `- ${student.section}`}
-                        </p>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground text-sm">
-                            Fotos:
-                          </span>
-                          <span className="font-medium">
-                            {student.photo_count || 0}
-                          </span>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <FolderStat label="Nivel" value={selectedFolder.depth} />
+                          <FolderStat label="Fotos" value={selectedFolder.photo_count} />
+                          <FolderStat label="Subcarpetas" value={childFolders.length} />
+                          <FolderStat label="Tiene hijos" value={selectedFolder.has_children ? 'Sí' : 'No'} />
                         </div>
-                        {student.parent_name && (
-                          <p className="text-muted-foreground text-sm">
-                            {student.parent_name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="mt-4 flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="glass-button flex-1"
-                          onClick={() =>
-                            router.push(
-                              `/admin/events/${eventId}/students/${student.id}/gallery`
-                            )
-                          }
-                        >
-                          <ImageIcon className="mr-1 h-4 w-4" />
-                          <span className="hidden xs:inline">Galería</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="glass-button"
-                          onClick={() =>
-                            router.push(
-                              `/admin/events/${eventId}/students/${student.id}/edit`
-                            )
-                          }
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only sm:not-sr-only sm:ml-1">
-                            Editar
-                          </span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="glass-button"
-                          onClick={() =>
-                            router.push(
-                              `/admin/events/${eventId}/students/${student.id}/delete`
-                            )
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only sm:not-sr-only sm:ml-1">
-                            Eliminar
-                          </span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+
+                        <Link href={`/admin/events/${eventId}/library`}>
+                          <Button variant="secondary" className="w-full gap-2">
+                            <ExternalLink className="h-4 w-4" /> Abrir en el gestor completo
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card className="border-dashed border-border/30 bg-background/60">
+                      <CardContent className="flex h-full items-center justify-center py-16 text-sm text-muted-foreground">
+                        Seleccioná una carpeta para ver detalles.
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="students" className="space-y-4">
+            {metrics ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <OverviewMetricCard
+                  label="Estudiantes activos"
+                  value={metrics.active_students}
+                  helper={`${formatPercent(
+                    metrics.total_students > 0
+                      ? (metrics.active_students / metrics.total_students) * 100
+                      : undefined
+                  )} del total`}
+                  icon={<Users className="h-5 w-5 text-emerald-500" />}
+                />
+                <OverviewMetricCard
+                  label="Con curso asignado"
+                  value={metrics.students_with_course}
+                  helper={`${formatPercent(
+                    metrics.total_students > 0
+                      ? (metrics.students_with_course / metrics.total_students) * 100
+                      : undefined
+                  )} cubiertos`}
+                  icon={<GraduationCap className="h-5 w-5 text-blue-500" />}
+                />
+                <OverviewMetricCard
+                  label="Sin curso"
+                  value={metrics.students_without_course}
+                  helper="Revisá la organización"
+                  icon={<AlertCircle className="h-5 w-5 text-orange-500" />}
+                />
               </div>
             ) : (
-              <Card className="glass-card border border-white/20">
-                <CardContent className="p-0">
-                  <div className="divide-y divide-white/20">
-                    {students.map((student) => (
-                      <div
-                        key={student.id}
-                        className="cursor-pointer p-4 transition-colors hover:bg-white/10"
-                        onClick={() =>
-                          router.push(
-                            `/admin/events/${eventId}/students/${student.id}/gallery`
-                          )
-                        }
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h4
-                                className="cursor-pointer font-medium hover:underline"
-                                onClick={() =>
-                                  router.push(
-                                    `/admin/events/${eventId}/students/${student.id}/gallery`
-                                  )
-                                }
-                              >
-                                {student.name}
-                              </h4>
-                              <Badge
-                                variant={
-                                  student.active ? 'default' : 'secondary'
-                                }
-                                size="sm"
-                              >
-                                {student.active ? 'Activo' : 'Inactivo'}
-                              </Badge>
-                              {(student.grade || student.section) && (
-                                <span className="text-muted-foreground text-sm">
-                                  {student.grade}{' '}
-                                  {student.section && `- ${student.section}`}
-                                </span>
-                              )}
-                            </div>
-                            {student.parent_name && (
-                              <p className="text-muted-foreground text-sm">
-                                {student.parent_name}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-6 text-sm">
-                            <div className="text-center">
-                              <p className="font-medium">
-                                {student.photo_count || 0}
-                              </p>
-                              <p className="text-muted-foreground">Fotos</p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="glass-button"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          ) : (
-            <Card className="glass-card border border-white/20">
-              <CardContent className="py-8 text-center">
-                <UserCircle className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                <p className="text-muted-foreground mb-4">
-                  No hay estudiantes disponibles
-                </p>
-                <Button className="glass-button">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Crear Primer Estudiante
-                </Button>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="h-32 rounded-2xl" />
+                ))}
+              </div>
+            )}
+            <Card className="border-border/30 bg-background/80">
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 py-6">
+                <div>
+                  <p className="text-sm font-medium">Gestioná estudiantes del evento</p>
+                  <p className="text-sm text-muted-foreground">
+                    Accedé al panel dedicado para sincronizar datos de cursos y familias.
+                  </p>
+                </div>
+                <Link href={`/admin/events/${eventId}/students`}>
+                  <Button className="gap-2">
+                    <ExternalLink className="h-4 w-4" /> Abrir módulo de estudiantes
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
-          )}
-        </>
-      )}
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            {metrics ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <AnalyticsCard
+                  title="Salud general"
+                  value={formatNumber(performance?.health_score)}
+                  helper="Indicador interno basado en tagging, órdenes y cobertura"
+                  progress={performance?.health_score}
+                />
+                <AnalyticsCard
+                  title="Avance de catalogación"
+                  value={formatPercent(metrics.photo_tagging_progress)}
+                  helper="Porcentaje de fotos etiquetadas"
+                  progress={metrics.photo_tagging_progress}
+                />
+                <AnalyticsCard
+                  title="Conversión a pedidos"
+                  value={formatPercent(metrics.order_conversion_rate)}
+                  helper="Pedidos vs. estudiantes activos"
+                  progress={metrics.order_conversion_rate}
+                />
+                <AnalyticsCard
+                  title="Fotos por estudiante"
+                  value={formatNumber(metrics.avg_photos_per_student, { maximumFractionDigits: 2 })}
+                  helper="Promedio de fotos aprobadas por estudiante"
+                />
+              </div>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={index} className="h-36 rounded-2xl" />
+                ))}
+              </div>
+            )}
+            <Card className="border-border/30 bg-background/80">
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 py-6">
+                <div>
+                  <p className="text-sm font-medium">¿Necesitás más detalle?</p>
+                  <p className="text-sm text-muted-foreground">
+                    Abrí la biblioteca completa del evento para ver métricas avanzadas y ejecutar acciones.
+                  </p>
+                </div>
+                <Link href={`/admin/events/${eventId}/library`}>
+                  <Button variant="secondary" className="gap-2">
+                    <ExternalLink className="h-4 w-4" /> Ir a la biblioteca del evento
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </CardContent>
+      </Card>
+    </Tabs>
+  );
+}
+
+interface OverviewMetricCardProps {
+  label: string;
+  value: number | undefined;
+  helper?: string;
+  icon: ReactNode;
+}
+
+function OverviewMetricCard({ label, value, helper, icon }: OverviewMetricCardProps) {
+  return (
+    <Card className="border-border/30 bg-background/80">
+      <CardContent className="space-y-3 py-5">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>{label}</span>
+          <span>{icon}</span>
+        </div>
+        <p className="text-2xl font-semibold text-foreground">{formatNumber(value, { maximumFractionDigits: 0 })}</p>
+        {helper ? <p className="text-xs text-muted-foreground/80">{helper}</p> : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ActivitySummaryProps {
+  label: string;
+  value: number | undefined;
+}
+
+function ActivitySummary({ label, value }: ActivitySummaryProps) {
+  return (
+    <div className="rounded-2xl border border-border/30 bg-background/80 p-4 text-center">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-semibold">{formatNumber(value, { maximumFractionDigits: 0 })}</p>
     </div>
   );
 }
 
-// Quick jump navigation functions
-const quickJumpToCourse = (courseId: string) => {
-  const course = courses.find((c) => c.id === courseId);
-  if (course) {
-    if (course.is_folder) {
-      handleFolderSelect(courseId);
-    } else {
-      handleCourseSelect(courseId);
-    }
-    // Show a toast notification for quick navigation
-    // toast.info(`Navegando a ${course.name}`);
-  }
-};
+interface FolderStatProps {
+  label: string;
+  value: string | number | undefined;
+}
 
-const quickJumpToStudent = (studentId: string) => {
-  // Find which course the student belongs to
-  const student = students.find((s) => s.id === studentId);
-  if (student?.course_id) {
-    handleCourseSelect(student.course_id);
-    // Show a toast notification for quick navigation
-    // toast.info(`Navegando a estudiante ${student.name}`);
-  }
-};
+function FolderStat({ label, value }: FolderStatProps) {
+  return (
+    <div className="rounded-xl border border-border/30 bg-background/70 p-3 text-center">
+      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{typeof value === 'number' ? formatNumber(value, { maximumFractionDigits: 0 }) : value ?? '—'}</p>
+    </div>
+  );
+}
 
-const quickJumpToPhoto = async (photoId: string) => {
-  try {
-    // Fetch photo details to determine which course/student it belongs to
-    const response = await fetch(`/api/admin/photos/${photoId}`);
-    if (response.ok) {
-      const photo = await response.json();
-      // If photo has a course, navigate to that course
-      if (photo.course_id) {
-        handleCourseSelect(photo.course_id);
-      }
-      // If photo has students, navigate to the first student's course
-      else if (
-        photo.students &&
-        photo.students.length > 0 &&
-        photo.students[0].course_id
-      ) {
-        handleCourseSelect(photo.students[0].course_id);
-      }
-      // Show a toast notification for quick navigation
-      // toast.info('Navegando a la foto');
-    }
-  } catch (error) {
-    console.error('Error fetching photo details for quick jump:', error);
-  }
-};
+interface AnalyticsCardProps {
+  title: string;
+  value: string;
+  helper?: string;
+  progress?: number | null;
+}
 
-export default HierarchicalNavigation;
+function AnalyticsCard({ title, value, helper, progress }: AnalyticsCardProps) {
+  const normalized = typeof progress === 'number' ? Math.max(0, Math.min(100, progress)) : null;
+  return (
+    <Card className="border-border/30 bg-background/80">
+      <CardContent className="space-y-4 py-5">
+        <div>
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          {helper ? <p className="text-sm text-muted-foreground">{helper}</p> : null}
+        </div>
+        <p className="text-3xl font-semibold">{value}</p>
+        {typeof normalized === 'number' ? (
+          <div className="h-2 w-full rounded-full bg-muted/40">
+            <div
+              className="h-2 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+              style={{ width: `${normalized}%` }}
+            />
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}

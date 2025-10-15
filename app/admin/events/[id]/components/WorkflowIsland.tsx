@@ -161,7 +161,7 @@ export function WorkflowIsland({
                 Activa
               </Badge>
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               {phaseMessages[currentPhase] || phaseInfo.description}
             </p>
           </div>
@@ -169,7 +169,7 @@ export function WorkflowIsland({
 
         <div className="text-right">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">
+            <span className="text-gray-500 dark:text-gray-400 text-sm">
               Progreso general
             </span>
             <span className="gradient-text-ios26 text-lg font-bold">
@@ -199,7 +199,7 @@ export function WorkflowIsland({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-gray-500 dark:text-gray-400 text-sm">
                 Configuración
               </span>
               <div className="flex items-center gap-1">
@@ -209,7 +209,7 @@ export function WorkflowIsland({
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Contenido</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Contenido</span>
               <div className="flex items-center gap-1">
                 {currentPhase !== 'setup' ? (
                   <>
@@ -219,7 +219,7 @@ export function WorkflowIsland({
                 ) : (
                   <>
                     <Clock className="h-4 w-4 text-gray-400" />
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">
                       Pendiente
                     </span>
                   </>
@@ -228,7 +228,7 @@ export function WorkflowIsland({
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Publicación</span>
+              <span className="text-gray-500 dark:text-gray-400 text-sm">Publicación</span>
               <div className="flex items-center gap-1">
                 {[
                   'publishing',
@@ -243,7 +243,7 @@ export function WorkflowIsland({
                 ) : (
                   <>
                     <Clock className="h-4 w-4 text-gray-400" />
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">
                       Pendiente
                     </span>
                   </>
@@ -271,15 +271,15 @@ export function WorkflowIsland({
                 <h4 className="font-semibold text-blue-700 dark:text-blue-300">
                   {nextAction.title}
                 </h4>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
                   {nextAction.description}
                 </p>
               </div>
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
-                  <Clock className="text-muted-foreground h-4 w-4" />
-                  <span className="text-muted-foreground text-sm">
+                  <Clock className="text-gray-500 dark:text-gray-400 h-4 w-4" />
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
                     {nextAction.estimatedTime} min
                   </span>
                 </div>
@@ -331,7 +331,7 @@ export function WorkflowIsland({
               </div>
 
               <h4 className="mb-1 font-semibold">{mainSuggestion.title}</h4>
-              <p className="text-muted-foreground mb-2 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm">
                 {mainSuggestion.description}
               </p>
 
@@ -395,7 +395,7 @@ export function WorkflowIsland({
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
       >
-        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+        <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm">
           <div className="h-2 w-2 animate-pulse rounded-full bg-blue-500"></div>
           <span>
             {nextActions.length > 0

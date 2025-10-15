@@ -83,16 +83,20 @@ export async function middleware(request: NextRequest) {
       '/favicon',
       '/images',
       '/public',
+      '/api/admin/folders',
+      '/api/admin/events',
     ];
     const isNoisy = NOISY_PATHS.some((p) => pathname.startsWith(p));
     if (!(process.env.NODE_ENV === 'development' && isNoisy)) {
       logger.info('Request received', {
         requestId,
         method,
-        pathname,
+        path: pathname,
         userAgent: maskUserAgent(userAgent),
-        clientIP: maskIP(clientIP),
-        referer: referer ? maskUrl(referer) : null,
+        ip: maskIP(clientIP),
+        errorContext: {
+          referer: referer ? maskUrl(referer) : null,
+        },
       });
     }
 
@@ -103,8 +107,11 @@ export async function middleware(request: NextRequest) {
       
       logger.warn('HTTP request redirected to HTTPS', {
         requestId,
-        originalUrl: url.href,
-        redirectUrl: redirectUrl.href,
+        path: pathname,
+        errorContext: {
+          originalUrl: url.href,
+          redirectUrl: redirectUrl.href,
+        },
       });
       
       return NextResponse.redirect(redirectUrl, 301);
@@ -134,18 +141,22 @@ export async function middleware(request: NextRequest) {
       if (!antiHotlinkResult.allowed) {
         logger.warn('Anti-hotlinking blocked request', {
           requestId,
-          pathname,
-          reason: antiHotlinkResult.reason,
-          referer: referer ? maskUrl(referer) : null,
-          clientIP: maskIP(clientIP),
+          path: pathname,
+          ip: maskIP(clientIP),
+          errorContext: {
+            reason: antiHotlinkResult.reason,
+            referer: referer ? maskUrl(referer) : null,
+          },
         });
-        
+
+        const headers = new Headers({ 'X-Request-ID': requestId });
+        if (antiHotlinkResult.reason) {
+          headers.set('X-Block-Reason', antiHotlinkResult.reason);
+        }
+
         return new NextResponse('Forbidden', {
           status: 403,
-          headers: {
-            'X-Request-ID': requestId,
-            'X-Block-Reason': antiHotlinkResult.reason,
-          },
+          headers,
         });
       }
     }
@@ -157,22 +168,27 @@ export async function middleware(request: NextRequest) {
       if (!rateLimitResult.allowed) {
         logger.warn('Rate limit exceeded', {
           requestId,
-          pathname,
-          clientIP: maskIP(clientIP),
-          limit: rateLimitResult.limit,
-          remaining: rateLimitResult.remaining,
-          resetTime: rateLimitResult.resetTime,
+          path: pathname,
+          ip: maskIP(clientIP),
+          errorContext: {
+            limit: rateLimitResult.limit,
+            remaining: rateLimitResult.remaining,
+            resetTime: rateLimitResult.resetTime,
+          },
         });
-        
+
+        const headers = new Headers({ 'X-Request-ID': requestId });
+        headers.set('X-RateLimit-Limit', rateLimitResult.limit?.toString() || '0');
+        headers.set('X-RateLimit-Remaining', rateLimitResult.remaining?.toString() || '0');
+        headers.set('X-RateLimit-Reset', rateLimitResult.resetTime?.toString() || '0');
+        headers.set(
+          'Retry-After',
+          Math.ceil(((rateLimitResult.resetTime || Date.now()) - Date.now()) / 1000).toString()
+        );
+
         return new NextResponse('Too Many Requests', {
           status: 429,
-          headers: {
-            'X-Request-ID': requestId,
-            'X-RateLimit-Limit': rateLimitResult.limit?.toString() || '0',
-            'X-RateLimit-Remaining': rateLimitResult.remaining?.toString() || '0',
-            'X-RateLimit-Reset': rateLimitResult.resetTime?.toString() || '0',
-            'Retry-After': Math.ceil(((rateLimitResult.resetTime || Date.now()) - Date.now()) / 1000).toString(),
-          },
+          headers,
         });
       }
       
@@ -188,16 +204,19 @@ export async function middleware(request: NextRequest) {
     if (isBlockedUserAgent(userAgent)) {
       logger.warn('Blocked user agent', {
         requestId,
+        path: pathname,
         userAgent: maskUserAgent(userAgent),
-        clientIP: maskIP(clientIP),
+        ip: maskIP(clientIP),
       });
-      
+
+      const headers = new Headers({
+        'X-Request-ID': requestId,
+        'X-Block-Reason': 'blocked-user-agent',
+      });
+
       return new NextResponse('Forbidden', {
         status: 403,
-        headers: {
-          'X-Request-ID': requestId,
-          'X-Block-Reason': 'blocked-user-agent',
-        },
+        headers,
       });
     }
 
@@ -206,10 +225,13 @@ export async function middleware(request: NextRequest) {
     if (!(process.env.NODE_ENV === 'development' && NOISY_PATHS.some((p) => pathname.startsWith(p)))) {
       logger.info('Request processed successfully', {
         requestId,
-        pathname,
+        path: pathname,
         method,
-        duration,
-        status: 'allowed',
+        ip: maskIP(clientIP),
+        performance: {
+          totalTime: duration,
+        },
+        statusCode: response.status,
       });
     }
 
@@ -220,9 +242,14 @@ export async function middleware(request: NextRequest) {
     
     logger.error('Middleware error', {
       requestId,
-      pathname: request.nextUrl.pathname,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      duration,
+      path: request.nextUrl.pathname,
+      errorCode: error instanceof Error ? error.name : 'unknown',
+      errorContext: {
+        message: error instanceof Error ? error.message : String(error),
+      },
+      performance: {
+        totalTime: duration,
+      },
     });
 
     // En caso de error del middleware, permitir que pase la request
@@ -262,7 +289,8 @@ function getClientIP(request: NextRequest): string {
   }
   
   // Fallback a IP de Next.js
-  return request.ip || 'unknown';
+  const nextIp = (request as unknown as { ip?: string | null }).ip;
+  return nextIp || 'unknown';
 }
 
 /**

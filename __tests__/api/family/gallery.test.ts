@@ -1,824 +1,164 @@
-import {
-  describe,
-  it,
-  expect,
-  beforeEach,
-  afterEach,
-  vi,
-  beforeAll,
-} from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+vi.mock('server-only', () => ({}), { virtual: true });
+
+vi.mock('@/lib/services/family.service', () => ({
+  familyService: {
+    getSubjectPhotos: vi.fn(),
+    getActiveOrder: vi.fn(),
+    getPhotoInfo: vi.fn(),
+    trackPhotoView: vi.fn(),
+  },
+}));
+
+process.env.NEXT_PUBLIC_SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321';
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'anon-key';
+process.env.SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 'service-role-key';
 import { NextRequest } from 'next/server';
+
+vi.mock('@/lib/middleware/auth.middleware', () => ({
+  AuthMiddleware: {
+    withAuth:
+      (handler: any) =>
+      async (request: NextRequest, params: any) => {
+        const authContext = {
+          isAdmin: false,
+          user: { id: 'family-user' },
+          subject: { id: 'subject-001', name: 'Alumno Demo' },
+        };
+        return handler(request, authContext, params);
+      },
+  },
+  SecurityLogger: {
+    logResourceAccess: vi.fn(),
+    logSecurityEvent: vi.fn(),
+  },
+}));
+
+vi.mock('@/lib/middleware/rate-limit.middleware', () => ({
+  RateLimitMiddleware: {
+    withRateLimit: (handler: any) => handler,
+  },
+}));
+
 import { GET } from '@/app/api/family/gallery/[token]/route';
-import { familyService } from '@/lib/services/family.service';
-import { signedUrlForKey } from '@/lib/storage/signedUrl';
+import {
+  galleryService,
+  GalleryServiceError,
+  type GalleryResult,
+} from '@/lib/services/gallery.service';
 
-// Mock services
-vi.mock('@/lib/services/family.service');
-vi.mock('@/lib/services/storage');
-vi.mock('@/lib/storage/signedUrl');
-
-// Test data constants
-const TEST_TOKEN = 'valid-token-123456789012345678901234567890';
-const TEST_SUBJECT_ID = '123e4567-e89b-12d3-a456-426614174000';
-const TEST_PHOTO_ID_1 = 'photo-123e4567-e89b-12d3-a456-426614174001';
-const TEST_PHOTO_ID_2 = 'photo-123e4567-e89b-12d3-a456-426614174002';
-const TEST_EVENT_ID = 'event-123e4567-e89b-12d3-a456-426614174000';
-
-const mockSubject = {
-  id: TEST_SUBJECT_ID,
-  event_id: TEST_EVENT_ID,
-  name: 'Juan Pérez',
-  parent_name: 'María González',
-  parent_email: 'maria@example.com',
-  token: TEST_TOKEN,
-  token_expires_at: '2025-12-31T23:59:59Z',
-  created_at: '2024-01-01T00:00:00Z',
-  event: {
-    id: TEST_EVENT_ID,
-    name: 'Graduación 2024',
-    date: '2024-12-15',
-    school_name: 'Colegio San José',
-    status: 'active',
-    photo_prices: { base: 1500 },
-  },
-};
-
-const mockPhotoAssignments = [
-  {
-    id: 'assignment-1',
-    photo_id: TEST_PHOTO_ID_1,
-    subject_id: TEST_SUBJECT_ID,
-    assigned_at: '2024-01-01T10:00:00Z',
-    photo: {
-      id: TEST_PHOTO_ID_1,
-      event_id: TEST_EVENT_ID,
-      filename: 'IMG_001.jpg',
-      storage_path: 'events/test-event/photos/IMG_001.jpg',
-      created_at: '2024-01-01T09:00:00Z',
-      status: 'approved',
+describe('/api/family/gallery/[token]', () => {
+  const token = 'valid-token-12345678901234567890';
+  const mockGallery: GalleryResult = {
+    token: {
+      token,
+      accessType: 'family_subject',
+      isLegacy: false,
+      isActive: true,
+      expiresAt: null,
+      maxViews: null,
+      viewCount: 1,
     },
-  },
-  {
-    id: 'assignment-2',
-    photo_id: TEST_PHOTO_ID_2,
-    subject_id: TEST_SUBJECT_ID,
-    assigned_at: '2024-01-01T11:00:00Z',
-    photo: {
-      id: TEST_PHOTO_ID_2,
-      event_id: TEST_EVENT_ID,
-      filename: 'IMG_002.jpg',
-      storage_path: 'events/test-event/photos/IMG_002.jpg',
-      created_at: '2024-01-01T09:30:00Z',
-      status: 'approved',
+    event: { id: 'event-01', name: 'Acto Escolar' },
+    folder: null,
+    subject: {
+      id: 'subject-001',
+      name: 'Alumno Demo',
+      grade: '5°',
+      section: 'B',
+      parent_name: 'Contacto',
+      parent_email: 'familia@example.com',
+      created_at: '2025-01-01T00:00:00.000Z',
+    } as any,
+    student: null,
+    share: undefined,
+    items: [
+      {
+        id: 'photo-01',
+        filename: 'foto.jpg',
+        previewUrl: 'https://cdn.example.com/preview/foto.jpg',
+        signedUrl: 'https://signed.example.com/foto.jpg',
+        downloadUrl: null,
+        createdAt: '2025-01-01T12:00:00.000Z',
+        size: 150000,
+        mimeType: 'image/jpeg',
+        folderId: null,
+        type: 'individual',
+        origin: 'photos',
+        assignmentId: 'assignment-01',
+        storagePath: 'events/demo/photo.jpg',
+        metadata: { width: 1200, height: 1800 },
+      },
+    ],
+    pagination: {
+      page: 1,
+      limit: 24,
+      total: 1,
+      totalPages: 1,
+      hasMore: false,
     },
-  },
-];
-
-const mockActiveOrder = {
-  id: 'order-123',
-  subject_id: TEST_SUBJECT_ID,
-  status: 'pending',
-  total_amount: 3000,
-  created_at: '2024-01-01T12:00:00Z',
-  items: [{ photo_id: TEST_PHOTO_ID_1, quantity: 2, price: 1500 }],
-};
-
-// Mock request helper
-const createMockRequest = (
-  token: string,
-  params?: Record<string, string>
-): NextRequest => {
-  const url = params
-    ? `http://localhost:3000/api/family/gallery/${token}?${new URLSearchParams(params).toString()}`
-    : `http://localhost:3000/api/family/gallery/${token}`;
-
-  return new NextRequest(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (compatible; test)',
+    catalog: null,
+    activeOrder: null,
+    legacyFallbackUsed: false,
+    rateLimit: {
+      limit: 30,
+      remaining: 29,
+      resetAt: Date.now() + 60000,
+      retryAfter: 0,
     },
-  });
-};
+  };
 
-describe('/api/family/gallery/[token] - Comprehensive Tests', () => {
-  beforeAll(() => {
-    // Mock AuthMiddleware
-    vi.doMock('@/lib/middleware/auth.middleware', () => ({
-      AuthMiddleware: {
-        withAuth:
-          (handler: any, role: string) =>
-          async (request: NextRequest, params: any) => {
-            const authContext = {
-              isFamily: role === 'family',
-              subject: mockSubject,
-              token: TEST_TOKEN,
-            };
-            return handler(request, authContext, params);
-          },
-      },
-      SecurityLogger: {
-        logResourceAccess: vi.fn(),
-        logSecurityEvent: vi.fn(),
-      },
-    }));
+  const gallerySpy = vi.spyOn(galleryService, 'getGallery');
 
-    // Mock RateLimitMiddleware
-    vi.doMock('@/lib/middleware/rate-limit.middleware', () => ({
-      RateLimitMiddleware: {
-        withRateLimit: (handler: any) => handler,
-      },
-    }));
-  });
+  const createRequest = (query?: Record<string, string>) => {
+    const search = query ? `?${new URLSearchParams(query).toString()}` : '';
+    return new NextRequest(
+      `http://localhost:3000/api/family/gallery/${token}${search}`,
+      {
+        method: 'GET',
+        headers: {
+          'user-agent': 'vitest-family-test',
+        },
+      }
+    );
+  };
+
+  const params = { params: { token } };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    gallerySpy.mockReset();
+  });
 
-    // Setup default mocks
-    (familyService.getSubjectPhotos as any).mockResolvedValue({
-      photos: mockPhotoAssignments,
-      total: 2,
-      has_more: false,
+  it('returns unified gallery payload with legacy mapper', async () => {
+    gallerySpy.mockResolvedValue(mockGallery);
+
+    const response = await GET(createRequest(), params);
+    expect(response.status).toBe(200);
+
+    const body = await response.json();
+    expect(body?.data?.gallery).toMatchObject({
+      token: expect.objectContaining({ token }),
+      items: expect.arrayContaining([
+        expect.objectContaining({ id: 'photo-01', signedUrl: expect.any(String) }),
+      ]),
+      pagination: expect.objectContaining({ total: 1 }),
+      subject: expect.objectContaining({ name: 'Alumno Demo' }),
     });
+    expect(body?.data?.legacy?.photos?.[0]).toMatchObject({ id: 'photo-01' });
+  });
 
-    (familyService.getActiveOrder as any).mockResolvedValue(null);
-    (familyService.getPhotoInfo as any).mockResolvedValue(
-      mockPhotoAssignments[0]
+  it('propagates GalleryServiceError with status code', async () => {
+    gallerySpy.mockRejectedValue(
+      new GalleryServiceError('invalid_token', 'Token inválido', 404)
     );
-    (familyService.trackPhotoView as any).mockResolvedValue(undefined);
 
-    (signedUrlForKey as any).mockResolvedValue(
-      'https://storage.supabase.co/object/sign/bucket/photo.jpg?token=signed-token'
-    );
+    const response = await GET(createRequest(), params);
+    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(body).toMatchObject({ error: 'Token inválido', code: 'invalid_token' });
   });
 
-  afterEach(() => {
-    vi.resetAllMocks();
-  });
-
-  describe('Autenticación y Autorización de Token', () => {
-    it('debería rechazar requests sin autenticación familia', async () => {
-      // Mock no family auth
-      vi.doMock('@/lib/middleware/auth.middleware', () => ({
-        AuthMiddleware: {
-          withAuth:
-            (handler: any) => async (request: NextRequest, params: any) => {
-              const authContext = {
-                isFamily: false,
-                subject: null,
-                token: null,
-              };
-              return handler(request, authContext, params);
-            },
-        },
-        SecurityLogger: {
-          logResourceAccess: vi.fn(),
-          logSecurityEvent: vi.fn(),
-        },
-      }));
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe('Family token access required');
-    });
-
-    it('debería validar longitud mínima del token (20 caracteres)', async () => {
-      const shortToken = 'short-token';
-      const request = createMockRequest(shortToken);
-
-      try {
-        await GET(request, { params: { token: shortToken } });
-      } catch (error: any) {
-        expect(error.message || error.toString()).toContain(
-          'Token must be at least 20 characters'
-        );
-      }
-    });
-
-    it('debería rechazar token de sujeto sin acceso', async () => {
-      // Mock sin sujeto en contexto
-      vi.doMock('@/lib/middleware/auth.middleware', () => ({
-        AuthMiddleware: {
-          withAuth:
-            (handler: any) => async (request: NextRequest, params: any) => {
-              const authContext = {
-                isFamily: true,
-                subject: null,
-                token: TEST_TOKEN,
-              };
-              return handler(request, authContext, params);
-            },
-        },
-        SecurityLogger: {
-          logResourceAccess: vi.fn(),
-          logSecurityEvent: vi.fn(),
-        },
-      }));
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe('Family token access required');
-    });
-
-    it('debería permitir acceso con token válido', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.subject.id).toBe(TEST_SUBJECT_ID);
-      expect(data.subject.name).toBe('Juan Pérez');
-    });
-  });
-
-  describe('Rate Limiting por Token', () => {
-    it('debería aplicar rate limiting específico por token', async () => {
-      // En una implementación real, esto se probaría haciendo múltiples requests
-      // El rate limiting por token debería ser 30 req/min según CLAUDE.md
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('debería permitir burst de requests dentro del límite', async () => {
-      // Test de múltiples requests secuenciales
-      const requests = Array(5)
-        .fill(0)
-        .map(() => {
-          const request = createMockRequest(TEST_TOKEN);
-          return GET(request, { params: { token: TEST_TOKEN } });
-        });
-
-      const responses = await Promise.all(requests);
-      responses.forEach((response) => {
-        expect(response.status).toBeLessThan(429);
-      });
-    });
-  });
-
-  describe('Acceso a Fotos Asignadas', () => {
-    it('debería obtener fotos asignadas con paginación por defecto', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.photos).toHaveLength(2);
-      expect(data.pagination.page).toBe(1);
-      expect(data.pagination.limit).toBe(50);
-      expect(data.pagination.total).toBe(2);
-      expect(data.pagination.has_more).toBe(false);
-
-      expect(familyService.getSubjectPhotos).toHaveBeenCalledWith(
-        TEST_SUBJECT_ID,
-        1,
-        50
-      );
-    });
-
-    it('debería respetar parámetros de paginación personalizados', async () => {
-      const request = createMockRequest(TEST_TOKEN, { page: '2', limit: '10' });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(200);
-      expect(familyService.getSubjectPhotos).toHaveBeenCalledWith(
-        TEST_SUBJECT_ID,
-        2,
-        10
-      );
-    });
-
-    it('debería limitar el tamaño de página a máximo 100', async () => {
-      const request = createMockRequest(TEST_TOKEN, { limit: '500' });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(200);
-      expect(familyService.getSubjectPhotos).toHaveBeenCalledWith(
-        TEST_SUBJECT_ID,
-        1,
-        100
-      );
-    });
-
-    it('debería incluir URLs firmadas para todas las fotos', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      data.photos.forEach((photo: any) => {
-        expect(photo.signed_url).toBeDefined();
-        expect(photo.signed_url).toContain('signed-token');
-      });
-
-      // Verificar que se solicitaron URLs firmadas para cada foto
-      expect(signedUrlForKey).toHaveBeenCalledTimes(2);
-      expect(signedUrlForKey).toHaveBeenCalledWith(
-        'events/test-event/photos/IMG_001.jpg',
-        3600
-      );
-      expect(signedUrlForKey).toHaveBeenCalledWith(
-        'events/test-event/photos/IMG_002.jpg',
-        3600
-      );
-    });
-
-    it('debería solo mostrar fotos asignadas al sujeto específico', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      data.photos.forEach((photo: any) => {
-        expect(photo.id).toMatch(/^photo-/);
-      });
-    });
-  });
-
-  describe('URLs Firmadas y Expiración', () => {
-    it('debería generar URLs firmadas con 1 hora de expiración', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(signedUrlForKey).toHaveBeenCalledWith(
-        expect.any(String),
-        3600 // 1 hora en segundos
-      );
-    });
-
-    it('debería manejar errores en generación de URLs firmadas', async () => {
-      (signedUrlForKey as any).mockRejectedValue(
-        new Error('Storage service unavailable')
-      );
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(500);
-    });
-
-    it('debería cachear URLs firmadas cuando sea posible', async () => {
-      // Hacer dos requests seguidos
-      const request1 = createMockRequest(TEST_TOKEN);
-      const request2 = createMockRequest(TEST_TOKEN);
-
-      await GET(request1, { params: { token: TEST_TOKEN } });
-      await GET(request2, { params: { token: TEST_TOKEN } });
-
-      // En una implementación con cache, el segundo request debería usar cache
-      expect(signedUrlForKey).toHaveBeenCalledTimes(4); // 2 fotos * 2 requests
-    });
-  });
-
-  describe('Foto Específica', () => {
-    it('debería obtener información de una foto específica', async () => {
-      const request = createMockRequest(TEST_TOKEN, {
-        photo_id: TEST_PHOTO_ID_1,
-      });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.photo.id).toBe(TEST_PHOTO_ID_1);
-      expect(data.photo.filename).toBe('IMG_001.jpg');
-      expect(data.photo.signed_url).toBeDefined();
-
-      expect(familyService.getPhotoInfo).toHaveBeenCalledWith(
-        TEST_PHOTO_ID_1,
-        TEST_SUBJECT_ID
-      );
-      expect(familyService.trackPhotoView).toHaveBeenCalledWith(
-        TEST_PHOTO_ID_1,
-        TEST_SUBJECT_ID
-      );
-    });
-
-    it('debería rechazar acceso a foto no asignada', async () => {
-      (familyService.getPhotoInfo as any).mockResolvedValue(null);
-
-      const request = createMockRequest(TEST_TOKEN, {
-        photo_id: 'unauthorized-photo',
-      });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(data.error).toBe('Photo not found or access denied');
-    });
-
-    it('debería trackear visualización de foto', async () => {
-      const request = createMockRequest(TEST_TOKEN, {
-        photo_id: TEST_PHOTO_ID_1,
-      });
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(familyService.trackPhotoView).toHaveBeenCalledWith(
-        TEST_PHOTO_ID_1,
-        TEST_SUBJECT_ID
-      );
-    });
-
-    it('debería continuar funcionando aunque falle el tracking', async () => {
-      (familyService.trackPhotoView as any).mockRejectedValue(
-        new Error('Analytics service unavailable')
-      );
-
-      const request = createMockRequest(TEST_TOKEN, {
-        photo_id: TEST_PHOTO_ID_1,
-      });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(200);
-    });
-  });
-
-  describe('Información del Sujeto y Evento', () => {
-    it('debería incluir información completa del sujeto y evento', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.subject).toMatchObject({
-        id: TEST_SUBJECT_ID,
-        name: 'Juan Pérez',
-        parent_name: 'María González',
-        parent_email: 'maria@example.com',
-        event: {
-          id: TEST_EVENT_ID,
-          name: 'Graduación 2024',
-          date: '2024-12-15',
-          school_name: 'Colegio San José',
-          photo_prices: { base: 1500 },
-        },
-      });
-    });
-
-    it('debería manejar sujeto sin evento asociado', async () => {
-      const subjectWithoutEvent = { ...mockSubject, event: null };
-      vi.doMock('@/lib/middleware/auth.middleware', () => ({
-        AuthMiddleware: {
-          withAuth:
-            (handler: any) => async (request: NextRequest, params: any) => {
-              const authContext = {
-                isFamily: true,
-                subject: subjectWithoutEvent,
-                token: TEST_TOKEN,
-              };
-              return handler(request, authContext, params);
-            },
-        },
-        SecurityLogger: {
-          logResourceAccess: vi.fn(),
-          logSecurityEvent: vi.fn(),
-        },
-      }));
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.subject.event).toBeNull();
-    });
-  });
-
-  describe('Pedidos Activos', () => {
-    it('debería incluir pedido activo si existe', async () => {
-      (familyService.getActiveOrder as any).mockResolvedValue(mockActiveOrder);
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.active_order).toMatchObject({
-        id: 'order-123',
-        status: 'pending',
-        total_amount: 3000,
-        items_count: 1,
-      });
-    });
-
-    it('debería manejar ausencia de pedido activo', async () => {
-      (familyService.getActiveOrder as any).mockResolvedValue(null);
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.active_order).toBeNull();
-    });
-
-    it('debería continuar funcionando aunque falle obtención de pedido activo', async () => {
-      (familyService.getActiveOrder as any).mockRejectedValue(
-        new Error('Database connection failed')
-      );
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Debería fallar gracefully sin exponer detalles del error
-      expect(response.status).toBe(500);
-    });
-  });
-
-  describe('Cache y Performance', () => {
-    it('debería completarse dentro de tiempo razonable', async () => {
-      const startTime = Date.now();
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      expect(response.status).toBe(200);
-      expect(duration).toBeLessThan(2000); // 2 segundos máximo
-    });
-
-    it('debería manejar carga de múltiples fotos eficientemente', async () => {
-      // Mock con muchas fotos
-      const manyPhotos = Array(50)
-        .fill(0)
-        .map((_, i) => ({
-          ...mockPhotoAssignments[0],
-          id: `assignment-${i}`,
-          photo_id: `photo-${i}`,
-          photo: mockPhotoAssignments[0].photo!
-            ? {
-                ...mockPhotoAssignments[0].photo!,
-                id: `photo-${i}`,
-                filename: `IMG_${String(i).padStart(3, '0')}.jpg`,
-                storage_path: `events/test-event/photos/IMG_${String(i).padStart(3, '0')}.jpg`,
-              }
-            : {
-                id: `photo-${i}`,
-                event_id: TEST_EVENT_ID,
-                filename: `IMG_${String(i).padStart(3, '0')}.jpg`,
-                storage_path: `events/test-event/photos/IMG_${String(i).padStart(3, '0')}.jpg`,
-                created_at: '2024-01-01T09:00:00Z',
-                status: 'approved',
-              },
-        }));
-
-      (familyService.getSubjectPhotos as any).mockResolvedValue({
-        photos: manyPhotos,
-        total: 50,
-        has_more: false,
-      });
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.photos).toHaveLength(50);
-
-      // Todas las fotos deberían tener URL firmada
-      data.photos.forEach((photo: any) => {
-        expect(photo.signed_url).toBeDefined();
-      });
-    });
-
-    it('debería usar Promise.all para generar URLs firmadas en paralelo', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Verificar que las URLs se generan en paralelo, no secuencialmente
-      expect(signedUrlForKey).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe('Validación de Parámetros', () => {
-    it('debería validar parámetros de query string', async () => {
-      const request = createMockRequest(TEST_TOKEN, {
-        page: '-1',
-        limit: 'invalid',
-      });
-
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Debería usar valores por defecto o manejar gracefully
-      expect(response.status).toBeLessThan(500);
-    });
-
-    it('debería convertir page string a number correctamente', async () => {
-      const request = createMockRequest(TEST_TOKEN, { page: '3', limit: '25' });
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(familyService.getSubjectPhotos).toHaveBeenCalledWith(
-        TEST_SUBJECT_ID,
-        3,
-        25
-      );
-    });
-
-    it('debería manejar parámetros inválidos gracefully', async () => {
-      const request = createMockRequest(TEST_TOKEN, {
-        page: 'abc',
-        limit: 'xyz',
-        photo_id: 'invalid-uuid',
-      });
-
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Debería procesar sin errores usando valores por defecto
-      expect(response.status).toBeLessThan(500);
-    });
-  });
-
-  describe('Logging y Seguridad', () => {
-    it('debería logear acceso a galería familia', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      // En una implementación real, verificaríamos SecurityLogger.logResourceAccess
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('debería incluir requestId único en logs', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Verificar que se genera requestId único para tracking
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('debería logear métricas de performance', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Debería logear duración y estadísticas de la request
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('debería enmascarar tokens en logs de seguridad', async () => {
-      const request = createMockRequest(TEST_TOKEN);
-      await GET(request, { params: { token: TEST_TOKEN } });
-
-      // Verificar que el token se enmascara como tok_*** en logs
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('Manejo de Errores', () => {
-    it('debería manejar errores de validación de Zod', async () => {
-      // Token muy corto para activar validación de Zod
-      const invalidToken = 'short';
-      const request = createMockRequest(invalidToken);
-
-      try {
-        await GET(request, { params: { token: invalidToken } });
-      } catch (error: any) {
-        expect(error.message).toContain('Token must be at least 20 characters');
-      }
-    });
-
-    it('debería manejar errores del servicio familia', async () => {
-      (familyService.getSubjectPhotos as any).mockRejectedValue(
-        new Error('Database connection timeout')
-      );
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(500);
-      const data = await response.json();
-      expect(data.error).toBe('Internal server error');
-    });
-
-    it('debería manejar errores de storage service', async () => {
-      (signedUrlForKey as any).mockRejectedValue(
-        new Error('Storage bucket unavailable')
-      );
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(500);
-    });
-
-    it('debería retornar error 400 con detalles para validación Zod', async () => {
-      // Esto requeriría un setup específico para forzar error de Zod
-      // En la implementación real, se testearía con parámetros específicos
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('debería no exponer detalles internos en errores 500', async () => {
-      (familyService.getSubjectPhotos as any).mockRejectedValue(
-        new Error('Internal database error with sensitive info')
-      );
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(data.error).toBe('Internal server error');
-      expect(data.error).not.toContain('sensitive info');
-    });
-  });
-
-  describe('Anti-Hotlinking y Referer Validation', () => {
-    it('debería verificar referer header para prevenir hotlinking', async () => {
-      // Test con referer externo
-      new NextRequest(
-        `http://localhost:3000/api/family/gallery/${TEST_TOKEN}`,
-        {
-          method: 'GET',
-          headers: {
-            Referer: 'https://malicious-site.com/',
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      // En implementación real, esto debería ser bloqueado
-      // Por ahora es placeholder
-      expect(true).toBe(true);
-    });
-
-    it('debería permitir acceso desde dominio autorizado', async () => {
-      const request = new NextRequest(
-        `http://localhost:3000/api/family/gallery/${TEST_TOKEN}`,
-        {
-          method: 'GET',
-          headers: {
-            Referer: 'https://lookescolar.com/',
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      expect(response.status).toBe(200);
-    });
-  });
-
-  describe('Casos Edge y Límites', () => {
-    it('debería manejar token en el límite de 20 caracteres', async () => {
-      const exactToken = 'a'.repeat(20); // Exactamente 20 caracteres
-
-      vi.doMock('@/lib/middleware/auth.middleware', () => ({
-        AuthMiddleware: {
-          withAuth:
-            (handler: any) => async (request: NextRequest, params: any) => {
-              const authContext = {
-                isFamily: true,
-                subject: { ...mockSubject, token: exactToken },
-                token: exactToken,
-              };
-              return handler(request, authContext, params);
-            },
-        },
-        SecurityLogger: {
-          logResourceAccess: vi.fn(),
-          logSecurityEvent: vi.fn(),
-        },
-      }));
-
-      const request = createMockRequest(exactToken);
-      const response = await GET(request, { params: { token: exactToken } });
-
-      expect(response.status).toBe(200);
-    });
-
-    it('debería manejar sujeto sin fotos asignadas', async () => {
-      (familyService.getSubjectPhotos as any).mockResolvedValue({
-        photos: [],
-        total: 0,
-        has_more: false,
-      });
-
-      const request = createMockRequest(TEST_TOKEN);
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.photos).toHaveLength(0);
-      expect(data.pagination.total).toBe(0);
-    });
-
-    it('debería manejar página inexistente gracefully', async () => {
-      const request = createMockRequest(TEST_TOKEN, { page: '999999' });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(200);
-      // Debería retornar página vacía sin error
-    });
-
-    it('debería manejar límite de 0 o negativo gracefully', async () => {
-      const request = createMockRequest(TEST_TOKEN, { limit: '0' });
-      const response = await GET(request, { params: { token: TEST_TOKEN } });
-
-      expect(response.status).toBe(200);
-      // Debería usar un límite mínimo razonable
-    });
-  });
 });

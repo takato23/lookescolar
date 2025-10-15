@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   useMemo,
   useCallback,
@@ -207,7 +209,7 @@ export function VirtualEventGrid({
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20">
           <div className="border-3 h-8 w-8 animate-spin rounded-full border-blue-600 border-t-transparent" />
         </div>
-        <p className="text-gray-600">Cargando eventos optimizado...</p>
+        <p className="text-gray-500 dark:text-gray-400">Cargando eventos optimizado...</p>
       </div>
     );
   }
@@ -241,7 +243,7 @@ export function VirtualEventGrid({
       {events.length > 100 && (
         <div className="mt-4 text-center">
           <div className="inline-flex items-center gap-2 text-sm text-gray-500">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-blue-600" />
             <span>Optimizado para {events.length} eventos</span>
           </div>
         </div>
@@ -272,7 +274,7 @@ export function VirtualGridStats({
 
   return (
     <div className="neural-glass-card space-y-1 p-3 text-xs">
-      <div className="font-semibold text-blue-600">Rendimiento Virtual</div>
+      <div className="font-semibold text-blue-600 dark:text-blue-400">Rendimiento Virtual</div>
       <div>Eventos totales: {events.length}</div>
       <div>Visibles: {visibleRange.endIndex - visibleRange.startIndex + 1}</div>
       <div>

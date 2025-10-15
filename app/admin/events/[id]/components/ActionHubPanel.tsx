@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { MotionDiv } from '@/lib/dynamic-imports';
 import {
   Upload,
@@ -15,6 +15,7 @@ import {
   Star,
   ChevronRight,
   Brain,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,8 @@ import {
   WorkflowPriority,
 } from '@/lib/stores/event-workflow-store';
 import { useRouter } from 'next/navigation';
+import { ShareManager } from '@/components/admin/share/ShareManager';
+import { toast } from 'sonner';
 
 type ActionClickHandler = (arg: WorkflowAction) => void;
 
@@ -40,6 +43,48 @@ export const ActionHubPanel = memo(function ActionHubPanel({
   onActionClick,
 }: ActionHubPanelProps) {
   const router = useRouter();
+  const [isShareManagerOpen, setShareManagerOpen] = useState(false);
+  const [shareRefreshKey, setShareRefreshKey] = useState(0);
+  const [isCreatingShare, setIsCreatingShare] = useState(false);
+
+  const handleCreateEventShare = useCallback(async () => {
+    if (!eventId) return;
+    try {
+      setIsCreatingShare(true);
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shareType: 'event', eventId }),
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => null);
+        throw new Error(detail?.error || 'No se pudo crear el enlace');
+      }
+      const data = await res.json();
+      const shareUrl: string =
+        data?.links?.store || data?.links?.gallery || '';
+      if (shareUrl) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+        } catch {}
+      }
+      toast.success('Enlace del evento creado', {
+        description: shareUrl ? 'Copiado al portapapeles.' : undefined,
+        action: {
+          label: 'Ver gestor',
+          onClick: () => setShareManagerOpen(true),
+        },
+      });
+      setShareRefreshKey(Date.now());
+      setShareManagerOpen(true);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'No se pudo crear el enlace'
+      );
+    } finally {
+      setIsCreatingShare(false);
+    }
+  }, [eventId]);
 
   const priorityConfig = {
     [WorkflowPriority.CRITICAL]: {
@@ -113,6 +158,14 @@ export const ActionHubPanel = memo(function ActionHubPanel({
       description: 'Interfaz tradicional de fotos',
     },
     {
+      id: 'share-manager',
+      title: 'Compartir Evento',
+      icon: Link2,
+      color: 'rose',
+      description: 'Gestioná enlaces públicos y tokens',
+      onClick: () => setShareManagerOpen(true),
+    },
+    {
       id: 'qr-codes',
       title: 'Códigos QR',
       icon: QrCode,
@@ -151,7 +204,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
       {/* Priority Actions */}
       {nextActions.length > 0 && (
         <div className="mb-6 space-y-3">
-          <h4 className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+          <h4 className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm font-medium">
             <Star className="h-4 w-4" />
             Acciones Prioritarias
           </h4>
@@ -194,13 +247,13 @@ export const ActionHubPanel = memo(function ActionHubPanel({
                         </Badge>
                       </div>
 
-                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 line-clamp-2 text-xs">
                         {action.description}
                       </p>
 
                       <div className="mt-1 flex items-center gap-2">
-                        <Clock className="text-muted-foreground h-3 w-3" />
-                        <span className="text-muted-foreground text-xs">
+                        <Clock className="text-gray-500 dark:text-gray-400 h-3 w-3" />
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">
                           ~{action.estimatedTime} min
                         </span>
                         {action.automatable && (
@@ -211,7 +264,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
                       </div>
                     </div>
 
-                    <ChevronRight className="text-muted-foreground h-4 w-4 flex-shrink-0" />
+                    <ChevronRight className="text-gray-500 dark:text-gray-400 h-4 w-4 flex-shrink-0" />
                   </div>
                 </Button>
               </MotionDiv>
@@ -222,7 +275,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
 
       {/* Quick Actions Grid */}
       <div className="space-y-3">
-        <h4 className="text-muted-foreground text-sm font-medium">
+        <h4 className="text-gray-500 dark:text-gray-400 text-sm font-medium">
           Acciones Rápidas
         </h4>
 
@@ -237,7 +290,15 @@ export const ActionHubPanel = memo(function ActionHubPanel({
               <Button
                 variant="outline"
                 className="glass-fab h-auto w-full flex-col gap-2 p-3 transition-transform hover:scale-105"
-                onClick={() => router.push(action.href)}
+                onClick={() => {
+                  if (action.onClick) {
+                    action.onClick();
+                    return;
+                  }
+                  if (action.href) {
+                    router.push(action.href);
+                  }
+                }}
               >
                 <action.icon className={`h-5 w-5 text-${action.color}-500`} />
                 <span className="text-xs font-medium">{action.title}</span>
@@ -261,11 +322,23 @@ export const ActionHubPanel = memo(function ActionHubPanel({
               IA puede automatizar esta acción
             </span>
           </div>
-          <p className="text-muted-foreground mt-1 text-xs">
-            {nextActions.find((action) => action.aiSuggestion)?.aiSuggestion}
-          </p>
-        </MotionDiv>
-      )}
+      <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
+        {nextActions.find((action) => action.aiSuggestion)?.aiSuggestion}
+      </p>
+    </MotionDiv>
+  )}
+
+      <ShareManager
+        eventId={eventId}
+        open={isShareManagerOpen}
+        onOpenChange={setShareManagerOpen}
+        onRequestCreateShare={handleCreateEventShare}
+        createButtonLabel="Nuevo enlace del evento"
+        createButtonLoading={isCreatingShare}
+        emptyStateMessage="Generá el primer enlace para compartir la galería con las familias."
+        contextDescription="Gestioná enlaces públicos y tokens del evento sin salir del hub."
+        refreshKey={shareRefreshKey}
+      />
     </MotionDiv>
   );
 });

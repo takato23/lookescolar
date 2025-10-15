@@ -10,12 +10,12 @@ export const GET = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
       const requestId = crypto.randomUUID();
 
       try {
-        const { id: eventId } = await params;
+        const { id: eventId } = params;
         const url = new URL(req.url);
         const action = url.searchParams.get('action');
         const templateId = url.searchParams.get('templateId');
@@ -103,12 +103,12 @@ export const POST = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
       const requestId = crypto.randomUUID();
 
       try {
-        const { id: eventId } = await params;
+        const { id: eventId } = params;
 
         let body;
         try {

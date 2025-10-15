@@ -520,8 +520,8 @@ export default function PhotoFilters({
                 className={cn(
                   "transition-all duration-200",
                   filters.withFolder === false
-                    ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700"
-                    : "bg-white/60 dark:bg-slate-800/60 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                    ? "bg-primary-50 dark:bg-primary-950/30 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-800"
+                    : "bg-white/60 dark:bg-slate-800/60 hover:bg-primary-50 dark:hover:bg-primary-950/20"
                 )}
               >
                 <FolderIcon className="h-4 w-4 mr-2" />
@@ -579,7 +579,7 @@ export default function PhotoFilters({
               </Badge>
             )}
             {filters.withFolder === false && (
-              <Badge variant="outline" className="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 border-orange-300 dark:border-orange-700">
+              <Badge variant="outline" className="bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-800">
                 <FolderIcon className="h-3 w-3 mr-1" />
                 Sin carpeta
               </Badge>

@@ -75,20 +75,20 @@ const QRTaggingDemo: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-muted p-6">
       <div className="mx-auto max-w-7xl">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-foreground">
             Demo: QR Tagging System
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
             Prueba el sistema integrado de etiquetado QR para asignar fotos a
             estudiantes.
           </p>
 
-          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
             <h2 className="mb-2 font-semibold text-blue-900">Instrucciones:</h2>
-            <ol className="list-inside list-decimal space-y-1 text-sm text-blue-800">
+            <ol className="list-inside list-decimal space-y-1 text-sm text-blue-800 dark:text-blue-200">
               <li>
                 Haz clic en "Modo QR" para activar el etiquetado por código QR
               </li>

@@ -5,8 +5,8 @@ import crypto from 'crypto';
 
 // PATCH /api/admin/share/[token]
 // body: { action: 'deactivate' | 'rotate' }
-export const PATCH = withAdminAuth(async (req: NextRequest, { params }: { params: Promise<{ token: string }> }) => {
-  const { token } = await params;
+export const PATCH = withAdminAuth(async (req: NextRequest, { params }: { params: { token: string } }) => {
+  const { token } = params;
   const body = await req.json().catch(() => ({}));
   const action = body?.action as 'deactivate' | 'rotate' | undefined;
 

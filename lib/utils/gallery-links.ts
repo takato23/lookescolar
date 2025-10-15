@@ -38,7 +38,8 @@ export function generateFamilyGalleryLink({
 export function generateQRLink(token: string, origin?: string): string {
   const baseOrigin =
     origin || (typeof window !== 'undefined' ? window.location.origin : '');
-  return `${baseOrigin}/api/qr?token=${token}`;
+  const encodedToken = encodeURIComponent(token);
+  return `${baseOrigin}/access?token=${encodedToken}`;
 }
 
 /**

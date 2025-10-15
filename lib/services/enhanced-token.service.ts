@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { ensureAliasForToken } from '@/lib/services/token-alias.service';
 import {
   generateSecureToken,
   maskToken,
@@ -43,6 +44,10 @@ export interface EnhancedTokenData {
   studentIds?: string[];
   familyEmail?: string;
   eventId?: string;
+  alias?: {
+    alias: string;
+    shortCode: string;
+  };
 }
 
 export interface TokenGenerationOptions {
@@ -147,6 +152,19 @@ export class EnhancedTokenService {
     // Also maintain backward compatibility with subject_tokens
     await this.createSubjectToken(studentId, token, expiresAt);
 
+    try {
+      const aliasRecord = await ensureAliasForToken(tokenData.id);
+      tokenData.alias = {
+        alias: aliasRecord.alias,
+        shortCode: aliasRecord.short_code,
+      };
+    } catch (error) {
+      console.warn('[EnhancedTokenService] Failed to ensure alias for student token', {
+        tokenId: tokenData.id,
+        error,
+      });
+    }
+
     console.log({
       event: 'student_token_generated',
       studentId: maskToken(studentId),
@@ -234,6 +252,19 @@ export class EnhancedTokenService {
     // Create individual subject tokens for backward compatibility
     for (const studentId of studentIds) {
       await this.createSubjectToken(studentId, token, expiresAt);
+    }
+
+    try {
+      const aliasRecord = await ensureAliasForToken(tokenData.id);
+      tokenData.alias = {
+        alias: aliasRecord.alias,
+        shortCode: aliasRecord.short_code,
+      };
+    } catch (error) {
+      console.warn('[EnhancedTokenService] Failed to ensure alias for family token', {
+        tokenId: tokenData.id,
+        error,
+      });
     }
 
     console.log({

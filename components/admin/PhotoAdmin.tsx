@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   useState,
   useEffect,
@@ -133,6 +135,31 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Icons
 import {
@@ -169,7 +196,10 @@ import {
   Zap,
   AlertCircle,
   ArrowLeft,
-  
+  Edit3,
+  Move,
+  ClipboardPaste,
+  FileUser,
 } from 'lucide-react';
 import { PhotoUploadButton } from './PhotoUploadButton';
 import EventSelector from './EventSelector';
@@ -177,6 +207,9 @@ import EventSelector from './EventSelector';
 // 🚀 FASE 2: Importar componentes de contexto de evento
 import { EventContextBanner } from '@/components/admin/shared/EventContextBanner';
 import { StudentManagement } from '@/components/admin/shared/StudentManagement';
+import { ShareManager } from '@/components/admin/share/ShareManager';
+import { AssignFolderPhotos } from '@/app/admin/events/[id]/library/components/AssignFolderPhotos';
+import BatchStudentManagement from '@/components/admin/BatchStudentManagement';
 
 // Types (optimized for minimal egress)
 interface OptimizedFolder {
@@ -395,6 +428,29 @@ const api = {
         throw new Error(data.error || 'Failed to delete folder');
       return true;
     },
+    copy: async (
+      folderId: string,
+      payload: {
+        target_parent_id?: string | null;
+        new_name?: string;
+        include_subfolders?: boolean;
+        duplicate_assets?: boolean;
+      }
+    ) => {
+      const response = await fetch(
+        createApiUrl(`/api/admin/folders/${folderId}/copy`),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to copy folder');
+      }
+      return data;
+    },
   },
   events: {
     listSimple: async (
@@ -422,11 +478,11 @@ const api = {
         end_date?: string;
         file_type?: string;
       }
-    ): Promise<{
+    ): {
       assets: OptimizedAsset[];
       count: number;
       hasMore: boolean;
-    }> => {
+    } => {
       const params = new URLSearchParams({
         folder_id: folderId,
         limit: String(Math.min(options?.limit || 50, 100)), // Allow up to 100
@@ -471,11 +527,11 @@ const api = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
       }
-    ): Promise<{
+    ): {
       photos: OptimizedAsset[];
       count: number;
       hasMore: boolean;
-    }> => {
+    } => {
       const params = new URLSearchParams({
         page: String(
           Math.floor((options?.offset || 0) / (options?.limit || 50)) + 1
@@ -569,6 +625,17 @@ const FolderTreePanel: React.FC<{
   isLoading?: boolean;
   eventId?: string | null;
   onOpenStudentManagement?: () => void;
+  onFolderAction?: (
+    action: 'rename' | 'move' | 'delete' | 'copy' | 'paste',
+    folder: OptimizedFolder
+  ) => void;
+  clipboard?: {
+    hasData: boolean;
+    sourceFolderId?: string;
+    sourceName?: string;
+  };
+  onPasteToRoot?: () => void;
+  onOpenBatchStudentManagement?: () => void;
 }> = ({
   folders,
   selectedFolderId,
@@ -578,6 +645,10 @@ const FolderTreePanel: React.FC<{
   isLoading,
   eventId,
   onOpenStudentManagement,
+  onFolderAction,
+  clipboard,
+  onPasteToRoot,
+  onOpenBatchStudentManagement,
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
@@ -730,6 +801,14 @@ const FolderTreePanel: React.FC<{
     newFolderName: string;
     setNewFolderName: (name: string) => void;
     onCreateFolder: () => void;
+    onFolderAction?: (
+      action: 'rename' | 'move' | 'delete' | 'copy' | 'paste',
+      folder: OptimizedFolder
+    ) => void;
+    clipboard?: {
+      hasData: boolean;
+      sourceFolderId?: string;
+    };
   }> = ({
     folder,
     depth = 0,
@@ -745,6 +824,8 @@ const FolderTreePanel: React.FC<{
     newFolderName,
     setNewFolderName,
     onCreateFolder,
+    onFolderAction,
+    clipboard,
   }) => {
     // If filtering and this node isn't in the matched path, don't render this node
     if (filterActive && !matchedIds.has(folder.id)) return null;
@@ -764,7 +845,7 @@ const FolderTreePanel: React.FC<{
       <div>
         <div
           className={cn(
-            'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-100',
+            'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted',
             isSelected && 'bg-blue-100 text-blue-700',
             isOver &&
               'scale-105 transform bg-blue-50 shadow-sm ring-2 ring-inset ring-blue-400',
@@ -780,7 +861,7 @@ const FolderTreePanel: React.FC<{
                 e.stopPropagation();
                 onToggleExpand(folder.id);
               }}
-              className="rounded p-0.5 hover:bg-gray-200"
+              className="rounded p-0.5 hover:bg-muted"
             >
               {isExpanded ? (
                 <ChevronDown className="h-3 w-3" />
@@ -793,7 +874,7 @@ const FolderTreePanel: React.FC<{
           )}
 
           {isOver ? (
-            <FolderOpen className="h-4 w-4 text-blue-600" />
+            <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           ) : (
             <Folder className="h-4 w-4 text-gray-500" />
           )}
@@ -808,8 +889,8 @@ const FolderTreePanel: React.FC<{
               className={cn(
                 'mr-1 px-1 text-[10px]',
                 folder.scope === 'event' && 'border-blue-200 text-blue-700',
-                folder.scope === 'global' && 'border-gray-300 text-gray-700',
-                folder.scope === 'legacy' && 'border-amber-200 text-amber-700',
+                folder.scope === 'global' && 'border-border text-foreground',
+                folder.scope === 'legacy' && 'border-primary-200 text-primary-700',
                 folder.scope === 'template' &&
                   'border-purple-200 text-purple-700'
               )}
@@ -828,12 +909,85 @@ const FolderTreePanel: React.FC<{
             </Badge>
           )}
 
+          {onFolderAction && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="rounded p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"
+                aria-label="Acciones de carpeta"
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={4}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  onFolderAction?.('copy', folder);
+                }}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={
+                  !clipboard?.hasData || clipboard?.sourceFolderId === folder.id
+                }
+                onSelect={(event) => {
+                  event.preventDefault();
+                  if (!clipboard?.hasData) return;
+                  onFolderAction?.('paste', folder);
+                }}
+              >
+                <ClipboardPaste className="mr-2 h-4 w-4" />
+                Pegar aquí
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  onFolderAction('rename', folder);
+                }}
+                >
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Renombrar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    onFolderAction('move', folder);
+                  }}
+                >
+                  <Move className="mr-2 h-4 w-4" />
+                  Mover
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={!folder.parent_id}
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    if (!folder.parent_id) return;
+                    onFolderAction('delete', folder);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
           <button
             onClick={(e) => {
               e.stopPropagation();
               setIsCreating(folder.id);
             }}
-            className="rounded p-0.5 opacity-0 hover:bg-gray-200 group-hover:opacity-100"
+            className="rounded p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"
           >
             <Plus className="h-3 w-3" />
           </button>
@@ -893,6 +1047,8 @@ const FolderTreePanel: React.FC<{
                 newFolderName={newFolderName}
                 setNewFolderName={setNewFolderName}
                 onCreateFolder={onCreateFolder}
+                onFolderAction={onFolderAction}
+                clipboard={clipboard}
               />
             ))}
           </div>
@@ -970,16 +1126,35 @@ const FolderTreePanel: React.FC<{
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setIsCreating(selectedFolderId || 'root')}
+            className="h-8 shrink-0 px-2"
+            title="Nueva carpeta"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          {clipboard?.hasData && (
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setIsCreating(selectedFolderId || 'root')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPasteToRoot?.();
+              }}
               className="h-8 shrink-0 px-2"
-              title="Nueva carpeta"
+              title={
+                clipboard?.sourceName
+                  ? `Pegar "${clipboard.sourceName}" en la raíz`
+                  : 'Pegar en la raíz'
+              }
+              disabled={!onPasteToRoot}
             >
-              <Plus className="h-4 w-4" />
+              <ClipboardPaste className="h-4 w-4" />
             </Button>
-            {/* 🚀 FASE 2: Botón de gestión de estudiantes cuando hay contexto de evento */}
+          )}
+          {/* 🚀 FASE 2: Botón de gestión de estudiantes cuando hay contexto de evento */}
             {eventId && (
               <Button
                 size="sm"
@@ -989,6 +1164,17 @@ const FolderTreePanel: React.FC<{
                 title="Gestión de estudiantes"
               >
                 <Users className="h-4 w-4" />
+              </Button>
+            )}
+            {eventId && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onOpenBatchStudentManagement?.()}
+                className="h-8 shrink-0 px-2 text-amber-600 hover:text-amber-800"
+                title="Importar estudiantes / autogenerar carpetas"
+              >
+                <FileUser className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -1063,6 +1249,7 @@ const FolderTreePanel: React.FC<{
               newFolderName={newFolderName}
               setNewFolderName={setNewFolderName}
               onCreateFolder={handleCreateFolder}
+              clipboard={clipboard}
             />
           ))}
 
@@ -1340,7 +1527,7 @@ const PhotoGridPanel: React.FC<{
           'min-h-[120px] sm:min-h-[140px]',
           isSelected
             ? 'border-blue-500 bg-blue-50 shadow-md'
-            : 'border-transparent bg-white hover:border-gray-300 hover:shadow-sm'
+            : 'border-transparent bg-white hover:border-border hover:shadow-sm'
         )}
         ref={draggable.setNodeRef}
         style={style}
@@ -1356,18 +1543,18 @@ const PhotoGridPanel: React.FC<{
             'absolute left-2 top-2 z-10 flex h-7 w-7 touch-manipulation items-center justify-center rounded border-2 shadow-sm transition-all sm:h-6 sm:w-6',
             isSelected
               ? 'scale-105 transform border-blue-500 bg-blue-500 text-white'
-              : 'border-gray-400 bg-white group-hover:border-gray-600 group-hover:bg-gray-50'
+              : 'border-gray-400 bg-white group-hover:border-gray-600 group-hover:bg-muted'
           )}
         >
           {isSelected ? (
             <CheckSquare className="h-4 w-4" />
           ) : (
-            <Square className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+            <Square className="h-4 w-4 text-gray-400 group-hover:text-muted-foreground" />
           )}
         </div>
 
         {/* Image preview */}
-        <div className="relative flex aspect-square items-center justify-center bg-gray-100">
+        <div className="relative flex aspect-square items-center justify-center bg-muted">
           {previewUrl ? (
             <SafeImage
               src={previewUrl}
@@ -1379,7 +1566,7 @@ const PhotoGridPanel: React.FC<{
             <ImageIcon className="h-8 w-8 text-gray-400" />
           )}
           {!previewUrl && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
               {asset.status === 'processing' && (
                 <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
               )}
@@ -1395,7 +1582,7 @@ const PhotoGridPanel: React.FC<{
 
         {/* Filename */}
         <div className="p-2">
-          <p className="truncate text-xs text-gray-600" title={asset.filename}>
+          <p className="truncate text-xs text-gray-500 dark:text-gray-400" title={asset.filename}>
             {asset.filename}
           </p>
         </div>
@@ -1412,7 +1599,7 @@ const PhotoGridPanel: React.FC<{
             <div
               key={asset.id}
               className={cn(
-                'flex cursor-pointer touch-manipulation items-center gap-3 p-3 hover:bg-gray-50',
+                'flex cursor-pointer touch-manipulation items-center gap-3 p-3 hover:bg-muted',
                 'min-h-[56px]', // Better mobile touch target
                 isSelected && 'bg-blue-50'
               )}
@@ -1425,7 +1612,7 @@ const PhotoGridPanel: React.FC<{
                   'flex h-7 w-7 touch-manipulation items-center justify-center rounded border-2 shadow-sm transition-all sm:h-6 sm:w-6',
                   isSelected
                     ? 'scale-105 transform border-blue-500 bg-blue-500 text-white'
-                    : 'border-gray-400 bg-white hover:border-gray-600 hover:bg-gray-50'
+                    : 'border-gray-400 bg-white hover:border-gray-600 hover:bg-muted'
                 )}
               >
                 {isSelected ? (
@@ -1435,7 +1622,7 @@ const PhotoGridPanel: React.FC<{
                 )}
               </div>
 
-              <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
                 <SafeImage
                   src={asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path)}
                   alt={asset.filename}
@@ -1445,7 +1632,7 @@ const PhotoGridPanel: React.FC<{
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">
+                <p className="truncate text-sm font-medium text-foreground">
                   {asset.filename}
                 </p>
                 <p className="text-xs text-gray-500">
@@ -1551,7 +1738,7 @@ const PhotoGridPanel: React.FC<{
             </Tabs>
             {/* Selection tip for new users */}
             {selectedAssetIds.size === 0 && assets.length > 0 && (
-              <div className="rounded bg-gray-50/90 px-2 py-1 text-xs text-gray-600 backdrop-blur">
+              <div className="rounded bg-muted/90 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 backdrop-blur">
                 <span className="hidden sm:inline">
                   💡 Clic • ESC limpiar • Shift rango
                 </span>
@@ -1568,9 +1755,9 @@ const PhotoGridPanel: React.FC<{
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="overflow-hidden rounded-lg border">
-                <div className="aspect-square animate-pulse bg-gray-100" />
+                <div className="aspect-square animate-pulse bg-muted" />
                 <div className="p-2">
-                  <div className="h-3 w-3/4 animate-pulse rounded bg-gray-200" />
+                  <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
                 </div>
               </div>
             ))}
@@ -1648,13 +1835,13 @@ const InspectorPanel: React.FC<{
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Selected:</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Selected:</span>
                     <span className="text-sm font-medium">
                       {selectedAssets.length} files
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Tamaño total:</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Tamaño total:</span>
                     <span className="text-sm font-medium">
                       {formatFileSize(totalSize)}
                     </span>
@@ -1663,7 +1850,7 @@ const InspectorPanel: React.FC<{
                     (a) => a.status && a.status !== 'ready'
                   ) && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Estado:</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Estado:</span>
                       <div className="flex gap-1">
                         {(
                           ['ready', 'processing', 'error', 'pending'] as const
@@ -1705,7 +1892,7 @@ const InspectorPanel: React.FC<{
                   </h4>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Sesión:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Sesión:</span>
                       <span
                         className={cn(
                           'font-medium',
@@ -1719,12 +1906,12 @@ const InspectorPanel: React.FC<{
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Solicitudes:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Solicitudes:</span>
                       <span className="font-medium">
                         {egressMetrics.totalRequests}
                       </span>
                     </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200">
+                    <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
                       <div
                         className={cn(
                           'h-1.5 rounded-full transition-all',
@@ -1753,7 +1940,7 @@ const InspectorPanel: React.FC<{
                   <h4 className="font-medium">Detalles</h4>
 
                   {(selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)) && (
-                    <div className="aspect-square overflow-hidden rounded bg-gray-100">
+                    <div className="aspect-square overflow-hidden rounded bg-muted">
                       <SafeImage
                         src={selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)}
                         alt={selectedAssets[0].filename}
@@ -1765,7 +1952,7 @@ const InspectorPanel: React.FC<{
 
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Nombre de archivo:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Nombre de archivo:</span>
                       <span
                         className="max-w-24 truncate font-medium"
                         title={selectedAssets[0].filename}
@@ -1774,13 +1961,13 @@ const InspectorPanel: React.FC<{
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Tamaño:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Tamaño:</span>
                       <span className="font-medium">
                         {formatFileSize(selectedAssets[0].file_size)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Creado:</span>
+                      <span className="text-gray-500 dark:text-gray-400">Creado:</span>
                       <span className="font-medium">
                         {new Date(
                           selectedAssets[0].created_at
@@ -1871,10 +2058,24 @@ export default function PhotoAdmin({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
+  const initialFolderParam = (searchParams.get('folder_id') ||
+    searchParams.get('folderId')) as string | null;
+  const initialFolderParamRef = useRef<string | null>(initialFolderParam || null);
+
   // State
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(
+    () => initialFolderParamRef.current
+  );
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
     new Set()
+  );
+  const [folderClipboard, setFolderClipboard] = useState<
+    { folderId: string; eventId: string | null; folderName: string } | null
+  >(null);
+  const initialStudentParam = (searchParams.get('student_id') ||
+    searchParams.get('studentId')) as string | null;
+  const [studentFilter, setStudentFilter] = useState<string | null>(
+    initialStudentParam || null
   );
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -1905,9 +2106,38 @@ export default function PhotoAdmin({
   ] = useState<'all'>('all');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showEscaparateManager, setShowEscaparateManager] = useState(false);
+  const [isShareManagerOpen, setShareManagerOpen] = useState(false);
+  const [shareRefreshKey, setShareRefreshKey] = useState(0);
+
+  // Event selection state
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
+    const fromLocalStorage =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('le:lastEventId')
+        : null;
+    const fromParams = (searchParams.get('event_id') ||
+      searchParams.get('eventId')) as string | null;
+
+    // Quick validation: check if it's the known invalid ID and clear immediately
+    if (fromLocalStorage === '83070ba2-738e-4038-ab5e-0c42fe4a2880') {
+      console.warn(
+        'Detected invalid event ID in localStorage, clearing immediately'
+      );
+      if (typeof window !== 'undefined')
+        localStorage.removeItem('le:lastEventId');
+      return fromParams || null;
+    }
+
+    const result = fromLocalStorage || fromParams || null;
+    return result;
+  });
+
   // 🚀 FASE 2: Estado para gestión de estudiantes
   const [showStudentManagement, setShowStudentManagement] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showBatchStudentModal, setShowBatchStudentModal] = useState(false);
+  const [batchCourses, setBatchCourses] = useState<any[]>([]);
+  const [isLoadingBatchCourses, setIsLoadingBatchCourses] = useState(false);
   // Share creation modal state
   const [showCreateShareModal, setShowCreateShareModal] = useState(false);
   const [sharePassword, setSharePassword] = useState('');
@@ -1915,9 +2145,26 @@ export default function PhotoAdmin({
   const [shareAllowDownload, setShareAllowDownload] = useState(false);
   const [shareAllowComments, setShareAllowComments] = useState(false);
   const [isCreatingShare, setIsCreatingShare] = useState(false);
-  // Share manager state
-  const [shares, setShares] = useState<any[]>([]);
-  const [loadingShares, setLoadingShares] = useState(false);
+  const [renameState, setRenameState] = useState<{ folder: any } | null>(null);
+  const [renameName, setRenameName] = useState('');
+  const [moveState, setMoveState] = useState<
+    { folder: any; targetParentId: string | null } | null
+  >(null);
+  const [moveTargetId, setMoveTargetId] = useState<string>('__root__');
+  const [deleteState, setDeleteState] = useState<{ folder: any } | null>(null);
+
+  const syncQueryParams = useCallback(
+    (updater: (params: URLSearchParams) => void) => {
+      if (typeof window === 'undefined') return;
+      const url = new URL(window.location.href);
+      const before = url.search;
+      updater(url.searchParams);
+      if (url.search !== before) {
+        window.history.replaceState({}, '', url.toString());
+      }
+    },
+    []
+  );
 
   // Settings state - persisted in localStorage
   const [settings, setSettings] = useState(() => {
@@ -2087,8 +2334,9 @@ export default function PhotoAdmin({
     setMaxSizeMB('');
     setStartDate('');
     setEndDate('');
+    setStudentFilter(null);
     // fileTypeFilter removed
-  }, []);
+  }, [setStudentFilter]);
 
   // Settings handlers
   const updateSettings = useCallback(
@@ -2130,34 +2378,21 @@ export default function PhotoAdmin({
     } catch (e) {
       console.warn('Error clearing event context:', e);
     }
-  }, []);
+    setSelectedFolderId(null);
+    setSelectedAssetIds(new Set());
+    setRenameState(null);
+    setMoveState(null);
+    setDeleteState(null);
+    initialFolderParamRef.current = null;
+  }, [
+    setSelectedEventId,
+    setSelectedFolderId,
+    setSelectedAssetIds,
+    setRenameState,
+    setMoveState,
+    setDeleteState,
+  ]);
 
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
-    const fromLocalStorage =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('le:lastEventId')
-        : null;
-    const fromParams = (searchParams.get('event_id') ||
-      searchParams.get('eventId')) as string | null;
-
-    // Quick validation: check if it's the known invalid ID and clear immediately
-    if (fromLocalStorage === '83070ba2-738e-4038-ab5e-0c42fe4a2880') {
-      console.warn(
-        'Detected invalid event ID in localStorage, clearing immediately'
-      );
-      if (typeof window !== 'undefined')
-        localStorage.removeItem('le:lastEventId');
-      return fromParams || null;
-    }
-
-    const result = fromLocalStorage || fromParams || null;
-    console.debug('Initial selectedEventId:', {
-      fromLocalStorage,
-      fromParams,
-      result,
-    });
-    return result;
-  });
   const [eventsList, setEventsList] = useState<
     Array<{ id: string; name: string }>
   >([]);
@@ -2169,8 +2404,12 @@ export default function PhotoAdmin({
       searchParams.get('codeId')) as string | null;
     const course = (searchParams.get('course_id') ||
       searchParams.get('courseId')) as string | null;
-    if (student && !searchTerm) setSearchTerm(student);
-    else if (course && !searchTerm) setSearchTerm(course);
+    if (student && !searchTerm) {
+      setSearchTerm(student);
+      setStudentFilter(student);
+    } else if (course && !searchTerm) {
+      setSearchTerm(course);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2179,6 +2418,13 @@ export default function PhotoAdmin({
   const [egressMetrics, setEgressMetrics] = useState<EgressMetrics>(
     egressMonitor.getMetrics()
   );
+
+  useEffect(() => {
+    const trimmed = searchTerm.trim();
+    if (studentFilter && (!trimmed || trimmed !== studentFilter)) {
+      setStudentFilter(null);
+    }
+  }, [searchTerm, studentFilter]);
 
   // Update egress metrics periodically
   useEffect(() => {
@@ -2222,83 +2468,159 @@ export default function PhotoAdmin({
     suspense: true,
   });
 
-  // Auto-select first folder when list loads
-  useEffect(() => {
-    console.debug('Folder auto-selection:', {
-      selectedFolderId,
-      foldersCount: folders?.length,
-      firstFolderId: folders?.[0]?.id,
-      firstFolderName: folders?.[0]?.name,
-    });
-    if (!selectedFolderId && folders && folders.length > 0) {
-      console.log(
-        'Auto-selecting first folder:',
-        folders[0].name,
-        folders[0].id
-      );
-      setSelectedFolderId(folders[0].id);
-    }
-  }, [folders, selectedFolderId]);
-
   // Load events for selector, memoize last event
   useEffect(() => {
+    let mounted = true;
+    
     (async () => {
       try {
         const list = await api.events.listSimple(100);
-        setEventsList(list);
+        if (!mounted) return;
+        
+        let finalList = [...list];
 
-        // Validate selectedEventId after events are loaded
+        // If we have a selectedEventId that's not in the list, try to fetch it
         if (
           selectedEventId &&
           !list.some((event) => event.id === selectedEventId)
         ) {
-          console.warn(
-            'Selected event ID is invalid, clearing localStorage and selecting first event',
-            {
-              invalidId: selectedEventId,
-              availableEvents: list.map((e) => e.id),
-            }
+          console.log(
+            'Selected event not in initial list, attempting to fetch event details',
+            selectedEventId
           );
 
-          // Force clear all related localStorage items
-          localStorage.removeItem('le:lastEventId');
-          localStorage.removeItem('photoAdminSettings');
-
-          // Clear React Query cache for invalid queries
-          if (typeof window !== 'undefined' && (window as any).queryClient) {
-            (window as any).queryClient.clear();
+          // Try to fetch the specific event details
+          try {
+            const response = await fetch(
+              createApiUrl(`/api/admin/events/${selectedEventId}`)
+            );
+            if (response.ok) {
+              const eventData = await response.json();
+              if (eventData.event) {
+                // Add the missing event to the list
+                const missingEvent = {
+                  id: eventData.event.id,
+                  name: eventData.event.name || 'Sin nombre',
+                };
+                finalList = [missingEvent, ...list];
+                console.log('Successfully added missing event to list', missingEvent);
+              }
+            }
+          } catch (fetchError) {
+            console.warn('Could not fetch specific event details:', fetchError);
+            // If we can't fetch the event, don't clear the selection
+            // The user explicitly passed this event ID
           }
+        }
 
-          // Select the first event if available
-          if (list.length > 0) {
-            setSelectedEventId(list[0].id);
-            localStorage.setItem('le:lastEventId', list[0].id);
-          } else {
-            setSelectedEventId(null);
-          }
-        } else if (!selectedEventId && list.length > 0) {
-          // Auto-select first event if none is selected
-          setSelectedEventId(list[0].id);
-          localStorage.setItem('le:lastEventId', list[0].id);
+        if (!mounted) return;
+        setEventsList(finalList);
+
+        // Only auto-select first event if no event is selected at all
+        if (!selectedEventId && finalList.length > 0) {
+          setSelectedEventId(finalList[0].id);
+          setSelectedFolderId(null);
+          setSelectedAssetIds(new Set());
+          setRenameState(null);
+          setMoveState(null);
+          setDeleteState(null);
+          initialFolderParamRef.current = null;
         }
       } catch (e) {
-        console.warn('Failed to load events list');
+        console.warn('Failed to load events list:', e);
       }
     })();
-  }, [selectedEventId]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Intentional empty deps to avoid refetch loops
+
+  // Handle when selectedEventId changes - check if we need to fetch it
+  useEffect(() => {
+    if (selectedEventId && eventsList.length > 0 && !eventsList.some(e => e.id === selectedEventId)) {
+      // Event not in list, try to fetch it
+      (async () => {
+        try {
+          const response = await fetch(
+            createApiUrl(`/api/admin/events/${selectedEventId}`)
+          );
+          if (response.ok) {
+            const eventData = await response.json();
+            if (eventData.event) {
+              // Add the missing event to the list
+              const missingEvent = {
+                id: eventData.event.id,
+                name: eventData.event.name || 'Sin nombre',
+              };
+              setEventsList(prev => [missingEvent, ...prev.filter(e => e.id !== missingEvent.id)]);
+              console.log('Added missing event to list after selection change', missingEvent);
+            }
+          }
+        } catch (error) {
+          console.warn('Could not fetch event details after selection change:', error);
+        }
+      })();
+    }
+  }, [selectedEventId, eventsList]);
 
   useEffect(() => {
     if (selectedEventId) {
       try {
         localStorage.setItem('le:lastEventId', selectedEventId);
       } catch {}
-      const url = new URL(window.location.href);
-      if (url.searchParams.get('event_id') !== selectedEventId) {
-        url.searchParams.set('event_id', selectedEventId);
-        window.history.replaceState({}, '', url.toString());
-      }
+    } else {
+      try {
+        localStorage.removeItem('le:lastEventId');
+      } catch {}
     }
-  }, [selectedEventId]);
+
+    syncQueryParams((params) => {
+      if (selectedEventId) {
+        params.set('eventId', selectedEventId);
+        params.set('event_id', selectedEventId);
+      } else {
+        params.delete('eventId');
+        params.delete('event_id');
+      }
+    });
+  }, [selectedEventId, syncQueryParams]);
+
+  useEffect(() => {
+    if (!showBatchStudentModal || !selectedEventId) return;
+    let isActive = true;
+    setIsLoadingBatchCourses(true);
+
+    (async () => {
+      try {
+        const response = await fetch(
+          createApiUrl(`/api/admin/events/${selectedEventId}/courses?limit=500`)
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!isActive) return;
+
+        if (!response.ok) {
+          throw new Error(data?.error || 'No se pudieron cargar los cursos');
+        }
+
+        setBatchCourses(Array.isArray(data?.courses) ? data.courses : []);
+      } catch (error) {
+        if (!isActive) return;
+        console.error('Error fetching courses for batch management:', error);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'Error al cargar los cursos del evento'
+        );
+      } finally {
+        if (isActive) setIsLoadingBatchCourses(false);
+      }
+    })();
+
+    return () => {
+      isActive = false;
+    };
+  }, [showBatchStudentModal, selectedEventId]);
 
   // Infinite assets query with proper pagination
   const {
@@ -2425,6 +2747,93 @@ export default function PhotoAdmin({
     return map;
   }, [folders]);
 
+  useEffect(() => {
+    if (!folders || folders.length === 0) return;
+
+    if (selectedFolderId && folderById.has(selectedFolderId)) {
+      return;
+    }
+
+    const pending = initialFolderParamRef.current;
+    if (pending && folderById.has(pending)) {
+      setSelectedFolderId(pending);
+      initialFolderParamRef.current = null;
+      return;
+    }
+
+    if (!selectedFolderId) {
+      const fallback =
+        folders.find((f) => !f.parent_id) || folders[0];
+      if (fallback) {
+        setSelectedFolderId(fallback.id);
+      }
+    }
+  }, [folders, folderById, selectedFolderId]);
+
+  useEffect(() => {
+    syncQueryParams((params) => {
+      if (selectedFolderId) {
+        params.set('folderId', selectedFolderId);
+        params.set('folder_id', selectedFolderId);
+      } else {
+        params.delete('folderId');
+        params.delete('folder_id');
+      }
+    });
+  }, [selectedFolderId, syncQueryParams]);
+
+  useEffect(() => {
+    syncQueryParams((params) => {
+      if (studentFilter) {
+        params.set('studentId', studentFilter);
+        params.set('student_id', studentFilter);
+      } else {
+        params.delete('studentId');
+        params.delete('student_id');
+      }
+    });
+  }, [studentFilter, syncQueryParams]);
+
+  useEffect(() => {
+    const trimmed = searchTerm.trim();
+    syncQueryParams((params) => {
+      if (trimmed && trimmed !== studentFilter) {
+        params.set('q', trimmed);
+      } else {
+        params.delete('q');
+      }
+    });
+  }, [searchTerm, studentFilter, syncQueryParams]);
+
+  const moveOptions = useMemo(() => {
+    if (!moveState) return [] as OptimizedFolder[];
+    const disallowed = new Set<string>();
+    const collectDescendants = (id: string) => {
+      folders
+        .filter((f) => f.parent_id === id)
+        .forEach((child) => {
+          if (disallowed.has(child.id)) return;
+          disallowed.add(child.id);
+          collectDescendants(child.id);
+        });
+    };
+    disallowed.add(moveState.folder.id);
+    collectDescendants(moveState.folder.id);
+    return folders.filter((f) => !disallowed.has(f.id));
+  }, [moveState, folders]);
+
+  useEffect(() => {
+    if (renameState) {
+      setRenameName(renameState.folder.name);
+    }
+  }, [renameState]);
+
+  useEffect(() => {
+    if (moveState) {
+      setMoveTargetId(moveState.targetParentId ?? '__root__');
+    }
+  }, [moveState]);
+
   const breadcrumbItems = useMemo(() => {
     if (!selectedFolderId) return [] as Array<{ id: string; name: string }>;
     const items: Array<{ id: string; name: string }> = [];
@@ -2494,13 +2903,116 @@ export default function PhotoAdmin({
     onSuccess: (newFolder) => {
       // Invalidar folders para asegurar datos consistentes después de crear carpeta
       queryClient.invalidateQueries({
-        queryKey: ['optimized-folders'],
+        queryKey: ['optimized-folders', selectedEventId],
         refetchType: 'active',
       });
       toast.success('Carpeta creada exitosamente');
     },
     onError: (error: Error) => {
       toast.error(`Error al crear carpeta: ${error.message}`);
+    },
+  });
+
+  const renameFolderMutation = useMutation<
+    unknown,
+    Error,
+    { folderId: string; name: string }
+  >({
+    mutationFn: ({ folderId, name }) =>
+      api.folders.update(folderId, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-folders', selectedEventId],
+        refetchType: 'active',
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-assets'],
+        exact: false,
+      });
+      toast.success('Carpeta renombrada');
+            setRenameState(null);
+      setRenameName('');
+    },
+    onError: (error) => {
+      toast.error(`Error al renombrar carpeta: ${error.message}`);
+    },
+  });
+
+  const moveFolderMutation = useMutation<
+    unknown,
+    Error,
+    { folderId: string; targetParentId: string | null }
+  >({
+    mutationFn: ({ folderId, targetParentId }) =>
+      api.folders.update(folderId, { parent_id: targetParentId }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-folders', selectedEventId],
+        refetchType: 'active',
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-assets'],
+        exact: false,
+      });
+      toast.success('Carpeta movida');
+      setMoveState(null);
+      setMoveTargetId('__root__');
+      if (selectedFolderId === variables.folderId) {
+        setSelectedFolderId(variables.folderId);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Error al mover carpeta: ${error.message}`);
+    },
+  });
+
+  const deleteFolderMutation = useMutation<
+    unknown,
+    Error,
+    { folderId: string; parentId: string | null }
+  >({
+    mutationFn: ({ folderId }) => api.folders.delete(folderId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-folders', selectedEventId],
+        refetchType: 'active',
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-assets'],
+        exact: false,
+      });
+      toast.success('Carpeta eliminada');
+      if (selectedFolderId === variables.folderId) {
+        setSelectedAssetIds(new Set());
+        setSelectedFolderId(variables.parentId);
+      }
+      setDeleteState(null);
+    },
+    onError: (error) => {
+      toast.error(`Error al eliminar carpeta: ${error.message}`);
+    },
+  });
+
+  const copyFolderMutation = useMutation<
+    any,
+    Error,
+    { sourceFolderId: string; targetParentId: string | null; newName?: string }
+  >({
+    mutationFn: ({ sourceFolderId, targetParentId, newName }) =>
+      api.folders.copy(sourceFolderId, {
+        target_parent_id: targetParentId,
+        new_name: newName,
+        include_subfolders: true,
+        duplicate_assets: false,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['optimized-folders', selectedEventId],
+        refetchType: 'active',
+      });
+    },
+    onError: (error) => {
+      toast.error(`Error al copiar carpeta: ${error.message}`);
     },
   });
 
@@ -2598,22 +3110,132 @@ export default function PhotoAdmin({
   );
 
   // Handlers
+  const handleEventChange = useCallback(
+    (id: string | null) => {
+      const nextId = id && id.length > 0 ? id : null;
+      setSelectedEventId(nextId);
+      setSelectedFolderId(null);
+      setSelectedAssetIds(new Set());
+      setSearchTerm('');
+      setStudentFilter(null);
+      setRenameState(null);
+      setMoveState(null);
+      setDeleteState(null);
+      initialFolderParamRef.current = null;
+    },
+    [
+      setSelectedAssetIds,
+      setSelectedFolderId,
+      setSelectedEventId,
+      setSearchTerm,
+      setStudentFilter,
+      setRenameState,
+      setMoveState,
+      setDeleteState,
+    ]
+  );
+
   const handleSelectFolder = useCallback((folderId: string) => {
     setSelectedFolderId(folderId);
     setSelectedAssetIds(new Set());
   }, []);
 
+  const handlePasteFolder = useCallback(
+    (targetParentId: string | null) => {
+      if (!folderClipboard) {
+        toast.error('No hay ninguna carpeta copiada');
+        return;
+      }
+
+      if (
+        folderClipboard.eventId &&
+        selectedEventId &&
+        folderClipboard.eventId !== selectedEventId
+      ) {
+        toast.error('Solo se puede pegar dentro del mismo evento');
+        return;
+      }
+
+      const clipboardSnapshot = { ...folderClipboard };
+
+      copyFolderMutation.mutate(
+        {
+          sourceFolderId: clipboardSnapshot.folderId,
+          targetParentId,
+        },
+        {
+          onSuccess: (result) => {
+            const foldersList = Array.isArray(result?.folders)
+              ? result.folders
+              : [];
+            const rootEntry = foldersList.find?.(
+              (entry: any) => entry.oldId === clipboardSnapshot.folderId
+            ) ?? foldersList[0];
+            const label = rootEntry?.name || clipboardSnapshot.folderName;
+            toast.success(`Carpeta copiada como "${label}"`);
+            if (rootEntry?.newId) {
+              setSelectedFolderId((prev) => prev ?? rootEntry.newId);
+            }
+          },
+        }
+      );
+    },
+    [folderClipboard, selectedEventId, copyFolderMutation, setSelectedFolderId]
+  );
+
+  const handleFolderAction = useCallback(
+    (
+      action: 'rename' | 'move' | 'delete' | 'copy' | 'paste',
+      folder: OptimizedFolder
+    ) => {
+      switch (action) {
+        case 'rename':
+          setRenameState({ folder });
+          setRenameName(folder.name);
+          break;
+        case 'move':
+          setMoveState({ folder, targetParentId: folder.parent_id ?? null });
+          setMoveTargetId(folder.parent_id ?? '__root__');
+          break;
+        case 'delete':
+          setDeleteState({ folder });
+          break;
+        case 'copy':
+          setFolderClipboard({
+            folderId: folder.id,
+            eventId: folder.event_id ?? selectedEventId ?? null,
+            folderName: folder.name,
+          });
+          toast.success(`Carpeta "${folder.name}" copiada`);
+          break;
+        case 'paste':
+          handlePasteFolder(folder.id);
+          break;
+        default:
+          break;
+      }
+    },
+    [
+      setDeleteState,
+      setMoveState,
+      setMoveTargetId,
+      setRenameName,
+      setRenameState,
+      setFolderClipboard,
+      selectedEventId,
+      handlePasteFolder,
+    ]
+  );
+
   const handleCreateFolder = useCallback(
     (name: string, parentId?: string) => {
-      const eventId = (searchParams.get('event_id') ||
-        searchParams.get('eventId')) as string | null;
       createFolderMutation.mutate({
         name,
         parent_id: parentId || null,
-        event_id: eventId || null,
+        event_id: selectedEventId || null,
       });
     },
-    [createFolderMutation, searchParams]
+    [createFolderMutation, selectedEventId]
   );
 
   const handleUpload = useCallback(
@@ -3002,14 +3624,17 @@ export default function PhotoAdmin({
         ? folders.find((f) => f.id === selectedFolderId)?.name || 'Carpeta'
         : `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''}`;
 
-      const payload: any = {
+      const payload: Record<string, any> = {
         eventId, // el backend puede derivarlo de carpeta/fotos si es necesario
         shareType: isFolder ? 'folder' : 'photos',
         allowDownload: shareAllowDownload,
         allowComments: shareAllowComments,
-        expiresAt: shareExpiresAt ? new Date(shareExpiresAt).toISOString() : null,
         title: `Escaparate - ${titleBase}`,
       };
+
+      if (shareExpiresAt) {
+        payload.expiresAt = new Date(shareExpiresAt).toISOString();
+      }
 
       if (isFolder) payload.folderId = selectedFolderId;
       else payload.photoIds = Array.from(selectedAssetIds);
@@ -3065,19 +3690,16 @@ export default function PhotoAdmin({
       toast.success(`🏪 Escaparate "${shareData.title}" creado!`, {
         description: '✅ Enlace listo (copiado) — abre el gestor para ver todos',
         action: {
-          label: 'Ver Gestor',
-          onClick: () => setShowEscaparateManager(true),
+          label: 'Ver gestor',
+          onClick: () => setShareManagerOpen(true),
         },
       });
+      setShareRefreshKey(Date.now());
       setShowCreateShareModal(false);
       setSharePassword('');
       setShareExpiresAt('');
       setShareAllowDownload(false);
       setShareAllowComments(false);
-      // Refresh manager list if open
-      if (showEscaparateManager) {
-        try { await loadShares(); } catch {}
-      }
     } catch (err) {
       console.error('Create share error:', err);
       toast.error(
@@ -3096,29 +3718,7 @@ export default function PhotoAdmin({
     shareAllowComments,
     shareExpiresAt,
     sharePassword,
-    showEscaparateManager,
   ]);
-
-  const loadShares = useCallback(async () => {
-    try {
-      if (!selectedEventId) {
-        setShares([]);
-        return;
-      }
-      setLoadingShares(true);
-      const res = await fetch(`/api/share?eventId=${encodeURIComponent(selectedEventId)}`);
-      if (!res.ok) {
-        setShares([]);
-        return;
-      }
-      const data = await res.json();
-      setShares(Array.isArray(data?.shares) ? data.shares : []);
-    } catch {
-      setShares([]);
-    } finally {
-      setLoadingShares(false);
-    }
-  }, [selectedEventId]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const assetId = event.active.id as string;
@@ -3301,7 +3901,7 @@ export default function PhotoAdmin({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className={cn('flex h-screen flex-col bg-gray-50', className)}>
+      <div className={cn('flex h-screen flex-col bg-muted', className)}>
         {/* Header */}
         <div className="border-b bg-white px-6 py-4">
           <div className="flex items-center justify-between">
@@ -3310,13 +3910,13 @@ export default function PhotoAdmin({
                 variant="ghost"
                 size="sm"
                 onClick={() => window.history.back()}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-foreground"
                 title="Volver atrás"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Volver</span>
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">Photos</h1>
+              <h1 className="text-2xl font-bold text-foreground">Photos</h1>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -3324,8 +3924,9 @@ export default function PhotoAdmin({
               <div className="flex items-center gap-2">
                 <EventSelector
                   value={selectedEventId}
-                  onChange={(id) => setSelectedEventId(id)}
+                  onChange={(id) => handleEventChange(id || null)}
                   className="h-9"
+                  events={eventsList}
                 />
               </div>
 
@@ -3340,7 +3941,7 @@ export default function PhotoAdmin({
                 <div className="hidden items-center gap-2 md:flex">
                   <Label
                     htmlFor="desktop-status-filter"
-                    className="whitespace-nowrap text-sm text-gray-700"
+                    className="whitespace-nowrap text-sm text-foreground"
                   >
                     Estado
                   </Label>
@@ -3368,7 +3969,7 @@ export default function PhotoAdmin({
 
                 {/* Date range filter */}
                 <div className="hidden items-center gap-2 lg:flex">
-                  <Label className="whitespace-nowrap text-sm text-gray-700">
+                  <Label className="whitespace-nowrap text-sm text-foreground">
                     Fecha
                   </Label>
                   <Input
@@ -3396,7 +3997,7 @@ export default function PhotoAdmin({
               <div className="flex items-center gap-3">
                 {/* Page size selector */}
                 <div className="hidden items-center gap-2 md:flex">
-                  <Label className="whitespace-nowrap text-sm text-gray-700">
+                  <Label className="whitespace-nowrap text-sm text-foreground">
                     Página
                   </Label>
                   <Select
@@ -3414,7 +4015,7 @@ export default function PhotoAdmin({
                       <SelectItem value="100">100</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="whitespace-nowrap text-xs text-gray-600">
+                  <span className="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
                     Total: {totalAssetsCount}
                   </span>
                 </div>
@@ -3471,7 +4072,7 @@ export default function PhotoAdmin({
                 {/* Upload progress (compact with ETA) */}
                 {uploadState && (
                   <div className="flex min-w-[210px] items-center gap-2">
-                    <div className="h-2 w-28 overflow-hidden rounded bg-gray-200">
+                    <div className="h-2 w-28 overflow-hidden rounded bg-muted">
                       <div
                         className="h-2 animate-pulse bg-gradient-to-r from-blue-500 to-indigo-500"
                         style={{
@@ -3479,7 +4080,7 @@ export default function PhotoAdmin({
                         }}
                       />
                     </div>
-                    <div className="whitespace-nowrap text-[11px] text-gray-600">
+                    <div className="whitespace-nowrap text-[11px] text-gray-500 dark:text-gray-400">
                       {uploadState.uploaded}/{uploadState.total}
                       {(() => {
                         const elapsed =
@@ -3526,8 +4127,43 @@ export default function PhotoAdmin({
                   variant="outline"
                   size="sm"
                   className="h-9"
-                  onClick={async () => { setShowEscaparateManager(true); await loadShares(); }}
-                  title="Gestor de enlaces de escaparates"
+                  onClick={() => setShowAssignModal(true)}
+                  disabled={!selectedEventId}
+                  title={
+                    selectedEventId
+                      ? 'Asignar fotos a estudiantes'
+                      : 'Elegí un evento para asignar fotos'
+                  }
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="ml-1 hidden sm:inline">Asignar</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  onClick={() => setShowBatchStudentModal(true)}
+                  disabled={!selectedEventId}
+                  title={
+                    selectedEventId
+                      ? 'Importar estudiantes y generar carpetas'
+                      : 'Elegí un evento para importar estudiantes'
+                  }
+                >
+                  <FileUser className="h-4 w-4" />
+                  <span className="ml-1 hidden sm:inline">Importar</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  onClick={() => setShareManagerOpen(true)}
+                  disabled={!selectedEventId}
+                  title={
+                    selectedEventId
+                      ? 'Gestor de enlaces del evento'
+                      : 'Elegí un evento para gestionar enlaces'
+                  }
                 >
                   <Package className="h-4 w-4" />
                   <span className="ml-1 hidden sm:inline">Enlaces</span>
@@ -3555,7 +4191,7 @@ export default function PhotoAdmin({
           >
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm text-gray-700">Estado</Label>
+                <Label className="text-sm text-foreground">Estado</Label>
                 <Select
                   value={statusFilter}
                   onValueChange={(v) => setStatusFilter(v as any)}
@@ -3578,7 +4214,7 @@ export default function PhotoAdmin({
               {/* Min/Max MB removed by request */}
 
               <div>
-                <Label className="text-sm text-gray-700">Start</Label>
+                <Label className="text-sm text-foreground">Start</Label>
                 <Input
                   type="date"
                   value={startDate}
@@ -3587,7 +4223,7 @@ export default function PhotoAdmin({
                 />
               </div>
               <div>
-                <Label className="text-sm text-gray-700">End</Label>
+                <Label className="text-sm text-foreground">End</Label>
                 <Input
                   type="date"
                   value={endDate}
@@ -3620,6 +4256,13 @@ export default function PhotoAdmin({
             />
           </div>
         )}
+        {!selectedEventId && (
+          <div className="px-6 py-3">
+            <div className="rounded-md border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              Elegí un evento para gestionar enlaces y sincronizar las carpetas.
+            </div>
+          </div>
+        )}
 
         {/* Main Content - 3 Panel Layout */}
         <ResizablePanelGroup direction="horizontal" className="flex-1">
@@ -3635,6 +4278,16 @@ export default function PhotoAdmin({
               eventId={selectedEventId}
               className="h-full"
               onOpenStudentManagement={() => setShowStudentManagement(true)}
+              onFolderAction={handleFolderAction}
+              clipboard={{
+                hasData: Boolean(folderClipboard),
+                sourceFolderId: folderClipboard?.folderId,
+                sourceName: folderClipboard?.folderName,
+              }}
+              onPasteToRoot={() => handlePasteFolder(null)}
+              onOpenBatchStudentManagement={() =>
+                setShowBatchStudentModal(true)
+              }
             />
           </ResizablePanel>
 
@@ -3668,7 +4321,7 @@ export default function PhotoAdmin({
             ) : (
               <div className="flex h-full flex-col">
                 {/* Context bar: current event and folder */}
-                <div className="relative sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2 text-[12px] text-gray-600">
+                <div className="relative sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2 text-[12px] text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-2">
                     <span className="mr-1">Evento:</span>
                     <span className="mr-3 font-medium">
@@ -3687,7 +4340,7 @@ export default function PhotoAdmin({
                           >
                             <button
                               onClick={() => handleSelectFolder(item.id)}
-                              className="text-blue-600 hover:underline"
+                              className="text-blue-600 dark:text-blue-400 hover:underline"
                               title={item.name}
                             >
                               {item.name}
@@ -3817,18 +4470,18 @@ export default function PhotoAdmin({
       {/* Floating Upload Panel */}
       {uploadState && showUploadPanel && (
         <div className="fixed bottom-4 right-4 z-50 w-[320px]">
-          <Card className="border-blue-200 shadow-lg">
+          <Card className="border-blue-200 dark:border-blue-800 shadow-lg">
             <CardContent className="p-4">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Upload className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-gray-900">
+                  <Upload className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-medium text-foreground">
                     Subiendo fotos
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* Parallelism selector */}
-                  <div className="hidden items-center gap-1 text-[11px] text-gray-600 sm:flex">
+                  <div className="hidden items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 sm:flex">
                     <span>Paralelismo</span>
                     <Select
                       value={String(uploadParallelism)}
@@ -3847,7 +4500,7 @@ export default function PhotoAdmin({
                     </Select>
                   </div>
                   {/* Auto-retry count selector */}
-                  <div className="hidden items-center gap-1 text-[11px] text-gray-600 sm:flex">
+                  <div className="hidden items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 sm:flex">
                     <span>Reintentos</span>
                     <Select
                       value={String(autoRetryCount)}
@@ -3972,7 +4625,7 @@ export default function PhotoAdmin({
                   )}
                   <button
                     onClick={() => setShowUploadPanel(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-muted-foreground"
                     title="Ocultar panel"
                   >
                     <X className="h-4 w-4" />
@@ -3981,7 +4634,7 @@ export default function PhotoAdmin({
               </div>
 
               <div className="space-y-2">
-                <div className="h-2 w-full overflow-hidden rounded bg-gray-200">
+                <div className="h-2 w-full overflow-hidden rounded bg-muted">
                   <div
                     className="h-2 bg-gradient-to-r from-blue-500 to-indigo-500"
                     style={{
@@ -3989,7 +4642,7 @@ export default function PhotoAdmin({
                     }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                   <span>
                     {uploadState.uploaded}/{uploadState.total}
                     {uploadState.failed > 0 && (
@@ -4049,7 +4702,7 @@ export default function PhotoAdmin({
                 </div>
 
                 {showUploadDetails && uploadState && (
-                  <div className="mt-2 max-h-56 space-y-1 overflow-auto rounded border bg-gray-50 p-2">
+                  <div className="mt-2 max-h-56 space-y-1 overflow-auto rounded border bg-muted p-2">
                     {uploadState.batches.map((b, idx) => (
                       <div
                         key={b.index}
@@ -4060,7 +4713,7 @@ export default function PhotoAdmin({
                             <CheckSquare className="h-3 w-3 text-green-600" />
                           )}
                           {b.status === 'uploading' && (
-                            <RefreshCw className="h-3 w-3 animate-spin text-blue-600" />
+                            <RefreshCw className="h-3 w-3 animate-spin text-blue-600 dark:text-blue-400" />
                           )}
                           {b.status === 'pending' && (
                             <Square className="h-3 w-3 text-gray-400" />
@@ -4073,7 +4726,7 @@ export default function PhotoAdmin({
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="text-gray-600">
+                          <div className="text-gray-500 dark:text-gray-400">
                             {b.uploaded > 0 && (
                               <span className="mr-1 text-green-600">
                                 +{b.uploaded}
@@ -4275,7 +4928,7 @@ export default function PhotoAdmin({
               </div>
 
               <div className="space-y-6">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedFolderId
                     ? 'Se compartirá la carpeta seleccionada'
                     : `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''} seleccionada(s)`}
@@ -4334,80 +4987,277 @@ export default function PhotoAdmin({
         </div>
       )}
 
-      {/* Share Manager Modal */}
-      {showEscaparateManager && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
-            <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Gestor de enlaces</h2>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={loadShares} disabled={loadingShares}>
-                    <RefreshCw className="mr-1 h-4 w-4" /> Actualizar
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setShowEscaparateManager(false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+      <ShareManager
+        eventId={selectedEventId}
+        open={isShareManagerOpen}
+        onOpenChange={setShareManagerOpen}
+        onRequestCreateShare={() => {
+          setShareManagerOpen(false);
+          setShowCreateShareModal(true);
+        }}
+        createButtonLabel="Nuevo enlace"
+        createButtonDisabled={
+          !selectedEventId ||
+          (!selectedFolderId && selectedAssetIds.size === 0)
+        }
+        emptyStateMessage="Todavía no creaste enlaces para este evento."
+        contextDescription="Gestioná los enlaces del evento; elegí una carpeta o fotos para crear nuevos enlaces."
+        refreshKey={shareRefreshKey}
+      />
 
-              <div className="space-y-3">
-                {loadingShares ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <RefreshCw className="h-4 w-4 animate-spin" /> Cargando enlaces…
-                  </div>
-                ) : shares.length === 0 ? (
-                  <div className="text-sm text-gray-600">No hay enlaces aún</div>
-                ) : (
-                  shares.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between rounded border p-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium text-gray-900">{s.title || 'Enlace'}</div>
-                        <div className="text-xs text-gray-600">
-                          {s.share_type} • {new Date(s.created_at).toLocaleString('es-AR')}
-                          {s.password_hash ? ' • 🔒 con contraseña' : ''}
-                          {s.expires_at ? ` • expira ${new Date(s.expires_at).toLocaleString('es-AR')}` : ''}
-                        </div>
-                        <div className="mt-1 truncate text-xs text-gray-500">{s.links?.store || s.links?.gallery}</div>
-                      </div>
-                      <div className="ml-3 flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(s.links?.store || s.links?.gallery || '');
-                              toast.success('Enlace copiado');
-                            } catch {}
-                          }}
-                        >
-                          Copiar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={async () => {
-                            if (!confirm('¿Desactivar este enlace?')) return;
-                              const r = await fetch(`/api/share/${encodeURIComponent(s.id)}`, { method: 'DELETE' });
-                            if (r.ok) {
-                              toast.success('Enlace desactivado');
-                              await loadShares();
-                            } else {
-                              toast.error('No se pudo desactivar');
-                            }
-                          }}
-                        >
-                          Desactivar
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+      {showAssignModal && selectedEventId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-lg font-semibold text-foreground">
+                Asignar fotos a estudiantes
+              </h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowAssignModal(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-5">
+              <AssignFolderPhotos
+                eventId={selectedEventId}
+                currentFolderId={selectedFolderId}
+                currentFolderName={
+                  selectedFolderId
+                    ? folderById.get(selectedFolderId)?.name || ''
+                    : ''
+                }
+                onAssignmentComplete={() => {
+                  if (selectedFolderId) {
+                    queryClient.invalidateQueries({
+                      queryKey: ['optimized-assets', selectedFolderId],
+                      refetchType: 'active',
+                    });
+                  }
+                  queryClient.invalidateQueries({
+                    queryKey: ['optimized-folders', selectedEventId],
+                    refetchType: 'active',
+                  });
+                  setShowAssignModal(false);
+                }}
+              />
             </div>
           </div>
         </div>
       )}
+
+      {showBatchStudentModal && selectedEventId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-lg font-semibold text-foreground">
+                Importación masiva de estudiantes
+              </h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowBatchStudentModal(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-5">
+              {isLoadingBatchCourses ? (
+                <div className="flex h-48 items-center justify-center gap-2 text-muted-foreground">
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  Cargando cursos...
+                </div>
+              ) : (
+                <BatchStudentManagement
+                  eventId={selectedEventId}
+                  eventName={
+                    eventsList.find((ev) => ev.id === selectedEventId)?.name ||
+                    'Evento'
+                  }
+                  courses={batchCourses}
+                  onDataChange={() => {
+                    queryClient.invalidateQueries({
+                      queryKey: ['optimized-folders', selectedEventId],
+                      refetchType: 'active',
+                    });
+                    if (selectedFolderId) {
+                      queryClient.invalidateQueries({
+                        queryKey: ['optimized-assets', selectedFolderId],
+                        refetchType: 'active',
+                      });
+                    }
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Dialog
+        open={Boolean(renameState)}
+        onOpenChange={(open) => {
+          if (!open) {
+                  setRenameState(null);
+      setRenameName('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renombrar carpeta</DialogTitle>
+            <DialogDescription>
+              Ingresá el nuevo nombre para la carpeta
+              {renameState ? ` "${renameState.folder.name}"` : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            placeholder="Nombre de la carpeta"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                      setRenameState(null);
+      setRenameName('');
+              }}
+              disabled={renameFolderMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!renameState) return;
+                const trimmed = renameName.trim();
+                if (!trimmed) {
+                  toast.error('El nombre no puede estar vacío');
+                  return;
+                }
+                renameFolderMutation.mutate({
+                  folderId: renameState.folder.id,
+                  name: trimmed,
+                });
+              }}
+              disabled={
+                !renameState ||
+                renameFolderMutation.isPending ||
+                renameName.trim().length === 0 ||
+                renameName.trim() === renameState.folder.name
+              }
+            >
+              {renameFolderMutation.isPending ? 'Guardando…' : 'Guardar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(moveState)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMoveState(null);
+            setMoveTargetId('__root__');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover carpeta</DialogTitle>
+            <DialogDescription>
+              Elegí el destino para mover la carpeta
+              {moveState ? ` "${moveState.folder.name}"` : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label>Destino</Label>
+            <Select value={moveTargetId} onValueChange={setMoveTargetId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar carpeta" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="__root__">Mover a raíz</SelectItem>
+                {moveOptions.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    {`${'• '.repeat(folder.depth || 0)}${folder.name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMoveState(null);
+                setMoveTargetId('__root__');
+              }}
+              disabled={moveFolderMutation.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!moveState) return;
+                const target = moveTargetId === '__root__' ? null : moveTargetId;
+                moveFolderMutation.mutate({
+                  folderId: moveState.folder.id,
+                  targetParentId: target,
+                });
+              }}
+              disabled={
+                !moveState ||
+                moveFolderMutation.isPending ||
+                (moveTargetId === '__root__' && !moveState.folder.parent_id) ||
+                (moveTargetId !== '__root__' && moveState.folder.parent_id === moveTargetId)
+              }
+            >
+              {moveFolderMutation.isPending ? 'Moviendo…' : 'Mover'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={Boolean(deleteState)}
+        onOpenChange={(open) => {
+          if (!open) setDeleteState(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar carpeta</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará la carpeta
+              {deleteState ? ` "${deleteState.folder.name}"` : ''} y sus
+              referencias. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteFolderMutation.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteFolderMutation.isPending}
+              onClick={() => {
+                if (!deleteState) return;
+                deleteFolderMutation.mutate({
+                  folderId: deleteState.folder.id,
+                  parentId: deleteState.folder.parent_id,
+                });
+              }}
+            >
+              {deleteFolderMutation.isPending ? 'Eliminando…' : 'Eliminar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 🚀 FASE 2: Modal de gestión de estudiantes */}
       {showStudentManagement && selectedEventId && (

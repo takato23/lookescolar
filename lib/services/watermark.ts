@@ -410,7 +410,7 @@ function createWatermarkSvg(
  * Incluye detección de duplicados por hash MD5
  */
 export async function processImageBatch(
-  images: { buffer: Buffer; originalName: string }[],
+  images: Array<{ buffer: Buffer; originalName: string }>,
   options: WatermarkOptions = {},
   maxConcurrency: number = 3
 ): Promise<{

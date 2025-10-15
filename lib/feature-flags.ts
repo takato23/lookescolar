@@ -6,6 +6,7 @@ export interface FeatureFlags {
   UNIFIED_GALLERY_ENABLED: boolean;
   FAMILY_IN_GALLERY_ROUTE: boolean;
   TOKEN_AUTO_DETECTION: boolean;
+  WARM_HOME_HERO: boolean;
 
   // Event Photo Library
   EVENT_PHOTO_LIBRARY_ENABLED: boolean;
@@ -30,6 +31,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   UNIFIED_GALLERY_ENABLED: true,
   FAMILY_IN_GALLERY_ROUTE: true,
   TOKEN_AUTO_DETECTION: false,
+  WARM_HOME_HERO: true,
   EVENT_PHOTO_LIBRARY_ENABLED: true, // ✅ Activado para desarrollo
   EVENT_PHOTO_LIBRARY_VIRTUALIZATION: true, // ✅ Activado para performance
   EVENT_PHOTO_LIBRARY_DRAG_DROP: true, // ✅ Activado para UX
@@ -53,6 +55,8 @@ const flags: FeatureFlags = {
   TOKEN_AUTO_DETECTION:
     process.env.FF_TOKEN_AUTO_DETECTION === 'true' ||
     DEFAULT_FLAGS.TOKEN_AUTO_DETECTION,
+  WARM_HOME_HERO:
+    process.env.FF_WARM_HOME_HERO === 'true' || DEFAULT_FLAGS.WARM_HOME_HERO,
   EVENT_PHOTO_LIBRARY_ENABLED:
     process.env.FF_EVENT_PHOTO_LIBRARY_ENABLED === 'true' ||
     DEFAULT_FLAGS.EVENT_PHOTO_LIBRARY_ENABLED,

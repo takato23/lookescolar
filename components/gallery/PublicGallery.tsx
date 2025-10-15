@@ -5,7 +5,7 @@ import { PhotoCard } from '@/components/public/PhotoCard';
 import { PhotoModal } from '@/components/public/PhotoModal';
 import { Button } from '@/components/ui/button';
 import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
-import { useCartStore } from '@/store/useCartStore';
+import { usePublicCartStore } from '@/lib/stores/unified-cart-store';
 import { ImageIcon, RefreshCwIcon, AlertTriangleIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react';
 
 interface Photo {
@@ -47,7 +47,10 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { items, openCart } = useCartStore();
+  const items = usePublicCartStore((state) => state.items);
+  const openCart = usePublicCartStore((state) => state.openCart);
+  const setContext = usePublicCartStore((state) => state.setContext);
+  const setEventId = usePublicCartStore((state) => state.setEventId);
 
   const fetchPhotos = useCallback(
     async (page: number = 1, append: boolean = false) => {
@@ -109,6 +112,12 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
   useEffect(() => {
     fetchPhotos(1, false);
   }, [fetchPhotos]);
+
+  useEffect(() => {
+    if (!eventId) return;
+    setContext({ context: 'public', eventId });
+    setEventId(eventId);
+  }, [eventId, setContext, setEventId]);
 
   const handleLoadMore = () => {
     if (galleryData?.pagination.has_more && !loadingMore) {

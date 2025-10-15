@@ -3,10 +3,12 @@ import PublishClient from './PublishClient';
 import { fetchCounter } from '@/lib/services/fetch-counter';
 import CentralitaPublishClient from '@/components/admin/centralita/centralita-publish-client';
 
-export default async function PublishPage(props: {
-  searchParams?: Promise<{ event_id?: string; tab?: string }> | { event_id?: string; tab?: string };
+export default async function PublishPage({
+  searchParams,
+}: {
+  searchParams?: { event_id?: string; tab?: string };
 }) {
-  const sp = (await (props.searchParams as any)) || (props.searchParams as any) || {};
+  const sp = searchParams ?? {};
   const eventId = sp?.event_id as string | undefined;
   const centralitaEnabled = process.env.NEXT_PUBLIC_CENTRALITA_ENABLED === 'true';
 
@@ -14,6 +16,7 @@ export default async function PublishPage(props: {
     if (centralitaEnabled) {
       return <CentralitaPublishClient />;
     }
+    // Use default PublishClient
     return <PublishClient />;
   }
 
@@ -91,5 +94,11 @@ export default async function PublishPage(props: {
     );
   }
 
-  return <PublishClient initialSelectedEventId={eventId} initialData={initialData} />;
+  // Use modern design with initial data
+  return (
+    <PublishClient
+      initialSelectedEventId={eventId}
+      initialData={initialData}
+    />
+  );
 }

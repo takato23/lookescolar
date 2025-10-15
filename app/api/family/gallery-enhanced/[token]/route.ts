@@ -38,6 +38,11 @@ interface PhotoWithMetadata {
     location?: any;
     tags?: string[];
   };
+  engagement?: {
+    is_favorite: boolean;
+    in_cart_quantity: number;
+    purchased_quantity: number;
+  };
 }
 
 interface StudentInfo {
@@ -110,12 +115,12 @@ interface GalleryResponse {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-): Promise<NextResponse<GalleryResponse>> {
+  { params }: { params: { token: string } }
+) {
   const requestId = generateRequestId();
 
   try {
-    const { token } = await params;
+    const { token } = params;
     const { searchParams } = new URL(request.url);
 
     console.log(`[${requestId}] Enhanced gallery request:`, {
@@ -176,6 +181,205 @@ export async function GET(
 
     const supabase = await createServerSupabaseServiceClient();
 
+    const accessibleStudentIds = Array.from(
+      new Set(
+        (students || [])
+          .map((s) => s.id)
+          .filter(
+            (id): id is string => typeof id === 'string' && id.length > 0
+          )
+      )
+    );
+    const restrictByStudents =
+      accessibleStudentIds.length > 0 && validationResult.accessLevel !== 'event';
+
+    if (student_id && !accessibleStudentIds.includes(student_id)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No tienes acceso a las fotos de este estudiante',
+          // @ts-ignore - partial response for error case
+        },
+        { status: 403 }
+      );
+    }
+
+    async function resolveShareTokenId(): Promise<string | null> {
+      try {
+        const { data } = await supabase
+          .from('share_tokens')
+          .select('id')
+          .eq('token', token)
+          .eq('is_active', true)
+          .maybeSingle();
+        return data?.id ?? null;
+      } catch (err: any) {
+        if (err?.code === 'PGRST116' || err?.code === '42P01') {
+          return null;
+        }
+        console.warn(`[${requestId}] Failed to resolve share token id`, err);
+        return null;
+      }
+    }
+
+    async function loadFavorites(tokenId: string | null): Promise<Set<string>> {
+      if (!tokenId) return new Set();
+
+      try {
+        const { data, error } = await supabase
+          .from('share_favorites')
+          .select('asset_id')
+          .eq('share_token_id', tokenId);
+
+        if (error) {
+          if (error.code === '42P01') {
+            return new Set();
+          }
+          throw error;
+        }
+
+        const favorites = new Set<string>();
+        for (const row of data || []) {
+          const assetId = (row as any).asset_id;
+          if (typeof assetId === 'string' && assetId.length > 0) {
+            favorites.add(assetId);
+          }
+        }
+        return favorites;
+      } catch (err) {
+        console.warn(`[${requestId}] Failed to load favorites`, err);
+        return new Set();
+      }
+    }
+
+    type OrderMetrics = {
+      counts: Map<string, number>;
+      total: number;
+    };
+
+    async function collectOrderMetrics(
+      statuses: string[]
+    ): Promise<OrderMetrics> {
+      if (!statuses.length) {
+        return { counts: new Map(), total: 0 };
+      }
+
+      try {
+        let orderQuery = supabase.from('orders').select('id').in('status', statuses);
+
+        if (restrictByStudents) {
+          orderQuery = orderQuery.in('subject_id', accessibleStudentIds);
+        } else if (event?.id) {
+          orderQuery = orderQuery.eq('event_id', event.id);
+        }
+
+        const { data: ordersData, error: ordersError } = await orderQuery;
+        if (ordersError) {
+          if (ordersError.code === '42P01') {
+            return { counts: new Map(), total: 0 };
+          }
+          throw ordersError;
+        }
+
+        const orderIds =
+          ordersData?.map((row: any) => row.id).filter((id: any) => typeof id === 'string') ?? [];
+
+        if (!orderIds.length) {
+          return { counts: new Map(), total: 0 };
+        }
+
+        const { data: itemsData, error: itemsError } = await supabase
+          .from('order_items')
+          .select('order_id, photo_id, quantity')
+          .in('order_id', orderIds);
+
+        if (itemsError) {
+          if (itemsError.code === '42P01') {
+            return { counts: new Map(), total: 0 };
+          }
+          throw itemsError;
+        }
+
+        const counts = new Map<string, number>();
+        let total = 0;
+
+        for (const row of itemsData || []) {
+          const photoId = (row as any).photo_id;
+          const rawQty = (row as any).quantity;
+          if (typeof photoId !== 'string' || photoId.length === 0) continue;
+
+          const quantity =
+            typeof rawQty === 'number' && !Number.isNaN(rawQty) ? rawQty : 1;
+
+          counts.set(photoId, (counts.get(photoId) ?? 0) + quantity);
+          total += quantity;
+        }
+
+        return { counts, total };
+      } catch (err) {
+        console.warn(`[${requestId}] Failed to collect order metrics`, err);
+        return { counts: new Map(), total: 0 };
+      }
+    }
+
+    const shareTokenId = await resolveShareTokenId();
+    const [favoriteAssetSet, cartMetrics, purchasedMetrics] = await Promise.all([
+      loadFavorites(shareTokenId),
+      collectOrderMetrics(['pending', 'processing']),
+      collectOrderMetrics(['paid', 'completed', 'fulfilled', 'delivered']),
+    ]);
+
+    const favoriteAssetIds = Array.from(favoriteAssetSet);
+    const purchasedAssetIds = Array.from(purchasedMetrics.counts.keys());
+
+    const applyPhotoFilters = (
+      queryBuilder: any
+    ): { builder: any; emptyResult: boolean } => {
+      let builder = queryBuilder;
+      let emptyResult = false;
+
+      if (student_id) {
+        if (!accessibleStudentIds.includes(student_id)) {
+          emptyResult = true;
+        } else {
+          builder = builder.eq('photo_students.student_id', student_id);
+        }
+      } else if (restrictByStudents) {
+        builder = builder.in('photo_students.student_id', accessibleStudentIds);
+      }
+
+      if (search) {
+        builder = builder.ilike('filename', `%${search}%`);
+      }
+
+      switch (filter_by) {
+        case 'favorites':
+          if (!favoriteAssetIds.length) {
+            emptyResult = true;
+          } else {
+            builder = builder.in('id', favoriteAssetIds);
+          }
+          break;
+        case 'purchased':
+          if (!purchasedAssetIds.length) {
+            emptyResult = true;
+          } else {
+            builder = builder.in('id', purchasedAssetIds);
+          }
+          break;
+        case 'unpurchased':
+          if (purchasedAssetIds.length) {
+            const inClause = `("${purchasedAssetIds.join('","')}")`;
+            builder = builder.not('id', 'in', inClause);
+          }
+          break;
+        default:
+          break;
+      }
+
+      return { builder, emptyResult };
+    };
+
     // Build photo query based on access level and filters
     let photoQuery = supabase
       .from('assets')
@@ -208,36 +412,8 @@ export async function GET(
       .eq('event_id', event.id)
       .eq('approved', true);
 
-    // Filter by accessible students
-    const accessibleStudentIds = students.map((s) => s.id);
-    if (student_id) {
-      // Specific student requested - verify access
-      if (!accessibleStudentIds.includes(student_id)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'No tienes acceso a las fotos de este estudiante',
-            // @ts-ignore - partial response for error case
-          },
-          { status: 403 }
-        );
-      }
-      photoQuery = photoQuery.eq('photo_students.student_id', student_id);
-    } else {
-      // All accessible students
-      photoQuery = photoQuery.in(
-        'photo_students.student_id',
-        accessibleStudentIds
-      );
-    }
-
-    // Apply search filter
-    if (search) {
-      photoQuery = photoQuery.ilike('filename', `%${search}%`);
-    }
-
-    // TODO: Apply additional filters (favorites, purchased, etc.)
-    // This would require joining with user-specific tables like favorites, orders, etc.
+    // Apply filters
+    const filteredPhotoQuery = applyPhotoFilters(photoQuery);
 
     // Apply sorting
     const sortColumn =
@@ -246,31 +422,56 @@ export async function GET(
         : sort_by === 'filename'
           ? 'filename'
           : 'created_at';
-    photoQuery = photoQuery.order(sortColumn, {
+    const orderedPhotoQuery = (filteredPhotoQuery.builder as any).order(sortColumn, {
       ascending: sort_order === 'asc',
     });
 
     // Get total count for pagination
-    const { count: totalCount } = await supabase
-      .from('assets')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', event.id)
-      .eq('approved', true)
-      .in('photo_students.student_id', accessibleStudentIds);
+    const countQuery = applyPhotoFilters(
+      supabase
+        .from('assets')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', event.id)
+        .eq('approved', true)
+    );
 
-    const totalPhotos = totalCount || 0;
-    const totalPages = Math.ceil(totalPhotos / limit);
+    const emptyResult =
+      filteredPhotoQuery.emptyResult || countQuery.emptyResult;
+
     const offset = (page - 1) * limit;
+    let totalPhotos = 0;
+    let totalPages = 0;
+    let photosData: any[] = [];
 
-    // Apply pagination
-    photoQuery = photoQuery.range(offset, offset + limit - 1);
+    if (!emptyResult) {
+      const {
+        count: totalCount,
+        error: totalCountError,
+      } = await countQuery.builder;
+      if (totalCountError) {
+        console.error(
+          `[${requestId}] Error counting photos:`,
+          totalCountError
+        );
+        throw new Error(
+          `Failed to count photos: ${totalCountError.message}`
+        );
+      }
 
-    // Execute query
-    const { data: photosData, error: photosError } = await photoQuery;
+      totalPhotos = totalCount || 0;
+      totalPages = totalPhotos > 0 ? Math.ceil(totalPhotos / limit) : 0;
 
-    if (photosError) {
-      console.error(`[${requestId}] Error fetching photos:`, photosError);
-      throw new Error(`Failed to fetch photos: ${photosError.message}`);
+      const { data: photosResponse, error: photosError } = await (orderedPhotoQuery as any).range(
+        offset,
+        offset + limit - 1
+      );
+
+      if (photosError) {
+        console.error(`[${requestId}] Error fetching photos:`, photosError);
+        throw new Error(`Failed to fetch photos: ${photosError.message}`);
+      }
+
+      photosData = photosResponse || [];
     }
 
     // Process photos and build response
@@ -287,6 +488,11 @@ export async function GET(
       taken_at: photo.taken_at,
       created_at: photo.created_at,
       metadata: photo.metadata,
+      engagement: {
+        is_favorite: favoriteAssetSet.has(photo.id),
+        in_cart_quantity: cartMetrics.counts.get(photo.id) ?? 0,
+        purchased_quantity: purchasedMetrics.counts.get(photo.id) ?? 0,
+      },
     }));
 
     // Build student information
@@ -311,17 +517,33 @@ export async function GET(
 
     // Calculate statistics
     const photosByStudent: Record<string, number> = {};
-    const totalFavorites = 0; // TODO: Implement favorites counting
-    const totalInCart = 0; // TODO: Implement cart counting
-    const totalPurchased = 0; // TODO: Implement purchased counting
+    const totalFavorites = favoriteAssetSet.size;
+    const totalInCart = cartMetrics.total;
+    const totalPurchased = purchasedMetrics.total;
 
     // Count photos by student
     for (const photo of photosData || []) {
-      for (const photoStudent of photo.photo_students || []) {
-        const studentId = photoStudent.student_id;
+      for (const photoStudent of (photo.photo_students || []) as any[]) {
+        const studentId = photoStudent?.student_id;
+        if (typeof studentId !== 'string' || studentId.length === 0) continue;
         photosByStudent[studentId] = (photosByStudent[studentId] || 0) + 1;
       }
     }
+
+    const fileTypesSet = new Set<string>();
+    for (const photo of photosData || []) {
+      const filename = (photo as any)?.filename;
+      if (typeof filename === 'string') {
+        const ext = filename.split('.').pop()?.toLowerCase();
+        if (ext) {
+          fileTypesSet.add(ext);
+        }
+      }
+    }
+    const fileTypes =
+      fileTypesSet.size > 0
+        ? Array.from(fileTypesSet).sort()
+        : ['jpg', 'jpeg', 'png', 'webp'];
 
     // Build filters metadata
     const availableStudents = studentInfo.map((student) => ({
@@ -331,23 +553,40 @@ export async function GET(
     }));
 
     // Get date range for filters
-    const { data: dateRange } = await supabase
-      .from('assets')
-      .select('created_at, taken_at')
-      .eq('event_id', event.id)
-      .eq('approved', true)
-      .in('photo_students.student_id', accessibleStudentIds)
-      .order('created_at', { ascending: true })
-      .limit(1);
+    const buildDateQuery = (ascending: boolean) =>
+      applyPhotoFilters(
+        supabase
+          .from('assets')
+          .select('created_at, taken_at')
+          .eq('event_id', event.id)
+          .eq('approved', true)
+          .order('created_at', { ascending })
+          .limit(1)
+      );
 
-    const { data: latestDate } = await supabase
-      .from('assets')
-      .select('created_at, taken_at')
-      .eq('event_id', event.id)
-      .eq('approved', true)
-      .in('photo_students.student_id', accessibleStudentIds)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    const earliestQuery = buildDateQuery(true);
+    const latestQuery = buildDateQuery(false);
+
+    let earliestRecord: any = null;
+    let latestRecord: any = null;
+
+    if (!earliestQuery.emptyResult) {
+      const { data, error } = await earliestQuery.builder;
+      if (error) {
+        console.warn(`[${requestId}] Error fetching earliest date:`, error);
+      } else if (Array.isArray(data) && data.length > 0) {
+        earliestRecord = data[0];
+      }
+    }
+
+    if (!latestQuery.emptyResult) {
+      const { data, error } = await latestQuery.builder;
+      if (error) {
+        console.warn(`[${requestId}] Error fetching latest date:`, error);
+      } else if (Array.isArray(data) && data.length > 0) {
+        latestRecord = data[0];
+      }
+    }
 
     const response: GalleryResponse = {
       success: true,
@@ -385,10 +624,10 @@ export async function GET(
       filters: {
         available_students: availableStudents,
         date_range: {
-          earliest: dateRange?.[0]?.created_at || new Date().toISOString(),
-          latest: latestDate?.[0]?.created_at || new Date().toISOString(),
+          earliest: earliestRecord?.created_at || new Date().toISOString(),
+          latest: latestRecord?.created_at || new Date().toISOString(),
         },
-        file_types: ['jpg', 'jpeg', 'png', 'webp'], // TODO: Get actual file types
+        file_types: fileTypes,
       },
     };
 
@@ -461,12 +700,12 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
-): Promise<NextResponse<GalleryResponse>> {
+  { params }: { params: { token: string } }
+) {
   const requestId = generateRequestId();
 
   try {
-    const { token } = await params;
+    const { token } = params;
     const body = await request.json();
 
     const {

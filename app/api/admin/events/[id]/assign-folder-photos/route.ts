@@ -23,15 +23,12 @@ interface AssignmentResult {
 }
 
 // POST: Bulk assign photos from a folder to subjects
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
 

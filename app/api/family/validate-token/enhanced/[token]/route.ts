@@ -8,6 +8,7 @@ import {
   generateRequestId,
 } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { EnhancedTokenValidationResponse } from '@/lib/types/family-access';
 
 // Rate limiting configuration
 const RATE_LIMIT = {
@@ -16,81 +17,20 @@ const RATE_LIMIT = {
   blockDurationMs: 60 * 60 * 1000, // 1 hour block for excessive attempts
 };
 
-interface EnhancedTokenValidationResponse {
-  valid: boolean;
-  access_level: 'none' | 'student' | 'family' | 'group' | 'event';
-  token_type?: string;
-  expires_in_days?: number;
-  warnings?: string[];
-
-  // Student access data
-  student?: {
-    id: string;
-    name: string;
-    event: {
-      id: string;
-      name: string;
-      school_name?: string;
-    };
-  };
-
-  // Family access data
-  family?: {
-    email: string;
-    students: Array<{
-      id: string;
-      name: string;
-    }>;
-    event: {
-      id: string;
-      name: string;
-      school_name?: string;
-    };
-  };
-
-  // Access permissions
-  permissions?: {
-    can_view_photos: boolean;
-    can_download_previews: boolean;
-    can_purchase: boolean;
-    can_share: boolean;
-    max_devices: number;
-    device_fingerprint_required: boolean;
-  };
-
-  // Security information
-  security?: {
-    device_registered: boolean;
-    ip_address: string;
-    access_logged: boolean;
-    usage_count: number;
-    last_access?: string;
-  };
-
-  error?: string;
-  error_code?:
-    | 'INVALID_TOKEN'
-    | 'EXPIRED_TOKEN'
-    | 'INACTIVE_TOKEN'
-    | 'EVENT_INACTIVE'
-    | 'RATE_LIMITED'
-    | 'SERVER_ERROR';
-}
-
 /**
  * GET /api/family/validate-token/enhanced/[token]
  * Enhanced token validation with comprehensive access control and security logging
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ): Promise<NextResponse<EnhancedTokenValidationResponse>> {
   const requestId = generateRequestId();
   let clientIP: string;
   let userAgent: string;
 
   try {
-    const { token } = await params;
+    const { token } = params;
 
     // Extract client information for security logging
     clientIP =
@@ -197,6 +137,14 @@ export async function GET(
       return NextResponse.json(response, { status: 403 });
     }
 
+    const eventSummary = {
+      id: event.id,
+      name: event.name,
+      school_name: event.school_name || undefined,
+      start_date: event.start_date || undefined,
+      end_date: event.end_date || undefined,
+    };
+
     // Log successful access
     const supabase = await createServerSupabaseServiceClient();
     await supabase.from('token_access_log').insert({
@@ -237,6 +185,7 @@ export async function GET(
         token_type: tokenData.type,
         expires_in_days: validationResult.expiresInDays,
         warnings: validationResult.warnings,
+        event: eventSummary,
 
         family: {
           email: tokenData.familyEmail,
@@ -244,11 +193,7 @@ export async function GET(
             id: s.id,
             name: `${s.first_name} ${s.last_name}`,
           })),
-          event: {
-            id: event.id,
-            name: event.name,
-            school_name: event.school_name || undefined,
-          },
+          event: eventSummary,
         },
 
         permissions,
@@ -273,15 +218,12 @@ export async function GET(
         token_type: tokenData.type,
         expires_in_days: validationResult.expiresInDays,
         warnings: validationResult.warnings,
+        event: eventSummary,
 
         student: {
           id: student.id,
           name: `${student.first_name} ${student.last_name}`,
-          event: {
-            id: event.id,
-            name: event.name,
-            school_name: event.school_name || undefined,
-          },
+          event: eventSummary,
         },
 
         permissions,
@@ -302,6 +244,7 @@ export async function GET(
         token_type: tokenData.type,
         expires_in_days: validationResult.expiresInDays,
         warnings: validationResult.warnings,
+        event: eventSummary,
         permissions,
         security: {
           device_registered: false,
@@ -380,12 +323,12 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ): Promise<NextResponse<EnhancedTokenValidationResponse>> {
   const requestId = generateRequestId();
 
   try {
-    const { token } = await params;
+    const { token } = params;
     const body = await request.json();
 
     // Extract device fingerprint and additional security context

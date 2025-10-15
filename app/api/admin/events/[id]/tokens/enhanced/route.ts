@@ -64,10 +64,10 @@ const TokenAnalyticsSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Getting enhanced tokens for event:`, {
@@ -291,10 +291,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Generating enhanced tokens for event:`, {
@@ -497,10 +497,10 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Rotating expiring tokens for event:`, {

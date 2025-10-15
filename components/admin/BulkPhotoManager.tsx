@@ -157,7 +157,7 @@ export function BulkPhotoManager({
     current: number;
     total: number;
     operation: string;
-  } | null>(null);
+  }> | null>(null);
 
   // Update photos when prop changes
   useEffect(() => {
@@ -440,11 +440,11 @@ export function BulkPhotoManager({
       <CardContent className="space-y-6">
         {/* Statistics */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3 text-center">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {stats.total}
             </div>
-            <div className="text-xs text-blue-700">Total</div>
+            <div className="text-xs text-blue-700 dark:text-blue-300">Total</div>
           </div>
           <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
             <div className="text-2xl font-bold text-green-600">
@@ -467,7 +467,7 @@ export function BulkPhotoManager({
         </div>
 
         {/* Filters */}
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Filter className="h-4 w-4" />
@@ -482,7 +482,7 @@ export function BulkPhotoManager({
                   Buscar por nombre
                 </Label>
                 <div className="relative">
-                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
+                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                   <Input
                     id="search"
                     placeholder="Buscar fotos..."
@@ -641,7 +641,7 @@ export function BulkPhotoManager({
         </Card>
 
         {/* Selection Tools */}
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center justify-between text-base">
               <div className="flex items-center gap-2">
@@ -702,12 +702,12 @@ export function BulkPhotoManager({
             </div>
 
             {stats.selected > 0 && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-blue-700">
+                  <span className="font-medium text-blue-700 dark:text-blue-300">
                     {stats.selected} fotos seleccionadas
                   </span>
-                  <span className="text-blue-600">
+                  <span className="text-blue-600 dark:text-blue-400">
                     {Math.round((stats.selectedSizeKB / 1024) * 10) / 10} MB
                   </span>
                 </div>
@@ -824,7 +824,7 @@ export function BulkPhotoManager({
                       {operationProgress.current} / {operationProgress.total}
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-gray-200">
+                  <div className="h-2 w-full rounded-full bg-muted">
                     <div
                       className="h-2 rounded-full bg-green-500 transition-all duration-300"
                       style={{
@@ -853,7 +853,7 @@ export function BulkPhotoManager({
           <CardContent>
             <ScrollArea className="h-96">
               {filteredPhotos.length === 0 ? (
-                <div className="py-8 text-center text-gray-500">
+                <div className="py-8 text-center text-muted-foreground0">
                   No se encontraron fotos con los filtros aplicados
                 </div>
               ) : (
@@ -865,7 +865,7 @@ export function BulkPhotoManager({
                         'flex items-center gap-3 rounded-lg border p-3 transition-all',
                         selectedPhotos.has(photo.id)
                           ? 'border-blue-300 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-border hover:border-border'
                       )}
                     >
                       <Checkbox
@@ -887,13 +887,13 @@ export function BulkPhotoManager({
                             >
                               {photo.approved ? 'Aprobada' : 'Pendiente'}
                             </Badge>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted-foreground0">
                               {formatFileSize(photo.file_size)}
                             </span>
                           </div>
                         </div>
 
-                        <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
+                        <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground0">
                           <span>
                             {photo.width} × {photo.height}
                           </span>

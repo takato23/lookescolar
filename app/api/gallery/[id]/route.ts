@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = params;
     const url = new URL(request.url);
     const page = Math.max(parseInt(url.searchParams.get('page') || '1', 10), 1);
     const limit = Math.min(

@@ -2,355 +2,263 @@
 
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { Database, Json } from '@/types/database';
 
-// Type definitions for better code organization
+const EventIdSchema = z.string().uuid('Invalid event ID format');
+const FolderIdSchema = z.string().uuid('Invalid folder ID format');
+
+const CoreSettingsSchema = z
+  .object({
+    general: z
+      .object({
+        showOnHomepage: z.boolean().optional(),
+        location: z.string().optional(),
+        rootFolderId: z.string().uuid('Invalid root folder UUID').optional(),
+      })
+      .optional()
+      .passthrough(),
+    privacy: z
+      .object({
+        passwordEnabled: z.boolean().optional(),
+        password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+      })
+      .optional()
+      .passthrough(),
+    download: z
+      .object({
+        enabled: z.boolean().optional(),
+        sizes: z.array(z.enum(['web', 'small', 'original'])).optional(),
+        pinEnabled: z.boolean().optional(),
+      })
+      .optional()
+      .passthrough(),
+    store: z
+      .object({
+        enabled: z.boolean().optional(),
+        priceSheetId: z.string().uuid('Invalid price sheet UUID').optional(),
+        showInStore: z.boolean().optional(),
+      })
+      .optional()
+      .passthrough(),
+  })
+  .passthrough();
+
+const DesignSchema = z
+  .object({
+    cover: z
+      .object({
+        style: z.enum(['novel', 'vintage', 'frame', 'stripe', 'divider', 'journal', 'classic', 'none']).optional(),
+      })
+      .optional()
+      .passthrough(),
+    typography: z.object({ preset: z.enum(['sans', 'serif', 'modern', 'timeless', 'bold', 'subtle']).optional() }).optional().passthrough(),
+    color: z.object({ scheme: z.enum(['light', 'gold', 'rose', 'terracotta', 'sand', 'olive', 'agave', 'sea', 'dark']).optional() }).optional().passthrough(),
+    grid: z
+      .object({
+        style: z.enum(['vertical', 'horizontal']).optional(),
+        thumb: z.enum(['regular', 'large']).optional(),
+        spacing: z.enum(['regular', 'large']).optional(),
+        nav: z.enum(['icons', 'icons_text']).optional(),
+      })
+      .optional()
+      .passthrough(),
+    theme: z.enum(['default', 'jardin', 'secundaria', 'bautismo']).optional(),
+  })
+  .partial()
+  .passthrough();
+
+const SettingsSchema = CoreSettingsSchema.extend({
+  design: DesignSchema.optional(),
+});
+
+export type EventSettings = z.infer<typeof SettingsSchema>;
+
 type EventMetrics = {
   orders: { total: number; paid: number; pending: number };
   students: { total: number };
   photos: { total: number; unassigned: number | null };
 };
 
-type CoreSettings = {
-  general: {
-    showOnHomepage: boolean;
-    location?: string;
-    rootFolderId?: string;
-  };
-  privacy: {
-    passwordEnabled: boolean;
-    password?: string;
-  };
-  download: {
-    enabled: boolean;
-    sizes: ('web' | 'small' | 'original')[];
-    pinEnabled: boolean;
-  };
-  store: {
-    enabled: boolean;
-    priceSheetId?: string;
-    showInStore: boolean;
-  };
-};
-
-// Enhanced schema validation with better error messages
-const CoreSettingsSchema = z.object({
-  general: z
-    .object({
-      showOnHomepage: z.boolean().describe('Whether event appears on homepage'),
-      location: z.string().min(1, 'Location must not be empty').optional(),
-      rootFolderId: z.string().uuid('Invalid root folder UUID').optional(),
-    })
-    .strict(),
-  privacy: z
-    .object({
-      passwordEnabled: z.boolean(),
-      password: z.string().min(6, 'Password must be at least 6 characters').optional(),
-    })
-    .strict(),
-  download: z
-    .object({
-      enabled: z.boolean(),
-      sizes: z.array(z.enum(['web', 'small', 'original'])).default([]),
-      pinEnabled: z.boolean(),
-    })
-    .strict(),
-  store: z
-    .object({
-      enabled: z.boolean(),
-      priceSheetId: z.string().uuid('Invalid price sheet UUID').optional(),
-      showInStore: z.boolean(),
-    })
-    .strict(),
-}).describe('Event core settings configuration');
-
-// Optional design block (Pixieset-like)
-const DesignSchema = z
-  .object({
-    cover: z.object({
-      style: z.enum([
-        'novel',
-        'vintage',
-        'frame',
-        'stripe',
-        'divider',
-        'journal',
-        'classic',
-        'none',
-      ]),
-    }),
-    typography: z.object({ preset: z.enum(['sans', 'serif', 'modern', 'timeless', 'bold', 'subtle']) }),
-    color: z.object({ scheme: z.enum(['light', 'gold', 'rose', 'terracotta', 'sand', 'olive', 'agave', 'sea', 'dark']) }),
-    grid: z.object({
-      style: z.enum(['vertical', 'horizontal']),
-      thumb: z.enum(['regular', 'large']),
-      spacing: z.enum(['regular', 'large']),
-      nav: z.enum(['icons', 'icons_text']),
-    }),
-    theme: z.enum(['default', 'jardin', 'secundaria', 'bautismo']).optional(),
-  })
-  .strict()
-  .optional();
-
-// Full schema allows optional design
-const SettingsSchema = CoreSettingsSchema.extend({ design: z.any().optional() });
-
-export type EventSettings = z.infer<typeof CoreSettingsSchema> & { design?: z.infer<typeof DesignSchema> };
-
-/**
- * Update event settings with validation and conflict resolution
- * @param eventId - UUID of the event to update
- * @param payload - Settings payload to merge with existing settings
- * @returns Promise<{success: boolean}>
- */
-export async function updateEventSettings(
-  eventId: string, 
-  payload: unknown
-): Promise<{ success: boolean }> {
-  const id = EventIdSchema.parse(eventId);
-  const supabase = await createServerSupabaseServiceClient();
-  
-  const startTime = performance.now();
-
-  try {
-    // Fetch current settings with error handling
-    const { data: current, error: readErr } = await supabase
-      .from('events')
-      .select('settings')
-      .eq('id', id)
-      .single();
-      
-    if (readErr) {
-      throw new Error(`Failed to fetch current settings: ${readErr.message}`);
-    }
-
-    // Safely merge settings
-    const currentSettings = current?.settings || {};
-    const incomingPayload = payload && typeof payload === 'object' ? payload : {};
-    
-    const merged = {
-      ...currentSettings,
-      ...incomingPayload,
-    };
-
-    // Validate merged settings
-    const validatedSettings = SettingsSchema.parse(merged);
-
-    // Update with optimistic concurrency control
-    const { error: updateError } = await supabase
-      .from('events')
-      .update({ 
-        settings: validatedSettings,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id);
-      
-    if (updateError) {
-      throw new Error(`Failed to update settings: ${updateError.message}`);
-    }
-    
-    const executionTime = performance.now() - startTime;
-    console.debug(`[Performance] Event settings updated in ${executionTime.toFixed(2)}ms`);
-    
-    return { success: true };
-    
-  } catch (error) {
-    const executionTime = performance.now() - startTime;
-    console.error(`[Performance] Event settings update failed after ${executionTime.toFixed(2)}ms:`, error);
-    throw error;
-  }
+function toRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }
 
-/**
- * Link a root folder to an event with validation
- * @param eventId - UUID of the event
- * @param folderId - UUID of the folder to link
- * @returns Promise<{success: boolean}>
- */
-export async function linkRootFolder(
-  eventId: string, 
-  folderId: string
-): Promise<{ success: boolean }> {
+function mergeSettings(
+  current: Record<string, unknown>,
+  incoming: Record<string, unknown>
+): EventSettings {
+  const merged: Record<string, unknown> = {
+    ...current,
+    ...incoming,
+  };
+
+  if ('general' in current || 'general' in incoming) {
+    merged.general = {
+      ...toRecord((current as Record<string, unknown>).general),
+      ...toRecord((incoming as Record<string, unknown>).general),
+    };
+  }
+
+  if ('privacy' in current || 'privacy' in incoming) {
+    merged.privacy = {
+      ...toRecord((current as Record<string, unknown>).privacy),
+      ...toRecord((incoming as Record<string, unknown>).privacy),
+    };
+  }
+
+  if ('download' in current || 'download' in incoming) {
+    merged.download = {
+      ...toRecord((current as Record<string, unknown>).download),
+      ...toRecord((incoming as Record<string, unknown>).download),
+    };
+  }
+
+  if ('store' in current || 'store' in incoming) {
+    merged.store = {
+      ...toRecord((current as Record<string, unknown>).store),
+      ...toRecord((incoming as Record<string, unknown>).store),
+    };
+  }
+
+  if ('design' in current || 'design' in incoming) {
+    merged.design = {
+      ...toRecord((current as Record<string, unknown>).design),
+      ...toRecord((incoming as Record<string, unknown>).design),
+    };
+  }
+
+  return SettingsSchema.parse(merged);
+}
+
+export async function updateEventSettings(eventId: string, payload: unknown): Promise<{ success: boolean }> {
+  const id = EventIdSchema.parse(eventId);
+  const supabase = await createServerSupabaseServiceClient();
+
+  const { data: current, error: readError } = await supabase
+    .from('events')
+    .select('settings')
+    .eq('id', id)
+    .single<Pick<Database['public']['Tables']['events']['Row'], 'settings'>>();
+
+  if (readError) {
+    throw new Error(`Failed to fetch current settings: ${readError.message}`);
+  }
+
+  const currentSettings = toRecord(current?.settings);
+  const incomingSettings = toRecord(payload);
+  const validatedSettings = mergeSettings(currentSettings, incomingSettings);
+
+  const updatePayload: Database['public']['Tables']['events']['Update'] = {
+    settings: validatedSettings as unknown as Json,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: updateError } = await supabase.from('events').update(updatePayload).eq('id', id);
+
+  if (updateError) {
+    throw new Error(`Failed to update settings: ${updateError.message}`);
+  }
+
+  return { success: true };
+}
+
+export async function linkRootFolder(eventId: string, folderId: string): Promise<{ success: boolean }> {
   const id = EventIdSchema.parse(eventId);
   const folderUuid = FolderIdSchema.parse(folderId);
   const supabase = await createServerSupabaseServiceClient();
-  
-  const startTime = performance.now();
 
-  try {
-    // Fetch current settings
-    const { data, error } = await supabase
-      .from('events')
-      .select('settings')
-      .eq('id', id)
-      .single();
-      
-    if (error) {
-      throw new Error(`Failed to fetch event: ${error.message}`);
-    }
+  const { data, error } = await supabase
+    .from('events')
+    .select('settings')
+    .eq('id', id)
+    .single<Pick<Database['public']['Tables']['events']['Row'], 'settings'>>();
 
-    // Safely update settings structure
-    const currentSettings = (data?.settings || {}) as any;
-    const updatedSettings = {
-      ...currentSettings,
-      general: {
-        ...(currentSettings.general || {}),
-        rootFolderId: folderUuid,
-      },
-    };
-
-    // Update with timestamp
-    const { error: updateError } = await supabase
-      .from('events')
-      .update({ 
-        settings: updatedSettings,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id);
-      
-    if (updateError) {
-      throw new Error(`Failed to link folder: ${updateError.message}`);
-    }
-    
-    const executionTime = performance.now() - startTime;
-    console.debug(`[Performance] Root folder linked in ${executionTime.toFixed(2)}ms`);
-    
-    return { success: true };
-    
-  } catch (error) {
-    const executionTime = performance.now() - startTime;
-    console.error(`[Performance] Root folder linking failed after ${executionTime.toFixed(2)}ms:`, error);
-    throw error;
+  if (error) {
+    throw new Error(`Failed to fetch event: ${error.message}`);
   }
+
+  const currentSettings = toRecord(data?.settings);
+  const updatedSettings = mergeSettings(currentSettings, {
+    general: {
+      ...toRecord(currentSettings.general),
+      rootFolderId: folderUuid,
+    },
+  });
+
+  const updatePayload: Database['public']['Tables']['events']['Update'] = {
+    settings: updatedSettings as unknown as Json,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error: updateError } = await supabase.from('events').update(updatePayload).eq('id', id);
+
+  if (updateError) {
+    throw new Error(`Failed to link folder: ${updateError.message}`);
+  }
+
+  return { success: true };
 }
 
-// Enhanced validation schemas
-const EventIdSchema = z.string().uuid('Invalid event ID format');
-const FolderIdSchema = z.string().uuid('Invalid folder ID format');
-
-/**
- * Fetch comprehensive event metrics with optimized database queries
- * @param eventId - UUID of the event
- * @returns Promise<EventMetrics> - Object containing orders, students, and photos metrics
- */
 export async function fetchEventMetrics(eventId: string): Promise<EventMetrics> {
   const id = EventIdSchema.parse(eventId);
   const supabase = await createServerSupabaseServiceClient();
-  
-  const startTime = performance.now();
 
   try {
-    // Execute parallel queries for better performance
     const [subjectsResult, ordersResult] = await Promise.all([
-      // Students count
-      supabase
-        .from('subjects')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', id),
-      // Orders total count
+      supabase.from('subjects').select('id', { count: 'exact', head: true }).eq('event_id', id),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('event_id', id),
+    ]);
+
+    if (subjectsResult.error) {
+      throw subjectsResult.error;
+    }
+    if (ordersResult.error) {
+      throw ordersResult.error;
+    }
+
+    const paidStatuses = ['paid', 'approved', 'delivered'];
+    const [paidResult, pendingResult] = await Promise.all([
       supabase
         .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', id),
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', id)
+        .in('status', paidStatuses),
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', id)
+        .eq('status', 'pending'),
     ]);
-    
-    const subjectsCount = subjectsResult.count || 0;
-    const ordersTotal = ordersResult.count || 0;
 
-  // Paid/Approved
-  let ordersPaid = 0;
-  try {
-    const { count } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', id)
-      .in('status' as any, ['paid', 'approved', 'delivered']);
-    ordersPaid = count || 0;
-  } catch {
-    // Fallback si .in no disponible: contar approved
-    const { count } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('event_id', id)
-      .eq('status', 'approved');
-    ordersPaid = count || 0;
-  }
+    const ordersTotal = ordersResult.count ?? 0;
+    const ordersPaid = paidResult.error ? 0 : paidResult.count ?? 0;
+    const ordersPending = pendingResult.error ? 0 : pendingResult.count ?? 0;
+    const studentsTotal = subjectsResult.count ?? 0;
 
-  // Pending
-  const { count: ordersPending } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('event_id', id)
-    .eq('status', 'pending');
+    let assetsTotal = 0;
+    let unassigned: number | null = null;
 
-  // Photos: folders -> assets
-  let folderIds: string[] = [];
-  try {
-    const { data: folders } = await supabase
-      .from('folders')
-      .select('id')
-      .eq('event_id', id);
-    folderIds = (folders || []).map((f: any) => f.id);
-  } catch (e: any) {
-    // Esquema legacy sin event_id en folders
-    folderIds = [];
-  }
+    const { data: folders, error: folderError } = await supabase.from('folders').select('id').eq('event_id', id);
 
-  let assetsTotal = 0;
-  if (folderIds.length > 0) {
-    const { count } = await supabase
-      .from('assets')
-      .select('id', { count: 'exact', head: true })
-      .in('folder_id', folderIds);
-    assetsTotal = count || 0;
-  } else {
-    assetsTotal = 0; // sin carpetas asociadas
-  }
-
-  // Unassigned: depende del esquema de photo_subjects. Si no está claro, dejar null.
-  let unassigned: number | null = null;
-  try {
-    if (folderIds.length > 0) {
-      // Intento rápido: contar asignaciones por photo_id y estimar no asignadas = total - asignadas_distintas
-      // Nota: PostgREST no soporta distinct count directo; en fase 2 migramos a RPC.
-      const { data: sampleAssets } = await supabase
+    if (!folderError && folders && folders.length > 0) {
+      const folderIds = folders.map((folder) => String(folder.id));
+      const { count: assetsCount, error: assetsError } = await supabase
         .from('assets')
-        .select('id')
-        .in('folder_id', folderIds)
-        .limit(1000);
-      const ids = (sampleAssets || []).map((a: any) => a.id);
-      if (ids.length > 0) {
-        await supabase
-          .from('photo_subjects' as any)
-          .select('photo_id', { count: 'exact', head: true })
-          .in('photo_id' as any, ids);
-        // Esto no es distinct; dejamos null para no reportar dato impreciso
-        unassigned = null;
+        .select('id', { count: 'exact', head: true })
+        .in('folder_id', folderIds);
+
+      if (!assetsError && typeof assetsCount === 'number') {
+        assetsTotal = assetsCount;
       }
     }
-  } catch {
-    unassigned = null;
-  }
 
-    const metricsResult = {
-      orders: { 
-        total: ordersTotal, 
-        paid: ordersPaid, 
-        pending: ordersPending 
-      },
-      students: { total: subjectsCount },
+    return {
+      orders: { total: ordersTotal, paid: ordersPaid, pending: ordersPending },
+      students: { total: studentsTotal },
       photos: { total: assetsTotal, unassigned },
     };
-    
-    const executionTime = performance.now() - startTime;
-    console.debug(`[Performance] Event metrics fetched in ${executionTime.toFixed(2)}ms`);
-    
-    return metricsResult;
-    
   } catch (error) {
-    const executionTime = performance.now() - startTime;
-    console.error(`[Performance] Event metrics failed after ${executionTime.toFixed(2)}ms:`, error);
-    
-    // Return safe defaults on error
+    console.error('[Events] fetchEventMetrics failed', error);
     return {
       orders: { total: 0, paid: 0, pending: 0 },
       students: { total: 0 },

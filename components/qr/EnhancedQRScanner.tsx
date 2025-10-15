@@ -215,7 +215,7 @@ export function EnhancedQRScanner({
     } catch (error) {
       console.warn('QR detection error:', error);
     }
-  }, [settings.enhanceContrast]);
+  }, [settings.enhanceContrast, handleQRDetection]);
 
   /**
    * Handle QR detection with enhanced processing
@@ -318,6 +318,8 @@ export function EnhancedQRScanner({
       onScan,
       onSubjectFound,
       scanMode,
+      recordScanEvent,
+      stopScanning,
     ]
   );
 
@@ -439,7 +441,7 @@ export function EnhancedQRScanner({
     return () => {
       stopScanning();
     };
-  }, []);
+  }, [initializeCamera, stopScanning]);
 
   // Render loading state
   if (hasCamera === null) {
@@ -630,7 +632,7 @@ export function EnhancedQRScanner({
               <div className="text-xs text-gray-500">Successful</div>
             </div>
             <div className="space-y-1">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 {scanStats.avgScanTime.toFixed(0)}ms
               </div>
               <div className="text-xs text-gray-500">Avg Time</div>

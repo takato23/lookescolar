@@ -118,7 +118,7 @@ export default function MercadoPagoSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Configuración de Mercado Pago</h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-gray-500 dark:text-gray-400">
             Configura las credenciales para procesar pagos con Mercado Pago
           </p>
         </div>
@@ -145,7 +145,7 @@ export default function MercadoPagoSettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg bg-blue-50 p-4">
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-4">
             <h3 className="mb-2 font-semibold">
               Pasos para configurar Mercado Pago:
             </h3>
@@ -156,7 +156,7 @@ export default function MercadoPagoSettingsPage() {
                   href="https://www.mercadopago.com.ar/developers/panel"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 underline"
+                  className="text-blue-600 dark:text-blue-400 underline"
                 >
                   Panel de Desarrolladores de Mercado Pago
                 </a>
@@ -289,7 +289,7 @@ export default function MercadoPagoSettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowAccessToken(!showAccessToken)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-foreground"
               >
                 {showAccessToken ? (
                   <EyeOff className="h-4 w-4" />
@@ -320,7 +320,7 @@ export default function MercadoPagoSettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowWebhookSecret(!showWebhookSecret)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-foreground"
               >
                 {showWebhookSecret ? (
                   <EyeOff className="h-4 w-4" />
@@ -344,7 +344,7 @@ export default function MercadoPagoSettingsPage() {
                   `${window.location.origin}/api/payments/webhook`
                 }
                 readOnly
-                className="bg-gray-50 font-mono"
+                className="bg-muted font-mono"
               />
               <Button
                 variant="outline"
@@ -443,12 +443,12 @@ export default function MercadoPagoSettingsPage() {
               href="https://www.mercadopago.com.ar/developers/es/docs"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-muted"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
                 <p className="font-semibold">Documentación</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Guías y referencias de la API
                 </p>
               </div>
@@ -458,12 +458,12 @@ export default function MercadoPagoSettingsPage() {
               href="https://www.mercadopago.com.ar/developers/panel/test-users"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-muted"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
                 <p className="font-semibold">Usuarios de Prueba</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Crea usuarios para testing
                 </p>
               </div>
@@ -473,12 +473,12 @@ export default function MercadoPagoSettingsPage() {
               href="https://www.mercadopago.com.ar/activities"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-muted"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
                 <p className="font-semibold">Actividad de Cuenta</p>
-                <p className="text-sm text-gray-600">Ve tus transacciones</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Ve tus transacciones</p>
               </div>
             </a>
 
@@ -486,12 +486,12 @@ export default function MercadoPagoSettingsPage() {
               href="https://vendedores.mercadolibre.com.ar/ingresos-mercadopago"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-lg border p-3 hover:bg-muted"
             >
               <ExternalLink className="h-4 w-4" />
               <div>
                 <p className="font-semibold">Balance y Retiros</p>
-                <p className="text-sm text-gray-600">Gestiona tu dinero</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Gestiona tu dinero</p>
               </div>
             </a>
           </div>

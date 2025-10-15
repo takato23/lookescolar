@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
 import {
   Share2,
   X,
@@ -17,6 +18,8 @@ import {
   Folder,
   Image as ImageIcon,
   Users,
+  Sparkles,
+  Link2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +84,24 @@ const VIEW_LIMIT_OPTIONS = [
   { value: '1000', label: '1000 vistas' },
 ];
 
+type ShareType = 'folder' | 'photos';
+
+type SharePayloadBase = {
+  eventId: string;
+  shareType: ShareType;
+  title: string;
+  description?: string;
+  password?: string;
+  expiresAt?: string;
+  maxViews?: number;
+  allowDownload: boolean;
+  allowComments: boolean;
+};
+
+type SharePayload =
+  | (SharePayloadBase & { shareType: 'folder'; folderId: string })
+  | (SharePayloadBase & { shareType: 'photos'; photoIds: string[] });
+
 export function ShareInterface({
   eventId,
   eventName,
@@ -104,9 +125,10 @@ export function ShareInterface({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Determine share type and default title
-  const shareType = selectedItems.length > 0 ? 'photos' : 'folder';
+  const shareType: ShareType = selectedItems.length > 0 ? 'photos' : 'folder';
   const defaultTitle =
     shareType === 'folder'
       ? `${currentFolderName || 'Fotos'} - ${eventName}`
@@ -141,13 +163,14 @@ export function ShareInterface({
     try {
       setLoading(true);
       setError(null);
+      setIsAnimating(true);
 
       const expiresAt = calculateExpirationDate(shareData.expiry);
       const maxViews = shareData.maxViews
         ? parseInt(shareData.maxViews)
         : undefined;
 
-      const payload = {
+      const commonPayload: SharePayloadBase = {
         eventId,
         shareType,
         title: shareData.title.trim() || defaultTitle,
@@ -159,12 +182,31 @@ export function ShareInterface({
         allowComments: shareData.allowComments,
       };
 
-      // Add type-specific data
+      let payload: SharePayload;
+
       if (shareType === 'folder') {
-        payload.folderId = currentFolderId;
+        if (!currentFolderId) {
+          throw new Error('No hay carpeta seleccionada para compartir');
+        }
+        payload = {
+          ...commonPayload,
+          shareType: 'folder',
+          folderId: currentFolderId,
+        };
       } else {
-        payload.photoIds = selectedItems.map((item) => item.id);
+        const photoIds = selectedItems.map((item) => item.id).filter(Boolean);
+        if (photoIds.length === 0) {
+          throw new Error('Selecciona al menos una foto para compartir');
+        }
+        payload = {
+          ...commonPayload,
+          shareType: 'photos',
+          photoIds,
+        };
       }
+
+      // Show progress toast
+      const toastId = toast.loading('Generando enlace de compartición...');
 
       const response = await fetch('/api/share', {
         method: 'POST',
@@ -179,11 +221,24 @@ export function ShareInterface({
 
       const result = await response.json();
       setGeneratedShare(result.share);
+
+      // Success feedback
+      toast.success('¡Enlace creado exitosamente!', {
+        id: toastId,
+        description: 'El enlace está listo para compartir',
+      });
+
+      // Animate the success state
+      setTimeout(() => setIsAnimating(false), 1000);
     } catch (error) {
       console.error('Error generating share:', error);
-      setError(
-        error instanceof Error ? error.message : 'Failed to create share'
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create share';
+      setError(errorMessage);
+
+      // Error feedback
+      toast.error('Error al crear el enlace', {
+        description: errorMessage,
+      });
     } finally {
       setLoading(false);
     }
@@ -201,9 +256,16 @@ export function ShareInterface({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
+      toast.success('¡Enlace copiado!', {
+        description: 'El enlace se copió al portapapeles',
+        duration: 2000,
+      });
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
+      toast.error('Error al copiar', {
+        description: 'No se pudo copiar el enlace',
+      });
     }
   }, []);
 
@@ -215,18 +277,23 @@ export function ShareInterface({
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 bg-white shadow-lg',
+        'rounded-lg border border-border bg-white shadow-lg',
         className
       )}
     >
       {/* Header */}
-      <div className="border-b border-gray-200 p-6">
+      <div className="border-b border-border bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 p-6 rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Share2 className="h-6 w-6 text-blue-600" />
+            <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+              <Share2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Compartir</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                Compartir
+                <Sparkles className="h-4 w-4 text-yellow-500" />
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {shareType === 'folder' ? (
                   <>
                     <Folder className="mr-1 inline h-4 w-4" />
@@ -244,7 +311,12 @@ export function ShareInterface({
             </div>
           </div>
 
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -284,7 +356,7 @@ export function ShareInterface({
 
             {/* Security Settings */}
             <div className="space-y-4">
-              <h4 className="flex items-center gap-2 text-sm font-medium text-gray-900">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Lock className="h-4 w-4" />
                 Configuración de Seguridad
               </h4>
@@ -353,7 +425,7 @@ export function ShareInterface({
 
             {/* Permissions */}
             <div className="space-y-4">
-              <h4 className="flex items-center gap-2 text-sm font-medium text-gray-900">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
                 <Users className="h-4 w-4" />
                 Permisos
               </h4>
@@ -398,11 +470,15 @@ export function ShareInterface({
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
               <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button onClick={handleGenerateShare} disabled={loading}>
+              <Button
+                onClick={handleGenerateShare}
+                disabled={loading}
+                className="relative overflow-hidden transition-all hover:scale-105"
+              >
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -410,7 +486,7 @@ export function ShareInterface({
                   </>
                 ) : (
                   <>
-                    <Share2 className="mr-2 h-4 w-4" />
+                    <Link2 className="mr-2 h-4 w-4" />
                     Crear enlace
                   </>
                 )}
@@ -420,44 +496,58 @@ export function ShareInterface({
         ) : (
           /* Generated Share Display */
           <div className="space-y-6">
-            <div className="text-center">
-              <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-600" />
-              <h4 className="mb-2 text-lg font-medium text-gray-900">
+            <div className={`text-center transition-all duration-500 ${isAnimating ? 'scale-110' : 'scale-100'}`}>
+              <div className="relative inline-block">
+                <CheckCircle2 className={`mx-auto mb-3 h-12 w-12 text-green-600 transition-all duration-500 ${isAnimating ? 'scale-125' : ''}`} />
+                {isAnimating && (
+                  <div className="absolute inset-0 h-12 w-12 bg-green-400 rounded-full animate-ping opacity-30"></div>
+                )}
+              </div>
+              <h4 className="mb-2 text-lg font-medium text-foreground">
                 ¡Enlace creado exitosamente!
               </h4>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 El enlace de compartición está listo para usar
               </p>
             </div>
 
             {/* Share URL */}
             <div className="space-y-2">
-              <Label>Enlace de compartición</Label>
-              <div className="flex items-center gap-2">
+              <Label className="flex items-center gap-2">
+                <Link2 className="h-4 w-4" />
+                Enlace de compartición
+              </Label>
+              <div className="flex items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-lg">
                 <Input
                   value={generatedShare.shareUrl}
                   readOnly
-                  className="flex-1 font-mono text-sm"
+                  className="flex-1 font-mono text-sm bg-white dark:bg-gray-800 border-0"
                 />
                 <Button
-                  variant="outline"
+                  variant={copied ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleCopy(generatedShare.shareUrl)}
-                  className="flex-shrink-0"
+                  className={`flex-shrink-0 transition-all ${copied ? 'bg-green-600 hover:bg-green-700' : ''}`}
                 >
                   {copied ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <>
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Copiado
+                    </>
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copiar
+                    </>
                   )}
                 </Button>
               </div>
             </div>
 
             {/* Share Details */}
-            <div className="space-y-3 rounded-md bg-gray-50 p-4">
+            <div className="space-y-3 rounded-md bg-muted p-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Tipo:</span>
+                <span className="text-gray-500 dark:text-gray-400">Tipo:</span>
                 <span className="font-medium">
                   {shareType === 'folder' ? 'Carpeta' : 'Fotos seleccionadas'}
                 </span>
@@ -465,8 +555,8 @@ export function ShareInterface({
 
               {generatedShare.hasPassword && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Protección:</span>
-                  <span className="font-medium text-amber-600">
+                  <span className="text-gray-500 dark:text-gray-400">Protección:</span>
+                  <span className="font-medium text-amber-600 dark:text-amber-400">
                     <Lock className="mr-1 inline h-3 w-3" />
                     Con contraseña
                   </span>
@@ -475,7 +565,7 @@ export function ShareInterface({
 
               {generatedShare.expiresAt && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Expira:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Expira:</span>
                   <span className="font-medium">
                     <Calendar className="mr-1 inline h-3 w-3" />
                     {new Date(generatedShare.expiresAt).toLocaleDateString(
@@ -494,7 +584,7 @@ export function ShareInterface({
 
               {generatedShare.maxViews && (
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Límite de vistas:</span>
+                  <span className="text-gray-500 dark:text-gray-400">Límite de vistas:</span>
                   <span className="font-medium">
                     <Eye className="mr-1 inline h-3 w-3" />
                     {generatedShare.maxViews} vistas
@@ -503,10 +593,10 @@ export function ShareInterface({
               )}
 
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Permisos:</span>
+                <span className="text-gray-500 dark:text-gray-400">Permisos:</span>
                 <div className="flex items-center gap-2">
                   {generatedShare.allowDownload && (
-                    <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700">
+                    <span className="rounded bg-blue-100 dark:bg-blue-950/30 px-2 py-1 text-xs text-blue-700">
                       <Download className="mr-1 inline h-3 w-3" />
                       Descarga
                     </span>
@@ -526,7 +616,7 @@ export function ShareInterface({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between border-t border-border pt-4">
               <Button variant="outline" onClick={() => setGeneratedShare(null)}>
                 Crear otro enlace
               </Button>

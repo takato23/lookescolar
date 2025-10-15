@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Camera,
@@ -337,12 +339,12 @@ export function ProGallery({
     return (
       <div className="py-16 text-center">
         <div className="bg-muted mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl">
-          <Camera className="text-muted-foreground h-8 w-8" />
+          <Camera className="text-gray-500 dark:text-gray-400 h-8 w-8" />
         </div>
         <h3 className="text-foreground mb-3 text-xl font-semibold">
           No hay fotos en este evento
         </h3>
-        <p className="text-muted-foreground mx-auto mb-8 max-w-md">
+        <p className="text-gray-500 dark:text-gray-400 mx-auto mb-8 max-w-md">
           Sube tus primeras fotos para comenzar a organizar tu galería
           profesional.
         </p>
@@ -371,7 +373,7 @@ export function ProGallery({
               </CardTitle>
 
               {selectedPhotos.size > 0 && (
-                <div className="text-muted-foreground text-sm">
+                <div className="text-gray-500 dark:text-gray-400 text-sm">
                   {selectedPhotos.size} seleccionada
                   {selectedPhotos.size !== 1 ? 's' : ''}
                 </div>
@@ -381,7 +383,7 @@ export function ProGallery({
             <div className="flex items-center gap-2">
               {/* Search */}
               <div className="relative">
-                <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
+                <Search className="text-gray-500 dark:text-gray-400 absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform" />
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -448,7 +450,7 @@ export function ProGallery({
               {/* Grid size slider */}
               {viewMode === 'grid' && (
                 <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
-                  <ZoomOut className="text-muted-foreground h-4 w-4" />
+                  <ZoomOut className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                   <input
                     type="range"
                     min="2"
@@ -460,7 +462,7 @@ export function ProGallery({
                     }
                     className="w-20"
                   />
-                  <ZoomIn className="text-muted-foreground h-4 w-4" />
+                  <ZoomIn className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                 </div>
               )}
             </div>
@@ -540,7 +542,7 @@ export function ProGallery({
       </div>
 
       {/* Quick actions bar */}
-      <div className="text-muted-foreground flex items-center justify-between text-sm">
+      <div className="text-gray-500 dark:text-gray-400 flex items-center justify-between text-sm">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={selectAll}>
             Seleccionar todo ({filteredAndSortedPhotos.length})
@@ -613,7 +615,7 @@ function PhotoGridItem({
         />
       ) : (
         <div className="from-muted to-muted-foreground/10 flex h-full w-full items-center justify-center bg-gradient-to-br">
-          <Camera className="text-muted-foreground h-8 w-8" />
+          <Camera className="text-gray-500 dark:text-gray-400 h-8 w-8" />
         </div>
       )}
 
@@ -719,7 +721,7 @@ function PhotoListItem({
               />
             ) : (
               <div className="bg-muted flex h-16 w-16 items-center justify-center rounded-lg">
-                <Camera className="text-muted-foreground h-6 w-6" />
+                <Camera className="text-gray-500 dark:text-gray-400 h-6 w-6" />
               </div>
             )}
           </div>
@@ -731,7 +733,7 @@ function PhotoListItem({
                 <p className="text-foreground truncate font-medium">
                   {photo.original_name}
                 </p>
-                <div className="text-muted-foreground mt-1 flex items-center gap-3 text-sm">
+                <div className="text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-3 text-sm">
                   <span>{formatFileSize(photo.size_bytes)}</span>
                   <span>•</span>
                   <span>

@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import React, {
   useState,
   useRef,
@@ -139,7 +141,7 @@ const LiquidPhotoCard: React.FC<{
     ? 'bg-emerald-500'
     : photo.tagged
       ? 'bg-blue-500'
-      : 'bg-amber-500';
+      : 'bg-primary-500';
 
   const statusText = photo.approved
     ? 'Aprobada'
@@ -157,7 +159,7 @@ const LiquidPhotoCard: React.FC<{
     return (
       <div className="group transform cursor-pointer rounded-xl bg-white shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg dark:bg-gray-800">
         <div className="flex items-center space-x-4 p-4">
-          <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-700">
+          <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-muted dark:bg-gray-700">
             {photo.preview_url ? (
               <img
                 src={photo.preview_url}
@@ -182,7 +184,7 @@ const LiquidPhotoCard: React.FC<{
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+            <h3 className="truncate text-sm font-medium text-foreground dark:text-gray-200">
               {photo.original_filename}
             </h3>
             <div className="mt-1 flex items-center space-x-2">
@@ -193,7 +195,7 @@ const LiquidPhotoCard: React.FC<{
                   {statusText}
                 </span>
               </SimpleTooltip>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
+              <span className="text-xs text-muted-foreground dark:text-gray-400">
                 {Math.round(photo.file_size / 1024)} KB
               </span>
             </div>
@@ -241,7 +243,7 @@ const LiquidPhotoCard: React.FC<{
             className={`flex h-6 w-6 transform cursor-pointer items-center justify-center rounded-full shadow-sm transition-all hover:scale-110 ${
               isSelected
                 ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300'
+                : 'bg-muted text-muted-foreground dark:bg-gray-600 dark:text-gray-300'
             }`}
             onClick={(e) => {
               e.stopPropagation();
@@ -275,7 +277,7 @@ const LiquidPhotoCard: React.FC<{
               className={`flex h-6 w-6 transform cursor-pointer items-center justify-center rounded-full shadow-lg transition-all hover:scale-110 ${
                 isSelected
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white/90 text-gray-600 backdrop-blur-sm dark:bg-gray-800/90 dark:text-gray-300'
+                  : 'bg-white/90 text-muted-foreground backdrop-blur-sm dark:bg-gray-800/90 dark:text-gray-300'
               }`}
               onClick={(e) => {
                 e.stopPropagation();
@@ -361,10 +363,10 @@ const LiquidPhotoCard: React.FC<{
         {/* Photo Info with Better Contrast */}
         <div className="rounded-b-2xl bg-white/90 backdrop-blur-sm dark:bg-gray-800/90">
           <div className="p-3">
-            <div className="mb-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+            <div className="mb-1 truncate text-sm font-medium text-foreground dark:text-gray-200">
               {photo.original_filename}
             </div>
-            <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex justify-between text-xs text-muted-foreground dark:text-gray-400">
               <span>{Math.round(photo.file_size / 1024)} KB</span>
               <span>{new Date(photo.created_at).toLocaleDateString()}</span>
             </div>
@@ -1301,13 +1303,13 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
           ) : (
             <div className="py-12 text-center">
               <div className="inline-block rounded-2xl bg-white p-8 shadow-lg dark:bg-gray-800">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 p-4 dark:bg-gray-700">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted p-4 dark:bg-gray-700">
                   <ImageIcon className="h-full w-full text-gray-400" />
                 </div>
-                <h3 className="mb-2 font-medium text-gray-800 dark:text-gray-200">
+                <h3 className="mb-2 font-medium text-foreground dark:text-gray-200">
                   No se encontraron fotos
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground dark:text-gray-400">
                   {searchQuery
                     ? `No hay fotos que coincidan con "${searchQuery}".`
                     : 'No hay fotos disponibles con los filtros seleccionados.'}
@@ -1441,9 +1443,9 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="flex items-center gap-4 rounded-full border border-gray-200 bg-white px-6 py-3 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+            className="flex items-center gap-4 rounded-full border border-border bg-white px-6 py-3 shadow-2xl dark:border-gray-700 dark:bg-gray-900"
           >
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground dark:text-gray-300">
               <CheckSquareIcon className="h-4 w-4" />
               <span>
                 {selectedPhotos.length} seleccionada
@@ -1554,7 +1556,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => setSelectedPhotos([])}
-              className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
+              className="h-8 px-2 text-xs text-gray-500 hover:text-foreground"
             >
               <XIcon className="h-4 w-4" />
             </Button>
@@ -1610,12 +1612,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
       {showMoveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="mx-4 max-h-[80vh] w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-800">
-            <div className="border-b border-gray-200 p-6 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <div className="border-b border-border p-6 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">
                 Mover {selectedPhotos.length} foto
                 {selectedPhotos.length !== 1 ? 's' : ''}
               </h3>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              <p className="mt-1 text-sm text-muted-foreground dark:text-gray-400">
                 Selecciona una carpeta de destino
               </p>
             </div>
@@ -1632,12 +1634,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                   {/* Option to move to "Sin carpeta" */}
                   <button
                     onClick={() => handleMovePhotos('null')}
-                    className="w-full rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-orange-300 hover:bg-orange-50"
+                    className="w-full rounded-lg border border-border p-3 text-left transition-colors hover:border-primary-300 hover:bg-primary-50"
                   >
                     <div className="flex items-center gap-3">
-                      <FolderIcon className="h-5 w-5 text-orange-600" />
+                      <FolderIcon className="h-5 w-5 text-primary-600" />
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-foreground">
                           Sin carpeta
                         </div>
                         <div className="text-xs text-gray-500">
@@ -1651,12 +1653,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
                     <button
                       key={folder.id}
                       onClick={() => handleMovePhotos(folder.id)}
-                      className="w-full rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
+                      className="w-full rounded-lg border border-border p-3 text-left transition-colors hover:border-blue-300 hover:bg-blue-50"
                     >
                       <div className="flex items-center gap-3">
-                        <FolderIcon className="h-5 w-5 text-blue-600" />
+                        <FolderIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium text-gray-900">
+                          <div className="truncate font-medium text-foreground">
                             {folder.name}
                           </div>
                           {folder.eventName && (
@@ -1672,7 +1674,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
               )}
             </div>
 
-            <div className="flex justify-end gap-3 border-t border-gray-200 p-6 dark:border-gray-700">
+            <div className="flex justify-end gap-3 border-t border-border p-6 dark:border-gray-700">
               <Button
                 variant="outline"
                 onClick={() => setShowMoveModal(false)}

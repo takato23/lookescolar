@@ -220,7 +220,7 @@ export class FolderPublishService {
     const familyUrl = folder.share_token ? `/f/${folder.share_token}` : null;
 
     const qrUrl = folder.share_token
-      ? `/api/qr?token=${folder.share_token}`
+      ? `/access?token=${encodeURIComponent(folder.share_token)}`
       : null;
 
     return {

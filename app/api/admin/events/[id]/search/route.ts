@@ -26,10 +26,10 @@ interface SearchResult {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const { searchParams } = new URL(request.url);
 
     const query = searchParams.get('q')?.trim();

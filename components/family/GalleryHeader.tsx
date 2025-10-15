@@ -1,10 +1,17 @@
 'use client';
 
+interface EngagementStats {
+  totalFavorites: number;
+  totalInCart: number;
+  totalPurchased: number;
+  totalUnpurchased: number;
+}
+
 interface GalleryHeaderProps {
   totalPhotos: number;
   displayedPhotos: number;
   selectedCount: number;
-  favoritesCount: number;
+  stats: EngagementStats;
   onSelectAll: () => void;
   onClearSelection: () => void;
 }
@@ -13,7 +20,7 @@ export function GalleryHeader({
   totalPhotos,
   displayedPhotos,
   selectedCount,
-  favoritesCount,
+  stats,
   onSelectAll,
   onClearSelection,
 }: GalleryHeaderProps) {
@@ -63,15 +70,39 @@ export function GalleryHeader({
               <span>{selectedCount} seleccionadas</span>
             </div>
           )}
+        </div>
 
-          {favoritesCount > 0 && (
-            <div className="flex items-center space-x-1 text-red-600">
-              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-              <span>{favoritesCount} favoritos</span>
-            </div>
-          )}
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+          <span className="inline-flex items-center space-x-1 rounded-full bg-red-100 px-3 py-1 font-medium text-red-700">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            <span>{stats.totalFavorites} favoritas</span>
+          </span>
+
+          <span className="inline-flex items-center space-x-1 rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" />
+              <circle cx="9" cy="19" r="2" />
+              <circle cx="17" cy="19" r="2" />
+            </svg>
+            <span>{stats.totalInCart} en carrito</span>
+          </span>
+
+          <span className="inline-flex items-center space-x-1 rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{stats.totalPurchased} compradas</span>
+          </span>
+
+          <span className="inline-flex items-center space-x-1 rounded-full bg-gray-100 px-3 py-1 font-medium text-gray-700">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M12 8v4l3 3" />
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+            <span>{stats.totalUnpurchased} pendientes</span>
+          </span>
         </div>
       </div>
 

@@ -207,7 +207,7 @@ export function UntaggedPhotos({
           <div className="rounded-lg bg-white p-4">
             <div className="flex items-center space-x-3">
               <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-500"></div>
-              <span className="text-gray-700">Procesando asignación...</span>
+              <span className="text-foreground">Procesando asignación...</span>
             </div>
           </div>
         </div>

@@ -53,7 +53,7 @@ async function createUnifiedRedirects() {
       const redirectContent = `import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 /**
@@ -65,7 +65,7 @@ interface PageProps {
  * Migración completada: ${new Date().toISOString()}
  */
 export default async function UnifiedPhotoRedirect({ params }: PageProps) {
-  const { id: eventId } = await params;
+  const { id: eventId } = params;
   
   // Redirigir al sistema unificado con contexto de evento
   redirect(\`${route.newRedirectTarget}\`);

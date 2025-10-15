@@ -24,9 +24,9 @@ export function AdminLoginModal({ onLogin }: AdminLoginModalProps) {
     <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
       <Dialog.Trigger asChild>
         <Button
-          variant="ghost"
+          variant="default"
           size="sm"
-          className="rounded-none border border-gray-300 font-mono text-xs uppercase tracking-wider hover:border-gray-400 hover:bg-gray-100"
+          className="rounded-full border border-transparent bg-[#FF9F6A] px-5 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#101428] shadow-[0_12px_32px_-18px_rgba(16,24,40,0.3)] transition-transform hover:-translate-y-0.5 hover:bg-[#FF8B4A]"
         >
           <User className="mr-2 h-4 w-4" />
           Admin
@@ -41,7 +41,7 @@ export function AdminLoginModal({ onLogin }: AdminLoginModalProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute -top-12 right-0 rounded-none border border-white/20 text-white hover:border-white/40 hover:text-gray-300"
+                className="absolute -top-12 right-0 rounded-full border border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20"
                 aria-label="Cerrar modal de login"
               >
                 <X className="h-4 w-4" />

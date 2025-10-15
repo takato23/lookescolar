@@ -1,0 +1,15 @@
+export const selectionConstants = {
+  EMPTY_SELECTION_MAP,
+  EMPTY_SELECTION_ARRAY,
+} as const;
+
+export const selectionSelectors = {
+  mapByEvent: (eventId: string) => (state: PhotoSelectionState) =>
+    state.selections[eventId] ?? EMPTY_SELECTION_MAP,
+  sortedByEvent: (eventId: string) => (state: PhotoSelectionState) =>
+    state.selectionLists[eventId] ?? EMPTY_SELECTION_ARRAY,
+  idsByEvent: (eventId: string) => (state: PhotoSelectionState) =>
+    state.selectionIds[eventId] ?? EMPTY_SELECTION_IDS,
+};
+
+export const selectionShallow = shallow;

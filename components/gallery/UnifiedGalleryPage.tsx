@@ -18,16 +18,20 @@ interface Photo {
   size: number;
   width: number;
   height: number;
+  signed_url?: string | null;
+  download_url?: string | null;
+  type?: string | null;
 }
 
 interface Subject {
   id: string;
   name: string;
-  grade_section: string;
-  event: {
-    name: string;
-    school_name: string;
-  };
+  grade?: string | null;
+  section?: string | null;
+  event?: {
+    name?: string | null;
+    school_name?: string | null;
+  } | null;
 }
 
 interface PackageOption {
@@ -161,7 +165,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
   const loadGallery = async (targetPage: number) => {
     try {
       const response = await fetch(
-        `/api/family/gallery-simple/${token}?page=${targetPage}&limit=24`
+        `/api/family/gallery/${token}?page=${targetPage}&limit=24`
       );
 
       if (!response.ok) {
@@ -171,14 +175,37 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
         return;
       }
 
-      const data = await response.json();
-      const newPhotos = (data.photos || []) as Photo[];
+      const payload = await response.json();
+      const gallery = payload?.data?.gallery;
+
+      if (!gallery) {
+        setError(payload?.error || 'Galería no disponible');
+        setLoading(false);
+        return;
+      }
+
+      const newPhotos: Photo[] = (gallery.items || []).map((item: any) => ({
+        id: item.id,
+        filename: item.filename || 'foto',
+        preview_url:
+          item.previewUrl ||
+          item.signedUrl ||
+          item.downloadUrl ||
+          '/placeholder-image.svg',
+        size: item.size ?? 0,
+        width: item.metadata?.width ?? 0,
+        height: item.metadata?.height ?? 0,
+        signed_url: item.signedUrl ?? null,
+        download_url: item.downloadUrl ?? null,
+        type: item.type ?? null,
+      }));
+
       setPhotos((prev) =>
         targetPage === 1 ? newPhotos : [...prev, ...newPhotos]
       );
-      setHasMore(Boolean(data.pagination?.has_more ?? newPhotos.length >= 24));
+      setHasMore(Boolean(gallery.pagination?.hasMore));
       setPage(targetPage);
-      setSubject(data.subject);
+      setSubject(gallery.subject ?? gallery.student ?? null);
 
       // Load favorites from localStorage
       const savedFavorites = localStorage.getItem(`favorites_${token}`);
@@ -515,7 +542,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
 
             {/* Photo Selection Status */}
             {selectedPackage && (
-              <div className="mb-6 rounded-xl bg-blue-50 p-4">
+              <div className="mb-6 rounded-xl bg-blue-50 dark:bg-blue-950/20 p-4">
                 <h4 className="mb-2 font-bold text-gray-900">
                   Selección de Fotos:
                 </h4>
@@ -549,7 +576,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
                     </span>
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-blue-600">
+                <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
                   Usa los botones{' '}
                   <span className="rounded bg-blue-600 px-1 text-white">I</span>{' '}
                   y{' '}

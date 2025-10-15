@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { Heart, Check, Star } from 'lucide-react'
-import { useCartStore } from '@/store/useCartStore'
+import { usePublicCartStore } from '@/lib/stores/unified-cart-store'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 
 interface PhotoCardProps {
   photo: {
     id: string
     signed_url: string
+    filename?: string
   }
   price?: number
   onOpenModal?: (photoId: string) => void
@@ -22,7 +22,10 @@ const BLUR_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQ
 export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const { addItem, removeItem, isItemInCart, getItemQuantity } = useCartStore()
+  const addItem = usePublicCartStore((state) => state.addItem)
+  const removeItem = usePublicCartStore((state) => state.removeItem)
+  const isItemInCart = usePublicCartStore((state) => state.isItemInCart)
+  const getItemQuantity = usePublicCartStore((state) => state.getItemQuantity)
   
   const isSelected = isItemInCart(photo.id)
   const quantity = getItemQuantity(photo.id)
@@ -33,7 +36,12 @@ export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) 
     if (isSelected) {
       removeItem(photo.id)
     } else {
-      addItem(photo.id, price)
+      addItem({
+        photoId: photo.id,
+        filename: photo.filename ?? photo.id,
+        price,
+        watermarkUrl: photo.signed_url,
+      })
     }
   }
 

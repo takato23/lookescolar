@@ -1,0 +1,171 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+backups/
+
+# Next.js
+.next/
+out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Testing
+__tests__/
+tests/
+*.test.*
+*.spec.*
+
+# Development tools
+.vscode/
+.idea/
+
+# Scripts and tools
+scripts/
+archive/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Database
+*.db
+*.sqlite
+
+# Backups
+backups/
+backup-*.zip
+archive/docs/.next.backup/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Config files that shouldn't be deployed
+.eslintrc*
+.eslintcache
+.prettierrc*
+tailwind.config.*
+tsconfig.json
+next.config.js
+vercel.json
+.vercelignore
+
+# Large static files (if any)
+public/mockups/
+public/images/
+
+# Service Workers (should not be processed during build)
+public/sw.js
+public/sw-mobile-dashboard.js
+public/clear-sw.js
+public/disable-sw.js
+
+# Testing and development files (reduce size)
+__tests__/
+tests/
+*.test.*
+*.spec.*
+vitest.config.ts
+vitest.setup.ts
+playwright.config.ts
+
+# Documentation and archive (reduce size)
+docs/
+archive/
+*.md
+!README.md
+
+# Scripts and tools (reduce size)
+scripts/
+*.sql
+*.js
+!scripts/deploy.sh
+
+# Additional large directories
+components/admin/mobile/
+components/gallery/
+components/store/
+components/ui/brutalist-typography.tsx
+components/ui/product-grid.tsx
+components/admin/PhotoAdmin.tsx
+lib/qr/decoder.ts
+hooks/useABTestTracking.ts
+
+# Development dependencies and cache
+.npm-cache/
+tsconfig.tsbuildinfo
+coverage/
+.eslintcache
+
+# Temporary and cache files
+.next/
+.vercel/
+dist/
+build/
+*.tmp
+*.temp
+.cache/
+
+# Git and version control
+.git/
+.gitignore
+.github/
+
+# Docker files
+Dockerfile*
+docker-compose*
+
+# IDE files
+.vscode/
+.idea/
+
+# Large static assets
+public/mockups/
+public/images/
+
+# Logs and debug files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

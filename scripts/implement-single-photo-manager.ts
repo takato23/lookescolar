@@ -115,19 +115,19 @@ export function EventContextHeader({
   const redirectsConfig = `
 // app/admin/events/[id]/library/page.tsx
 export default async function EventLibraryRedirect({ params }) {
-  const { id } = await params;
+  const { id } = params;
   redirect(\`/admin/photos?event_id=\${id}\`);
 }
 
 // app/admin/events/[id]/unified/page.tsx  
 export default async function EventUnifiedRedirect({ params }) {
-  const { id } = await params;
+  const { id } = params;
   redirect(\`/admin/photos?event_id=\${id}\`);
 }
 
 // app/admin/events/[id]/photos/page.tsx
 export default async function EventPhotosRedirect({ params }) {
-  const { id } = await params;
+  const { id } = params;
   redirect(\`/admin/photos?event_id=\${id}\`);
 }
 `;

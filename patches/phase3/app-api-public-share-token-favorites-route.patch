@@ -1,0 +1,206 @@
+diff --git a/app/api/public/share/[token]/favorites/route.ts b/app/api/public/share/[token]/favorites/route.ts
+index 8510fd6..1dea57a 100644
+--- a/app/api/public/share/[token]/favorites/route.ts
++++ b/app/api/public/share/[token]/favorites/route.ts
+@@ -1,6 +1,10 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { shareTokenSecurity } from '@/lib/security/share-token-security';
+ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
++import {
++  galleryService,
++  GalleryServiceError,
++} from '@/lib/services/gallery.service';
+ 
+ // GET /api/public/share/[token]/favorites
+ export async function GET(
+@@ -9,19 +13,43 @@ export async function GET(
+ ) {
+   try {
+     const { token } = await params;
+-    const validation = await shareTokenSecurity.validateToken(token);
++    const requestContext = await shareTokenSecurity.extractRequestContext();
++    const validation = await shareTokenSecurity.validateToken(
++      token,
++      undefined,
++      requestContext
++    );
+     if (!validation.isValid || !validation.token) {
+       return NextResponse.json(
+         { success: false, error: validation.error || 'Invalid or expired token' },
+         { status: 403 }
+       );
+     }
++    const gallery = await galleryService.getGallery({
++      token,
++      page: 1,
++      limit: 1,
++      ipAddress:
++        requestContext.ip ||
++        req.headers.get('x-forwarded-for') ||
++        req.headers.get('x-real-ip') ||
++        null,
++      userAgent: requestContext.userAgent ?? req.headers.get('user-agent') ?? undefined,
++      skipRateLimit: true,
++    });
++    const shareTokenId =
++      gallery.token.shareTokenId ?? validation.token.id ?? null;
++    if (!shareTokenId) {
++      return NextResponse.json(
++        { success: false, error: 'Share token not found' },
++        { status: 404 }
++      );
++    }
+     const supabase = await createServerSupabaseServiceClient();
+-    const tokenId = validation.token.id;
+     const { data, error } = await supabase
+       .from('share_favorites')
+       .select('asset_id')
+-      .eq('share_token_id', tokenId);
++      .eq('share_token_id', shareTokenId);
+     if (error) {
+       return NextResponse.json(
+         { success: false, error: 'Failed to load favorites' },
+@@ -31,6 +59,12 @@ export async function GET(
+     const favorites = (data || []).map((r: any) => r.asset_id as string);
+     return NextResponse.json({ success: true, favorites });
+   } catch (e) {
++    if (e instanceof GalleryServiceError) {
++      return NextResponse.json(
++        { success: false, error: e.message, code: e.code },
++        { status: e.status }
++      );
++    }
+     return NextResponse.json(
+       { success: false, error: 'Internal server error' },
+       { status: 500 }
+@@ -45,7 +79,12 @@ export async function POST(
+ ) {
+   try {
+     const { token } = await params;
+-    const validation = await shareTokenSecurity.validateToken(token);
++    const requestContext = await shareTokenSecurity.extractRequestContext();
++    const validation = await shareTokenSecurity.validateToken(
++      token,
++      undefined,
++      requestContext
++    );
+     if (!validation.isValid || !validation.token) {
+       return NextResponse.json(
+         { success: false, error: validation.error || 'Invalid or expired token' },
+@@ -68,11 +107,41 @@ export async function POST(
+         { status: 400 }
+       );
+     }
++    const gallery = await galleryService.getGallery({
++      token,
++      page: 1,
++      limit: 1,
++      photoId: assetId,
++      ipAddress:
++        requestContext.ip ||
++        req.headers.get('x-forwarded-for') ||
++        req.headers.get('x-real-ip') ||
++        null,
++      userAgent: requestContext.userAgent ?? req.headers.get('user-agent') ?? undefined,
++      skipRateLimit: true,
++    });
++
++    if (!gallery.items.length) {
++      return NextResponse.json(
++        { success: false, error: 'Asset not found in share gallery' },
++        { status: 404 }
++      );
++    }
++
++    const shareTokenId =
++      gallery.token.shareTokenId ?? validation.token.id ?? null;
++    if (!shareTokenId) {
++      return NextResponse.json(
++        { success: false, error: 'Share token not found' },
++        { status: 404 }
++      );
++    }
++
+     const supabase = await createServerSupabaseServiceClient();
+     const { error } = await supabase
+       .from('share_favorites')
+       .insert({
+-        share_token_id: validation.token.id,
++        share_token_id: shareTokenId,
+         asset_id: assetId,
+       })
+       .select()
+@@ -85,6 +154,12 @@ export async function POST(
+     }
+     return NextResponse.json({ success: true });
+   } catch (e) {
++    if (e instanceof GalleryServiceError) {
++      return NextResponse.json(
++        { success: false, error: e.message, code: e.code },
++        { status: e.status }
++      );
++    }
+     return NextResponse.json(
+       { success: false, error: 'Internal server error' },
+       { status: 500 }
+@@ -99,7 +174,12 @@ export async function DELETE(
+ ) {
+   try {
+     const { token } = await params;
+-    const validation = await shareTokenSecurity.validateToken(token);
++    const requestContext = await shareTokenSecurity.extractRequestContext();
++    const validation = await shareTokenSecurity.validateToken(
++      token,
++      undefined,
++      requestContext
++    );
+     if (!validation.isValid || !validation.token) {
+       return NextResponse.json(
+         { success: false, error: validation.error || 'Invalid or expired token' },
+@@ -114,11 +194,32 @@ export async function DELETE(
+         { status: 400 }
+       );
+     }
++    const gallery = await galleryService.getGallery({
++      token,
++      page: 1,
++      limit: 1,
++      ipAddress:
++        requestContext.ip ||
++        req.headers.get('x-forwarded-for') ||
++        req.headers.get('x-real-ip') ||
++        null,
++      userAgent: requestContext.userAgent ?? req.headers.get('user-agent') ?? undefined,
++      skipRateLimit: true,
++    });
++    const shareTokenId =
++      gallery.token.shareTokenId ?? validation.token.id ?? null;
++    if (!shareTokenId) {
++      return NextResponse.json(
++        { success: false, error: 'Share token not found' },
++        { status: 404 }
++      );
++    }
++
+     const supabase = await createServerSupabaseServiceClient();
+     const { error } = await supabase
+       .from('share_favorites')
+       .delete()
+-      .eq('share_token_id', validation.token.id)
++      .eq('share_token_id', shareTokenId)
+       .eq('asset_id', assetId);
+     if (error) {
+       return NextResponse.json(
+@@ -128,6 +229,12 @@ export async function DELETE(
+     }
+     return NextResponse.json({ success: true });
+   } catch (e) {
++    if (e instanceof GalleryServiceError) {
++      return NextResponse.json(
++        { success: false, error: e.message, code: e.code },
++        { status: e.status }
++      );
++    }
+     return NextResponse.json(
+       { success: false, error: 'Internal server error' },
+       { status: 500 }

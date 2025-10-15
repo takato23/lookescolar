@@ -11,7 +11,9 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error('Global error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Global error:', error);
+    }
   }, [error]);
 
   return (
@@ -33,6 +35,12 @@ export default function Error({
     </div>
   );
 }
+
+
+
+
+
+
 
 
 

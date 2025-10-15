@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SecurityValidator } from '@/lib/security/validation';
@@ -85,21 +87,24 @@ export async function authenticateAdmin(
   request: NextRequest
 ): Promise<AuthResult> {
   const requestId = generateRequestId();
+  const shouldLogDevBypass = process.env.LOG_DEV_AUTH_EVENTS === 'true';
 
   try {
     // Development/staging bypass: always allow in non-production to speed up tests/dev
     if (process.env.NODE_ENV !== 'production') {
-      SecurityLogger.logSecurityEvent(
-        'auth_dev_bypass_success',
-        {
-          requestId,
-          host: request.headers.get('host') ?? '',
-          ip:
-            request.headers.get('x-forwarded-for') ||
-            request.headers.get('x-real-ip'),
-        },
-        'info'
-      );
+      if (shouldLogDevBypass) {
+        SecurityLogger.logSecurityEvent(
+          'auth_dev_bypass_success',
+          {
+            requestId,
+            host: request.headers.get('host') ?? '',
+            ip:
+              request.headers.get('x-forwarded-for') ||
+              request.headers.get('x-real-ip'),
+          },
+          'info'
+        );
+      }
       return {
         authenticated: true,
         user: {

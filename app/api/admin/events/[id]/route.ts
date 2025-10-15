@@ -59,10 +59,10 @@ async function resolveFriendlyEventIdInline(identifier: string) {
 
 // Get a single event with stats
 export const GET = RateLimitMiddleware.withRateLimit(
-  withAuth(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
       const supabase = await createServerSupabaseServiceClient();
-      const { id } = await params;
+      const { id } = params;
       
       // Resolve friendly identifier to UUID if needed
       const eventId = await resolveFriendlyEventIdInline(id);
@@ -140,9 +140,9 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
-      const id = (await params).id;
+      const id = (params).id;
       if (!id) {
         return NextResponse.json(
           { error: 'Falta id de evento' },
@@ -225,9 +225,9 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
-      const id = (await params).id;
+      const id = (params).id;
       if (!id) {
         return NextResponse.json(
           { error: 'Falta id de evento' },

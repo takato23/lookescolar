@@ -13,16 +13,16 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: Promise<{ token: string; slug: string[] }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: { token: string; slug: string[] };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
 export default async function CatchAllSharePage({
   params,
   searchParams,
 }: PageProps) {
-  const { token, slug } = await params;
-  const searchParamsObj = await searchParams;
+  const { token, slug } = params;
+  const searchParamsObj = searchParams;
 
   // Construir la URL de la tienda unificada preservando los query params
   let redirectUrl = `/store-unified/${token}`;

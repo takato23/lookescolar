@@ -1,0 +1,123 @@
+diff --git a/components/public/shared-gallery.tsx b/components/public/shared-gallery.tsx
+index dd692f2..f55798a 100644
+--- a/components/public/shared-gallery.tsx
++++ b/components/public/shared-gallery.tsx
+@@ -28,19 +28,19 @@ interface SharedGalleryProps {
+ interface GalleryData {
+   share: {
+     id: string;
+-    allow_download: boolean;
+-    allow_share: boolean;
++    allow_download?: boolean;
++    allow_share?: boolean;
+     custom_message?: string;
+-    expires_at: string;
+-    view_count: number;
++    expires_at?: string;
++    view_count?: number;
+     max_views?: number;
+     views_remaining?: number;
+   };
+   event: {
+     id: string;
+     name: string;
+-    school: string;
+-    date: string;
++    school?: string;
++    date?: string;
+   };
+   level?: {
+     id: string;
+@@ -113,50 +113,52 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
+     setError(null);
+     
+     try {
+-      // Use the simplified family gallery API that supports folder/code/subject tokens
+-      const response = await fetch(`/api/family/gallery-simple/${token}`);
+-      
++      const response = await fetch(`/api/public/share/${token}/gallery`);
++
+       if (!response.ok) {
+         throw new Error('Failed to load shared gallery');
+       }
+-      
+-      const data = await response.json();
+-      
+-      if (data.success || data.photos) {
+-        setGalleryData({
+-          // Map minimal fields to our expected structure
+-          share: {
+-            id: data.subject?.id || 'share',
+-            allow_download: false,
+-            allow_share: true,
+-            custom_message: undefined,
+-            expires_at: new Date().toISOString(),
+-            view_count: 0,
+-            max_views: undefined,
+-            views_remaining: undefined,
+-          },
+-          event: {
+-            id: data.subject?.event?.id || 'event',
+-            name: data.subject?.event?.name || 'Evento',
+-            school: data.subject?.event?.school_name || 'Escuela',
+-            date: new Date().toISOString(),
+-          },
+-          photos: (data.photos || []).map((p: any) => ({
+-            id: p.id,
+-            filename: p.filename,
+-            preview_url: p.preview_url,
+-            file_size: p.size || 0,
+-            width: p.width || 0,
+-            height: p.height || 0,
+-            taken_at: p.created_at,
+-            created_at: p.created_at,
+-            approved: true,
+-            photo_type: 'event',
+-          })),
+-        } as any);
+-      } else {
+-        throw new Error(data.error || 'Failed to load shared gallery');
++
++      const payload = await response.json();
++
++      if (!payload?.success || !payload.gallery) {
++        throw new Error(payload?.error || 'Failed to load shared gallery');
+       }
++
++      const gallery = payload.gallery;
++      const legacy = payload.legacy;
++
++      setGalleryData({
++        share: {
++          id: gallery.token?.token || 'share',
++          allow_download: gallery.share?.allowDownload ?? false,
++          allow_share: gallery.share?.allowComments ?? true,
++          custom_message: gallery.share?.metadata?.message,
++          expires_at: gallery.token?.expiresAt ?? new Date().toISOString(),
++          view_count: gallery.token?.viewCount ?? 0,
++          max_views: gallery.token?.maxViews ?? undefined,
++          views_remaining: undefined,
++        },
++        event: {
++          id: gallery.event?.id || 'event',
++          name: gallery.event?.name || legacy?.eventName || 'Evento',
++          school: gallery.event?.school_name || 'Escuela',
++          date: new Date().toISOString(),
++        },
++        photos: (gallery.items || []).map((item: any) => ({
++          id: item.id,
++          filename: item.filename || 'foto',
++          preview_url:
++            item.previewUrl || item.signedUrl || item.downloadUrl || '/placeholder-image.svg',
++          file_size: item.size || 0,
++          width: item.metadata?.width || 0,
++          height: item.metadata?.height || 0,
++          taken_at: item.createdAt,
++          created_at: item.createdAt,
++          approved: true,
++          photo_type: item.type || 'event',
++        })),
++      } as any);
+     } catch (err) {
+       console.error('Error loading shared gallery:', err);
+       setError(err instanceof Error ? err.message : 'Failed to load shared gallery');

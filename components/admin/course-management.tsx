@@ -480,7 +480,7 @@ export default function CourseManagement({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestión de Cursos</h2>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Administra los cursos y clases del evento
           </p>
         </div>
@@ -583,7 +583,7 @@ export default function CourseManagement({
                 <div className="space-y-4">
                   {/* Description */}
                   {course.description && (
-                    <p className="text-muted-foreground line-clamp-2 text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 line-clamp-2 text-sm">
                       {course.description}
                     </p>
                   )}
@@ -591,27 +591,27 @@ export default function CourseManagement({
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div>
-                      <Users className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
+                      <Users className="text-gray-500 dark:text-gray-400 mx-auto mb-1 h-4 w-4" />
                       <p className="text-sm font-medium">
                         {course.student_count || 0}
                       </p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
                         Estudiantes
                       </p>
                     </div>
                     <div>
-                      <Camera className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
+                      <Camera className="text-gray-500 dark:text-gray-400 mx-auto mb-1 h-4 w-4" />
                       <p className="text-sm font-medium">
                         {course.photo_count || 0}
                       </p>
-                      <p className="text-muted-foreground text-xs">Fotos</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">Fotos</p>
                     </div>
                     <div>
-                      <BookOpen className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
+                      <BookOpen className="text-gray-500 dark:text-gray-400 mx-auto mb-1 h-4 w-4" />
                       <p className="text-sm font-medium">
                         {course.group_photo_count || 0}
                       </p>
-                      <p className="text-muted-foreground text-xs">Grupales</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">Grupales</p>
                     </div>
                   </div>
 
@@ -655,7 +655,7 @@ export default function CourseManagement({
                   </div>
 
                   {/* Metadata */}
-                  <div className="text-muted-foreground border-t pt-2 text-xs">
+                  <div className="text-gray-500 dark:text-gray-400 border-t pt-2 text-xs">
                     Creado:{' '}
                     {new Date(course.created_at).toLocaleDateString('es-AR')}
                     {course.updated_at !== course.created_at && (
@@ -676,9 +676,9 @@ export default function CourseManagement({
       ) : (
         <Card>
           <CardContent className="py-12 text-center">
-            <BookOpen className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <BookOpen className="text-gray-500 dark:text-gray-400 mx-auto mb-4 h-12 w-12" />
             <h3 className="mb-2 text-lg font-medium">No hay cursos</h3>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
               {searchTerm
                 ? 'No se encontraron cursos con esos criterios'
                 : 'Comienza agregando tu primer curso'}

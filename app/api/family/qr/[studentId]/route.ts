@@ -11,10 +11,10 @@ const studentIdSchema = z.string().uuid('Invalid student ID');
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ studentId: string }> }
+  { params }: { params: { studentId: string } }
 ) {
   const requestId = crypto.randomUUID();
-  const { studentId: studentIdParam } = await params;
+  const { studentId: studentIdParam } = params;
 
   try {
     // Extract family token from headers

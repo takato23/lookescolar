@@ -1,20 +1,23 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useCartStore } from '@/store/useCartStore'
+import { usePublicCartStore } from '@/lib/stores/unified-cart-store'
 
 interface CartInitializerProps {
   eventId: string
 }
 
 export function CartInitializer({ eventId }: CartInitializerProps) {
-  const setEventId = useCartStore((state) => state.setEventId)
-  
+  const setContext = usePublicCartStore((state) => state.setContext)
+  const setEventId = usePublicCartStore((state) => state.setEventId)
+
   useEffect(() => {
-    if (eventId) {
-      setEventId(eventId)
-    }
-  }, [eventId, setEventId])
+    if (!eventId) return
+
+    // Persistimos el contexto público junto al evento para el carrito global
+    setContext({ context: 'public', eventId })
+    setEventId(eventId)
+  }, [eventId, setContext, setEventId])
 
   return null // Este componente no renderiza nada, solo inicializa el store
 }

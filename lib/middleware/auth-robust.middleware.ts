@@ -207,7 +207,10 @@ async function checkAdminRole(userId: string, email?: string): Promise<boolean> 
 
 // Wrapper function for API routes
 export function withRobustAuth(
-  handler: (request: NextRequest, context: { user: any; requestId: string }) => Promise<NextResponse>
+  handler: (
+    request: NextRequest,
+    context: { user: any; requestId: string } & Record<string, any>
+  ) => Promise<NextResponse>
 ) {
   return async (request: NextRequest, ...args: any[]): Promise<NextResponse> => {
     const authResult = await robustAuthCheck(request);
@@ -228,9 +231,15 @@ export function withRobustAuth(
     }
 
     try {
+      const baseContext =
+        args && args.length > 0 && typeof args[0] === 'object' && args[0] !== null
+          ? args[0]
+          : {};
+
       const response = await handler(request, {
+        ...baseContext,
         user: authResult.user!,
-        requestId: authResult.requestId
+        requestId: authResult.requestId,
       });
 
       // Add request ID to response headers

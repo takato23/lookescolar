@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-xl" />
           <div className="neural-glass-surface relative p-6 sm:p-8">
             {/* Breadcrumbs */}
-            <nav className="mb-6 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
@@ -173,7 +173,7 @@ export default function AnalyticsPage() {
                 Admin
               </Link>
               <ChevronRight className="h-4 w-4" />
-              <span className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+              <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
                 <TrendingUp className="h-4 w-4" />
                 Analytics
               </span>
@@ -196,7 +196,7 @@ export default function AnalyticsPage() {
                     <h1 className="neural-title text-2xl font-bold sm:text-3xl lg:text-4xl">
                       Dashboard de Analytics
                     </h1>
-                    <p className="neural-subtitle mt-1 text-gray-600 dark:text-gray-300">
+                    <p className="neural-subtitle mt-1 text-muted-foreground dark:text-gray-300">
                       Insights detallados sobre el rendimiento de tu negocio
                     </p>
                   </div>
@@ -206,19 +206,19 @@ export default function AnalyticsPage() {
                 <div className="mt-4 flex flex-wrap gap-4">
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-3 w-3 rounded-full bg-green-400"></div>
-                    <span className="text-gray-600 dark:text-gray-300">
+                    <span className="text-muted-foreground dark:text-gray-300">
                       {analyticsData.totalEvents} eventos activos
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-3 w-3 rounded-full bg-blue-400"></div>
-                    <span className="text-gray-600 dark:text-gray-300">
+                    <span className="text-muted-foreground dark:text-gray-300">
                       ${analyticsData.totalRevenue.toLocaleString()} en ingresos
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <div className="h-3 w-3 rounded-full bg-purple-400"></div>
-                    <span className="text-gray-600 dark:text-gray-300">
+                    <span className="text-muted-foreground dark:text-gray-300">
                       {analyticsData.completionRate}% tasa de finalización
                     </span>
                   </div>
@@ -234,7 +234,7 @@ export default function AnalyticsPage() {
             <div className="neural-glass-card p-12 text-center">
               <div className="inline-flex items-center gap-3">
                 <div className="border-3 h-6 w-6 animate-spin rounded-full border-blue-600 border-t-transparent"></div>
-                <span className="text-lg font-medium text-gray-600">
+                <span className="text-lg font-medium text-gray-500 dark:text-gray-400">
                   Cargando analytics...
                 </span>
               </div>
@@ -250,7 +250,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Footer Info */}
-        <div className="neural-glass-card p-4 text-center text-sm text-gray-600">
+        <div className="neural-glass-card p-4 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
             Los datos se actualizan cada 15 minutos. Última actualización:{' '}
             {new Date().toLocaleString('es-AR')}

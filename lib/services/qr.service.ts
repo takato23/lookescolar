@@ -387,25 +387,41 @@ export class QRService {
         throw new Error(`Failed to store student QR code: ${error.message}`);
       }
 
+      const { data: subjectMetadata, error: subjectMetadataError } =
+        await supabase
+          .from('subjects')
+          .select('metadata')
+          .eq('id', studentId)
+          .single();
+
+      if (subjectMetadataError) {
+        throw new Error(
+          `Failed to fetch subject metadata: ${subjectMetadataError.message}`
+        );
+      }
+
+      const existingMetadata =
+        (subjectMetadata?.metadata as Record<string, any>) || {};
+
       // Link QR code to student in subjects table
-      await supabase
+      const { error: updateSubjectError } = await supabase
         .from('subjects')
         .update({
           qr_code: qrData.id,
           metadata: {
-            ...((
-              await supabase
-                .from('subjects')
-                .select('metadata')
-                .eq('id', studentId)
-                .single()
-            ).data?.metadata || {}),
+            ...existingMetadata,
             qr_token: token,
             qr_code_value: codeValue,
             qr_type: 'student_identification',
           },
         })
         .eq('id', studentId);
+
+      if (updateSubjectError) {
+        throw new Error(
+          `Failed to update subject with QR metadata: ${updateSubjectError.message}`
+        );
+      }
 
       // Generate QR code image
       const qrOptions = { ...this.defaultOptions, ...options };
@@ -584,7 +600,7 @@ export class QRService {
           title: data.title,
           studentName: student.name,
           createdAt: data.created_at,
-          ...student.metadata,
+          ...(student.metadata ?? {}),
         },
       };
     } catch (error) {

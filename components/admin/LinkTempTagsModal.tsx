@@ -282,7 +282,7 @@ export function LinkTempTagsModal({
             Vincular Etiquetas Temporales
           </DialogTitle>
           {eventName && (
-            <p className="text-muted-foreground text-sm">Evento: {eventName}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Evento: {eventName}</p>
           )}
         </DialogHeader>
 
@@ -297,18 +297,18 @@ export function LinkTempTagsModal({
             <div className="grid grid-cols-2 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <Tag className="mx-auto mb-2 h-6 w-6 text-orange-600" />
+                  <Tag className="mx-auto mb-2 h-6 w-6 text-primary-600" />
                   <div className="font-semibold">{tempTags.length}</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-gray-500 dark:text-gray-400 text-xs">
                     Etiquetas temporales
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <Users className="mx-auto mb-2 h-6 w-6 text-blue-600" />
+                  <Users className="mx-auto mb-2 h-6 w-6 text-blue-600 dark:text-blue-400" />
                   <div className="font-semibold">{students.length}</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-gray-500 dark:text-gray-400 text-xs">
                     Estudiantes oficiales
                   </div>
                 </CardContent>
@@ -317,7 +317,7 @@ export function LinkTempTagsModal({
 
             {/* Suggestions */}
             {suggestedRules.length === 0 ? (
-              <div className="text-muted-foreground py-8 text-center">
+              <div className="text-gray-500 dark:text-gray-400 py-8 text-center">
                 <Link2 className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p>No se encontraron coincidencias automáticas</p>
                 <p className="text-xs">
@@ -342,7 +342,7 @@ export function LinkTempTagsModal({
                         className={`cursor-pointer transition-all ${
                           isSelected
                             ? 'bg-blue-50 ring-2 ring-blue-500'
-                            : 'hover:bg-gray-50'
+                            : 'hover:bg-muted'
                         }`}
                         onClick={() => toggleRule(rule)}
                       >
@@ -354,13 +354,13 @@ export function LinkTempTagsModal({
                                   <span className="text-sm font-medium">
                                     {rule.tempName}
                                   </span>
-                                  <ArrowRight className="text-muted-foreground h-3 w-3" />
-                                  <span className="text-sm font-medium text-blue-700">
+                                  <ArrowRight className="text-gray-500 dark:text-gray-400 h-3 w-3" />
+                                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                                     {rule.studentName}
                                   </span>
                                 </div>
                                 {rule.tempEmail && (
-                                  <div className="text-muted-foreground mt-1 text-xs">
+                                  <div className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
                                     {rule.tempEmail}
                                   </div>
                                 )}
@@ -379,9 +379,9 @@ export function LinkTempTagsModal({
 
                             <div className="ml-3">
                               {isSelected ? (
-                                <Check className="h-4 w-4 text-blue-600" />
+                                <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                               ) : (
-                                <div className="h-4 w-4 rounded border-2 border-gray-300" />
+                                <div className="h-4 w-4 rounded border-2 border-border" />
                               )}
                             </div>
                           </div>

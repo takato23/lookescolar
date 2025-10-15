@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/utils/logger';
+import type { Database } from '@/types/database';
 import 'server-only';
 
-const supabase = createClient(
+const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
@@ -15,16 +16,20 @@ const supabase = createClient(
 
 export interface EventFolder {
   id: string;
-  event_id: string;
+  event_id: string | null;
   parent_id: string | null;
   name: string;
-  path: string;
+  path: string | null;
   depth: number;
   sort_order: number;
-  description?: string;
+  description?: string | null;
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;
+  photo_count?: number | null;
+  child_folder_count?: number | null;
+  share_token?: string | null;
+  is_published?: boolean | null;
 }
 
 export interface FolderWithStats extends EventFolder {

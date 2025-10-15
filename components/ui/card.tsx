@@ -33,8 +33,8 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
 
     const variants = {
       default: [
-        'bg-card text-card-foreground',
-        'border border-border',
+        'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+        'border border-gray-200 dark:border-gray-700',
         'shadow-soft',
         'rounded-lg',
       ].join(' '),
@@ -66,8 +66,8 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       ].join(' '),
 
       elevated: [
-        'bg-card text-card-foreground',
-        'border border-border',
+        'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+        'border border-gray-200 dark:border-gray-700',
         'shadow-large hover:shadow-xl',
         'rounded-xl',
         'hover:-translate-y-1',
@@ -274,7 +274,7 @@ const StatsCard = forwardRef<HTMLDivElement, StatsCardProps>(
     const trendColors = {
       up: 'text-green-600 bg-green-50 border-green-200',
       down: 'text-red-600 bg-red-50 border-red-200',
-      neutral: 'text-gray-600 bg-gray-50 border-gray-200',
+      neutral: 'text-muted-foreground bg-muted border-border',
     };
 
     // Special handling for glass-ios26 variant

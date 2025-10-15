@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+# Run staged file linters before allowing a commit.
+npm run lint:staged

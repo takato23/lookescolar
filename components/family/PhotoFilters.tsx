@@ -1,11 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-interface FiltersState {
+export type EngagementFilter = 'all' | 'favorites' | 'purchased' | 'unpurchased';
+
+export interface FiltersState {
   search: string;
   dateRange: { from?: string; to?: string };
-  favorites: boolean;
+  engagement: EngagementFilter;
+}
+
+interface EngagementStats {
+  totalPhotos: number;
+  totalFavorites: number;
+  totalInCart: number;
+  totalPurchased: number;
 }
 
 interface PhotoFiltersProps {
@@ -13,6 +22,7 @@ interface PhotoFiltersProps {
   onUpdateFilters: (filters: Partial<FiltersState>) => void;
   totalPhotos: number;
   filteredPhotos: number;
+  stats?: EngagementStats | null;
 }
 
 export function PhotoFilters({
@@ -20,15 +30,31 @@ export function PhotoFilters({
   onUpdateFilters,
   totalPhotos,
   filteredPhotos,
+  stats,
 }: PhotoFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchValue, setSearchValue] = useState(filters.search);
+
+  const resolvedStats: EngagementStats = useMemo(
+    () => ({
+      totalPhotos: stats?.totalPhotos ?? totalPhotos,
+      totalFavorites: stats?.totalFavorites ?? 0,
+      totalInCart: stats?.totalInCart ?? 0,
+      totalPurchased: stats?.totalPurchased ?? 0,
+    }),
+    [stats, totalPhotos]
+  );
+
+  const unpurchasedCount = Math.max(
+    0,
+    resolvedStats.totalPhotos - resolvedStats.totalPurchased
+  );
 
   const hasActiveFilters =
     filters.search ||
     filters.dateRange.from ||
     filters.dateRange.to ||
-    filters.favorites;
+    filters.engagement !== 'all';
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +66,7 @@ export function PhotoFilters({
     onUpdateFilters({
       search: '',
       dateRange: {},
-      favorites: false,
+      engagement: 'all',
     });
   };
 
@@ -112,30 +138,55 @@ export function PhotoFilters({
             </button>
           </form>
 
-          {/* Filtro rápido de favoritos */}
-          <button
-            onClick={() => onUpdateFilters({ favorites: !filters.favorites })}
-            className={`flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              filters.favorites
-                ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <svg
-              className={`h-4 w-4 ${filters.favorites ? 'fill-current' : ''}`}
-              fill={filters.favorites ? 'currentColor' : 'none'}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-            <span>Solo favoritos</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            {[
+              {
+                key: 'all' as EngagementFilter,
+                label: 'Todas',
+                count: resolvedStats.totalPhotos,
+              },
+              {
+                key: 'favorites' as EngagementFilter,
+                label: 'Favoritas',
+                count: resolvedStats.totalFavorites,
+              },
+              {
+                key: 'purchased' as EngagementFilter,
+                label: 'Compradas',
+                count: resolvedStats.totalPurchased,
+              },
+              {
+                key: 'unpurchased' as EngagementFilter,
+                label: 'Sin comprar',
+                count: unpurchasedCount,
+              },
+            ].map((option) => {
+              const isActive = filters.engagement === option.key;
+              return (
+                <button
+                  key={option.key}
+                  onClick={() => onUpdateFilters({ engagement: option.key })}
+                  className={`flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  <span>{option.label}</span>
+                  <span
+                    className={`inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full border px-2 text-xs ${
+                      isActive
+                        ? 'border-white/40 bg-white/20 text-white'
+                        : 'border-gray-300 bg-white text-gray-600'
+                    }`}
+                  >
+                    {option.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -149,6 +200,17 @@ export function PhotoFilters({
               </span>
             )}
           </div>
+
+          {resolvedStats.totalInCart > 0 && (
+            <div className="text-xs font-medium text-amber-600 sm:text-sm">
+              <span className="rounded-full bg-amber-100 px-3 py-1">
+                {resolvedStats.totalInCart}{' '}
+                {resolvedStats.totalInCart === 1
+                  ? 'foto en carrito compartido'
+                  : 'fotos en carrito compartido'}
+              </span>
+            </div>
+          )}
 
           {/* Botón expandir/contraer */}
           <button
@@ -262,7 +324,7 @@ export function PhotoFilters({
                 )}
 
                 {filters.dateRange.from && (
-                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 dark:bg-blue-950/30 px-3 py-1 text-xs font-medium text-blue-700">
                     <span>Desde: {formatDate(filters.dateRange.from)}</span>
                     <button
                       onClick={() =>
@@ -278,7 +340,7 @@ export function PhotoFilters({
                 )}
 
                 {filters.dateRange.to && (
-                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                  <span className="inline-flex items-center space-x-1 rounded-full bg-blue-100 dark:bg-blue-950/30 px-3 py-1 text-xs font-medium text-blue-700">
                     <span>Hasta: {formatDate(filters.dateRange.to)}</span>
                     <button
                       onClick={() =>
@@ -293,12 +355,16 @@ export function PhotoFilters({
                   </span>
                 )}
 
-                {filters.favorites && (
-                  <span className="inline-flex items-center space-x-1 rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-                    <span>Solo favoritos</span>
+                {filters.engagement !== 'all' && (
+                  <span className="inline-flex items-center space-x-1 rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700">
+                    <span>
+                      {filters.engagement === 'favorites' && 'Favoritas'}
+                      {filters.engagement === 'purchased' && 'Compradas'}
+                      {filters.engagement === 'unpurchased' && 'Sin comprar'}
+                    </span>
                     <button
-                      onClick={() => onUpdateFilters({ favorites: false })}
-                      className="text-red-500 hover:text-red-700"
+                      onClick={() => onUpdateFilters({ engagement: 'all' })}
+                      className="text-purple-500 hover:text-purple-700"
                     >
                       ×
                     </button>

@@ -3,12 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 
@@ -58,6 +53,7 @@ interface OrderDetailProps {
     status: 'delivered' | 'cancelled',
     notes?: string
   ) => void;
+  embedded?: boolean;
 }
 
 export default function OrderDetail({
@@ -65,6 +61,7 @@ export default function OrderDetail({
   isOpen,
   onClose,
   onStatusUpdate,
+  embedded = false,
 }: OrderDetailProps) {
   const [order, setOrder] = useState<EnhancedOrder | null>(null);
   const [loading, setLoading] = useState(false);
@@ -102,61 +99,67 @@ export default function OrderDetail({
     }).format(cents / 100);
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Detalle de Pedido</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-auto p-1"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
+  const header = (
+    <div className="mb-6 flex items-center justify-between">
+      <h2 className="text-lg font-semibold">
+        Detalle del Pedido {order ? `#${order.id.slice(-8)}` : ''}
+      </h2>
+      {!embedded && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="h-auto p-1"
+          aria-label="Cerrar detalle de pedido"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  );
 
-        {loading && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2">Cargando detalles...</span>
-          </div>
-        )}
+  const content = (
+    <>
+      {header}
 
-        {error && (
-          <div className="py-8 text-center text-red-600">Error: {error}</div>
-        )}
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span className="ml-2">Cargando detalles...</span>
+        </div>
+      )}
 
-        {order && (
-          <div className="space-y-6">
-            {/* Order Header */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Pedido #{order.id.slice(-8)}</CardTitle>
-              </CardHeader>
+      {error && (
+        <div className="py-8 text-center text-red-600">Error: {error}</div>
+      )}
+
+      {order && (
+        <div className="space-y-6">
+          {/* Order Header */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Pedido #{order.id.slice(-8)}</CardTitle>
+            </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Cliente
                     </label>
                     <p className="text-lg font-semibold">
                       {order.contact_name}
                     </p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       {order.contact_email}
                     </p>
                     {order.contact_phone && (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">
                         {order.contact_phone}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Estado
                     </label>
                     <div className="flex items-center gap-2">
@@ -184,19 +187,19 @@ export default function OrderDetail({
                     </div>
                   </div>
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Total
                     </label>
                     <p className="text-xl font-bold">
                       {formatCurrency(order.total_amount_cents)}
                     </p>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       {order.total_items}{' '}
                       {order.total_items === 1 ? 'item' : 'items'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-muted-foreground text-sm font-medium">
+                    <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                       Fecha
                     </label>
                     <p className="text-sm">
@@ -289,14 +292,14 @@ export default function OrderDetail({
                         <div>
                           <p className="font-medium">{item.label}</p>
                           {item.photo && (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-gray-500 dark:text-gray-400 text-sm">
                               Foto ID: {item.photo.id.slice(-8)}
                             </p>
                           )}
                         </div>
                         <div className="text-right">
                           <p className="font-medium">x {item.quantity}</p>
-                          <p className="text-muted-foreground text-sm">
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">
                             {formatCurrency(item.price_cents * item.quantity)}
                           </p>
                         </div>
@@ -316,7 +319,7 @@ export default function OrderDetail({
                 <CardContent className="space-y-3">
                   {order.notes && (
                     <div>
-                      <label className="text-muted-foreground text-sm font-medium">
+                      <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                         Notas del Cliente:
                       </label>
                       <p className="bg-muted/50 mt-1 rounded p-2 text-sm">
@@ -326,7 +329,7 @@ export default function OrderDetail({
                   )}
                   {order.admin_notes && (
                     <div>
-                      <label className="text-muted-foreground text-sm font-medium">
+                      <label className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                         Notas del Admin:
                       </label>
                       <p className="bg-muted/50 mt-1 rounded p-2 text-sm">
@@ -351,6 +354,17 @@ export default function OrderDetail({
             )}
           </div>
         )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-6">{content}</div>;
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
+        {content}
       </DialogContent>
     </Dialog>
   );

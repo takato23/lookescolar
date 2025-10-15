@@ -23,7 +23,7 @@ function PhotoSystemLoader() {
     <div className="flex h-[60vh] items-center justify-center">
       <div className="text-center">
         <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
-        <p className="text-gray-600">Loading Unified Photo System...</p>
+        <p className="text-gray-500 dark:text-gray-400">Loading Unified Photo System...</p>
       </div>
     </div>
   );
@@ -49,8 +49,8 @@ function PhotoSystemError() {
             />
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-medium text-gray-900">System Error</h3>
-        <p className="mb-4 text-sm text-gray-600">
+        <h3 className="mb-2 text-lg font-medium text-foreground">System Error</h3>
+        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
           There was an error loading the unified photo management system.
         </p>
         <button
@@ -98,7 +98,7 @@ export default function UnifiedPhotosPage() {
         defaultOptions: {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 minutes
-            cacheTime: 10 * 60 * 1000, // 10 minutes
+            gcTime: 10 * 60 * 1000, // 10 minutes
             retry: 3,
             retryDelay: (attemptIndex) =>
               Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -116,9 +116,9 @@ export default function UnifiedPhotosPage() {
       <Toaster position="top-right" />
 
       {backHref && (
-        <div className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur">
+        <div className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
-            <span className="text-sm text-gray-600">Contexto de evento</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">Contexto de evento</span>
             <Link href={backHref}>
               <Button size="sm" variant="outline">Volver al evento</Button>
             </Link>

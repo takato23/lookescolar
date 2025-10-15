@@ -158,7 +158,7 @@ export function MobilePhotoGallery({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3 }}
                 className={clsx(
-                  'relative aspect-square overflow-hidden rounded-lg bg-gray-100',
+                  'relative aspect-square overflow-hidden rounded-lg bg-muted',
                   'cursor-pointer transition-all duration-200',
                   isSelected &&
                     'shadow-lg ring-2 ring-primary-500 ring-offset-2'
@@ -181,7 +181,7 @@ export function MobilePhotoGallery({
                     priority={index < 6} // Prioritize first 6 images
                   />
                 ) : (
-                  <div className="flex h-full w-full animate-pulse items-center justify-center bg-gray-200">
+                  <div className="flex h-full w-full animate-pulse items-center justify-center bg-muted">
                     <div className="h-8 w-8 text-gray-400">
                       <svg fill="currentColor" viewBox="0 0 20 20">
                         <path

@@ -1,8 +1,10 @@
 import '@testing-library/jest-dom';
-import { beforeAll, afterEach, afterAll } from 'vitest';
+import { beforeAll, afterEach, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { cleanup } from '@testing-library/react';
+
+vi.mock('server-only', () => ({}), { virtual: true });
 
 // Mock global objects for testing environment
 if (typeof crypto === 'undefined' || !crypto.randomUUID) {

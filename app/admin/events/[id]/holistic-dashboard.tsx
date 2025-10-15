@@ -110,7 +110,7 @@ export default function HolisticEventDashboard() {
               <p className="gradient-text-ios26 text-lg font-medium">
                 Iniciando sistema holístico...
               </p>
-              <p className="text-muted-foreground mt-2 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">
                 Analizando estado del evento
               </p>
             </div>
@@ -217,7 +217,7 @@ export default function HolisticEventDashboard() {
             </Button>
 
             <div className="flex items-center gap-3">
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+              <div className="text-gray-500 dark:text-gray-400 flex items-center gap-2 text-sm">
                 <Link
                   href="/admin"
                   className="transition-colors hover:text-blue-500"
@@ -247,7 +247,7 @@ export default function HolisticEventDashboard() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm">
               <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              <span className="text-muted-foreground">
+              <span className="text-gray-500 dark:text-gray-400">
                 Sincronizado{' '}
                 {new Date().toLocaleTimeString('es-AR', {
                   hour: '2-digit',
@@ -474,11 +474,11 @@ export default function HolisticEventDashboard() {
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
                         +{activity.count} elementos
                       </p>
                     </div>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">
                       {activity.time}
                     </span>
                   </motion.div>
@@ -510,7 +510,7 @@ export default function HolisticEventDashboard() {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
                     Progreso del evento
                   </span>
                   <span className="text-sm font-medium">
@@ -524,13 +524,13 @@ export default function HolisticEventDashboard() {
                     <p className="gradient-text-ios26 text-2xl font-bold">
                       {Math.round(metrics.conversionRate * 100)}%
                     </p>
-                    <p className="text-muted-foreground text-xs">Conversión</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">Conversión</p>
                   </div>
                   <div className="text-center">
                     <p className="gradient-text-ios26 text-2xl font-bold">
                       {Math.round(metrics.engagementRate * 100)}%
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-gray-500 dark:text-gray-400 text-xs">
                       Participación
                     </p>
                   </div>
@@ -541,7 +541,7 @@ export default function HolisticEventDashboard() {
                     <div
                       className={`h-2 w-2 rounded-full ${healthScore > 80 ? 'bg-green-500' : healthScore > 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
                     ></div>
-                    <span className="text-muted-foreground">
+                    <span className="text-gray-500 dark:text-gray-400">
                       Salud del evento:
                     </span>
                     <span className="font-medium">
@@ -599,11 +599,11 @@ export default function HolisticEventDashboard() {
                             ? 'Impacto Medio'
                             : 'Bajo Impacto'}
                       </Badge>
-                      <ArrowRight className="text-muted-foreground h-4 w-4" />
+                      <ArrowRight className="text-gray-500 dark:text-gray-400 h-4 w-4" />
                     </div>
 
                     <h4 className="mb-2 font-medium">{suggestion.title}</h4>
-                    <p className="text-muted-foreground mb-3 text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">
                       {suggestion.description}
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400">

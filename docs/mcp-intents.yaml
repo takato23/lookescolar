@@ -1,0 +1,256 @@
+# MCP intents → tools mapping
+# Generated: 2025-10-08
+
+version: 1
+owners:
+  product: "ops-ai@lookescolar.com"
+  engineering: "backend@lookescolar.com"
+
+intents:
+  - id: photos.search
+    label: "Buscar fotos"
+    description: "Consultar fotos de un evento con filtros avanzados."
+    tool: buscar_fotos
+    domains: [photos]
+    priority: P0
+    status: ready
+    sample_queries:
+      - "Mostrame las fotos aprobadas de 6B del acto del 20 de mayo."
+      - "¿Hay fotos con etiqueta 'familia' para el evento 123?"
+
+  - id: photos.approve
+    label: "Aprobar o rechazar fotos"
+    tool: aprobar_fotos
+    domains: [photos]
+    priority: P0
+    status: ready
+    sample_queries:
+      - "Aprobá el lote nuevo de 30 fotos del evento 456."
+      - "Rechazá las fotos borrosas que marcó calidad."
+
+  - id: photos.move
+    label: "Reorganizar fotos"
+    tool: mover_fotos
+    domains: [photos]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "Mové las fotos de Juan Pérez a la carpeta Curso A."
+      - "Pasá la carpeta 'preselección' al nivel principal."
+
+  - id: photos.share_urls
+    label: "Generar links firmados"
+    tool: generar_urls_fotos
+    domains: [photos, share]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "Necesito URLs temporales para mandar por WhatsApp."
+      - "Dame links preview de estas fotos por 24 horas."
+
+  - id: photos.create_folder
+    label: "Crear carpeta"
+    tool: crear_carpeta_evento
+    domains: [photos]
+    priority: P2
+    status: ready
+    sample_queries:
+      - "Creá carpeta 'Backstage' debajo de 'Acto principal'."
+      - "Armá carpeta raíz 'Entrega diplomas'."
+
+  - id: photos.list_folders
+    label: "Listar estructura"
+    tool: listar_carpetas_evento
+    domains: [photos]
+    priority: P2
+    status: ready
+    sample_queries:
+      - "Mostrame la estructura de carpetas del evento 789."
+      - "¿Qué carpetas hay dentro de 'Bautismos'?"
+
+  - id: photos.auto_classify
+    label: "Clasificar automáticamente"
+    tool: auto_clasificar_evento
+    domains: [photos, ai]
+    priority: P2
+    status: ready
+    sample_queries:
+      - "Clasificá automáticamente el evento 321."
+      - "Autoetiquetá las fotos de primaria."
+
+  - id: photos.manual_classify
+    label: "Clasificación asistida"
+    tool: clasificar_fotos
+    domains: [photos, ai]
+    priority: P2
+    status: ready
+    sample_queries:
+      - "Etiquetá estas fotos como 'acto final'."
+      - "Marcá las fotos grupales de 3ºA."
+
+  - id: catalog.create_package
+    label: "Crear paquete comercial"
+    tool: crear_paquete
+    domains: [catalog]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "Armá un combo premium con fotos 10x15 y llaveros."
+      - "Nuevo paquete digital con 5 descargas."
+
+  - id: orders.list
+    label: "Consultar pedidos"
+    tool: consultar_pedidos
+    domains: [orders]
+    priority: P0
+    status: ready
+    sample_queries:
+      - "¿Cuántos pedidos pendientes hay en el evento 555?"
+      - "Dame pedidos aprobados entre ayer y hoy."
+
+  - id: orders.update
+    label: "Actualizar pedido"
+    tool: actualizar_pedido
+    domains: [orders]
+    priority: P0
+    status: ready
+    sample_queries:
+      - "Marcá como entregado el pedido 123."
+      - "Subile la prioridad al pedido 987 a 4."
+
+  - id: orders.summary
+    label: "Resumen ejecutivo"
+    tool: resumen_pedidos
+    domains: [orders]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "Necesito un resumen de pendientes del día."
+      - "¿Cuántos pedidos vencidos hay esta semana?"
+
+  - id: orders.follow_up
+    label: "Seguimiento prioritario"
+    tool: orders_follow_up
+    domains: [orders, ops]
+    priority: P0
+    status: ready
+    sample_queries:
+      - "¿A quién tengo que llamar primero hoy?"
+      - "Listá pedidos overdue con contacto y acción sugerida."
+
+  - id: analytics.sales_overview
+    label: "Métricas de ventas"
+    tool: estadisticas_ventas
+    domains: [analytics]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "Dame ventas de agosto con forecast."
+      - "Compará ingresos de la última semana vs anterior."
+
+  - id: analytics.event_insights
+    label: "Insights por evento"
+    tool: analytics_event_insights
+    domains: [analytics]
+    priority: P0
+    status: ready
+    sample_queries:
+      - "Resumen ejecutivo del evento 1122."
+      - "¿Cuál fue la hora pico y cuántas alertas tenemos?"
+
+  - id: analytics.historical_report
+    label: "Reporte histórico"
+    tool: analytics_historical_report
+    domains: [analytics]
+    priority: P2
+    status: backlog
+    dependencies:
+      - order_export_service
+      - pdf_generation_pipeline
+    sample_queries:
+      - "Generá el reporte mensual en PDF."
+      - "Descargá CSV de ventas del primer trimestre."
+
+  - id: qr.batch_status
+    label: "Estado de QR"
+    tool: qr_batch_status
+    domains: [qr, ops]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "¿Cómo vienen los escaneos del evento deportes?"
+      - "Mostrame errores más comunes de QR."
+
+  - id: store.theme_preview
+    label: "Preview de tema"
+    tool: store_theme_preview
+    domains: [storefront]
+    priority: P1
+    status: ready
+    sample_queries:
+      - "¿Qué colores tiene el tema Lumina?"
+      - "Dame variables CSS del tema jardín."
+
+  - id: notifications.dispatch
+    label: "Enviar notificaciones"
+    tool: notifications.dispatch
+    domains: [notifications]
+    priority: P0
+    status: backlog
+    dependencies:
+      - provider.notifications
+      - secrets.management
+    sample_queries:
+      - "Avisá en Slack que el pedido 123 está listo."
+      - "Mandá email de recordatorio al contacto del evento 888."
+
+  - id: notifications.subscribe
+    label: "Gestionar suscripciones"
+    tool: notifications.subscribe
+    domains: [notifications]
+    priority: P1
+    status: backlog
+    dependencies:
+      - provider.notifications
+      - db.mcp_notification_channels
+    sample_queries:
+      - "Suscribí al equipo comercial al flujo de pedidos VIP."
+      - "Listá destinos configurados para recordatorios."
+
+  - id: workflows.run_playbook
+    label: "Ejecutar playbook"
+    tool: workflows.run_playbook
+    domains: [automation]
+    priority: P1
+    status: backlog
+    dependencies:
+      - playbook_orchestrator
+      - context_store
+    sample_queries:
+      - "Corré el playbook de onboarding de evento nuevo."
+      - "Ejecutá la secuencia de recordatorios post evento."
+
+  - id: workflows.schedule_job
+    label: "Programar job"
+    tool: orders.schedule_job
+    domains: [automation]
+    priority: P2
+    status: backlog
+    dependencies:
+      - scheduler.api
+      - cron_secret_rotation
+    sample_queries:
+      - "Programá recordatorios diarios para pedidos pendientes."
+      - "Agendá reintentos de cobro cada 12 horas."
+
+backlog_summary:
+  - area: notifications
+    priority: P0
+    blockers:
+      - Decidir proveedor externo (ver docs/notifications-provider.md cuando esté disponible)
+      - Gestionar credenciales seguras vía Supabase secrets
+  - area: automation
+    priority: P1
+    blockers:
+      - Diseñar formato declarativo de playbooks
+      - Persistencia de contexto en `mcp_conversations`

@@ -40,7 +40,7 @@ export function PhotoLightbox({
   const [imageError, setImageError] = useState(false);
   const [signedUrl, setSignedUrl] = useState('');
   const [isZoomed, setIsZoomed] = useState(false);
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number }> | null>(
     null
   );
 

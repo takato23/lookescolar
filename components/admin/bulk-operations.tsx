@@ -384,7 +384,7 @@ export default function BulkOperations({
                 variant="ghost"
                 size="sm"
                 onClick={onClearSelection}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-gray-500 dark:text-gray-400 hover:text-foreground"
               >
                 <XCircle className="mr-1 h-4 w-4" />
                 Deseleccionar
@@ -466,7 +466,7 @@ export default function BulkOperations({
 
           <div className="py-4">
             <div className="bg-muted mb-4 flex items-center gap-2 rounded-lg p-3">
-              <Users className="text-muted-foreground h-4 w-4" />
+              <Users className="text-gray-500 dark:text-gray-400 h-4 w-4" />
               <span className="text-sm">
                 Esta acción afectará <strong>{selectedCount}</strong> {itemType}
               </span>
@@ -479,7 +479,7 @@ export default function BulkOperations({
                   <p className="text-destructive font-medium">
                     Acción peligrosa
                   </p>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Esta operación no se puede deshacer. Asegúrate de que
                     quieres continuar.
                   </p>

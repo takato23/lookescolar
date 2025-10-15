@@ -11,6 +11,11 @@ interface Photo {
   created_at: string;
   signed_url: string;
   assignment_id?: string;
+  engagement?: {
+    is_favorite: boolean;
+    in_cart_quantity: number;
+    purchased_quantity: number;
+  };
 }
 
 interface VirtualPhotoGridProps {
@@ -65,7 +70,8 @@ function GridCell({ columnIndex, rowIndex, style, data }: GridCellProps) {
   }
 
   const isSelected = selectedPhotos.has(photo.id);
-  const isFavorite = favorites.has(photo.id);
+  const isFavorite =
+    favorites.has(photo.id) || Boolean(photo.engagement?.is_favorite);
 
   return (
     <div style={style} className="p-2">
@@ -106,6 +112,9 @@ function PhotoCard({
   const [currentUrl, setCurrentUrl] = useState(photo.signed_url);
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
 
+  const purchasedQuantity = photo.engagement?.purchased_quantity ?? 0;
+  const inCartQuantity = photo.engagement?.in_cart_quantity ?? 0;
+
   // Cargar URL firmada optimizada
   useEffect(() => {
     if (getSignedUrl && !isLoadingUrl) {
@@ -128,7 +137,7 @@ function PhotoCard({
     <div
       className={`group relative h-full overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-md ${isSelected ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
     >
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-square bg-muted">
         {!imageError ? (
           <img
             src={currentUrl}
@@ -144,7 +153,7 @@ function PhotoCard({
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-200">
+          <div className="flex h-full w-full items-center justify-center bg-muted">
             <svg
               className="h-8 w-8 text-gray-400"
               fill="none"
@@ -160,7 +169,7 @@ function PhotoCard({
         )}
 
         {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 flex animate-pulse items-center justify-center bg-gray-200">
+          <div className="absolute inset-0 flex animate-pulse items-center justify-center bg-muted">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-purple-600 border-t-transparent"></div>
           </div>
         )}
@@ -178,7 +187,7 @@ function PhotoCard({
               aria-label={`Ver foto ${photo.filename}`}
             >
               <svg
-                className="h-5 w-5 text-gray-700"
+                className="h-5 w-5 text-foreground"
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -204,7 +213,7 @@ function PhotoCard({
             className={`flex h-6 w-6 transform items-center justify-center rounded-full border-2 transition-all duration-200 hover:scale-110 ${
               isFavorite
                 ? 'border-red-500 bg-red-500 text-white shadow-lg'
-                : 'border-gray-300 bg-white/90 text-gray-600 shadow-sm hover:border-red-400 hover:bg-white'
+                : 'border-border bg-white/90 text-muted-foreground shadow-sm hover:border-red-400 hover:bg-white'
             }`}
             aria-label={
               isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'
@@ -235,7 +244,7 @@ function PhotoCard({
             className={`flex h-6 w-6 transform items-center justify-center rounded-full border-2 transition-all duration-200 hover:scale-110 ${
               isSelected
                 ? 'border-purple-600 bg-purple-600 text-white shadow-lg'
-                : 'border-gray-300 bg-white/90 shadow-sm hover:border-purple-400'
+                : 'border-border bg-white/90 shadow-sm hover:border-purple-400'
             }`}
             aria-label={isSelected ? 'Deseleccionar foto' : 'Seleccionar foto'}
           >
@@ -263,6 +272,25 @@ function PhotoCard({
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
             </div>
+          </div>
+        )}
+
+        {(purchasedQuantity > 0 || inCartQuantity > 0) && (
+          <div className="absolute left-2 bottom-2 z-10 flex flex-col gap-1">
+            {purchasedQuantity > 0 && (
+              <span className="rounded-full bg-emerald-600/90 px-2 py-1 text-xs font-semibold text-white shadow-sm">
+                {purchasedQuantity > 1
+                  ? `${purchasedQuantity} compradas`
+                  : 'Comprada'}
+              </span>
+            )}
+            {inCartQuantity > 0 && (
+              <span className="rounded-full bg-amber-500/90 px-2 py-1 text-xs font-semibold text-white shadow-sm">
+                {inCartQuantity > 1
+                  ? `${inCartQuantity} en carrito`
+                  : 'En carrito'}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -356,7 +384,7 @@ export function VirtualPhotoGrid({
       <div
         className={`flex flex-col items-center justify-center py-12 ${className}`}
       >
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <svg
             className="h-8 w-8 text-gray-400"
             fill="none"
@@ -369,7 +397,7 @@ export function VirtualPhotoGrid({
             <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
-        <h3 className="mb-2 text-lg font-semibold text-gray-600">
+        <h3 className="mb-2 text-lg font-semibold text-gray-500 dark:text-gray-400">
           No hay fotos disponibles
         </h3>
         <p className="max-w-md text-center text-sm text-gray-500">
@@ -387,7 +415,7 @@ export function VirtualPhotoGrid({
     <div className={`w-full ${className}`}>
       {/* Stats bar */}
       <div className="mb-6 flex items-center justify-between text-sm">
-        <div className="text-gray-600">
+        <div className="text-gray-500 dark:text-gray-400">
           <span className="font-medium">{photos.length}</span> fotos disponibles
           {favorites.size > 0 && (
             <span className="ml-3 text-red-600">
@@ -419,7 +447,7 @@ export function VirtualPhotoGrid({
       </div>
 
       {/* Virtual Grid */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+      <div className="overflow-hidden rounded-lg border border-border bg-muted">
         <Grid
           ref={gridRef}
           height={gridHeight}

@@ -334,18 +334,18 @@ export function UploadInterface({
   return (
     <div
       className={cn(
-        'rounded-lg border border-gray-200 bg-white shadow-sm',
+        'rounded-lg border border-border bg-white shadow-sm',
         className
       )}
     >
       {/* Header */}
-      <div className="border-b border-gray-200 p-4">
+      <div className="border-b border-border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-blue-600" />
+            <Upload className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Subir Fotos</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-lg font-medium text-foreground">Subir Fotos</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {currentFolderName ? (
                   <>
                     <FolderOpen className="mr-1 inline h-4 w-4" />
@@ -367,7 +367,7 @@ export function UploadInterface({
 
         {files.length > 0 && (
           <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between text-sm text-gray-600">
+            <div className="mb-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               <span>
                 {completedCount} completado{completedCount !== 1 ? 's' : ''},{' '}
                 {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''},{' '}
@@ -386,7 +386,7 @@ export function UploadInterface({
           'border-2 border-dashed p-8 text-center transition-colors',
           isDragOver
             ? 'border-blue-500 bg-blue-50'
-            : 'border-gray-300 hover:border-gray-400',
+            : 'border-border hover:border-gray-400',
           files.length > 0 && 'border-b-0'
         )}
         onDragEnter={handleDragEnter}
@@ -395,22 +395,22 @@ export function UploadInterface({
         onDrop={handleDrop}
       >
         <div className="space-y-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-            <Upload className="h-6 w-6 text-gray-600" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <Upload className="h-6 w-6 text-gray-500 dark:text-gray-400" />
           </div>
 
           <div>
-            <p className="text-lg font-medium text-gray-900">
+            <p className="text-lg font-medium text-foreground">
               Arrastra fotos aquí o{' '}
               <button
                 type="button"
-                className="text-blue-600 underline hover:text-blue-700"
+                className="text-blue-600 dark:text-blue-400 underline hover:text-blue-700"
                 onClick={() => fileInputRef.current?.click()}
               >
                 busca archivos
               </button>
             </p>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               JPG, PNG, WebP, HEIC hasta 50MB. Máximo {MAX_FILES} archivos.
             </p>
           </div>
@@ -419,7 +419,7 @@ export function UploadInterface({
 
       {/* File list */}
       {files.length > 0 && (
-        <div className="border-t border-gray-200">
+        <div className="border-t border-border">
           <div className="max-h-64 overflow-y-auto">
             {files.map((file) => (
               <div
@@ -430,7 +430,7 @@ export function UploadInterface({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <ImageIcon className="h-4 w-4 flex-shrink-0 text-gray-400" />
-                    <span className="truncate text-sm font-medium text-gray-900">
+                    <span className="truncate text-sm font-medium text-foreground">
                       {file.file.name}
                     </span>
                     <span className="flex-shrink-0 text-xs text-gray-500">
@@ -465,7 +465,7 @@ export function UploadInterface({
                   )}
                   {(file.status === 'uploading' ||
                     file.status === 'processing') && (
-                    <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                    <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
                   )}
                   {file.status === 'completed' && (
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -491,7 +491,7 @@ export function UploadInterface({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-between bg-gray-50 p-4">
+          <div className="flex items-center justify-between bg-muted p-4">
             <div className="flex gap-2">
               <Button
                 variant="outline"

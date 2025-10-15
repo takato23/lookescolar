@@ -160,11 +160,32 @@ export async function POST(request: NextRequest) {
           request.headers.get('origin') ||
           process.env.NEXT_PUBLIC_APP_URL ||
           'http://localhost:3000';
-        const basePath = 'store-unified';
+        const basePath = callbackBase || 'store-unified';
+
+        // Persist the order so success page can display it
+        try {
+          const supabase = await createServerSupabaseServiceClient();
+          await supabase.from('unified_orders').insert({
+            id: order.id,
+            token: order.token,
+            base_package: order.basePackage,
+            selected_photos: order.selectedPhotos,
+            additional_copies: order.additionalCopies,
+            contact_info: order.contactInfo,
+            total_price: order.totalPrice,
+            status: 'pending_payment',
+            mercadopago_preference_id: devPreferenceId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        } catch (persistErr) {
+          console.warn('[MP][create-preference] dev fallback order persist error', persistErr);
+        }
+
         return NextResponse.json({
           success: true,
           preference_id: devPreferenceId,
-          init_point: `${baseUrl}/${basePath}/${order.token}/payment/success?pref_id=${devPreferenceId}`,
+          init_point: `${baseUrl}/${basePath}/${order.token}/payment/success?pref_id=${devPreferenceId}&external_reference=${order.id}`,
           sandbox_init_point: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${devPreferenceId}`,
           public_key: 'TEST_PUBLIC_KEY',
           order_id: order.id,
@@ -346,12 +367,32 @@ export async function POST(request: NextRequest) {
           request.headers.get('origin') ||
           process.env.NEXT_PUBLIC_APP_URL ||
           'http://localhost:3000';
-        const basePath = 'store-unified';
+        const basePath = callbackBase || 'store-unified';
+
+        // Persist the order for the success page in dev
+        try {
+          const supabase = await createServerSupabaseServiceClient();
+          await supabase.from('unified_orders').insert({
+            id: order.id,
+            token: order.token,
+            base_package: order.basePackage,
+            selected_photos: order.selectedPhotos,
+            additional_copies: order.additionalCopies,
+            contact_info: order.contactInfo,
+            total_price: order.totalPrice,
+            status: 'pending_payment',
+            mercadopago_preference_id: devPreferenceId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        } catch (persistErr) {
+          console.warn('[MP][create-preference] dev persist error (mp error path)', persistErr);
+        }
         return NextResponse.json(
           {
             success: true,
             preference_id: devPreferenceId,
-            init_point: `${baseUrl}/${basePath}/${order.token}/payment/success?pref_id=${devPreferenceId}`,
+            init_point: `${baseUrl}/${basePath}/${order.token}/payment/success?pref_id=${devPreferenceId}&external_reference=${order.id}`,
             sandbox_init_point: `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=${devPreferenceId}`,
             public_key: publicKey,
             order_id: order.id,

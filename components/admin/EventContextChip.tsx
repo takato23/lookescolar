@@ -84,7 +84,7 @@ export default function EventContextChip({
   return (
     <div className={cn("space-y-3", className)}>
       {/* Breadcrumb Navigation */}
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+      <nav className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
         <Link 
           href="/admin/events" 
           className="flex items-center gap-1 transition-colors hover:text-primary-600 dark:hover:text-primary-400"
@@ -114,16 +114,16 @@ export default function EventContextChip({
                 <ImageIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
+                <h2 className="font-semibold text-foreground dark:text-gray-100 text-lg">
                   📸 Fotos de {event.name}
                 </h2>
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground dark:text-gray-400">
                   {event.event_date && (
                     <span>{new Date(event.event_date).toLocaleDateString('es-ES')}</span>
                   )}
                   {photoCount !== undefined && (
                     <span className="flex items-center gap-1">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                      <span className="font-medium text-foreground dark:text-gray-100">
                         {filteredCount !== undefined && filteredCount !== photoCount 
                           ? `${filteredCount} de ${photoCount}` 
                           : photoCount
@@ -144,7 +144,7 @@ export default function EventContextChip({
                 variant="outline"
                 size="sm"
                 onClick={handleRemoveFilter}
-                className="text-gray-600 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                className="text-muted-foreground dark:text-gray-400 border-border dark:border-gray-600 hover:bg-muted dark:hover:bg-gray-800/50"
               >
                 <XIcon className="h-4 w-4 mr-2" />
                 Ver todas las fotos
@@ -168,11 +168,11 @@ export default function EventContextChip({
         {/* Optional Progress Indicator */}
         {photoCount !== undefined && filteredCount !== undefined && filteredCount !== photoCount && (
           <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground dark:text-gray-400 mb-1">
               <span>Mostrando {filteredCount} de {photoCount} fotos</span>
               <span>{Math.round((filteredCount / photoCount) * 100)}%</span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div className="w-full bg-muted dark:bg-gray-700 rounded-full h-1.5">
               <div 
                 className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
                 style={{ width: `${(filteredCount / photoCount) * 100}%` }}

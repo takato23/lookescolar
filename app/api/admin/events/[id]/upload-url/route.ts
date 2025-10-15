@@ -9,12 +9,12 @@ export const POST = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest,
-      { params }: { params: Promise<{ id: string }> }
+      { params }: { params: { id: string } }
     ) => {
       const requestId = crypto.randomUUID();
 
       try {
-        const eventId = (await params).id;
+        const eventId = (params).id;
 
         if (!eventId) {
           return NextResponse.json(

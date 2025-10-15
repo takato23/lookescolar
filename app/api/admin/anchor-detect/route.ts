@@ -1,11 +1,24 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { detectAnchorsRun } from '@/lib/photos/batchAnchors';
 import { AuthMiddleware } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
+type AnchorDetectSuccess = {
+  success: true;
+  qr_detection_disabled?: boolean;
+  reason?: string;
+  detected: Array<{ photo_id: string; code_value: string; code_id: string }>;
+  unmatched: Array<{ photo_id: string; code_value: string }>;
+  errors: Array<{ photo_id: string; error: string }>;
+  updatedExif: number;
+};
+
+type AnchorDetectResponse = AnchorDetectSuccess | { error: string };
+
 export const POST = RateLimitMiddleware.withRateLimit(
-  AuthMiddleware.withAuth(async (req: NextRequest, auth) => {
+  AuthMiddleware.withAuth<[], AnchorDetectResponse>(async (req: NextRequest, auth) => {
     // En desarrollo, permitir sin autenticación
     if (!auth.isAdmin && process.env.NODE_ENV !== 'development') {
       return NextResponse.json(

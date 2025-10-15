@@ -128,8 +128,8 @@ export default function GalleryStatsDashboard({
     return (
       <div className="p-6">
         <div className="bg-muted rounded-lg p-4 text-center">
-          <ImageIcon className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
-          <p className="text-muted-foreground">
+          <ImageIcon className="text-gray-500 dark:text-gray-400 mx-auto mb-2 h-12 w-12" />
+          <p className="text-gray-500 dark:text-gray-400">
             No hay estadísticas disponibles
           </p>
         </div>
@@ -170,7 +170,7 @@ export default function GalleryStatsDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Total</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Total</p>
                 <p className="text-2xl font-bold">{stats.total_photos || 0}</p>
               </div>
               <Camera className="h-8 w-8 text-blue-500 opacity-50" />
@@ -182,7 +182,7 @@ export default function GalleryStatsDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Aprobadas</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Aprobadas</p>
                 <p className="text-2xl font-bold">
                   {stats.approved_photos || 0}
                 </p>
@@ -196,7 +196,7 @@ export default function GalleryStatsDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Individuales</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Individuales</p>
                 <p className="text-2xl font-bold">
                   {stats.individual_photos || 0}
                 </p>
@@ -210,10 +210,10 @@ export default function GalleryStatsDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-muted-foreground text-sm">Grupales</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Grupales</p>
                 <p className="text-2xl font-bold">{stats.group_photos || 0}</p>
               </div>
-              <BookOpen className="h-8 w-8 text-orange-500 opacity-50" />
+              <BookOpen className="h-8 w-8 text-primary-600 opacity-50" />
             </div>
           </CardContent>
         </Card>

@@ -282,15 +282,15 @@ export function SessionMode({
 
   if (!isActive) {
     return (
-      <Card className="border-blue-200 bg-blue-50 p-4">
+      <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-              <PlayIcon className="h-5 w-5 text-blue-600" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950/30">
+              <PlayIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
               <h3 className="font-semibold text-blue-900">Modo Sesión</h3>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
                 Asignación secuencial de fotos
               </p>
             </div>
@@ -323,7 +323,7 @@ export function SessionMode({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600" htmlFor="sort-mode">
+            <label className="text-sm text-gray-500 dark:text-gray-400" htmlFor="sort-mode">
               Orden
             </label>
             <select
@@ -380,13 +380,13 @@ export function SessionMode({
         {loading ? (
           <div className="py-8 text-center">
             <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
-            <p className="mt-2 text-sm text-gray-600">Cargando alumnos...</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Cargando alumnos...</p>
           </div>
         ) : filteredSubjects.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mb-4">
               <UsersIcon className="mx-auto mb-2 h-12 w-12 text-gray-400" />
-              <p className="mb-2 text-gray-600">No hay alumnos disponibles</p>
+              <p className="mb-2 text-gray-500 dark:text-gray-400">No hay alumnos disponibles</p>
               <p className="mb-4 text-sm text-gray-500">
                 {subjects.length === 0
                   ? 'Agrega alumnos para comenzar la sesión'
@@ -433,7 +433,7 @@ export function SessionMode({
                       {currentStudent?.name}
                     </h4>
                     {currentStudent?.grade_section && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {currentStudent.grade_section}
                       </p>
                     )}
@@ -470,10 +470,10 @@ export function SessionMode({
               </div>
 
               {/* Photo Assignment */}
-              <div className="rounded-lg bg-gray-50 p-3">
+              <div className="rounded-lg bg-muted p-3">
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4 text-gray-600" />
+                    <ImageIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     <span className="text-sm font-medium">
                       {selectedPhotos.length} fotos seleccionadas
                     </span>
@@ -504,7 +504,7 @@ export function SessionMode({
         )}
 
         {/* Quick keyboard shortcuts info */}
-        <div className="rounded bg-gray-50 p-2 text-xs text-gray-500">
+        <div className="rounded bg-muted p-2 text-xs text-gray-500">
           <strong>Atajos:</strong> ← Anterior • → Siguiente • Enter Asignar •
           Espacio Saltar
         </div>
@@ -519,7 +519,7 @@ export function SessionMode({
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserPlusIcon className="h-5 w-5 text-blue-600" />
+              <UserPlusIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Agregar Nuevo Alumno
             </DialogTitle>
           </DialogHeader>
@@ -600,7 +600,7 @@ export function SessionMode({
             <DialogTitle>Cargar lista de alumnos</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Pegá una lista. Formatos admitidos por línea: "Nombre", "Nombre -
               Grado", "Nombre, Grado".
             </p>

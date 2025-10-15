@@ -3,15 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PhotoModal as PublicPhotoModal } from '@/components/public/PhotoModal';
-import { 
-  Camera, 
-  ShoppingCart, 
-  ArrowLeft, 
-  Package, 
+import {
+  Camera,
+  ShoppingCart,
+  ArrowLeft,
+  Package,
   Eye,
-  Heart,
-  Download,
-  Share2,
   Calendar,
   MapPin,
   CheckCircle,
@@ -77,7 +74,6 @@ interface PublicEventGalleryProps {
 }
 
 export default function PublicEventGallery({ eventId }: PublicEventGalleryProps) {
-  const router = useRouter();
   const [event, setEvent] = useState<Event | null>(null);
   const [currentView, setCurrentView] = useState<'event' | 'collection' | 'subcarpeta'>('event');
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
@@ -212,7 +208,7 @@ export default function PublicEventGallery({ eventId }: PublicEventGalleryProps)
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <Camera className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
+          <Camera className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-4 animate-spin" />
           <p className="text-gray-600">Cargando galería...</p>
         </div>
       </div>
@@ -539,7 +535,7 @@ function CollectionView({
       <Card className="bg-white/80 backdrop-blur-sm border-gray-200/60 shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-blue-600" />
+            <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Álbum Completo - {collection.name}
           </CardTitle>
         </CardHeader>
@@ -547,7 +543,7 @@ function CollectionView({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600">Todas las fotos del nivel ({collection.photo_count})</p>
-              <p className="text-2xl font-bold text-blue-600 mt-1">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                 ${(collection.album_price / 100).toFixed(2)}
               </p>
               <p className="text-sm text-green-600">
@@ -699,14 +695,14 @@ function SubcarpetaView({
 
       {/* Selection Bar */}
       {selectedCount > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-semibold text-blue-900">
                   {selectedCount} foto{selectedCount !== 1 ? 's' : ''} seleccionada{selectedCount !== 1 ? 's' : ''}
                 </p>
-                <p className="text-blue-700">
+                <p className="text-blue-700 dark:text-blue-300">
                   ${(discountedPrice / 100).toFixed(2)}
                   {selectedCount >= event.pricing.bulk_discount_threshold && (
                     <span className="text-green-600 ml-2">
@@ -780,7 +776,7 @@ function SubcarpetaView({
                   }`}>
                     <div className="absolute top-2 right-2">
                       {isSelected ? (
-                        <CheckCircle className="h-6 w-6 text-blue-600 bg-white rounded-full" />
+                        <CheckCircle className="h-6 w-6 text-blue-600 dark:text-blue-400 bg-white rounded-full" />
                       ) : (
                         <div className="h-6 w-6 border-2 border-white rounded-full bg-black/20" />
                       )}

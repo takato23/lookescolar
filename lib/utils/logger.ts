@@ -47,10 +47,11 @@ interface LogContext {
   };
   pageType?: 'admin' | 'family' | 'public';
   security?: {
-    rateLimitHit?: boolean;
-    authFailure?: boolean;
-    suspiciousActivity?: boolean;
+    rateLimitHit?: boolean,
+    authFailure?: boolean,
+    suspiciousActivity?: boolean
   };
+  [key: string]: unknown;
 }
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
@@ -230,17 +231,17 @@ class Logger {
    * Log API request/response with performance metrics
    */
   apiRequest(context: {
-    requestId: string;
-    method: string;
-    path: string;
-    statusCode: number;
-    duration: number;
-    ip?: string;
-    userAgent?: string;
-    userId?: string;
-    token?: string;
-    bytes?: number;
-    cacheHit?: boolean;
+    requestId: string,
+    method: string,
+    path: string,
+    statusCode: number,
+    duration: number,
+    ip?: string,
+    userAgent?: string,
+    userId?: string,
+    token?: string,
+    bytes?: number,
+    cacheHit?: boolean
   }) {
     this.info(
       'api_request',
@@ -260,18 +261,18 @@ class Logger {
   photoOperation(
     event: 'photo_upload' | 'photo_view' | 'photo_assign',
     context: {
-      requestId: string;
-      photoId?: string;
-      filename?: string;
-      duration?: number;
-      bytes?: number;
-      eventId?: string;
-      userId?: string;
+      requestId: string,
+      photoId?: string,
+      filename?: string,
+      duration?: number,
+      bytes?: number,
+      eventId?: string,
+      userId?: string,
       performance?: {
-        watermarkTime?: number;
-        storageOpTime?: number;
-        dbQueryTime?: number;
-      };
+        watermarkTime?: number,
+        storageOpTime?: number,
+        dbQueryTime?: number
+      }
     }
   ) {
     this.info(event, {
@@ -294,16 +295,16 @@ class Logger {
       | 'token_generated'
       | 'token_expired',
     context: {
-      requestId: string;
-      ip?: string;
-      userAgent?: string;
-      userId?: string;
-      token?: string;
-      reason?: string;
+      requestId: string,
+      ip?: string,
+      userAgent?: string,
+      userId?: string,
+      token?: string,
+      reason?: string,
       security?: {
-        rateLimitHit?: boolean;
-        suspiciousActivity?: boolean;
-      };
+        rateLimitHit?: boolean,
+        suspiciousActivity?: boolean
+      }
     }
   ) {
     const level = event === 'auth_failure' ? 'warn' : 'info';
@@ -316,13 +317,13 @@ class Logger {
   paymentEvent(
     event: 'payment_initiated' | 'payment_processed' | 'payment_failed',
     context: {
-      requestId: string;
-      orderId: string;
-      amount?: number;
-      currency?: string;
-      paymentId?: string;
-      token?: string;
-      errorCode?: string;
+      requestId: string,
+      orderId: string,
+      amount?: number,
+      currency?: string,
+      paymentId?: string,
+      token?: string,
+      errorCode?: string
     }
   ) {
     const level = event === 'payment_failed' ? 'error' : 'info';
@@ -345,12 +346,12 @@ class Logger {
       | 'suspicious_activity'
       | 'unauthorized_access',
     context: {
-      requestId: string;
-      ip?: string;
-      path?: string;
-      userAgent?: string;
-      token?: string;
-      details?: Record<string, any>;
+      requestId: string,
+      ip?: string,
+      path?: string,
+      userAgent?: string,
+      token?: string,
+      details?: Record<string, any>
     }
   ) {
     this.warn(event, {
@@ -508,9 +509,7 @@ export class PerformanceTimer {
     return Object.fromEntries(this.checkpoints);
   }
 
-  static measure<T>(
-    fn: () => Promise<T>
-  ): Promise<{ result: T; duration: number }> {
+  static measure<T>(fn: () => Promise<T>): Promise<{ result: T; duration: number }> {
     const timer = new PerformanceTimer();
     return fn().then((result) => ({
       result,

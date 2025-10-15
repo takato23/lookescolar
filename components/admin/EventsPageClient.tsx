@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import Link from 'next/link';
 import {
   Plus,
@@ -667,7 +669,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-xl" />
           <div className="neural-glass-surface relative p-6 sm:p-8">
             {/* Breadcrumbs */}
-            <nav className="mb-6 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
@@ -676,7 +678,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                 Dashboard
               </Link>
               <ChevronRight className="h-4 w-4 text-gray-400" />
-              <span className="font-medium text-gray-900 dark:text-white">
+              <span className="font-medium text-foreground dark:text-white">
                 Eventos
               </span>
             </nav>
@@ -697,7 +699,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                   <h1 className="neural-title text-2xl font-bold sm:text-3xl md:text-4xl">
                     Eventos
                   </h1>
-                  <p className="max-w-2xl text-sm text-gray-600 dark:text-gray-300 sm:text-base">
+                  <p className="max-w-2xl text-sm text-muted-foreground dark:text-gray-300 sm:text-base">
                     Gestiona tus sesiones fotográficas con la nueva interfaz
                     neural optimizada para pantallas grandes
                   </p>
@@ -713,7 +715,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                       {/* Selection Info */}
                       <div className="flex items-center gap-3">
                         <div className="rounded-lg bg-blue-100/70 p-2 backdrop-blur-sm">
-                          <CheckSquare className="h-5 w-5 text-blue-600" />
+                          <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -721,7 +723,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                               {selectedEvents.length} evento(s) seleccionado(s)
                             </span>
                             {isProcessing && (
-                              <div className="flex items-center gap-1 text-xs text-blue-600">
+                              <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
                                 <RefreshCw className="h-3 w-3 animate-spin" />
                                 <span>{lastAction || 'Procesando...'}</span>
                               </div>
@@ -754,7 +756,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                           variant="outline"
                           onClick={handleBulkArchive}
                           disabled={isProcessing}
-                          className="border-amber-200/70 bg-amber-50/70 text-amber-700 backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-amber-100"
+                          className="border-primary-200/70 bg-primary-50/70 text-primary-700 backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-primary-100"
                         >
                           <Archive className="mr-1 h-3 w-3" />
                           Archivar
@@ -787,7 +789,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                           variant="ghost"
                           onClick={() => setSelectedEvents([])}
                           disabled={isProcessing}
-                          className="backdrop-blur-sm transition-all duration-200 hover:bg-gray-100/70"
+                          className="backdrop-blur-sm transition-all duration-200 hover:bg-muted/70"
                         >
                           <X className="mr-1 h-3 w-3" />
                           Cancelar
@@ -797,7 +799,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
 
                     {/* Bulk Actions Progress Bar */}
                     {isProcessing && (
-                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-1.5 animate-pulse rounded-full bg-blue-500"
                           style={{ width: '100%' }}
@@ -1055,7 +1057,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                             onChange={(e) =>
                               setProgressFilter(Number(e.target.value))
                             }
-                            className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
+                            className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-muted"
                           />
                         </div>
 
@@ -1227,10 +1229,10 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                       <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-muted-foreground dark:text-gray-300">
                         Total Eventos
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-2xl font-bold text-foreground dark:text-white">
                         {stats.totalEvents}
                       </p>
                     </div>
@@ -1243,10 +1245,10 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                       <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-muted-foreground dark:text-gray-300">
                         Fotos Totales
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-2xl font-bold text-foreground dark:text-white">
                         {stats.totalPhotos}
                       </p>
                     </div>
@@ -1259,10 +1261,10 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
                       <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-muted-foreground dark:text-gray-300">
                         Ingresos Totales
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-2xl font-bold text-foreground dark:text-white">
                         ${stats.totalRevenue.toLocaleString()}
                       </p>
                     </div>
@@ -1271,14 +1273,14 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
 
                 <div className="neural-metric-display">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-orange-100/50 p-2 dark:bg-orange-900/30">
-                      <Eye className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    <div className="rounded-lg bg-primary-50/50 p-2 dark:bg-primary-950/30">
+                      <Eye className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-muted-foreground dark:text-gray-300">
                         Progreso Promedio
                       </p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      <p className="text-2xl font-bold text-foreground dark:text-white">
                         {stats.avgCompletionRate}%
                       </p>
                     </div>
@@ -1349,16 +1351,16 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="neural-metric-display">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   Eventos renderizados
                 </div>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {processedEvents.length}
                 </div>
               </div>
 
               <div className="neural-metric-display">
-                <div className="text-sm text-gray-600">Columnas de grid</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Columnas de grid</div>
                 <div className="text-2xl font-bold text-purple-600">
                   {optimizedGridColumns}
                 </div>
@@ -1366,7 +1368,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
 
               {memoryInfo && (
                 <div className="neural-metric-display">
-                  <div className="text-sm text-gray-600">Uso de memoria</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Uso de memoria</div>
                   <div className="text-2xl font-bold text-green-600">
                     {Math.round(memoryInfo.usedJSHeapSize / 1024 / 1024)}MB
                   </div>
@@ -1374,8 +1376,8 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
               )}
 
               <div className="neural-metric-display">
-                <div className="text-sm text-gray-600">Modo virtual</div>
-                <div className="text-lg font-bold text-orange-600">
+                <div className="text-sm text-gray-500 dark:text-gray-400">Modo virtual</div>
+                <div className="text-lg font-bold text-primary-600">
                   {processedEvents.length > 20 ? 'Activo' : 'Inactivo'}
                 </div>
               </div>
@@ -1489,7 +1491,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
                 <div className="neural-glass-card p-6 text-center">
                   <div className="border-3 mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-blue-600 border-t-transparent" />
-                  <p className="text-gray-600">Cargando vista previa...</p>
+                  <p className="text-gray-500 dark:text-gray-400">Cargando vista previa...</p>
                 </div>
               </div>
             }

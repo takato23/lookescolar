@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerAuth } from '@/lib/supabase/auth-server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';

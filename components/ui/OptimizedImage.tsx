@@ -122,12 +122,12 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
         {isLoading && !hasError && (
           <div
             className={cn(
-              'absolute inset-0 flex items-center justify-center bg-gray-100',
+              'absolute inset-0 flex items-center justify-center bg-muted',
               loadingClassName
             )}
           >
             <div className="flex items-center space-x-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-gray-600"></div>
               <span className="text-sm text-gray-500">Cargando...</span>
             </div>
           </div>
@@ -137,7 +137,7 @@ export const OptimizedImage = forwardRef<HTMLImageElement, OptimizedImageProps>(
         {hasError && (
           <div
             className={cn(
-              'absolute inset-0 flex items-center justify-center bg-gray-100',
+              'absolute inset-0 flex items-center justify-center bg-muted',
               errorClassName
             )}
           >

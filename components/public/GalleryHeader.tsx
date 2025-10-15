@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Star, ShoppingCart, Menu, Search, Calendar, Users, Camera } from 'lucide-react'
-import { useCartStore } from '@/store/useCartStore'
+import { usePublicCartStore } from '@/lib/stores/unified-cart-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -22,7 +22,8 @@ interface GalleryHeaderProps {
 }
 
 export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeaderProps) {
-  const { getTotalItems, openCart } = useCartStore()
+  const getTotalItems = usePublicCartStore((state) => state.getTotalItems)
+  const openCart = usePublicCartStore((state) => state.openCart)
   const [searchTerm, setSearchTerm] = useState('')
   const totalItems = getTotalItems()
 

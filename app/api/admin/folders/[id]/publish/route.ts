@@ -73,11 +73,11 @@ const bodySchema = z.object({
 
 async function handlePOST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
     // Validate params
-    const { id } = paramsSchema.parse(await params);
+    const { id } = paramsSchema.parse(params);
 
     // Validate request body
     const body = await request.json().catch(() => ({}));
@@ -198,7 +198,9 @@ async function handlePOST(
           unified_share_token: newShareToken64,
           family_url: `${origin}/s/${newShareToken32}`,
           store_url: `${origin}/store-unified/${newShareToken64}`,
-          qr_url: `${origin}/api/qr?token=${newShareToken32}`,
+          qr_url: `${origin}/access?token=${encodeURIComponent(
+            newShareToken32
+          )}`,
           photo_count: photoCount,
         });
       }
@@ -225,7 +227,9 @@ async function handlePOST(
         unified_share_token: unifiedToken || null,
         family_url: `${origin}/s/${folder.share_token}`,
         store_url: unifiedToken ? `${origin}/store-unified/${unifiedToken}` : null,
-        qr_url: `${origin}/api/qr?token=${folder.share_token}`,
+        qr_url: `${origin}/access?token=${encodeURIComponent(
+          folder.share_token
+        )}`,
         photo_count: photoCount,
       });
     }
@@ -303,7 +307,7 @@ async function handlePOST(
         unified_share_token: shareToken64,
         family_url: `${origin}/s/${shareToken32}`,
         store_url: `${origin}/store-unified/${shareToken64}`,
-        qr_url: `${origin}/api/qr?token=${shareToken32}`,
+        qr_url: `${origin}/access?token=${encodeURIComponent(shareToken32)}`,
         photo_count: photoCount,
         published_at: publishedAt,
         settings,
@@ -336,11 +340,11 @@ async function handlePOST(
 
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
     // Validate params
-    const { id } = paramsSchema.parse(await params);
+    const { id } = paramsSchema.parse(params);
 
     // Get Supabase client
     const supabase = await createServerSupabaseServiceClient();

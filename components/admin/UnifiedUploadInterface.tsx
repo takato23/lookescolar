@@ -94,11 +94,11 @@ export function UnifiedUploadInterface({
               Subir Fotos
             </CardTitle>
             {eventName && (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Evento: <span className="font-medium">{eventName}</span>
               </p>
             )}
-            <p className="text-muted-foreground text-xs">
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
               📁 Destino: {getCurrentFolderPath()}
             </p>
           </div>
@@ -136,20 +136,20 @@ export function UnifiedUploadInterface({
 
           <div className="mt-4 space-y-4">
             {/* Mode Description */}
-            <div className="grid grid-cols-1 gap-4 rounded-lg bg-gray-50 p-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 rounded-lg bg-muted p-4 md:grid-cols-2">
               <div
                 className={cn(
                   'rounded border p-3 transition-all',
                   activeTab === 'simple'
                     ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-200'
+                    : 'border-border'
                 )}
               >
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <ImageIcon className="h-4 w-4" />
                   Subida Simple
                 </div>
-                <p className="mb-2 text-xs text-gray-600">
+                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                   Ideal para pocas fotos (hasta 20). Sube una por una con vista
                   previa inmediata.
                 </p>
@@ -164,14 +164,14 @@ export function UnifiedUploadInterface({
                   'rounded border p-3 transition-all',
                   activeTab === 'bulk'
                     ? 'border-blue-300 bg-blue-50'
-                    : 'border-gray-200'
+                    : 'border-border'
                 )}
               >
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <Zap className="h-4 w-4" />
                   Subida Masiva
                 </div>
-                <p className="mb-2 text-xs text-gray-600">
+                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                   Para muchas fotos (cientos). Subida en lotes con progreso
                   detallado.
                 </p>
@@ -183,14 +183,14 @@ export function UnifiedUploadInterface({
             </div>
 
             {/* Optimization Notice */}
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 p-3">
               <div className="flex items-start gap-2">
                 <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500" />
                 <div className="text-sm">
-                  <p className="mb-1 font-medium text-blue-700">
+                  <p className="mb-1 font-medium text-blue-700 dark:text-blue-300">
                     Optimización automática activada
                   </p>
-                  <p className="text-xs leading-relaxed text-blue-600">
+                  <p className="text-xs leading-relaxed text-blue-600 dark:text-blue-400">
                     Todas las fotos se optimizan automáticamente a{' '}
                     <strong>35KB</strong> con marca de agua "
                     <strong>LOOK ESCOLAR</strong>" para maximizar el espacio del
@@ -227,7 +227,7 @@ export function UnifiedUploadInterface({
         {/* Upload Statistics */}
         {uploadStats.totalUploaded > 0 && (
           <div className="mt-6 border-t pt-4">
-            <h4 className="mb-2 text-sm font-medium text-gray-700">
+            <h4 className="mb-2 text-sm font-medium text-foreground">
               Estadísticas de esta sesión
             </h4>
             <div className="grid grid-cols-1 gap-4 text-center sm:grid-cols-3">
@@ -248,9 +248,9 @@ export function UnifiedUploadInterface({
                   Espacio optimizado
                 </div>
               </div>
-              <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
-                <div className="text-lg font-bold text-orange-600">~70%</div>
-                <div className="text-xs text-orange-700">
+              <div className="rounded-lg border border-primary-200 bg-primary-50 p-3">
+                <div className="text-lg font-bold text-primary">~70%</div>
+                <div className="text-xs text-primary-700">
                   Compresión promedio
                 </div>
               </div>
@@ -259,12 +259,12 @@ export function UnifiedUploadInterface({
         )}
 
         {/* Storage Capacity Indicator */}
-        <div className="mt-4 rounded-lg bg-gray-50 p-3">
-          <div className="mb-2 flex items-center justify-between text-xs text-gray-600">
+        <div className="mt-4 rounded-lg bg-muted p-3">
+          <div className="mb-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>Capacidad estimada del plan gratuito</span>
             <span>~28,500 fotos (1GB)</span>
           </div>
-          <div className="h-2 w-full rounded-full bg-gray-200">
+          <div className="h-2 w-full rounded-full bg-muted">
             <div
               className="h-2 rounded-full bg-green-500 transition-all duration-300"
               style={{

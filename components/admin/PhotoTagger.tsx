@@ -58,7 +58,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
     type: 'tag' | 'untag';
     photoIds: string[];
     subjectId?: string;
-  } | null>(null);
+  }> | null>(null);
 
   // Cargar datos de tagging
   const loadTaggingData = useCallback(async () => {
@@ -275,7 +275,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
   if (!data) {
     return (
       <div className="py-12 text-center">
-        <p className="text-muted-foreground">Error cargando datos de tagging</p>
+        <p className="text-gray-500 dark:text-gray-400">Error cargando datos de tagging</p>
       </div>
     );
   }
@@ -290,7 +290,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
 
       {/* Controles */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="text-muted-foreground">
+        <div className="text-gray-500 dark:text-gray-400">
           {selectedPhotos.length > 0 && (
             <span>
               {selectedPhotos.length} foto
@@ -348,7 +348,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
         {/* Lado izquierdo: Fotos sin asignar */}
         <div className="space-y-4">
           <h2 className="text-foreground flex items-center text-xl font-semibold">
-            <span className="mr-3 h-3 w-3 rounded-full bg-orange-400"></span>
+            <span className="mr-3 h-3 w-3 rounded-full bg-primary-400"></span>
             Fotos Sin Asignar ({data.untaggedPhotos.length})
           </h2>
 
@@ -380,7 +380,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
       {/* Instrucciones */}
       <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 backdrop-blur-sm">
         <h3 className="text-foreground mb-2 font-medium">Instrucciones:</h3>
-        <ul className="text-muted-foreground space-y-1 text-sm">
+        <ul className="text-gray-500 dark:text-gray-400 space-y-1 text-sm">
           <li>
             • Click en fotos para seleccionar (Ctrl/Cmd + Click para selección
             múltiple)

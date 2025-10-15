@@ -1,10 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createServerSupabaseClient,
-  createServerSupabaseServiceClient,
-} from '@/lib/supabase/server';
-import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
-import { withRobustAuth, robustAuthCheck } from '@/lib/middleware/auth-robust.middleware';
+import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { SecurityLogger } from '@/lib/middleware/auth.middleware';
+import { withRobustAuth } from '@/lib/middleware/auth-robust.middleware';
 import {
   searchParamsSchema,
   SecurityValidator,
@@ -12,13 +11,6 @@ import {
 } from '@/lib/security/validation';
 import { z } from 'zod';
 import { signedUrlForKey } from '@/lib/storage/signedUrl';
-import {
-  createErrorResponse,
-  createSuccessResponse,
-  parsePaginationParams,
-  createPaginationMeta,
-  logDevRequest,
-} from '@/lib/utils/api-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -314,50 +306,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
   }
 }
 
-// Keep original handler for fallback
-async function handleGET(request: NextRequest) {
-  // AGGRESSIVE BYPASS - Skip all authentication in production
-  console.log('🔧 AGGRESSIVE BYPASS - NODE_ENV:', process.env.NODE_ENV);
-  console.log('🔧 VERCEL_ENV:', process.env.VERCEL_ENV);
-  
-  // Force bypass for any non-development environment
-  if (process.env.NODE_ENV !== 'development') {
-    console.log('🔧 Using AGGRESSIVE bypass for production debugging');
-    return handleGETRobust(request, {
-      user: {
-        id: 'aggressive-bypass-user',
-        email: 'admin@aggressive.bypass',
-        role: 'admin'
-      },
-      requestId: `aggressive-${Date.now()}`
-    });
-  }
-
-  // Normal authentication flow
-  const authResult = await robustAuthCheck(request);
-  
-  if (!authResult.authenticated || !authResult.isAdmin) {
-    console.error('❌ Auth failed:', {
-      authenticated: authResult.authenticated,
-      isAdmin: authResult.isAdmin,
-      error: authResult.error,
-      env: process.env.NODE_ENV
-    });
-    
-    return NextResponse.json(
-      { error: authResult.error || 'Admin access required' },
-      { status: authResult.authenticated ? 403 : 401 }
-    );
-  }
-
-  return handleGETRobust(request, {
-    user: authResult.user!,
-    requestId: authResult.requestId
-  });
-}
-
-// Export with robust authentication
-export const GET = handleGET;
+export const GET = withRobustAuth(handleGETRobust);
 
 // DELETE - Borrar múltiples fotos
 // Support two deletion modes:
@@ -377,9 +326,12 @@ const deleteByFilterSchema = z.object({
 
 const deletePhotosSchema = z.union([deleteByIdsSchema, deleteByFilterSchema]);
 
-async function handleDELETE(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id') || 'unknown';
-  const userId = request.headers.get('x-user-id') || 'unknown';
+async function handleDELETE(
+  request: NextRequest,
+  context: { user: any; requestId: string }
+) {
+  const { user, requestId } = context;
+  const userId = user?.id || 'unknown';
 
   try {
     const body = await request.json();
@@ -397,6 +349,7 @@ async function handleDELETE(request: NextRequest) {
     }
 
     let photoIds: string[] = [];
+    let targetEventId: string | null = null;
     const supabase = await createServerSupabaseServiceClient();
 
     // Determine deletion mode
@@ -406,6 +359,7 @@ async function handleDELETE(request: NextRequest) {
     } else {
       // Mode 2: Delete by filter (eventId + codeId)
       const { eventId, codeId } = validation.data;
+      targetEventId = eventId;
       
       // Build query to get photo IDs by filter
       let query = supabase
@@ -450,6 +404,7 @@ async function handleDELETE(request: NextRequest) {
         requestId,
         userId,
         count: photoIds.length,
+        eventId: targetEventId,
       },
       'info'
     );
@@ -459,7 +414,7 @@ async function handleDELETE(request: NextRequest) {
     // Obtener paths de las fotos para borrar del storage
     const { data: photos, error: fetchError } = await supabase
       .from('photos')
-      .select('storage_path, preview_path')
+      .select('id, event_id, storage_path, preview_path')
       .in('id', photoIds);
 
     if (fetchError) {
@@ -468,6 +423,57 @@ async function handleDELETE(request: NextRequest) {
         { error: 'Error obteniendo fotos' },
         { status: 500 }
       );
+    }
+
+    if (!photos || photos.length === 0) {
+      return NextResponse.json(
+        { error: 'No photos found for the provided identifiers' },
+        { status: 404 }
+      );
+    }
+
+    const eventIds = new Set(
+      photos
+        .map((photo) => photo.event_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    );
+
+    if (targetEventId) {
+      if (eventIds.size > 0 && (!eventIds.has(targetEventId) || eventIds.size > 1)) {
+        return NextResponse.json(
+          { error: 'Photos do not belong exclusively to the requested event' },
+          { status: 400 }
+        );
+      }
+    } else {
+      if (eventIds.size === 0) {
+        return NextResponse.json(
+          { error: 'Unable to determine event ownership for selected photos' },
+          { status: 400 }
+        );
+      }
+      if (eventIds.size > 1) {
+        return NextResponse.json(
+          { error: 'Photos belong to multiple events. Delete per event to avoid mistakes.' },
+          { status: 400 }
+        );
+      }
+      targetEventId = Array.from(eventIds)[0] ?? null;
+    }
+
+    if (targetEventId) {
+      const { data: eventRecord, error: eventError } = await supabase
+        .from('events')
+        .select('id')
+        .eq('id', targetEventId)
+        .maybeSingle();
+
+      if (eventError || !eventRecord) {
+        return NextResponse.json(
+          { error: 'Event not found or not accessible' },
+          { status: 404 }
+        );
+      }
     }
 
     // Validate and collect paths to delete
@@ -544,6 +550,7 @@ async function handleDELETE(request: NextRequest) {
         requestId,
         userId,
         count: photoIds.length,
+        eventId: targetEventId,
       },
       'info'
     );
@@ -552,6 +559,7 @@ async function handleDELETE(request: NextRequest) {
       success: true,
       message: `${photoIds.length} foto(s) borrada(s)`,
       deleted: photoIds.length,
+      eventId: targetEventId,
     });
   } catch (error) {
     SecurityLogger.logSecurityEvent(
@@ -569,6 +577,4 @@ async function handleDELETE(request: NextRequest) {
   }
 }
 
-// Export with conditional authentication based on environment
-// Temporarily bypass auth for debugging in production
-export const DELETE = handleDELETE;
+export const DELETE = withRobustAuth(handleDELETE);

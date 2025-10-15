@@ -15,17 +15,10 @@ export interface SignUpCredentials extends LoginCredentials {
   confirmPassword?: string;
 }
 
-// Cliente de autenticación para browser
 export class AuthClient {
-  private supabase = createClient();
+  private readonly supabase = createClient();
 
-  /**
-   * Login con email y contraseña
-   */
-  async login(
-    credentials: LoginCredentials
-  ): Promise<{ user: User | null; error: AuthError | null }> {
-    // En modo desarrollo, usar endpoint mock
+  async login(credentials: LoginCredentials): Promise<{ user: User | null; error: AuthError | null }> {
     if (process.env.NODE_ENV === 'development') {
       try {
         const response = await fetch('/api/auth/login', {
@@ -36,32 +29,31 @@ export class AuthClient {
           body: JSON.stringify(credentials),
         });
 
-        const data = await response.json();
+        const payload = await response.json();
 
-        if (!response.ok || data.error) {
+        if (!response.ok || payload?.error) {
           return {
             user: null,
             error: {
-              message: data.error || 'Error en el login',
+              message: payload?.error ?? 'Error en el login',
               code: 'auth_error',
             },
           };
         }
 
-        // Crear objeto User mock compatible con Supabase
         const mockUser: User = {
-          id: data.user.id,
-          email: data.user.email,
-          app_metadata: {},
-          user_metadata: { name: data.user.name },
+          id: payload.user.id,
+          email: payload.user.email,
           aud: 'authenticated',
           created_at: new Date().toISOString(),
-          role: data.user.role,
+          role: payload.user.role,
+          app_metadata: {},
+          user_metadata: { name: payload.user.name },
         } as User;
 
         return { user: mockUser, error: null };
       } catch (err) {
-        console.error('Login error:', err);
+        console.error('[AuthClient] login error (dev mode)', err);
         return {
           user: null,
           error: { message: 'Error conectando con el servidor' },
@@ -69,7 +61,6 @@ export class AuthClient {
       }
     }
 
-    // Código original para producción con Supabase
     try {
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email: credentials.email,
@@ -80,7 +71,7 @@ export class AuthClient {
         return {
           user: null,
           error: {
-            message: this.getErrorMessage(error.message),
+            message: this.mapErrorMessage(error.message),
             code: error.message,
           },
         };
@@ -88,6 +79,7 @@ export class AuthClient {
 
       return { user: data.user, error: null };
     } catch (err) {
+      console.error('[AuthClient] unexpected login error', err);
       return {
         user: null,
         error: { message: 'Error inesperado durante el login' },
@@ -95,44 +87,43 @@ export class AuthClient {
     }
   }
 
-  /**
-   * Logout del usuario actual
-   */
   async logout(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await this.supabase.auth.signOut();
 
       if (error) {
         return {
-          error: { message: 'Error al cerrar sesión', code: error.message },
+          error: {
+            message: this.mapErrorMessage(error.message),
+            code: error.message,
+          },
         };
       }
 
       return { error: null };
     } catch (err) {
+      console.error('[AuthClient] unexpected logout error', err);
       return { error: { message: 'Error inesperado durante el logout' } };
     }
   }
 
-  /**
-   * Obtiene el usuario actual
-   */
-  async getCurrentUser(): Promise<{
-    user: User | null;
-    error: AuthError | null;
-  }> {
+  async getCurrentUser(): Promise<{ user: User | null; error: AuthError | null }> {
     try {
       const { data, error } = await this.supabase.auth.getUser();
 
       if (error) {
         return {
           user: null,
-          error: { message: 'Error al obtener usuario', code: error.message },
+          error: {
+            message: this.mapErrorMessage(error.message),
+            code: error.message,
+          },
         };
       }
 
       return { user: data.user, error: null };
     } catch (err) {
+      console.error('[AuthClient] unexpected getCurrentUser error', err);
       return {
         user: null,
         error: { message: 'Error inesperado al obtener usuario' },
@@ -140,25 +131,23 @@ export class AuthClient {
     }
   }
 
-  /**
-   * Refresca la sesión del usuario
-   */
-  async refreshSession(): Promise<{
-    user: User | null;
-    error: AuthError | null;
-  }> {
+  async refreshSession(): Promise<{ user: User | null; error: AuthError | null }> {
     try {
       const { data, error } = await this.supabase.auth.refreshSession();
 
       if (error) {
         return {
           user: null,
-          error: { message: 'Error al refrescar sesión', code: error.message },
+          error: {
+            message: 'Error al refrescar sesión',
+            code: error.message,
+          },
         };
       }
 
-      return { user: data.user, error: null };
+      return { user: data.user ?? null, error: null };
     } catch (err) {
+      console.error('[AuthClient] unexpected refreshSession error', err);
       return {
         user: null,
         error: { message: 'Error inesperado al refrescar sesión' },
@@ -166,19 +155,13 @@ export class AuthClient {
     }
   }
 
-  /**
-   * Escucha cambios en el estado de autenticación
-   */
   onAuthStateChange(callback: (user: User | null) => void) {
-    return this.supabase.auth.onAuthStateChange((event, session) => {
+    return this.supabase.auth.onAuthStateChange((_, session) => {
       callback(session?.user ?? null);
     });
   }
 
-  /**
-   * Convierte errores de Supabase a mensajes amigables
-   */
-  private getErrorMessage(errorCode: string): string {
+  private mapErrorMessage(errorCode: string): string {
     switch (errorCode) {
       case 'Invalid login credentials':
         return 'Email o contraseña incorrectos';
@@ -198,5 +181,4 @@ export class AuthClient {
   }
 }
 
-// Instancia del cliente para usar en componentes
 export const authClient = new AuthClient();

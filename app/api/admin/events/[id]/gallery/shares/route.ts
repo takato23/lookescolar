@@ -16,9 +16,9 @@ const CreateShareSchema = z.object({
 
 // POST /api/admin/events/[id]/gallery/shares
 export const POST = withAuth(
-  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
-      const { id: eventId } = await params;
+      const { id: eventId } = params;
       const body = await req.json();
       const userId = req.headers.get('x-user-id');
 
@@ -138,9 +138,9 @@ const ListSharesSchema = z.object({
 
 // GET /api/admin/events/[id]/gallery/shares
 export const GET = withAuth(
-  async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+  async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
-      const { id: eventId } = await params;
+      const { id: eventId } = params;
       const { searchParams } = new URL(req.url);
 
       // Parse and validate query parameters

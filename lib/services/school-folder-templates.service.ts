@@ -352,7 +352,7 @@ export class SchoolFolderTemplatesService {
           description: folderTemplate.description,
           sort_order: folderTemplate.sort_order,
           metadata: {
-            ...folderTemplate.metadata,
+            ...(folderTemplate.metadata ?? {}),
             template_generated: true,
             created_at_depth: depth,
           },

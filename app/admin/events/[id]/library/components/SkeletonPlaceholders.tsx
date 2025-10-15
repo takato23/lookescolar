@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, type ReactElement } from 'react';
 import { cn } from '@/lib/utils';
 
 // Base skeleton animation
@@ -15,7 +15,7 @@ interface SkeletonItemProps {
 // Skeleton for individual grid items
 export const SkeletonGridItem = memo<SkeletonItemProps>(({ style, type }) => (
   <div style={style} className="p-2">
-    <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-white">
+    <div className="relative overflow-hidden rounded-lg border border-border bg-white">
       {type === 'folder' ? <SkeletonFolderContent /> : <SkeletonPhotoContent />}
     </div>
   </div>
@@ -43,7 +43,7 @@ SkeletonFolderContent.displayName = 'SkeletonFolderContent';
 const SkeletonPhotoContent = memo(() => (
   <div className="flex h-full flex-col">
     {/* Image area */}
-    <div className="relative flex-1 overflow-hidden rounded-t-lg bg-gray-100">
+    <div className="relative flex-1 overflow-hidden rounded-t-lg bg-muted">
       <div className={cn(skeletonBaseClass, 'absolute inset-0')} />
     </div>
 
@@ -135,7 +135,7 @@ export const SkeletonContentGrid = memo<{
   rowCount: number;
   itemSize: number;
 }>(({ columnCount, rowCount, itemSize }) => {
-  const items = [];
+  const items: ReactElement[] = [];
 
   for (let row = 0; row < rowCount; row++) {
     for (let col = 0; col < columnCount; col++) {

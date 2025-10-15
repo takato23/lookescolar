@@ -5,13 +5,13 @@ import { logger } from '@/lib/utils/logger';
 
 export const GET = withAuth(async (
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) => {
   const requestId = crypto.randomUUID();
   let eventId: string | undefined;
 
   try {
-    const resolvedParams = await params;
+    const resolvedParams = params;
     eventId = resolvedParams.id;
     const url = new URL(req.url);
     const folderId = url.searchParams.get('folderId');

@@ -39,6 +39,7 @@ interface EventInfo {
 interface PublishResponse {
   success: boolean;
   share_token?: string;
+  newToken?: string;
   family_url?: string;
   qr_url?: string;
   error?: string;

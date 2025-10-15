@@ -24,6 +24,8 @@ export function ThemeProvider({
   defaultTheme = 'system',
   storageKey = 'lookescolar-theme',
 }: ThemeProviderProps) {
+  const debugLog = () => {};
+
   const [theme, setThemeState] = useState<Theme>(defaultTheme);
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
@@ -52,6 +54,9 @@ export function ThemeProvider({
     html.style.transition = 'background-color 0.3s ease, color 0.3s ease';
     html.classList.add(resolvedTheme);
 
+    // Sincronizar atributo data-theme para estilos que lo consultan (admin)
+    html.setAttribute('data-theme', resolvedTheme);
+
     // Si el tema seleccionado es "night", agregar clase adicional
     if (theme === 'night') {
       html.classList.add('night');
@@ -63,6 +68,7 @@ export function ThemeProvider({
       const color = resolvedTheme === 'dark' ? '#0a0a0a' : '#fafaff';
       metaThemeColor.setAttribute('content', color);
     }
+
   };
 
   // Setear tema con persistencia
@@ -80,8 +86,8 @@ export function ThemeProvider({
 
   // Toggle entre light y dark (omite system)
   const toggleTheme = () => {
-    const current = resolvedTheme;
-    setTheme(current === 'light' ? 'dark' : 'light');
+    const newTheme = resolvedTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
   };
 
   // Inicialización en mount

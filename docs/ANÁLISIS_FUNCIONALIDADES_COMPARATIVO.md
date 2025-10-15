@@ -1,188 +1,33 @@
 # 📊 Análisis Comparativo: EventPhotoManager vs PhotoAdmin
 
-## 🎯 **Objetivo: Unificar Criterios y Funcionalidades**
+## Estado general (13 oct 2025)
+- PhotoAdmin opera como la consola unificada desde `app/admin/photos/page.tsx`, reutilizando `components/admin/PhotoAdmin.tsx` con React Query y layout a tres paneles.
+- Las acciones inline de carpetas (crear, renombrar, mover, eliminar) disparan mutaciones con invalidación selectiva de queries, manteniendo en sincronía árbol y grilla.
+- La gestión de estudiantes se integra mediante `components/admin/shared/StudentManagement.tsx`, con altas/bajas y filtros por curso dentro del flujo de PhotoAdmin.
+- La creación y administración de enlaces públicos se canaliza vía `ShareManager`, permitiendo generar escaparates para carpetas o selecciones con contraseña, expiración y refresco del historial.
+- Sincronización filtro ⇄ query-string (`syncQueryParams`) y `EventContextBanner` conservan contexto específico de evento mientras se navega cross-evento.
+- Drag & drop configurable (DND Kit), paneles redimensionables y panel de subida con lotes replican e incrementan la UX de EventPhotoManager.
 
-El usuario tiene razón: **NO se trata de borrar o reducir**, sino de que **ambos gestores tengan las MISMAS funcionalidades completas**.
+## Paridad funcional (detalle)
 
----
+| Bloque | Estado PhotoAdmin | Observaciones / pendientes |
+| --- | --- | --- |
+| Jerarquía de carpetas | ✅ Árbol jerárquico con contadores agregados, persistencia de expansión, creación desde cualquier nodo y ahora copy/paste funcional (duplica la estructura en el destino conservando jerarquía). | Evaluar si conviene copiar también los assets asociados o dejarlo como acción explícita en backend. |
+| Acciones sobre carpetas | ✅ Mutaciones rename/move/delete con toasts y refresco de queries (`createFolderMutation`, `renameFolderMutation`, `moveFolderMutation`, `deleteFolderMutation`). | Consolidar validación de nombres duplicados en backend para evitar conflictos silenciosos. |
+| Bulk de fotos | ✅ Selección múltiple, mover/eliminar con actualización optimista y creación de escaparates desde selección (`handleBulkMove`, `handleBulkDelete`, `handleCreateAlbum`). | Falta consolidar feedback granular cuando el backend rechaza parte del lote. |
+| Drag & drop | ✅ Integrado vía `@dnd-kit` y configurable desde el modal de ajustes (`settings.enableDragAndDrop`). | Validar performance con colecciones > 500 ítems y registrar resultados. |
+| Gestión de estudiantes | ✅ `StudentManagement` embebido permite listar, filtrar y crear estudiantes; se añadieron los flujos de asignación masiva (`AssignFolderPhotos`) y el importador CSV con autogeneración de carpetas (`BatchStudentManagement`). | Monitorear performance en eventos con >2k estudiantes y refinar feedback en importaciones parciales. |
+| Compartir / escaparates | ✅ `handleCreateAlbum` + `ShareManager` soportan carpeta o selección, expiración, contraseña, sincronización con historial local y muestran métricas de actividad (accesos, IPs únicas, último uso). | Añadir vista consolidada de actividad sospechosa y revocaciones masivas directamente desde el gestor. |
+| Contexto de evento | ✅ Banner (`EventContextBanner`) + sincronización de filtros con query string (`syncQueryParams`). | Documentar el reseteo cuando se llega desde rutas antiguas para evitar estados zombie. |
+| UI/UX avanzada | ✅ Layout a tres paneles, panel de configuración, panel de subida por lotes y monitoreo de progreso. | Revisar variante compacta para dispositivos táctiles y confirmar accesibilidad de atajos. |
 
-## 📋 **Funcionalidades por Gestor**
+## Pendientes priorizados
+1. **Duplicado completo de assets al copiar carpetas** – evaluar si el copy/paste debe clonar también archivos y asignaciones o si se mantiene la duplicación sólo estructural.
+2. **Consolidar métricas y auditoría de enlaces** – `ShareManager` ya consume analíticas de actividad, pero falta explorar dashboards agregados (sospechas, IPs bloqueadas, etc.).
+3. **Hardening de validaciones backend** – Validar renombrado duplicado y límites de lote en la API para evitar estados inconsistentes frente a ejecuciones concurrentes.
+4. **Hardening de validaciones backend** – Validar renombrado duplicado y límites de lote en la API para evitar estados inconsistentes frente a ejecuciones concurrentes.
 
-### ✅ **EventPhotoManager TIENE (Completo):**
-
-#### **🗂️ Gestión Avanzada de Carpetas:**
-- ✅ **Crear carpetas/niveles** (`setShowAddLevelModal`)
-- ✅ **Borrar carpetas** (`handleDeleteFolder`)
-- ✅ **Mover carpetas** (`handleMoveFolder`)
-- ✅ **Renombrar carpetas** (`handleRenameFolder`)
-- ✅ **Jerarquía de 4 niveles:** Evento → Nivel → Curso → Estudiante
-
-#### **👥 Gestión de Estudiantes:**
-- ✅ **Cargar estudiantes** (`setShowStudentModal`)
-- ✅ **Asignar fotos a estudiantes**
-- ✅ **Crear carpetas de estudiantes automáticamente**
-
-#### **🔗 Sistema de Compartir Completo:**
-- ✅ **Compartir por evento** 
-- ✅ **Compartir por nivel**
-- ✅ **Compartir por carpeta**
-- ✅ **Compartir fotos individuales**
-- ✅ **Modal de compartir** (`shareModal`)
-
-#### **🎨 UI/UX Avanzado:**
-- ✅ **Folder tree jerárquico** en sidebar
-- ✅ **Contexto del evento** siempre visible
-- ✅ **3 paneles:** Navegación + Fotos + Inspector
-- ✅ **Drag & drop** para organización
-- ✅ **Búsqueda contextual**
-
----
-
-### ❌ **PhotoAdmin FALTA (Incompleto):**
-
-#### **🗂️ Gestión Limitada de Carpetas:**
-- ❌ **NO puede borrar carpetas** 
-- ❌ **NO puede mover carpetas** (TODO pendiente)
-- ❌ **NO puede renombrar carpetas**
-- ❌ **NO tiene creación avanzada de jerarquía**
-
-#### **👥 Sin Gestión de Estudiantes:**
-- ❌ **NO puede cargar estudiantes**
-- ❌ **NO puede asignar fotos**
-- ❌ **NO crea carpetas de estudiantes**
-
-#### **🔗 Sistema de Compartir Limitado:**
-- ❌ **NO puede compartir** (TODO pendiente)
-- ❌ **NO tiene niveles de compartir**
-- ❌ **NO tiene modal de compartir**
-
-#### **🎨 UI/UX Básico:**
-- ❌ **Folder tree básico** sin jerarquía completa
-- ❌ **Sin contexto específico** de evento
-- ❌ **Layout menos organizado**
-
----
-
-## 🚧 **Problemas Identificados**
-
-### **🔴 Problema Principal:**
-La fotógrafa tiene que **ELEGIR** qué gestor usar según la funcionalidad que necesite:
-
-- **¿Necesita borrar carpetas?** → Debe ir a EventPhotoManager
-- **¿Necesita compartir por nivel?** → Debe ir a EventPhotoManager  
-- **¿Necesita ver todas las fotos?** → Debe ir a PhotoAdmin
-- **¿Necesita cargar estudiantes?** → Debe ir a EventPhotoManager
-
-### **🔴 Experiencia Inconsistente:**
-- **EventPhotoManager:** Completo pero limitado a 1 evento
-- **PhotoAdmin:** Cross-eventos pero con funcionalidades limitadas
-
----
-
-## 🎯 **Solución: Unificación de Funcionalidades**
-
-### **📝 Plan de Acción:**
-
-#### **1. 🔧 Mejorar PhotoAdmin con TODO lo que tiene EventPhotoManager**
-
-##### **🗂️ Gestión Completa de Carpetas:**
-```typescript
-// AGREGAR a PhotoAdmin:
-- handleDeleteFolder()
-- handleMoveFolder() 
-- handleRenameFolder()
-- createFolderHierarchy()
-- folderActionsDropdown
-```
-
-##### **👥 Gestión de Estudiantes:**
-```typescript
-// AGREGAR a PhotoAdmin:
-- StudentUploadModal
-- assignPhotosToStudents()
-- createStudentFolders()
-- studentManagement
-```
-
-##### **🔗 Sistema de Compartir Completo:**
-```typescript
-// AGREGAR a PhotoAdmin:
-- shareByLevel()
-- shareByFolder()
-- shareIndividualPhotos()
-- ShareModal component
-- contextualSharing
-```
-
-##### **🎨 UI/UX Mejorado:**
-```typescript
-// AGREGAR a PhotoAdmin:
-- HierarchicalFolderTree
-- EventContextHeader (cuando hay filtro)
-- 3-panel layout option
-- Advanced drag & drop
-```
-
-#### **2. 🔄 Resultado Final:**
-
-**✅ PhotoAdmin Mejorado:**
-- ✅ **TODAS** las funcionalidades de EventPhotoManager
-- ✅ **PLUS** capacidad cross-eventos
-- ✅ **Filtros por evento** para simular contexto específico
-- ✅ **Galería completa** con funcionalidades completas
-
-**✅ EventPhotoManager Mantenido:**
-- ✅ **Contexto específico** del evento
-- ✅ **Todas las funcionalidades** (sin cambios)
-- ✅ **UI optimizada** para evento único
-
----
-
-## 🌟 **Beneficios de la Unificación**
-
-### **👩‍💼 Para la Fotógrafa:**
-- 🎯 **Sin confusión:** Ambos gestores tienen las mismas funcionalidades
-- 🔄 **Flexibilidad:** Puede usar cualquiera según su flujo de trabajo
-- ⚡ **Eficiencia:** No necesita cambiar de interfaz para funcionalidades diferentes
-
-### **🏗️ Para el Sistema:**
-- 📈 **Consistencia:** Experiencia unificada
-- 🛠️ **Mantenimiento:** Funcionalidades compartidas
-- 🚀 **Escalabilidad:** Base sólida para futuras mejoras
-
----
-
-## 📋 **Tareas Específicas a Implementar**
-
-### **🔧 Desarrollo Requerido:**
-
-1. **📁 Folder Management Completo:**
-   - Agregar delete, move, rename a PhotoAdmin
-   - Compartir lógica con EventPhotoManager
-
-2. **👥 Student Management:**
-   - Portar sistema de estudiantes a PhotoAdmin
-   - Mantener compatibilidad cross-eventos
-
-3. **🔗 Sharing System:**
-   - Implementar sharing completo en PhotoAdmin
-   - Niveles jerárquicos de compartir
-
-4. **🎨 UI/UX Improvements:**
-   - Folder tree jerárquico avanzado
-   - Contexto dinámico según filtros
-   - Layout mejorado
-
----
-
-## ✅ **Resultado Esperado**
-
-### **🎉 Sistema Unificado:**
-- **PhotoAdmin:** Galería completa con TODAS las funcionalidades
-- **EventPhotoManager:** Contexto específico con TODAS las funcionalidades
-- **Sin elección forzada:** La fotógrafa usa el que prefiera según su flujo
-- **Criterios unificados:** Mismas capacidades en ambos
-
----
-
-**🎯 Próximo paso: Implementar las funcionalidades faltantes en PhotoAdmin para lograr paridad completa con EventPhotoManager.**
+## Recomendaciones inmediatas
+- Registrar prueba manual de arrastre y acciones masivas en PhotoAdmin antes de retirar EventPhotoManager.
+- Asignar responsables y estimaciones a los pendientes anteriores dentro del backlog compartido.
+- Mantener este documento actualizado tras cada entrega relevante (agregar fecha + cambios principales).

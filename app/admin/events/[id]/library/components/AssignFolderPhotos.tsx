@@ -210,7 +210,7 @@ export function AssignFolderPhotos({
             </SelectContent>
           </Select>
           {currentFolderName && selectedFolderId === currentFolderId && (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               📍 Carpeta actual: {currentFolderName}
             </p>
           )}
@@ -258,7 +258,7 @@ export function AssignFolderPhotos({
 
           <div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
             {subjects.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center text-sm">
+              <p className="text-gray-500 dark:text-gray-400 py-4 text-center text-sm">
                 No hay estudiantes en este evento
               </p>
             ) : (
@@ -275,7 +275,7 @@ export function AssignFolderPhotos({
                   >
                     {subject.name}
                     {subject.grade_section && (
-                      <span className="text-muted-foreground ml-1">
+                      <span className="text-gray-500 dark:text-gray-400 ml-1">
                         ({subject.grade_section})
                       </span>
                     )}
@@ -351,7 +351,7 @@ export function AssignFolderPhotos({
         </Button>
 
         {/* Warning */}
-        <div className="text-muted-foreground flex items-start space-x-2 text-sm">
+        <div className="text-gray-500 dark:text-gray-400 flex items-start space-x-2 text-sm">
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <p>
             Esta acción creará las conexiones necesarias para que las fotos

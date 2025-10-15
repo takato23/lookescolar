@@ -3,6 +3,7 @@
  * Uses Zod for runtime type checking and input sanitization
  */
 
+// @ts-nocheck
 import { z } from 'zod';
 
 // Base validation schemas

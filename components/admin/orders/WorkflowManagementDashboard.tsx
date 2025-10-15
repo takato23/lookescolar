@@ -10,7 +10,7 @@ export default function WorkflowManagementDashboard() {
           <CardTitle>Workflow Management</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
+          <p className="text-gray-500 dark:text-gray-400">
             Workflow management coming soon...
           </p>
         </CardContent>

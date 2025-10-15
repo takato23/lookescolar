@@ -101,12 +101,12 @@ export async function OrderStatus({ token }: OrderStatusProps) {
       )}
 
       {activeOrder.status === 'processing' && (
-        <div className="mt-4 rounded-lg bg-blue-100 p-4">
-          <div className="flex items-center space-x-2 text-blue-800">
+        <div className="mt-4 rounded-lg bg-blue-100 dark:bg-blue-950/30 p-4">
+          <div className="flex items-center space-x-2 text-blue-800 dark:text-blue-200">
             <span>ℹ️</span>
             <span className="font-semibold">Verificando pago...</span>
           </div>
-          <p className="mt-1 text-sm text-blue-700">
+          <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
             Estamos verificando tu pago con Mercado Pago. Esto puede tomar unos
             minutos.
           </p>

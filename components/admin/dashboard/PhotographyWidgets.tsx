@@ -83,13 +83,13 @@ export function EventProgressWidget() {
       case 'planning':
         return 'bg-blue-500/10 text-blue-700 border-blue-200';
       case 'in_progress':
-        return 'bg-amber-500/10 text-amber-700 border-amber-200';
+        return 'bg-primary-500/10 text-primary-700 border-primary-200';
       case 'processing':
         return 'bg-purple-500/10 text-purple-700 border-purple-200';
       case 'completed':
         return 'bg-green-500/10 text-green-700 border-green-200';
       default:
-        return 'bg-gray-500/10 text-gray-700 border-gray-200';
+        return 'bg-gray-500/10 text-foreground border-border';
     }
   };
 
@@ -150,7 +150,7 @@ export function EventProgressWidget() {
                     {getStatusText(event.status)}
                   </Badge>
                 </div>
-                <div className="mb-3 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="mb-3 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {event.location}
@@ -171,7 +171,7 @@ export function EventProgressWidget() {
             );
           })}
           {activeEvents.length === 0 && (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-8 text-center text-gray-500 dark:text-gray-400">
               <Camera className="mx-auto mb-2 h-8 w-8" />
               <p>No hay eventos activos</p>
             </div>
@@ -243,7 +243,7 @@ export function QuickAccessWidget() {
           </div>
 
           {/* Actividad Reciente */}
-          <div className="text-center text-xs text-muted-foreground">
+          <div className="text-center text-xs text-gray-500 dark:text-gray-400">
             {quickAccessData.recentActivity}
           </div>
         </div>
@@ -289,11 +289,11 @@ export function OrdersSummaryWidget() {
           {/* Pedidos Pendientes */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-amber-500" />
+              <Clock className="h-4 w-4 text-primary-600" />
               <span className="text-sm font-medium">Pendientes de Entrega</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-amber-600">
+              <span className="text-2xl font-bold text-primary">
                 {ordersData.pendingDelivery}
               </span>
               <Button variant="ghost" size="sm">
@@ -309,7 +309,7 @@ export function OrdersSummaryWidget() {
               <span className="text-sm font-medium">Ingresos del Mes</span>
             </div>
             <div className="text-center">
-              <span className="text-2xl font-bold text-blue-600">
+              <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 ${ordersData.totalRevenue.toLocaleString()}
               </span>
             </div>
@@ -349,7 +349,7 @@ export function PhotoManagementWidget() {
                 <div className="text-2xl font-bold text-primary">
                   {photoData.totalPhotos.toLocaleString()}
                 </div>
-                <div className="text-xs text-muted-foreground">Total de fotos</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Total de fotos</div>
               </div>
 
               {/* Procesadas Hoy */}
@@ -367,7 +367,7 @@ export function PhotoManagementWidget() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Pendientes</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-amber-600">
+                    <span className="text-lg font-bold text-primary">
                       {photoData.pendingProcessing}
                     </span>
                     <Button variant="ghost" size="sm">
@@ -381,14 +381,14 @@ export function PhotoManagementWidget() {
               <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Galerías activas</span>
-                  <span className="text-lg font-bold text-blue-600">
+                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
                     {photoData.publishedGalleries}
                   </span>
                 </div>
               </div>
 
               {/* Última Actividad */}
-              <div className="text-center text-xs text-muted-foreground">
+              <div className="text-center text-xs text-gray-500 dark:text-gray-400">
                 Última carga: {photoData.lastUpload}
               </div>
 
@@ -416,7 +416,7 @@ export function BusinessMetricsWidget() {
     <Card variant="glass-ios26" className="h-full">
       <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-600" />
+            <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             Métricas del Negocio
           </CardTitle>
       </CardHeader>
@@ -427,7 +427,7 @@ export function BusinessMetricsWidget() {
             <div className="text-3xl font-bold text-green-600">
               ${businessData.monthlyRevenue.toLocaleString()}
             </div>
-            <div className="text-xs text-muted-foreground">Ingresos del mes</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">Ingresos del mes</div>
             <Badge 
               variant="secondary" 
               className="mt-2 bg-green-500/10 text-green-700"
@@ -441,7 +441,7 @@ export function BusinessMetricsWidget() {
             <div className="flex items-center justify-between">
               <span className="text-sm">Clientes Activos</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-blue-600">
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
                   {businessData.activeClients}
                 </span>
                 <div className="h-2 w-12 rounded-full bg-blue-500/10">
@@ -484,7 +484,7 @@ export function BusinessMetricsWidget() {
             </div>
           </div>
 
-          <div className="pt-2 text-center text-xs text-muted-foreground">
+          <div className="pt-2 text-center text-xs text-gray-500 dark:text-gray-400">
             Actualizado hace 2 min
           </div>
         </div>

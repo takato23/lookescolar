@@ -26,11 +26,10 @@ const BodySchema = z.object({
 
 async function handlePATCH(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
-  // Next.js requires awaiting params in dynamic Route Handlers
-  const { id: awaitedId } = await context.params;
+  const { id: awaitedId } = context.params;
   const photoId = awaitedId as string | undefined;
   if (!photoId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
@@ -108,5 +107,4 @@ async function handlePATCH(
 export const runtime = 'nodejs';
 
 export const PATCH = handlePATCH;
-
 

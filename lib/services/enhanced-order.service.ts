@@ -429,8 +429,13 @@ export class EnhancedOrderService {
 
     const { data: orders, error } = await query;
 
-    if (error || !orders) {
+    if (error) {
       throw new Error('Failed to calculate stats');
+    }
+
+    // Handle empty results
+    if (!orders) {
+      orders = [];
     }
 
     const stats: OrderStats = {

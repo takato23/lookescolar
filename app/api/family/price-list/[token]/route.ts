@@ -3,10 +3,10 @@ import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ) {
   try {
-    const { token } = await params;
+    const { token } = params;
     if (!token || token.length < 20) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 400 });
     }

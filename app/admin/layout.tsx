@@ -151,7 +151,6 @@ export default function AdminLayout({
         <Script 
           src="/scripts/force-dark-mode.js" 
           strategy="afterInteractive"
-          priority={true}
         />
         <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
       </KeyboardProvider>

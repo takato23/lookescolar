@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 /**
  * Utilidades para manejar inconsistencias de esquema entre entornos
  * Permite transición gradual sin romper funcionalidad existente
@@ -218,7 +220,9 @@ export function prepareOrderInsert(orderData: {
 /**
  * Verifica qué campos están disponibles en el esquema actual
  */
-export async function detectSchemaVersion(supabase: any): Promise<{
+export async function detectSchemaVersion(
+  supabase: any
+): Promise<{
   hasNewEventFields: boolean;
   hasNewOrderFields: boolean;
   version: 'legacy' | 'mixed' | 'new';

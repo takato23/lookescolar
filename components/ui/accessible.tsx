@@ -50,10 +50,10 @@ export function AccessibleButton({
 }: AccessibleButtonProps) {
   const variants = {
     primary: 'bg-purple-600 text-white hover:bg-purple-700 focus:bg-purple-700',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus:bg-gray-200',
-    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:bg-gray-100',
+    secondary: 'bg-muted text-foreground hover:bg-muted focus:bg-muted',
+    ghost: 'bg-transparent text-foreground hover:bg-muted focus:bg-muted',
     outline:
-      'bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 focus:bg-gray-50',
+      'bg-transparent border border-border text-foreground hover:bg-muted focus:bg-muted',
   };
 
   const sizes = {
@@ -119,7 +119,7 @@ export function AccessibleField({
     <div className={cn('space-y-2', className)}>
       <label
         htmlFor={fieldId}
-        className="block text-sm font-medium text-gray-700"
+        className="block text-sm font-medium text-foreground"
       >
         {label}
         {required && (
@@ -130,7 +130,7 @@ export function AccessibleField({
       </label>
 
       {hint && (
-        <p id={hintId} className="text-sm text-gray-600">
+        <p id={hintId} className="text-sm text-gray-500 dark:text-gray-400">
           {hint}
         </p>
       )}
@@ -231,13 +231,13 @@ export function AccessibleModal({
           <div className="mb-4 flex items-center justify-between">
             <h2
               id={`${title}-title`}
-              className="text-xl font-semibold text-gray-900"
+              className="text-xl font-semibold text-foreground"
             >
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="rounded-md p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="rounded-md p-2 text-gray-400 hover:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple-500"
               aria-label="Cerrar modal"
             >
               <svg
@@ -257,7 +257,7 @@ export function AccessibleModal({
           </div>
 
           {description && (
-            <p id={`${title}-description`} className="mb-6 text-gray-600">
+            <p id={`${title}-description`} className="mb-6 text-gray-500 dark:text-gray-400">
               {description}
             </p>
           )}
@@ -331,7 +331,7 @@ export function AccessibleProgress({
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-foreground">{label}</label>
         {showPercentage && (
           <span
             className="text-sm text-gray-500"
@@ -342,7 +342,7 @@ export function AccessibleProgress({
         )}
       </div>
 
-      {description && <p className="text-sm text-gray-600">{description}</p>}
+      {description && <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>}
 
       <div
         role="progressbar"
@@ -350,7 +350,7 @@ export function AccessibleProgress({
         aria-valuemin={0}
         aria-valuemax={max}
         aria-label={`${label}: ${value} de ${max}`}
-        className="h-2 w-full rounded-full bg-gray-200"
+        className="h-2 w-full rounded-full bg-muted"
       >
         <div
           className="h-2 rounded-full bg-purple-600 transition-all duration-300"

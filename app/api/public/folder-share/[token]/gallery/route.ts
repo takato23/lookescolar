@@ -4,10 +4,10 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 // GET /api/public/folder-share/[token]/gallery
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string }> }
+  { params }: { params: { token: string } }
 ) {
   try {
-    const { token } = await params;
+    const { token } = params;
     const url = new URL(req.url);
     const sp = url.searchParams;
     const page = Math.max(1, parseInt(sp.get('page') || '1'));

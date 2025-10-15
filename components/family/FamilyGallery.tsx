@@ -1,10 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Subject } from '@/lib/services/family.service';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
+import type { Subject } from '@/lib/services/family.service';
 import { VirtualPhotoGrid } from '@/components/ui/virtual-photo-grid';
 import { PhotoLightbox } from '@/components/family/PhotoLightbox';
-import { PhotoFilters } from '@/components/family/PhotoFilters';
+import {
+  PhotoFilters,
+  type FiltersState,
+} from '@/components/family/PhotoFilters';
 import { GalleryHeader } from '@/components/family/GalleryHeader';
 import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
 
@@ -14,18 +23,21 @@ interface Photo {
   storage_path: string;
   created_at: string;
   signed_url: string;
-  assignment_id: string;
+  preview_url?: string;
+  watermark_url?: string;
+  assignment_id?: string;
+  engagement?: {
+    is_favorite: boolean;
+    in_cart_quantity: number;
+    purchased_quantity: number;
+  };
 }
 
-interface GalleryData {
-  photos: Photo[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    has_more: boolean;
-    total_pages: number;
-  };
+interface GalleryStats {
+  totalPhotos: number;
+  totalFavorites: number;
+  totalInCart: number;
+  totalPurchased: number;
 }
 
 interface GalleryState {
@@ -34,11 +46,41 @@ interface GalleryState {
   currentPage: number;
   hasMore: boolean;
   total: number;
-  filters: {
-    search: string;
-    dateRange: { from?: string; to?: string };
-    favorites: boolean;
+  stats: GalleryStats;
+}
+
+interface EnhancedGalleryPhoto {
+  id: string;
+  filename: string;
+  preview_url?: string;
+  watermark_url?: string;
+  storage_path?: string;
+  created_at: string;
+  taken_at?: string | null;
+  engagement?: {
+    is_favorite?: boolean;
+    in_cart_quantity?: number;
+    purchased_quantity?: number;
   };
+}
+
+interface EnhancedGalleryResponse {
+  success: boolean;
+  photos: EnhancedGalleryPhoto[];
+  pagination: {
+    current_page: number;
+    total_pages?: number;
+    total_photos: number;
+    has_more: boolean;
+    per_page: number;
+  };
+  stats: {
+    total_photos: number;
+    total_favorites: number;
+    total_in_cart: number;
+    total_purchased: number;
+  };
+  error?: string;
 }
 
 interface FamilyGalleryProps {
@@ -46,21 +88,32 @@ interface FamilyGalleryProps {
   subjectInfo: Subject;
 }
 
+const EMPTY_STATS: GalleryStats = {
+  totalPhotos: 0,
+  totalFavorites: 0,
+  totalInCart: 0,
+  totalPurchased: 0,
+};
+
 export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
+  const [filters, setFilters] = useState<FiltersState>({
+    search: '',
+    dateRange: {},
+    engagement: 'all',
+  });
+  const filtersRef = useRef<FiltersState>(filters);
+
   const [galleryState, setGalleryState] = useState<GalleryState>({
     allPhotos: [],
     filteredPhotos: [],
     currentPage: 0,
     hasMore: true,
     total: 0,
-    filters: {
-      search: '',
-      dateRange: {},
-      favorites: false,
-    },
+    stats: EMPTY_STATS,
   });
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const favoritesRef = useRef<Set<string>>(favorites);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,149 +123,204 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
     Map<string, { url: string; expires: number }>
   >(new Map());
 
-  // Load initial gallery
-  const loadInitialGallery = useCallback(async () => {
-    try {
-      setInitialLoading(true);
-      setError(null);
-      const response = await fetch(
-        `/api/family/gallery/${token}?page=1&limit=20`
-      );
-
-      if (!response.ok) {
-        throw new Error('Error al cargar las fotos');
-      }
-
-      const data: GalleryData = await response.json();
-
-      setGalleryState((prev) => ({
-        ...prev,
-        allPhotos: data.photos,
-        filteredPhotos: data.photos,
-        currentPage: 1,
-        hasMore: data.pagination.has_more,
-        total: data.pagination.total,
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
-      console.error('Error loading gallery:', err);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [token]);
-
-  // Load more photos for infinite scroll
-  const loadMorePhotos = useCallback(async () => {
-    if (loading || !galleryState.hasMore) return;
-
-    try {
-      setLoading(true);
-      const nextPage = galleryState.currentPage + 1;
-      const response = await fetch(
-        `/api/family/gallery/${token}?page=${nextPage}&limit=20`
-      );
-
-      if (!response.ok) {
-        throw new Error('Error al cargar más fotos');
-      }
-
-      const data: GalleryData = await response.json();
-
-      setGalleryState((prev) => {
-        const newAllPhotos = [...prev.allPhotos, ...data.photos];
-        return {
-          ...prev,
-          allPhotos: newAllPhotos,
-          filteredPhotos: applyFilters(newAllPhotos, prev.filters),
-          currentPage: nextPage,
-          hasMore: data.pagination.has_more,
-          total: data.pagination.total,
-        };
-      });
-    } catch (err) {
-      console.error('Error loading more photos:', err);
-      // Don't set error state for load more failures, just log them
-    } finally {
-      setLoading(false);
-    }
-  }, [token, loading, galleryState.hasMore, galleryState.currentPage]);
-
-  // Load initial gallery
   useEffect(() => {
-    loadInitialGallery();
-  }, [loadInitialGallery]);
+    filtersRef.current = filters;
+  }, [filters]);
 
-  // Aplicar filtros a las fotos
+  useEffect(() => {
+    favoritesRef.current = favorites;
+  }, [favorites]);
+
   const applyFilters = useCallback(
-    (photos: Photo[], filters: GalleryState['filters']) => {
+    (photos: Photo[], currentFilters: FiltersState) => {
       return photos.filter((photo) => {
-        // Filtro de búsqueda por nombre de archivo
-        if (filters.search) {
-          const searchTerm = filters.search.toLowerCase();
+        if (currentFilters.search) {
+          const searchTerm = currentFilters.search.toLowerCase();
           if (!photo.filename.toLowerCase().includes(searchTerm)) {
             return false;
           }
         }
 
-        // Filtro de rango de fechas
-        if (filters.dateRange.from || filters.dateRange.to) {
+        if (currentFilters.dateRange.from || currentFilters.dateRange.to) {
           const photoDate = new Date(photo.created_at);
           if (
-            filters.dateRange.from &&
-            photoDate < new Date(filters.dateRange.from)
+            currentFilters.dateRange.from &&
+            photoDate < new Date(currentFilters.dateRange.from)
           ) {
             return false;
           }
           if (
-            filters.dateRange.to &&
-            photoDate > new Date(filters.dateRange.to)
+            currentFilters.dateRange.to &&
+            photoDate > new Date(currentFilters.dateRange.to)
           ) {
             return false;
           }
         }
 
-        // Filtro de favoritos
-        if (filters.favorites && !favorites.has(photo.id)) {
-          return false;
+        const engagement = photo.engagement;
+        switch (currentFilters.engagement) {
+          case 'favorites':
+            return Boolean(engagement?.is_favorite);
+          case 'purchased':
+            return (engagement?.purchased_quantity ?? 0) > 0;
+          case 'unpurchased':
+            return (engagement?.purchased_quantity ?? 0) === 0;
+          default:
+            return true;
         }
-
-        return true;
       });
     },
-    [favorites]
+    []
   );
 
-  // Cargar carrito y favoritos desde sessionStorage
+  const mapPhoto = useCallback((photo: EnhancedGalleryPhoto): Photo => {
+    const fallbackUrl =
+      photo.preview_url ?? photo.watermark_url ?? photo.storage_path ?? '';
+
+    return {
+      id: photo.id,
+      filename: photo.filename,
+      storage_path: fallbackUrl,
+      created_at: photo.created_at,
+      signed_url: fallbackUrl,
+      preview_url: photo.preview_url,
+      watermark_url: photo.watermark_url,
+      engagement: {
+        is_favorite: Boolean(photo.engagement?.is_favorite),
+        in_cart_quantity: photo.engagement?.in_cart_quantity ?? 0,
+        purchased_quantity: photo.engagement?.purchased_quantity ?? 0,
+      },
+    };
+  }, []);
+
+  const fetchGalleryPage = useCallback(
+    async (
+      page: number,
+      options?: { append?: boolean; filters?: FiltersState }
+    ) => {
+      const append = options?.append ?? false;
+      const activeFilters = options?.filters ?? filtersRef.current;
+
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '20',
+      });
+
+      if (activeFilters.search) {
+        params.set('search', activeFilters.search);
+      }
+
+      if (activeFilters.engagement !== 'all') {
+        params.set('filter_by', activeFilters.engagement);
+      }
+
+      try {
+        if (append) {
+          setLoading(true);
+        } else {
+          setInitialLoading(true);
+          setError(null);
+        }
+
+        const response = await fetch(
+          `/api/family/gallery-enhanced/${token}?${params.toString()}`
+        );
+
+        if (!response.ok) {
+          throw new Error('Error al cargar las fotos');
+        }
+
+        const data = (await response.json()) as EnhancedGalleryResponse;
+
+        if (!data.success) {
+          throw new Error(data.error || 'Error al cargar las fotos');
+        }
+
+        const normalizedPhotos = data.photos.map(mapPhoto);
+        let mergedPhotos: Photo[] = [];
+
+        setGalleryState((prev) => {
+          mergedPhotos = append
+            ? [...prev.allPhotos, ...normalizedPhotos]
+            : normalizedPhotos;
+
+          const filtered = applyFilters(mergedPhotos, activeFilters);
+
+          return {
+            allPhotos: mergedPhotos,
+            filteredPhotos: filtered,
+            currentPage: data.pagination.current_page,
+            hasMore: data.pagination.has_more,
+            total: data.pagination.total_photos,
+            stats: {
+              totalPhotos: data.stats.total_photos,
+              totalFavorites: data.stats.total_favorites,
+              totalInCart: data.stats.total_in_cart,
+              totalPurchased: data.stats.total_purchased,
+            },
+          };
+        });
+
+        const favoriteIds = mergedPhotos
+          .filter((photo) => photo.engagement?.is_favorite)
+          .map((photo) => photo.id);
+        const nextFavorites = new Set(favoriteIds);
+        setFavorites(nextFavorites);
+        favoritesRef.current = nextFavorites;
+      } catch (err) {
+        console.error('Error loading gallery:', err);
+        if (!append) {
+          setError(err instanceof Error ? err.message : 'Error desconocido');
+        }
+      } finally {
+        if (append) {
+          setLoading(false);
+        } else {
+          setInitialLoading(false);
+        }
+      }
+    },
+    [token, applyFilters, mapPhoto]
+  );
+
+  useEffect(() => {
+    setGalleryState({
+      allPhotos: [],
+      filteredPhotos: [],
+      currentPage: 0,
+      hasMore: true,
+      total: 0,
+      stats: EMPTY_STATS,
+    });
+    setSelectedPhotos(new Set());
+    setFavorites(new Set());
+    favoritesRef.current = new Set();
+    void fetchGalleryPage(1);
+  }, [fetchGalleryPage]);
+
   useEffect(() => {
     const savedCart = sessionStorage.getItem(`cart_${token}`);
     if (savedCart) {
       try {
-        const cartData = JSON.parse(savedCart);
-        setSelectedPhotos(new Set(cartData.map((item: any) => item.photo_id)));
+        const cartData = JSON.parse(savedCart) as Array<{ photo_id: string }>;
+        setSelectedPhotos(new Set(cartData.map((item) => item.photo_id)));
       } catch (err) {
         console.warn('Error loading cart from storage:', err);
       }
     }
 
-    const savedFavorites = localStorage.getItem(`favorites_${token}`);
-    if (savedFavorites) {
-      try {
-        const favoriteIds = JSON.parse(savedFavorites);
-        setFavorites(new Set(favoriteIds));
-      } catch (err) {
-        console.warn('Error loading favorites from storage:', err);
-      }
-    }
-
-    // Cargar cache de URLs firmadas
     const savedCache = sessionStorage.getItem(`signed_urls_${token}`);
     if (savedCache) {
       try {
-        const cacheData = JSON.parse(savedCache);
-        const validCache = new Map();
+        const cacheData = JSON.parse(savedCache) as Record<
+          string,
+          { url: string; expires: number }
+        >;
+
+        const validCache = new Map<string, { url: string; expires: number }>();
         const now = Date.now();
 
-        Object.entries(cacheData).forEach(([key, value]: [string, any]) => {
+        Object.entries(cacheData).forEach(([key, value]) => {
           if (value.expires > now) {
             validCache.set(key, value);
           }
@@ -225,7 +333,6 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
     }
   }, [token]);
 
-  // Save cart to sessionStorage
   const saveCartToStorage = useCallback(
     (photoIds: Set<string>) => {
       const cartItems = Array.from(photoIds).map((id) => {
@@ -234,13 +341,12 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
           photo_id: id,
           filename: photo?.filename || '',
           quantity: 1,
-          price: 0, // Will be calculated in cart
+          price: 0,
         };
       });
 
       sessionStorage.setItem(`cart_${token}`, JSON.stringify(cartItems));
 
-      // Dispatch event para que el carrito se actualice
       window.dispatchEvent(
         new CustomEvent('cartUpdated', {
           detail: { items: cartItems, token },
@@ -250,7 +356,6 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
     [galleryState.allPhotos, token]
   );
 
-  // Toggle photo selection
   const togglePhotoSelection = useCallback(
     (photo: Photo) => {
       const newSelection = new Set(selectedPhotos);
@@ -267,55 +372,113 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
     [selectedPhotos, saveCartToStorage]
   );
 
-  // Toggle favorito
   const toggleFavorite = useCallback(
-    (photoId: string) => {
-      const newFavorites = new Set(favorites);
-      if (newFavorites.has(photoId)) {
-        newFavorites.delete(photoId);
+    async (photoId: string) => {
+      const currentFavorites = new Set(favoritesRef.current);
+      const isFavorite = currentFavorites.has(photoId);
+      const optimisticFavorites = new Set(currentFavorites);
+
+      if (isFavorite) {
+        optimisticFavorites.delete(photoId);
       } else {
-        newFavorites.add(photoId);
+        optimisticFavorites.add(photoId);
       }
 
-      setFavorites(newFavorites);
-      localStorage.setItem(
-        `favorites_${token}`,
-        JSON.stringify(Array.from(newFavorites))
-      );
+      setFavorites(optimisticFavorites);
+      favoritesRef.current = optimisticFavorites;
 
-      // Actualizar fotos filtradas si está activo el filtro de favoritos
-      if (galleryState.filters.favorites) {
-        setGalleryState((prev) => ({
-          ...prev,
-          filteredPhotos: applyFilters(prev.allPhotos, prev.filters),
-        }));
-      }
-    },
-    [
-      favorites,
-      token,
-      galleryState.filters,
-      galleryState.allPhotos,
-      applyFilters,
-    ]
-  );
+      let previousStats: GalleryStats | null = null;
 
-  // Actualizar filtros
-  const updateFilters = useCallback(
-    (newFilters: Partial<GalleryState['filters']>) => {
       setGalleryState((prev) => {
-        const updatedFilters = { ...prev.filters, ...newFilters };
+        const updatedPhotos = prev.allPhotos.map((photo) =>
+          photo.id === photoId
+            ? {
+                ...photo,
+                engagement: {
+                  ...photo.engagement,
+                  is_favorite: !isFavorite,
+                },
+              }
+            : photo
+        );
+
+        const filtered = applyFilters(updatedPhotos, filtersRef.current);
+        previousStats = prev.stats;
+        const delta = isFavorite ? -1 : 1;
+
         return {
           ...prev,
-          filters: updatedFilters,
-          filteredPhotos: applyFilters(prev.allPhotos, updatedFilters),
+          allPhotos: updatedPhotos,
+          filteredPhotos: filtered,
+          stats: {
+            ...prev.stats,
+            totalFavorites: Math.max(0, prev.stats.totalFavorites + delta),
+          },
         };
       });
+
+      try {
+        let response: Response;
+        if (isFavorite) {
+          response = await fetch(
+            `/api/public/share/${token}/favorites?assetId=${photoId}`,
+            { method: 'DELETE' }
+          );
+        } else {
+          response = await fetch(`/api/public/share/${token}/favorites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assetId: photoId }),
+          });
+        }
+
+        if (!response.ok) {
+          throw new Error('No se pudo actualizar el favorito');
+        }
+      } catch (err) {
+        console.error('Error toggling favorite:', err);
+        const revertedFavorites = new Set(currentFavorites);
+        setFavorites(revertedFavorites);
+        favoritesRef.current = revertedFavorites;
+
+        setGalleryState((prev) => {
+          const updatedPhotos = prev.allPhotos.map((photo) =>
+            photo.id === photoId
+              ? {
+                  ...photo,
+                  engagement: {
+                    ...photo.engagement,
+                    is_favorite: isFavorite,
+                  },
+                }
+              : photo
+          );
+          const filtered = applyFilters(updatedPhotos, filtersRef.current);
+
+          return {
+            ...prev,
+            allPhotos: updatedPhotos,
+            filteredPhotos: filtered,
+            stats: previousStats ?? prev.stats,
+          };
+        });
+      }
     },
-    [galleryState.allPhotos, applyFilters]
+    [token, applyFilters]
   );
 
-  // Obtener URL firmada desde datos ya firmados o cache local (sin pedir al endpoint de dev)
+  const updateFilters = useCallback(
+    (partial: Partial<FiltersState>) => {
+      setFilters((prev) => {
+        const updated = { ...prev, ...partial };
+        filtersRef.current = updated;
+        void fetchGalleryPage(1, { append: false, filters: updated });
+        return updated;
+      });
+    },
+    [fetchGalleryPage]
+  );
+
   const getSignedUrl = useCallback(
     async (photo: Photo): Promise<string> => {
       const now = Date.now();
@@ -325,16 +488,14 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
         return cached.url;
       }
 
-      // Preferir la URL firmada provista por el server; si existe, cachear su expiración aproximada
       if (photo.signed_url) {
-        const expires = now + 3600 * 1000; // 1 hora por defecto si no viene metadata
+        const expires = now + 3600 * 1000;
         const newCache = new Map(signedUrlCache);
         newCache.set(photo.id, { url: photo.signed_url, expires });
         setSignedUrlCache(newCache);
-        const cacheObject = Object.fromEntries(newCache);
         sessionStorage.setItem(
           `signed_urls_${token}`,
-          JSON.stringify(cacheObject)
+          JSON.stringify(Object.fromEntries(newCache))
         );
         return photo.signed_url;
       }
@@ -344,14 +505,39 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
     [signedUrlCache, token]
   );
 
-  // Abrir lightbox con foto específica
   const openLightbox = useCallback((photo: Photo) => {
     setSelectedPhoto(photo);
     setLightboxOpen(true);
   }, []);
 
+  const design = (subjectInfo as any)?.event?.settings?.design || {};
+  const gapClass = design?.grid?.spacing === 'large' ? 'gap-6' : 'gap-4';
+  const colsClass =
+    design?.grid?.thumb === 'large'
+      ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+      : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+  const eventTheme = ((subjectInfo as any)?.event?.theme || 'default') as any;
+
+  const headerStats = useMemo(
+    () => ({
+      totalFavorites: galleryState.stats.totalFavorites,
+      totalInCart: galleryState.stats.totalInCart,
+      totalPurchased: galleryState.stats.totalPurchased,
+      totalUnpurchased: Math.max(
+        0,
+        galleryState.stats.totalPhotos - galleryState.stats.totalPurchased
+      ),
+    }),
+    [galleryState.stats]
+  );
+
+  const loadMorePhotos = useCallback(() => {
+    if (loading || !galleryState.hasMore) return;
+    void fetchGalleryPage(galleryState.currentPage + 1, { append: true });
+  }, [loading, galleryState.hasMore, galleryState.currentPage, fetchGalleryPage]);
+
   if (initialLoading) {
-    return <GallerySkeleton />;
+    return <GallerySkeleton colsClass={colsClass} gapClass={gapClass} />;
   }
 
   if (error) {
@@ -365,7 +551,7 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
         </h3>
         <p className="mb-4 text-sm text-red-500">{error}</p>
         <button
-          onClick={loadInitialGallery}
+          onClick={() => void fetchGalleryPage(1)}
           className="rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
         >
           Reintentar
@@ -374,141 +560,80 @@ export function FamilyGallery({ token, subjectInfo }: FamilyGalleryProps) {
     );
   }
 
-  // Fotos para mostrar (filtradas o todas)
   const displayPhotos = galleryState.filteredPhotos;
-
-  const design: any = (subjectInfo as any)?.event?.settings?.design || {};
-  const gapClass = design?.grid?.spacing === 'large' ? 'gap-6' : 'gap-4';
-  const colsClass = design?.grid?.thumb === 'large'
-    ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-    : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
-  const eventTheme = ((subjectInfo as any)?.event?.theme || 'default') as any;
 
   return (
     <ThemedGalleryWrapper eventTheme={eventTheme}>
-    <div id="gallery" className="space-y-6">
-      {/* Header con estadísticas y controles */}
-      <GalleryHeader
-        totalPhotos={galleryState.total}
-        displayedPhotos={displayPhotos.length}
-        selectedCount={selectedPhotos.size}
-        favoritesCount={favorites.size}
-        onSelectAll={() => {
-          displayPhotos.forEach((photo) => {
-            if (!selectedPhotos.has(photo.id)) {
-              togglePhotoSelection(photo);
-            }
-          });
-        }}
-        onClearSelection={() => {
-          displayPhotos.forEach((photo) => {
-            if (selectedPhotos.has(photo.id)) {
-              togglePhotoSelection(photo);
-            }
-          });
-        }}
-      />
+      <div id="gallery" className="space-y-6">
+        <GalleryHeader
+          totalPhotos={galleryState.stats.totalPhotos || galleryState.total}
+          displayedPhotos={displayPhotos.length}
+          selectedCount={selectedPhotos.size}
+          stats={headerStats}
+          onSelectAll={() => {
+            displayPhotos.forEach((photo) => {
+              if (!selectedPhotos.has(photo.id)) {
+                togglePhotoSelection(photo);
+              }
+            });
+          }}
+          onClearSelection={() => {
+            displayPhotos.forEach((photo) => {
+              if (selectedPhotos.has(photo.id)) {
+                togglePhotoSelection(photo);
+              }
+            });
+          }}
+        />
 
-      {/* Filtros */}
-      <PhotoFilters
-        filters={galleryState.filters}
-        onUpdateFilters={updateFilters}
-        totalPhotos={galleryState.allPhotos.length}
-        filteredPhotos={displayPhotos.length}
-      />
+        <PhotoFilters
+          filters={filters}
+          onUpdateFilters={updateFilters}
+          totalPhotos={galleryState.stats.totalPhotos || galleryState.allPhotos.length}
+          filteredPhotos={displayPhotos.length}
+          stats={galleryState.stats}
+        />
 
-      {/* Grid Virtual */}
-      <VirtualPhotoGrid
-        photos={displayPhotos}
-        selectedPhotos={selectedPhotos}
-        favorites={favorites}
-        onTogglePhoto={togglePhotoSelection}
-        onToggleFavorite={toggleFavorite}
-        onViewPhoto={openLightbox}
-        loading={loading}
-        loadMore={loadMorePhotos}
-        hasMore={galleryState.hasMore}
-        getSignedUrl={getSignedUrl}
-        className="min-h-[400px]"
-      />
+        <VirtualPhotoGrid
+          photos={displayPhotos}
+          selectedPhotos={selectedPhotos}
+          favorites={favorites}
+          onTogglePhoto={togglePhotoSelection}
+          onToggleFavorite={toggleFavorite}
+          onViewPhoto={openLightbox}
+          loading={loading}
+          loadMore={loadMorePhotos}
+          hasMore={galleryState.hasMore}
+          getSignedUrl={getSignedUrl}
+          className="min-h-[400px]"
+        />
 
-      {/* Lightbox Modal */}
-      <PhotoLightbox
-        isOpen={lightboxOpen}
-        photos={displayPhotos}
-        currentPhoto={selectedPhoto}
-        onClose={() => {
-          setLightboxOpen(false);
-          setSelectedPhoto(null);
-        }}
-        onToggleSelection={togglePhotoSelection}
-        onToggleFavorite={toggleFavorite}
-        selectedPhotos={selectedPhotos}
-        favorites={favorites}
-        getSignedUrl={getSignedUrl}
-      />
-    </div>
+        <PhotoLightbox
+          isOpen={lightboxOpen}
+          photos={displayPhotos}
+          currentPhoto={selectedPhoto}
+          onClose={() => {
+            setLightboxOpen(false);
+            setSelectedPhoto(null);
+          }}
+          onToggleSelection={togglePhotoSelection}
+          onToggleFavorite={toggleFavorite}
+          selectedPhotos={selectedPhotos}
+          favorites={favorites}
+          getSignedUrl={getSignedUrl}
+        />
+      </div>
     </ThemedGalleryWrapper>
   );
 }
 
-// Modal para ver foto completa
-interface PhotoModalProps {
-  photo: Photo;
-  onClose: () => void;
-  isSelected: boolean;
-  onToggle: () => void;
-}
-
-function PhotoModal({ photo, onClose, isSelected, onToggle }: PhotoModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">
-      <div className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-lg bg-white">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b bg-white p-4">
-          <div>
-            <h3 className="truncate font-semibold text-gray-800">
-              {photo.filename}
-            </h3>
-            <p className="text-sm text-gray-500">
-              {new Date(photo.created_at).toLocaleDateString('es-AR')}
-            </p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={onToggle}
-              className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
-                isSelected
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {isSelected ? '✓ Seleccionada' : 'Seleccionar'}
-            </button>
-            <button
-              onClick={onClose}
-              className="p-2 text-gray-500 transition-colors hover:text-gray-700"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-
-        {/* Image */}
-        <div className="relative max-h-[70vh] overflow-auto">
-          <img
-            src={photo.signed_url}
-            alt={photo.filename}
-            className="h-auto w-full"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Skeleton loading
-function GallerySkeleton() {
+function GallerySkeleton({
+  colsClass,
+  gapClass,
+}: {
+  colsClass: string;
+  gapClass: string;
+}) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

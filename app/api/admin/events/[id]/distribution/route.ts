@@ -53,12 +53,9 @@ const ExpiryWarningsSchema = z.object({
 // GET - Distribution History and Statistics
 // ============================================================
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
     const { searchParams } = new URL(request.url);
 
@@ -325,12 +322,9 @@ export async function GET(
 // POST - Generate and Distribute Tokens
 // ============================================================
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Distribution request for event:`, {
@@ -497,12 +491,9 @@ export async function POST(
 // PUT - Bulk Distribute Existing Tokens
 // ============================================================
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Bulk distribution request for event:`, {
@@ -643,12 +634,9 @@ export async function PUT(
 // PATCH - Send Expiry Warnings
 // ============================================================
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Expiry warnings request for event:`, {

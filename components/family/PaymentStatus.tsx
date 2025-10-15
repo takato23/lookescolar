@@ -214,8 +214,8 @@ export default function PaymentStatus({
             Si sigues teniendo problemas, contáctanos:
           </p>
           <div className="space-y-1 text-sm">
-            <p className="text-blue-600">📧 contacto@lookescolar.com</p>
-            <p className="text-blue-600">📱 +54 11 1234-5678</p>
+            <p className="text-blue-600 dark:text-blue-400">📧 contacto@lookescolar.com</p>
+            <p className="text-blue-600 dark:text-blue-400">📱 +54 11 1234-5678</p>
           </div>
         </div>
       </Card>

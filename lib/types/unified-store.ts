@@ -1,22 +1,28 @@
 // lib/types/unified-store.ts
 // Tipos y catálogo para la tienda unificada de productos físicos
 
-export interface ProductOption {
+import { Product, ProductType } from '@/lib/config/default-products';
+
+export interface ProductOption extends Product {
   id: string;
   name: string;
   description: string;
-  basePrice: number;
-  type: 'option_a' | 'option_b';
-  contents: {
-    folderSize: string;
-    individualPhotos: number;
-    individualSize: string;
-    smallPhotos: number;
-    smallSize: string;
-    groupPhotos: number;
-    groupSize: string;
+  basePrice?: number;
+  price: number;
+  type: ProductType;
+  enabled: boolean;
+  highlight?: boolean;
+  order?: number;
+  contents?: {
+    folderSize?: string;
+    individualPhotos?: number;
+    individualSize?: string;
+    smallPhotos?: number;
+    smallSize?: string;
+    groupPhotos?: number;
+    groupSize?: string;
   };
-  features: string[];
+  features?: any;
 }
 
 export interface AdditionalCopy {
@@ -72,59 +78,10 @@ export interface UnifiedOrder {
   currency: string;
 }
 
-// Product catalog with real prices in Argentine Pesos
+// Legacy Product catalog - use DEFAULT_PRODUCTS instead
+// This is kept for backward compatibility but should be migrated to use dynamic products from settings
 export const PRODUCT_CATALOG = {
-  productOptions: [
-    {
-      id: 'option_a',
-      name: 'OPCIÓN A',
-      description:
-        'Carpeta personalizada completa con fotos individuales y grupales',
-      basePrice: 8500, // $8,500 ARS
-      type: 'option_a' as const,
-      contents: {
-        folderSize: '20x30 cm',
-        individualPhotos: 1,
-        individualSize: '15x21 cm',
-        smallPhotos: 4,
-        smallSize: '4x5 cm',
-        groupPhotos: 1,
-        groupSize: '15x21 cm',
-      },
-      features: [
-        'Carpeta personalizada de 20x30 cm',
-        '1 foto individual de 15x21 cm',
-        '4 fotos pequeñas de 4x5 cm (de la misma imagen individual)',
-        '1 foto grupal de 15x21 cm',
-        'Impresión de alta calidad',
-        'Terminación mate',
-      ],
-    },
-    {
-      id: 'option_b',
-      name: 'OPCIÓN B',
-      description: 'Carpeta personalizada premium con más fotos individuales',
-      basePrice: 12500, // $12,500 ARS
-      type: 'option_b' as const,
-      contents: {
-        folderSize: '20x30 cm',
-        individualPhotos: 2,
-        individualSize: '15x21 cm',
-        smallPhotos: 8,
-        smallSize: '4x5 cm',
-        groupPhotos: 1,
-        groupSize: '15x21 cm',
-      },
-      features: [
-        'Carpeta personalizada de 20x30 cm',
-        '2 fotos individuales de 15x21 cm',
-        '8 fotos pequeñas de 4x5 cm (de las mismas imágenes individuales)',
-        '1 foto grupal de 15x21 cm',
-        'Impresión de alta calidad',
-        'Terminación mate',
-      ],
-    },
-  ],
+  productOptions: [],  // Will be populated from settings
 
   additionalCopies: [
     {

@@ -128,32 +128,33 @@ export class EnhancedRateLimitService {
     request: NextRequest,
     qrType: 'generation' | 'validation' | 'access'
   ): Promise<{ response?: NextResponse; result: RateLimitResult }> {
-    const configs = {
-      generation: {
-        identifier: await this.getIdentifier(request, {
-          identifier: 'ip',
-        } as RateLimitConfig),
-        limit: 50, // 50 QR generations per hour
-        window: '1h',
-        message: 'Too many QR code generation requests',
-      },
-      validation: {
-        identifier: await this.getIdentifier(request, {
-          identifier: 'ip',
-        } as RateLimitConfig),
-        limit: 100, // 100 validations per hour
-        window: '1h',
-        message: 'Too many QR code validation requests',
-      },
-      access: {
-        identifier: await this.getIdentifier(request, {
-          identifier: 'ip',
-        } as RateLimitConfig),
-        limit: 200, // 200 QR accesses per hour
-        window: '1h',
-        message: 'Too many QR code access requests',
-      },
-    };
+    const configs: Record<'generation' | 'validation' | 'access', RateLimitConfig> =
+      {
+        generation: {
+          identifier: await this.getIdentifier(request, {
+            identifier: 'ip',
+          } as RateLimitConfig),
+          limit: 50, // 50 QR generations per hour
+          window: '1h',
+          message: 'Too many QR code generation requests',
+        },
+        validation: {
+          identifier: await this.getIdentifier(request, {
+            identifier: 'ip',
+          } as RateLimitConfig),
+          limit: 100, // 100 validations per hour
+          window: '1h',
+          message: 'Too many QR code validation requests',
+        },
+        access: {
+          identifier: await this.getIdentifier(request, {
+            identifier: 'ip',
+          } as RateLimitConfig),
+          limit: 200, // 200 QR accesses per hour
+          window: '1h',
+          message: 'Too many QR code access requests',
+        },
+      };
 
     const config = configs[qrType];
     return await this.applyRateLimit(request, config);

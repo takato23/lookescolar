@@ -1,51 +1,62 @@
-import { Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import EventPhotoManager from '@/components/admin/EventPhotoManager';
+import { redirect } from 'next/navigation';
 
-interface PageProps {
-  params: Promise<{ id: string }>;
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function firstValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value ?? undefined;
 }
 
-/**
- * 🔄 RESTAURADO - Gestión de Fotos del Evento
- * 
- * Interfaz específica para gestionar fotos de un evento particular.
- * Proporciona contexto completo del evento y gestión de fotos integrada.
- */
-export default async function EventLibraryPage({ params }: PageProps) {
-  const { id: eventId } = await params;
-  
-  return (
-    <Suspense fallback={<EventPhotoManagerSkeleton />}>
-      <EventPhotoManager eventId={eventId} />
-    </Suspense>
-  );
+function alignParam(params: URLSearchParams, canonical: string, legacy: string) {
+  const value = params.get(canonical) ?? params.get(legacy);
+  if (!value) return;
+  params.set(canonical, value);
+  params.set(legacy, value);
 }
 
-function EventPhotoManagerSkeleton() {
-  return (
-    <div className="h-screen flex flex-col">
-      <div className="border-b p-4">
-        <Skeleton className="h-8 w-64 mb-2" />
-        <Skeleton className="h-4 w-96" />
-      </div>
-      <div className="flex-1 p-4">
-        <div className="grid grid-cols-4 gap-4 mb-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full" />
-          ))}
-        </div>
-        <div className="grid grid-cols-6 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-square w-full" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+export default function EventLibraryPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: SearchParams;
+}) {
+  const merged = new URLSearchParams();
+
+  if (searchParams) {
+    for (const [key, rawValue] of Object.entries(searchParams)) {
+      const value = firstValue(rawValue);
+      if (value) {
+        merged.set(key, value);
+      }
+    }
+  }
+
+  const eventId = params.id;
+  if (eventId) {
+    merged.set('eventId', eventId);
+    merged.set('event_id', eventId);
+  }
+
+  // Normalize folder filters coming from legacy level/course parameters
+  const levelId = merged.get('levelId') ?? merged.get('level_id');
+  const courseId = merged.get('courseId') ?? merged.get('course_id');
+  const folderCandidate = levelId || courseId;
+  if (folderCandidate) {
+    merged.set('folderId', folderCandidate);
+    merged.set('folder_id', folderCandidate);
+  }
+
+  alignParam(merged, 'folderId', 'folder_id');
+  alignParam(merged, 'studentId', 'student_id');
+  alignParam(merged, 'codeId', 'code_id');
+  alignParam(merged, 'subjectId', 'subject_id');
+
+  const qs = merged.toString();
+  redirect(`/admin/photos${qs ? `?${qs}` : ''}`);
 }
 
 export const metadata = {
   title: 'Gestión de Fotos del Evento',
-  description: 'Gestionar fotos, carpetas y organización del evento'
+  description: 'Gestionar fotos, carpetas y organización del evento',
 };

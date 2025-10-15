@@ -7,14 +7,14 @@ import { MobileOptimizations } from '@/components/family/MobileOptimizations';
 
 interface FamilyLayoutProps {
   children: ReactNode;
-  params: Promise<{ token: string }>;
+  params: { token: string };
 }
 
 export default async function FamilyLayout({
   children,
   params,
 }: FamilyLayoutProps) {
-  const { token } = await params;
+  const { token } = params;
   // Navegación móvil con items parametrizados por token
   const baseItems = Array.isArray(familyNavigationItems)
     ? familyNavigationItems

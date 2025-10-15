@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = params;
     const url = new URL(request.url);
     const courseId = url.searchParams.get('course');
     const levelId = url.searchParams.get('level');
@@ -38,8 +38,7 @@ export async function GET(
       .select(`
         id,
         original_filename,
-        preview_url,
-        thumbnail_url,
+        watermark_path,
         file_size,
         width,
         height,
@@ -75,8 +74,8 @@ export async function GET(
     const publicPhotos = (photosData || []).map(photo => ({
       id: photo.id,
       filename: photo.original_filename,
-      preview_url: photo.preview_url,
-      thumbnail_url: photo.thumbnail_url,
+      preview_url: photo.watermark_path || '/mockups/photos/placeholder.jpg',
+      thumbnail_url: photo.watermark_path || '/mockups/photos/placeholder.jpg',
       dimensions: {
         width: photo.width,
         height: photo.height

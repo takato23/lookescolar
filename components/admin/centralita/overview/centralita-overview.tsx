@@ -54,20 +54,20 @@ export default function CentralitaOverview({
           <h3 className="mb-4 text-lg font-semibold">KPIs</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-sm text-gray-600">Total carpetas</div>
+              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Total carpetas</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{stats.published}</div>
-              <div className="text-sm text-gray-600">Publicadas</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Publicadas</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{stats.unpublished}</div>
-              <div className="text-sm text-gray-600">Privadas</div>
+              <div className="text-2xl font-bold text-primary">{stats.unpublished}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Privadas</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.totalPhotos}</div>
-              <div className="text-sm text-gray-600">Fotos totales</div>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalPhotos}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Fotos totales</div>
             </div>
           </div>
         </Card>
@@ -77,7 +77,7 @@ export default function CentralitaOverview({
           <h3 className="mb-2 text-lg font-semibold">Enlace público</h3>
           {hasEvent ? (
             <div className="space-y-3">
-              <div className="rounded-lg border bg-gray-50 p-3 text-xs">
+              <div className="rounded-lg border bg-muted p-3 text-xs">
                 {getPublicUrl() || 'Habilita la galería pública para obtener un enlace'}
               </div>
               <div className="flex gap-2">
@@ -119,7 +119,7 @@ export default function CentralitaOverview({
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-600">Selecciona un evento para ver su enlace público.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Selecciona un evento para ver su enlace público.</p>
           )}
         </Card>
       </div>

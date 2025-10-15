@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { featureFlags } from '@/lib/feature-flags';
+import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
 
 // Schema de validación
 const CheckoutSchema = z.object({
@@ -27,17 +28,17 @@ const CheckoutSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  console.log('🚀 [CHECKOUT] ===== INICIO ENDPOINT =====');
-  console.log('🚀 [CHECKOUT] Método:', request.method);
-  console.log('🚀 [CHECKOUT] URL:', request.url);
-  console.log(
-    '🚀 [CHECKOUT] Headers:',
-    Object.fromEntries(request.headers.entries())
-  );
+  const requestId = generateRequestId();
+  const startTime = Date.now();
 
   try {
     // Gate this checkout when unified store is the only allowed checkout
     if ((featureFlags as any).UNIFIED_STORE_CHECKOUT_ONLY === true || process.env.FF_UNIFIED_STORE_CHECKOUT_ONLY === 'true') {
+      SecurityLogger.logSecurityEvent(
+        'family_purchase_disabled',
+        { requestId },
+        'warning'
+      );
       return NextResponse.json(
         {
           error: 'Checkout deshabilitado',
@@ -48,27 +49,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🚀 [CHECKOUT] Iniciando procesamiento del checkout');
-
     const body = await request.json();
-    console.log('📥 [CHECKOUT] Body recibido:', JSON.stringify(body, null, 2));
 
     // Validar request
     const validatedData = CheckoutSchema.parse(body);
     const { token, contactInfo, items } = validatedData;
 
-    console.log('🔐 [CHECKOUT] Procesando checkout para token:', token);
-    console.log('📦 [CHECKOUT] Items:', items.length);
-    console.log('👤 [CHECKOUT] Contact info:', contactInfo);
+    const requestedTotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
 
-    // Crear cliente Supabase
-    console.log('🔧 [CHECKOUT] Creando cliente Supabase...');
+    SecurityLogger.logSecurityEvent(
+      'family_purchase_request',
+      {
+        requestId,
+        token,
+        itemsCount: items.length,
+        requestedTotal,
+        contactEmail: contactInfo.email,
+      },
+      'info'
+    );
+
     const supabase = await createServerSupabaseServiceClient();
-    console.log('✅ [CHECKOUT] Cliente Supabase creado:', typeof supabase);
-    console.log('✅ [CHECKOUT] Métodos disponibles:', Object.keys(supabase));
-
-    // 1. Validar que el token existe y está activo
-    console.log('🔍 [CHECKOUT] Buscando folder con token:', token);
 
     const { data: folder, error: folderError } = await supabase
       .from('folders')
@@ -85,21 +89,21 @@ export async function POST(request: NextRequest) {
       .eq('is_published', true)
       .single();
 
-    console.log('📁 [CHECKOUT] Resultado de búsqueda:', {
-      folder,
-      folderError,
-    });
-
     if (folderError || !folder) {
-      console.error('❌ [CHECKOUT] Token inválido o expirado:', token);
-      console.error('❌ [CHECKOUT] Error específico:', folderError);
+      SecurityLogger.logSecurityEvent(
+        'family_purchase_token_invalid',
+        {
+          requestId,
+          token,
+          error: folderError?.message,
+        },
+        'warning'
+      );
       return NextResponse.json(
         { error: 'Token inválido o expirado' },
         { status: 401 }
       );
     }
-
-    console.log('✅ [CHECKOUT] Token válido para carpeta:', folder.name);
 
     // Obtener información del evento si existe
     let eventInfo = null;
@@ -112,7 +116,6 @@ export async function POST(request: NextRequest) {
 
       if (!eventError && event) {
         eventInfo = event;
-        console.log('✅ [CHECKOUT] Evento encontrado:', event.name);
       }
     }
 
@@ -185,11 +188,6 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log(
-      '📝 [CHECKOUT] Datos de orden a insertar:',
-      JSON.stringify(orderData, null, 2)
-    );
-
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert(orderData)
@@ -197,14 +195,38 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError) {
-      console.error('❌ [CHECKOUT] Error creando orden:', orderError);
+      SecurityLogger.logSecurityEvent(
+        'family_purchase_error',
+        {
+          requestId,
+          token,
+          folderId: folder.id,
+          itemsCount: items.length,
+          total,
+          error: orderError.message,
+        },
+        'error'
+      );
       return NextResponse.json(
         { error: 'Error creando la orden' },
         { status: 500 }
       );
     }
 
-    console.log('✅ [CHECKOUT] Orden creada:', order.id);
+    SecurityLogger.logSecurityEvent(
+      'family_purchase_created',
+      {
+        requestId,
+        token,
+        folderId: folder.id,
+        eventId: folder.event_id,
+        orderId: order.id,
+        itemsCount: items.length,
+        total,
+        duration: Date.now() - startTime,
+      },
+      'info'
+    );
 
     // 5. Incrementar contador de vistas
     await supabase
@@ -225,8 +247,6 @@ export async function POST(request: NextRequest) {
       failure: `${baseUrl}/store/${token}/failure`,
       pending: `${baseUrl}/store/${token}/pending`,
     };
-
-    console.log('🔗 [CHECKOUT] URLs de retorno:', backUrls);
 
     const mercadopagoData = {
       external_reference: order.id,
@@ -315,7 +335,16 @@ export async function POST(request: NextRequest) {
         message: 'Orden creada exitosamente. Redirigiendo a MercadoPago...',
       });
     } catch (mpError) {
-      console.error('❌ [CHECKOUT] Error creando preferencia MP:', mpError);
+      SecurityLogger.logSecurityEvent(
+        'family_purchase_mp_error',
+        {
+          requestId,
+          orderId: order.id,
+          error:
+            mpError instanceof Error ? mpError.message : String(mpError),
+        },
+        'warning'
+      );
 
       // Fallback: simular URL (para desarrollo)
       const fallbackUrl = `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=dev_${order.id}`;
@@ -330,19 +359,16 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('❌ [CHECKOUT] Error general:', error);
-    console.error(
-      '❌ [CHECKOUT] Stack trace:',
-      error instanceof Error ? error.stack : 'No stack trace'
-    );
-    console.error('❌ [CHECKOUT] Error type:', typeof error);
-    console.error(
-      '❌ [CHECKOUT] Error message:',
-      error instanceof Error ? error.message : String(error)
+    SecurityLogger.logSecurityEvent(
+      'family_purchase_error',
+      {
+        requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'error'
     );
 
     if (error instanceof z.ZodError) {
-      console.error('❌ [CHECKOUT] Error de validación Zod:', error.errors);
       return NextResponse.json(
         { error: 'Datos de entrada inválidos', details: error.errors },
         { status: 400 }

@@ -29,10 +29,10 @@ export function Swipeable({
   threshold = 50,
   className,
 }: SwipeableProps) {
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number }> | null>(
     null
   );
-  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(
+  const [touchEnd, setTouchEnd] = useState<{ x: number; y: number }> | null>(
     null
   );
 

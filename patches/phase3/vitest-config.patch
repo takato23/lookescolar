@@ -1,0 +1,24 @@
+diff --git a/vitest.config.ts b/vitest.config.ts
+index 724417a..ee5989e 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -13,7 +13,7 @@ export default defineConfig({
+       '__tests__/**/*.test.tsx',
+     ],
+     exclude: ['node_modules', 'dist', '.next', 'coverage'],
+-    setupFiles: ['./vitest.setup.ts'],
++    setupFiles: [],
+     globals: true,
+     css: true,
+     reporters: ['default'],
+@@ -35,6 +35,10 @@ export default defineConfig({
+   resolve: {
+     alias: {
+       '@': path.resolve(__dirname, './'),
++      'server-only': path.resolve(
++        __dirname,
++        './tests/mocks/server-only.ts'
++      ),
+     },
+   },
+ });

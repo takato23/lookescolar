@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { familyService, CartItem } from '@/lib/services/family.service';
+import { SecurityLogger, generateRequestId } from '@/lib/middleware/auth.middleware';
 
 // Esquemas de validación
 const cartItemSchema = z.object({
@@ -26,21 +27,29 @@ const calculateTotalSchema = z.object({
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
   const ip = request.ip ?? request.headers.get('x-forwarded-for') ?? 'unknown';
+  const requestId = generateRequestId();
 
   try {
     const body = await request.json();
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'validate';
 
-    // Log acceso (enmascarado)
-    console.log(
-      `Cart API access - Action: ${action}, IP: ${ip.replace(/\d+$/, '***')}, Items: ${body.items?.length || 0}`
+    SecurityLogger.logSecurityEvent(
+      'family_cart_request',
+      {
+        requestId,
+        ip,
+        action,
+        token: body?.token,
+        itemsCount: body?.items?.length || 0,
+      },
+      'info'
     );
 
     if (action === 'validate') {
-      return await validateCart(body, startTime);
+      return await validateCart(body, startTime, requestId);
     } else if (action === 'calculate') {
-      return await calculateTotal(body, startTime);
+      return await calculateTotal(body, startTime, requestId);
     } else {
       return NextResponse.json(
         { error: 'Invalid action. Use "validate" or "calculate"' },
@@ -49,7 +58,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`Cart API error - Duration: ${duration}ms, Error:`, error);
+    SecurityLogger.logSecurityEvent(
+      'family_cart_error',
+      {
+        requestId,
+        ip,
+        duration,
+        error: error instanceof Error ? error.message : 'unknown',
+      },
+      'error'
+    );
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -73,13 +91,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
  */
 async function validateCart(
   body: any,
-  startTime: number
+  startTime: number,
+  requestId: string
 ): Promise<NextResponse> {
   const { token, items } = validateCartSchema.parse(body);
 
   // Validar token y obtener información del sujeto
   const subject = await familyService.validateToken(token);
   if (!subject) {
+    SecurityLogger.logSecurityEvent(
+      'family_cart_token_invalid',
+      {
+        requestId,
+        token,
+        itemsCount: items.length,
+      },
+      'warning'
+    );
     return NextResponse.json(
       { error: 'Invalid token or access denied' },
       { status: 401 }
@@ -98,6 +126,16 @@ async function validateCart(
   const isValid = await familyService.validateCartItems(cartItems, subject.id);
 
   if (!isValid) {
+    SecurityLogger.logSecurityEvent(
+      'family_cart_item_rejected',
+      {
+        requestId,
+        token,
+        subjectId: subject.id,
+        itemsCount: cartItems.length,
+      },
+      'warning'
+    );
     return NextResponse.json(
       {
         error: 'One or more photos do not belong to this subject',
@@ -110,6 +148,16 @@ async function validateCart(
   // Verificar si hay un pedido activo (solo uno permitido)
   const activeOrder = await familyService.getActiveOrder(subject.id);
   if (activeOrder) {
+    SecurityLogger.logSecurityEvent(
+      'family_cart_active_order_conflict',
+      {
+        requestId,
+        token,
+        subjectId: subject.id,
+        activeOrderId: activeOrder.id,
+      },
+      'warning'
+    );
     return NextResponse.json(
       {
         error:
@@ -128,6 +176,19 @@ async function validateCart(
 
   const duration = Date.now() - startTime;
 
+  SecurityLogger.logSecurityEvent(
+    'family_cart_validated',
+    {
+      requestId,
+      token,
+      subjectId: subject.id,
+      itemsCount: cartItems.length,
+      totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+      duration,
+    },
+    'info'
+  );
+
   return NextResponse.json({
     valid: true,
     message: 'Cart is valid',
@@ -143,13 +204,23 @@ async function validateCart(
  */
 async function calculateTotal(
   body: any,
-  startTime: number
+  startTime: number,
+  requestId: string
 ): Promise<NextResponse> {
   const { token, items } = calculateTotalSchema.parse(body);
 
   // Validar token y obtener información del sujeto
   const subject = await familyService.validateToken(token);
   if (!subject || !subject.event) {
+    SecurityLogger.logSecurityEvent(
+      'family_cart_token_invalid',
+      {
+        requestId,
+        token,
+        itemsCount: items.length,
+      },
+      'warning'
+    );
     return NextResponse.json(
       { error: 'Invalid token or event not found' },
       { status: 401 }
@@ -168,6 +239,16 @@ async function calculateTotal(
   const isValid = await familyService.validateCartItems(cartItems, subject.id);
 
   if (!isValid) {
+    SecurityLogger.logSecurityEvent(
+      'family_cart_item_rejected',
+      {
+        requestId,
+        token,
+        subjectId: subject.id,
+        itemsCount: cartItems.length,
+      },
+      'warning'
+    );
     return NextResponse.json(
       { error: 'One or more photos do not belong to this subject' },
       { status: 403 }
@@ -189,10 +270,19 @@ async function calculateTotal(
   }));
 
   const duration = Date.now() - startTime;
-
-  // Log cálculo (enmascarado)
-  console.log(
-    `Cart calculation - Token: tok_***, Items: ${cartItems.length}, Total: $${total}, Duration: ${duration}ms`
+  SecurityLogger.logSecurityEvent(
+    'family_cart_priced',
+    {
+      requestId,
+      token,
+      subjectId: subject.id,
+      eventId: subject.event.id,
+      itemsCount: cartItems.length,
+      totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+      total,
+      duration,
+    },
+    'info'
   );
 
   return NextResponse.json({
@@ -226,6 +316,7 @@ async function calculateTotal(
  */
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
+  const requestId = generateRequestId();
 
   try {
     const body = await request.json();
@@ -240,6 +331,15 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     // Validar token
     const subject = await familyService.validateToken(token);
     if (!subject) {
+      SecurityLogger.logSecurityEvent(
+        'family_cart_token_invalid',
+        {
+          requestId,
+          token,
+          photoId: photo_id,
+        },
+        'warning'
+      );
       return NextResponse.json(
         { error: 'Invalid token or access denied' },
         { status: 401 }
@@ -252,6 +352,16 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       subject.id
     );
     if (!isValidPhoto) {
+      SecurityLogger.logSecurityEvent(
+        'family_cart_item_rejected',
+        {
+          requestId,
+          token,
+          subjectId: subject.id,
+          photoId: photo_id,
+        },
+        'warning'
+      );
       return NextResponse.json(
         { error: 'Photo does not belong to this subject' },
         { status: 403 }
@@ -259,6 +369,19 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     }
 
     const duration = Date.now() - startTime;
+
+    SecurityLogger.logSecurityEvent(
+      'family_cart_item_updated',
+      {
+        requestId,
+        token,
+        subjectId: subject.id,
+        photoId: photo_id,
+        quantity,
+        duration,
+      },
+      'info'
+    );
 
     return NextResponse.json({
       success: true,
@@ -269,7 +392,15 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error(`Cart update error - Duration: ${duration}ms, Error:`, error);
+    SecurityLogger.logSecurityEvent(
+      'family_cart_error',
+      {
+        requestId,
+        duration,
+        error: error instanceof Error ? error.message : 'unknown',
+      },
+      'error'
+    );
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(

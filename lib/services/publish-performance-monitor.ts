@@ -46,10 +46,7 @@ class PublishPerformanceMonitor {
       operation: `${operation}:${operationId}`,
       startTime: Date.now(),
       success: false, // Will be updated on completion
-      metadata: {
-        ...metadata,
-        operationId,
-      },
+      metadata: { ...(metadata ?? {}), operationId },
     };
 
     this.metrics.push(metric);

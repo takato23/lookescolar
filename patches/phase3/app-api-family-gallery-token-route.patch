@@ -1,0 +1,388 @@
+diff --git a/app/api/family/gallery/[token]/route.ts b/app/api/family/gallery/[token]/route.ts
+index c0bb414..2db6d8a 100644
+--- a/app/api/family/gallery/[token]/route.ts
++++ b/app/api/family/gallery/[token]/route.ts
+@@ -1,9 +1,5 @@
+-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+-
+ import { NextRequest, NextResponse } from 'next/server';
+ import { z } from 'zod';
+-import { familyService } from '@/lib/services/family.service';
+-import { signedUrlForKey } from '@/lib/storage/signedUrl';
+ import {
+   AuthMiddleware,
+   SecurityLogger,
+@@ -12,28 +8,92 @@ import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
+ import {
+   createErrorResponse,
+   createSuccessResponse,
+-  parsePaginationParams,
+-  createPaginationMeta,
+   logDevRequest,
+ } from '@/lib/utils/api-response';
++import {
++  galleryService,
++  GalleryServiceError,
++  type GalleryResult,
++} from '@/lib/services/gallery.service';
+ 
+ const tokenParamsSchema = z.object({
+-  token: z.string().min(20, 'Token must be at least 20 characters'), // Minimum 20 characters as per security requirements
++  token: z.string().min(8, 'Token inválido'),
+ });
+ 
+ const queryParamsSchema = z.object({
+   page: z
+     .string()
+     .optional()
+-    .transform((val) => (val ? parseInt(val, 10) : 1)),
++    .transform((val) => (val ? Math.max(1, parseInt(val, 10)) : 1)),
+   limit: z
+     .string()
+     .optional()
+-    .transform((val) => (val ? Math.min(parseInt(val, 10), 100) : 50)), // Max 100 per page
+-  photo_id: z.string().optional(), // Para obtener una foto específica
++    .transform((val) => (val ? Math.min(100, Math.max(1, parseInt(val, 10))) : 50)),
++  photo_id: z.string().optional(),
+ });
+ 
+-// Rate limiting se maneja en middleware.ts
++function getClientIp(request: NextRequest): string | null {
++  const forwarded = request.headers.get('x-forwarded-for');
++  if (forwarded) {
++    const [first] = forwarded.split(',');
++    if (first && first.trim()) return first.trim();
++  }
++  const realIp = request.headers.get('x-real-ip');
++  if (realIp) return realIp;
++  return null;
++}
++
++function mapLegacyFamilyResponse(result: GalleryResult) {
++  return {
++    subject: result.subject
++      ? {
++          id: result.subject.id,
++          name: result.subject.name,
++          grade: (result.subject as any).grade ?? null,
++          section: (result.subject as any).section ?? null,
++          parent_name: result.subject.parent_name ?? null,
++          parent_email: result.subject.parent_email ?? null,
++          event: result.event
++            ? {
++                id: result.event.id,
++                name: result.event.name,
++                date: (result.event as any).date ?? null,
++                school_name: result.event.school_name ?? null,
++              }
++            : null,
++        }
++      : null,
++    photos: result.items.map((item) => ({
++      id: item.id,
++      filename: item.filename,
++      storage_path: item.storagePath ?? null,
++      created_at: item.createdAt,
++      signed_url: item.signedUrl,
++      preview_url: item.previewUrl,
++      download_url: item.downloadUrl,
++      assignment_id: item.assignmentId ?? null,
++      photo_type: item.type ?? 'individual',
++      metadata: item.metadata ?? null,
++    })),
++    pagination: {
++      page: result.pagination.page,
++      limit: result.pagination.limit,
++      total: result.pagination.total,
++      has_more: result.pagination.hasMore,
++      total_pages: result.pagination.totalPages,
++    },
++    active_order: result.activeOrder
++      ? {
++          id: result.activeOrder.id,
++          status: result.activeOrder.status,
++          total_amount: result.activeOrder.totalAmount,
++          created_at: result.activeOrder.createdAt,
++          items_count: result.activeOrder.itemsCount,
++        }
++      : null,
++  };
++}
++
+ export const GET = RateLimitMiddleware.withRateLimit(
+   AuthMiddleware.withAuth(
+     async (
+@@ -41,11 +101,13 @@ export const GET = RateLimitMiddleware.withRateLimit(
+       authContext,
+       { params }: { params: Promise<{ token: string }> }
+     ) => {
+-      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+-      const startTime = Date.now();
++      const requestId =
++        globalThis.crypto && 'randomUUID' in globalThis.crypto
++          ? (globalThis.crypto as Crypto).randomUUID()
++          : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
++      const startedAt = Date.now();
+ 
+       try {
+-        // Verificar que es una familia con token válido (ya verificado por AuthMiddleware)
+         if (!authContext.isAdmin && !authContext.user) {
+           return createErrorResponse(
+             'Invalid token or access denied',
+@@ -55,207 +117,77 @@ export const GET = RateLimitMiddleware.withRateLimit(
+           );
+         }
+ 
+-        // Log del acceso
+-        SecurityLogger.logResourceAccess(
+-          'family_gallery',
+-          authContext,
+-          request
+-        );
++        SecurityLogger.logResourceAccess('family_gallery', authContext, request);
+ 
+-        // Validar parámetros de la URL
+         const { token } = tokenParamsSchema.parse(await params);
+-        const { searchParams } = new URL(request.url);
+-        const { page, limit, offset } = parsePaginationParams(searchParams);
+-        const photo_id = searchParams.get('photo_id');
+-
+-        // Obtener subject desde el token
+-        const subject = await familyService.getSubjectByToken(token);
+-        if (!subject) {
+-          return createErrorResponse(
+-            'Invalid token',
+-            'Subject not found for token',
+-            404,
+-            requestId
+-          );
+-        }
+-
+-        // Si se solicita una foto específica
+-        if (photo_id) {
+-          try {
+-            const photoInfo = await familyService.getPhotoInfo(
+-              photo_id,
+-              subject.id
+-            );
+-            if (!photoInfo) {
+-              return createErrorResponse(
+-                'Photo not found or access denied',
+-                'Photo does not exist or is not accessible',
+-                404,
+-                requestId
+-              );
+-            }
+-
+-            // Generar URL firmada para la foto
+-            const key =
+-              (photoInfo.photo as any).watermark_path ||
+-              (photoInfo.photo as any).preview_path;
+-            if (!key) {
+-              return createErrorResponse(
+-                'Vista previa no disponible',
+-                'No preview or watermark path available',
+-                404,
+-                requestId
+-              );
+-            }
+-            const signedUrl = await signedUrlForKey(key, 900); // 15 min
+-
+-            // Trackear view
+-            await familyService.trackPhotoView(photo_id, subject.id);
+-
+-            logDevRequest(
+-              requestId,
+-              'GET',
+-              `/api/family/gallery/${token}`,
+-              Date.now() - startTime,
+-              200
+-            );
+-
+-            return createSuccessResponse(
+-              {
+-                photo: {
+-                  id: photoInfo.photo.id,
+-                  filename: photoInfo.photo.filename,
+-                  storage_path: photoInfo.photo.storage_path,
+-                  created_at: photoInfo.photo.created_at,
+-                  signed_url: signedUrl,
+-                },
+-              },
+-              undefined,
+-              requestId
+-            );
+-          } catch (photoError) {
+-            return createErrorResponse(
+-              'Error loading photo',
+-              photoError instanceof Error
+-                ? photoError.message
+-                : 'Unknown error',
+-              500,
+-              requestId
+-            );
+-          }
+-        }
+-
+-        // Obtener fotos asignadas con paginación (individuales y grupales)
+-        const { photos, total, has_more } =
+-          await familyService.getSubjectPhotos(subject.id, page, limit);
+-
+-        // Generar URLs firmadas para todas las fotos (individuales y grupales)
+-        const photosWithUrls = (
+-          await Promise.all(
+-            photos.map(async (assignment) => {
+-              const key =
+-                (assignment.photo as any).watermark_path ||
+-                (assignment.photo as any).preview_path;
+-              if (!key) return null;
+-              const signedUrl = await signedUrlForKey(key, 900); // 15 min de expiración
+-
+-              // Determine if this is a group photo based on the structure
+-              const isGroupPhoto =
+-                'course_id' in assignment && assignment.course_id;
++        const query = queryParamsSchema.parse(
++          Object.fromEntries(new URL(request.url).searchParams.entries())
++        );
+ 
+-              return {
+-                id: assignment.photo.id,
+-                filename: assignment.photo.filename,
+-                storage_path: assignment.photo.storage_path,
+-                created_at: assignment.photo.created_at,
+-                signed_url: signedUrl,
+-                assignment_id: assignment.id,
+-                photo_type: assignment.photo.photo_type || 'individual',
+-                is_group_photo: isGroupPhoto,
+-                course_id: isGroupPhoto ? (assignment as any).course_id : null,
+-                tagged_at: (assignment as any).tagged_at,
+-              };
+-            })
+-          )
+-        ).filter(Boolean);
++        const ipAddress = getClientIp(request);
++        const userAgent = request.headers.get('user-agent') ?? undefined;
+ 
+-        // Obtener pedido activo si existe
+-        const activeOrder = await familyService.getActiveOrder(subject.id);
++        const result = await galleryService.getGallery({
++          token,
++          page: query.page,
++          limit: query.limit,
++          photoId: query.photo_id,
++          ipAddress,
++          userAgent,
++        });
+ 
+-        const duration = Date.now() - startTime;
++        const duration = Date.now() - startedAt;
+ 
+         SecurityLogger.logSecurityEvent('family_gallery_success', {
+           requestId,
+-          subjectId: subject.id,
+-          photoCount: photos.length,
++          subjectId: result.subject?.id ?? null,
++          photoCount: result.items.length,
+           duration,
+         });
+ 
+-        return NextResponse.json({
+-          subject: {
+-            id: subject.id,
+-            name: subject.name,
+-            grade: (subject as any).grade,
+-            section: (subject as any).section,
+-            parent_name: subject.parent_name,
+-            parent_email: subject.parent_email,
+-            event: subject.event
+-              ? {
+-                  id: subject.event.id,
+-                  name: subject.event.name,
+-                  date: (subject.event as any).date,
+-                  school_name:
+-                    (subject.event as any).school_name ||
+-                    (subject.event as any).school,
+-                }
+-              : null,
+-            course: (subject as any).course
+-              ? {
+-                  id: (subject as any).course.id,
+-                  name: (subject as any).course.name,
+-                  grade: (subject as any).course.grade,
+-                  section: (subject as any).course.section,
+-                }
+-              : null,
+-          },
+-          photos: photosWithUrls,
+-          pagination: {
+-            page,
+-            limit,
+-            total,
+-            has_more,
+-            total_pages: Math.ceil(total / limit),
++        logDevRequest(
++          requestId,
++          'GET',
++          `/api/family/gallery/${token}`,
++          duration,
++          200
++        );
++
++        return createSuccessResponse(
++          {
++            gallery: result,
++            legacy: mapLegacyFamilyResponse(result),
+           },
+-          active_order: activeOrder
+-            ? {
+-                id: activeOrder.id,
+-                status: activeOrder.status,
+-                total_amount: activeOrder.total_amount,
+-                created_at: activeOrder.created_at,
+-                items_count: activeOrder.items.length,
+-              }
+-            : null,
+-        });
++          200,
++          requestId
++        );
+       } catch (error) {
+-        const duration = Date.now() - startTime;
++        const duration = Date.now() - startedAt;
+ 
+         SecurityLogger.logSecurityEvent(
+           'family_gallery_error',
+           {
+             requestId,
+             subjectId: authContext.subject?.id,
+-            error: error instanceof Error ? error.message : 'Unknown error',
++            error: error instanceof Error ? error.message : 'unknown error',
+             duration,
+           },
+           'error'
+         );
+ 
++        if (error instanceof GalleryServiceError) {
++          return NextResponse.json(
++            { error: error.message, code: error.code },
++            { status: error.status }
++          );
++        }
++
+         if (error instanceof z.ZodError) {
+           return NextResponse.json(
+             {
+               error: 'Invalid parameters',
+               details: error.errors.map(
+-                (e) => `${e.path.join('.')}: ${e.message}`
++                (issue) => `${issue.path.join('.')}: ${issue.message}`
+               ),
+             },
+             { status: 400 }
+@@ -269,5 +201,5 @@ export const GET = RateLimitMiddleware.withRateLimit(
+       }
+     },
+     'family'
+-  ) // Require family token authentication
++  )
+ );

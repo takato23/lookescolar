@@ -22,10 +22,10 @@ interface DriveItem {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path') || '';
     const pathSegments = path ? path.split('/').filter(Boolean) : [];
@@ -287,10 +287,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const body = await request.json();
     const { action, data } = body;
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { X, Minus, Plus, Trash2, ShoppingCart, Star } from 'lucide-react'
-import { useCartStore } from '@/store/useCartStore'
+import { usePublicCartStore } from '@/lib/stores/unified-cart-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,18 +21,18 @@ export function CartDrawer() {
   
   const pathname = usePathname()
 
-  const {
-    items,
-    isCartOpen,
-    closeCart,
-    removeItem,
-    updateQuantity,
-    clearCart,
-    getTotalItems,
-    getTotalPrice,
-    setContactInfo,
-    eventId
-  } = useCartStore()
+  const items = usePublicCartStore((state) => state.items)
+  const isCartOpen = usePublicCartStore((state) => state.isOpen)
+  const openCart = usePublicCartStore((state) => state.openCart)
+  const closeCart = usePublicCartStore((state) => state.closeCart)
+  const removeItem = usePublicCartStore((state) => state.removeItem)
+  const updateQuantity = usePublicCartStore((state) => state.updateQuantity)
+  const clearCart = usePublicCartStore((state) => state.clearCart)
+  const getTotalItems = usePublicCartStore((state) => state.getTotalItems)
+  const getTotalPrice = usePublicCartStore((state) => state.getTotalPrice)
+  const setContactInfo = usePublicCartStore((state) => state.setContactInfo)
+  const getEventId = usePublicCartStore((state) => state.getEventId)
+  const setEventId = usePublicCartStore((state) => state.setEventId)
   
   // Fallback: extraer eventId de la URL si no está en el store
   const getEventIdFromUrl = () => {
@@ -40,7 +40,14 @@ export function CartDrawer() {
     return match ? match[1] : null
   }
   
-  const finalEventId = eventId || getEventIdFromUrl()
+  const storedEventId = getEventId()
+  const finalEventId = storedEventId || getEventIdFromUrl()
+
+  useEffect(() => {
+    if (!storedEventId && finalEventId) {
+      setEventId(finalEventId)
+    }
+  }, [storedEventId, finalEventId, setEventId])
 
   const totalItems = getTotalItems()
   const totalPrice = getTotalPrice()
@@ -113,7 +120,7 @@ export function CartDrawer() {
   }
 
   return (
-    <Sheet open={isCartOpen} onOpenChange={closeCart}>
+    <Sheet open={isCartOpen} onOpenChange={(open) => (open ? openCart() : closeCart())}>
       <SheetContent className="w-full sm:max-w-lg bg-gradient-to-br from-yellow-50 via-orange-50 to-rose-50 border-l-4 border-yellow-400">
         <SheetHeader className="space-y-4">
           <div className="flex items-center justify-between">

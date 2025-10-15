@@ -43,12 +43,12 @@ interface Photo {
 interface Subject {
   id: string;
   name: string;
-  grade_section: string;
-  event: {
-    id: string;
-    name: string;
-    school_name: string;
-  };
+  grade_section?: string | null;
+  event?: {
+    id?: string | null;
+    name?: string | null;
+    school_name?: string | null;
+  } | null;
 }
 
 type ViewMode = 'gallery' | 'shopping' | 'wizard';
@@ -87,9 +87,10 @@ export default function EnhancedFamilyGalleryPage() {
 
   // Initialize product context when subject is loaded
   useEffect(() => {
-    if (subject?.event?.id) {
+    const eventId = subject?.event?.id;
+    if (eventId) {
       setProductContext({
-        event_id: subject.event.id,
+        event_id: eventId,
         bulk_discount_threshold: 5,
         bulk_discount_percentage: 10,
       });
@@ -99,7 +100,7 @@ export default function EnhancedFamilyGalleryPage() {
   const loadGallery = async (targetPage: number) => {
     try {
       const response = await fetch(
-        `/api/family/gallery-simple/${token}?page=${targetPage}&limit=60`
+        `/api/family/gallery/${token}?page=${targetPage}&limit=60`
       );
 
       if (!response.ok) {
@@ -109,22 +110,65 @@ export default function EnhancedFamilyGalleryPage() {
         return;
       }
 
-      const data = await response.json();
-      const newPhotos = (data.photos || []) as Photo[];
+      const payload = await response.json();
+      const gallery = payload?.data?.gallery;
 
-      // Enhance photos with watermark URLs
-      const enhancedPhotos = newPhotos.map((photo) => ({
-        ...photo,
-        original_filename: photo.filename,
-        watermark_url: photo.preview_url,
-      }));
+      if (!gallery) {
+        setError(payload?.error || 'Galería no disponible');
+        setLoading(false);
+        return;
+      }
+
+      const enhancedPhotos: Photo[] = (gallery.items || []).map((item: any) => {
+        const preview =
+          item.signedUrl || item.previewUrl || item.downloadUrl || null;
+        return {
+          id: item.id,
+          filename: item.filename || 'foto',
+          preview_url: preview || '/placeholder-image.svg',
+          size: item.size || 0,
+          width: (item.metadata as any)?.width || 0,
+          height: (item.metadata as any)?.height || 0,
+          original_filename: item.filename || 'foto',
+          watermark_url: preview || '/placeholder-image.svg',
+        };
+      });
 
       setPhotos((prev) =>
         targetPage === 1 ? enhancedPhotos : [...prev, ...enhancedPhotos]
       );
-      setHasMore(Boolean(data.pagination?.has_more ?? newPhotos.length >= 60));
-      setPage(targetPage);
-      setSubject(data.subject);
+      setHasMore(Boolean(gallery.pagination?.hasMore));
+      setPage(gallery.pagination?.page ?? targetPage);
+      const subjectSource = gallery.subject ?? gallery.student ?? null;
+      const eventInfo = gallery.event
+        ? {
+            id: gallery.event.id,
+            name: gallery.event.name ?? null,
+            school_name: (gallery.event as any).school_name ?? null,
+          }
+        : null;
+      const normalizedSubject: Subject | null = subjectSource
+        ? {
+            id: subjectSource.id,
+            name: subjectSource.name ?? 'Galería familiar',
+            grade_section:
+              [
+                (subjectSource as any).grade ?? null,
+                (subjectSource as any).section ?? null,
+              ]
+                .filter(Boolean)
+                .join(' ') || null,
+            event: eventInfo,
+          }
+        : eventInfo
+        ? {
+            id: gallery.token.token,
+            name: eventInfo.name ?? 'Galería',
+            grade_section: null,
+            event: eventInfo,
+          }
+        : null;
+      setSubject(normalizedSubject);
 
       // Load favorites from localStorage
       const savedFavorites = localStorage.getItem(`favorites_${token}`);

@@ -235,7 +235,7 @@ export function QualityAssurance({
           <h4 className="mb-2 font-medium text-green-700 dark:text-green-300">
             ¡Excelente Calidad!
           </h4>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
             No se detectaron problemas en tu evento. Todo está funcionando
             correctamente.
           </p>
@@ -270,7 +270,7 @@ export function QualityAssurance({
                     className="rounded-lg border border-red-200/30 bg-red-500/5 p-3"
                   >
                     <h5 className="mb-1 text-sm font-medium">{issue.title}</h5>
-                    <p className="text-muted-foreground mb-2 text-sm">
+                    <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm">
                       {issue.description}
                     </p>
                     <p className="mb-3 text-xs text-red-600 dark:text-red-400">
@@ -362,7 +362,7 @@ export function QualityAssurance({
                                 </Badge>
                               </div>
 
-                              <p className="text-muted-foreground mb-2 text-sm">
+                              <p className="text-gray-500 dark:text-gray-400 mb-2 text-sm">
                                 {issue.description}
                               </p>
 

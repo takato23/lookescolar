@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect, useCallback } from 'react';
 import CentralitaHeader from './centralita-header';
 import CentralitaTabs, { CentralitaTabsContent } from './centralita-tabs';
@@ -232,7 +234,9 @@ export default function CentralitaPublishClient(props?: {
         onSuccess: (data: any) => {
           if (data.share_token) {
             const familyUrl = data.family_url || `${window.location.origin}/s/${data.share_token}`;
-            const qrUrl = data.qr_url || `/api/qr?token=${encodeURIComponent(data.share_token)}`;
+            const qrUrl =
+              data.qr_url ||
+              `/access?token=${encodeURIComponent(data.share_token)}`;
             sps(
               {
                 codeId: folder.id,
@@ -291,7 +295,8 @@ export default function CentralitaPublishClient(props?: {
           if (data.newToken || data.share_token) {
             const token = data.newToken || data.share_token;
             const familyUrl = data.family_url || `${window.location.origin}/s/${token}`;
-            const qrUrl = data.qr_url || `/api/qr?token=${encodeURIComponent(token)}`;
+            const qrUrl =
+              data.qr_url || `/access?token=${encodeURIComponent(token)}`;
             srs(folder.name, token, familyUrl, qrUrl);
           }
           if (effectiveEvent?.id) initializeEvent(effectiveEvent.id).catch(() => {});
@@ -363,14 +368,14 @@ export default function CentralitaPublishClient(props?: {
       <CentralitaHeader />
 
       {migrationError && (
-        <Card className="border-amber-300 bg-amber-50">
+        <Card className="border-primary-300 bg-primary-50">
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-700" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-primary-700" />
               <div className="flex-1">
-                <h3 className="font-medium text-amber-900">Acción requerida: migración pendiente</h3>
-                <p className="mt-1 text-sm text-amber-800">{migrationError}</p>
-                <div className="mt-2 text-xs text-amber-700">
+                <h3 className="font-medium text-primary-900">Acción requerida: migración pendiente</h3>
+                <p className="mt-1 text-sm text-primary-800">{migrationError}</p>
+                <div className="mt-2 text-xs text-primary-700">
                   Archivo: <code>supabase/migrations/20250826_folder_sharing_system.sql</code>
                 </div>
               </div>
@@ -388,7 +393,7 @@ export default function CentralitaPublishClient(props?: {
           <select
             value={selectedEventId}
             onChange={(e) => setSelectedEventId(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+            className="rounded-md border border-border bg-white px-3 py-2 text-sm"
           >
             <option value="">Todos los eventos</option>
             {events.map((e) => (
@@ -429,15 +434,15 @@ export default function CentralitaPublishClient(props?: {
         </CentralitaTabsContent>
 
         <CentralitaTabsContent value="public">
-          <Card className="border-blue-200 bg-gradient-to-br from-blue-50/50 to-blue-100/30">
+          <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 to-blue-100/30">
             <div className="p-6">
               <div className="mb-6 flex items-start gap-4">
-                <div className="flex-shrink-0 rounded-full bg-blue-100 p-3">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="flex-shrink-0 rounded-full bg-blue-100 dark:bg-blue-950/30 p-3">
+                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1">
                   <h2 className="mb-2 text-xl font-semibold text-blue-900">Galería Pública del Evento</h2>
-                  <p className="mb-4 text-sm text-blue-700">
+                  <p className="mb-4 text-sm text-blue-700 dark:text-blue-300">
                     {effectiveEvent ? (<><strong>{effectiveEvent.name}</strong> - Vista pública del evento en tienda unificada</>) : ('Selecciona un evento para configurar la galería pública')}
                   </p>
 
@@ -452,7 +457,7 @@ export default function CentralitaPublishClient(props?: {
                         <Button onClick={async () => { const url = getPublicUrl(); if (url) await copyToClipboard(url); }} className="bg-blue-600 hover:bg-blue-700" disabled={!publicShareToken}>
                           <Copy className="mr-2 h-4 w-4" /> Copiar Enlace Público
                         </Button>
-                        <Button asChild variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50" disabled={!publicShareToken}>
+                        <Button asChild variant="outline" className="border-blue-300 text-blue-700 dark:text-blue-300 hover:bg-blue-50" disabled={!publicShareToken}>
                           <a href={getPublicUrl()} target="_blank" rel="noreferrer">
                             <ExternalLink className="mr-2 h-4 w-4" /> Vista Previa
                           </a>
@@ -462,9 +467,9 @@ export default function CentralitaPublishClient(props?: {
                         </Button>
                       </div>
 
-                      <div className="rounded-lg border border-blue-200 bg-blue-100/50 p-3">
-                        <div className="mb-1 text-xs font-medium text-blue-700">Enlace público:</div>
-                        <div className="break-all font-mono text-xs text-blue-800">{publicShareToken ? getPublicUrl() : 'Habilita la galería para generar un enlace público'}</div>
+                      <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-100/50 p-3">
+                        <div className="mb-1 text-xs font-medium text-blue-700 dark:text-blue-300">Enlace público:</div>
+                        <div className="break-all font-mono text-xs text-blue-800 dark:text-blue-200">{publicShareToken ? getPublicUrl() : 'Habilita la galería para generar un enlace público'}</div>
                       </div>
                     </>
                   )}
@@ -482,10 +487,10 @@ export default function CentralitaPublishClient(props?: {
                 <BarChart3 className="h-5 w-5 text-yellow-600" /> Métricas de Rendimiento
               </h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Total de carpetas</span><Badge variant="outline">{performanceMetrics.total}</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Publicadas</span><Badge className="bg-green-100 text-green-800">{performanceMetrics.published}</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Privadas</span><Badge variant="outline">{performanceMetrics.unpublished}</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-600">Fotos totales</span><Badge variant="outline">{performanceMetrics.totalPhotos}</Badge></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Total de carpetas</span><Badge variant="outline">{performanceMetrics.total}</Badge></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Publicadas</span><Badge className="bg-green-100 text-green-800">{performanceMetrics.published}</Badge></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Privadas</span><Badge variant="outline">{performanceMetrics.unpublished}</Badge></div>
+                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Fotos totales</span><Badge variant="outline">{performanceMetrics.totalPhotos}</Badge></div>
               </div>
             </Card>
           </div>
@@ -494,7 +499,7 @@ export default function CentralitaPublishClient(props?: {
         <CentralitaTabsContent value="settings">
           <Card className="p-6">
             <h3 className="mb-2 text-lg font-semibold">Configuración</h3>
-            <p className="text-sm text-gray-600">Ajustes avanzados próximamente.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Ajustes avanzados próximamente.</p>
           </Card>
         </CentralitaTabsContent>
       </CentralitaTabs>

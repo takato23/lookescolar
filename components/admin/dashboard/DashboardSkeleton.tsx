@@ -8,7 +8,7 @@ export const DashboardSkeleton = React.memo(function DashboardSkeleton() {
   return (
     <div className="bg-background min-h-screen">
       {/* Header Skeleton */}
-      <div className="border-border bg-card px-6 py-4">
+      <div className="border-border bg-white dark:bg-gray-900 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div>

@@ -23,7 +23,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const backgroundClasses = {
     beige: 'bg-[#D4C4B0]',
-    white: 'bg-white border border-gray-200',
+    white: 'bg-white border border-border',
     black: 'bg-black',
     navy: 'bg-[#2C3E50]',
   };

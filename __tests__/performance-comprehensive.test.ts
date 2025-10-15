@@ -53,7 +53,7 @@ describe('Comprehensive Performance Test Suite', () => {
     try {
       const adminAuth = await fetch(`${API_BASE_URL}/api/admin/auth`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: Promise<{ 'Content-Type': 'application/json' }>,
         body: JSON.stringify({
           email: process.env.TEST_ADMIN_EMAIL,
           password: process.env.TEST_ADMIN_PASSWORD,

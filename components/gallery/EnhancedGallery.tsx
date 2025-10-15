@@ -90,7 +90,7 @@ export function EnhancedGallery({
   const [actionFeedback, setActionFeedback] = useState<{
     action: 'add' | 'remove' | 'view' | 'download';
     photoName: string;
-  } | null>(null);
+  }> | null>(null);
 
   // Confirmation dialog
   const [confirmDialog, setConfirmDialog] = useState<{

@@ -47,7 +47,7 @@ const FolderTreeItem = memo(
       <div className="select-none">
         <div
           className={cn(
-            'group flex cursor-pointer items-center gap-1 rounded-sm px-2 py-1 transition-colors hover:bg-gray-100',
+            'group flex cursor-pointer items-center gap-1 rounded-sm px-2 py-1 transition-colors hover:bg-muted',
             isSelected && 'bg-blue-50 font-medium text-blue-700'
           )}
           style={{ paddingLeft }}
@@ -56,7 +56,7 @@ const FolderTreeItem = memo(
           {/* Expand/collapse button */}
           {hasChildren ? (
             <button
-              className="rounded p-0.5 hover:bg-gray-200"
+              className="rounded p-0.5 hover:bg-muted"
               onClick={(e) => {
                 e.stopPropagation();
                 onFolderToggle(folder.id);
@@ -135,10 +135,10 @@ const FolderSidebarComponent = ({
   className,
 }: FolderSidebarProps) => {
   return (
-    <div className={cn('flex h-full flex-col border-r bg-gray-50', className)}>
+    <div className={cn('flex h-full flex-col border-r bg-muted', className)}>
       {/* Header */}
       <div className="flex items-center justify-between border-b p-4">
-        <h3 className="font-semibold text-gray-900">Folders</h3>
+        <h3 className="font-semibold text-foreground">Folders</h3>
         <Button
           size="sm"
           variant="outline"
@@ -155,7 +155,7 @@ const FolderSidebarComponent = ({
         {/* Root folder */}
         <div
           className={cn(
-            'mb-2 flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 transition-colors hover:bg-gray-100',
+            'mb-2 flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 transition-colors hover:bg-muted',
             currentFolder === null && 'bg-blue-50 font-medium text-blue-700'
           )}
           onClick={() => onFolderSelect(null)}

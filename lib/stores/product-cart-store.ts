@@ -9,13 +9,13 @@ import {
   ComboPackage,
   PriceCalculation,
   ProductRecommendation,
-  PricingContext,
   ProductCartState,
 } from '@/lib/types/products';
 import {
   calculateProductCartTotal,
   generateProductRecommendations,
   formatProductPrice,
+  PricingContext,
 } from '@/lib/services/product-pricing';
 import { useUnifiedCartStore } from '@/lib/stores/unified-cart-store';
 

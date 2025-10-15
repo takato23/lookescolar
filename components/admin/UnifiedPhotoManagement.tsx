@@ -14,6 +14,8 @@
 
 'use client';
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -76,7 +78,7 @@ const EVENT_TYPES: EventTypeConfig[] = [
       secondary: 'from-blue-600 to-indigo-700',
       accent: 'bg-gradient-to-r from-slate-500 to-blue-600',
       background: 'bg-gradient-to-br from-slate-50 to-blue-50',
-      text: 'text-slate-800',
+      text: 'text-foreground',
     },
     typography: 'font-modern',
     elements: ['🎓', '📚', '🏆', '⚡', '🎯'],
@@ -91,7 +93,7 @@ const EVENT_TYPES: EventTypeConfig[] = [
       secondary: 'from-white to-gray-100',
       accent: 'bg-gradient-to-r from-amber-400 to-yellow-500',
       background: 'bg-gradient-to-br from-white to-amber-50',
-      text: 'text-amber-800',
+      text: 'text-primary-800',
     },
     typography: 'font-elegant',
     elements: ['✝️', '🕊️', '👼', '💒', '🌟'],
@@ -134,12 +136,12 @@ export default function UnifiedPhotoManagement({
         config.colors.background,
         config.typography
       ),
-      header: cn('bg-gradient-to-r p-6 text-white', config.colors.primary),
+      header: cn('bg-gradient-to-r p-6 text-foreground', config.colors.primary),
       card: cn(
         'border-2 shadow-lg transition-all duration-300 hover:shadow-xl',
         config.id === 'jardin' && 'border-pink-300 hover:border-pink-400',
-        config.id === 'secundaria' && 'border-slate-300 hover:border-slate-400',
-        config.id === 'comunion' && 'border-amber-300 hover:border-amber-400'
+        config.id === 'secundaria' && 'border-border hover:border-border',
+        config.id === 'comunion' && 'border-primary-300 hover:border-primary-400'
       ),
       button: cn(
         'transition-all duration-300',
@@ -172,7 +174,7 @@ export default function UnifiedPhotoManagement({
                 <h1 className="text-3xl font-bold">
                   Gestor de Fotos - {currentConfig.name}
                 </h1>
-                <p className="text-sm text-white/80">
+                <p className="text-sm text-foreground/80">
                   {currentConfig.description}
                 </p>
               </div>
@@ -206,8 +208,8 @@ export default function UnifiedPhotoManagement({
                   className={cn(
                     'rounded-lg border-2 p-4 text-left transition-all duration-300',
                     isSelected
-                      ? 'scale-105 border-white bg-white/20 shadow-lg'
-                      : 'border-white/30 bg-white/10 hover:bg-white/15'
+                      ? 'scale-105 border-border bg-surface/20 shadow-lg'
+                      : 'border-border/30 bg-surface/10 hover:bg-surface/15'
                   )}
                   whileHover={{ scale: isSelected ? 1.05 : 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -216,19 +218,19 @@ export default function UnifiedPhotoManagement({
                     <Icon
                       className={cn(
                         'h-6 w-6',
-                        isSelected ? 'text-white' : 'text-white/70'
+                        isSelected ? 'text-foreground' : 'text-foreground/70'
                       )}
                     />
                     <div>
                       <h3
                         className={cn(
                           'font-semibold',
-                          isSelected ? 'text-white' : 'text-white/80'
+                          isSelected ? 'text-foreground' : 'text-foreground/80'
                         )}
                       >
                         {eventType.name}
                       </h3>
-                      <p className="text-xs text-white/60">
+                      <p className="text-xs text-foreground/60">
                         {eventType.elements.join(' ')}
                       </p>
                     </div>
@@ -298,7 +300,7 @@ export default function UnifiedPhotoManagement({
           --text-color: #92400e;
         }
 
-        .photo-admin-themed .bg-white {
+        .photo-admin-themed .bg-card {
           background-color: var(--background-color) !important;
         }
 
@@ -310,7 +312,7 @@ export default function UnifiedPhotoManagement({
           );
         }
 
-        .photo-admin-themed .border-gray-200 {
+        .photo-admin-themed .border-border {
           border-color: var(--accent-color);
           opacity: 0.3;
         }

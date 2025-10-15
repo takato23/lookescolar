@@ -7,7 +7,7 @@ interface SharedGalleryPageProps {
 }
 
 export default async function SharedGalleryPage({ params }: SharedGalleryPageProps) {
-  const { token } = await params;
+  const { token } = params;
   // Canonical public gallery route
   redirect(`/share/${token}`);
 }

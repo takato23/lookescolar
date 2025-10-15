@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   Download,
@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CheckoutModal } from '@/components/family/CheckoutModal';
-import { useCartStore } from '@/lib/stores/cart-store';
+import { useFamilyCartStore } from '@/lib/stores/unified-cart-store';
 
 interface SharedGalleryProps {
   token: string;
@@ -28,19 +28,19 @@ interface SharedGalleryProps {
 interface GalleryData {
   share: {
     id: string;
-    allow_download: boolean;
-    allow_share: boolean;
+    allow_download?: boolean;
+    allow_share?: boolean;
     custom_message?: string;
-    expires_at: string;
-    view_count: number;
+    expires_at?: string;
+    view_count?: number;
     max_views?: number;
     views_remaining?: number;
   };
   event: {
     id: string;
     name: string;
-    school: string;
-    date: string;
+    school?: string;
+    date?: string;
   };
   level?: {
     id: string;
@@ -102,68 +102,84 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const { addItem, clearCart } = useCartStore();
+  const addItem = useFamilyCartStore((state) => state.addItem);
+  const clearCart = useFamilyCartStore((state) => state.clearCart);
+  const setContext = useFamilyCartStore((state) => state.setContext);
+  const setEventId = useFamilyCartStore((state) => state.setEventId);
 
   useEffect(() => {
     loadGallery();
-  }, [token]);
+  }, [token, loadGallery]);
 
-  const loadGallery = async () => {
+  const loadGallery = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Use the simplified family gallery API that supports folder/code/subject tokens
-      const response = await fetch(`/api/family/gallery-simple/${token}`);
-      
+      const response = await fetch(`/api/public/share/${token}/gallery`);
+
       if (!response.ok) {
         throw new Error('Failed to load shared gallery');
       }
-      
-      const data = await response.json();
-      
-      if (data.success || data.photos) {
-        setGalleryData({
-          // Map minimal fields to our expected structure
-          share: {
-            id: data.subject?.id || 'share',
-            allow_download: false,
-            allow_share: true,
-            custom_message: undefined,
-            expires_at: new Date().toISOString(),
-            view_count: 0,
-            max_views: undefined,
-            views_remaining: undefined,
-          },
-          event: {
-            id: data.subject?.event?.id || 'event',
-            name: data.subject?.event?.name || 'Evento',
-            school: data.subject?.event?.school_name || 'Escuela',
-            date: new Date().toISOString(),
-          },
-          photos: (data.photos || []).map((p: any) => ({
-            id: p.id,
-            filename: p.filename,
-            preview_url: p.preview_url,
-            file_size: p.size || 0,
-            width: p.width || 0,
-            height: p.height || 0,
-            taken_at: p.created_at,
-            created_at: p.created_at,
-            approved: true,
-            photo_type: 'event',
-          })),
-        } as any);
-      } else {
-        throw new Error(data.error || 'Failed to load shared gallery');
+
+      const payload = await response.json();
+
+      if (!payload?.success || !payload.gallery) {
+        throw new Error(payload?.error || 'Failed to load shared gallery');
       }
+
+      const gallery = payload.gallery;
+      const legacy = payload.legacy;
+
+      setGalleryData({
+        share: {
+          id: gallery.token?.token || 'share',
+          allow_download: gallery.share?.allowDownload ?? false,
+          allow_share: gallery.share?.allowComments ?? true,
+          custom_message: gallery.share?.metadata?.message,
+          expires_at: gallery.token?.expiresAt ?? new Date().toISOString(),
+          view_count: gallery.token?.viewCount ?? 0,
+          max_views: gallery.token?.maxViews ?? undefined,
+          views_remaining: undefined,
+        },
+        event: {
+          id: gallery.event?.id || 'event',
+          name: gallery.event?.name || legacy?.eventName || 'Evento',
+          school: gallery.event?.school_name || 'Escuela',
+          date: new Date().toISOString(),
+        },
+        photos: (gallery.items || []).map((item: any) => ({
+          id: item.id,
+          filename: item.filename || 'foto',
+          preview_url:
+            item.previewUrl || item.signedUrl || item.downloadUrl || '/placeholder-image.svg',
+          file_size: item.size || 0,
+          width: item.metadata?.width || 0,
+          height: item.metadata?.height || 0,
+          taken_at: item.createdAt,
+          created_at: item.createdAt,
+          approved: true,
+          photo_type: item.type || 'event',
+        })),
+      } as any);
     } catch (err) {
       console.error('Error loading shared gallery:', err);
       setError(err instanceof Error ? err.message : 'Failed to load shared gallery');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    const eventId = galleryData?.event?.id ?? null;
+
+    if (eventId) {
+      setContext({ context: 'family', eventId, token });
+      setEventId(eventId);
+    } else if (token) {
+      setContext({ context: 'family', eventId: token, token });
+    }
+  }, [galleryData?.event?.id, setContext, setEventId, token]);
 
   const handleDownload = async () => {
     try {
@@ -283,9 +299,9 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       <div className="flex items-center justify-center min-h-screen p-4">
         <div className="max-w-md text-center">
           <div className="bg-muted rounded-lg p-6">
-            <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <ImageIcon className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-3" />
             <h3 className="text-xl font-medium mb-2">Galería no encontrada</h3>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               Es posible que el enlace haya expirado o sea inválido.
             </p>
           </div>
@@ -353,15 +369,15 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       <div className="p-2">
         <p className="text-xs font-medium truncate">{photo.filename}</p>
         <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
             {new Date(photo.created_at).toLocaleDateString()}
           </span>
           <div className="flex items-center gap-1">
             {photo.tagged_students && photo.tagged_students.length > 0 && (
-              <Users className="w-3 h-3 text-muted-foreground" />
+              <Users className="w-3 h-3 text-gray-500 dark:text-gray-400" />
             )}
             {photo.tagged_courses && photo.tagged_courses.length > 0 && (
-              <BookOpen className="w-3 h-3 text-muted-foreground" />
+              <BookOpen className="w-3 h-3 text-gray-500 dark:text-gray-400" />
             )}
           </div>
         </div>
@@ -417,7 +433,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           )}
         </div>
         
-        <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
           <span>{new Date(photo.created_at).toLocaleDateString()}</span>
           <span>{Math.round(photo.file_size / 1024)} KB</span>
           <div className="flex items-center gap-1">
@@ -446,7 +462,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
                  level ? `Galería de ${level.name}` : 
                  `Galería de ${event.name}`}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-gray-500 dark:text-gray-400">
                 {event.school} - {new Date(event.date).toLocaleDateString()}
               </p>
               {share.custom_message && (
@@ -520,7 +536,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           </div>
           
           {/* Share info */}
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center gap-1">
               <Eye className="h-4 w-4" />
               <span>Vistas: {share.view_count}</span>
@@ -581,9 +597,9 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center p-12 text-center">
-            <ImageIcon className="h-16 w-16 text-muted-foreground mb-4" />
+            <ImageIcon className="h-16 w-16 text-gray-500 dark:text-gray-400 mb-4" />
             <h3 className="text-xl font-medium mb-2">No hay fotos en esta galería</h3>
-            <p className="text-muted-foreground">
+            <p className="text-gray-500 dark:text-gray-400">
               Aún no se han subido fotos para esta galería.
             </p>
           </div>
@@ -601,7 +617,7 @@ export default function SharedGallery({ token }: SharedGalleryProps) {
       
       {/* Footer */}
       <footer className="border-t mt-8">
-        <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
             Galería compartida de {event.school} - {new Date(event.date).toLocaleDateString()}
           </p>

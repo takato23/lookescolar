@@ -1,667 +1,313 @@
-/**
- * UNIFIED STORE PAGE - /store-unified/[token]
- *
- * Página unificada de tienda que maneja TODOS los tipos de tokens:
- * - Event tokens (/s/[token])
- * - Course tokens (/s/[token])
- * - Family tokens (/f/[token])
- * - Store tokens (/store/[token])
- *
- * Características:
- * - Una sola interfaz para todas las familias
- * - Misma experiencia de usuario
- * - Contenido filtrado según el token
- * - Sistema de carrito unificado
- */
+'use client';
 
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { absoluteUrl } from '@/lib/absoluteUrl';
-import { UnifiedStore } from '@/components/store/UnifiedStore';
-import { hierarchicalGalleryService } from '@/lib/services/hierarchical-gallery.service';
-import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { useParams } from 'next/navigation';
 
-interface PageProps {
-  params: Promise<{ token: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+// Lazy loading de componentes para bundle splitting
+const PixiesetFlowTemplate = lazy(() => import('@/components/store/templates/PixiesetFlowTemplate').then(module => ({ default: module.PixiesetFlowTemplate })));
+
+// Componente de loading optimizado para Suspense
+const StoreLoadingFallback = () => (
+  <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Cargando tienda...</p>
+    </div>
+  </div>
+);
+import { mergeWithGuaranteedSettings } from '@/lib/services/store-initialization.service';
+import { ThemeToggleSimple } from '@/components/ui/theme-toggle-enhanced';
+import { useTheme } from '@/components/providers/theme-provider';
+import { StoreErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { useUnifiedStore } from '@/lib/stores/unified-store';
+
+interface Photo {
+  id: string;
+  url: string;
+  preview_url?: string | null;
+  alt: string;
+  download_url?: string | null;
+  type?: string | null;
 }
 
-// Generar metadata dinámica basada en el token
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
-  const { token } = await params;
+interface StoreData {
+  store?: {
+    name: string;
+  };
+  event?: {
+    name: string;
+    school_name?: string;
+  };
+  assets?: any[];
+  subject?: {
+    name: string;
+    course?: string;
+  };
+}
 
-  try {
-    // Validar token y obtener contexto
-    const validation = await hierarchicalGalleryService.validateAccess(token);
+function normalizeCatalog(rawCatalog: any | null) {
+  if (!rawCatalog) return null;
 
-    if (!validation.isValid || !validation.context) {
-      // Fallback para tokens de sharing público - use direct database access
-      const isShareToken = /^[a-f0-9]{32}$/i.test(token) || /^[a-f0-9]{64}$/i.test(token);
-      const isFolderShareToken = !isShareToken && token.length >= 16 && token.length <= 64;
-      
-      // Metadata para share_tokens (32/64 hex)
-      if (isShareToken) {
-        try {
-          const supabase = await createServerSupabaseServiceClient();
-          const { data: st } = await supabase
-            .from('share_tokens')
-            .select('share_type, event_id, folder_id')
-            .eq('token', token)
-            .maybeSingle();
-          if (st) {
-            let title = 'Tienda de Fotos | LookEscolar';
-            if (st.share_type === 'event' && st.event_id) {
-              const { data: ev } = await supabase.from('events').select('name, school').eq('id', st.event_id).maybeSingle();
-              const name = (ev as any)?.name || (ev as any)?.school || 'Galería';
-              title = `${name} - Tienda de Fotos | LookEscolar`;
-            }
-            if (st.share_type === 'folder' && st.folder_id) {
-              const { data: fo } = await supabase.from('folders').select('name, event_id').eq('id', st.folder_id).single();
-              let eventName = fo?.name || 'Álbum';
-              try {
-                const { data: ev } = await supabase.from('events').select('name, school').eq('id', fo?.event_id).maybeSingle();
-                eventName = (ev as any)?.name || (ev as any)?.school || fo?.name || 'Álbum';
-              } catch {}
-              title = `${eventName} - Tienda de Fotos | LookEscolar`;
-            }
-            return {
-              title,
-              description: 'Compra fotos seleccionadas de esta galería',
-              robots: 'noindex, nofollow',
-              referrer: 'no-referrer',
-            } as any;
-          }
-        } catch {}
-      }
+  const items = Array.isArray(rawCatalog.items)
+    ? [...rawCatalog.items].sort((a, b) => {
+        const orderA =
+          typeof a.sortOrder === 'number'
+            ? a.sortOrder
+            : typeof a.sort_order === 'number'
+              ? a.sort_order
+              : 0;
+        const orderB =
+          typeof b.sortOrder === 'number'
+            ? b.sortOrder
+            : typeof b.sort_order === 'number'
+              ? b.sort_order
+              : 0;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        const labelA = (a.label ?? a.name ?? '').toString();
+        const labelB = (b.label ?? b.name ?? '').toString();
+        return labelA.localeCompare(labelB);
+      })
+    : [];
 
-      if (isFolderShareToken) {
-        try {
-          const supabase = await createServerSupabaseServiceClient();
+  const overrides = Array.isArray(rawCatalog.overrides)
+    ? [...rawCatalog.overrides].sort((a, b) => {
+        const keyA = `${a.productId ?? a.product_id ?? ''}::${
+          a.comboId ?? a.combo_id ?? ''
+        }`;
+        const keyB = `${b.productId ?? b.product_id ?? ''}::${
+          b.comboId ?? b.combo_id ?? ''
+        }`;
+        return keyA.localeCompare(keyB);
+      })
+    : [];
 
-          // Get folder info for metadata
-          const { data: folder } = await supabase
-            .from('folders')
-            .select('id, event_id, name, is_published')
-            .eq('share_token', token)
-            .eq('is_published', true)
-            .single();
+  return {
+    ...rawCatalog,
+    items,
+    overrides,
+  };
+}
 
-          if (folder) {
-            // Get event name
-            let eventName = 'Galería';
-            try {
-              const { data: ev } = await supabase
-                .from('events')
-                .select('name, school')
-                .eq('id', folder.event_id)
-                .maybeSingle();
-              eventName = (ev as any)?.name || (ev as any)?.school || folder.name || 'Galería';
-            } catch {}
+export default function UnifiedStorePage() {
+  const params = useParams();
+  const token = params.token as string;
+  const { resolvedTheme } = useTheme();
+  const setTokenInStore = useUnifiedStore((state) => state.setToken);
+  const setEventInfoInStore = useUnifiedStore((state) => state.setEventInfo);
 
-            return {
-              title: `${eventName} - Tienda de Fotos | LookEscolar`,
-              description: 'Compra fotos seleccionadas de esta galería',
-              robots: 'noindex, nofollow',
-              referrer: 'no-referrer',
-            } as any;
-          }
-        } catch {}
-      }
-      return {
-        title: 'Tienda no disponible - LookEscolar',
-        description: 'El enlace de la tienda no es válido o ha expirado.',
-        robots: 'noindex, nofollow',
-      };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [storeData, setStoreData] = useState<StoreData | null>(null);
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [settings, setSettings] = useState<any>(null);
+  const [catalog, setCatalog] = useState<any>(null);
+
+  // Estado para paginación
+  const [photosPerPage] = useState(20); // Carga inicial reducida
+  const [totalPhotos, setTotalPhotos] = useState(0);
+  const [allPhotos, setAllPhotos] = useState<Photo[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      setTokenInStore(token);
     }
+  }, [token, setTokenInStore]);
 
-    const { context } = validation;
-    const scopeName =
-      context.scope === 'event'
-        ? 'Evento'
-        : context.scope === 'course'
-          ? 'Curso'
-          : 'Familia';
+  useEffect(() => {
+    fetchStoreData();
+  }, [token]);
 
-    return {
-      title: `${scopeName}: ${context.resourceName} - Tienda de Fotos | LookEscolar`,
-      description: `Compra fotos profesionales de ${context.resourceName}. Galería de fotos con opciones de paquetes y copias adicionales.`,
-      openGraph: {
-        title: `${context.resourceName} - Tienda de Fotos`,
-        description: `Compra fotos profesionales de ${context.resourceName}`,
-        type: 'website',
-        url: `/store-unified/${token}`,
-      },
-      robots: {
-        index: false, // No indexar por privacidad
-        follow: false,
-        nocache: true,
-        noarchive: true,
-        nosnippet: true,
-      },
-      referrer: 'no-referrer',
-    };
-  } catch (error) {
-    return {
-      title: 'Tienda de Fotos - LookEscolar',
-      description: 'Galería de fotos profesionales con opciones de compra.',
-      robots: { index: false, follow: false, nocache: true },
-      referrer: 'no-referrer',
-    };
-  }
-}
+  const fetchPhotos = useCallback(async (page: number = 1, append: boolean = false) => {
+    try {
+      setLoadingMore(true);
+      const response = await fetch(`/api/store/${token}?include_assets=true&limit=${photosPerPage}&offset=${(page - 1) * photosPerPage}`);
 
-export default async function UnifiedStorePage({
-  params,
-  searchParams,
-}: PageProps) {
-  const { token } = await params;
-  const searchParamsObj = await searchParams;
-  const page = Math.max(1, parseInt((searchParamsObj?.page as string) || '1'));
-  const limit = Math.min(100, Math.max(1, parseInt((searchParamsObj?.limit as string) || '60')));
-  const stepParam = (searchParamsObj?.step as string) || '';
-  const allowedSteps = new Set(['package', 'photos', 'extras', 'contact', 'payment']);
-  const initialStep = allowedSteps.has(stepParam) ? (stepParam as any) : undefined;
+      if (!response.ok) throw new Error('Error al cargar fotos');
 
-  try {
-    // Validar token y obtener contexto
-    const validation = await hierarchicalGalleryService.validateAccess(token);
+      const data = await response.json();
+      const gallery = data.gallery as {
+        items?: any[];
+        pagination?: { total: number };
+      } | undefined;
 
-    let photos:
-      | Array<{ id: string; filename: string; preview_url: string; size: number; width: number; height: number }>
-      | null = null;
-    let subject: any = null;
-    let isShareToken = false;
-    let ctx: any = null;
-
-    if (!validation.isValid) {
-      // Fallback: tokens de sharing público (tabla share_tokens: 32 o 64 hex)
-      isShareToken = /^[a-f0-9]{32}$/i.test(token) || /^[a-f0-9]{64}$/i.test(token);
-      const isFolderShareToken = !isShareToken && token.length >= 16 && token.length <= 64;
-      
-      // Aceptar tokens de share (32/64 hex) o tokens de carpeta (16-64 chars legacy)
-      if (!isShareToken && !isFolderShareToken) {
-        console.error('Token validation failed - not a valid share token:', validation.reason);
-        notFound();
-      }
-
-      // Direct database access for share tokens
-      try {
-        const supabase = await createServerSupabaseServiceClient();
-
-        // First try to find in share_tokens table (event/folder/photos shares)
-        if (isShareToken) {
-          const { data: shareTokenData } = await supabase
-            .from('share_tokens')
-            .select('id, token, event_id, folder_id, photo_ids, share_type, metadata, is_active, expires_at')
-            .eq('token', token)
-            .eq('is_active', true)
-            .single();
-
-          if (shareTokenData && (!shareTokenData.expires_at || new Date(shareTokenData.expires_at) > new Date())) {
-            console.log('✅ [UNIFIED STORE] Found valid share token:', {
-              tokenId: shareTokenData.id,
-              eventId: shareTokenData.event_id,
-              shareType: shareTokenData.share_type,
-              token: token.slice(0, 8) + '...'
-            });
-
-            // Share type specific handling (folder/photos), otherwise event
-            const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-            const publicBuckets = ['assets', 'photos', 'photo-public'];
-            const buildPublicUrl = (path?: string | null) => {
-              if (!path || !baseUrl) return null;
-              for (const b of publicBuckets) {
-                return `${baseUrl}/storage/v1/object/public/${b}/${path}`;
-              }
-              return null;
-            };
-            const offset = (page - 1) * limit;
-            const subjectId = (shareTokenData as any).subject_id || (shareTokenData.metadata && (shareTokenData.metadata as any).subject_id) || null;
-            const baseSelect = 'id, folder_id, filename, original_path, preview_path, watermark_path, file_size, mime_type, created_at, status';
-
-            if (shareTokenData.share_type === 'folder' && shareTokenData.folder_id) {
-              // Folder subtree
-              let allowedFolderIds: string[] = [];
-              try {
-                const { data: rows } = await supabase.rpc('get_descendant_folders', { p_folder_id: shareTokenData.folder_id });
-                allowedFolderIds = (rows || []).map((r: any) => r.id);
-                if (!allowedFolderIds.includes(shareTokenData.folder_id)) allowedFolderIds.push(shareTokenData.folder_id);
-              } catch { allowedFolderIds = [shareTokenData.folder_id]; }
-
-              let q = supabase.from('assets').select(baseSelect).eq('status', 'ready').in('folder_id', allowedFolderIds);
-              if (subjectId) {
-                const selectExpr = `${baseSelect}, asset_subjects!inner(subject_id)`;
-                q = supabase.from('assets').select(selectExpr).eq('status','ready').in('folder_id', allowedFolderIds).eq('asset_subjects.subject_id', subjectId);
-              }
-              const { data: foAssets, error: assetsErr } = await q.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
-              if (assetsErr) { console.error('❌ [UNIFIED STORE] Failed to fetch folder assets:', assetsErr); notFound(); }
-
-              const mapped = (foAssets || []).map((a: any) => {
-                const wm = a.watermark_path || a.watermark_url || null;
-                const pre = a.preview_path || a.preview_url || null;
-                const orig = a.original_path || a.storage_path || null;
-                const direct = typeof pre === 'string' && pre.startsWith('http') ? pre : null;
-                const url = direct || buildPublicUrl(wm) || buildPublicUrl(pre) || buildPublicUrl(orig) || '';
-                return { id: a.id, filename: a.filename || a.original_filename || 'foto', preview_url: url, size: a.file_size || 0, width: 800, height: 600 };
-              });
-
-              // Folder and event info
-              const { data: folderInfo } = await supabase
-                .from('folders')
-                .select('id, name, event_id')
-                .eq('id', shareTokenData.folder_id)
-                .single();
-              let eventName: string | null = null;
-              try {
-                const { data: ev } = await supabase
-                  .from('events')
-                  .select('name, school')
-                  .eq('id', folderInfo?.event_id)
-                  .maybeSingle();
-                eventName = (ev as any)?.name || (ev as any)?.school || null;
-              } catch {}
-              photos = mapped;
-              subject = {
-                id: folderInfo?.event_id,
-                name: eventName || folderInfo?.name || 'Álbum',
-                grade_section: 'Evento',
-                event: { name: eventName || folderInfo?.name || 'Álbum', school_name: 'Escuela', theme: 'default' },
-              };
-
-              return (
-                <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-                  <UnifiedStore token={token} photos={photos || []} subject={subject} callbackBase="f" initialStep={initialStep} />
-                </div>
-              );
-            }
-
-            if (shareTokenData.share_type === 'photos' && Array.isArray(shareTokenData.photo_ids) && shareTokenData.photo_ids.length > 0) {
-              let q = supabase.from('assets').select(baseSelect).eq('status','ready').in('id', shareTokenData.photo_ids);
-              if (subjectId) {
-                const selectExpr = `${baseSelect}, asset_subjects!inner(subject_id)`;
-                q = supabase.from('assets').select(selectExpr).eq('status','ready').in('id', shareTokenData.photo_ids).eq('asset_subjects.subject_id', subjectId);
-              }
-              const { data: phAssets, error: assetsErr } = await q.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
-              if (assetsErr) { console.error('❌ [UNIFIED STORE] Failed to fetch selected photos:', assetsErr); notFound(); }
-
-              const mapped = (phAssets || []).map((a: any) => {
-                const wm = a.watermark_path || a.watermark_url || null;
-                const pre = a.preview_path || a.preview_url || null;
-                const orig = a.original_path || a.storage_path || null;
-                const direct = typeof pre === 'string' && pre.startsWith('http') ? pre : null;
-                const url = direct || buildPublicUrl(wm) || buildPublicUrl(pre) || buildPublicUrl(orig) || '';
-                return { id: a.id, filename: a.filename || a.original_filename || 'foto', preview_url: url, size: a.file_size || 0, width: 800, height: 600 };
-              });
-
-              // Event header
-              const { data: eventData } = await supabase
-                .from('events')
-                .select('id, name, school')
-                .eq('id', shareTokenData.event_id)
-                .maybeSingle();
-              photos = mapped;
-              subject = {
-                id: shareTokenData.event_id,
-                name: (eventData as any)?.name || (eventData as any)?.school || 'Fotos seleccionadas',
-                grade_section: 'Evento',
-                event: { name: (eventData as any)?.name || (eventData as any)?.school || 'Evento', school_name: 'Escuela', theme: 'default' },
-              };
-
-              return (
-                <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-                  <UnifiedStore token={token} photos={photos || []} subject={subject} callbackBase="f" initialStep={initialStep} />
-                </div>
-              );
-            }
-
-            // Get event info (default)
-            const { data: eventData } = await supabase
-              .from('events')
-              .select('id, name, location, date')
-              .eq('id', shareTokenData.event_id)
-              .single();
-
-            if (eventData) {
-              // Get photos from event (all folders in event)
-              const offset = (page - 1) * limit;
-              
-              // Get all folders for this event
-              const { data: eventFolders } = await supabase
-                .from('folders')
-                .select('id')
-                .eq('event_id', shareTokenData.event_id);
-              
-              const folderIds = (eventFolders || []).map(f => f.id);
-              
-              if (folderIds.length > 0) {
-                // Get assets from all folders in the event
-                const { data: assets, error: assetsErr } = await supabase
-                  .from('assets')
-                  .select('id, folder_id, filename, original_path, preview_path, watermark_path, file_size, mime_type, created_at, status')
-                  .eq('status', 'ready')
-                  .in('folder_id', folderIds)
-                  .order('created_at', { ascending: false })
-                  .range(offset, offset + limit - 1);
-
-                if (!assetsErr && assets) {
-                  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-                  const publicBuckets = ['assets', 'photos', 'photo-public'];
-
-                  const buildPublicUrl = (path?: string | null) => {
-                    if (!path || !baseUrl) return null;
-                    for (const b of publicBuckets) {
-                      return `${baseUrl}/storage/v1/object/public/${b}/${path}`;
-                    }
-                    return null;
-                  };
-
-                  photos = assets.map((a: any) => {
-                    const wm = a.watermark_path || a.watermark_url || null;
-                    const pre = a.preview_path || a.preview_url || null;
-                    const orig = a.original_path || a.storage_path || null;
-                    const direct = typeof pre === 'string' && pre.startsWith('http') ? pre : null;
-                    const url = direct || buildPublicUrl(wm) || buildPublicUrl(pre) || buildPublicUrl(orig) || '';
-                    return {
-                      id: a.id,
-                      filename: a.filename || a.original_filename || 'foto',
-                      preview_url: url,
-                      size: a.file_size || 0,
-                      width: 800,
-                      height: 600,
-                    };
-                  });
-
-                  subject = {
-                    id: eventData.id,
-                    name: eventData.name || eventData.location || 'Evento',
-                    grade_section: 'Evento',
-                    event: {
-                      name: eventData.name || eventData.location || 'Evento',
-                      school_name: eventData.location || 'Escuela',
-                      theme: 'default',
-                    },
-                  };
-
-                  console.log('✅ [UNIFIED STORE] Event share token processed successfully:', {
-                    token: token.slice(0, 8) + '...',
-                    photosCount: photos.length,
-                    eventName: subject.name
-                  });
-
-                  // Return early with successful event share data
-                  return (
-                    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-                      <UnifiedStore
-                        token={token}
-                        photos={photos || []}
-                        subject={subject}
-                        callbackBase="f"
-                        initialStep={initialStep}
-                      />
-                    </div>
-                  );
-
-                } else {
-                  console.error('❌ [UNIFIED STORE] Failed to fetch event assets:', assetsErr);
-                  notFound();
-                }
-              } else {
-                console.log('⚠️ [UNIFIED STORE] No folders found for event');
-                notFound();
-              }
-            } else {
-              console.error('❌ [UNIFIED STORE] Event not found for share token');
-              notFound();
-            }
-          } else {
-            // Not found in share_tokens; continue with legacy folder token fallback below
-            console.log('ℹ️ [UNIFIED STORE] Token not in share_tokens; trying folder.share_token fallback');
-          }
-        }
-
-        // If not an event share token or event token failed, try to find folder by share token
-        let { data: folder, error: folderErr } = await supabase
-          .from('folders')
-          .select('id, event_id, name, is_published, share_token')
-          .eq('share_token', token)
-          .single();
-
-        // If folder not found by share token, try to find by any existing share tokens and create a new one
-        if (folderErr || !folder) {
-          console.log('⚠️ [UNIFIED STORE] Token not found, attempting recovery...');
-          
-          // Try to find any published folders that might need a share token
-          const { data: folders, error: foldersErr } = await supabase
-            .from('folders')
-            .select('id, event_id, name, is_published')
-            .eq('is_published', true)
-            .is('share_token', null)
-            .limit(1);
-
-          if (!foldersErr && folders && folders.length > 0) {
-            // Generate a new share token for the first available folder
-            const newShareToken = Array.from(crypto.getRandomValues(new Uint8Array(16)))
-              .map(b => b.toString(16).padStart(2, '0'))
-              .join('');
-
-            const { data: updatedFolder, error: updateErr } = await supabase
-              .from('folders')
-              .update({
-                share_token: newShareToken,
-                is_published: true,
-                published_at: new Date().toISOString()
-              })
-              .eq('id', folders[0].id)
-              .select('id, event_id, name, is_published, share_token')
-              .single();
-
-            if (!updateErr && updatedFolder) {
-              console.log('✅ [UNIFIED STORE] Created new share token for recovery');
-              // Use the updated folder with the new token
-              folder = updatedFolder;
-            } else {
-              console.log('ℹ️ [UNIFIED STORE] No published folders available for recovery');
-              notFound();
-            }
-          } else {
-            console.log('ℹ️ [UNIFIED STORE] No folders found that could be published');
-            notFound();
-          }
-        }
-
-        if (!folder.is_published) {
-          console.error('❌ [UNIFIED STORE] Folder not published:', { 
-            folderId: folder.id,
-            token: token.slice(0, 8) + '...' 
-          });
-          notFound();
-        }
-
-        // Get all descendant folders (including the root)
-        let allowedFolderIds: string[] = [];
-        try {
-          const { data: rows } = await supabase.rpc('get_descendant_folders', {
-            p_folder_id: folder.id,
-          });
-          allowedFolderIds = (rows || []).map((r: any) => r.id);
-          if (!allowedFolderIds.includes(folder.id)) allowedFolderIds.push(folder.id);
-        } catch {
-          allowedFolderIds = [folder.id];
-        }
-
-        // Get assets
-        const offset = (page - 1) * limit;
-        const { data: assets, error: assetsErr, count } = await supabase
-          .from('assets')
-          .select('id, folder_id, filename, original_path, preview_path, file_size, mime_type, created_at, status', { count: 'exact' })
-          .eq('status', 'ready')
-          .in('folder_id', allowedFolderIds)
-          .order('created_at', { ascending: false })
-          .range(offset, offset + limit - 1);
-
-        if (assetsErr) {
-          console.error('❌ [UNIFIED STORE] Failed to fetch assets:', assetsErr);
-          notFound();
-        }
-
-        // Event branding
-        let eventName: string | null = null;
-        try {
-          const { data: ev } = await supabase
-            .from('events')
-            .select('name, school')
-            .eq('id', folder.event_id)
-            .maybeSingle();
-          eventName = (ev as any)?.name || (ev as any)?.school || null;
-        } catch {}
-
-        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const publicBuckets = ['assets', 'photos', 'photo-public'];
-
-        const buildPublicUrl = (path?: string | null) => {
-          if (!path || !baseUrl) return null;
-          for (const b of publicBuckets) {
-            return `${baseUrl}/storage/v1/object/public/${b}/${path}`;
-          }
-          return null;
-        };
-
-        photos = (assets || []).map((a: any) => {
-          const wm = a.watermark_path || a.watermark_url || null;
-          const pre = a.preview_path || a.preview_url || null;
-          const orig = a.original_path || a.storage_path || null;
-          const direct = typeof pre === 'string' && pre.startsWith('http') ? pre : null;
-          const url = direct || buildPublicUrl(wm) || buildPublicUrl(pre) || buildPublicUrl(orig) || '';
-          return {
-            id: a.id,
-            filename: a.filename || a.original_filename || 'foto',
-            preview_url: url,
-            size: a.file_size || 0,
-            width: 800,
-            height: 600,
-          };
-        });
-
-        subject = {
-          id: folder.event_id,
-          name: eventName || folder.name || 'Evento',
-          grade_section: 'Evento',
-          event: {
-            name: eventName || folder.name || 'Evento',
-            school_name: 'Escuela',
-            theme: 'default',
-          },
-        };
-
-        console.log('✅ [UNIFIED STORE] Direct database access successful:', {
-          token: token.slice(0, 8) + '...',
-          photosCount: photos.length,
-          eventName: subject.name
-        });
-
-      } catch (error) {
-        console.error('❌ [UNIFIED STORE] Direct database access failed:', error);
-        notFound();
-      }
-    } else {
-      const context = validation.context!;
-      ctx = context;
-      console.log('✅ [UNIFIED STORE] Token válido:', {
-        scope: context.scope,
-        resourceName: context.resourceName,
-        canDownload: context.canDownload,
-        queryParams: searchParamsObj,
-      });
-
-      // Obtener datos según el scope del token
-      const offset = (page - 1) * limit;
-      const assets = await hierarchicalGalleryService.getAssetsPaginated(
-        token,
-        undefined,
-        limit,
-        offset
-      );
-
-      photos = assets.assets.map((asset) => ({
+      const rawAssets = (gallery?.items || data.assets || []) as any[];
+      const mappedPhotos: Photo[] = rawAssets.map((asset) => ({
         id: asset.id,
-        filename: asset.filename,
-        // Use hierarchical preview endpoint (validates scope and signs URL)
-        preview_url: `/api/hierarchical/${token}/preview/${asset.id}`,
-        size: asset.fileSize || 0,
-        // Width/height may be unknown at this stage; use sensible defaults
-        width: 800,
-        height: 600,
+        url:
+          asset.previewUrl ??
+          asset.preview_url ??
+          asset.watermark_url ??
+          asset.signedUrl ??
+          asset.download_url ??
+          '/placeholder-image.svg',
+        preview_url:
+          asset.previewUrl ?? asset.preview_url ?? asset.watermark_url ?? null,
+        alt: asset.filename || 'Foto',
+        download_url: asset.downloadUrl ?? asset.download_url ?? null,
+        type: asset.type ?? asset.photo_type ?? null,
       }));
 
-      // Crear subject unificado basado en el contexto
-      subject = {
-        id: context.resourceId,
-        name: context.resourceName,
-        grade_section:
-          context.scope === 'event'
-            ? 'Evento'
-            : context.scope === 'course'
-              ? 'Curso'
-              : 'Familia',
-        event: {
-          name: context.resourceName,
-          school_name:
-            context.scope === 'event' ? context.resourceName : 'Escuela',
-          theme: 'default',
+      const total = gallery?.pagination?.total ?? data.pagination?.total ?? mappedPhotos.length;
+
+      setTotalPhotos(total);
+      setAllPhotos((prev) => (append ? [...prev, ...mappedPhotos] : mappedPhotos));
+      setPhotos(mappedPhotos);
+    } catch (error) {
+      console.error('[StoreUnified] Error al cargar fotos:', error);
+      setError('Error al cargar las fotos. Intente recargar la página.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [token, photosPerPage]);
+
+  // Cargar más fotos al hacer scroll
+  const loadMorePhotos = useCallback(() => {
+    if (!loadingMore && allPhotos.length < totalPhotos) {
+      const nextPage = Math.floor(allPhotos.length / photosPerPage) + 1;
+      fetchPhotos(nextPage, true);
+    }
+  }, [loadingMore, allPhotos.length, totalPhotos, photosPerPage, fetchPhotos]);
+
+  const fetchStoreData = async () => {
+    try {
+      setLoading(true);
+
+      // Cargar configuración pública de la tienda (con precios reales)
+      const configResponse = await fetch('/api/public/store/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      });
+
+      let mergedSettings = mergeWithGuaranteedSettings(null);
+      let normalizedCatalog: any = null;
+
+      if (configResponse.ok) {
+        const configData = await configResponse.json();
+        if (configData.success && configData.settings) {
+          mergedSettings = mergeWithGuaranteedSettings(configData.settings);
+        }
+        normalizedCatalog = normalizeCatalog(configData.catalog ?? null);
+        setCatalog(normalizedCatalog);
+      } else {
+        setCatalog(null);
+      }
+
+      // Cargar primera página de fotos con paginación
+      await fetchPhotos(1, false);
+
+      // Cargar datos de la tienda (sin assets para evitar duplicación)
+      const storeResponse = await fetch(`/api/store/${token}?include_assets=false`);
+      if (!storeResponse.ok) {
+        throw new Error('Error al cargar la tienda');
+      }
+
+      const data = await storeResponse.json();
+      setStoreData(data);
+
+      const heroTitle =
+        data.store?.name ||
+        data.event?.name ||
+        mergedSettings.texts?.hero_title ||
+        'Galería Fotográfica';
+
+      const finalSettings = {
+        ...mergedSettings,
+        template: 'pixieset' as const,
+        texts: {
+          ...mergedSettings.texts,
+          hero_title: heroTitle,
+          hero_subtitle:
+            mergedSettings.texts?.hero_subtitle ||
+            'Galería Fotográfica Escolar',
         },
       };
 
-      // Log de acceso exitoso
-      await hierarchicalGalleryService.logAccess(token, 'store_access', {
-        success: true,
-        responseTimeMs: 0,
-        notes: `Unified store access to ${context.scope} gallery with params: ${JSON.stringify(searchParamsObj)}`,
+      setSettings(finalSettings);
+      setEventInfoInStore({
+        name: heroTitle,
+        schoolName: data.event?.school_name ?? '',
+        gradeSection: data.subject?.course ?? '',
       });
+
+    } catch (error) {
+      console.error('Error loading store:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Mostrar información de debug en desarrollo
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const debugScope = ctx?.scope || (isShareToken ? 'share' : 'unknown');
-    const debugResourceName = ctx?.resourceName || subject?.name || 'Galería';
-    const debugInfo = isDevelopment
-      ? {
-          token: token.slice(0, 8) + '...',
-          scope: debugScope,
-          resourceName: debugResourceName,
-          photosCount: photos?.length || 0,
-          queryParams: searchParamsObj,
-          redirectSource: (searchParamsObj as any).source || 'direct',
-        }
-      : null;
-
-    // Debug logging for the page
-    console.log('📄 UnifiedStorePage rendering:', {
-      token: token.slice(0, 8) + '...',
-      photosCount: photos?.length || 0,
-      subjectName: subject?.event?.name,
-      debugScope
-    });
-
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-        <UnifiedStore
-          token={token}
-          photos={photos || []}
-          subject={subject}
-          // Mantener callbacks existentes bajo /f/[token]/payment/*
-          callbackBase="f"
-          // Permite deep-linkear a un paso específico del checkout
-          initialStep={initialStep}
-        />
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando galería...</p>
+        </div>
       </div>
     );
-  } catch (error) {
-    console.error('Error loading unified store:', error);
-    notFound();
   }
-}
 
-// Habilitar ISR para mejor rendimiento
-export const revalidate = 300; // 5 minutos
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="absolute top-4 right-4">
+            <ThemeToggleSimple />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Error</h1>
+          <p className="text-destructive mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!settings || photos.length === 0) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="absolute top-4 right-4">
+            <ThemeToggleSimple />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Galería no disponible</h1>
+          <p className="text-muted-foreground">No se encontraron fotos en esta galería.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StoreErrorBoundary>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        {/* Theme Toggle - Fixed position for all states */}
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggleSimple />
+        </div>
+
+        <Suspense fallback={<StoreLoadingFallback />}>
+          <PixiesetFlowTemplate
+            settings={settings}
+            photos={photos}
+            token={token}
+            subject={storeData?.subject}
+            totalPhotos={totalPhotos}
+            isPreselected={false}
+            onLoadMorePhotos={loadMorePhotos}
+            hasMorePhotos={allPhotos.length < totalPhotos}
+            loadingMore={loadingMore}
+          />
+        </Suspense>
+      </div>
+    </StoreErrorBoundary>
+  );
+}

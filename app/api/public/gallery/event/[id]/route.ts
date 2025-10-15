@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = params;
     const supabase = await createServerSupabaseServiceClient();
 
     // Get event with public visibility

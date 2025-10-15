@@ -6,13 +6,13 @@ import crypto from 'crypto';
 // GET: Get all subjects for an event
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
   try {
-    const { id: eventId } = await params;
+    const { id: eventId } = params;
     const supabase = await createServerSupabaseServiceClient();
 
     logger.info('Get event subjects request received', {

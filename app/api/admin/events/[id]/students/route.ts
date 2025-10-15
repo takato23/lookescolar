@@ -16,7 +16,7 @@ const subjectSchema = z.object({
 export const GET = withAuth(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
-      const eventId = (await params).id;
+      const eventId = (params).id;
       const { searchParams } = new URL(req.url);
 
       const courseId = searchParams.get('course_id');
@@ -146,7 +146,7 @@ export const GET = withAuth(
 export const POST = withAuth(
   async (req: NextRequest, { params }: { params: { id: string } }) => {
     try {
-      const eventId = (await params).id;
+      const eventId = (params).id;
       const body = await req.json();
 
       // Handle bulk import

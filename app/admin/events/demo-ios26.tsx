@@ -119,9 +119,9 @@ export default function EventsDemoPage() {
         {/* Enhanced Header with Breadcrumbs and Stats */}
         <div className="relative animate-fade-in">
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-xl" />
-          <div className="liquid-glass-card-ios26 relative rounded-2xl border border-white/20 p-6 shadow-xl sm:p-8">
+          <div className="liquid-glass-card-ios26 relative rounded-2xl border border-border/20 p-6 shadow-xl sm:p-8">
             {/* Breadcrumbs */}
-            <nav className="mb-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <nav className="mb-4 flex items-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground">
               <Link
                 href="/admin"
                 className="flex items-center gap-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
@@ -129,8 +129,8 @@ export default function EventsDemoPage() {
                 <Home className="h-4 w-4" />
                 Dashboard
               </Link>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-              <span className="font-medium text-gray-900 dark:text-white">
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-foreground dark:text-foreground">
                 Eventos
               </span>
             </nav>
@@ -138,15 +138,15 @@ export default function EventsDemoPage() {
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3 sm:gap-4">
                 <Link href="/admin">
-                  <button className="liquid-glass-button-ios26 rounded-full p-2 transition-colors hover:bg-white/10">
-                    <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                  <button className="liquid-glass-button-ios26 rounded-full p-2 transition-colors hover:bg-surface/10">
+                    <ArrowLeft className="h-5 w-5 text-foreground dark:text-muted-foreground" />
                   </button>
                 </Link>
                 <div>
                   <h1 className="gradient-text-ios26 mb-2 text-2xl font-bold sm:text-3xl md:text-4xl">
                     Eventos
                   </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 sm:text-base">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground sm:text-base">
                     Gestiona tus sesiones fotográficas y organiza por colegios
                   </p>
                 </div>
@@ -154,9 +154,9 @@ export default function EventsDemoPage() {
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link href="/admin/events/new">
-                  <button className="liquid-glass-button-ios26 flex items-center gap-2 rounded-xl px-4 py-2 shadow-lg transition-all hover:bg-white/10 sm:px-6 sm:py-3">
+                  <button className="liquid-glass-button-ios26 flex items-center gap-2 rounded-xl px-4 py-2 shadow-lg transition-all hover:bg-surface/10 sm:px-6 sm:py-3">
                     <Plus className="h-5 w-5" />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">
+                    <span className="font-semibold text-foreground dark:text-muted-foreground">
                       Nuevo Evento
                     </span>
                   </button>
@@ -171,10 +171,10 @@ export default function EventsDemoPage() {
                   <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                     Total Eventos
                   </p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-xl font-bold text-foreground dark:text-foreground">
                     {totalEvents}
                   </p>
                 </div>
@@ -185,10 +185,10 @@ export default function EventsDemoPage() {
                   <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                     Fotos Totales
                   </p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-xl font-bold text-foreground dark:text-foreground">
                     {totalPhotos}
                   </p>
                 </div>
@@ -199,10 +199,10 @@ export default function EventsDemoPage() {
                   <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                     Ingresos Totales
                   </p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-xl font-bold text-foreground dark:text-foreground">
                     ${totalRevenue.toLocaleString()}
                   </p>
                 </div>

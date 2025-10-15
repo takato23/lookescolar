@@ -45,9 +45,9 @@ CREATE TABLE IF NOT EXISTS enhanced_tokens (
 -- ============================================================
 
 -- Primary token lookup (most critical)
-CREATE INDEX idx_enhanced_tokens_token_active 
-  ON enhanced_tokens(token) 
-  WHERE is_active = true AND expires_at > NOW();
+CREATE INDEX idx_enhanced_tokens_token_active
+  ON enhanced_tokens(token)
+  WHERE is_active = true;
 
 -- Token type and expiry queries
 CREATE INDEX idx_enhanced_tokens_type_expires 

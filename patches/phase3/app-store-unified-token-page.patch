@@ -1,0 +1,221 @@
+diff --git a/app/store-unified/[token]/page.tsx b/app/store-unified/[token]/page.tsx
+index 52c0180..038518b 100644
+--- a/app/store-unified/[token]/page.tsx
++++ b/app/store-unified/[token]/page.tsx
+@@ -1,19 +1,32 @@
+ 'use client';
+ 
+-import React, { useState, useEffect } from 'react';
++import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+ import { useParams } from 'next/navigation';
+-import { PixiesetFlowTemplate } from '@/components/store/templates/PixiesetFlowTemplate';
++
++// Lazy loading de componentes para bundle splitting
++const PixiesetFlowTemplate = lazy(() => import('@/components/store/templates/PixiesetFlowTemplate').then(module => ({ default: module.PixiesetFlowTemplate })));
++
++// Componente de loading optimizado para Suspense
++const StoreLoadingFallback = () => (
++  <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
++    <div className="text-center">
++      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
++      <p className="text-muted-foreground">Cargando tienda...</p>
++    </div>
++  </div>
++);
+ import { GUARANTEED_SETTINGS } from '@/lib/services/store-initialization.service';
+ import { ThemeToggleSimple } from '@/components/ui/theme-toggle-enhanced';
+ import { useTheme } from '@/components/providers/theme-provider';
++import { StoreErrorBoundary } from '@/components/ui/ErrorBoundary';
+ 
+ interface Photo {
+   id: string;
+   url: string;
+-  preview_url?: string;
++  preview_url?: string | null;
+   alt: string;
+-  student?: string;
+-  subject?: string;
++  download_url?: string | null;
++  type?: string | null;
+ }
+ 
+ interface StoreData {
+@@ -40,15 +53,73 @@ export default function UnifiedStorePage() {
+   const [storeData, setStoreData] = useState<StoreData | null>(null);
+   const [photos, setPhotos] = useState<Photo[]>([]);
+   const [settings, setSettings] = useState<any>(null);
++  const [catalog, setCatalog] = useState<any>(null);
++
++  // Estado para paginación
++  const [photosPerPage] = useState(20); // Carga inicial reducida
++  const [totalPhotos, setTotalPhotos] = useState(0);
++  const [allPhotos, setAllPhotos] = useState<Photo[]>([]);
++  const [loadingMore, setLoadingMore] = useState(false);
+ 
+   useEffect(() => {
+     fetchStoreData();
+   }, [token]);
+ 
++  const fetchPhotos = useCallback(async (page: number = 1, append: boolean = false) => {
++    try {
++      setLoadingMore(true);
++      const response = await fetch(`/api/store/${token}?include_assets=true&limit=${photosPerPage}&offset=${(page - 1) * photosPerPage}`);
++
++      if (!response.ok) throw new Error('Error al cargar fotos');
++
++      const data = await response.json();
++      const gallery = data.gallery as {
++        items?: any[];
++        pagination?: { total: number };
++      } | undefined;
++
++      const rawAssets = (gallery?.items || data.assets || []) as any[];
++      const mappedPhotos: Photo[] = rawAssets.map((asset) => ({
++        id: asset.id,
++        url:
++          asset.previewUrl ??
++          asset.preview_url ??
++          asset.watermark_url ??
++          asset.signedUrl ??
++          asset.download_url ??
++          '/placeholder-image.svg',
++        preview_url:
++          asset.previewUrl ?? asset.preview_url ?? asset.watermark_url ?? null,
++        alt: asset.filename || 'Foto',
++        download_url: asset.downloadUrl ?? asset.download_url ?? null,
++        type: asset.type ?? asset.photo_type ?? null,
++      }));
++
++      const total = gallery?.pagination?.total ?? data.pagination?.total ?? mappedPhotos.length;
++
++      setTotalPhotos(total);
++      setAllPhotos((prev) => (append ? [...prev, ...mappedPhotos] : mappedPhotos));
++      setPhotos(mappedPhotos);
++    } catch (error) {
++      console.error('[StoreUnified] Error al cargar fotos:', error);
++      setError('Error al cargar las fotos. Intente recargar la página.');
++    } finally {
++      setLoadingMore(false);
++    }
++  }, [token, photosPerPage]);
++
++  // Cargar más fotos al hacer scroll
++  const loadMorePhotos = useCallback(() => {
++    if (!loadingMore && allPhotos.length < totalPhotos) {
++      const nextPage = Math.floor(allPhotos.length / photosPerPage) + 1;
++      fetchPhotos(nextPage, true);
++    }
++  }, [loadingMore, allPhotos.length, totalPhotos, photosPerPage, fetchPhotos]);
++
+   const fetchStoreData = async () => {
+     try {
+       setLoading(true);
+-      
++
+       // Cargar configuración pública de la tienda (con precios reales)
+       const configResponse = await fetch('/api/public/store/config', {
+         method: 'POST',
+@@ -57,33 +128,31 @@ export default function UnifiedStorePage() {
+       });
+ 
+       let realSettings: any = null;
++      let incomingCatalog: any = null;
++
+       if (configResponse.ok) {
+         const configData = await configResponse.json();
+         if (configData.success && configData.settings) {
+           realSettings = configData.settings;
+         }
++        if (configData.catalog) {
++          incomingCatalog = configData.catalog;
++          setCatalog(configData.catalog);
++        }
+       }
+-      
+-      // Cargar datos de la tienda y assets
+-      const storeResponse = await fetch(`/api/store/${token}?include_assets=true&limit=100`);
++
++      // Cargar primera página de fotos con paginación
++      await fetchPhotos(1, false);
++
++      // Cargar datos de la tienda (sin assets para evitar duplicación)
++      const storeResponse = await fetch(`/api/store/${token}?include_assets=false`);
+       if (!storeResponse.ok) {
+         throw new Error('Error al cargar la tienda');
+       }
+-      
++
+       const data = await storeResponse.json();
+       setStoreData(data);
+ 
+-      // Convertir assets a photos para el componente
+-      const convertedPhotos: Photo[] = (data.assets || []).map((asset: any) => ({
+-        id: asset.id,
+-        url: asset.url,
+-        preview_url: asset.preview_url || asset.watermark_url,
+-        alt: `Foto ${asset.filename || asset.id}`,
+-        student: asset.tagged_students?.[0] || '',
+-        subject: data.subject?.name || ''
+-      }));
+-      setPhotos(convertedPhotos);
+-
+       // 🔧 USAR CONFIGURACIÓN SIMPLE Y SEGURA (sin async en client)
+       console.log('🔍 Configuración recibida de API:', realSettings);
+       
+@@ -115,6 +184,14 @@ export default function UnifiedStorePage() {
+         hasCarpetaB: !!finalSettings.products.carpetaB
+       });
+ 
++      if (incomingCatalog) {
++        console.log('🛒 Catálogo disponible', {
++          priceListId: incomingCatalog.priceListId,
++          items: incomingCatalog.items?.length ?? 0,
++          overrides: incomingCatalog.overrides?.length ?? 0,
++        });
++      }
++
+       setSettings(finalSettings);
+ 
+     } catch (error) {
+@@ -171,20 +248,27 @@ export default function UnifiedStorePage() {
+   }
+ 
+   return (
+-    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+-      {/* Theme Toggle - Fixed position for all states */}
+-      <div className="fixed top-4 right-4 z-50">
+-        <ThemeToggleSimple />
+-      </div>
++    <StoreErrorBoundary>
++      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
++        {/* Theme Toggle - Fixed position for all states */}
++        <div className="fixed top-4 right-4 z-50">
++          <ThemeToggleSimple />
++        </div>
+ 
+-      <PixiesetFlowTemplate
+-        settings={settings}
+-        photos={photos}
+-        token={token}
+-        subject={storeData?.subject}
+-        totalPhotos={photos.length}
+-        isPreselected={false}
+-      />
+-    </div>
++        <Suspense fallback={<StoreLoadingFallback />}>
++          <PixiesetFlowTemplate
++            settings={settings}
++            photos={photos}
++            token={token}
++            subject={storeData?.subject}
++            totalPhotos={totalPhotos}
++            isPreselected={false}
++            onLoadMorePhotos={loadMorePhotos}
++            hasMorePhotos={allPhotos.length < totalPhotos}
++            loadingMore={loadingMore}
++          />
++        </Suspense>
++      </div>
++    </StoreErrorBoundary>
+   );
+ }

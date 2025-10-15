@@ -156,7 +156,7 @@ export function ProSidebar({
               )}
 
               {item.shortcut && showShortcuts && (
-                <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
+                <span className="text-gray-500 dark:text-gray-400 bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
                   {item.shortcut}
                 </span>
               )}
@@ -195,7 +195,7 @@ export function ProSidebar({
             <h2 className="text-foreground text-lg font-semibold">
               Look Escolar
             </h2>
-            <p className="text-muted-foreground text-xs">Panel Profesional</p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">Panel Profesional</p>
           </div>
         )}
 

@@ -63,7 +63,7 @@ export default function PostUploadToast({
 
   return (
     <div className={cn(
-      "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 min-w-[400px] max-w-[500px]",
+      "bg-white dark:bg-gray-900 border border-border dark:border-gray-700 rounded-lg shadow-lg p-4 min-w-[400px] max-w-[500px]",
       className
     )}>
       {/* Header */}
@@ -73,14 +73,14 @@ export default function PostUploadToast({
         </div>
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+          <h3 className="font-semibold text-foreground dark:text-gray-100 text-sm">
             ✅ {uploadedCount} foto{uploadedCount !== 1 ? 's' : ''} subida{uploadedCount !== 1 ? 's' : ''} exitosamente
           </h3>
           
           <div className="flex items-center gap-2 mt-1">
             {/* Event Badge */}
             {eventName && (
-              <Badge variant="outline" className="text-xs bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+              <Badge variant="outline" className="text-xs bg-muted dark:bg-gray-800 text-foreground dark:text-gray-300">
                 📸 {eventName}
               </Badge>
             )}
@@ -140,7 +140,7 @@ export default function PostUploadToast({
             variant="outline"
             size="sm"
             onClick={onTagNow}
-            className="flex-1 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+            className="flex-1 text-primary-700 dark:text-primary-300 border-primary-200 dark:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-950/20"
           >
             <TagIcon className="h-4 w-4 mr-2" />
             Etiquetar ahora
@@ -149,7 +149,7 @@ export default function PostUploadToast({
       </div>
 
       {/* Progress Summary */}
-      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-3 pt-3 border-t border-border dark:border-gray-700">
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
           <span>
             {uploadedCount} archivo{uploadedCount !== 1 ? 's' : ''} procesado{uploadedCount !== 1 ? 's' : ''}
@@ -163,7 +163,7 @@ export default function PostUploadToast({
         
         {hasQRDetection && (
           <div className="mt-2">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div className="w-full bg-muted dark:bg-gray-700 rounded-full h-1.5">
               <div 
                 className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
                 style={{ width: `${(qrDetection.auto_assigned / qrDetection.detected) * 100}%` }}

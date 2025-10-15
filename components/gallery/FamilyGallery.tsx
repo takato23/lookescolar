@@ -27,11 +27,11 @@ interface Photo {
 interface Subject {
   id: string;
   name: string;
-  grade_section: string;
-  event: {
-    name: string;
-    school_name: string;
-  };
+  grade_section?: string | null;
+  event?: {
+    name?: string | null;
+    school_name?: string | null;
+  } | null;
 }
 
 interface FamilyGalleryProps {
@@ -94,7 +94,7 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
     try {
       debugMigration('Loading family gallery', { targetPage, token: token.slice(0, 8) + '...' });
       
-      const response = await fetch(`/api/family/gallery-simple/${token}?page=${targetPage}&limit=60`);
+      const response = await fetch(`/api/family/gallery/${token}?page=${targetPage}&limit=60`);
 
       if (!response.ok) {
         const error = await response.json();
@@ -103,12 +103,60 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
         return;
       }
 
-      const data = await response.json();
-      const newPhotos = (data.photos || []) as Photo[];
+      const payload = await response.json();
+      const gallery = payload?.data?.gallery;
+
+      if (!gallery) {
+        setError(payload?.error || 'Galería no disponible');
+        setLoading(false);
+        return;
+      }
+
+      const newPhotos: Photo[] = (gallery.items || []).map((item: any) => ({
+        id: item.id,
+        filename: item.filename || 'foto',
+        preview_url:
+          item.signedUrl ||
+          item.previewUrl ||
+          item.downloadUrl ||
+          '/placeholder-image.svg',
+        size: item.size || 0,
+        width: (item.metadata as any)?.width || 0,
+        height: (item.metadata as any)?.height || 0,
+      }));
+
       setPhotos((prev) => (targetPage === 1 ? newPhotos : [...prev, ...newPhotos]));
-      setHasMore(Boolean(data.pagination?.has_more ?? (newPhotos.length >= 60)));
-      setPage(targetPage);
-      setSubject(data.subject);
+      setHasMore(Boolean(gallery.pagination?.hasMore));
+      setPage(gallery.pagination?.page ?? targetPage);
+      const subjectSource = gallery.subject ?? gallery.student ?? null;
+      const eventInfo = gallery.event
+        ? {
+            name: gallery.event.name ?? null,
+            school_name: (gallery.event as any).school_name ?? null,
+          }
+        : null;
+      const normalizedSubject: Subject | null = subjectSource
+        ? {
+            id: subjectSource.id,
+            name: subjectSource.name ?? 'Galería familiar',
+            grade_section:
+              [
+                (subjectSource as any).grade ?? null,
+                (subjectSource as any).section ?? null,
+              ]
+                .filter(Boolean)
+                .join(' ') || null,
+            event: eventInfo,
+          }
+        : eventInfo
+        ? {
+            id: gallery.token.token,
+            name: eventInfo.name ?? 'Galería',
+            grade_section: null,
+            event: eventInfo,
+          }
+        : null;
+      setSubject(normalizedSubject);
 
       // Cargar favoritos del localStorage
       const savedFavorites = localStorage.getItem(`favorites_${token}`);
@@ -279,9 +327,9 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
               <span className="text-green-700 font-semibold">{photos.length} fotos disponibles</span>
             </div>
             {selectedPhotos.size > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full">
-                <ShoppingCartIcon className="h-4 w-4 text-blue-600" />
-                <span className="font-semibold text-blue-600">{selectedPhotos.size} para comprar</span>
+              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 px-4 py-2 rounded-full">
+                <ShoppingCartIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <span className="font-semibold text-blue-600 dark:text-blue-400">{selectedPhotos.size} para comprar</span>
               </div>
             )}
             {favorites.size > 0 && (

@@ -112,19 +112,19 @@ function FolderNode({
 
   const getFolderIcon = () => {
     if (folder.event_id && folder.events) {
-      return <School className="h-4 w-4 text-blue-600" />;
+      return <School className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
     }
     if (isExpanded && hasChildren) {
-      return <FolderOpen className="h-4 w-4 text-blue-600" />;
+      return <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
     }
-    return <Folder className="h-4 w-4 text-gray-600" />;
+    return <Folder className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
   };
 
   return (
     <div>
       <div
         className={cn(
-          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100',
+          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted',
           isSelected && 'bg-blue-100 text-blue-900'
         )}
         style={{ marginLeft: indentWidth }}
@@ -262,7 +262,7 @@ export function FolderTree({
     photoCount: number;
     subfolderCount: number;
     hasSubfolders: boolean;
-  } | null>(null);
+  }> | null>(null);
 
   // Load children for a folder
   const loadFolderChildren = useCallback(async (folderId: string) => {
@@ -497,13 +497,13 @@ export function FolderTree({
       {/* Root/All Photos Option */}
       <div
         className={cn(
-          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-gray-100',
+          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted',
           selectedFolderId === null && 'bg-blue-100 text-blue-900'
         )}
         onClick={() => onFolderSelect(null)}
       >
         <div className="h-4 w-4" /> {/* Spacer for alignment */}
-        <Home className="h-4 w-4 text-gray-600" />
+        <Home className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         <span className="flex-1 text-sm font-medium">All Photos</span>
         <Button
           variant="ghost"
@@ -603,9 +603,9 @@ export function FolderTree({
           </DialogHeader>
 
           <div className="space-y-3 py-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Are you sure you want to delete the folder{' '}
-              <span className="font-semibold text-gray-900">
+              <span className="font-semibold text-foreground">
                 "{folderToDelete?.name}"
               </span>
               ?

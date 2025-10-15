@@ -14,18 +14,36 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import type { QualityIssue as WorkflowQualityIssue } from '@/lib/stores/event-workflow-store';
 
-interface QualityIssue {
-  id: string;
-  type: 'error' | 'warning' | 'info';
-  title: string;
-  description: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  category: 'photos' | 'data' | 'system' | 'user_experience';
-  timestamp: string;
-  actionRequired?: boolean;
-  autoFixable?: boolean;
-}
+type QualityIssue = WorkflowQualityIssue;
+
+const getSeverityColor = (severity: QualityIssue['severity']) => {
+  switch (severity) {
+    case 'critical':
+      return 'bg-red-100 text-red-800 border-red-200';
+    case 'high':
+      return 'bg-orange-100 text-orange-800 border-orange-200';
+    case 'medium':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    case 'low':
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    default:
+      return 'bg-muted text-foreground border-border';
+  }
+};
+
+const getIssueTone = (issue: QualityIssue): 'error' | 'warning' | 'info' => {
+  switch (issue.severity) {
+    case 'critical':
+    case 'high':
+      return 'error';
+    case 'medium':
+      return 'warning';
+    default:
+      return 'info';
+  }
+};
 
 type IssueIdHandler = (id: string) => void;
 
@@ -70,21 +88,6 @@ export function QualityAssurance({
     setLocalIssues((prev) => prev.filter((issue) => issue.id !== issueId));
   };
 
-  const getSeverityColor = (severity: QualityIssue['severity']) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
   const criticalIssues = localIssues.filter(
     (issue) => issue.severity === 'critical'
   );
@@ -126,7 +129,7 @@ export function QualityAssurance({
           <div className="py-8 text-center">
             <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-green-500" />
             <p className="text-lg font-medium text-green-700">¡Excelente!</p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               No se detectaron problemas de calidad
             </p>
           </div>
@@ -171,7 +174,7 @@ export function QualityAssurance({
             {/* Other Issues */}
             {otherIssues.length > 0 && (
               <div className="space-y-2">
-                <h4 className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <Info className="h-4 w-4" />
                   Otros ({otherIssues.length})
                 </h4>
@@ -199,25 +202,24 @@ interface IssueCardProps {
 }
 
 function IssueCard({ issue, onResolve, onDismiss }: IssueCardProps) {
+  const tone = getIssueTone(issue);
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="glass-label-ios26 rounded-lg border border-gray-200 p-3"
+      className="glass-label-ios26 rounded-lg border border-border p-3"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-1 items-start gap-3">
           <div className="mt-0.5">
-            {issue.type === 'error' && (
+            {tone === 'error' && (
               <AlertCircle className="h-4 w-4 text-red-500" />
             )}
-            {issue.type === 'warning' && (
+            {tone === 'warning' && (
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
             )}
-            {issue.type === 'info' && (
-              <Info className="h-4 w-4 text-blue-500" />
-            )}
+            {tone === 'info' && <Info className="h-4 w-4 text-blue-500" />}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -231,14 +233,16 @@ function IssueCard({ issue, onResolve, onDismiss }: IssueCardProps) {
               </Badge>
             </div>
 
-            <p className="text-muted-foreground mb-2 text-xs">
+            <p className="text-gray-500 dark:text-gray-400 mb-2 text-xs">
               {issue.description}
             </p>
 
-            <div className="text-muted-foreground flex items-center gap-3 text-xs">
+            <div className="text-gray-500 dark:text-gray-400 flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {new Date(issue.timestamp).toLocaleDateString()}
+                {issue.timestamp
+                  ? new Date(issue.timestamp).toLocaleDateString()
+                  : 'Sin fecha'}
               </span>
               <span className="capitalize">
                 {issue.category?.replace('_', ' ') || 'general'}
@@ -267,7 +271,7 @@ function IssueCard({ issue, onResolve, onDismiss }: IssueCardProps) {
             variant="ghost"
             size="sm"
             onClick={() => onDismiss(issue.id)}
-            className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
+            className="h-7 w-7 p-0 text-gray-400 hover:text-muted-foreground"
           >
             <X className="h-3 w-3" />
           </Button>
@@ -275,19 +279,4 @@ function IssueCard({ issue, onResolve, onDismiss }: IssueCardProps) {
       </div>
     </motion.div>
   );
-}
-
-function getSeverityColor(severity: QualityIssue['severity']) {
-  switch (severity) {
-    case 'critical':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'high':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'low':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
 }

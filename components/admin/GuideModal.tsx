@@ -56,7 +56,7 @@ export function GuideModal({
         aria-modal="true"
         aria-labelledby="guide-title"
         aria-describedby="guide-desc"
-        className="bg-card text-foreground shadow-3d border-border w-full max-w-lg rounded-2xl border p-6 outline-none"
+        className="bg-white dark:bg-gray-900 text-foreground shadow-3d border-border w-full max-w-lg rounded-2xl border p-6 outline-none"
       >
         <div className="mb-4 flex items-start justify-between">
           <h2 id="guide-title" className="text-xl font-bold">
@@ -72,32 +72,32 @@ export function GuideModal({
           </Button>
         </div>
 
-        <p id="guide-desc" className="text-muted-foreground mb-4 text-sm">
+        <p id="guide-desc" className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
           Te guiamos paso a paso. Elegí una acción para continuar.
         </p>
 
         <ol className="mb-6 grid list-decimal grid-cols-1 gap-3 pl-5">
           <li className="bg-muted/40 rounded-lg p-3">
             <div className="font-medium">Crear evento</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               Nombre del colegio y fecha
             </div>
           </li>
           <li className="bg-muted/40 rounded-lg p-3">
             <div className="font-medium">Subir fotos</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               Arrastrá o seleccioná archivos
             </div>
           </li>
           <li className="bg-muted/40 rounded-lg p-3">
             <div className="font-medium">Compartir enlaces/QR</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               Enviá el acceso a las familias
             </div>
           </li>
           <li className="bg-muted/40 rounded-lg p-3">
             <div className="font-medium">Revisar pedidos</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
               Ver ventas y pagos
             </div>
           </li>

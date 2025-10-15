@@ -27,7 +27,8 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter Variable', 'Inter', ...fontFamily.sans],
+        sans: ['var(--font-body)', 'Inter', ...fontFamily.sans],
+        display: ['var(--font-display)', 'Bricolage Grotesque', ...fontFamily.sans],
         mono: ['JetBrains Mono Variable', 'JetBrains Mono', ...fontFamily.mono],
       },
       fontSize: {
@@ -139,6 +140,51 @@ const config: Config = {
         'safe-right': 'env(safe-area-inset-right)',
       },
       colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          // Numeric shades added to support utility classes like bg-primary-700
+          '50': '#eef2ff',
+          '100': '#e0e7ff',
+          '200': '#c7d2fe',
+          '300': '#a5b4fc',
+          '400': '#818cf8',
+          '500': '#6366f1',
+          '600': '#4f46e5',
+          '700': '#4338ca',
+          '800': '#3730a3',
+          '900': '#312e81',
+          '950': '#1e1b4b',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
         // Apple-grade age-appropriate color systems
         kindergarten: {
           primary: 'hsl(45, 100%, 70%)',
@@ -154,45 +200,6 @@ const config: Config = {
           primary: 'hsl(220, 70%, 50%)',
           secondary: 'hsl(150, 60%, 45%)',
           accent: 'hsl(280, 60%, 55%)',
-        },
-        primary: {
-          '50': '#f0f4ff',
-          '100': '#e0e9ff',
-          '200': '#c7d6ff',
-          '300': '#a3b8ff',
-          '400': '#7c91ff',
-          '500': '#5b6fff',
-          '600': '#4c5bdb',
-          '700': '#3d47b7',
-          '800': '#2f3693',
-          '900': '#1f2470',
-          '950': '#141852',
-        },
-        secondary: {
-          '50': '#faf7ff',
-          '100': '#f4edff',
-          '200': '#ead7ff',
-          '300': '#dbb5ff',
-          '400': '#c588ff',
-          '500': '#ab5aff',
-          '600': '#9333ea',
-          '700': '#7c2dd6',
-          '800': '#6822b3',
-          '900': '#54188f',
-          '950': '#3d0f69',
-        },
-        accent: {
-          '50': '#fffef7',
-          '100': '#fffbeb',
-          '200': '#fef3c7',
-          '300': '#fde68a',
-          '400': '#facc15',
-          '500': '#eab308',
-          '600': '#ca8a04',
-          '700': '#a16207',
-          '800': '#854d0e',
-          '900': '#713f12',
-          '950': '#422006',
         },
         success: {
           '50': '#f0fdf4',
@@ -281,6 +288,8 @@ const config: Config = {
         md: '12px',
         lg: '24px',
         xl: '40px',
+        '2xl': '64px',
+        '3xl': '96px',
       },
       boxShadow: {
         glass: '0 8px 32px rgba(31, 38, 135, 0.37)',
@@ -320,6 +329,10 @@ const config: Config = {
         'spin-slow': 'spin 3s linear infinite',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'liquid': 'liquid 8s ease-in-out infinite',
+        'liquid-slow': 'liquid 12s ease-in-out infinite',
+        'frost': 'frost 10s ease-in-out infinite',
+        'blob': 'blob 7s infinite',
       },
       keyframes: {
         float: {
@@ -400,6 +413,48 @@ const config: Config = {
           },
           to: {
             height: '0',
+          },
+        },
+        liquid: {
+          '0%, 100%': {
+            transform: 'translateX(0%) translateY(0%) rotate(0deg) scale(1)',
+            borderRadius: '33% 67% 70% 30% / 30% 30% 70% 70%',
+          },
+          '25%': {
+            transform: 'translateX(2%) translateY(-2%) rotate(1deg) scale(1.01)',
+            borderRadius: '58% 42% 57% 43% / 53% 57% 43% 47%',
+          },
+          '50%': {
+            transform: 'translateX(-1%) translateY(1%) rotate(-1deg) scale(1.02)',
+            borderRadius: '50% 50% 33% 67% / 55% 27% 73% 45%',
+          },
+          '75%': {
+            transform: 'translateX(1%) translateY(2%) rotate(0.5deg) scale(1.01)',
+            borderRadius: '33% 67% 58% 42% / 63% 37% 63% 37%',
+          },
+        },
+        frost: {
+          '0%, 100%': {
+            filter: 'blur(0.5px)',
+            opacity: '0.9',
+          },
+          '50%': {
+            filter: 'blur(0px)',
+            opacity: '1',
+          },
+        },
+        blob: {
+          '0%': {
+            transform: 'translate(0px, 0px) scale(1)',
+          },
+          '33%': {
+            transform: 'translate(30px, -50px) scale(1.1)',
+          },
+          '66%': {
+            transform: 'translate(-20px, 20px) scale(0.9)',
+          },
+          '100%': {
+            transform: 'translate(0px, 0px) scale(1)',
           },
         },
       },

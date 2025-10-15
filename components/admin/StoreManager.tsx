@@ -141,10 +141,10 @@ export default function StoreManager({
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-foreground">
             Gestión de Tiendas
           </h2>
-          <p className="mt-1 text-gray-600">
+          <p className="mt-1 text-muted-foreground0 dark:text-muted-foreground">
             Administra las tiendas públicas para compartir fotos con familias
           </p>
         </div>
@@ -167,9 +167,9 @@ export default function StoreManager({
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Store className="h-8 w-8 text-blue-600" />
+                <Store className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-muted-foreground0 dark:text-muted-foreground">
                     Total Tiendas
                   </p>
                   <p className="text-2xl font-bold">{stores.length}</p>
@@ -182,7 +182,7 @@ export default function StoreManager({
               <div className="flex items-center">
                 <Eye className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-muted-foreground0 dark:text-muted-foreground">
                     Total Vistas
                   </p>
                   <p className="text-2xl font-bold">
@@ -197,7 +197,7 @@ export default function StoreManager({
               <div className="flex items-center">
                 <ImageIcon className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-muted-foreground0 dark:text-muted-foreground">
                     Total Fotos
                   </p>
                   <p className="text-2xl font-bold">
@@ -210,9 +210,9 @@ export default function StoreManager({
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Calendar className="h-8 w-8 text-orange-600" />
+                <Calendar className="h-8 w-8 text-primary-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Eventos</p>
+                  <p className="text-sm font-medium text-muted-foreground0 dark:text-muted-foreground">Eventos</p>
                   <p className="text-2xl font-bold">
                     {new Set(stores.map((store) => store.event_id)).size}
                   </p>
@@ -227,11 +227,11 @@ export default function StoreManager({
       {stores.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <Store className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="mb-2 text-lg font-medium text-gray-900">
+            <Store className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-medium text-foreground">
               No hay tiendas publicadas
             </h3>
-            <p className="mb-4 text-gray-500">
+            <p className="mb-4 text-muted-foreground0">
               Crea tu primera tienda para compartir fotos con las familias
             </p>
             <CreateStoreDialog
@@ -301,9 +301,9 @@ function StoreCard({
             <CardTitle className="text-lg">
               {store.store_settings.store_title || store.folder_name}
             </CardTitle>
-            <p className="mt-1 text-sm text-gray-600">{store.event_name}</p>
+            <p className="mt-1 text-sm text-muted-foreground0 dark:text-muted-foreground">{store.event_name}</p>
             {store.event_date && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground0">
                 {new Date(store.event_date).toLocaleDateString('es-ES')}
               </p>
             )}
@@ -315,16 +315,16 @@ function StoreCard({
       <CardContent>
         <div className="mb-4 grid grid-cols-2 gap-4">
           <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600">
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {store.view_count}
             </p>
-            <p className="text-xs text-gray-500">Vistas</p>
+            <p className="text-xs text-muted-foreground0">Vistas</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-purple-600">
               {store.asset_count}
             </p>
-            <p className="text-xs text-gray-500">Fotos</p>
+            <p className="text-xs text-muted-foreground0">Fotos</p>
           </div>
         </div>
 
@@ -398,7 +398,7 @@ function CreateStoreDialog({
           <DialogTitle>Crear Nueva Tienda</DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground0 dark:text-muted-foreground">
             Funcionalidad en desarrollo. Por ahora puedes publicar carpetas
             individualmente desde la gestión de eventos.
           </p>
@@ -438,14 +438,14 @@ function StoreSettingsDialog({
           <DialogTitle>Configurar Tienda</DialogTitle>
         </DialogHeader>
         <div className="py-4">
-          <p className="text-gray-600">
+          <p className="text-muted-foreground0 dark:text-muted-foreground">
             Configuración de tienda en desarrollo.
           </p>
-          <div className="mt-4 rounded-lg bg-gray-50 p-4">
+          <div className="mt-4 rounded-lg bg-muted p-4">
             <h4 className="mb-2 font-medium">Tienda: {store.folder_name}</h4>
-            <p className="text-sm text-gray-600">Token: {store.share_token}</p>
-            <p className="text-sm text-gray-600">Vistas: {store.view_count}</p>
-            <p className="text-sm text-gray-600">Fotos: {store.asset_count}</p>
+            <p className="text-sm text-muted-foreground0 dark:text-muted-foreground">Token: {store.share_token}</p>
+            <p className="text-sm text-muted-foreground0 dark:text-muted-foreground">Vistas: {store.view_count}</p>
+            <p className="text-sm text-muted-foreground0 dark:text-muted-foreground">Fotos: {store.asset_count}</p>
           </div>
         </div>
         <DialogFooter>

@@ -18,7 +18,7 @@ export interface CartItem {
   };
 }
 
-interface ContactInfo {
+export interface ContactInfo {
   name: string;
   email: string;
   phone: string;
@@ -47,6 +47,8 @@ interface UnifiedCartStore {
 
   // Contexto
   setContext: (context: GalleryContextData) => void;
+  setEventId: (eventId: string | null) => void;
+  getEventId: () => string | null;
 
   // Cálculos
   getTotalItems: () => number;
@@ -166,6 +168,25 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
         });
 
         set({ context });
+      },
+
+      setEventId: (eventId) => {
+        if (!eventId) {
+          return;
+        }
+
+        debugMigration('Updating eventId in unified cart store', { eventId });
+
+        set((state) => ({
+          context: state.context
+            ? { ...state.context, eventId }
+            : { context: 'public', eventId },
+        }));
+      },
+
+      getEventId: () => {
+        const ctx = get().context;
+        return ctx?.eventId ?? null;
       },
 
       // Cálculos

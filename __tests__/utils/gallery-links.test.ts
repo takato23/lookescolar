@@ -55,13 +55,13 @@ describe('Gallery Links Utility', () => {
   });
 
   describe('generateQRLink', () => {
-    it('should generate correct QR API endpoint', () => {
+    it('should generate access route for QR scanning', () => {
       const result = generateQRLink(
         '4ecebc495344b51b5b3cae049d27edd2',
         'http://localhost:3002'
       );
       expect(result).toBe(
-        'http://localhost:3002/api/qr?token=4ecebc495344b51b5b3cae049d27edd2'
+        'http://localhost:3002/access?token=4ecebc495344b51b5b3cae049d27edd2'
       );
     });
   });

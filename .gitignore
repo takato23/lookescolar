@@ -27,3 +27,15 @@ dist-ssr
 *.sln
 *.sw?
 /dist
+
+# Archive folder - local backups only
+/archive/
+# Backup files and folders - local only
+backup*/
+backups/
+*.backup*
+.vercel
+
+# Env files
+.env*
+!.env*.example

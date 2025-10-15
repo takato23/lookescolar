@@ -15,6 +15,12 @@ interface Subject {
   created_at: string | null;
 }
 
+type NewSubjectPayload = {
+  name: string;
+  grade: string | null;
+  event_id: string;
+};
+
 interface FormData {
   name: string;
   grade: string;
@@ -194,7 +200,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
         return;
       }
       
-      const subjectsToAdd = lines.map((line, index) => {
+      const subjectsToAdd: NewSubjectPayload[] = lines.map((line, index) => {
         const [name, grade] = line.split(',').map(s => s.trim());
         
         if (!name) {
@@ -210,7 +216,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
 
       // Process in batches to avoid overwhelming the server
       const batchSize = 10;
-      const batches = [];
+      const batches: NewSubjectPayload[][] = [];
       
       for (let i = 0; i < subjectsToAdd.length; i += batchSize) {
         batches.push(subjectsToAdd.slice(i, i + batchSize));

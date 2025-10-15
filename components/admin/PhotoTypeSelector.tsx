@@ -63,7 +63,7 @@ export function PhotoTypeSelector({
             variant={selectedType === type ? 'default' : 'outline'}
             size="sm"
             onClick={() => onTypeChange(type)}
-            className={` ${selectedType === type ? selectedColor : 'hover:bg-gray-50'} transition-all duration-200`}
+            className={` ${selectedType === type ? selectedColor : 'hover:bg-muted'} transition-all duration-200`}
           >
             <span className="mr-1">{emoji}</span>
             <span className="hidden sm:inline">{title}</span>
@@ -77,8 +77,8 @@ export function PhotoTypeSelector({
   return (
     <div className={`space-y-3 ${className}`}>
       <div className="flex items-center gap-2">
-        <Camera className="h-4 w-4 text-gray-600" />
-        <h4 className="text-sm font-semibold text-gray-800">Tipo de Fotos</h4>
+        <Camera className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <h4 className="text-sm font-semibold text-foreground">Tipo de Fotos</h4>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -98,7 +98,7 @@ export function PhotoTypeSelector({
               className={`cursor-pointer border-2 transition-all duration-200 ${
                 selectedType === type
                   ? selectedColor
-                  : `hover:shadow-md ${buttonColor} border-gray-200`
+                  : `hover:shadow-md ${buttonColor} border-border`
               } `}
               onClick={() => onTypeChange(type)}
             >
@@ -110,7 +110,7 @@ export function PhotoTypeSelector({
                   </div>
                   <div>
                     <h5 className="text-sm font-semibold">{title}</h5>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
                       {description}
                     </p>
                   </div>
@@ -130,9 +130,9 @@ export function PhotoTypeSelector({
       </div>
 
       {/* Info Panel */}
-      <Card className="border-blue-200 bg-blue-50/50">
+      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50">
         <CardContent className="p-3">
-          <div className="flex items-start gap-2 text-xs text-blue-700">
+          <div className="flex items-start gap-2 text-xs text-blue-700 dark:text-blue-300">
             <div className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-blue-200">
               <span className="text-[10px]">ℹ</span>
             </div>

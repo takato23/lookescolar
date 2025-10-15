@@ -3,9 +3,9 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // GET /api/public/gallery/[token]
-export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
   try {
-    const token = (await params).token;
+    const token = (params).token;
 
     // Validate token format
     if (!token || token.length !== 32) {

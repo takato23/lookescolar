@@ -142,23 +142,23 @@ export function TaggingHelp() {
           <div className="max-h-96 overflow-y-auto p-6">
             {activeTab === 'shortcuts' && (
               <div className="space-y-4">
-                <div className="mb-4 text-gray-600">
+                <div className="mb-4 text-gray-500 dark:text-gray-400">
                   Usa estos atajos de teclado para hacer el tagging más rápido:
                 </div>
 
                 {shortcuts.map((shortcut, index) => (
                   <div
                     key={index}
-                    className="flex items-center space-x-4 rounded-lg bg-gray-50 p-3"
+                    className="flex items-center space-x-4 rounded-lg bg-muted p-3"
                   >
                     <div className="text-2xl">{shortcut.icon}</div>
                     <div className="flex-1">
                       <div className="mb-1 flex items-center space-x-2">
-                        <span className="rounded bg-gray-200 px-2 py-1 font-mono text-sm font-medium text-gray-700">
+                        <span className="rounded bg-muted px-2 py-1 font-mono text-sm font-medium text-foreground">
                           {shortcut.keys}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
                         {shortcut.description}
                       </div>
                     </div>
@@ -169,7 +169,7 @@ export function TaggingHelp() {
 
             {activeTab === 'tips' && (
               <div className="space-y-4">
-                <div className="mb-4 text-gray-600">
+                <div className="mb-4 text-gray-500 dark:text-gray-400">
                   Consejos para hacer el tagging de manera más eficiente:
                 </div>
 
@@ -181,10 +181,10 @@ export function TaggingHelp() {
                     <div className="flex items-start space-x-3">
                       <div className="text-2xl">{tip.icon}</div>
                       <div>
-                        <h3 className="mb-2 font-medium text-gray-800">
+                        <h3 className="mb-2 font-medium text-foreground">
                           {tip.title}
                         </h3>
-                        <p className="text-sm leading-relaxed text-gray-600">
+                        <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-400">
                           {tip.description}
                         </p>
                       </div>
@@ -196,7 +196,7 @@ export function TaggingHelp() {
           </div>
 
           {/* Footer */}
-          <div className="bg-gray-50 px-6 py-4">
+          <div className="bg-muted px-6 py-4">
             <div className="text-center text-sm text-gray-500">
               <span className="inline-flex items-center">
                 💡 Tip: Este panel se puede abrir en cualquier momento con el

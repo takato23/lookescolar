@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { signedUrlForKey } from '@/lib/storage/signedUrl';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 
 // GET /admin/previews/[filename] -> 302 redirect to signed URL in Storage
 // Small in-memory caches to avoid repeated expensive lookups in dev
@@ -24,9 +25,9 @@ function shouldDebug(req: NextRequest) {
   );
 }
 
-export const GET = withAdminAuth(async (req: NextRequest, { params }: { params: Promise<{ filename: string }> }) => {
+export const GET = withAdminAuth(async (req: NextRequest, { params }: { params: { filename: string } }) => {
   try {
-    const { filename } = await params;
+    const { filename } = params;
     if (!filename || !/\.(png|jpg|jpeg|webp|gif)$/i.test(filename)) {
       return new NextResponse('Invalid preview filename', { status: 400 });
     }
@@ -73,6 +74,11 @@ export const GET = withAdminAuth(async (req: NextRequest, { params }: { params: 
     }
 
     // First, try to find the asset in database to get the correct path
+    type AssetPreviewRow = Pick<
+      Database['public']['Tables']['assets']['Row'],
+      'preview_path' | 'original_path' | 'filename'
+    >;
+
     const dbFoundPaths: string[] = [];
     try {
       const supabase = await createServerSupabaseServiceClient();
@@ -83,7 +89,8 @@ export const GET = withAdminAuth(async (req: NextRequest, { params }: { params: 
         .limit(5);
 
       if (!dbError && assets && assets.length > 0) {
-        for (const asset of assets) {
+        const assetRows = assets as AssetPreviewRow[];
+        for (const asset of assetRows) {
           if (asset.preview_path) dbFoundPaths.push(asset.preview_path);
           // Do NOT push original_path; we only serve previews in this endpoint
         }
@@ -109,7 +116,7 @@ export const GET = withAdminAuth(async (req: NextRequest, { params }: { params: 
       )
     );
 
-    let signedUrl = null;
+    let signedUrl: string | null = null;
     let lastError = null;
 
     // Try each possible key until we find one that works

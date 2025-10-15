@@ -1,39 +1,59 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default function UnifiedGalleryRedirect() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+function firstValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) return value[0];
+  return value ?? undefined;
+}
 
-  useEffect(() => {
-    // Build the unified photos URL with filters
-    const params = new URLSearchParams();
+function alignParam(params: URLSearchParams, canonical: string, legacy: string) {
+  const value = params.get(canonical) ?? params.get(legacy);
+  if (!value) return;
+  params.set(canonical, value);
+  params.set(legacy, value);
+}
 
-    // Pass through any existing query parameters as filters
-    const eventId = searchParams?.get('eventId');
-    const levelId = searchParams?.get('levelId');
-    const courseId = searchParams?.get('courseId');
-    const studentId = searchParams?.get('studentId');
+export default function UnifiedGalleryRedirect({
+  searchParams,
+}: {
+  searchParams?: SearchParams;
+}) {
+  const merged = new URLSearchParams();
 
-    if (eventId) params.set('event_id', eventId);
-    if (levelId) params.set('folder_id', levelId); // levels map to folders
-    if (courseId) params.set('folder_id', courseId); // courses map to folders
-    if (studentId) params.set('student_id', studentId);
+  if (searchParams) {
+    for (const [key, rawValue] of Object.entries(searchParams)) {
+      const value = firstValue(rawValue);
+      if (value) {
+        merged.set(key, value);
+      }
+    }
+  }
 
-    // Redirect to unified photos interface with appropriate filters
-    const unifiedUrl = `/admin/photos${params.toString() ? `?${params.toString()}` : ''}`;
-    router.replace(unifiedUrl);
-  }, [router, searchParams]);
+  // Map existing filters to the unified PhotoAdmin casing
+  const eventId = merged.get('eventId') ?? merged.get('event_id');
+  if (eventId) {
+    merged.set('eventId', eventId);
+    merged.set('event_id', eventId);
+  }
 
-  // Loading state while redirecting
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
-        <p className="text-gray-600">Redirecting to unified photo system...</p>
-      </div>
-    </div>
-  );
+  const folderFallback =
+    merged.get('folderId') ??
+    merged.get('folder_id') ??
+    merged.get('levelId') ??
+    merged.get('level_id') ??
+    merged.get('courseId') ??
+    merged.get('course_id');
+
+  if (folderFallback) {
+    merged.set('folderId', folderFallback);
+    merged.set('folder_id', folderFallback);
+  }
+
+  alignParam(merged, 'studentId', 'student_id');
+  alignParam(merged, 'codeId', 'code_id');
+  alignParam(merged, 'subjectId', 'subject_id');
+
+  const qs = merged.toString();
+  redirect(`/admin/photos${qs ? `?${qs}` : ''}`);
 }

@@ -9,10 +9,10 @@ import { shareTokenSecurity } from '@/lib/security/share-token-security';
 // - Dev bypass via ALLOW_DEV_BYPASS
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ token: string; assetId: string }> }
+  { params }: { params: { token: string; assetId: string } }
 ) {
   try {
-    const { token, assetId } = await params;
+    const { token, assetId } = params;
     if (!token || !assetId) {
       return NextResponse.json({ success: false, error: 'Invalid params' }, { status: 400 });
     }
