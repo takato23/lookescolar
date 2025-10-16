@@ -18,11 +18,34 @@ import { uploadToStorage } from '@/lib/services/storage';
 import { SecurityValidator } from '@/lib/security/validation';
 import sharp from 'sharp';
 
+vi.hoisted(() => {
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'https://example.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY ??= 'service-role-key';
+  process.env.SUPABASE_ANON_KEY ??= 'anon-key';
+  return {};
+});
+
 // Mock de todos los servicios
 vi.mock('@/lib/supabase/server');
 vi.mock('@/lib/services/watermark');
 vi.mock('@/lib/services/storage');
 vi.mock('@/lib/security/validation');
+const optimizerMocks = vi.hoisted(() => ({
+  processForFreeTier: vi.fn(),
+}));
+vi.mock('@/lib/services/free-tier-optimizer', () => ({
+  FreeTierOptimizer: {
+    processForFreeTier: optimizerMocks.processForFreeTier,
+  },
+}));
+const qrMocks = vi.hoisted(() => ({
+  detectQRCodesInImage: vi.fn(async () => []),
+}));
+vi.mock('@/lib/services/qr-detection.service', () => ({
+  qrDetectionService: {
+    detectQRCodesInImage: qrMocks.detectQRCodesInImage,
+  },
+}));
 
 const mockSupabaseClient = {
   from: vi.fn(() => ({
@@ -133,6 +156,16 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    optimizerMocks.processForFreeTier.mockReset();
+    optimizerMocks.processForFreeTier.mockResolvedValue({
+      processedBuffer: Buffer.from('default-processed'),
+      finalDimensions: { width: 800, height: 600 },
+      actualSizeKB: 42,
+      compressionLevel: 1,
+    });
+    qrMocks.detectQRCodesInImage.mockReset();
+    qrMocks.detectQRCodesInImage.mockResolvedValue([]);
+
     // Setup mocks por defecto
     (createServerSupabaseClient as any).mockResolvedValue(mockSupabaseClient);
     (createServerSupabaseServiceClient as any).mockResolvedValue(
@@ -201,6 +234,16 @@ describe('/api/admin/photos/upload - Comprehensive Tests', () => {
         })),
       })),
     });
+
+    (mockSupabaseServiceClient as any).storage = {
+      from: vi.fn(() => ({
+        upload: vi.fn().mockResolvedValue({
+          data: { path: 'events/test-event/uploads/test.webp' },
+          error: null,
+        }),
+        remove: vi.fn().mockResolvedValue({ data: null, error: null }),
+      })),
+    };
   });
 
   afterEach(() => {

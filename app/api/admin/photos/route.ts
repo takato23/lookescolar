@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -91,19 +91,41 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
     }
 
     // MEMORY OPTIMIZATION: Simplified query, fetch subjects separately if needed
-    const buildBaseQuery = () => serviceClient
-      .from('assets')
-      .select(
-        `id, folder_id, filename, original_path, preview_path, watermark_path, file_size, created_at, status`,
-        { count: 'exact' }
-      );
+    const selectColumns = `
+      id,
+      folder_id,
+      filename,
+      original_path,
+      storage_path,
+      preview_path,
+      watermark_path,
+      file_size,
+      mime_type,
+      status,
+      created_at,
+      metadata,
+      folders!inner(
+        id,
+        event_id,
+        path
+      )
+    `;
+
+    const buildBaseQuery = () =>
+      serviceClient
+        .from('assets')
+        .select(selectColumns, { count: 'exact' });
+
     let query = buildBaseQuery();
-    
-    // Only filter by folder_id if provided (replacing event_id logic)
+
     if (eventId) {
-      // For now, we'll skip the event_id filter and show all assets
-      // TODO: Need to join with folders table to filter by event_id
-      // query = query.eq('folder_id', eventId);
+      query = query.eq('folders.event_id', eventId);
+    }
+
+    if (codeId === 'null') {
+      query = query.is('folder_id', null);
+    } else if (codeId) {
+      query = query.eq('folder_id', codeId);
     }
     // Note: assets table doesn't have code_id or approved columns
     // These filters are temporarily disabled until we map the proper structure
@@ -148,39 +170,8 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
     query = query.range(parsedOffset, parsedOffset + parsedLimit - 1);
 
     const queryStartTime = Date.now();
-    let { data: photos, error, count } = await query;
+    const { data: photos, error, count } = await query;
     const queryDuration = Date.now() - queryStartTime;
-
-    // Fallback: if schema lacks code_id (legacy), retry without code filter instead of 500
-    if (error && codeId) {
-      const message = (error as any)?.message || '';
-      const details = JSON.stringify(error);
-      if (/code_id/i.test(message) || /code_id/i.test(details)) {
-        try {
-          let fallback = buildBaseQuery();
-          if (eventId) fallback = fallback.eq('event_id', eventId);
-          if (approved === 'true') {
-            fallback = fallback.eq('approved', true);
-          } else if (approved === 'false') {
-            fallback = fallback.eq('approved', false);
-          }
-          if (search) fallback = fallback.ilike('original_filename', `%${search}%`);
-          if (dateFrom) fallback = fallback.gte('created_at', dateFrom);
-          if (dateTo) fallback = fallback.lte('created_at', dateTo);
-          const validSortColumns = ['created_at', 'original_filename'];
-          const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'created_at';
-          const ascending = sortOrder === 'asc';
-          fallback = fallback.order(sortColumn, { ascending });
-          fallback = fallback.range(parsedOffset, parsedOffset + parsedLimit - 1);
-          const rerun = await fallback;
-          photos = rerun.data as any;
-          count = (rerun as any).count as any;
-          error = null as any;
-        } catch (_) {
-          // keep original error
-        }
-      }
-    }
 
     if (error) {
       console.error('Error fetching photos:', error);
@@ -203,6 +194,18 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
 
     // MEMORY OPTIMIZATION: Process assets efficiently with conditional preview URL generation  
     let processedPhotos = await Promise.all((photos || []).map(async (asset: any) => {
+      const folderInfo = Array.isArray(asset.folders)
+        ? asset.folders[0]
+        : asset.folders;
+      const derivedEventId =
+        folderInfo && typeof folderInfo.event_id === 'string'
+          ? folderInfo.event_id
+          : null;
+      const storagePath =
+        asset.original_path ??
+        asset.storage_path ??
+        null;
+
       // Generate preview URL conditionally based on request size to avoid OOM
       let preview_url = null;
       
@@ -222,16 +225,19 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
       // Map assets table fields to photos API response format
       return {
         id: asset.id,
-        event_id: null, // assets table uses folder_id instead
+        event_id: derivedEventId,
         folder_id: asset.folder_id,
         filename: asset.filename,
         original_filename: asset.filename, // Map filename to original_filename for compatibility
-        storage_path: asset.original_path, // Map original_path to storage_path for compatibility
-        original_path: asset.original_path,
+        storage_path: storagePath,
+        original_path: asset.original_path ?? null,
         preview_path: asset.preview_path ?? null,
         watermark_path: asset.watermark_path ?? null, // Include watermark_path for fallback
         preview_url,
-        approved: true, // Default to approved since assets table doesn't have this field yet
+        approved:
+          asset.metadata && typeof asset.metadata?.approved === 'boolean'
+            ? asset.metadata.approved
+            : true,
         created_at: asset.created_at,
         file_size: asset.file_size ?? null,
         width: null, // Not in current assets schema
@@ -239,6 +245,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
         subjects: [], // Empty for now to save memory - can be loaded separately if needed
         tagged: false, // Simplified for memory - can be enhanced later
         status: asset.status || 'ready', // Include status from assets table
+        metadata: asset.metadata ?? null,
       };
     }));
 
@@ -349,6 +356,7 @@ async function handleDELETE(
     }
 
     let photoIds: string[] = [];
+    let assetsToDelete: any[] | null = null;
     let targetEventId: string | null = null;
     const supabase = await createServerSupabaseServiceClient();
 
@@ -360,33 +368,42 @@ async function handleDELETE(
       // Mode 2: Delete by filter (eventId + codeId)
       const { eventId, codeId } = validation.data;
       targetEventId = eventId;
-      
-      // Build query to get photo IDs by filter
+
+      // Build query to get asset IDs by filter
       let query = supabase
-        .from('photos')
-        .select('id')
-        .eq('event_id', eventId);
-      
-      // Handle codeId filter
+        .from('assets')
+        .select(
+          `
+          id,
+          folder_id,
+          original_path,
+          storage_path,
+          preview_path,
+          watermark_path,
+          folders!inner(
+            event_id
+          )
+        `
+        )
+        .eq('folders.event_id', eventId);
+
       if (codeId === 'null') {
-        // Photos without folder (null code_id)
-        query = query.is('code_id', null);
+        query = query.is('folder_id', null);
       } else {
-        // Photos in specific folder
-        query = query.eq('code_id', codeId);
+        query = query.eq('folder_id', codeId);
       }
-      
-      const { data: photosToDelete, error: queryError } = await query;
-      
+
+      const { data: records, error: queryError } = await query;
+
       if (queryError) {
-        console.error('Error querying photos by filter:', queryError);
+        console.error('Error querying assets by filter:', queryError);
         return NextResponse.json(
           { error: 'Error finding photos to delete' },
           { status: 500 }
         );
       }
-      
-      if (!photosToDelete || photosToDelete.length === 0) {
+
+      if (!records || records.length === 0) {
         // No photos match the filter - return success with 0 deleted
         return NextResponse.json({
           success: true,
@@ -394,8 +411,8 @@ async function handleDELETE(
           deleted: 0,
         });
       }
-      
-      photoIds = photosToDelete.map(p => p.id);
+      assetsToDelete = records;
+      photoIds = records.map((p) => p.id);
     }
 
     SecurityLogger.logSecurityEvent(
@@ -411,21 +428,36 @@ async function handleDELETE(
 
     // Reuse previously created supabase service client
 
-    // Obtener paths de las fotos para borrar del storage
-    const { data: photos, error: fetchError } = await supabase
-      .from('photos')
-      .select('id, event_id, storage_path, preview_path')
-      .in('id', photoIds);
+    if (!assetsToDelete) {
+      const { data, error: fetchError } = await supabase
+        .from('assets')
+        .select(
+          `
+          id,
+          folder_id,
+          original_path,
+          storage_path,
+          preview_path,
+          watermark_path,
+          folders(
+            event_id
+          )
+        `
+        )
+        .in('id', photoIds);
 
-    if (fetchError) {
-      console.error('Error obteniendo fotos:', fetchError);
-      return NextResponse.json(
-        { error: 'Error obteniendo fotos' },
-        { status: 500 }
-      );
+      if (fetchError) {
+        console.error('Error obteniendo assets:', fetchError);
+        return NextResponse.json(
+          { error: 'Error obteniendo fotos' },
+          { status: 500 }
+        );
+      }
+
+      assetsToDelete = data ?? [];
     }
 
-    if (!photos || photos.length === 0) {
+    if (!assetsToDelete || assetsToDelete.length === 0) {
       return NextResponse.json(
         { error: 'No photos found for the provided identifiers' },
         { status: 404 }
@@ -433,8 +465,13 @@ async function handleDELETE(
     }
 
     const eventIds = new Set(
-      photos
-        .map((photo) => photo.event_id)
+      assetsToDelete
+        .map((asset: any) => {
+          const folderInfo = Array.isArray(asset.folders)
+            ? asset.folders[0]
+            : asset.folders;
+          return folderInfo?.event_id ?? null;
+        })
         .filter((id): id is string => typeof id === 'string' && id.length > 0)
     );
 
@@ -476,68 +513,76 @@ async function handleDELETE(
       }
     }
 
-    // Validate and collect paths to delete
-    const filesToDelete: string[] = [];
-    photos?.forEach((photo) => {
-      if (
-        photo.storage_path &&
-        SecurityValidator.isValidStoragePath(photo.storage_path)
-      ) {
-        filesToDelete.push(photo.storage_path);
+    const bucketGroups = new Map<string, Set<string>>();
+    const ORIGINAL_BUCKET =
+      process.env['STORAGE_BUCKET_ORIGINAL'] ||
+      process.env['STORAGE_BUCKET'] ||
+      'photo-private';
+    const PREVIEW_BUCKET =
+      process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
+
+    const normalizePath = (raw: string | null | undefined) => {
+      if (!raw || !SecurityValidator.isValidStoragePath(raw)) {
+        return null;
       }
-      if (
-        photo.preview_path &&
-        SecurityValidator.isValidStoragePath(photo.preview_path)
-      ) {
-        filesToDelete.push(photo.preview_path);
+      let normalized = raw.replace(/^\/+/, '').trim();
+      if (!normalized) return null;
+      const segments = normalized.split('/');
+      let bucket: string | null = null;
+      if (segments[0] === PREVIEW_BUCKET || segments[0] === ORIGINAL_BUCKET) {
+        bucket = segments.shift() || null;
+        normalized = segments.join('/');
       }
+      if (!bucket) {
+        if (
+          /(previews|uploads|thumbnails|watermark)/i.test(normalized)
+        ) {
+          bucket = PREVIEW_BUCKET;
+        } else {
+          bucket = ORIGINAL_BUCKET;
+        }
+      }
+      if (!bucket || !normalized) {
+        return null;
+      }
+      return { bucket, key: normalized };
+    };
+
+    const resolvedAssets = assetsToDelete ?? [];
+
+    resolvedAssets.forEach((asset: any) => {
+      [
+        asset.original_path,
+        asset.storage_path,
+        asset.preview_path,
+        asset.watermark_path,
+      ].forEach((maybePath) => {
+        const resolved = normalizePath(maybePath);
+        if (!resolved) return;
+        const existing = bucketGroups.get(resolved.bucket) ?? new Set<string>();
+        existing.add(resolved.key);
+        bucketGroups.set(resolved.bucket, existing);
+      });
     });
 
-    // Borrar archivos del storage, respetando el bucket correcto
-    if (filesToDelete.length > 0) {
-      const ORIGINAL_BUCKET = process.env['STORAGE_BUCKET_ORIGINAL'] || process.env['STORAGE_BUCKET'] || 'photo-private';
-      const PREVIEW_BUCKET = process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
-
-      const originals: string[] = [];
-      const previews: string[] = [];
-
-      for (const path of filesToDelete) {
-        if ((/(^|\/)previews\//.test(path)) || /watermark/i.test(path)) {
-          previews.push(path);
-        } else {
-          originals.push(path);
-        }
-      }
-
-      // Remove previews
-      if (previews.length > 0) {
-        const { error: storageErrorPrev } = await supabase.storage
-          .from(PREVIEW_BUCKET)
-          .remove(previews);
-        if (storageErrorPrev) {
-          console.error('Error borrando previews del storage:', storageErrorPrev);
-        }
-      }
-
-      // Remove originals
-      if (originals.length > 0) {
-        const { error: storageErrorOrig } = await supabase.storage
-          .from(ORIGINAL_BUCKET)
-          .remove(originals);
-        if (storageErrorOrig) {
-          console.error('Error borrando originales del storage:', storageErrorOrig);
-        }
+    for (const [bucket, keys] of bucketGroups) {
+      if (keys.size === 0) continue;
+      const { error: storageError } = await supabase.storage
+        .from(bucket)
+        .remove(Array.from(keys));
+      if (storageError) {
+        console.error(`Error borrando archivos del bucket ${bucket}:`, storageError);
       }
     }
 
     // Borrar registros de la DB
     const { error: deleteError } = await supabase
-      .from('photos')
+      .from('assets')
       .delete()
       .in('id', photoIds);
 
     if (deleteError) {
-      console.error('Error borrando fotos de la DB:', deleteError);
+      console.error('Error borrando assets de la DB:', deleteError);
       return NextResponse.json(
         { error: 'Error borrando fotos' },
         { status: 500 }

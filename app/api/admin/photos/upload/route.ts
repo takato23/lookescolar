@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -265,7 +265,19 @@ export const POST = RateLimitMiddleware.withRateLimit(
       }
 
       // Process all images with FreeTierOptimizer (no original storage)
-      const processedImages = [];
+      const processedImages: Array<{
+        buffer: Buffer;
+        originalName: string;
+        width: number;
+        height: number;
+        actualSizeKB: number;
+        compressionLevel: number;
+        originalSize: number;
+        source: {
+          buffer: Buffer;
+          file: File;
+        };
+      }> = [];
       const processingErrors = [];
 
       for (const imageBuffer of imageBuffers) {
@@ -304,6 +316,10 @@ export const POST = RateLimitMiddleware.withRateLimit(
             actualSizeKB: optimizedResult.actualSizeKB,
             compressionLevel: optimizedResult.compressionLevel,
             originalSize: imageBuffer.file.size,
+            source: {
+              buffer: imageBuffer.buffer,
+              file: imageBuffer.file,
+            },
           });
         } catch (error: any) {
           processingErrors.push({
@@ -322,8 +338,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       );
 
       // Upload processed images to storage (only previews, no originals)
-      for (let i = 0; i < processedImages.length; i++) {
-        const processed = processedImages[i];
+      for (const processed of processedImages) {
         const originalName = processed.originalName;
 
         try {
@@ -371,7 +386,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
           try {
             const qrSvc = await getQrService();
             const qrResults = await qrSvc.detectQRCodesInImage(
-              imageBuffers[i].buffer,
+              processed.source.buffer,
               eventId,
               {
                 maxWidth: 1920,

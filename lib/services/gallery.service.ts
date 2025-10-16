@@ -465,7 +465,7 @@ class GalleryService {
       throw new GalleryServiceError('db_error', 'No se pudo cargar la galería', 500);
     }
 
-    let assetRows = Array.isArray(data) ? data : [];
+    const assetRows = Array.isArray(data) ? data : [];
 
     let items = await this.mapAssetRows(assetRows, { allowDownload });
     let total = typeof count === 'number' ? count : items.length;
@@ -653,23 +653,39 @@ class GalleryService {
   ): Promise<GalleryAsset[]> {
     return Promise.all(
       rows.map(async (row: any) => {
-        const previewUrl =
+        const publicPreview =
           this.resolvePublicUrl(row?.watermark_path) ||
-          this.resolvePublicUrl(row?.preview_path);
-        const signedPreview = await this.safeSignedUrl(
-          row?.watermark_path || row?.preview_path || row?.original_path,
-          { quietMissing: true }
-        );
-        const downloadUrl = options.allowDownload
-          ? await this.safeSignedUrl(row?.original_path || row?.storage_path, {
+          this.resolvePublicUrl(row?.preview_path) ||
+          this.resolvePublicUrl(row?.storage_path);
+        const previewKey =
+          row?.watermark_path ||
+          row?.preview_path ||
+          row?.original_path ||
+          row?.storage_path;
+        const signedPreview = previewKey
+          ? await this.safeSignedUrl(previewKey, {
               quietMissing: true,
             })
           : null;
+        const previewUrl = publicPreview ?? signedPreview;
+
+        let downloadUrl: string | null = null;
+        if (options.allowDownload) {
+          const publicDownload =
+            this.resolvePublicUrl(row?.storage_path) ||
+            this.resolvePublicUrl(row?.original_path);
+          const signedDownload = row?.original_path || row?.storage_path
+            ? await this.safeSignedUrl(row?.original_path || row?.storage_path, {
+                quietMissing: true,
+              })
+            : null;
+          downloadUrl = publicDownload ?? signedDownload;
+        }
 
         return {
           id: row?.id,
           filename: row?.filename || row?.original_filename || 'foto',
-          previewUrl: previewUrl ?? signedPreview,
+          previewUrl,
           signedUrl: signedPreview,
           downloadUrl,
           createdAt: row?.created_at ?? null,
@@ -958,11 +974,31 @@ class GalleryService {
     }
     const baseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
     if (!baseUrl) return null;
-    const normalized = path.replace(/^\/+/, '');
-    for (const bucket of PUBLIC_BUCKETS) {
-      return `${baseUrl}/storage/v1/object/public/${bucket}/${normalized}`;
+    let normalized = path.trim().replace(/^\/+/, '');
+    if (!normalized) return null;
+
+    const previewBucket =
+      process.env['STORAGE_BUCKET_PREVIEW'] || 'photos';
+    const allowedBuckets = new Set<string>([
+      ...PUBLIC_BUCKETS,
+      previewBucket,
+    ]);
+
+    const segments = normalized.split('/');
+    let bucket: string | null = null;
+
+    if (segments.length > 1 && allowedBuckets.has(segments[0])) {
+      bucket = segments.shift() ?? null;
+      normalized = segments.join('/');
+    } else if (/(previews|uploads|thumbnails|watermark)/i.test(normalized)) {
+      bucket = previewBucket;
     }
-    return null;
+
+    if (!bucket || !allowedBuckets.has(bucket) || !normalized) {
+      return null;
+    }
+
+    return `${baseUrl}/storage/v1/object/public/${bucket}/${normalized}`;
   }
 
   private async safeSignedUrl(

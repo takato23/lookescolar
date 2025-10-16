@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   resolveAccessTokenMock: vi.fn(),
@@ -83,7 +83,7 @@ describe('galleryService', () => {
     student: null,
   } as any;
 
-  const assetRow = {
+  const baseAssetRow = {
     id: 'photo-1',
     filename: 'foto.jpg',
     original_path: 'originals/foto.jpg',
@@ -97,6 +97,8 @@ describe('galleryService', () => {
     metadata: { assignment_id: 'assign-1' },
   };
 
+  let currentAssets: any[] = [];
+
   const buildQueryBuilder = (table: string) => {
     const builder: any = {
       _table: table,
@@ -105,21 +107,28 @@ describe('galleryService', () => {
       in: vi.fn(() => builder),
       order: vi.fn(() => builder),
       range: vi.fn(async () => ({
-        data: table === 'assets' ? [assetRow] : [],
+        data: table === 'assets' ? currentAssets : [],
         error: null,
-        count: table === 'assets' ? 1 : 0,
+        count: table === 'assets' ? currentAssets.length : 0,
       })),
     };
     return builder;
   };
 
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL =
+      'https://example-project.supabase.co';
+    process.env.STORAGE_BUCKET_PREVIEW = 'photos';
+    process.env.STORAGE_BUCKET_ORIGINAL = 'photo-private';
+
     resolveAccessTokenMock.mockReset();
     getShareTokenByIdMock.mockReset();
     recordShareViewMock.mockReset();
     getCatalogForEventMock.mockReset();
     supabaseMock.from.mockReset();
     supabaseMock.rpc.mockReset();
+
+    currentAssets = [{ ...baseAssetRow }];
 
     let callCount = 0;
     resolveAccessTokenMock.mockImplementation(async () => ({
@@ -153,6 +162,12 @@ describe('galleryService', () => {
     supabaseMock.rpc.mockResolvedValue({ data: [], error: null });
   });
 
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.STORAGE_BUCKET_PREVIEW;
+    delete process.env.STORAGE_BUCKET_ORIGINAL;
+  });
+
   it('returns gallery data with signed URLs for share tokens', async () => {
     const result = await galleryService.getGallery({
       token: 'share-token',
@@ -167,6 +182,8 @@ describe('galleryService', () => {
     expect(result.items[0]).toMatchObject({
       id: 'photo-1',
       filename: 'foto.jpg',
+      previewUrl:
+        'https://example-project.supabase.co/storage/v1/object/public/photos/watermarks/foto.jpg',
       signedUrl: expect.stringContaining('signed/watermarks/foto.jpg'),
       downloadUrl: expect.stringContaining('signed/originals/foto.jpg'),
       storagePath: 'originals/foto.jpg',
@@ -179,6 +196,33 @@ describe('galleryService', () => {
     });
     expect(recordShareViewMock).toHaveBeenCalled();
     expect(getCatalogForEventMock).toHaveBeenCalledWith('event-1');
+  });
+
+  it('falls back to signed preview when bucket is private', async () => {
+    currentAssets = [
+      {
+        ...baseAssetRow,
+        watermark_path: null,
+        preview_path: null,
+        original_path: 'originals/private.jpg',
+        storage_path: 'originals/private.jpg',
+      },
+    ];
+
+    const result = await galleryService.getGallery({
+      token: 'share-token',
+      page: 1,
+      limit: 1,
+      ipAddress: '2.2.2.2',
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].previewUrl).toBe(
+      'https://signed/originals/private.jpg'
+    );
+    expect(result.items[0].downloadUrl).toBe(
+      'https://signed/originals/private.jpg'
+    );
   });
 
   it('enforces share token rate limiting', async () => {
