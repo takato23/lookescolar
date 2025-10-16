@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import React, {
   useState,
@@ -23,7 +23,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { uploadFiles, createApiUrl } from '@/lib/utils/api-client';
 
 // Enhanced utility function to convert preview path to proxy URL (admin-only access)
-const getPreviewUrl = (previewPath: string | null, originalPath?: string | null): string | null => {
+const getPreviewUrl = (
+  previewPath: string | null,
+  originalPath?: string | null
+): string | null => {
   // Try preview path first
   if (previewPath) {
     if (previewPath.startsWith('http')) return previewPath;
@@ -47,7 +50,7 @@ const getPreviewUrl = (previewPath: string | null, originalPath?: string | null)
   // Fallback to original path if preview not available
   if (originalPath) {
     if (originalPath.startsWith('http')) return originalPath;
-    
+
     // Extract filename from original path for preview lookup
     const filename = originalPath.split('/').pop();
     if (filename && /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(filename)) {
@@ -63,8 +66,8 @@ const SafeImage: React.FC<{
   src: string | null;
   alt: string;
   className?: string;
-  loading?: "lazy" | "eager";
-}> = ({ src, alt, className, loading = "lazy" }) => {
+  loading?: 'lazy' | 'eager';
+}> = ({ src, alt, className, loading = 'lazy' }) => {
   const [hasError, setHasError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
 
@@ -200,6 +203,8 @@ import {
   Move,
   ClipboardPaste,
   FileUser,
+  Sparkles,
+  Link2,
 } from 'lucide-react';
 import { PhotoUploadButton } from './PhotoUploadButton';
 import EventSelector from './EventSelector';
@@ -657,6 +662,65 @@ const FolderTreePanel: React.FC<{
   const [newFolderName, setNewFolderName] = useState('');
   const [filterText, setFilterText] = useState('');
   const searchRef = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'le:favFolders',
+        JSON.stringify(Array.from(favoriteFolderIds))
+      );
+    } catch (error) {
+      console.warn('No se pudieron guardar las carpetas favoritas', error);
+    }
+  }, [favoriteFolderIds]);
+
+  useEffect(() => {
+    setFavoriteFolderIds((prev) => {
+      if (prev.size === 0) return prev;
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        const exists = folders.some((folder) => folder.id === id);
+        if (exists) {
+          next.add(id);
+        } else {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [folders]);
+
+  const toggleFavorite = useCallback((folderId: string) => {
+    setFavoriteFolderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearFavorites = useCallback(() => {
+    setFavoriteFolderIds(new Set());
+  }, []);
+  const [favoriteFolderIds, setFavoriteFolderIds] = useState<Set<string>>(
+    () => {
+      if (typeof window === 'undefined') return new Set();
+      try {
+        const saved = localStorage.getItem('le:favFolders');
+        if (!saved) return new Set();
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return new Set(parsed.filter((id) => typeof id === 'string'));
+        }
+      } catch (error) {
+        console.warn('No se pudieron leer las carpetas favoritas', error);
+      }
+      return new Set();
+    }
+  );
 
   const buildFolderTree = (
     folders: OptimizedFolder[]
@@ -786,6 +850,41 @@ const FolderTreePanel: React.FC<{
 
   // Dedicated row component to respect Hooks rules
   type TreeNode = OptimizedFolder & { children?: OptimizedFolder[] };
+  const folderMap = useMemo(() => {
+    const map = new Map<string, TreeNode>();
+    const walk = (nodes: TreeNode[] = []) => {
+      nodes.forEach((node) => {
+        map.set(node.id, node);
+        if (node.children && node.children.length > 0) {
+          walk(node.children as TreeNode[]);
+        }
+      });
+    };
+    walk(folderTree as TreeNode[]);
+    return map;
+  }, [folderTree]);
+
+  const quickAccessNodes = useMemo(() => {
+    const seen = new Set<string>();
+    const nodes: TreeNode[] = [];
+
+    favoriteFolderIds.forEach((id) => {
+      const node = folderMap.get(id);
+      if (node && !seen.has(node.id)) {
+        nodes.push(node);
+        seen.add(node.id);
+      }
+    });
+
+    folderTree.forEach((node) => {
+      if (!seen.has(node.id)) {
+        nodes.push(node as TreeNode);
+        seen.add(node.id);
+      }
+    });
+
+    return nodes.slice(0, 8);
+  }, [favoriteFolderIds, folderMap, folderTree]);
   const FolderNode: React.FC<{
     folder: TreeNode;
     depth?: number;
@@ -827,19 +926,41 @@ const FolderTreePanel: React.FC<{
     onFolderAction,
     clipboard,
   }) => {
-    // If filtering and this node isn't in the matched path, don't render this node
-    if (filterActive && !matchedIds.has(folder.id)) return null;
-
     const hasChildren = !!(folder.children && folder.children.length > 0);
     const isExpanded =
       expandedFolders.has(folder.id) ||
       (filterActive && expandIds.has(folder.id));
     const isSelected = selectedFolderId === folder.id;
+    const isFavorite = favoriteFolderIds.has(folder.id);
+    const highlightQuery = lcQuery;
+
+    const renderHighlightedName = () => {
+      if (!filterActive || !highlightQuery) return folder.name;
+      const label = folder.name || '';
+      const lower = label.toLowerCase();
+      const index = lower.indexOf(highlightQuery);
+      if (index === -1) return label;
+      const before = label.slice(0, index);
+      const match = label.slice(index, index + highlightQuery.length);
+      const after = label.slice(index + highlightQuery.length);
+      return (
+        <>
+          {before}
+          <span className="rounded bg-blue-100 px-1 text-blue-700">
+            {match}
+          </span>
+          {after}
+        </>
+      );
+    };
 
     const { isOver, setNodeRef } = useDroppable({
       id: folder.id,
       data: { type: 'folder' },
     });
+
+    // If filtering and this node isn't in the matched path, don't render this node
+    if (filterActive && !matchedIds.has(folder.id)) return null;
 
     return (
       <div>
@@ -880,7 +1001,7 @@ const FolderTreePanel: React.FC<{
           )}
 
           <span className="flex-1 truncate" title={folder.name}>
-            {folder.name}
+            {renderHighlightedName()}
           </span>
 
           {folder.scope && (
@@ -890,7 +1011,8 @@ const FolderTreePanel: React.FC<{
                 'mr-1 px-1 text-[10px]',
                 folder.scope === 'event' && 'border-blue-200 text-blue-700',
                 folder.scope === 'global' && 'border-border text-foreground',
-                folder.scope === 'legacy' && 'border-primary-200 text-primary-700',
+                folder.scope === 'legacy' &&
+                  'border-primary-200 text-primary-700',
                 folder.scope === 'template' &&
                   'border-purple-200 text-purple-700'
               )}
@@ -909,50 +1031,71 @@ const FolderTreePanel: React.FC<{
             </Badge>
           )}
 
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(folder.id);
+            }}
+            className={cn(
+              'rounded p-0.5 transition-all hover:bg-muted',
+              isFavorite
+                ? 'text-amber-500 opacity-100'
+                : 'text-gray-400 opacity-0 group-hover:opacity-100'
+            )}
+            aria-label={
+              isFavorite ? 'Quitar de carpetas destacadas' : 'Destacar carpeta'
+            }
+          >
+            <Star
+              className={cn('h-3.5 w-3.5', isFavorite && 'fill-amber-400')}
+            />
+          </button>
+
           {onFolderAction && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"
+                  aria-label="Acciones de carpeta"
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={4}
                 onClick={(e) => e.stopPropagation()}
-                className="rounded p-0.5 opacity-0 hover:bg-muted group-hover:opacity-100"
-                aria-label="Acciones de carpeta"
               >
-                <MoreVertical className="h-3.5 w-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              sideOffset={4}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <DropdownMenuItem
-                onSelect={(event) => {
-                  event.preventDefault();
-                  onFolderAction?.('copy', folder);
-                }}
-              >
-                <Copy className="mr-2 h-4 w-4" />
-                Copiar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={
-                  !clipboard?.hasData || clipboard?.sourceFolderId === folder.id
-                }
-                onSelect={(event) => {
-                  event.preventDefault();
-                  if (!clipboard?.hasData) return;
-                  onFolderAction?.('paste', folder);
-                }}
-              >
-                <ClipboardPaste className="mr-2 h-4 w-4" />
-                Pegar aquí
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={(event) => {
-                  event.preventDefault();
-                  onFolderAction('rename', folder);
-                }}
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    onFolderAction?.('copy', folder);
+                  }}
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copiar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={
+                    !clipboard?.hasData ||
+                    clipboard?.sourceFolderId === folder.id
+                  }
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    if (!clipboard?.hasData) return;
+                    onFolderAction?.('paste', folder);
+                  }}
+                >
+                  <ClipboardPaste className="mr-2 h-4 w-4" />
+                  Pegar aquí
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    onFolderAction('rename', folder);
+                  }}
                 >
                   <Edit3 className="mr-2 h-4 w-4" />
                   Renombrar
@@ -1070,12 +1213,12 @@ const FolderTreePanel: React.FC<{
     return out;
   };
 
-  const expandAll = () => {
+  const expandAll = useCallback(() => {
     setExpandedFolders(new Set(flattenIds(folderTree)));
-  };
-  const collapseAll = () => {
+  }, [folderTree]);
+  const collapseAll = useCallback(() => {
     setExpandedFolders(new Set());
-  };
+  }, []);
 
   // Keyboard shortcuts: E (expand), C (collapse), R (root), / (focus search)
   useEffect(() => {
@@ -1100,7 +1243,7 @@ const FolderTreePanel: React.FC<{
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [folders, eventId, onSelectFolder]);
+  }, [folders, eventId, onSelectFolder, expandAll, collapseAll]);
 
   return (
     <div className={cn('flex h-full flex-col border-r bg-white', className)}>
@@ -1126,35 +1269,35 @@ const FolderTreePanel: React.FC<{
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setIsCreating(selectedFolderId || 'root')}
-            className="h-8 shrink-0 px-2"
-            title="Nueva carpeta"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          {clipboard?.hasData && (
             <Button
               size="sm"
               variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPasteToRoot?.();
-              }}
+              onClick={() => setIsCreating(selectedFolderId || 'root')}
               className="h-8 shrink-0 px-2"
-              title={
-                clipboard?.sourceName
-                  ? `Pegar "${clipboard.sourceName}" en la raíz`
-                  : 'Pegar en la raíz'
-              }
-              disabled={!onPasteToRoot}
+              title="Nueva carpeta"
             >
-              <ClipboardPaste className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
             </Button>
-          )}
-          {/* 🚀 FASE 2: Botón de gestión de estudiantes cuando hay contexto de evento */}
+            {clipboard?.hasData && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPasteToRoot?.();
+                }}
+                className="h-8 shrink-0 px-2"
+                title={
+                  clipboard?.sourceName
+                    ? `Pegar "${clipboard.sourceName}" en la raíz`
+                    : 'Pegar en la raíz'
+                }
+                disabled={!onPasteToRoot}
+              >
+                <ClipboardPaste className="h-4 w-4" />
+              </Button>
+            )}
+            {/* 🚀 FASE 2: Botón de gestión de estudiantes cuando hay contexto de evento */}
             {eventId && (
               <Button
                 size="sm"
@@ -1200,6 +1343,82 @@ const FolderTreePanel: React.FC<{
               <X className="h-4 w-4" />
             </Button>
           )}
+        </div>
+
+        <div className="mb-3 rounded-lg border border-dashed border-border/70 bg-muted/30 p-3">
+          <div className="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+              Atajos de carpetas
+            </span>
+            {favoriteFolderIds.size > 0 && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  clearFavorites();
+                }}
+                className="text-[11px] font-normal text-blue-600 hover:underline"
+              >
+                Limpiar favoritos
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {quickAccessNodes.length === 0 ? (
+              <span className="text-xs text-muted-foreground">
+                Destaca carpetas con la estrella para tenerlas aquí.
+              </span>
+            ) : (
+              quickAccessNodes.map((node) => {
+                const total =
+                  aggregatedCountMap.get(node.id) ?? node.photo_count ?? 0;
+                return (
+                  <button
+                    key={node.id}
+                    type="button"
+                    onClick={() => onSelectFolder(node.id)}
+                    className={cn(
+                      'group flex min-w-[140px] flex-1 items-center justify-between rounded-md border px-3 py-2 text-left text-xs shadow-sm transition',
+                      selectedFolderId === node.id
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-transparent bg-white hover:border-border hover:bg-white/70'
+                    )}
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="truncate font-medium">{node.name}</span>
+                      {favoriteFolderIds.has(node.id) && (
+                        <Star className="h-3 w-3 text-amber-500" />
+                      )}
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                      {node.scope && (
+                        <span
+                          className={cn(
+                            'rounded-full px-2 py-0.5',
+                            node.scope === 'event' &&
+                              'bg-blue-100 text-blue-700',
+                            node.scope === 'global' &&
+                              'bg-slate-100 text-slate-700',
+                            node.scope === 'template' &&
+                              'bg-purple-100 text-purple-700',
+                            node.scope === 'legacy' &&
+                              'bg-amber-100 text-amber-700'
+                          )}
+                        >
+                          {node.scope}
+                        </span>
+                      )}
+                      <span className="rounded bg-muted px-1 py-0.5 text-[10px]">
+                        {total}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
 
         {/* Create root folder */}
@@ -1322,17 +1541,30 @@ const PhotoGridPanel: React.FC<{
   isLoadingAllPages,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
+    if (typeof window === 'undefined') return 'comfortable';
+    const saved = localStorage.getItem('le:photoDensity');
+    return saved === 'compact' ? 'compact' : 'comfortable';
+  });
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
     null
   );
   const [touchStartTime, setTouchStartTime] = useState<number>(0);
   const scrollElementRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('le:photoDensity', density);
+    } catch (error) {
+      console.warn('No se pudo persistir la densidad seleccionada', error);
+    }
+  }, [density]);
+
   // Virtual scrolling for performance
   const rowVirtualizer = useVirtualizer({
     count: Math.ceil(assets.length / 6) + (hasMore ? 1 : 0), // 6 items per row + loader
     getScrollElement: () => scrollElementRef.current,
-    estimateSize: () => 200, // Estimated row height
+    estimateSize: () => (density === 'compact' ? 160 : 220),
     overscan: 2,
   });
 
@@ -1480,7 +1712,14 @@ const PhotoGridPanel: React.FC<{
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <div className="grid h-full grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              <div
+                className={cn(
+                  'grid h-full',
+                  density === 'compact'
+                    ? 'grid-cols-3 gap-2 p-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8'
+                    : 'grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                )}
+              >
                 {rowAssets.map((asset, rowIndex) => {
                   const globalIndex = startIndex + rowIndex;
                   const isSelected = selectedAssetIds.has(asset.id);
@@ -1492,6 +1731,7 @@ const PhotoGridPanel: React.FC<{
                       onClick={(e) => handleAssetClick(asset, globalIndex, e)}
                       onTouchStart={handleTouchStart}
                       onTouchEnd={(e) => handleTouchEnd(asset, globalIndex, e)}
+                      density={density}
                     />
                   );
                 })}
@@ -1510,7 +1750,8 @@ const PhotoGridPanel: React.FC<{
     onClick: (e: React.MouseEvent) => void;
     onTouchStart: () => void;
     onTouchEnd: (e: React.TouchEvent) => void;
-  }> = ({ asset, isSelected, onClick, onTouchStart, onTouchEnd }) => {
+    density: 'comfortable' | 'compact';
+  }> = ({ asset, isSelected, onClick, onTouchStart, onTouchEnd, density }) => {
     const draggable = useDraggable({ id: asset.id, data: { type: 'asset' } });
     const style = {
       transform: draggable.transform
@@ -1518,15 +1759,31 @@ const PhotoGridPanel: React.FC<{
         : undefined,
     } as React.CSSProperties;
 
-    const previewUrl = asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path);
+    const previewUrl =
+      asset.preview_url ??
+      getPreviewUrl(asset.preview_path, asset.original_path);
+    const sizeLabel = asset.file_size
+      ? asset.file_size > 1024 * 1024
+        ? `${(asset.file_size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.max(1, Math.round(asset.file_size / 1024))} KB`
+      : null;
+    const dateLabel = asset.created_at
+      ? new Date(asset.created_at).toLocaleDateString('es-AR')
+      : null;
+    const statusText =
+      asset.status && asset.status !== 'ready'
+        ? statusLabel(asset.status)
+        : null;
 
     return (
       <div
         className={cn(
-          'group relative cursor-pointer touch-manipulation overflow-hidden rounded-lg border-2 transition-all',
-          'min-h-[120px] sm:min-h-[140px]',
+          'group relative cursor-pointer touch-manipulation overflow-hidden rounded-xl border transition-all',
+          density === 'compact'
+            ? 'min-h-[100px] sm:min-h-[120px]'
+            : 'min-h-[120px] sm:min-h-[150px]',
           isSelected
-            ? 'border-blue-500 bg-blue-50 shadow-md'
+            ? 'border-blue-500/80 bg-blue-50 shadow-lg ring-2 ring-blue-500/40'
             : 'border-transparent bg-white hover:border-border hover:shadow-sm'
         )}
         ref={draggable.setNodeRef}
@@ -1537,24 +1794,22 @@ const PhotoGridPanel: React.FC<{
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* Selection checkbox */}
         <div
           className={cn(
-            'absolute left-2 top-2 z-10 flex h-7 w-7 touch-manipulation items-center justify-center rounded border-2 shadow-sm transition-all sm:h-6 sm:w-6',
+            'absolute left-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border text-xs transition sm:h-8 sm:w-8',
             isSelected
-              ? 'scale-105 transform border-blue-500 bg-blue-500 text-white'
-              : 'border-gray-400 bg-white group-hover:border-gray-600 group-hover:bg-muted'
+              ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
+              : 'border-white/70 bg-black/30 text-white backdrop-blur-sm group-hover:border-white group-hover:bg-black/40'
           )}
         >
           {isSelected ? (
-            <CheckSquare className="h-4 w-4" />
+            <CheckSquare className="h-3.5 w-3.5" />
           ) : (
-            <Square className="h-4 w-4 text-gray-400 group-hover:text-muted-foreground" />
+            <Square className="h-3.5 w-3.5" />
           )}
         </div>
 
-        {/* Image preview */}
-        <div className="relative flex aspect-square items-center justify-center bg-muted">
+        <div className="relative aspect-square overflow-hidden bg-muted">
           {previewUrl ? (
             <SafeImage
               src={previewUrl}
@@ -1578,13 +1833,74 @@ const PhotoGridPanel: React.FC<{
               )}
             </div>
           )}
+
+          <div className="pointer-events-none absolute inset-0 rounded-xl border border-transparent transition group-hover:border-white/30" />
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition group-hover:opacity-100">
+            <div className="flex items-center justify-between p-2 text-[11px] text-white">
+              {statusText ? (
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                  {statusText}
+                </span>
+              ) : (
+                <span />
+              )}
+              <div className="pointer-events-auto flex items-center gap-1">
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toast.info(
+                      'Marca esta foto desde el inspector para destacarla.'
+                    );
+                  }}
+                  aria-label="Destacar foto"
+                >
+                  <Star className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toast.info(
+                      'Comparte fotos desde el inspector o el gestor de enlaces.'
+                    );
+                  }}
+                  aria-label="Compartir foto"
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="pointer-events-none space-y-1 px-2 pb-2">
+              <p className="truncate text-sm font-medium text-white">
+                {asset.filename}
+              </p>
+              <div className="flex items-center gap-2 text-[10px] text-white/80">
+                {sizeLabel && <span>{sizeLabel}</span>}
+                {sizeLabel && dateLabel && <span>•</span>}
+                {dateLabel && <span>{dateLabel}</span>}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Filename */}
-        <div className="p-2">
-          <p className="truncate text-xs text-gray-500 dark:text-gray-400" title={asset.filename}>
+        <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+          <span className="truncate" title={asset.filename}>
             {asset.filename}
-          </p>
+          </span>
+          <div className="flex items-center gap-1">
+            {statusText && (
+              <span
+                className="inline-flex h-2 w-2 rounded-full bg-blue-400"
+                aria-hidden
+              />
+            )}
+            {sizeLabel && <span>{sizeLabel}</span>}
+          </div>
         </div>
       </div>
     );
@@ -1601,7 +1917,8 @@ const PhotoGridPanel: React.FC<{
               className={cn(
                 'flex cursor-pointer touch-manipulation items-center gap-3 p-3 hover:bg-muted',
                 'min-h-[56px]', // Better mobile touch target
-                isSelected && 'bg-blue-50'
+                isSelected && 'bg-blue-50',
+                density === 'compact' && 'gap-2 py-2'
               )}
               onClick={(e) => handleAssetClick(asset, index, e)}
               onTouchStart={handleTouchStart}
@@ -1624,7 +1941,10 @@ const PhotoGridPanel: React.FC<{
 
               <div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
                 <SafeImage
-                  src={asset.preview_url ?? getPreviewUrl(asset.preview_path, asset.original_path)}
+                  src={
+                    asset.preview_url ??
+                    getPreviewUrl(asset.preview_path, asset.original_path)
+                  }
                   alt={asset.filename}
                   className="h-full w-full rounded object-cover"
                   loading="lazy"
@@ -1641,6 +1961,39 @@ const PhotoGridPanel: React.FC<{
                   {asset.created_at &&
                     ` • ${new Date(asset.created_at).toLocaleDateString('es-AR')}`}
                 </p>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toast.info(
+                      'Destaca esta foto desde el inspector para agregar notas.'
+                    );
+                  }}
+                  aria-label="Destacar foto"
+                >
+                  <Star className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toast.info(
+                      'Comparte fotos seleccionadas desde el gestor de enlaces.'
+                    );
+                  }}
+                  aria-label="Compartir foto"
+                >
+                  <Link2 className="h-4 w-4" />
+                </Button>
               </div>
 
               {asset.status && asset.status !== 'ready' && (
@@ -1736,9 +2089,39 @@ const PhotoGridPanel: React.FC<{
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+            <div className="flex items-center gap-1 rounded-full border bg-muted/60 p-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className={cn(
+                  'h-8 rounded-full px-3 text-xs',
+                  density === 'comfortable'
+                    ? 'bg-white text-foreground shadow'
+                    : 'text-muted-foreground'
+                )}
+                onClick={() => setDensity('comfortable')}
+              >
+                Cómodo
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className={cn(
+                  'h-8 rounded-full px-3 text-xs',
+                  density === 'compact'
+                    ? 'bg-white text-foreground shadow'
+                    : 'text-muted-foreground'
+                )}
+                onClick={() => setDensity('compact')}
+              >
+                Compacto
+              </Button>
+            </div>
             {/* Selection tip for new users */}
             {selectedAssetIds.size === 0 && assets.length > 0 && (
-              <div className="rounded bg-muted/90 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 backdrop-blur">
+              <div className="rounded bg-muted/90 px-2 py-1 text-xs text-gray-500 backdrop-blur dark:text-gray-400">
                 <span className="hidden sm:inline">
                   💡 Clic • ESC limpiar • Shift rango
                 </span>
@@ -1764,14 +2147,23 @@ const PhotoGridPanel: React.FC<{
           </div>
         </div>
       ) : assets.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center text-gray-500">
-          <ImageIcon className="mb-4 h-12 w-12" />
-          <h4 className="mb-2 text-lg font-medium">
-            No hay fotos en esta carpeta
-          </h4>
-          <p className="text-center text-sm">
-            Sube fotos o selecciona otra carpeta para ver contenido.
-          </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-muted-foreground/40 bg-muted/40 p-10 text-center text-sm text-muted-foreground">
+          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+          <div className="space-y-2">
+            <h4 className="text-lg font-semibold text-foreground">
+              No encontramos fotos aquí
+            </h4>
+            <p>
+              Revisa los filtros activos, incluye subcarpetas o utiliza la
+              búsqueda global (<span className="font-mono">Cmd/Ctrl + K</span>)
+              para saltar a otra ubicación.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+            <Badge variant="outline">Carpeta vacía</Badge>
+            <Badge variant="secondary">Filtros aplicados</Badge>
+            <Badge variant="outline">Mantén el flujo de explorador</Badge>
+          </div>
         </div>
       ) : viewMode === 'grid' ? (
         renderVirtualizedGrid()
@@ -1815,48 +2207,105 @@ const InspectorPanel: React.FC<{
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+  const primaryAsset = selectedAssets[0] ?? null;
+  const [draftName, setDraftName] = useState('');
+
+  useEffect(() => {
+    setDraftName(primaryAsset?.filename ?? '');
+  }, [primaryAsset?.id, primaryAsset?.filename]);
+
+  const handleNameBlur = () => {
+    if (!primaryAsset) return;
+    const trimmed = draftName.trim();
+    if (!trimmed) {
+      setDraftName(primaryAsset.filename ?? '');
+      return;
+    }
+    if (trimmed !== primaryAsset.filename) {
+      toast.info('Renombrado rápido llegará en la próxima iteración.');
+    }
+  };
+
+  const copyToClipboard = (value: string) => {
+    if (!value) return;
+    try {
+      navigator.clipboard.writeText(value);
+      toast.success('Copiado al portapapeles');
+    } catch (error) {
+      console.warn('Clipboard copy failed', error);
+      toast.error('No se pudo copiar');
+    }
+  };
+
+  const primarySize = primaryAsset
+    ? formatFileSize(primaryAsset.file_size)
+    : null;
+  const primaryDate = primaryAsset?.created_at
+    ? new Date(primaryAsset.created_at).toLocaleString('es-AR', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : null;
+  const primaryStatus = primaryAsset?.status
+    ? statusLabel(primaryAsset.status)
+    : null;
 
   return (
     <div className={cn('flex h-full flex-col border-l bg-white', className)}>
-      <div className="border-b p-4">
+      <div className="border-b px-4 py-3">
         <h3 className="text-lg font-semibold">Inspector</h3>
+        <p className="text-xs text-muted-foreground">
+          Mantén el flujo de navegador mientras editas y automatizas.
+        </p>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4">
         {selectedAssets.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center text-gray-500">
-            <Eye className="mb-2 h-8 w-8" />
-            <p className="text-sm">Select photos to inspect</p>
+          <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-muted-foreground/50 bg-muted/30 text-center text-sm text-muted-foreground">
+            <Eye className="h-8 w-8 text-muted-foreground" />
+            <p>Selecciona fotos o carpetas para ver su resumen aquí.</p>
+            <span className="text-xs">
+              Sugerencia: usa Shift + clic para rangos rápidos.
+            </span>
           </div>
         ) : (
-          <>
-            {/* Selection Summary */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Selected:</span>
-                    <span className="text-sm font-medium">
-                      {selectedAssets.length} files
+          <Tabs defaultValue="summary" className="flex h-full flex-col">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="summary">Resumen</TabsTrigger>
+              <TabsTrigger value="metadata">Metadatos</TabsTrigger>
+              <TabsTrigger value="automation">Automatizaciones</TabsTrigger>
+            </TabsList>
+
+            <TabsContent
+              value="summary"
+              className="mt-4 space-y-4 focus:outline-none"
+            >
+              <Card>
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Seleccionadas</span>
+                    <span className="font-medium text-foreground">
+                      {selectedAssets.length}{' '}
+                      {selectedAssets.length === 1 ? 'foto' : 'fotos'}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Tamaño total:</span>
-                    <span className="text-sm font-medium">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tamaño total</span>
+                    <span className="font-medium text-foreground">
                       {formatFileSize(totalSize)}
                     </span>
                   </div>
                   {selectedAssets.some(
-                    (a) => a.status && a.status !== 'ready'
+                    (asset) => asset.status && asset.status !== 'ready'
                   ) && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Estado:</span>
-                      <div className="flex gap-1">
+                    <div className="space-y-1 text-xs">
+                      <span className="text-muted-foreground">Estados</span>
+                      <div className="flex flex-wrap gap-1">
                         {(
                           ['ready', 'processing', 'error', 'pending'] as const
                         ).map((status) => {
                           const count = selectedAssets.filter(
-                            (a) => a.status === status
+                            (asset) => asset.status === status
                           ).length;
                           return count > 0 ? (
                             <Badge
@@ -1871,177 +2320,259 @@ const InspectorPanel: React.FC<{
                       </div>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Egress Monitoring */}
-            {egressMetrics && (
-              <Card
-                className={cn(
-                  egressMetrics.currentSession >
-                    egressMetrics.warningThreshold && 'border-yellow-300',
-                  egressMetrics.currentSession >
-                    egressMetrics.criticalThreshold && 'border-red-300'
-                )}
-              >
-                <CardContent className="p-4">
-                  <h4 className="mb-2 flex items-center gap-2 font-medium">
-                    <Activity className="h-4 w-4" />
-                    Uso de datos
-                  </h4>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Sesión:</span>
-                      <span
-                        className={cn(
-                          'font-medium',
-                          egressMetrics.currentSession >
-                            egressMetrics.warningThreshold && 'text-yellow-600',
-                          egressMetrics.currentSession >
-                            egressMetrics.criticalThreshold && 'text-red-600'
-                        )}
-                      >
-                        {formatFileSize(egressMetrics.currentSession)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Solicitudes:</span>
-                      <span className="font-medium">
-                        {egressMetrics.totalRequests}
-                      </span>
-                    </div>
-                    <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
-                      <div
-                        className={cn(
-                          'h-1.5 rounded-full transition-all',
-                          egressMetrics.currentSession >
-                            egressMetrics.criticalThreshold
-                            ? 'bg-red-500'
-                            : egressMetrics.currentSession >
-                                egressMetrics.warningThreshold
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                        )}
-                        style={{
-                          width: `${Math.min((egressMetrics.currentSession / egressMetrics.criticalThreshold) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Single Asset Details (only show essential info) */}
-            {selectedAssets.length === 1 && (
+              {egressMetrics && (
+                <Card
+                  className={cn(
+                    egressMetrics.currentSession >
+                      egressMetrics.warningThreshold && 'border-yellow-300',
+                    egressMetrics.currentSession >
+                      egressMetrics.criticalThreshold && 'border-red-300'
+                  )}
+                >
+                  <CardContent className="space-y-3 p-4">
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      <h4 className="font-medium">Uso de datos</h4>
+                    </div>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <div className="flex justify-between font-medium text-foreground">
+                        <span>Sesión</span>
+                        <span>
+                          {formatFileSize(egressMetrics.currentSession)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Solicitudes</span>
+                        <span>{egressMetrics.totalRequests}</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-muted">
+                        <div
+                          className={cn(
+                            'h-1.5 rounded-full transition-all',
+                            egressMetrics.currentSession >
+                              egressMetrics.criticalThreshold
+                              ? 'bg-red-500'
+                              : egressMetrics.currentSession >
+                                  egressMetrics.warningThreshold
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                          )}
+                          style={{
+                            width: `${Math.min(
+                              (egressMetrics.currentSession /
+                                egressMetrics.criticalThreshold) *
+                                100,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <h4 className="font-medium">Atajos rápidos</h4>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    <li>
+                      <span className="font-medium text-foreground">
+                        Shift + clic
+                      </span>{' '}
+                      selecciona rangos contiguos.
+                    </li>
+                    <li>
+                      <span className="font-medium text-foreground">
+                        Ctrl/Cmd + A
+                      </span>{' '}
+                      carga y selecciona todas las fotos visibles.
+                    </li>
+                    <li>
+                      <span className="font-medium text-foreground">
+                        Delete
+                      </span>{' '}
+                      abre la confirmación de eliminación.
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="metadata"
+              className="mt-4 space-y-4 focus:outline-none"
+            >
+              <Card>
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Ficha de la selección</h4>
+                    {primaryAsset?.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyToClipboard(primaryAsset.id)}
+                      >
+                        <Copy className="mr-2 h-4 w-4" />
+                        Copiar ID
+                      </Button>
+                    )}
+                  </div>
+                  {primaryAsset ? (
+                    <div className="space-y-4">
+                      {(primaryAsset.preview_url ??
+                        getPreviewUrl(
+                          primaryAsset.preview_path,
+                          primaryAsset.original_path
+                        )) && (
+                        <div className="aspect-square overflow-hidden rounded-lg border bg-muted">
+                          <SafeImage
+                            src={
+                              primaryAsset.preview_url ??
+                              getPreviewUrl(
+                                primaryAsset.preview_path,
+                                primaryAsset.original_path
+                              )
+                            }
+                            alt={primaryAsset.filename}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase text-muted-foreground">
+                          Nombre de archivo
+                        </Label>
+                        <Input
+                          value={draftName}
+                          onChange={(event) => setDraftName(event.target.value)}
+                          onBlur={handleNameBlur}
+                        />
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{primarySize}</span>
+                          {primaryStatus && (
+                            <Badge variant="outline" className="text-xs">
+                              {primaryStatus}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="grid gap-2 rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                        {primaryDate && (
+                          <div className="flex justify-between">
+                            <span>Creada</span>
+                            <span className="font-medium text-foreground">
+                              {primaryDate}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span>Carpeta actual</span>
+                          <span className="font-medium text-foreground">
+                            {currentFolderId
+                              ? folders.find(
+                                  (folder) => folder.id === currentFolderId
+                                )?.name || 'Sin nombre'
+                              : 'Sin asignar'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Selecciona una única foto para editar sus metadatos
+                      rápidos.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="automation"
+              className="mt-4 space-y-4 focus:outline-none"
+            >
               <Card>
                 <CardContent className="space-y-3 p-4">
-                  <h4 className="font-medium">Detalles</h4>
-
-                  {(selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)) && (
-                    <div className="aspect-square overflow-hidden rounded bg-muted">
-                      <SafeImage
-                        src={selectedAssets[0].preview_url ?? getPreviewUrl(selectedAssets[0].preview_path, selectedAssets[0].original_path)}
-                        alt={selectedAssets[0].filename}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Nombre de archivo:</span>
-                      <span
-                        className="max-w-24 truncate font-medium"
-                        title={selectedAssets[0].filename}
-                      >
-                        {selectedAssets[0].filename}
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Acciones masivas</h4>
+                    {albumTargetInfo && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {albumTargetInfo}
                       </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Tamaño:</span>
-                      <span className="font-medium">
-                        {formatFileSize(selectedAssets[0].file_size)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 dark:text-gray-400">Creado:</span>
-                      <span className="font-medium">
-                        {new Date(
-                          selectedAssets[0].created_at
-                        ).toLocaleDateString('es-AR')}
-                      </span>
-                    </div>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Bulk Operations */}
-            <Card>
-              <CardContent className="space-y-3 p-4">
-                <h4 className="font-medium">Acciones</h4>
-
-                <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start"
-                  onClick={onCreateAlbum}
-                >
-                  <Star className="mr-2 h-4 w-4" />
-                  Crear enlace
-                </Button>
-                  {albumTargetInfo && (
-                    <div className="ml-1 text-[11px] leading-snug text-gray-500">
-                      {albumTargetInfo}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <Select onValueChange={(v) => onBulkMove(v)}>
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={onCreateAlbum}
+                    >
+                      <Star className="mr-2 h-4 w-4" />
+                      Crear enlace
+                    </Button>
+                    <Select onValueChange={(value) => onBulkMove(value)}>
                       <SelectTrigger className="h-8 w-full">
                         <SelectValue placeholder="Mover a carpeta" />
                       </SelectTrigger>
                       <SelectContent>
                         {folders
-                          .filter((f) => f.id !== currentFolderId)
-                          .map((f) => (
-                            <SelectItem
-                              key={f.id}
-                              value={f.id}
-                            >{`${' '.repeat((f.depth || 0) * 2)}${f.name}`}</SelectItem>
+                          .filter((folder) => folder.id !== currentFolderId)
+                          .map((folder) => (
+                            <SelectItem key={folder.id} value={folder.id}>
+                              {`${' '.repeat((folder.depth || 0) * 2)}${folder.name}`}
+                            </SelectItem>
                           ))}
                       </SelectContent>
                     </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Descargar ({selectedAssets.length})
+                    </Button>
+                    <Separator />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full justify-start"
+                      onClick={onBulkDelete}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar ({selectedAssets.length})
+                    </Button>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Descargar ({selectedAssets.length})
-                  </Button>
-
-                  <Separator />
-
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={onBulkDelete}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar ({selectedAssets.length})
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </>
+              <Card>
+                <CardContent className="space-y-2 p-4">
+                  <h4 className="font-medium">Consejos de automatización</h4>
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    <li>
+                      Combina carpetas destacadas con el árbol para mover fotos
+                      más rápido.
+                    </li>
+                    <li>
+                      Las descargas masivas se muestran en el panel de estado
+                      del sistema.
+                    </li>
+                    <li>
+                      Comparte enlaces sin salir de esta vista usando el botón
+                      “Crear enlace”.
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </div>
@@ -2060,7 +2591,9 @@ export default function PhotoAdmin({
 
   const initialFolderParam = (searchParams.get('folder_id') ||
     searchParams.get('folderId')) as string | null;
-  const initialFolderParamRef = useRef<string | null>(initialFolderParam || null);
+  const initialFolderParamRef = useRef<string | null>(
+    initialFolderParam || null
+  );
 
   // State
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(
@@ -2069,9 +2602,11 @@ export default function PhotoAdmin({
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
     new Set()
   );
-  const [folderClipboard, setFolderClipboard] = useState<
-    { folderId: string; eventId: string | null; folderName: string } | null
-  >(null);
+  const [folderClipboard, setFolderClipboard] = useState<{
+    folderId: string;
+    eventId: string | null;
+    folderName: string;
+  } | null>(null);
   const initialStudentParam = (searchParams.get('student_id') ||
     searchParams.get('studentId')) as string | null;
   const [studentFilter, setStudentFilter] = useState<string | null>(
@@ -2147,9 +2682,10 @@ export default function PhotoAdmin({
   const [isCreatingShare, setIsCreatingShare] = useState(false);
   const [renameState, setRenameState] = useState<{ folder: any } | null>(null);
   const [renameName, setRenameName] = useState('');
-  const [moveState, setMoveState] = useState<
-    { folder: any; targetParentId: string | null } | null
-  >(null);
+  const [moveState, setMoveState] = useState<{
+    folder: any;
+    targetParentId: string | null;
+  } | null>(null);
   const [moveTargetId, setMoveTargetId] = useState<string>('__root__');
   const [deleteState, setDeleteState] = useState<{ folder: any } | null>(null);
 
@@ -2471,12 +3007,12 @@ export default function PhotoAdmin({
   // Load events for selector, memoize last event
   useEffect(() => {
     let mounted = true;
-    
+
     (async () => {
       try {
         const list = await api.events.listSimple(100);
         if (!mounted) return;
-        
+
         let finalList = [...list];
 
         // If we have a selectedEventId that's not in the list, try to fetch it
@@ -2503,7 +3039,10 @@ export default function PhotoAdmin({
                   name: eventData.event.name || 'Sin nombre',
                 };
                 finalList = [missingEvent, ...list];
-                console.log('Successfully added missing event to list', missingEvent);
+                console.log(
+                  'Successfully added missing event to list',
+                  missingEvent
+                );
               }
             }
           } catch (fetchError) {
@@ -2530,15 +3069,20 @@ export default function PhotoAdmin({
         console.warn('Failed to load events list:', e);
       }
     })();
-    
+
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Intentional empty deps to avoid refetch loops
 
   // Handle when selectedEventId changes - check if we need to fetch it
   useEffect(() => {
-    if (selectedEventId && eventsList.length > 0 && !eventsList.some(e => e.id === selectedEventId)) {
+    if (
+      selectedEventId &&
+      eventsList.length > 0 &&
+      !eventsList.some((e) => e.id === selectedEventId)
+    ) {
       // Event not in list, try to fetch it
       (async () => {
         try {
@@ -2553,12 +3097,21 @@ export default function PhotoAdmin({
                 id: eventData.event.id,
                 name: eventData.event.name || 'Sin nombre',
               };
-              setEventsList(prev => [missingEvent, ...prev.filter(e => e.id !== missingEvent.id)]);
-              console.log('Added missing event to list after selection change', missingEvent);
+              setEventsList((prev) => [
+                missingEvent,
+                ...prev.filter((e) => e.id !== missingEvent.id),
+              ]);
+              console.log(
+                'Added missing event to list after selection change',
+                missingEvent
+              );
             }
           }
         } catch (error) {
-          console.warn('Could not fetch event details after selection change:', error);
+          console.warn(
+            'Could not fetch event details after selection change:',
+            error
+          );
         }
       })();
     }
@@ -2762,8 +3315,7 @@ export default function PhotoAdmin({
     }
 
     if (!selectedFolderId) {
-      const fallback =
-        folders.find((f) => !f.parent_id) || folders[0];
+      const fallback = folders.find((f) => !f.parent_id) || folders[0];
       if (fallback) {
         setSelectedFolderId(fallback.id);
       }
@@ -2918,8 +3470,7 @@ export default function PhotoAdmin({
     Error,
     { folderId: string; name: string }
   >({
-    mutationFn: ({ folderId, name }) =>
-      api.folders.update(folderId, { name }),
+    mutationFn: ({ folderId, name }) => api.folders.update(folderId, { name }),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['optimized-folders', selectedEventId],
@@ -2930,7 +3481,7 @@ export default function PhotoAdmin({
         exact: false,
       });
       toast.success('Carpeta renombrada');
-            setRenameState(null);
+      setRenameState(null);
       setRenameName('');
     },
     onError: (error) => {
@@ -3168,9 +3719,10 @@ export default function PhotoAdmin({
             const foldersList = Array.isArray(result?.folders)
               ? result.folders
               : [];
-            const rootEntry = foldersList.find?.(
-              (entry: any) => entry.oldId === clipboardSnapshot.folderId
-            ) ?? foldersList[0];
+            const rootEntry =
+              foldersList.find?.(
+                (entry: any) => entry.oldId === clipboardSnapshot.folderId
+              ) ?? foldersList[0];
             const label = rootEntry?.name || clipboardSnapshot.folderName;
             toast.success(`Carpeta copiada como "${label}"`);
             if (rootEntry?.newId) {
@@ -3479,7 +4031,7 @@ export default function PhotoAdmin({
         setTimeout(() => setUploadState(null), 1500);
       }
     },
-    [selectedFolderId, queryClient]
+    [selectedFolderId, queryClient, includeSubfolders, uploadParallelism]
   );
 
   const handleAssetSelection = useCallback(
@@ -3603,13 +4155,16 @@ export default function PhotoAdmin({
         return;
       }
 
-      const eventId = selectedEventId ||
+      const eventId =
+        selectedEventId ||
         searchParams.get('event_id') ||
         searchParams.get('eventId') ||
         // Derivar desde carpeta seleccionada si existe
-        (selectedFolderId && folders.find(f => f.id === selectedFolderId)?.event_id) ||
+        (selectedFolderId &&
+          folders.find((f) => f.id === selectedFolderId)?.event_id) ||
         // Derivar desde assets seleccionados
-        (selectedAssetIds.size > 0 && assets.find(a => selectedAssetIds.has(a.id))?.event_id) ||
+        (selectedAssetIds.size > 0 &&
+          assets.find((a) => selectedAssetIds.has(a.id))?.event_id) ||
         undefined;
 
       // Validar que tenemos eventId o que el API puede derivarlo
@@ -3643,7 +4198,10 @@ export default function PhotoAdmin({
       const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, password: sharePassword || undefined }),
+        body: JSON.stringify({
+          ...payload,
+          password: sharePassword || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -3688,7 +4246,8 @@ export default function PhotoAdmin({
       } catch {}
 
       toast.success(`🏪 Escaparate "${shareData.title}" creado!`, {
-        description: '✅ Enlace listo (copiado) — abre el gestor para ver todos',
+        description:
+          '✅ Enlace listo (copiado) — abre el gestor para ver todos',
         action: {
           label: 'Ver gestor',
           onClick: () => setShareManagerOpen(true),
@@ -3714,6 +4273,7 @@ export default function PhotoAdmin({
     selectedEventId,
     searchParams,
     folders,
+    assets,
     shareAllowDownload,
     shareAllowComments,
     shareExpiresAt,
@@ -3756,10 +4316,12 @@ export default function PhotoAdmin({
 
         // Create image element
         const img = document.createElement('img');
-        const previewUrl = draggedAsset.preview_url ?? getPreviewUrl(
-          draggedAsset.preview_path || draggedAsset.watermark_path,
-          draggedAsset.original_path
-        );
+        const previewUrl =
+          draggedAsset.preview_url ??
+          getPreviewUrl(
+            draggedAsset.preview_path || draggedAsset.watermark_path,
+            draggedAsset.original_path
+          );
         if (previewUrl) {
           img.src = previewUrl;
           img.style.cssText = `
@@ -3910,7 +4472,7 @@ export default function PhotoAdmin({
                 variant="ghost"
                 size="sm"
                 onClick={() => window.history.back()}
-                className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-foreground"
+                className="flex items-center gap-2 text-gray-500 hover:text-foreground dark:text-gray-400"
                 title="Volver atrás"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -4340,7 +4902,7 @@ export default function PhotoAdmin({
                           >
                             <button
                               onClick={() => handleSelectFolder(item.id)}
-                              className="text-blue-600 dark:text-blue-400 hover:underline"
+                              className="text-blue-600 hover:underline dark:text-blue-400"
                               title={item.name}
                             >
                               {item.name}
@@ -4442,10 +5004,14 @@ export default function PhotoAdmin({
             {/* Main drag preview */}
             <div className="h-24 w-24 overflow-hidden rounded-lg border-2 border-blue-500 bg-white shadow-xl">
               <SafeImage
-                src={draggedAssetData.preview_url ?? getPreviewUrl(
-                  draggedAssetData.preview_path || draggedAssetData.watermark_path,
-                  draggedAssetData.original_path
-                )}
+                src={
+                  draggedAssetData.preview_url ??
+                  getPreviewUrl(
+                    draggedAssetData.preview_path ||
+                      draggedAssetData.watermark_path,
+                    draggedAssetData.original_path
+                  )
+                }
                 alt="Dragging"
                 className="h-full w-full object-cover"
               />
@@ -4470,7 +5036,7 @@ export default function PhotoAdmin({
       {/* Floating Upload Panel */}
       {uploadState && showUploadPanel && (
         <div className="fixed bottom-4 right-4 z-50 w-[320px]">
-          <Card className="border-blue-200 dark:border-blue-800 shadow-lg">
+          <Card className="border-blue-200 shadow-lg dark:border-blue-800">
             <CardContent className="p-4">
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -4921,8 +5487,14 @@ export default function PhotoAdmin({
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl">
             <div className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Crear enlace de galería</h2>
-                <Button size="sm" variant="ghost" onClick={() => setShowCreateShareModal(false)}>
+                <h2 className="text-lg font-semibold">
+                  Crear enlace de galería
+                </h2>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowCreateShareModal(false)}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -4955,7 +5527,9 @@ export default function PhotoAdmin({
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Permitir descargas</Label>
-                    <p className="text-xs text-gray-500">Por defecto desactivado</p>
+                    <p className="text-xs text-gray-500">
+                      Por defecto desactivado
+                    </p>
                   </div>
                   <Switch
                     checked={shareAllowDownload}
@@ -4974,10 +5548,16 @@ export default function PhotoAdmin({
                 </div>
 
                 <div className="flex justify-end gap-2 border-t pt-4">
-                  <Button variant="outline" onClick={() => setShowCreateShareModal(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCreateShareModal(false)}
+                  >
                     Cancelar
                   </Button>
-                  <Button onClick={handleCreateAlbum} disabled={isCreatingShare}>
+                  <Button
+                    onClick={handleCreateAlbum}
+                    disabled={isCreatingShare}
+                  >
                     {isCreatingShare ? 'Creando…' : 'Crear enlace'}
                   </Button>
                 </div>
@@ -4997,8 +5577,7 @@ export default function PhotoAdmin({
         }}
         createButtonLabel="Nuevo enlace"
         createButtonDisabled={
-          !selectedEventId ||
-          (!selectedFolderId && selectedAssetIds.size === 0)
+          !selectedEventId || (!selectedFolderId && selectedAssetIds.size === 0)
         }
         emptyStateMessage="Todavía no creaste enlaces para este evento."
         contextDescription="Gestioná los enlaces del evento; elegí una carpeta o fotos para crear nuevos enlaces."
@@ -5102,8 +5681,8 @@ export default function PhotoAdmin({
         open={Boolean(renameState)}
         onOpenChange={(open) => {
           if (!open) {
-                  setRenameState(null);
-      setRenameName('');
+            setRenameState(null);
+            setRenameName('');
           }
         }}
       >
@@ -5125,8 +5704,8 @@ export default function PhotoAdmin({
             <Button
               variant="outline"
               onClick={() => {
-                      setRenameState(null);
-      setRenameName('');
+                setRenameState(null);
+                setRenameName('');
               }}
               disabled={renameFolderMutation.isPending}
             >
@@ -5205,7 +5784,8 @@ export default function PhotoAdmin({
             <Button
               onClick={() => {
                 if (!moveState) return;
-                const target = moveTargetId === '__root__' ? null : moveTargetId;
+                const target =
+                  moveTargetId === '__root__' ? null : moveTargetId;
                 moveFolderMutation.mutate({
                   folderId: moveState.folder.id,
                   targetParentId: target,
@@ -5215,7 +5795,8 @@ export default function PhotoAdmin({
                 !moveState ||
                 moveFolderMutation.isPending ||
                 (moveTargetId === '__root__' && !moveState.folder.parent_id) ||
-                (moveTargetId !== '__root__' && moveState.folder.parent_id === moveTargetId)
+                (moveTargetId !== '__root__' &&
+                  moveState.folder.parent_id === moveTargetId)
               }
             >
               {moveFolderMutation.isPending ? 'Moviendo…' : 'Mover'}
@@ -5265,7 +5846,9 @@ export default function PhotoAdmin({
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-xl">
             <div className="p-6">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Gestión de Estudiantes</h2>
+                <h2 className="text-lg font-semibold">
+                  Gestión de Estudiantes
+                </h2>
                 <Button
                   size="sm"
                   variant="ghost"
