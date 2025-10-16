@@ -35,7 +35,6 @@ backup*/
 backups/
 *.backup*
 .vercel
-
 # Env files
 .env*
 !.env*.example
