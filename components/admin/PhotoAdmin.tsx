@@ -662,7 +662,27 @@ const FolderTreePanel: React.FC<{
   const [newFolderName, setNewFolderName] = useState('');
   const [filterText, setFilterText] = useState('');
   const searchRef = useRef<HTMLInputElement | null>(null);
+
+  // Estado para carpetas favoritas - debe estar antes de los efectos que lo usan
+  const [favoriteFolderIds, setFavoriteFolderIds] = useState<Set<string>>(
+    () => {
+      if (typeof window === 'undefined') return new Set();
+      try {
+        const saved = localStorage.getItem('le:favFolders');
+        if (!saved) return new Set();
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return new Set(parsed.filter((id) => typeof id === 'string'));
+        }
+      } catch (error) {
+        console.warn('No se pudieron leer las carpetas favoritas', error);
+      }
+      return new Set();
+    }
+  );
+
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(
         'le:favFolders',
@@ -690,6 +710,7 @@ const FolderTreePanel: React.FC<{
     });
   }, [folders]);
 
+  // Funciones para manejar carpetas favoritas
   const toggleFavorite = useCallback((folderId: string) => {
     setFavoriteFolderIds((prev) => {
       const next = new Set(prev);
@@ -705,22 +726,6 @@ const FolderTreePanel: React.FC<{
   const clearFavorites = useCallback(() => {
     setFavoriteFolderIds(new Set());
   }, []);
-  const [favoriteFolderIds, setFavoriteFolderIds] = useState<Set<string>>(
-    () => {
-      if (typeof window === 'undefined') return new Set();
-      try {
-        const saved = localStorage.getItem('le:favFolders');
-        if (!saved) return new Set();
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          return new Set(parsed.filter((id) => typeof id === 'string'));
-        }
-      } catch (error) {
-        console.warn('No se pudieron leer las carpetas favoritas', error);
-      }
-      return new Set();
-    }
-  );
 
   const buildFolderTree = (
     folders: OptimizedFolder[]
