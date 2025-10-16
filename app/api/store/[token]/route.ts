@@ -335,10 +335,10 @@ export async function GET(
       pagination: include_assets ? pagination : undefined,
     };
 
-    // Headers para cache público
+    // Headers para evitar cache público cuando hay contenido protegido por contraseña
     const headers = {
-      'Cache-Control': 'public, max-age=300, s-maxage=600', // 5 min browser, 10 min CDN
-      Vary: 'Accept-Encoding',
+      'Cache-Control': 'private, max-age=0, must-revalidate',
+      Vary: 'Accept-Encoding, X-Store-Password',
     };
 
     return NextResponse.json(storeResponse, { headers });

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { z } from 'zod';
 
 // Schema for store configuration
@@ -26,10 +27,10 @@ const StoreConfigSchema = z.object({
 });
 
 // GET - Obtener configuración de tienda por evento
-export async function GET(
+export const GET = withAdminAuth(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const eventId = (await params).id;
     const supabase = await createServerSupabaseServiceClient();
@@ -77,13 +78,13 @@ export async function GET(
     console.error('Error in GET store config:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+});
 
 // PATCH - Actualizar configuración de tienda por evento
-export async function PATCH(
+export const PATCH = withAdminAuth(async (
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   try {
     const eventId = (await params).id;
     const body = await request.json();
@@ -202,4 +203,4 @@ export async function PATCH(
     console.error('❌ Error in PATCH store config:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+});
