@@ -3,7 +3,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import { PremiumGlassButton, PremiumIconButton } from '@/components/ui/premium-glass-button';
+import {
+  PremiumGlassButton,
+  PremiumIconButton,
+} from '@/components/ui/premium-glass-button';
 import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortcuts';
 import { formatCurrency } from '@/lib/utils';
@@ -42,23 +45,9 @@ const PerformanceMonitor = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <div className="bg-muted h-32 animate-pulse rounded" />,
+    loading: () => <div className="h-32 animate-pulse rounded bg-muted" />,
   }
 );
-
-interface DashboardStats {
-  activeEvents: number;
-  totalPhotos: number;
-  registeredFamilies: number;
-  totalSales: number;
-  todayUploads: number;
-  todayOrders: number;
-  todayPayments: number;
-  pendingOrders: number;
-  storageUsed: number;
-  storageLimit: number;
-  recentActivity: Activity[];
-}
 
 interface Activity {
   id: string;
@@ -109,6 +98,66 @@ interface UpcomingMilestone {
   icon: LucideIcon;
 }
 
+interface EventSummary {
+  id: string;
+  name: string;
+  location: string | null;
+  date: string | null;
+  totalStudents: number;
+  photosUploaded: number;
+  expectedPhotos: number;
+  status: 'planning' | 'in_progress' | 'processing' | 'completed';
+}
+
+interface QuickAccessSummary {
+  lastEvent: string;
+  lastEventDate: string | null;
+  photosToProcess: number;
+  pendingUploads: number;
+  recentActivity: string;
+}
+
+interface PhotoManagementSummary {
+  totalPhotos: number;
+  processedToday: number;
+  pendingProcessing: number;
+  publishedGalleries: number;
+  lastUploadAt: string | null;
+}
+
+interface OrdersSummary {
+  newOrders: number;
+  pendingDelivery: number;
+  totalRevenueCents: number;
+  todayOrders: number;
+}
+
+interface BusinessMetricsSummary {
+  monthlyRevenueCents: number;
+  activeClients: number;
+  completionRate: number;
+  avgOrderValueCents: number;
+}
+
+interface DashboardStats {
+  activeEvents: number;
+  totalPhotos: number;
+  registeredFamilies: number;
+  totalSales: number;
+  todayUploads: number;
+  todayOrders: number;
+  todayPayments: number;
+  pendingOrders: number;
+  storageUsed: number;
+  storageLimit: number;
+  recentActivity: Activity[];
+  eventSummaries: EventSummary[];
+  quickAccess: QuickAccessSummary;
+  photoManagement: PhotoManagementSummary;
+  ordersSummary: OrdersSummary;
+  businessMetrics: BusinessMetricsSummary;
+}
+
 // Fetch dashboard stats from unified Admin Stats API and map to expected shape
 async function fetchDashboardStats(): Promise<DashboardStats> {
   const response = await fetch('/api/admin/stats', {
@@ -142,6 +191,93 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       message: a.message,
       timestamp: a.timestamp,
     })),
+    eventSummaries: (data?.events_summary || []).map((event: any) => ({
+      id: event.id,
+      name: event.name || 'Evento sin nombre',
+      location: event.location ?? null,
+      date: event.date ?? null,
+      totalStudents: event.totalStudents ?? event.total_students ?? 0,
+      photosUploaded: event.photosUploaded ?? event.photos_uploaded ?? 0,
+      expectedPhotos: event.expectedPhotos ?? event.expected_photos ?? 0,
+      status: event.status ?? 'planning',
+    })),
+    quickAccess: {
+      lastEvent:
+        data?.quick_access?.lastEvent ??
+        data?.quick_access?.last_event ??
+        'Sin eventos activos',
+      lastEventDate:
+        data?.quick_access?.lastEventDate ??
+        data?.quick_access?.last_event_date ??
+        null,
+      photosToProcess:
+        data?.quick_access?.photosToProcess ??
+        data?.quick_access?.photos_to_process ??
+        0,
+      pendingUploads:
+        data?.quick_access?.pendingUploads ??
+        data?.quick_access?.pending_uploads ??
+        0,
+      recentActivity:
+        data?.quick_access?.recentActivity ??
+        data?.quick_access?.recent_activity ??
+        'Aún no hay actividad registrada.',
+    },
+    photoManagement: {
+      totalPhotos:
+        data?.photo_management?.totalPhotos ??
+        data?.photo_management?.total_photos ??
+        0,
+      processedToday:
+        data?.photo_management?.processedToday ??
+        data?.photo_management?.processed_today ??
+        0,
+      pendingProcessing:
+        data?.photo_management?.pendingProcessing ??
+        data?.photo_management?.pending_processing ??
+        0,
+      publishedGalleries:
+        data?.photo_management?.publishedGalleries ??
+        data?.photo_management?.published_galleries ??
+        0,
+      lastUploadAt:
+        data?.photo_management?.lastUploadAt ??
+        data?.photo_management?.last_upload_at ??
+        null,
+    },
+    ordersSummary: {
+      newOrders:
+        data?.orders_summary?.newOrders ??
+        data?.orders_summary?.new_orders ??
+        0,
+      pendingDelivery:
+        data?.orders_summary?.pendingDelivery ??
+        data?.orders_summary?.pending_delivery ??
+        0,
+      totalRevenueCents:
+        data?.orders_summary?.totalRevenueCents ??
+        data?.orders_summary?.total_revenue_cents ??
+        0,
+      todayOrders:
+        data?.orders_summary?.todayOrders ??
+        data?.orders_summary?.today_orders ??
+        0,
+    },
+    businessMetrics: {
+      monthlyRevenueCents:
+        data?.business_metrics?.monthlyRevenueCents ??
+        data?.business_metrics?.monthly_revenue_cents ??
+        0,
+      activeClients:
+        data?.business_metrics?.activeClients ??
+        data?.business_metrics?.active_clients ??
+        0,
+      completionRate: data?.business_metrics?.completionRate ?? 0,
+      avgOrderValueCents:
+        data?.business_metrics?.avgOrderValueCents ??
+        data?.business_metrics?.avg_order_value_cents ??
+        0,
+    },
   };
 
   return mapped;
@@ -191,6 +327,33 @@ export function DashboardClient() {
     storageUsed: 0,
     storageLimit: 5 * 1024 * 1024 * 1024,
     recentActivity: [],
+    eventSummaries: [],
+    quickAccess: {
+      lastEvent: 'Sin eventos activos',
+      lastEventDate: null,
+      photosToProcess: 0,
+      pendingUploads: 0,
+      recentActivity: 'Aún no hay actividad registrada.',
+    },
+    photoManagement: {
+      totalPhotos: 0,
+      processedToday: 0,
+      pendingProcessing: 0,
+      publishedGalleries: 0,
+      lastUploadAt: null,
+    },
+    ordersSummary: {
+      newOrders: 0,
+      pendingDelivery: 0,
+      totalRevenueCents: 0,
+      todayOrders: 0,
+    },
+    businessMetrics: {
+      monthlyRevenueCents: 0,
+      activeClients: 0,
+      completionRate: 0,
+      avgOrderValueCents: 0,
+    },
   };
 
   // Format time functions
@@ -225,7 +388,11 @@ export function DashboardClient() {
     []
   );
 
-  const formatTodayLabel = (value: number, singular: string, plural: string) => {
+  const formatTodayLabel = (
+    value: number,
+    singular: string,
+    plural: string
+  ) => {
     if (!value) {
       return 'Sin actividad';
     }
@@ -238,7 +405,9 @@ export function DashboardClient() {
     }
     return Math.min(
       100,
-      Math.round((dashboardStats.storageUsed / dashboardStats.storageLimit) * 100)
+      Math.round(
+        (dashboardStats.storageUsed / dashboardStats.storageLimit) * 100
+      )
     );
   }, [dashboardStats.storageLimit, dashboardStats.storageUsed]);
 
@@ -309,17 +478,21 @@ export function DashboardClient() {
       dashboardStats.pendingOrders > 5
         ? 'alert'
         : dashboardStats.pendingOrders > 0
-        ? 'warning'
-        : 'success';
+          ? 'warning'
+          : 'success';
 
-    const uploadsTone: FocusTone = dashboardStats.todayUploads ? 'info' : 'muted';
-    const paymentsTone: FocusTone = dashboardStats.todayPayments ? 'success' : 'muted';
+    const uploadsTone: FocusTone = dashboardStats.todayUploads
+      ? 'info'
+      : 'muted';
+    const paymentsTone: FocusTone = dashboardStats.todayPayments
+      ? 'success'
+      : 'muted';
     const storageTone: FocusTone =
       storageUsagePercent > 92
         ? 'alert'
         : storageUsagePercent > 80
-        ? 'warning'
-        : 'info';
+          ? 'warning'
+          : 'info';
 
     return [
       {
@@ -365,8 +538,8 @@ export function DashboardClient() {
           storageUsagePercent > 90
             ? 'Se acerca al límite. Considerá archivar galerías antiguas.'
             : storageUsagePercent > 75
-            ? 'Buen ritmo: vigila que las próximas subidas no excedan el límite.'
-            : 'Tenés espacio disponible para nuevas sesiones.',
+              ? 'Buen ritmo: vigila que las próximas subidas no excedan el límite.'
+              : 'Tenés espacio disponible para nuevas sesiones.',
         badge: `${storageUsagePercent}% usado`,
         tone: storageTone,
         icon: FolderOpen,
@@ -469,8 +642,7 @@ export function DashboardClient() {
       'border-amber-200/80 bg-amber-500/10 text-amber-700 dark:border-amber-500/40 dark:text-amber-300',
     alert:
       'border-red-200/80 bg-red-500/10 text-red-700 dark:border-red-500/40 dark:text-red-300',
-    info:
-      'border-blue-200/80 bg-blue-500/10 text-blue-700 dark:border-blue-500/40 dark:text-blue-300',
+    info: 'border-blue-200/80 bg-blue-500/10 text-blue-700 dark:border-blue-500/40 dark:text-blue-300',
     muted:
       'border-slate-200/60 bg-slate-500/10 text-slate-600 dark:border-slate-500/40 dark:text-slate-300',
   };
@@ -485,7 +657,7 @@ export function DashboardClient() {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="glass-card-ios26 w-full max-w-md rounded-3xl p-8">
-          <div className="flex flex-col items-center text-center space-y-4">
+          <div className="flex flex-col items-center space-y-4 text-center">
             <div className="glass-button-ios26 rounded-full p-4">
               <AlertCircle className="h-8 w-8 text-red-500" />
             </div>
@@ -523,7 +695,6 @@ export function DashboardClient() {
         }}
         currentTime={currentTime}
       />
-      
 
       {/* Desktop Layout */}
       <div className="hidden min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20 lg:block">
@@ -541,7 +712,8 @@ export function DashboardClient() {
                     </h1>
                   </div>
                   <p className="mt-3 max-w-xl text-base text-muted-foreground">
-                    Visualiza el rendimiento diario, detecta bloqueos y activa los próximos pasos sin salir del dashboard.
+                    Visualiza el rendimiento diario, detecta bloqueos y activa
+                    los próximos pasos sin salir del dashboard.
                   </p>
                   <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                     <span className="inline-flex items-center gap-2 rounded-full border border-slate-300/40 bg-white/60 px-4 py-2 backdrop-blur dark:border-white/20 dark:bg-white/10">
@@ -596,7 +768,9 @@ export function DashboardClient() {
             </div>
 
             <div className="glass-card-ios26 relative rounded-3xl border border-white/10 p-6">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Próximos hitos</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Próximos hitos
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Mantén la operación alineada con los objetivos diarios.
               </p>
@@ -667,7 +841,8 @@ export function DashboardClient() {
                       Tablero operativo
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Revisa los puntos críticos y resuelve bloqueos con un vistazo.
+                      Revisa los puntos críticos y resuelve bloqueos con un
+                      vistazo.
                     </p>
                   </div>
                   <PremiumGlassButton
@@ -723,14 +898,18 @@ export function DashboardClient() {
               </div>
 
               <div className="grid gap-6 xl:grid-cols-3">
-                <EventProgressWidget />
-                <QuickAccessWidget />
-                <PhotoManagementWidget />
+                <EventProgressWidget events={dashboardStats.eventSummaries} />
+                <QuickAccessWidget data={dashboardStats.quickAccess} />
+                <PhotoManagementWidget
+                  summary={dashboardStats.photoManagement}
+                />
               </div>
 
               <div className="grid gap-6 xl:grid-cols-2">
-                <OrdersSummaryWidget />
-                <BusinessMetricsWidget />
+                <OrdersSummaryWidget summary={dashboardStats.ordersSummary} />
+                <BusinessMetricsWidget
+                  metrics={dashboardStats.businessMetrics}
+                />
               </div>
             </div>
 
@@ -745,7 +924,10 @@ export function DashboardClient() {
                       Refresca para asegurarte de que el equipo está al día.
                     </p>
                   </div>
-                  <PremiumIconButton onClick={() => refetch()} aria-label="Actualizar datos">
+                  <PremiumIconButton
+                    onClick={() => refetch()}
+                    aria-label="Actualizar datos"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </PremiumIconButton>
                 </div>
@@ -836,7 +1018,8 @@ export function DashboardClient() {
                   <div className="flex items-center justify-between text-sm text-slate-700 dark:text-slate-200">
                     <span>Usado</span>
                     <span>
-                      {storageUsedGb.toFixed(2)} GB / {storageLimitGb.toFixed(2)} GB
+                      {storageUsedGb.toFixed(2)} GB /{' '}
+                      {storageLimitGb.toFixed(2)} GB
                     </span>
                   </div>
                   <div className="h-3 rounded-full border border-white/10 bg-white/10">
@@ -876,7 +1059,9 @@ export function DashboardClient() {
 
           {showPerformanceMonitor && (
             <div className="glass-card-ios26 rounded-3xl border border-white/10 p-6">
-              <PerformanceMonitor onClose={() => setShowPerformanceMonitor(false)} />
+              <PerformanceMonitor
+                onClose={() => setShowPerformanceMonitor(false)}
+              />
             </div>
           )}
         </div>
