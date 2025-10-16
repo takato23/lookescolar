@@ -1,12 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-} from '@/components/ui/card';
+import React from 'react';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -24,104 +19,110 @@ import {
   PlayCircle,
   CheckCircle2,
 } from 'lucide-react';
+import { formatCurrency, formatRelativeTime } from '@/lib/utils';
 
-interface Event {
+type EventStatus = 'planning' | 'in_progress' | 'processing' | 'completed';
+
+export interface EventSummary {
   id: string;
   name: string;
-  date: string;
-  location: string;
+  location: string | null;
+  date: string | null;
   totalStudents: number;
   photosUploaded: number;
   expectedPhotos: number;
-  status: 'planning' | 'in_progress' | 'processing' | 'completed';
+  status: EventStatus;
 }
 
-interface BusinessMetrics {
-  monthlyRevenue: number;
+export interface QuickAccessSummary {
+  lastEvent: string;
+  lastEventDate: string | null;
+  photosToProcess: number;
+  pendingUploads: number;
+  recentActivity: string;
+}
+
+export interface PhotoManagementSummary {
+  totalPhotos: number;
+  processedToday: number;
+  pendingProcessing: number;
+  publishedGalleries: number;
+  lastUploadAt: string | null;
+}
+
+export interface OrdersSummary {
+  newOrders: number;
+  pendingDelivery: number;
+  totalRevenueCents: number;
+  todayOrders: number;
+}
+
+export interface BusinessMetricsSummary {
+  monthlyRevenueCents: number;
   activeClients: number;
   completionRate: number;
-  avgOrderValue: number;
+  avgOrderValueCents: number;
 }
 
-// Datos realistas para eventos activos
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    name: 'Escuela Primaria San Juan',
-    date: '2025-01-03',
-    location: 'Aula 12',
-    totalStudents: 180,
-    photosUploaded: 178,
-    expectedPhotos: 180,
-    status: 'in_progress',
-  },
-  {
-    id: '2',
-    name: 'Jardín de Infantes Los Peques',
-    date: '2025-01-04',
-    location: 'Patio Principal',
-    totalStudents: 95,
-    photosUploaded: 95,
-    expectedPhotos: 95,
-    status: 'completed',
-  },
-];
+function formatEventDate(date: string | null) {
+  if (!date) return 'Sin fecha registrada';
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Sin fecha registrada';
+  }
+  return parsed.toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
 
-// Datos de ejemplo para métricas de negocio
-const mockBusinessData = {
-  monthlyRevenue: 2850,
-  activeClients: 156,
-  completionRate: 94,
-  avgOrderValue: 18.50,
-};
+function getStatusColor(status: EventStatus) {
+  switch (status) {
+    case 'planning':
+      return 'bg-blue-500/10 text-blue-700 border-blue-200';
+    case 'in_progress':
+      return 'bg-primary-500/10 text-primary-700 border-primary-200';
+    case 'processing':
+      return 'bg-purple-500/10 text-purple-700 border-purple-200';
+    case 'completed':
+      return 'bg-green-500/10 text-green-700 border-green-200';
+    default:
+      return 'bg-gray-500/10 text-foreground border-border';
+  }
+}
 
-export function EventProgressWidget() {
-  const [activeEvents, setActiveEvents] = useState<Event[]>(mockEvents);
+function getStatusIcon(status: EventStatus) {
+  switch (status) {
+    case 'planning':
+      return <Calendar className="h-4 w-4" />;
+    case 'in_progress':
+      return <PlayCircle className="h-4 w-4" />;
+    case 'processing':
+      return <Upload className="h-4 w-4" />;
+    case 'completed':
+      return <CheckCircle2 className="h-4 w-4" />;
+    default:
+      return <Clock className="h-4 w-4" />;
+  }
+}
 
-  const getStatusColor = (status: Event['status']) => {
-    switch (status) {
-      case 'planning':
-        return 'bg-blue-500/10 text-blue-700 border-blue-200';
-      case 'in_progress':
-        return 'bg-primary-500/10 text-primary-700 border-primary-200';
-      case 'processing':
-        return 'bg-purple-500/10 text-purple-700 border-purple-200';
-      case 'completed':
-        return 'bg-green-500/10 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-500/10 text-foreground border-border';
-    }
-  };
+function getStatusText(status: EventStatus) {
+  switch (status) {
+    case 'planning':
+      return 'Planificando';
+    case 'in_progress':
+      return 'En Progreso';
+    case 'processing':
+      return 'Procesando';
+    case 'completed':
+      return 'Completado';
+    default:
+      return 'Desconocido';
+  }
+}
 
-  const getStatusIcon = (status: Event['status']) => {
-    switch (status) {
-      case 'planning':
-        return <Calendar className="h-4 w-4" />;
-      case 'in_progress':
-        return <PlayCircle className="h-4 w-4" />;
-      case 'processing':
-        return <Upload className="h-4 w-4" />;
-      case 'completed':
-        return <CheckCircle2 className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
-  };
-
-  const getStatusText = (status: Event['status']) => {
-    switch (status) {
-      case 'planning':
-        return 'Planificando';
-      case 'in_progress':
-        return 'En Progreso';
-      case 'processing':
-        return 'Procesando';
-      case 'completed':
-        return 'Completado';
-      default:
-        return 'Desconocido';
-    }
-  };
+export function EventProgressWidget({ events }: { events: EventSummary[] }) {
+  const activeEvents = events ?? [];
 
   return (
     <Card variant="glass-ios26" className="h-full">
@@ -134,7 +135,14 @@ export function EventProgressWidget() {
       <CardContent>
         <div className="space-y-4">
           {activeEvents.map((event) => {
-            const progress = (event.photosUploaded / event.expectedPhotos) * 100;
+            const progress =
+              event.expectedPhotos > 0
+                ? Math.min(
+                    100,
+                    (event.photosUploaded / event.expectedPhotos) * 100
+                  )
+                : 0;
+
             return (
               <div
                 key={event.id}
@@ -150,19 +158,26 @@ export function EventProgressWidget() {
                     {getStatusText(event.status)}
                   </Badge>
                 </div>
-                <div className="mb-3 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
-                    {event.location}
+                    {event.location || 'Sin ubicación'}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {formatEventDate(event.date)}
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
-                    {event.totalStudents} estudiantes
+                    {event.totalStudents.toLocaleString('es-AR')} estudiantes
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>Fotos: {event.photosUploaded}/{event.expectedPhotos}</span>
+                    <span>
+                      Fotos: {event.photosUploaded.toLocaleString('es-AR')} /
+                      {event.expectedPhotos.toLocaleString('es-AR')}
+                    </span>
                     <span>{Math.round(progress)}%</span>
                   </div>
                   <Progress value={progress} className="h-2" />
@@ -182,14 +197,7 @@ export function EventProgressWidget() {
   );
 }
 
-export function QuickAccessWidget() {
-  const [quickAccessData, setQuickAccessData] = useState({
-    lastEvent: 'Escuela Primaria San Juan',
-    photosToProcess: 23,
-    pendingUploads: 8,
-    recentActivity: '2 familias accedieron a la galería',
-  });
-
+export function QuickAccessWidget({ data }: { data: QuickAccessSummary }) {
   return (
     <Card variant="glass-ios26" className="h-full">
       <CardHeader>
@@ -200,27 +208,28 @@ export function QuickAccessWidget() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Último Evento */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Calendar className="h-4 w-4 text-blue-500" />
               <span className="text-sm font-medium">Último Evento</span>
             </div>
-            <p className="text-sm">{quickAccessData.lastEvent}</p>
+            <p className="text-sm font-semibold">{data.lastEvent}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatEventDate(data.lastEventDate)}
+            </p>
             <Button variant="ghost" size="sm" className="mt-2 w-full">
-              Continuar Trabajando
+              Continuar trabajando
             </Button>
           </div>
 
-          {/* Fotos Pendientes */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Camera className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium">Fotos Pendientes</span>
+              <span className="text-sm font-medium">Fotos pendientes</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-purple-600">
-                {quickAccessData.photosToProcess}
+                {data.photosToProcess.toLocaleString('es-AR')}
               </span>
               <Button variant="ghost" size="sm">
                 Procesar
@@ -228,23 +237,23 @@ export function QuickAccessWidget() {
             </div>
           </div>
 
-          {/* Carga Automática */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Upload className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Carga Automática</span>
+              <span className="text-sm font-medium">Carga automática</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">{quickAccessData.pendingUploads} fotos</span>
+              <span className="text-sm">
+                {data.pendingUploads.toLocaleString('es-AR')} fotos
+              </span>
               <Button variant="ghost" size="sm">
-                Ver Detalles
+                Ver detalles
               </Button>
             </div>
           </div>
 
-          {/* Actividad Reciente */}
           <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-            {quickAccessData.recentActivity}
+            {data.recentActivity}
           </div>
         </div>
       </CardContent>
@@ -252,14 +261,7 @@ export function QuickAccessWidget() {
   );
 }
 
-export function OrdersSummaryWidget() {
-  const [ordersData, setOrdersData] = useState({
-    newOrders: 5,
-    pendingDelivery: 12,
-    totalRevenue: 2850,
-    todayOrders: 8,
-  });
-
+export function OrdersSummaryWidget({ summary }: { summary: OrdersSummary }) {
   return (
     <Card variant="glass-ios26" className="h-full">
       <CardHeader>
@@ -270,31 +272,32 @@ export function OrdersSummaryWidget() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Nuevas Órdenes */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Package className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Nuevas Órdenes</span>
+              <span className="text-sm font-medium">Nuevas órdenes</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-green-600">
-                {ordersData.newOrders}
+                {summary.newOrders.toLocaleString('es-AR')}
               </span>
-              <Badge variant="secondary" className="bg-green-500/10 text-green-700">
-                Hoy
+              <Badge
+                variant="secondary"
+                className="bg-green-500/10 text-green-700"
+              >
+                Últimas 24h
               </Badge>
             </div>
           </div>
 
-          {/* Pedidos Pendientes */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <Clock className="h-4 w-4 text-primary-600" />
-              <span className="text-sm font-medium">Pendientes de Entrega</span>
+              <span className="text-sm font-medium">Pendientes de entrega</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-2xl font-bold text-primary">
-                {ordersData.pendingDelivery}
+                {summary.pendingDelivery.toLocaleString('es-AR')}
               </span>
               <Button variant="ghost" size="sm">
                 Gestionar
@@ -302,22 +305,24 @@ export function OrdersSummaryWidget() {
             </div>
           </div>
 
-          {/* Ingresos */}
           <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="mb-2 flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-medium">Ingresos del Mes</span>
+              <span className="text-sm font-medium">Ingresos confirmados</span>
             </div>
             <div className="text-center">
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                ${ordersData.totalRevenue.toLocaleString()}
+                {formatCurrency(summary.totalRevenueCents / 100)}
               </span>
+              <p className="text-xs text-muted-foreground">
+                Órdenes completadas:{' '}
+                {summary.todayOrders.toLocaleString('es-AR')}
+              </p>
             </div>
           </div>
 
-          {/* Acceso Rápido */}
           <Button variant="glass-ios26" className="w-full">
-            Ver Todas las Órdenes
+            Ver todas las órdenes
           </Button>
         </div>
       </CardContent>
@@ -325,159 +330,153 @@ export function OrdersSummaryWidget() {
   );
 }
 
-export function PhotoManagementWidget() {
-  const [photoData, setPhotoData] = useState({
-    totalPhotos: 3247,
-    processedToday: 156,
-    pendingProcessing: 23,
-    publishedGalleries: 8,
-    lastUpload: 'Hace 15 min',
-  });
-
+export function PhotoManagementWidget({
+  summary,
+}: {
+  summary: PhotoManagementSummary;
+}) {
   return (
-            <Card variant="glass-ios26" className="h-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5" />
-              Gestión de Fotos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Total de Fotos */}
-              <div className="rounded-lg border bg-white/5 p-3 text-center backdrop-blur-sm">
-                <div className="text-2xl font-bold text-primary">
-                  {photoData.totalPhotos.toLocaleString()}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Total de fotos</div>
-              </div>
-
-              {/* Procesadas Hoy */}
-              <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Procesadas hoy</span>
-                  <span className="text-lg font-bold text-green-600">
-                    {photoData.processedToday}
-                  </span>
-                </div>
-              </div>
-
-              {/* Pendientes de Procesar */}
-              <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Pendientes</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-primary">
-                      {photoData.pendingProcessing}
-                    </span>
-                    <Button variant="ghost" size="sm">
-                      Procesar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Galerías Publicadas */}
-              <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Galerías activas</span>
-                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                    {photoData.publishedGalleries}
-                  </span>
-                </div>
-              </div>
-
-              {/* Última Actividad */}
-              <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-                Última carga: {photoData.lastUpload}
-              </div>
-
-              {/* Acceso Rápido */}
-              <Button variant="glass-ios26" className="w-full">
-                Gestionar Fotos
-              </Button>
+    <Card variant="glass-ios26" className="h-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Camera className="h-5 w-5" />
+          Gestión de Fotos
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-white/5 p-3 text-center backdrop-blur-sm">
+            <div className="text-2xl font-bold text-primary">
+              {summary.totalPhotos.toLocaleString('es-AR')}
             </div>
-          </CardContent>
-        </Card>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Total de fotos
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Procesadas hoy</span>
+              <span className="text-lg font-bold text-green-600">
+                {summary.processedToday.toLocaleString('es-AR')}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Pendientes</span>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-primary">
+                  {summary.pendingProcessing.toLocaleString('es-AR')}
+                </span>
+                <Button variant="ghost" size="sm">
+                  Procesar
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-white/5 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Galerías activas</span>
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                {summary.publishedGalleries.toLocaleString('es-AR')}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+            Última carga: {formatRelativeTime(summary.lastUploadAt)}
+          </div>
+
+          <Button variant="glass-ios26" className="w-full">
+            Gestionar fotos
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-export function BusinessMetricsWidget() {
-  const [businessData, setBusinessData] = useState({
-    monthlyRevenue: 2850,
-    activeClients: 156,
-    completionRate: 94,
-    avgOrderValue: 18.50,
-  });
-
-
+export function BusinessMetricsWidget({
+  metrics,
+}: {
+  metrics: BusinessMetricsSummary;
+}) {
+  const completion = Math.min(100, Math.max(0, metrics.completionRate));
+  const avgOrderValue = metrics.avgOrderValueCents / 100;
 
   return (
     <Card variant="glass-ios26" className="h-full">
       <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            Métricas del Negocio
-          </CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          Métricas del Negocio
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Ingresos Mensuales */}
           <div className="text-center">
             <div className="text-3xl font-bold text-green-600">
-              ${businessData.monthlyRevenue.toLocaleString()}
+              {formatCurrency(metrics.monthlyRevenueCents / 100)}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Ingresos del mes</div>
-            <Badge 
-              variant="secondary" 
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Ingresos del mes
+            </div>
+            <Badge
+              variant="secondary"
               className="mt-2 bg-green-500/10 text-green-700"
             >
-              +12% vs mes anterior
+              Datos actualizados
             </Badge>
           </div>
 
-          {/* Métricas Clave */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm">Clientes Activos</span>
+              <span className="text-sm">Clientes activos</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                  {businessData.activeClients}
+                  {metrics.activeClients.toLocaleString('es-AR')}
                 </span>
                 <div className="h-2 w-12 rounded-full bg-blue-500/10">
-                  <div 
+                  <div
                     className="h-full rounded-full bg-blue-500"
-                    style={{ width: `${(businessData.activeClients / 200) * 100}%` }}
+                    style={{
+                      width: `${Math.min(100, (metrics.activeClients / 200) * 100)}%`,
+                    }}
                   />
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm">Tasa de Completado</span>
+              <span className="text-sm">Tasa de completado</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-emerald-600">
-                  {businessData.completionRate}%
+                  {completion.toLocaleString('es-AR')}%
                 </span>
                 <div className="h-2 w-12 rounded-full bg-emerald-500/10">
-                  <div 
+                  <div
                     className="h-full rounded-full bg-emerald-500"
-                    style={{ width: `${businessData.completionRate}%` }}
+                    style={{ width: `${completion}%` }}
                   />
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm">Valor Promedio</span>
+              <span className="text-sm">Valor promedio</span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-purple-600">
-                  ${businessData.avgOrderValue}
+                  {formatCurrency(avgOrderValue)}
                 </span>
                 <div className="h-2 w-12 rounded-full bg-purple-500/10">
-                  <div 
+                  <div
                     className="h-full rounded-full bg-purple-500"
-                    style={{ width: `${(businessData.avgOrderValue / 25) * 100}%` }}
+                    style={{
+                      width: `${Math.min(100, (avgOrderValue / 25) * 100)}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -485,7 +484,7 @@ export function BusinessMetricsWidget() {
           </div>
 
           <div className="pt-2 text-center text-xs text-gray-500 dark:text-gray-400">
-            Actualizado hace 2 min
+            Actualizado con datos en vivo
           </div>
         </div>
       </CardContent>
