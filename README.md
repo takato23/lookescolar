@@ -2,6 +2,12 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Multitenancy configuration
+
+The application now includes tenant-aware isolation. Review [docs/multitenancy.md](docs/multitenancy.md) for the list of new
+environment variables (`MULTITENANT_DOMAIN_MAP`, `NEXT_PUBLIC_MULTITENANT_DEFAULT_TENANT_ID`, etc.), tenant resolution flow
+and steps required to onboard new tenants.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh

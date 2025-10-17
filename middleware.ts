@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { logger } from '@/lib/utils/logger';
+import { resolveTenantId } from '@/lib/multitenant/tenant-resolver';
 
 // Configuración de origins permitidos
 const ALLOWED_ORIGINS = [
@@ -55,20 +56,44 @@ const TRUSTED_IPS = [
 export async function middleware(request: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
-  
+
   // BYPASS COMPLETO para endpoints de admin photos
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith('/api/admin/photos') || pathname.startsWith('/api/debug/')) {
-    const bypassResponse = NextResponse.next();
+  const tenantResolution = resolveTenantId({
+    headerTenantId: request.headers.get('x-tenant-id'),
+    host:
+      request.headers.get('x-forwarded-host') ?? request.headers.get('host'),
+  });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-tenant-id', tenantResolution.tenantId);
+  requestHeaders.set('x-tenant-source', tenantResolution.source);
+
+  if (
+    pathname.startsWith('/api/admin/photos') ||
+    pathname.startsWith('/api/debug/')
+  ) {
+    const bypassResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
     bypassResponse.headers.set('X-Request-ID', requestId);
     bypassResponse.headers.set('X-Bypass-Reason', 'admin-photos-debug');
+    bypassResponse.headers.set('X-Tenant-Id', tenantResolution.tenantId);
+    bypassResponse.headers.set('X-Tenant-Source', tenantResolution.source);
     return bypassResponse;
   }
-  
+
   // Agregar request ID a headers para tracking
-  const response = NextResponse.next();
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
   response.headers.set('X-Request-ID', requestId);
-  
+  response.headers.set('X-Tenant-Id', tenantResolution.tenantId);
+  response.headers.set('X-Tenant-Source', tenantResolution.source);
+
   try {
     const url = request.nextUrl.clone();
     const method = request.method;
@@ -101,10 +126,13 @@ export async function middleware(request: NextRequest) {
     }
 
     // 1. HTTPS Enforcement en producción
-    if (process.env.NODE_ENV === 'production' && !request.headers.get('x-forwarded-proto')?.includes('https')) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      !request.headers.get('x-forwarded-proto')?.includes('https')
+    ) {
       const redirectUrl = url.clone();
       redirectUrl.protocol = 'https:';
-      
+
       logger.warn('HTTP request redirected to HTTPS', {
         requestId,
         path: pathname,
@@ -113,7 +141,7 @@ export async function middleware(request: NextRequest) {
           redirectUrl: redirectUrl.href,
         },
       });
-      
+
       return NextResponse.redirect(redirectUrl, 301);
     }
 
@@ -130,14 +158,21 @@ export async function middleware(request: NextRequest) {
     });
 
     // 3b. Robots - Prevent indexing of tokenized gallery/store
-    if (pathname.startsWith('/share/') || pathname.startsWith('/store-unified/')) {
+    if (
+      pathname.startsWith('/share/') ||
+      pathname.startsWith('/store-unified/')
+    ) {
       response.headers.set('X-Robots-Tag', 'noindex, nofollow');
     }
 
     // 4. Anti-hotlinking para rutas protegidas
-    if (PROTECTED_PATHS.some(path => pathname.startsWith(path))) {
-      const antiHotlinkResult = validateAntiHotlinking(request, referer, clientIP);
-      
+    if (PROTECTED_PATHS.some((path) => pathname.startsWith(path))) {
+      const antiHotlinkResult = validateAntiHotlinking(
+        request,
+        referer,
+        clientIP
+      );
+
       if (!antiHotlinkResult.allowed) {
         logger.warn('Anti-hotlinking blocked request', {
           requestId,
@@ -162,9 +197,12 @@ export async function middleware(request: NextRequest) {
     }
 
     // 5. Rate Limiting - DISABLED IN DEVELOPMENT
-    if (pathname.startsWith('/api/') && process.env.NODE_ENV !== 'development') {
+    if (
+      pathname.startsWith('/api/') &&
+      process.env.NODE_ENV !== 'development'
+    ) {
       const rateLimitResult = await rateLimitMiddleware(request, requestId);
-      
+
       if (!rateLimitResult.allowed) {
         logger.warn('Rate limit exceeded', {
           requestId,
@@ -178,12 +216,23 @@ export async function middleware(request: NextRequest) {
         });
 
         const headers = new Headers({ 'X-Request-ID': requestId });
-        headers.set('X-RateLimit-Limit', rateLimitResult.limit?.toString() || '0');
-        headers.set('X-RateLimit-Remaining', rateLimitResult.remaining?.toString() || '0');
-        headers.set('X-RateLimit-Reset', rateLimitResult.resetTime?.toString() || '0');
+        headers.set(
+          'X-RateLimit-Limit',
+          rateLimitResult.limit?.toString() || '0'
+        );
+        headers.set(
+          'X-RateLimit-Remaining',
+          rateLimitResult.remaining?.toString() || '0'
+        );
+        headers.set(
+          'X-RateLimit-Reset',
+          rateLimitResult.resetTime?.toString() || '0'
+        );
         headers.set(
           'Retry-After',
-          Math.ceil(((rateLimitResult.resetTime || Date.now()) - Date.now()) / 1000).toString()
+          Math.ceil(
+            ((rateLimitResult.resetTime || Date.now()) - Date.now()) / 1000
+          ).toString()
         );
 
         return new NextResponse('Too Many Requests', {
@@ -191,12 +240,21 @@ export async function middleware(request: NextRequest) {
           headers,
         });
       }
-      
+
       // Agregar headers de rate limit a respuestas exitosas
       if (rateLimitResult.limit) {
-        response.headers.set('X-RateLimit-Limit', rateLimitResult.limit.toString());
-        response.headers.set('X-RateLimit-Remaining', (rateLimitResult.remaining || 0).toString());
-        response.headers.set('X-RateLimit-Reset', (rateLimitResult.resetTime || 0).toString());
+        response.headers.set(
+          'X-RateLimit-Limit',
+          rateLimitResult.limit.toString()
+        );
+        response.headers.set(
+          'X-RateLimit-Remaining',
+          (rateLimitResult.remaining || 0).toString()
+        );
+        response.headers.set(
+          'X-RateLimit-Reset',
+          (rateLimitResult.resetTime || 0).toString()
+        );
       }
     }
 
@@ -222,7 +280,12 @@ export async function middleware(request: NextRequest) {
 
     // Log exitoso (silenciar rutas ruidosas en desarrollo)
     const duration = Date.now() - startTime;
-    if (!(process.env.NODE_ENV === 'development' && NOISY_PATHS.some((p) => pathname.startsWith(p)))) {
+    if (
+      !(
+        process.env.NODE_ENV === 'development' &&
+        NOISY_PATHS.some((p) => pathname.startsWith(p))
+      )
+    ) {
       logger.info('Request processed successfully', {
         requestId,
         path: pathname,
@@ -236,10 +299,9 @@ export async function middleware(request: NextRequest) {
     }
 
     return response;
-
   } catch (error) {
     const duration = Date.now() - startTime;
-    
+
     logger.error('Middleware error', {
       requestId,
       path: request.nextUrl.pathname,
@@ -259,7 +321,7 @@ export async function middleware(request: NextRequest) {
     errorResponse.headers.set('X-Content-Type-Options', 'nosniff');
     errorResponse.headers.set('X-Frame-Options', 'DENY');
     errorResponse.headers.set('X-XSS-Protection', '1; mode=block');
-    
+
     return errorResponse;
   }
 }
@@ -274,20 +336,20 @@ function getClientIP(request: NextRequest): string {
   const forwardedFor = request.headers.get('x-forwarded-for');
   const realIP = request.headers.get('x-real-ip');
   const connectingIP = request.headers.get('cf-connecting-ip'); // Cloudflare
-  
+
   if (forwardedFor) {
     // x-forwarded-for puede ser una lista separada por comas
     return forwardedFor.split(',')[0].trim();
   }
-  
+
   if (realIP) {
     return realIP;
   }
-  
+
   if (connectingIP) {
     return connectingIP;
   }
-  
+
   // Fallback a IP de Next.js
   const nextIp = (request as unknown as { ip?: string | null }).ip;
   return nextIp || 'unknown';
@@ -299,30 +361,36 @@ function getClientIP(request: NextRequest): string {
  * @param {string|null} referer - Referer header
  * @returns {Record<string, string>} CORS headers
  */
-function getCorsHeaders(request: NextRequest, referer?: string | null): Record<string, string> {
+function getCorsHeaders(
+  request: NextRequest,
+  _referer?: string | null
+): Record<string, string> {
   const origin = request.headers.get('origin');
-  const isAllowedOrigin = origin && ALLOWED_ORIGINS.some(allowed => {
-    if (allowed.includes('*')) {
-      const pattern = allowed.replace('*', '[^.]*');
-      const regex = new RegExp(`^${pattern}$`, 'i');
-      return regex.test(origin);
-    }
-    return origin === allowed;
-  });
-  
+  const isAllowedOrigin =
+    origin &&
+    ALLOWED_ORIGINS.some((allowed) => {
+      if (allowed.includes('*')) {
+        const pattern = allowed.replace('*', '[^.]*');
+        const regex = new RegExp(`^${pattern}$`, 'i');
+        return regex.test(origin);
+      }
+      return origin === allowed;
+    });
+
   const headers: Record<string, string> = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Request-ID',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Requested-With, X-Request-ID',
     'Access-Control-Max-Age': '86400', // 24 horas
   };
-  
+
   if (isAllowedOrigin) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers['Access-Control-Allow-Credentials'] = 'true';
   } else {
     headers['Access-Control-Allow-Origin'] = 'null';
   }
-  
+
   return headers;
 }
 
@@ -338,18 +406,19 @@ function getSecurityHeaders(): Record<string, string> {
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-    
+
     // HSTS en producción
     ...(process.env.NODE_ENV === 'production' && {
-      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+      'Strict-Transport-Security':
+        'max-age=31536000; includeSubDomains; preload',
     }),
   };
-  
+
   // CSP - Solo agregar si está definido (temporalmente deshabilitado)
   if (CSP_HEADER) {
     headers['Content-Security-Policy'] = CSP_HEADER;
   }
-  
+
   return headers;
 }
 
@@ -361,8 +430,8 @@ function getSecurityHeaders(): Record<string, string> {
  * @returns {{allowed: boolean; reason?: string}} Validation result
  */
 function validateAntiHotlinking(
-  request: NextRequest, 
-  referer?: string | null, 
+  request: NextRequest,
+  referer?: string | null,
   clientIP?: string
 ): { allowed: boolean; reason?: string } {
   // Permitir IPs confiables sin referer check y relajar protección en desarrollo
@@ -370,13 +439,13 @@ function validateAntiHotlinking(
   if (isLocal || process.env.NODE_ENV !== 'production') {
     return { allowed: true };
   }
-  
+
   // TEMPORAL: Permitir todos los requests a endpoints de admin para debugging
   const pathname = request.nextUrl.pathname;
   if (pathname.startsWith('/api/admin/photos')) {
     return { allowed: true };
   }
-  
+
   // Permitir requests directos (sin referer) solo para GET
   if (!referer) {
     if (request.method === 'GET') {
@@ -384,33 +453,32 @@ function validateAntiHotlinking(
     }
     return { allowed: false, reason: 'no-referer-non-get' };
   }
-  
+
   try {
     const refererUrl = new URL(referer);
-    
+
     // Verificar si el referer está en la lista de permitidos
-    const isAllowed = ALLOWED_ORIGINS.some(origin => {
+    const isAllowed = ALLOWED_ORIGINS.some((origin) => {
       if (origin.includes('*')) {
         const pattern = origin.replace(/\*/g, '[^.]*'); // Escape all * characters
         const regex = new RegExp(`^https?://${pattern}$`, 'i');
         return regex.test(`${refererUrl.protocol}//${refererUrl.hostname}`);
       }
-      
+
       // Handle vercel.app domains specially
       if (origin.includes('vercel.app')) {
         return refererUrl.hostname.includes('vercel.app');
       }
-      
+
       const originUrl = new URL(origin);
       return refererUrl.hostname === originUrl.hostname;
     });
-    
+
     if (!isAllowed) {
       return { allowed: false, reason: 'invalid-referer' };
     }
-    
+
     return { allowed: true };
-    
   } catch {
     return { allowed: false, reason: 'malformed-referer' };
   }
@@ -422,13 +490,13 @@ function validateAntiHotlinking(
  * @param {string} userAgent - User-Agent header
  * @returns {boolean} True if blocked
  */
-function isBlockedUserAgent(userAgent: string): boolean {
+function isBlockedUserAgent(_userAgent: string): boolean {
   // En desarrollo no bloquear por User-Agent para facilitar pruebas locales
   if (process.env.NODE_ENV !== 'production') return false;
-  
+
   // TEMPORAL: No bloquear user agents para debugging de endpoints admin
   return false;
-  
+
   // Código original comentado temporalmente
   /*
   const blockedPatterns = [
@@ -472,7 +540,7 @@ function maskIP(ip?: string): string {
   if (!ip || ip === 'unknown') {
     return 'unknown';
   }
-  
+
   if (ip.includes(':')) {
     // IPv6 - mostrar solo primeros 4 grupos
     const parts = ip.split(':');
@@ -496,7 +564,7 @@ function maskUserAgent(ua: string): string {
   if (ua.length <= 20) {
     return ua.substring(0, 5) + '***';
   }
-  
+
   return ua.substring(0, 10) + '***' + ua.substring(ua.length - 5);
 }
 
@@ -519,13 +587,13 @@ export const config = {
   matcher: [
     // Aplicar a todas las rutas de API
     '/api/:path*',
-    
+
     // Aplicar a rutas específicas de la app (pero NO a estáticos de Next)
     '/admin/:path*',
     '/f/:path*',
-    
+
     // Excluir explícitamente archivos estáticos y assets de Next
     // Importante: evitar interceptar `/_next/*` para no romper CSS/JS
-    '/((?!_next/|_next/static|_next/image|favicon.ico|\.well-known|robots\.txt|sitemap\.xml).*)',
+    '/((?!_next/|_next/static|_next/image|favicon.ico|.well-known|robots.txt|sitemap.xml).*)',
   ],
 };
