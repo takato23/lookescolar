@@ -150,6 +150,14 @@ function makeEtag(updatedAt: string | null | undefined): string {
   return `"${updatedAt ?? Date.now().toString()}"`;
 }
 
+function sanitizeEtag(etag: string | null): string | null {
+  if (!etag) {
+    return null;
+  }
+
+  return etag.trim().replace(/^W\//, '');
+}
+
 export async function GET(req: NextRequest) {
   try {
     const supabase = createAdminClient();
@@ -212,6 +220,47 @@ export async function PATCH(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
+
+    const ifMatch = sanitizeEtag(req.headers.get('if-match'));
+
+    if (ifMatch) {
+      const { data: current, error: currentError } = await supabase
+        .from('app_settings')
+        .select('updated_at')
+        .eq('id', 1)
+        .single();
+
+      if (currentError) {
+        console.error(
+          'Failed to verify settings version before update:',
+          currentError
+        );
+        return NextResponse.json(
+          {
+            error: 'Failed to verify settings version',
+            details: currentError.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      const currentEtag = makeEtag(current?.updated_at);
+
+      if (currentEtag !== ifMatch) {
+        return NextResponse.json(
+          {
+            error: 'Settings have been modified by another user',
+          },
+          {
+            status: 412,
+            headers: {
+              ETag: currentEtag,
+              'Cache-Control': 'no-cache',
+            },
+          }
+        );
+      }
+    }
 
     // Convert to database format
     const update = toDb(parsed.data);
