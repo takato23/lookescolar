@@ -1,14 +1,22 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { withTenantOnClient } from '@/lib/multitenant/supabase-tenant';
+import { resolveTenantForBrowser } from '@/lib/multitenant/tenant-resolver';
+
+export interface BrowserSupabaseOptions {
+  tenantId?: string | null;
+  bypassTenant?: boolean;
+}
 
 /**
- * Creates a Supabase client for browser-side usage.
- * Validates required environment variables.
- * @returns {SupabaseClient<Database>} Supabase client instance
- * @throws {Error} If environment variables are missing
+ * Creates a tenant-aware Supabase client for browser usage.
+ * Injects the resolved tenant id in every request header and
+ * automatically scopes queries to the current tenant.
  */
-export function createClient(): SupabaseClient<Database> {
+export function createClient(
+  options: BrowserSupabaseOptions = {}
+): SupabaseClient<Database> {
   const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
   const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
@@ -18,8 +26,31 @@ export function createClient(): SupabaseClient<Database> {
     );
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  const resolution = resolveTenantForBrowser(options.tenantId ?? null);
+  const tenantHeaders = options.bypassTenant
+    ? {}
+    : { 'x-tenant-id': resolution.tenantId };
+
+  const baseClient = createBrowserClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey,
+    {
+      global: {
+        headers: tenantHeaders,
+      },
+    }
+  );
+
+  (baseClient as any).tenantId = resolution.tenantId;
+
+  if (options.bypassTenant) {
+    return baseClient;
+  }
+
+  return withTenantOnClient(baseClient, {
+    tenantId: resolution.tenantId,
+  });
 }
 
-// Alias para compatibilidad
 export const createClientSupabaseClient = createClient;
+export const supabase = createClient();
