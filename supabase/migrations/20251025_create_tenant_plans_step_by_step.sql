@@ -1,13 +1,13 @@
--- Simple migration to avoid deadlocks
--- Run this in smaller chunks if needed
+-- Alternative step-by-step migration to avoid deadlocks
+-- Execute each section separately if needed
 
--- Step 1: Create plans table with minimal structure
+-- SECTION 1: Create basic plans table
 CREATE TABLE IF NOT EXISTS public.plans (
   code TEXT PRIMARY KEY,
   name TEXT NOT NULL
 );
 
--- Step 2: Add columns one by one to avoid locks
+-- SECTION 2: Add columns to plans table
 ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS description TEXT;
 ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS max_events INTEGER;
 ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS max_photos_per_event INTEGER;
@@ -18,7 +18,7 @@ ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::j
 ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 ALTER TABLE public.plans ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
--- Step 3: Create tenant_plan_subscriptions table
+-- SECTION 3: Create tenant_plan_subscriptions table
 CREATE TABLE IF NOT EXISTS public.tenant_plan_subscriptions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
@@ -28,14 +28,14 @@ CREATE TABLE IF NOT EXISTS public.tenant_plan_subscriptions (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Add additional columns if needed
+-- SECTION 4: Add additional columns to tenant_plan_subscriptions
 ALTER TABLE public.tenant_plan_subscriptions ADD COLUMN IF NOT EXISTS current_period_start TIMESTAMPTZ;
 ALTER TABLE public.tenant_plan_subscriptions ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMPTZ;
 ALTER TABLE public.tenant_plan_subscriptions ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
 ALTER TABLE public.tenant_plan_subscriptions ADD COLUMN IF NOT EXISTS billing_provider TEXT;
 ALTER TABLE public.tenant_plan_subscriptions ADD COLUMN IF NOT EXISTS billing_external_id TEXT;
 
--- Add constraint if it doesn't exist
+-- SECTION 5: Add constraints and indexes
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -48,12 +48,11 @@ BEGIN
   END IF;
 END $$;
 
--- Create unique index
 CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_plan_active_unique
   ON public.tenant_plan_subscriptions(tenant_id)
   WHERE status = 'active';
 
--- Step 4: Insert plans (one by one to avoid locks)
+-- SECTION 6: Insert plans one by one
 INSERT INTO public.plans (code, name, description, max_events, max_photos_per_event, max_shares_per_event, price_monthly, currency)
 VALUES ('free', 'Free', 'Hasta 2 eventos activos y 200 fotos por evento.', 2, 200, 3, 0, 'ARS')
 ON CONFLICT (code) DO NOTHING;
@@ -70,7 +69,7 @@ INSERT INTO public.plans (code, name, description, max_events, max_photos_per_ev
 VALUES ('premium', 'Premium', 'Cobertura ilimitada para redes de estudios.', NULL, 20000, 200, 69999, 'ARS')
 ON CONFLICT (code) DO NOTHING;
 
--- Step 5: Assign free plan to existing tenants
+-- SECTION 7: Assign free plan to existing tenants
 INSERT INTO public.tenant_plan_subscriptions (tenant_id, plan_code, status, created_at, updated_at)
 SELECT t.id, 'free', 'active', NOW(), NOW()
 FROM public.tenants t

@@ -26,7 +26,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function ShareManagerPage({ params }: { params: { id: string } }) {
+export default function ShareManagerPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const { id: eventId } = params;
   const [folders, setFolders] = useState<any[]>([]);
   const [levels, setLevels] = useState<any[]>([]);
@@ -34,15 +38,28 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
   const [selectedLevelFolder, setSelectedLevelFolder] = useState<string>('');
   const [selectedCourseFolder, setSelectedCourseFolder] = useState<string>('');
   const [creating, setCreating] = useState<string | null>(null);
-  const [lastLink, setLastLink] = useState<{ scope: string; url: string; store: string }> | null>(null);
+  const [lastLink, setLastLink] = useState<{
+    scope: string;
+    url: string;
+    store: string;
+  } | null>(null);
   const [orderSummary, setOrderSummary] = useState<any[]>([]);
   const [shareList, setShareList] = useState<any[]>([]);
   const [showShareWizard, setShowShareWizard] = useState(false);
   const [expandedShareId, setExpandedShareId] = useState<string | null>(null);
-  const [audiencesByShare, setAudiencesByShare] = useState<Record<string, any[]>>({});
-  const [loadingAudienceFor, setLoadingAudienceFor] = useState<string | null>(null);
+  const [audiencesByShare, setAudiencesByShare] = useState<
+    Record<string, any[]>
+  >({});
+  const [loadingAudienceFor, setLoadingAudienceFor] = useState<string | null>(
+    null
+  );
   const [resendingShareId, setResendingShareId] = useState<string | null>(null);
-  const [opts, setOpts] = useState({ allowDownload: true, expiresInDays: 60, maxViews: 0, password: '' });
+  const [opts, setOpts] = useState({
+    allowDownload: true,
+    expiresInDays: 60,
+    maxViews: 0,
+    password: '',
+  });
   const [familyTokens, setFamilyTokens] = useState<
     Array<{
       id: string;
@@ -64,8 +81,15 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
   useEffect(() => {
     const load = async () => {
       try {
-        const params = new URLSearchParams({ include_unpublished: 'true', limit: '200', order_by: 'name_asc', event_id: eventId });
-        const res = await fetch(`/api/admin/folders/published?${params.toString()}`);
+        const params = new URLSearchParams({
+          include_unpublished: 'true',
+          limit: '200',
+          order_by: 'name_asc',
+          event_id: eventId,
+        });
+        const res = await fetch(
+          `/api/admin/folders/published?${params.toString()}`
+        );
         if (res.ok) {
           const data = await res.json();
           setFolders(data.folders || []);
@@ -91,7 +115,7 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     loadShares();
-  }, [eventId]); // Cambiar dependencia para evitar loops
+  }, [eventId, loadShares]); // Incluir loadShares en dependencias
 
   useEffect(() => {
     const shouldOpen = searchParams?.get('openWizard') === '1';
@@ -104,7 +128,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
     const loadSummary = async () => {
       try {
         const params = new URLSearchParams({ event_id: eventId, limit: '50' });
-        const res = await fetch(`/api/admin/orders/summary?${params.toString()}`);
+        const res = await fetch(
+          `/api/admin/orders/summary?${params.toString()}`
+        );
         if (res.ok) {
           const data = await res.json();
           setOrderSummary(data.summary || []);
@@ -120,7 +146,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
       const res = await fetch(`/api/admin/events/${eventId}/aliases`);
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.error || 'No se pudieron cargar los alias familiares');
+        throw new Error(
+          payload?.error || 'No se pudieron cargar los alias familiares'
+        );
       }
       const data = await res.json();
       setFamilyTokens(data.tokens || []);
@@ -134,12 +162,14 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
 
   useEffect(() => {
     fetchFamilyTokens();
-  }, [eventId]); // Solo ejecutar cuando cambia el eventId
+  }, [eventId, fetchFamilyTokens]); // Incluir fetchFamilyTokens en dependencias
 
   const ensureFamilyAliases = useCallback(async () => {
     setEnsuringAliases(true);
     try {
-      const res = await fetch(`/api/admin/events/${eventId}/aliases`, { method: 'POST' });
+      const res = await fetch(`/api/admin/events/${eventId}/aliases`, {
+        method: 'POST',
+      });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload?.error || 'No se pudieron generar alias');
@@ -156,10 +186,20 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
   }, [eventId, fetchFamilyTokens]);
 
   const printFamilyFlyer = useCallback(
-    (item: { alias: string; short_code: string; token: string; family_email?: string | null }) => {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    (item: {
+      alias: string;
+      short_code: string;
+      token: string;
+      family_email?: string | null;
+    }) => {
+      const origin =
+        typeof window !== 'undefined' ? window.location.origin : '';
       const qrUrl = `${origin}/access?token=${encodeURIComponent(item.token)}`;
-      const popup = window.open('', '_blank', 'noopener,noreferrer,width=720,height=960');
+      const popup = window.open(
+        '',
+        '_blank',
+        'noopener,noreferrer,width=720,height=960'
+      );
       if (!popup) {
         toast.error('Habilita ventanas emergentes para imprimir el flyer');
         return;
@@ -257,11 +297,15 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
         }
 
         const families = audiences
-          .filter((aud: any) => aud.audience_type !== 'manual' && aud.subject_id)
+          .filter(
+            (aud: any) => aud.audience_type !== 'manual' && aud.subject_id
+          )
           .map((aud: any) => aud.subject_id as string);
 
         const emails = audiences
-          .filter((aud: any) => aud.audience_type === 'manual' && aud.contact_email)
+          .filter(
+            (aud: any) => aud.audience_type === 'manual' && aud.contact_email
+          )
           .map((aud: any) => (aud.contact_email as string).toLowerCase());
 
         const groups = audiences
@@ -342,7 +386,10 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
       if (data?.success) {
         setLastLink({ scope, url: data.view_url, store: data.store_url });
         // refresh list
-        const params = new URLSearchParams({ event_id: eventId, active: 'true' });
+        const params = new URLSearchParams({
+          event_id: eventId,
+          active: 'true',
+        });
         fetch(`/api/admin/share/list?${params.toString()}`)
           .then((r) => r.json())
           .then((d) => setShareList(d.tokens || []))
@@ -353,15 +400,23 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
     }
   };
 
-  const levelOptions = useMemo(() => folders.filter((f) => (f.depth === 0 || f.parent_id === null)), [folders]);
-  const courseOptions = useMemo(() => folders.filter((f) => f.depth === 1 || f.parent_id), [folders]);
+  const levelOptions = useMemo(
+    () => folders.filter((f) => f.depth === 0 || f.parent_id === null),
+    [folders]
+  );
+  const courseOptions = useMemo(
+    () => folders.filter((f) => f.depth === 1 || f.parent_id),
+    [folders]
+  );
 
   return (
     <div className="container mx-auto max-w-6xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Compartir</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Crear enlaces para familias de este evento</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Crear enlaces para familias de este evento
+          </p>
         </div>
       </div>
 
@@ -373,7 +428,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             <input
               type="checkbox"
               checked={opts.allowDownload}
-              onChange={(e) => setOpts((o) => ({ ...o, allowDownload: e.target.checked }))}
+              onChange={(e) =>
+                setOpts((o) => ({ ...o, allowDownload: e.target.checked }))
+              }
             />
             Permitir descarga
           </label>
@@ -381,7 +438,12 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             <span>Expira (días)</span>
             <Input
               value={opts.expiresInDays}
-              onChange={(e) => setOpts((o) => ({ ...o, expiresInDays: Number(e.target.value || 0) }))}
+              onChange={(e) =>
+                setOpts((o) => ({
+                  ...o,
+                  expiresInDays: Number(e.target.value || 0),
+                }))
+              }
               className="w-24"
               type="number"
               min={1}
@@ -392,7 +454,12 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             <span>Máx. vistas</span>
             <Input
               value={opts.maxViews}
-              onChange={(e) => setOpts((o) => ({ ...o, maxViews: Number(e.target.value || 0) }))}
+              onChange={(e) =>
+                setOpts((o) => ({
+                  ...o,
+                  maxViews: Number(e.target.value || 0),
+                }))
+              }
               className="w-24"
               type="number"
               min={0}
@@ -403,7 +470,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             <span>Contraseña</span>
             <Input
               value={opts.password}
-              onChange={(e) => setOpts((o) => ({ ...o, password: e.target.value }))}
+              onChange={(e) =>
+                setOpts((o) => ({ ...o, password: e.target.value }))
+              }
               className="w-48"
               placeholder="(opcional)"
               type="text"
@@ -419,10 +488,15 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             <div>
               <div className="font-medium">Evento completo</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Todas las fotos publicadas del evento</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Todas las fotos publicadas del evento
+              </div>
             </div>
           </div>
-          <Button onClick={() => createLink('event', eventId)} disabled={creating === 'event:' + eventId}>
+          <Button
+            onClick={() => createLink('event', eventId)}
+            disabled={creating === 'event:' + eventId}
+          >
             <Share2 className="mr-2 h-4 w-4" /> Crear enlace
           </Button>
         </div>
@@ -434,7 +508,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
           <GraduationCap className="h-5 w-5 text-purple-600" />
           <div>
             <div className="font-medium">Secundaria (Nivel)</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Selecciona carpeta de nivel</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Selecciona carpeta de nivel
+            </div>
           </div>
         </div>
         <div className="flex gap-2">
@@ -451,8 +527,13 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             ))}
           </select>
           <Button
-            onClick={() => selectedLevelFolder && createLink('folder', selectedLevelFolder)}
-            disabled={!selectedLevelFolder || creating === 'folder:' + selectedLevelFolder}
+            onClick={() =>
+              selectedLevelFolder && createLink('folder', selectedLevelFolder)
+            }
+            disabled={
+              !selectedLevelFolder ||
+              creating === 'folder:' + selectedLevelFolder
+            }
           >
             <Share2 className="mr-2 h-4 w-4" /> Crear enlace
           </Button>
@@ -465,7 +546,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
           <Users className="h-5 w-5 text-emerald-600" />
           <div>
             <div className="font-medium">Salón 1 (Curso)</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Selecciona carpeta de curso/salón</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Selecciona carpeta de curso/salón
+            </div>
           </div>
         </div>
         <div className="flex gap-2">
@@ -482,8 +565,13 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             ))}
           </select>
           <Button
-            onClick={() => selectedCourseFolder && createLink('folder', selectedCourseFolder)}
-            disabled={!selectedCourseFolder || creating === 'folder:' + selectedCourseFolder}
+            onClick={() =>
+              selectedCourseFolder && createLink('folder', selectedCourseFolder)
+            }
+            disabled={
+              !selectedCourseFolder ||
+              creating === 'folder:' + selectedCourseFolder
+            }
           >
             <Share2 className="mr-2 h-4 w-4" /> Crear enlace
           </Button>
@@ -493,12 +581,18 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
       <Card className="border-dashed border-primary/30 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-lg font-semibold">Sistema de compartición avanzado</h3>
+            <h3 className="text-lg font-semibold">
+              Sistema de compartición avanzado
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Configurá alcance, audiencias y entrega automatizada desde un único flujo guiado.
+              Configurá alcance, audiencias y entrega automatizada desde un
+              único flujo guiado.
             </p>
           </div>
-          <Button className="sm:w-auto" onClick={() => setShowShareWizard(true)}>
+          <Button
+            className="sm:w-auto"
+            onClick={() => setShowShareWizard(true)}
+          >
             <Sparkles className="mr-2 h-4 w-4" /> Abrir wizard
           </Button>
         </div>
@@ -512,7 +606,8 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
             <div>
               <div className="font-medium">Alias familiares</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Compartí alias cortos y QR con cada familia sin salir de esta pantalla
+                Compartí alias cortos y QR con cada familia sin salir de esta
+                pantalla
               </div>
             </div>
           </div>
@@ -545,10 +640,13 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
         </div>
 
         {loadingFamilyTokens ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">Cargando alias familiares…</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Cargando alias familiares…
+          </div>
         ) : familyTokens.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:text-gray-400">
-            Todavía no hay tokens familiares registrados. Generá accesos desde el módulo de estudiantes/familias y presioná “Generar alias”.
+            Todavía no hay tokens familiares registrados. Generá accesos desde
+            el módulo de estudiantes/familias y presioná “Generar alias”.
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
@@ -559,15 +657,25 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Badge variant="outline">{token.type === 'family_access' ? 'Familia' : 'Estudiante'}</Badge>
+                    <Badge variant="outline">
+                      {token.type === 'family_access'
+                        ? 'Familia'
+                        : 'Estudiante'}
+                    </Badge>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {token.student_ids.length} estudiantes
                     </span>
                   </div>
-                  <div className="text-lg font-semibold tracking-wide">{token.alias.toUpperCase()}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Código corto: {token.short_code}</div>
+                  <div className="text-lg font-semibold tracking-wide">
+                    {token.alias.toUpperCase()}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Código corto: {token.short_code}
+                  </div>
                   {token.family_email && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Email: {token.family_email}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Email: {token.family_email}
+                    </div>
                   )}
                   {token.expires_at && (
                     <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -576,13 +684,25 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
                   )}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => copy(token.alias)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copy(token.alias)}
+                  >
                     <Copy className="mr-2 h-4 w-4" /> Copiar alias
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => copy(token.short_code)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copy(token.short_code)}
+                  >
                     <Copy className="mr-2 h-4 w-4" /> Copiar código
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => printFamilyFlyer(token)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => printFamilyFlyer(token)}
+                  >
                     <Printer className="mr-2 h-4 w-4" /> Imprimir flyer
                   </Button>
                 </div>
@@ -597,13 +717,25 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
           <div className="mb-2 text-sm font-medium">Enlace creado</div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{lastLink.scope}</Badge>
-            <Button variant="ghost" size="sm" onClick={() => copy(lastLink.url)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => copy(lastLink.url)}
+            >
               <Copy className="mr-2 h-4 w-4" /> Copiar enlace
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => window.open(lastLink.url, '_blank')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(lastLink.url, '_blank')}
+            >
               <ExternalLink className="mr-2 h-4 w-4" /> Abrir galería
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => window.open(lastLink.store, '_blank')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.open(lastLink.store, '_blank')}
+            >
               <Link2 className="mr-2 h-4 w-4" /> Abrir tienda
             </Button>
             <Button
@@ -639,7 +771,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
         </div>
 
         {shareList.length === 0 ? (
-          <div className="text-sm text-muted-foreground">No hay enlaces activos</div>
+          <div className="text-sm text-muted-foreground">
+            No hay enlaces activos
+          </div>
         ) : (
           <div className="space-y-3">
             {shareList.map((share) => {
@@ -651,7 +785,10 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
               };
               const audiencesCount = share.audiences_count ?? 0;
               return (
-                <div key={share.id} className="space-y-3 rounded-lg border p-3 text-sm">
+                <div
+                  key={share.id}
+                  className="space-y-3 rounded-lg border p-3 text-sm"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -659,31 +796,46 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
                           {String(scopeConfig.scope)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          Creado el {new Date(share.created_at).toLocaleString()}
+                          Creado el{' '}
+                          {new Date(share.created_at).toLocaleString()}
                         </span>
                         {share.expires_at && (
                           <span className="text-xs text-muted-foreground">
-                            Expira: {new Date(share.expires_at).toLocaleDateString()}
+                            Expira:{' '}
+                            {new Date(share.expires_at).toLocaleDateString()}
                           </span>
                         )}
-                        {!share.is_active && <Badge variant="destructive">Inactivo</Badge>}
+                        {!share.is_active && (
+                          <Badge variant="destructive">Inactivo</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Token {String(share.token || '').slice(0, 8)}… · Audiencias registradas: {audiencesCount}
+                        Token {String(share.token || '').slice(0, 8)}… ·
+                        Audiencias registradas: {audiencesCount}
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => window.open(share.view_url, '_blank')}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(share.view_url, '_blank')}
+                      >
                         Abrir
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => navigator.clipboard.writeText(share.view_url)}
+                        onClick={() =>
+                          navigator.clipboard.writeText(share.view_url)
+                        }
                       >
                         Copiar
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => window.open(share.store_url, '_blank')}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(share.store_url, '_blank')}
+                      >
                         Tienda
                       </Button>
                       <Button
@@ -692,7 +844,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
                         onClick={() => handleToggleAudiences(share.id)}
                         disabled={loadingAudienceFor === share.id}
                       >
-                        {expandedShareId === share.id ? 'Ocultar audiencias' : 'Ver audiencias'}
+                        {expandedShareId === share.id
+                          ? 'Ocultar audiencias'
+                          : 'Ver audiencias'}
                       </Button>
                       <Button
                         variant="ghost"
@@ -700,7 +854,9 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
                         onClick={() => handleResend(share)}
                         disabled={resendingShareId === share.id}
                       >
-                        {resendingShareId === share.id ? 'Reenviando…' : 'Reenviar'}
+                        {resendingShareId === share.id
+                          ? 'Reenviando…'
+                          : 'Reenviar'}
                       </Button>
                       <Button
                         variant="ghost"
@@ -716,8 +872,11 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
                   {expandedShareId === share.id && (
                     <div className="rounded-lg border bg-muted/40 p-3">
                       {loadingAudienceFor === share.id ? (
-                        <div className="text-sm text-muted-foreground">Cargando audiencias...</div>
-                      ) : audiencesByShare[share.id] && audiencesByShare[share.id].length > 0 ? (
+                        <div className="text-sm text-muted-foreground">
+                          Cargando audiencias...
+                        </div>
+                      ) : audiencesByShare[share.id] &&
+                        audiencesByShare[share.id].length > 0 ? (
                         <div className="space-y-2">
                           {audiencesByShare[share.id].map((audience: any) => (
                             <div
@@ -725,9 +884,13 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
                               className="flex flex-wrap items-center justify-between gap-2 rounded border px-2 py-2 text-sm"
                             >
                               <div>
-                                <div className="font-medium capitalize">{audience.audience_type}</div>
+                                <div className="font-medium capitalize">
+                                  {audience.audience_type}
+                                </div>
                                 <div className="text-xs text-muted-foreground">
-                                  {audience.contact_email || audience.subject_id || '—'}
+                                  {audience.contact_email ||
+                                    audience.subject_id ||
+                                    '—'}
                                 </div>
                               </div>
                               <Badge variant="outline" className="uppercase">
@@ -752,18 +915,34 @@ export default function ShareManagerPage({ params }: { params: { id: string } })
 
       {/* Resumen de órdenes por enlace */}
       <Card className="p-4">
-        <div className="mb-2 text-sm font-medium">Órdenes recientes por enlace</div>
+        <div className="mb-2 text-sm font-medium">
+          Órdenes recientes por enlace
+        </div>
         {orderSummary.length === 0 ? (
-          <div className="text-sm text-gray-500 dark:text-gray-400">Sin órdenes aún</div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Sin órdenes aún
+          </div>
         ) : (
           <div className="space-y-2">
             {orderSummary.slice(0, 10).map((it: any) => (
-              <div key={it.share_token_id || it.token} className="flex items-center justify-between text-sm">
+              <div
+                key={it.share_token_id || it.token}
+                className="flex items-center justify-between text-sm"
+              >
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{(it.token || '').slice(0, 6)}…</Badge>
-                  <span>{new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(it.total_amount || 0)}</span>
+                  <Badge variant="outline">
+                    {(it.token || '').slice(0, 6)}…
+                  </Badge>
+                  <span>
+                    {new Intl.NumberFormat('es-AR', {
+                      style: 'currency',
+                      currency: 'ARS',
+                    }).format(it.total_amount || 0)}
+                  </span>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{it.orders} pedidos</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  {it.orders} pedidos
+                </div>
               </div>
             ))}
           </div>

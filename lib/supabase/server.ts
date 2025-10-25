@@ -25,10 +25,10 @@ function normalizeOptions(
   return options ?? {};
 }
 
-function resolveTenantSync(options: ServerSupabaseOptions): {
+async function resolveTenant(options: ServerSupabaseOptions): Promise<{
   tenantId: string;
   source: string;
-} {
+}> {
   if (options.tenantId) {
     const sanitized = sanitizeTenantId(options.tenantId);
     if (sanitized) {
@@ -37,7 +37,7 @@ function resolveTenantSync(options: ServerSupabaseOptions): {
   }
 
   try {
-    const requestHeaders = headers();
+    const requestHeaders = await Promise.resolve(headers());
     const resolution = resolveTenantFromHeaders(
       Object.fromEntries(requestHeaders.entries())
     );
@@ -63,7 +63,7 @@ async function buildSupabaseClient(
     throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY no está configurado');
   }
 
-  const tenantResolution = resolveTenantSync(options);
+  const tenantResolution = await resolveTenant(options);
   const tenantId = tenantResolution.tenantId || getDefaultTenantId();
   setTenantForRequest(tenantId);
 
@@ -93,7 +93,7 @@ async function buildSupabaseClient(
     return withTenantOnClient(client, { tenantId });
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   const client = createServerClient<Database>(supabaseUrl, anonKey!, {
     cookies: {

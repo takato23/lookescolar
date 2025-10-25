@@ -20,7 +20,10 @@ const CoreSettingsSchema = z
     privacy: z
       .object({
         passwordEnabled: z.boolean().optional(),
-        password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+        password: z
+          .string()
+          .min(6, 'Password must be at least 6 characters')
+          .optional(),
       })
       .passthrough()
       .optional(),
@@ -47,16 +50,45 @@ const DesignSchema = z
   .object({
     cover: z
       .object({
-        style: z.enum(['novel', 'vintage', 'frame', 'stripe', 'divider', 'journal', 'classic', 'none']).optional(),
+        style: z
+          .enum([
+            'novel',
+            'vintage',
+            'frame',
+            'stripe',
+            'divider',
+            'journal',
+            'classic',
+            'none',
+          ])
+          .optional(),
       })
       .passthrough()
       .optional(),
     typography: z
-      .object({ preset: z.enum(['sans', 'serif', 'modern', 'timeless', 'bold', 'subtle']).optional() })
+      .object({
+        preset: z
+          .enum(['sans', 'serif', 'modern', 'timeless', 'bold', 'subtle'])
+          .optional(),
+      })
       .passthrough()
       .optional(),
     color: z
-      .object({ scheme: z.enum(['light', 'gold', 'rose', 'terracotta', 'sand', 'olive', 'agave', 'sea', 'dark']).optional() })
+      .object({
+        scheme: z
+          .enum([
+            'light',
+            'gold',
+            'rose',
+            'terracotta',
+            'sand',
+            'olive',
+            'agave',
+            'sea',
+            'dark',
+          ])
+          .optional(),
+      })
       .passthrough()
       .optional(),
     grid: z
@@ -86,7 +118,9 @@ type EventMetrics = {
 };
 
 function toRecord(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function mergeSettings(
@@ -136,7 +170,10 @@ function mergeSettings(
   return SettingsSchema.parse(merged);
 }
 
-export async function updateEventSettings(eventId: string, payload: unknown): Promise<{ success: boolean }> {
+export async function updateEventSettings(
+  eventId: string,
+  payload: unknown
+): Promise<{ success: boolean }> {
   const id = EventIdSchema.parse(eventId);
   const supabase = await createServerSupabaseServiceClient();
 
@@ -159,7 +196,10 @@ export async function updateEventSettings(eventId: string, payload: unknown): Pr
     updated_at: new Date().toISOString(),
   };
 
-  const { error: updateError } = await supabase.from('events').update(updatePayload).eq('id', id);
+  const { error: updateError } = await supabase
+    .from('events')
+    .update<Database['public']['Tables']['events']['Update']>(updatePayload)
+    .eq('id', id);
 
   if (updateError) {
     throw new Error(`Failed to update settings: ${updateError.message}`);
@@ -168,7 +208,10 @@ export async function updateEventSettings(eventId: string, payload: unknown): Pr
   return { success: true };
 }
 
-export async function linkRootFolder(eventId: string, folderId: string): Promise<{ success: boolean }> {
+export async function linkRootFolder(
+  eventId: string,
+  folderId: string
+): Promise<{ success: boolean }> {
   const id = EventIdSchema.parse(eventId);
   const folderUuid = FolderIdSchema.parse(folderId);
   const supabase = await createServerSupabaseServiceClient();
@@ -196,7 +239,10 @@ export async function linkRootFolder(eventId: string, folderId: string): Promise
     updated_at: new Date().toISOString(),
   };
 
-  const { error: updateError } = await supabase.from('events').update(updatePayload).eq('id', id);
+  const { error: updateError } = await supabase
+    .from('events')
+    .update<Database['public']['Tables']['events']['Update']>(updatePayload)
+    .eq('id', id);
 
   if (updateError) {
     throw new Error(`Failed to link folder: ${updateError.message}`);
@@ -205,14 +251,22 @@ export async function linkRootFolder(eventId: string, folderId: string): Promise
   return { success: true };
 }
 
-export async function fetchEventMetrics(eventId: string): Promise<EventMetrics> {
+export async function fetchEventMetrics(
+  eventId: string
+): Promise<EventMetrics> {
   const id = EventIdSchema.parse(eventId);
   const supabase = await createServerSupabaseServiceClient();
 
   try {
     const [subjectsResult, ordersResult] = await Promise.all([
-      supabase.from('subjects').select('id', { count: 'exact', head: true }).eq('event_id', id),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('event_id', id),
+      supabase
+        .from('subjects')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', id),
+      supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', id),
     ]);
 
     if (subjectsResult.error) {
@@ -237,14 +291,20 @@ export async function fetchEventMetrics(eventId: string): Promise<EventMetrics> 
     ]);
 
     const ordersTotal = ordersResult.count ?? 0;
-    const ordersPaid = paidResult.error ? 0 : paidResult.count ?? 0;
-    const ordersPending = pendingResult.error ? 0 : pendingResult.count ?? 0;
+    const ordersPaid = paidResult.error ? 0 : (paidResult.count ?? 0);
+    const ordersPending = pendingResult.error ? 0 : (pendingResult.count ?? 0);
     const studentsTotal = subjectsResult.count ?? 0;
 
     let assetsTotal = 0;
     const unassigned: number | null = null;
 
-    const { data: folders, error: folderError } = await supabase.from('folders').select('id').eq('event_id', id);
+    const { data: folders, error: folderError } = await supabase
+      .from('folders')
+      .select('id')
+      .eq('event_id', id)
+      .returns<
+        Array<Pick<Database['public']['Tables']['folders']['Row'], 'id'>>
+      >();
 
     if (!folderError && folders && folders.length > 0) {
       const folderIds = folders.map((folder) => String(folder.id));

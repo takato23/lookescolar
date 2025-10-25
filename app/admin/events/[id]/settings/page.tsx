@@ -26,6 +26,11 @@ export default function SettingsPage() {
   const [saving, startSaving] = useTransition();
   const [event, setEvent] = useState<any>(null);
 
+  const general = settings.general ?? { ...defaults.general };
+  const privacy = settings.privacy ?? { ...defaults.privacy };
+  const download = settings.download ?? { ...defaults.download };
+  const store = settings.store ?? { ...defaults.store };
+
   useEffect(() => {
     (async () => {
       let res = await fetch(`/api/admin/events/${id}`, { cache: 'no-store' });
@@ -34,7 +39,8 @@ export default function SettingsPage() {
       }
       const json = await res.json();
       setEvent(json.event || json);
-      if (json.event?.settings) setSettings((s) => ({ ...s, ...json.event.settings }));
+      if (json.event?.settings)
+        setSettings((s) => ({ ...s, ...json.event.settings }));
       if (json.settings) setSettings((s) => ({ ...s, ...json.settings }));
     })();
   }, [id]);
@@ -61,7 +67,7 @@ export default function SettingsPage() {
         <Button
           variant="outline"
           onClick={() => {
-            const url = computePhotoAdminUrl(id, settings.general.rootFolderId);
+            const url = computePhotoAdminUrl(id, general.rootFolderId ?? null);
             window.location.href = url;
           }}
         >
@@ -87,18 +93,27 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Label>Show on Homepage</Label>
                 <Switch
-                  checked={settings.general.showOnHomepage}
+                  checked={Boolean(general.showOnHomepage)}
                   onCheckedChange={(v) =>
-                    setSettings((s) => ({ ...s, general: { ...s.general, showOnHomepage: v } }))
+                    setSettings((s) => ({
+                      ...s,
+                      general: { ...(s.general ?? {}), showOnHomepage: v },
+                    }))
                   }
                 />
               </div>
               <div className="space-y-2">
                 <Label>Location</Label>
                 <Input
-                  value={settings.general.location || ''}
+                  value={general.location || ''}
                   onChange={(e) =>
-                    setSettings((s) => ({ ...s, general: { ...s.general, location: e.target.value } }))
+                    setSettings((s) => ({
+                      ...s,
+                      general: {
+                        ...(s.general ?? {}),
+                        location: e.target.value,
+                      },
+                    }))
                   }
                 />
               </div>
@@ -131,19 +146,28 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Label>Password Enabled</Label>
                 <Switch
-                  checked={settings.privacy.passwordEnabled}
+                  checked={Boolean(privacy.passwordEnabled)}
                   onCheckedChange={(v) =>
-                    setSettings((s) => ({ ...s, privacy: { ...s.privacy, passwordEnabled: v } }))
+                    setSettings((s) => ({
+                      ...s,
+                      privacy: { ...(s.privacy ?? {}), passwordEnabled: v },
+                    }))
                   }
                 />
               </div>
               <div className="space-y-2">
                 <Label>Password</Label>
                 <Input
-                  disabled={!settings.privacy.passwordEnabled}
-                  value={settings.privacy.password || ''}
+                  disabled={!privacy.passwordEnabled}
+                  value={privacy.password || ''}
                   onChange={(e) =>
-                    setSettings((s) => ({ ...s, privacy: { ...s.privacy, password: e.target.value } }))
+                    setSettings((s) => ({
+                      ...s,
+                      privacy: {
+                        ...(s.privacy ?? {}),
+                        password: e.target.value,
+                      },
+                    }))
                   }
                 />
               </div>
@@ -160,9 +184,12 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Label>Downloads</Label>
                 <Switch
-                  checked={settings.download.enabled}
+                  checked={Boolean(download.enabled)}
                   onCheckedChange={(v) =>
-                    setSettings((s) => ({ ...s, download: { ...s.download, enabled: v } }))
+                    setSettings((s) => ({
+                      ...s,
+                      download: { ...(s.download ?? {}), enabled: v },
+                    }))
                   }
                 />
               </div>
@@ -173,11 +200,21 @@ export default function SettingsPage() {
                     <label key={sz} className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={settings.download.sizes.includes(sz)}
+                        checked={
+                          Array.isArray(download.sizes)
+                            ? download.sizes.includes(sz)
+                            : false
+                        }
                         onChange={(e) => {
-                          const set = new Set(settings.download.sizes);
+                          const set = new Set(download.sizes ?? []);
                           e.target.checked ? set.add(sz) : set.delete(sz);
-                          setSettings((s) => ({ ...s, download: { ...s.download, sizes: [...set] } }));
+                          setSettings((s) => ({
+                            ...s,
+                            download: {
+                              ...(s.download ?? {}),
+                              sizes: Array.from(set),
+                            },
+                          }));
                         }}
                       />
                       {sz}
@@ -188,9 +225,12 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Label>PIN (4 dígitos)</Label>
                 <Switch
-                  checked={settings.download.pinEnabled}
+                  checked={Boolean(download.pinEnabled)}
                   onCheckedChange={(v) =>
-                    setSettings((s) => ({ ...s, download: { ...s.download, pinEnabled: v } }))
+                    setSettings((s) => ({
+                      ...s,
+                      download: { ...(s.download ?? {}), pinEnabled: v },
+                    }))
                   }
                 />
               </div>
@@ -207,27 +247,39 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Label>Enable store</Label>
                 <Switch
-                  checked={settings.store.enabled}
+                  checked={Boolean(store.enabled)}
                   onCheckedChange={(v) =>
-                    setSettings((s) => ({ ...s, store: { ...s.store, enabled: v } }))
+                    setSettings((s) => ({
+                      ...s,
+                      store: { ...(s.store ?? {}), enabled: v },
+                    }))
                   }
                 />
               </div>
               <div className="space-y-2">
                 <Label>Price Sheet ID</Label>
                 <Input
-                  value={settings.store.priceSheetId || ''}
+                  value={store.priceSheetId || ''}
                   onChange={(e) =>
-                    setSettings((s) => ({ ...s, store: { ...s.store, priceSheetId: e.target.value } }))
+                    setSettings((s) => ({
+                      ...s,
+                      store: {
+                        ...(s.store ?? {}),
+                        priceSheetId: e.target.value,
+                      },
+                    }))
                   }
                 />
               </div>
               <div className="flex items-center justify-between">
                 <Label>Show in Store</Label>
                 <Switch
-                  checked={settings.store.showInStore}
+                  checked={Boolean(store.showInStore)}
                   onCheckedChange={(v) =>
-                    setSettings((s) => ({ ...s, store: { ...s.store, showInStore: v } }))
+                    setSettings((s) => ({
+                      ...s,
+                      store: { ...(s.store ?? {}), showInStore: v },
+                    }))
                   }
                 />
               </div>
