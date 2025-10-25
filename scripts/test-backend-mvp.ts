@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * Script de prueba End-to-End para validar el backend MVP de Look Escolar

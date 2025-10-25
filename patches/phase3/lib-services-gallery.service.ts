@@ -471,7 +471,7 @@ class GalleryService {
       throw new GalleryServiceError('db_error', 'No se pudo cargar la galería', 500);
     }
 
-    let assetRows = Array.isArray(data) ? data : [];
+    const assetRows = Array.isArray(data) ? data : [];
 
     let items = await this.mapAssetRows(assetRows, { allowDownload });
     let total = typeof count === 'number' ? count : items.length;

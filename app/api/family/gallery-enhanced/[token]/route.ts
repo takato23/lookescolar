@@ -381,7 +381,7 @@ export async function GET(
     };
 
     // Build photo query based on access level and filters
-    let photoQuery = supabase
+    const photoQuery = supabase
       .from('assets')
       .select(
         `

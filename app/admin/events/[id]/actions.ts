@@ -242,7 +242,7 @@ export async function fetchEventMetrics(eventId: string): Promise<EventMetrics> 
     const studentsTotal = subjectsResult.count ?? 0;
 
     let assetsTotal = 0;
-    let unassigned: number | null = null;
+    const unassigned: number | null = null;
 
     const { data: folders, error: folderError } = await supabase.from('folders').select('id').eq('event_id', id);
 

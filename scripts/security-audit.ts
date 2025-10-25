@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 /**
  * Comprehensive Security Audit Script

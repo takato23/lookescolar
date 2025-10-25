@@ -1,6 +1,6 @@
 'use client';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
 import { FixedSizeGrid as Grid, areEqual } from 'react-window';
