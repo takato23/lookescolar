@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -16,10 +17,9 @@ const GalleryQuerySchema = z.object({
 // GET /api/admin/events/[id]/students/[studentId]/gallery
 export const GET = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; studentId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; studentId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const studentId = params.studentId;
       const { searchParams } = new URL(req.url);
@@ -217,10 +217,9 @@ export const GET = withAuth(
 // POST /api/admin/events/[id]/students/[studentId]/gallery/download
 export const POST = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; studentId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; studentId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const studentId = params.studentId;
       const { searchParams } = new URL(req.url);

@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -24,10 +25,9 @@ const queryParamsSchema = z.object({
 // GET /api/admin/events/[id]/courses/[courseId]/photos - Get group photos for a course
 export const GET = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
       const { searchParams } = new URL(req.url);
@@ -177,10 +177,9 @@ export const GET = withAuth(
 // POST /api/admin/events/[id]/courses/[courseId]/photos - Associate existing photos with course as group photos
 export const POST = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
       const body = await req.json();
@@ -309,10 +308,9 @@ export const POST = withAuth(
 // DELETE /api/admin/events/[id]/courses/[courseId]/photos - Remove photo associations from course
 export const DELETE = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
       const { searchParams } = new URL(req.url);

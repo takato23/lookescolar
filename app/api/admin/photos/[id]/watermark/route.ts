@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
@@ -7,8 +8,9 @@ import { logger } from '@/lib/utils/logger';
 
 // POST /admin/photos/[id]/watermark
 export const POST = RateLimitMiddleware.withRateLimit(
-  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const requestId = crypto.randomUUID();
+  withAuth(async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  const requestId = crypto.randomUUID();
     const photoId = params.id;
 
     try {
@@ -312,8 +314,9 @@ export const POST = RateLimitMiddleware.withRateLimit(
 
 // GET /admin/photos/[id]/watermark - Get existing watermark info
 export const GET = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const requestId = crypto.randomUUID();
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  const requestId = crypto.randomUUID();
     const photoId = params.id;
 
     try {

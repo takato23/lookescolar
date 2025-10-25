@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -16,10 +17,9 @@ const courseUpdateSchema = z.object({
 // GET /api/admin/events/[id]/courses/[courseId]
 export const GET = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
 
@@ -123,10 +123,9 @@ export const GET = withAuth(
 // PUT /api/admin/events/[id]/courses/[courseId]
 export const PUT = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
       const body = await req.json();
@@ -222,10 +221,9 @@ export const PUT = withAuth(
 // DELETE /api/admin/events/[id]/courses/[courseId]
 export const DELETE = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
       const { searchParams } = new URL(req.url);

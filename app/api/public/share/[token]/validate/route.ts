@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { shareTokenSecurity } from '@/lib/security/share-token-security';
 import { logger } from '@/lib/utils/logger';
@@ -5,9 +6,8 @@ import crypto from 'crypto';
 
 // POST /public/share/[token]/validate
 export async function POST(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   const { token } = params;
 
@@ -120,9 +120,8 @@ export async function POST(
 
 // GET /public/share/[token]/validate - Alternative endpoint for password-less validation
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   const { token } = params;
 

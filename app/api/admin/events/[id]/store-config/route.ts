@@ -3,14 +3,15 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { ZodError } from 'zod';
 import { StoreConfigSchema } from '@/lib/validations/store-config';
 import { convertDbToUiConfig, convertUiToDbConfig, getDefaultConfig } from '@/lib/services/store-config.mappers';
+import type { RouteContext } from '@/types/next-route';
 
 // GET - Obtener configuración de tienda por evento
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const eventId = (params).id;
+    const { id: eventId } = await context.params;
     const supabase = await createServerSupabaseServiceClient();
 
     // Buscar configuración específica del evento
@@ -53,10 +54,10 @@ export async function GET(
 // PATCH - Actualizar configuración de tienda por evento
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const eventId = (params).id;
+    const { id: eventId } = await context.params;
     const body = await request.json();
 
     let parsedBody;

@@ -38,7 +38,9 @@ function resolveTenantSync(options: ServerSupabaseOptions): {
 
   try {
     const requestHeaders = headers();
-    const resolution = resolveTenantFromHeaders(requestHeaders);
+    const resolution = resolveTenantFromHeaders(
+      Object.fromEntries(requestHeaders.entries())
+    );
     return { tenantId: resolution.tenantId, source: resolution.source };
   } catch {
     // Outside of a request context. Fallback to default tenant
@@ -65,7 +67,10 @@ async function buildSupabaseClient(
   const tenantId = tenantResolution.tenantId || getDefaultTenantId();
   setTenantForRequest(tenantId);
 
-  const tenantHeaders = options.bypassTenant ? {} : { 'x-tenant-id': tenantId };
+  const tenantHeaders = options.bypassTenant
+    ? undefined
+    : { 'x-tenant-id': tenantId };
+  const globalHeaders = tenantHeaders ? { headers: tenantHeaders } : undefined;
 
   if (options.serviceRole) {
     const keyToUse = serviceRoleKey || anonKey;
@@ -77,7 +82,8 @@ async function buildSupabaseClient(
 
     const client = createSupabaseClient<Database>(supabaseUrl, keyToUse, {
       auth: { autoRefreshToken: false, persistSession: false },
-      global: { headers: tenantHeaders },
+      global: globalHeaders,
+      db: { schema: 'public' },
     });
 
     if (options.bypassTenant) {
@@ -87,7 +93,7 @@ async function buildSupabaseClient(
     return withTenantOnClient(client, { tenantId });
   }
 
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
 
   const client = createServerClient<Database>(supabaseUrl, anonKey!, {
     cookies: {
@@ -102,7 +108,8 @@ async function buildSupabaseClient(
       },
     },
     auth: { autoRefreshToken: true, persistSession: true },
-    global: { headers: tenantHeaders },
+    global: globalHeaders,
+    db: { schema: 'public' },
   });
 
   if (options.bypassTenant) {

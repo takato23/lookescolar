@@ -1,20 +1,83 @@
 import { HTMLAttributes, forwardRef, ReactNode } from 'react';
 import { clsx } from 'clsx';
 
+type CardVariant =
+  | 'default'
+  | 'surface'
+  | 'glass'
+  | 'glass-strong'
+  | 'glass-ios26'
+  | 'elevated'
+  | 'outlined'
+  | 'floating';
+
+type CardTone = 'accent' | 'muted';
+
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?:
-    | 'default'
-    | 'surface'
-    | 'glass'
-    | 'glass-strong'
-    | 'glass-ios26' // New iOS 26 liquid glass variant
-    | 'elevated'
-    | 'outlined'
-    | 'floating';
+  variant?: CardVariant;
   interactive?: boolean;
   glow?: boolean;
   noise?: boolean;
 }
+
+interface VariantStyle {
+  className: string;
+  tone?: CardTone;
+  dataVariant?: 'ghost';
+  hover?: boolean;
+}
+
+const variantStyles: Record<CardVariant, VariantStyle> = {
+  default: {
+    className:
+      'liquid-glass text-foreground shadow-[0_26px_64px_-32px_rgba(16,24,40,0.35)]',
+    tone: 'muted',
+    dataVariant: 'ghost',
+  },
+  surface: {
+    className:
+      'liquid-surface text-foreground shadow-[0_20px_54px_-28px_rgba(16,24,40,0.32)]',
+    tone: 'muted',
+  },
+  glass: {
+    className:
+      'liquid-glass text-foreground shadow-[0_28px_68px_-32px_rgba(16,24,40,0.34)]',
+    tone: 'muted',
+  },
+  'glass-strong': {
+    className:
+      'liquid-glass-intense text-foreground shadow-[0_32px_88px_-30px_rgba(72,97,255,0.42)]',
+    tone: 'accent',
+  },
+  'glass-ios26': {
+    className:
+      'liquid-glass-intense text-foreground shadow-[0_32px_92px_-30px_rgba(91,111,255,0.46)]',
+    tone: 'accent',
+  },
+  elevated: {
+    className:
+      'liquid-glass-intense text-foreground shadow-[0_36px_96px_-28px_rgba(72,97,255,0.48)]',
+    tone: 'accent',
+    hover: true,
+  },
+  outlined: {
+    className:
+      'liquid-glass text-foreground border border-white/15 dark:border-white/10 shadow-[0_22px_58px_-32px_rgba(16,24,40,0.35)]',
+    tone: 'muted',
+    dataVariant: 'ghost',
+  },
+  floating: {
+    className:
+      'liquid-glass-intense text-foreground shadow-[0_40px_110px_-36px_rgba(91,111,255,0.5)]',
+    tone: 'accent',
+    hover: true,
+  },
+};
+
+const glowByTone: Record<CardTone, string> = {
+  accent: 'shadow-[0_0_90px_rgba(91,111,255,0.32)]',
+  muted: 'shadow-[0_0_75px_rgba(148,163,184,0.28)]',
+};
 
 const Card = forwardRef<HTMLDivElement, CardProps>(
   (
@@ -29,75 +92,24 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     },
     ref
   ) => {
-    const baseClasses = 'relative transition-all duration-300';
+    const config = variantStyles[variant];
 
-    const variants = {
-      default: [
-        'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
-        'border border-gray-200 dark:border-gray-700',
-        'shadow-soft',
-        'rounded-lg',
-      ].join(' '),
+    const baseClasses =
+      'relative transition-all duration-300 rounded-2xl overflow-hidden';
 
-      surface: [
-        'bg-surface text-foreground',
-        'border border-border',
-        'shadow-soft',
-        'rounded-lg',
-      ].join(' '),
+    const shouldElevate = interactive || config.hover;
 
-      glass: ['glass-card text-foreground', 'rounded-xl', 'shadow-glass'].join(
-        ' '
-      ),
+    const interactiveClasses = clsx(
+      shouldElevate && 'liquid-hover liquid-raise',
+      interactive && 'cursor-pointer'
+    );
 
-      'glass-strong': [
-        'bg-gradient-to-br from-glass-white-strong to-glass-white',
-        'backdrop-blur-lg border border-glass-border',
-        'shadow-glass text-foreground',
-        'rounded-xl',
-      ].join(' '),
-
-      // New iOS 26 liquid glass variant
-      'glass-ios26': [
-        'liquid-glass-card-ios26 text-foreground',
-        'rounded-2xl',
-        'shadow-glass',
-        'transition-all duration-300',
-      ].join(' '),
-
-      elevated: [
-        'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
-        'border border-gray-200 dark:border-gray-700',
-        'shadow-large hover:shadow-xl',
-        'rounded-xl',
-        'hover:-translate-y-1',
-      ].join(' '),
-
-      outlined: [
-        'bg-transparent text-foreground',
-        'border-2 border-border',
-        'hover:border-primary-500/50',
-        'rounded-lg',
-      ].join(' '),
-
-      floating: [
-        'glass-card text-foreground',
-        'shadow-glass hover:shadow-glow-strong',
-        'rounded-2xl',
-        'hover:-translate-y-2 hover:rotate-1',
-        'animate-float',
-      ].join(' '),
-    };
-
-    const interactiveClasses = interactive
-      ? 'cursor-pointer hover:-translate-y-1 hover:shadow-large active:translate-y-0 active:shadow-medium'
-      : '';
-
-    const glowClasses = glow ? 'animate-glow' : '';
+    const glowClasses =
+      glow && config.tone ? glowByTone[config.tone] : undefined;
 
     const cardClasses = clsx(
       baseClasses,
-      variants[variant],
+      config.className,
       interactiveClasses,
       glowClasses,
       {
@@ -107,7 +119,13 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     );
 
     return (
-      <div ref={ref} className={cardClasses} {...props}>
+      <div
+        ref={ref}
+        className={cardClasses}
+        data-liquid-tone={config.tone}
+        data-liquid-variant={config.dataVariant}
+        {...props}
+      >
         {noise && (
           <div className="noise rounded-inherit pointer-events-none absolute inset-0" />
         )}

@@ -97,24 +97,24 @@ function LandingNavigation({
       className={clsx(
         'fixed inset-x-0 top-0 z-50 transition-all duration-500',
         isScrolled
-          ? 'bg-white/80 shadow-[0_18px_48px_-28px_rgba(16,24,40,0.35)] backdrop-blur-2xl'
+          ? 'bg-white/12 shadow-[0_18px_48px_-28px_rgba(16,24,40,0.42)] backdrop-blur-2xl'
           : 'bg-transparent'
       )}
     >
       <div className="mx-auto max-w-7xl px-6 py-3">
         <div
           className={clsx(
-            'relative flex items-center justify-between gap-6 rounded-full border px-6 py-3 transition-all',
+            'relative flex items-center justify-between gap-6 rounded-full border px-6 py-3 transition-all duration-500',
             isScrolled
-              ? 'border-[#D4DAFF] bg-white/90 shadow-[0_20px_44px_-26px_rgba(16,24,40,0.28)] backdrop-blur-xl'
-              : 'border-white/35 bg-white/15 shadow-[0_24px_70px_-40px_rgba(16,24,40,0.5)] backdrop-blur-lg'
+              ? 'liquid-glass-intense border-white/25 shadow-[0_26px_60px_-30px_rgba(16,24,40,0.35)]'
+              : 'liquid-glass border-white/18 shadow-[0_36px_82px_-48px_rgba(16,24,40,0.55)]'
           )}
         >
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
             <div
               className={clsx(
-                'h-full w-full bg-gradient-to-r from-white/55 via-white/25 to-transparent transition-opacity',
-                isScrolled ? 'opacity-80' : 'opacity-95'
+                'h-full w-full bg-gradient-to-r from-white/65 via-white/25 to-transparent mix-blend-screen transition-opacity',
+                isScrolled ? 'opacity-90' : 'opacity-95'
               )}
             />
           </div>
@@ -124,7 +124,7 @@ function LandingNavigation({
               className="flex items-center gap-3 text-slate-900 transition-opacity hover:opacity-90"
             >
               <LookEscolarLogo size="sm" variant="gradient" className="drop-shadow-sm" />
-              <span className="font-display text-xs font-semibold uppercase tracking-[0.32em]">
+              <span className="chromatic-text font-display text-xs font-semibold uppercase tracking-[0.32em]">
                 LookEscolar
               </span>
             </Link>
@@ -155,7 +155,7 @@ function LandingNavigation({
                   'rounded-full px-5 text-[11px] font-semibold uppercase tracking-[0.32em] shadow-[0_12px_30px_-20px_rgba(16,24,40,0.38)] backdrop-blur transition-transform hover:-translate-y-0.5',
                   isScrolled
                     ? 'border-transparent bg-[#FF9F6A] text-[#101428] hover:bg-[#FF8B4A]'
-                    : 'border-white/40 bg-white/25 text-white hover:bg-white/35'
+                    : 'liquid-glass-intense text-white hover:shadow-[0_18px_40px_-22px_rgba(79,70,229,0.45)]'
                 )}
               >
                 Ver demo
@@ -222,12 +222,20 @@ function HeroAccessSection() {
       <div className="pointer-events-none absolute bottom-[-120px] left-[-40px] h-96 w-96 rounded-full bg-[#4B64FF]/28 blur-[180px]" />
       <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-5 py-2 text-[11px] uppercase tracking-[0.34em] text-white/80 shadow-lg shadow-black/20">
+          <div
+            className="liquid-glass inline-flex items-center gap-3 rounded-full px-5 py-2 text-[11px] uppercase tracking-[0.34em] text-white/85 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.45)]"
+            data-liquid-tone="muted"
+          >
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             Acceso familiar LookEscolar
           </div>
           <h1 className="font-display text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-            Ingresá el código de tu escuela y reviví el evento
+            <span className="chromatic-text block text-balance">
+              Ingresá el código de tu escuela
+            </span>
+            <span className="mt-2 block text-white/90">
+              y reviví el evento
+            </span>
           </h1>
           <p className="text-lg leading-relaxed text-white/90 sm:text-xl">
             Cada familia cuenta con un código único. Usalo para entrar a tu galería privada,
@@ -237,20 +245,29 @@ function HeroAccessSection() {
             {heroHighlights.map((item) => (
               <div
                 key={item.label}
-                className="rounded-2xl border border-white/10 bg-white/10 px-4 py-5 backdrop-blur"
+                className="liquid-glass flex h-full flex-col gap-2 rounded-2xl px-4 py-5"
+                data-liquid-tone="muted"
               >
-                <item.icon className="mb-3 h-5 w-5 text-white/80" />
-                <dt className="font-semibold text-white">{item.label}</dt>
-                <dd>{item.description}</dd>
+                <item.icon className="h-5 w-5 text-white/80" />
+                <dt className="chromatic-text text-sm font-semibold">
+                  {item.label}
+                </dt>
+                <dd className="text-sm text-white/80">{item.description}</dd>
               </div>
             ))}
           </dl>
         </div>
 
-        <div className="mx-auto w-full max-w-md rounded-[32px] border border-white/20 bg-white/5 p-4 shadow-2xl backdrop-blur-2xl">
-          <div className="relative overflow-hidden rounded-[28px] border border-white/15 bg-white/90 p-6 shadow-[0_30px_90px_-30px_rgba(15,23,42,0.55)]">
-            <FamilyAccessCard className="border border-slate-200/60 bg-white text-slate-900 shadow-none backdrop-blur-none" />
-            <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/0 via-white/30 to-white/0" />
+        <div
+          className="mx-auto w-full max-w-md liquid-glass-intense rounded-[32px] p-5 shadow-[0_48px_140px_-60px_rgba(9,16,40,0.75)]"
+          data-liquid-tone="accent"
+        >
+          <div
+            className="relative overflow-hidden rounded-[28px] liquid-glass px-6 py-6 shadow-[0_36px_110px_-48px_rgba(12,20,44,0.6)]"
+            data-liquid-tone="muted"
+          >
+            <FamilyAccessCard className="liquid-glass bg-white/70 text-slate-900 shadow-none" />
+            <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/0 via-white/20 to-white/0" />
           </div>
           <div className="relative mt-6 hidden h-56 w-full md:block">
             <div className="absolute inset-0 -z-10 rounded-[40px] bg-gradient-to-br from-[#4B64FF]/15 via-[#FF80D0]/20 to-transparent blur-3xl" />
@@ -258,11 +275,12 @@ function HeroAccessSection() {
               <div
                 key={preview.src}
                 className={clsx(
-                  'absolute h-40 w-40 overflow-hidden rounded-3xl border border-white/25 bg-white/60 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.6)] backdrop-blur',
+                  'absolute h-40 w-40 overflow-hidden rounded-3xl liquid-glass-intense border-0 shadow-[0_36px_80px_-40px_rgba(12,20,44,0.6)]',
                   preview.position,
                   preview.rotation,
                   preview.zIndex
                 )}
+                data-liquid-tone="accent"
               >
                 <Image
                   src={preview.src}
@@ -296,7 +314,10 @@ function ProductShowcaseSection() {
 
       <div className="relative mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#E9ECFF] px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-[#2B3EBF]">
+          <span
+            className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-[#2B3EBF]"
+            data-liquid-tone="accent"
+          >
             Ecosistema completo
           </span>
           <h2 className="font-display mt-6 text-4xl font-semibold text-[#101428] lg:text-6xl">
@@ -308,7 +329,10 @@ function ProductShowcaseSection() {
           </p>
         </div>
 
-        <div className="rounded-[36px] border border-[#D4DAFF] bg-[#F4F6FF]/90 p-6 shadow-[0_40px_120px_-40px_rgba(16,24,40,0.22)] backdrop-blur">
+        <div
+          className="liquid-glass-intense rounded-[36px] p-6 shadow-[0_40px_120px_-36px_rgba(16,24,40,0.32)]"
+          data-liquid-tone="accent"
+        >
           <ProductGrid className="overflow-hidden rounded-[28px] border border-[#E3E8FF] shadow-sm" />
         </div>
       </div>

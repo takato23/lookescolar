@@ -1,10 +1,10 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  _request: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   try {
     const { token } = params;
     if (!token || token.length < 20) {

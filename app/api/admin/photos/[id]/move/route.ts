@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { withAuth, SecurityLogger } from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
+import type { RouteContext } from '@/types/next-route';
 
 async function logErrorToFile(name: string, content: string) {
   try {
@@ -26,10 +27,10 @@ const BodySchema = z.object({
 
 async function handlePATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   const requestId = request.headers.get('x-request-id') || 'unknown';
-  const { id: awaitedId } = context.params;
+  const { id: awaitedId } = await context.params;
   const photoId = awaitedId as string | undefined;
   if (!photoId) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
@@ -107,4 +108,3 @@ async function handlePATCH(
 export const runtime = 'nodejs';
 
 export const PATCH = handlePATCH;
-

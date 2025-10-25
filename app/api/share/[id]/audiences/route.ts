@@ -1,8 +1,10 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
-export const GET = withAdminAuth(async (_req: NextRequest, { params }: { params: { id: string } }) => {
+export const GET = withAdminAuth(async (_req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   try {
     const shareId = params.id;
     if (!shareId) {

@@ -3,7 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  motion,
+  AnimatePresence,
+  LayoutGroup,
+  useReducedMotion,
+} from 'framer-motion';
 import {
   Menu,
   X,
@@ -531,50 +536,64 @@ export function MobileNav({
 // Mobile Bottom Navigation
 export function MobileBottomNav() {
   const pathname = usePathname();
-  
+  const prefersReducedMotion = useReducedMotion();
+  const bubbleTransition = prefersReducedMotion
+    ? { duration: 0.25, ease: 'easeOut' }
+    : { type: 'spring', stiffness: 350, damping: 30 };
   const navItems = [
     { href: '/mockup/admin', icon: Home, label: 'Inicio' },
     { href: '/mockup/admin/events', icon: Calendar, label: 'Eventos' },
     { href: '/mockup/admin/photos', icon: Camera, label: 'Fotos' },
     { href: '/mockup/admin/orders', icon: Package, label: 'Pedidos' },
     { href: '/mockup/admin/settings', icon: Settings, label: 'Ajustes' },
-  ];
+  ] as const;
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass-card-ios26 backdrop-blur-xl border-t border-white/10">
-      <div className="flex items-center justify-around py-2">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          
-          return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileTap={{ scale: 0.9 }}
-                className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all",
-                  isActive && "bg-gradient-to-r from-blue-500/10 to-purple-500/10"
-                )}
+    <LayoutGroup id="mobile-liquid-nav">
+      <div className="lg:hidden fixed left-1/2 z-50 w-auto max-w-[92%] -translate-x-1/2 px-1 bottom-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]">
+        <div className="liquid-glass-intense relative flex items-center gap-2 rounded-full px-2 py-2 shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)] backdrop-blur-2xl">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={item.label}
+                className="group relative flex h-14 w-14 flex-col items-center justify-center rounded-full text-white/60 transition-transform duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
               >
-                <Icon className={cn(
-                  "h-5 w-5",
-                  isActive
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-muted-foreground dark:text-gray-400"
-                )} />
-                <span className={cn(
-                  "text-xs",
-                  isActive
-                    ? "text-blue-600 dark:text-blue-400 font-medium"
-                    : "text-muted-foreground dark:text-gray-400"
-                )}>
+                {isActive && (
+                  <motion.div
+                    layoutId="mobile-liquid-bubble"
+                    className="absolute inset-0 -z-10 rounded-full bg-gradient-to-tr from-cyan-500 to-purple-600 shadow-lg shadow-purple-500/30"
+                    transition={bubbleTransition}
+                  />
+                )}
+                <Icon
+                  className={cn(
+                    'h-6 w-6 transition-all duration-300',
+                    isActive
+                      ? 'text-white drop-shadow-[0_4px_15px_rgba(80,56,237,0.45)] scale-110'
+                      : 'text-white/60 group-hover:text-white/80'
+                  )}
+                  strokeWidth={isActive ? 2.5 : 2}
+                />
+                <span
+                  className={cn(
+                    'mt-1 text-[11px] font-medium tracking-wider transition-all duration-300',
+                    isActive ? 'text-white' : 'text-white/60 group-hover:text-white/80'
+                  )}
+                >
                   {item.label}
                 </span>
-              </motion.div>
-            </Link>
-          );
-        })}
+              </Link>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </LayoutGroup>
   );
 }

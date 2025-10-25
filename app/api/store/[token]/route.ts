@@ -4,6 +4,7 @@
  * POST /api/store/[token]/order - Crear orden de compra (futuro)
  */
 
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
@@ -29,8 +30,9 @@ const QuerySchema = z.object({
 // GET - Obtener datos de la tienda
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: RouteContext<{ token: string }>
 ) {
+  const params = await context.params;
   try {
     const { token } = params;
     const { searchParams } = new URL(request.url);
@@ -365,9 +367,11 @@ export async function GET(
           const classificationMap = new Map(classifications.map(c => [c.id, c]));
 
           // Log classifications
-          classifications.forEach(({ id, isGroupPhoto, confidence, reason }) => {
-            console.log(`AI Classification for ${id}: ${isGroupPhoto ? 'GROUP' : 'INDIVIDUAL'} (${confidence.toFixed(2)} confidence) - ${reason}`);
-          });
+          classifications.forEach(
+            ({ id, isGroupPhoto, confidence, reason }) => {
+              console.log(`AI Classification for ${id}: ${isGroupPhoto ? 'GROUP' : 'INDIVIDUAL'} (${confidence.toFixed(2)} confidence) - ${reason}`);
+            }
+          );
 
           assets = assetsData.map((item: any) => {
             // Try different URL patterns for watermarked previews
@@ -465,15 +469,17 @@ export async function GET(
       event: {
         id: storeData.event_id,
         name: storeData.event_name,
-      date: storeData.event_date,
-    },
-    assets: include_assets ? assets : undefined,
-    pagination: include_assets ? pagination : undefined,
-    gallery: include_assets ? galleryPayload ?? undefined : undefined,
-    gallery_rate_limit:
-      include_assets && galleryPayload ? galleryPayload.rateLimit : undefined,
-    gallery_catalog:
-      include_assets && galleryPayload ? galleryPayload.catalog ?? null : undefined,
+        date: storeData.event_date,
+      },
+      assets: include_assets ? assets : undefined,
+      pagination: include_assets ? pagination : undefined,
+      gallery: include_assets ? galleryPayload ?? undefined : undefined,
+      gallery_rate_limit:
+        include_assets && galleryPayload ? galleryPayload.rateLimit : undefined,
+      gallery_catalog:
+        include_assets && galleryPayload
+          ? galleryPayload.catalog ?? null
+          : undefined,
     };
 
     // Headers para cache público
@@ -502,9 +508,8 @@ export async function GET(
 
 // POST - Crear orden de compra (placeholder para futuro)
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  request: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   try {
     const { token } = params;
 

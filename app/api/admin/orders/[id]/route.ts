@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
@@ -25,9 +26,8 @@ const UpdateOrderSchema = z.object({
  * Get detailed order information from unified_orders with fallback to legacy orders
  */
 export const GET = withAdminAuth(async (
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) => {
+  request: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   const startTime = Date.now();
 
   try {
@@ -201,9 +201,8 @@ function mapLegacyPaymentMethod(legacyMethod: string): string {
  * Update unified order with audit trail and fallback to legacy
  */
 export const PUT = withAdminAuth(async (
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) => {
+  request: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   const startTime = Date.now();
 
   try {
@@ -348,9 +347,8 @@ function mapUnifiedToLegacyStatus(unifiedStatus?: string): string {
  * Cancel unified order (soft delete with audit trail)
  */
 export const DELETE = withAdminAuth(async (
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) => {
+  request: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   const startTime = Date.now();
 
   try {

@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { adminAuthMiddleware } from '@/lib/security/admin-auth';
@@ -16,9 +17,8 @@ interface RouteParams {
 }
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: RouteParams }
-) {
+  request: NextRequest, context: RouteContext<RouteParams>) {
+  const params = await context.params;
   const authResult = await adminAuthMiddleware(request);
   if (
     !authResult ||

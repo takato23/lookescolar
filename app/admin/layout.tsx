@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/NotificationSystem';
 import { KeyboardProvider } from '@/components/ui/KeyboardShortcuts';
 import '@/styles/admin-dark-mode-fixes.css';
+import '@/styles/dashboard-animations.css';
 import Script from 'next/script';
 
 export default function AdminLayout({

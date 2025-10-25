@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { pdfService } from '@/lib/services/pdf.service';
 import { z } from 'zod';
+import type { RouteContext } from '@/types/next-route';
 
 // Rate limiting para generación de PDFs
 const pdfLimiter = new Map<string, { count: number; resetTime: number }>();
@@ -37,9 +38,9 @@ const pdfOptionsSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
-  const eventId = (params).id;
+  const { id: eventId } = await context.params;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
 
@@ -253,9 +254,9 @@ export async function GET(
 // Endpoint POST para generar PDF con configuración avanzada
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
-  const eventId = (params).id;
+  const { id: eventId } = await context.params;
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   try {

@@ -15,31 +15,31 @@ const CoreSettingsSchema = z
         location: z.string().optional(),
         rootFolderId: z.string().uuid('Invalid root folder UUID').optional(),
       })
-      .optional()
-      .passthrough(),
+      .passthrough()
+      .optional(),
     privacy: z
       .object({
         passwordEnabled: z.boolean().optional(),
         password: z.string().min(6, 'Password must be at least 6 characters').optional(),
       })
-      .optional()
-      .passthrough(),
+      .passthrough()
+      .optional(),
     download: z
       .object({
         enabled: z.boolean().optional(),
         sizes: z.array(z.enum(['web', 'small', 'original'])).optional(),
         pinEnabled: z.boolean().optional(),
       })
-      .optional()
-      .passthrough(),
+      .passthrough()
+      .optional(),
     store: z
       .object({
         enabled: z.boolean().optional(),
         priceSheetId: z.string().uuid('Invalid price sheet UUID').optional(),
         showInStore: z.boolean().optional(),
       })
-      .optional()
-      .passthrough(),
+      .passthrough()
+      .optional(),
   })
   .passthrough();
 
@@ -49,10 +49,16 @@ const DesignSchema = z
       .object({
         style: z.enum(['novel', 'vintage', 'frame', 'stripe', 'divider', 'journal', 'classic', 'none']).optional(),
       })
-      .optional()
-      .passthrough(),
-    typography: z.object({ preset: z.enum(['sans', 'serif', 'modern', 'timeless', 'bold', 'subtle']).optional() }).optional().passthrough(),
-    color: z.object({ scheme: z.enum(['light', 'gold', 'rose', 'terracotta', 'sand', 'olive', 'agave', 'sea', 'dark']).optional() }).optional().passthrough(),
+      .passthrough()
+      .optional(),
+    typography: z
+      .object({ preset: z.enum(['sans', 'serif', 'modern', 'timeless', 'bold', 'subtle']).optional() })
+      .passthrough()
+      .optional(),
+    color: z
+      .object({ scheme: z.enum(['light', 'gold', 'rose', 'terracotta', 'sand', 'olive', 'agave', 'sea', 'dark']).optional() })
+      .passthrough()
+      .optional(),
     grid: z
       .object({
         style: z.enum(['vertical', 'horizontal']).optional(),
@@ -60,8 +66,8 @@ const DesignSchema = z
         spacing: z.enum(['regular', 'large']).optional(),
         nav: z.enum(['icons', 'icons_text']).optional(),
       })
-      .optional()
-      .passthrough(),
+      .passthrough()
+      .optional(),
     theme: z.enum(['default', 'jardin', 'secundaria', 'bautismo']).optional(),
   })
   .partial()

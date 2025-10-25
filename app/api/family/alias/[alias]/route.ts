@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { enhancedTokenService } from '@/lib/services/enhanced-token.service';
 import { tokenAliasService } from '@/lib/services/token-alias.service';
@@ -8,9 +9,8 @@ import {
 } from '@/lib/types/family-access';
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: { alias: string } }
-) {
+  _request: NextRequest, context: RouteContext<{ alias: string }>) {
+  const params = await context.params;
   try {
     const { alias: rawAlias } = params;
     const alias = normalizeAliasInput(rawAlias);

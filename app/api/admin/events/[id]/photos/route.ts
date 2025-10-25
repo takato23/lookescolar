@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
@@ -8,10 +9,9 @@ import { logger } from '@/lib/utils/logger';
 export const GET = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
-      req: NextRequest,
-      { params }: { params: { id: string } }
-    ) => {
-      const requestId = crypto.randomUUID();
+      req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  const requestId = crypto.randomUUID();
       let eventId: string | undefined;
 
       try {

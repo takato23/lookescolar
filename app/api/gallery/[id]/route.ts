@@ -1,12 +1,12 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // Public: GET /api/gallery/[id]
 // Returns event info and paginated public-ready photos (watermarked/preview URLs)
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest, context: RouteContext<{ id: string }>) {
+  const params = await context.params;
   try {
     const { id: eventId } = params;
     const url = new URL(request.url);

@@ -1,11 +1,11 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // GET /api/public/folder-share/[token]/gallery
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   try {
     const { token } = params;
     const url = new URL(req.url);

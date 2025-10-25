@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -14,8 +15,9 @@ const PatchSchema = z.object({
 
 // PATCH /api/admin/events/[id]/public-gallery
 export const PATCH = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const { id: eventId } = params;
       const body = await req.json();
       const {

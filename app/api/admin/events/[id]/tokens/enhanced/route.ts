@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { RouteContext } from '@/types/next-route';
 import {
   enhancedTokenService,
   TokenType,
@@ -64,10 +65,10 @@ const TokenAnalyticsSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Getting enhanced tokens for event:`, {
@@ -291,10 +292,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Generating enhanced tokens for event:`, {
@@ -497,10 +498,10 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Rotating expiring tokens for event:`, {

@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -5,7 +6,8 @@ import crypto from 'crypto';
 
 // PATCH /api/admin/share/[token]
 // body: { action: 'deactivate' | 'rotate' }
-export const PATCH = withAdminAuth(async (req: NextRequest, { params }: { params: { token: string } }) => {
+export const PATCH = withAdminAuth(async (req: NextRequest, context: RouteContext<{ token: string }>) => {
+  const params = await context.params;
   const { token } = params;
   const body = await req.json().catch(() => ({}));
   const action = body?.action as 'deactivate' | 'rotate' | undefined;

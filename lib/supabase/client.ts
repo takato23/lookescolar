@@ -28,16 +28,16 @@ export function createClient(
 
   const resolution = resolveTenantForBrowser(options.tenantId ?? null);
   const tenantHeaders = options.bypassTenant
-    ? {}
+    ? undefined
     : { 'x-tenant-id': resolution.tenantId };
+  const globalHeaders = tenantHeaders ? { headers: tenantHeaders } : undefined;
 
   const baseClient = createBrowserClient<Database>(
     supabaseUrl,
     supabaseAnonKey,
     {
-      global: {
-        headers: tenantHeaders,
-      },
+      global: globalHeaders,
+      db: { schema: 'public' },
     }
   );
 

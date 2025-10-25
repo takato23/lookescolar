@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -72,9 +73,7 @@ const bodySchema = z.object({
 });
 
 async function handlePOST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+  request: NextRequest, context: RouteContext<{ id: string }>): Promise<NextResponse> {
   try {
     // Validate params
     const { id } = paramsSchema.parse(params);
@@ -339,9 +338,7 @@ async function handlePOST(
 }
 
 async function handleDELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<NextResponse> {
+  request: NextRequest, context: RouteContext<{ id: string }>): Promise<NextResponse> {
   try {
     // Validate params
     const { id } = paramsSchema.parse(params);

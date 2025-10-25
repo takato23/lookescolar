@@ -87,7 +87,9 @@ export interface TokenValidationResult {
  * Supports multiple token types, family access, and advanced security features
  */
 export class EnhancedTokenService {
-  private supabase = createServerSupabaseClient();
+  private getSupabase() {
+    return createServerSupabaseClient();
+  }
 
   /**
    * Generate a token for student access
@@ -103,7 +105,7 @@ export class EnhancedTokenService {
       rotateExisting = false,
     } = options;
 
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     // Validate student exists
     const { data: student, error: studentError } = await supabase
@@ -190,7 +192,7 @@ export class EnhancedTokenService {
       metadata = {},
     } = options;
 
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     // Validate all students exist and belong to the same event
     const { data: students, error: studentsError } = await supabase
@@ -287,7 +289,7 @@ export class EnhancedTokenService {
     type: TokenType = 'student_access',
     options: TokenGenerationOptions = {}
   ): Promise<BulkTokenGenerationResult> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     // Get all students in the event
     const { data: students, error: studentsError } = await supabase
@@ -407,7 +409,7 @@ export class EnhancedTokenService {
     }
 
     try {
-      const supabase = await this.supabase;
+      const supabase = await this.getSupabase();
 
       // Get enhanced token data
       const { data: enhancedToken } = await supabase
@@ -506,7 +508,7 @@ export class EnhancedTokenService {
     byType: Record<TokenType, number>;
     totalCount: number;
   }> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() + daysBeforeExpiry);
 
@@ -614,7 +616,7 @@ export class EnhancedTokenService {
 
   // Private helper methods
   private async generateUniqueToken(): Promise<string> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     let attempts = 0;
     const maxAttempts = 10;
 
@@ -648,7 +650,7 @@ export class EnhancedTokenService {
   private async storeEnhancedToken(
     tokenData: EnhancedTokenData
   ): Promise<void> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     const { error } = await supabase.from('enhanced_tokens').upsert({
       id: tokenData.id,
@@ -675,7 +677,7 @@ export class EnhancedTokenService {
     token: string,
     expiresAt: Date
   ): Promise<void> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     await supabase.from('subject_tokens').upsert({
       subject_id: studentId,
@@ -687,7 +689,7 @@ export class EnhancedTokenService {
   private async getActiveStudentToken(
     studentId: string
   ): Promise<EnhancedTokenData | null> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     const now = new Date().toISOString();
 
     const { data } = await supabase
@@ -706,7 +708,7 @@ export class EnhancedTokenService {
     familyEmail: string,
     eventId: string
   ): Promise<EnhancedTokenData | null> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     const now = new Date().toISOString();
 
     const { data } = await supabase
@@ -725,7 +727,7 @@ export class EnhancedTokenService {
   private async validateLegacyToken(
     token: string
   ): Promise<TokenValidationResult> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     const { data: tokenInfo } = await supabase
       .from('subject_tokens')
@@ -758,7 +760,7 @@ export class EnhancedTokenService {
   }
 
   private async updateTokenUsage(token: string): Promise<void> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     await supabase
       .from('enhanced_tokens')

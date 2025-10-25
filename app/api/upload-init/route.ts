@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
+import { tenantPlanServiceFactory } from '@/lib/services/tenant-plan.service';
+import { PlanLimitError } from '@/lib/errors/plan-limit-error';
 import crypto from 'crypto';
 
 // Validation schema
@@ -69,6 +71,26 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('id, tenant_id')
+      .eq('id', folder.event_id)
+      .maybeSingle();
+
+    if (eventError || !event) {
+      return NextResponse.json(
+        { success: false, error: 'Evento relacionado no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const planService = tenantPlanServiceFactory(supabase);
+    await planService.assertCanUploadPhotos({
+      tenantId: event.tenant_id,
+      eventId: event.id,
+      additionalPhotos: files.length,
+    });
 
     // Check for duplicate checksums if provided
     const providedChecksums = files
@@ -155,6 +177,18 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (error instanceof PlanLimitError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+          code: 'PLAN_LIMIT_EXCEEDED',
+          details: error.details,
+        },
+        { status: 403 }
+      );
+    }
+
     console.error('Upload init error:', error);
 
     if (error instanceof z.ZodError) {

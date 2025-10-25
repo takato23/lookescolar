@@ -3,6 +3,9 @@ import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { shareService, ShareAudienceInput, ShareScopeConfig } from '@/lib/services/share.service';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { tenantPlanServiceFactory } from '@/lib/services/tenant-plan.service';
+import { PlanLimitError } from '@/lib/errors/plan-limit-error';
+import { deriveEventIdFromContext } from '@/lib/services/share-service-fix';
 
 const AudienceItemSchema = z.object({
   type: z.enum(['family', 'group', 'manual']),
@@ -190,6 +193,50 @@ export const POST = withAdminAuth(async (req: NextRequest) => {
 
     const expiresAt = payload.expiresAt ? new Date(payload.expiresAt) : undefined;
 
+    let targetEventId: string | null =
+      scopeConfig?.scope === 'event' ? scopeConfig.anchorId ?? null : null;
+
+    if (!targetEventId && shareType === 'event') {
+      targetEventId = payload.eventId ?? scopeConfig?.anchorId ?? null;
+    }
+
+    if (!targetEventId && shareType === 'folder' && (payload.folderId || scopeConfig?.anchorId)) {
+      targetEventId =
+        await deriveEventIdFromContext({
+          eventId: payload.eventId || undefined,
+          folderId: payload.folderId ?? scopeConfig?.anchorId ?? undefined,
+          photoIds: payload.photoIds ?? [],
+          shareType,
+        });
+    }
+
+    if (!targetEventId && shareType === 'photos') {
+      targetEventId =
+        await deriveEventIdFromContext({
+          eventId: payload.eventId || undefined,
+          folderId: payload.folderId || undefined,
+          photoIds: payload.photoIds ?? [],
+          shareType,
+        });
+    }
+
+    if (targetEventId) {
+      const supabase = await createServerSupabaseServiceClient();
+      const { data: eventRecord } = await supabase
+        .from('events')
+        .select('id, tenant_id')
+        .eq('id', targetEventId)
+        .maybeSingle();
+
+      if (eventRecord?.tenant_id) {
+        const planService = tenantPlanServiceFactory(supabase);
+        await planService.assertCanCreateShare({
+          tenantId: eventRecord.tenant_id,
+          eventId: eventRecord.id,
+        });
+      }
+    }
+
     const result = await shareService.createShare({
       eventId: payload.eventId,
       folderId: payload.folderId ?? null,
@@ -246,6 +293,16 @@ export const POST = withAdminAuth(async (req: NextRequest) => {
       },
     });
   } catch (error) {
+    if (error instanceof PlanLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: 'PLAN_LIMIT_EXCEEDED',
+          details: error.details,
+        },
+        { status: 403 }
+      );
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Payload inválido', issues: error.issues },

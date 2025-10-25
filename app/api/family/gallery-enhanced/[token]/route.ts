@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { enhancedTokenService } from '@/lib/services/enhanced-token.service';
@@ -114,9 +115,8 @@ interface GalleryResponse {
  * Enhanced family gallery with advanced filtering, sorting, and multi-student support
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  request: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = generateRequestId();
 
   try {
@@ -699,9 +699,8 @@ export async function GET(
  * Enhanced gallery with additional context and preferences
  */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  request: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = generateRequestId();
 
   try {

@@ -10,6 +10,9 @@ import './globals.css';
 import { SkipToContent } from '@/components/ui/accessible';
 import '@/lib/utils/message-channel-error-handler';
 
+const NOISE_TEXTURE_FALLBACK =
+  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")";
+
 const display = BricolageGrotesque({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
@@ -68,6 +71,13 @@ export default function RootLayout({
               {children}
             </div>
             <Toaster richColors position="top-right" />
+            <div
+              aria-hidden="true"
+              className="liquid-noise-overlay"
+              style={{
+                backgroundImage: `var(--liquid-noise-texture, ${NOISE_TEXTURE_FALLBACK})`,
+              }}
+            />
           </ThemeProvider>
         </QueryProvider>
       </body>

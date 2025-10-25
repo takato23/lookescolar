@@ -1,8 +1,10 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { shareTokenSecurity } from '@/lib/security/share-token-security';
 
 // POST /api/share/validate/[token]
-export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const { token } = params;
   try {
     let password: string | undefined;
@@ -45,7 +47,8 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
 }
 
 // GET /api/share/validate/[token]
-export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(_req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const { token } = params;
   try {
     const requestContext = await shareTokenSecurity.extractRequestContext();

@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -24,10 +25,9 @@ const bulkCoursePhotoActionSchema = z.object({
 // POST /api/admin/events/[id]/courses/[courseId]/photos/bulk
 export const POST = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; courseId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; courseId: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const courseId = params.courseId;
       const body = await req.json();

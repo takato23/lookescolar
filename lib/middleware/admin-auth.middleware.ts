@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import type { RouteArgs } from '@/types/next-route';
 import { rateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { SecurityValidator } from '@/lib/security/validation';
 import crypto from 'crypto';
@@ -404,10 +405,35 @@ function getClientIP(request: NextRequest): string {
 }
 
 // Higher-order function to wrap admin API routes with authentication
+async function normalizeRouteArgs<T extends any[]>(
+  args: RouteArgs<T>
+): Promise<T> {
+  const normalized = await Promise.all(
+    args.map(async (arg) => {
+      if (arg && typeof arg === 'object' && 'params' in arg) {
+        const maybePromise = (arg as any).params;
+        if (maybePromise && typeof maybePromise.then === 'function') {
+          const resolvedParams = await maybePromise;
+          return { ...(arg as Record<string, unknown>), params: resolvedParams };
+        }
+      }
+      return arg;
+    })
+  );
+  return normalized as T;
+}
+
 export function withAdminAuth<T extends any[]>(
   handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
-) {
-  return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
+): (
+  request: NextRequest,
+  ...args: RouteArgs<T>
+) => Promise<NextResponse> {
+  return async (
+    request: NextRequest,
+    ...rawArgs: RouteArgs<T>
+  ): Promise<NextResponse> => {
+    const args = await normalizeRouteArgs(rawArgs);
     const authResult = await authenticateAdmin(request);
 
     // Handle rate limiting

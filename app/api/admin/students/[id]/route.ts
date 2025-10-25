@@ -3,6 +3,7 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
+import type { RouteContext } from '@/types/next-route';
 
 // Schema for route parameters
 const RouteParamsSchema = z.object({
@@ -15,8 +16,9 @@ const RouteParamsSchema = z.object({
  */
 export const GET = withAuth(async function (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 

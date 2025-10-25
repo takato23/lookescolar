@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   enhancedTokenService,
@@ -22,9 +23,7 @@ const RATE_LIMIT = {
  * Enhanced token validation with comprehensive access control and security logging
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-): Promise<NextResponse<EnhancedTokenValidationResponse>> {
+  request: NextRequest, context: RouteContext<{ token: string }>): Promise<NextResponse<EnhancedTokenValidationResponse>> {
   const requestId = generateRequestId();
   let clientIP: string;
   let userAgent: string;
@@ -322,9 +321,7 @@ export async function GET(
  * Enhanced token validation with device registration and additional security context
  */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-): Promise<NextResponse<EnhancedTokenValidationResponse>> {
+  request: NextRequest, context: RouteContext<{ token: string }>): Promise<NextResponse<EnhancedTokenValidationResponse>> {
   const requestId = generateRequestId();
 
   try {

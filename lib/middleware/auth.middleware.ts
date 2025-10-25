@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SecurityValidator } from '@/lib/security/validation';
+import type { RouteArgs } from '@/types/next-route';
 import crypto from 'crypto';
 
 // Request ID generator for tracking
@@ -282,14 +283,36 @@ async function checkAdminRole(userId: string): Promise<boolean> {
 }
 
 // Higher-order function to wrap API routes with authentication and optional CSRF protection
-export function withAuth(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse<any>>,
+async function normalizeRouteArgs<T extends any[]>(
+  args: RouteArgs<T>
+): Promise<T> {
+  const normalized = await Promise.all(
+    args.map(async (arg) => {
+      if (arg && typeof arg === 'object' && 'params' in arg) {
+        const maybePromise = (arg as any).params;
+        if (maybePromise && typeof maybePromise.then === 'function') {
+          const resolvedParams = await maybePromise;
+          return { ...(arg as Record<string, unknown>), params: resolvedParams };
+        }
+      }
+      return arg;
+    })
+  );
+  return normalized as T;
+}
+
+export function withAuth<T extends any[]>(
+  handler: (request: NextRequest, ...args: T) => Promise<NextResponse<any>>,
   options: { requireCSRF?: boolean } = {}
-) {
+): (
+  request: NextRequest,
+  ...args: RouteArgs<T>
+) => Promise<NextResponse<any>> {
   return async (
     request: NextRequest,
-    ...args: any[]
+    ...rawArgs: RouteArgs<T>
   ): Promise<NextResponse<any>> => {
+    const args = await normalizeRouteArgs(rawArgs);
     const authResult = await authenticateAdmin(request);
 
     if (!authResult.authenticated) {
@@ -418,8 +441,9 @@ export class AuthMiddleware {
   ) {
     return async (
       request: NextRequest,
-      ...args: T
+      ...rawArgs: RouteArgs<T>
     ): Promise<NextResponse<R | { error: string }>> => {
+      const args = await normalizeRouteArgs(rawArgs);
       const authResult = await authenticateAdmin(request);
 
       if (!authResult.authenticated) {

@@ -106,6 +106,9 @@ export interface Database {
           settings: Json | null;
           photo_prices: Json | null;
           school: string | null;
+          photographer_name: string | null;
+          photographer_email: string | null;
+          photographer_phone: string | null;
           tenant_id: string;
         };
         Insert: {
@@ -125,6 +128,9 @@ export interface Database {
           settings?: Json | null;
           photo_prices?: Json | null;
           school?: string | null;
+          photographer_name?: string | null;
+          photographer_email?: string | null;
+          photographer_phone?: string | null;
           tenant_id?: string;
         };
         Update: {
@@ -144,6 +150,9 @@ export interface Database {
           settings?: Json | null;
           photo_prices?: Json | null;
           school?: string | null;
+          photographer_name?: string | null;
+          photographer_email?: string | null;
+          photographer_phone?: string | null;
           tenant_id?: string;
         };
         Relationships: [
@@ -450,6 +459,176 @@ export interface Database {
           },
         ];
       };
+      plans: {
+        Row: {
+          code: string;
+          name: string;
+          description: string | null;
+          max_events: number | null;
+          max_photos_per_event: number | null;
+          max_shares_per_event: number | null;
+          price_monthly: number | null;
+          currency: string | null;
+          metadata: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          code: string;
+          name: string;
+          description?: string | null;
+          max_events?: number | null;
+          max_photos_per_event?: number | null;
+          max_shares_per_event?: number | null;
+          price_monthly?: number | null;
+          currency?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          name?: string;
+          description?: string | null;
+          max_events?: number | null;
+          max_photos_per_event?: number | null;
+          max_shares_per_event?: number | null;
+          price_monthly?: number | null;
+          currency?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      whatsapp_notification_attempts: {
+        Row: {
+          id: string;
+          notification_id: string;
+          tenant_id: string;
+          attempt_number: number;
+          status: string;
+          request_payload: Json | null;
+          response_payload: Json | null;
+          error_message: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          notification_id: string;
+          tenant_id: string;
+          attempt_number: number;
+          status: string;
+          request_payload?: Json | null;
+          response_payload?: Json | null;
+          error_message?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          notification_id?: string;
+          tenant_id?: string;
+          attempt_number?: number;
+          status?: string;
+          request_payload?: Json | null;
+          response_payload?: Json | null;
+          error_message?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'whatsapp_notification_attempts_notification_id_fkey';
+            columns: ['notification_id'];
+            referencedRelation: 'whatsapp_notifications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'whatsapp_notification_attempts_tenant_id_fkey';
+            columns: ['tenant_id'];
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      whatsapp_notifications: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          order_id: string;
+          order_source: string;
+          event_id: string | null;
+          photographer_phone: string | null;
+          photographer_name: string | null;
+          photographer_email: string | null;
+          status: string;
+          provider: string;
+          provider_message_id: string | null;
+          attempt_count: number;
+          last_error: string | null;
+          message_body: string;
+          message_payload: Json;
+          next_retry_at: string | null;
+          last_attempt_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          order_id: string;
+          order_source?: string;
+          event_id?: string | null;
+          photographer_phone?: string | null;
+          photographer_name?: string | null;
+          photographer_email?: string | null;
+          status?: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          attempt_count?: number;
+          last_error?: string | null;
+          message_body: string;
+          message_payload?: Json;
+          next_retry_at?: string | null;
+          last_attempt_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          order_id?: string;
+          order_source?: string;
+          event_id?: string | null;
+          photographer_phone?: string | null;
+          photographer_name?: string | null;
+          photographer_email?: string | null;
+          status?: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          attempt_count?: number;
+          last_error?: string | null;
+          message_body?: string;
+          message_payload?: Json;
+          next_retry_at?: string | null;
+          last_attempt_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'whatsapp_notifications_event_id_fkey';
+            columns: ['event_id'];
+            referencedRelation: 'events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'whatsapp_notifications_tenant_id_fkey';
+            columns: ['tenant_id'];
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       tenants: {
         Row: {
           id: string;
@@ -482,6 +661,61 @@ export interface Database {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      tenant_plan_subscriptions: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          plan_code: string;
+          status: string;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          trial_ends_at: string | null;
+          billing_provider: string | null;
+          billing_external_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          plan_code: string;
+          status?: string;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          trial_ends_at?: string | null;
+          billing_provider?: string | null;
+          billing_external_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          plan_code?: string;
+          status?: string;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          trial_ends_at?: string | null;
+          billing_provider?: string | null;
+          billing_external_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tenant_plan_subscriptions_plan_code_fkey';
+            columns: ['plan_code'];
+            referencedRelation: 'plans';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'tenant_plan_subscriptions_tenant_id_fkey';
+            columns: ['tenant_id'];
+            referencedRelation: 'tenants';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       subject_tokens: {
         Row: {

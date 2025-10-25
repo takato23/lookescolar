@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { qrService } from '@/lib/services/qr.service';
 import { logger } from '@/lib/utils/logger';
@@ -10,9 +11,8 @@ const studentIdSchema = z.string().uuid('Invalid student ID');
  * Get QR code for a student (family access)
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { studentId: string } }
-) {
+  request: NextRequest, context: RouteContext<{ studentId: string }>) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   const { studentId: studentIdParam } = params;
 

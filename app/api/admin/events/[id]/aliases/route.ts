@@ -1,3 +1,4 @@
+import { resolveParams, type RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -113,8 +114,14 @@ function mapTokenResponse(token: EnhancedTokenRow, alias: AliasSummary | null) {
   };
 }
 
-export const GET = withAdminAuth(async (_req: NextRequest, { params }: { params: { id: string } }) => {
-  const eventId = params?.id;
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'Unknown error';
+}
+
+export const GET = withAdminAuth(async (_req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const { id: eventId } = await resolveParams(context);
   if (!eventId) {
     return NextResponse.json(
       { success: false, error: 'Parámetro de evento faltante', tokens: [] },
@@ -143,21 +150,22 @@ export const GET = withAdminAuth(async (_req: NextRequest, { params }: { params:
       success: true,
       tokens: tokensWithAlias,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = toErrorMessage(error);
     logger.error('[AliasesList] CRITICAL error fetching aliases', {
       errorContext: {
-        message: error?.message ?? 'Unknown error',
+        message,
       },
     });
     return NextResponse.json(
-      { success: false, error: error?.message || 'Error al cargar alias' },
+      { success: false, error: message || 'Error al cargar alias' },
       { status: 500 }
     );
   }
 });
 
-export const POST = withAdminAuth(async (_req: NextRequest, { params }: { params: { id: string } }) => {
-  const eventId = params?.id;
+export const POST = withAdminAuth(async (_req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const { id: eventId } = await resolveParams(context);
   if (!eventId) {
     return NextResponse.json(
       { success: false, error: 'Parámetro de evento faltante', ensured: 0, aliases: [] },
@@ -202,14 +210,15 @@ export const POST = withAdminAuth(async (_req: NextRequest, { params }: { params
       ensured: ensured.length,
       aliases: ensured,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = toErrorMessage(error);
     logger.error('[AliasesEnsure] error ensuring aliases', {
       errorContext: {
-        message: error?.message ?? 'Unknown error',
+        message,
       },
     });
     return NextResponse.json(
-      { success: false, error: error?.message || 'Error al generar alias' },
+      { success: false, error: message || 'Error al generar alias' },
       { status: 500 }
     );
   }

@@ -1,12 +1,12 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/utils/logger';
 
 export const GET = withAuth(async (
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) => {
+  req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   let eventId: string | undefined;
 

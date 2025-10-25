@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { RouteContext } from '@/types/next-route';
 
 interface DriveItem {
   id: string;
@@ -22,10 +23,10 @@ interface DriveItem {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const { searchParams } = new URL(request.url);
     const path = searchParams.get('path') || '';
     const pathSegments = path ? path.split('/').filter(Boolean) : [];
@@ -287,10 +288,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const body = await request.json();
     const { action, data } = body;
 

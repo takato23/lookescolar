@@ -9,12 +9,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { accessTokenService } from '../../../../../lib/services/access-token.service';
 import { adminAuthMiddleware } from '../../../../../lib/security/admin-auth';
 import { z } from 'zod';
+import type { RouteContext } from '@/types/next-route';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
+type RouteParams = RouteContext<{ id: string }>;
 
 const updateTokenSchema = z.object({
   action: z.enum(['revoke', 'rotate']),
@@ -22,7 +19,7 @@ const updateTokenSchema = z.object({
 });
 
 // GET /api/admin/tokens/[id] - Get token details with usage stats
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, context: RouteParams) {
   try {
     // Admin authentication
     const authResult = await adminAuthMiddleware(request);
@@ -33,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+    const { id } = await context.params;
 
     // Get token details
     const token = await accessTokenService.getToken(id);
@@ -81,7 +78,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // POST /api/admin/tokens/[id] - Token operations (revoke, rotate)
-export async function POST(request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, context: RouteParams) {
   try {
     // Admin authentication
     const authResult = await adminAuthMiddleware(request);
@@ -92,7 +89,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+    const { id } = await context.params;
     const body = await request.json();
     const data = updateTokenSchema.parse(body);
 
@@ -197,7 +194,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/admin/tokens/[id] - Revoke token (alias for POST with revoke action)
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, context: RouteParams) {
   // Delegate to POST with revoke action
   const revokeRequest = new Request(request.url, {
     method: 'POST',
@@ -205,5 +202,5 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     body: JSON.stringify({ action: 'revoke', reason: 'Token deleted via API' }),
   });
 
-  return POST(revokeRequest, { params });
+  return POST(revokeRequest, context);
 }

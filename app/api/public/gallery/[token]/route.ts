@@ -1,9 +1,11 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 // GET /api/public/gallery/[token]
-export async function GET(req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   try {
     const token = (params).token;
 
@@ -348,7 +350,8 @@ const DownloadSchema = z.object({
 });
 
 // POST /api/public/gallery/[token]/download
-export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   try {
     const token = params.token;
     const body = await req.json();

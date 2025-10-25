@@ -4,33 +4,194 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 type SearchParams = Record<string, string | string[]>;
 
+type AdminEventStats = {
+  totalPhotos: number;
+  totalSubjects: number;
+  totalRevenue: number;
+  completionRate: number;
+  totalOrders: number;
+  conversionRate: number;
+};
+
+type AdminEvent = {
+  id: string;
+  name: string | null;
+  school: string | null;
+  location: string | null;
+  date: string | null;
+  status: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  price_per_photo: number | null;
+  stats: AdminEventStats;
+};
+
+type EventsPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  total_pages: number;
+  has_more: boolean;
+};
+
+type EventsError =
+  | {
+      type: 'warning';
+      message: string;
+      details?: string;
+    }
+  | {
+      type: 'error';
+      message: string;
+      details?: string;
+      timestamp: string;
+    };
+
+type EventsResult = {
+  events: AdminEvent[] | null;
+  pagination: EventsPagination | null;
+  error: EventsError | null;
+};
+
 const PRIMARY_TIMEOUT_MS = 15000;
 const FALLBACK_TIMEOUT_MS = 10000;
 const ALLOWED_SORT_FIELDS = new Set(['created_at', 'date', 'name', 'status']);
 
 // Normaliza la respuesta de los distintos orígenes para la UI
-const normalizeEvents = (raw: any[]): any[] => {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const toTrimmedString = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const toFiniteNumber = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return 0;
+};
+
+const parseInteger = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+const parsePositiveInteger = (value: unknown): number | null => {
+  const parsed = parseInteger(value);
+  if (parsed === null || parsed <= 0) return null;
+  return parsed;
+};
+
+const parseNonNegativeInteger = (value: unknown): number | null => {
+  const parsed = parseInteger(value);
+  if (parsed === null || parsed < 0) return null;
+  return parsed;
+};
+
+const readStat = (
+  sources: Array<Record<string, unknown>>,
+  keys: string[]
+): number => {
+  for (const source of sources) {
+    for (const key of keys) {
+      if (key in source) {
+        return toFiniteNumber(source[key]);
+      }
+    }
+  }
+  return 0;
+};
+
+const normalizeEvent = (raw: unknown): AdminEvent | null => {
+  if (!isRecord(raw)) return null;
+
+  const id = toTrimmedString(raw.id);
+  if (!id) return null;
+
+  const statsSources: Record<string, unknown>[] = [];
+  if (isRecord(raw.stats)) statsSources.push(raw.stats);
+  if (isRecord(raw.metrics)) statsSources.push(raw.metrics);
+  statsSources.push(raw);
+
+  const status =
+    toTrimmedString(raw.status) ??
+    (typeof raw.active === 'boolean'
+      ? raw.active
+        ? 'active'
+        : 'inactive'
+      : null);
+
+  const pricePerPhotoValue =
+    raw.price_per_photo ?? raw.photo_price ?? raw.pricePerPhoto;
+
+  const pricePerPhoto =
+    pricePerPhotoValue === undefined || pricePerPhotoValue === null
+      ? null
+      : toFiniteNumber(pricePerPhotoValue);
+
+  return {
+    id,
+    name: toTrimmedString(raw.name),
+    school:
+      toTrimmedString(raw.school) ??
+      toTrimmedString(raw.location) ??
+      toTrimmedString(raw.name),
+    location: toTrimmedString(raw.location),
+    date: toTrimmedString(raw.date),
+    status,
+    created_at: toTrimmedString(raw.created_at),
+    updated_at: toTrimmedString(raw.updated_at),
+    price_per_photo: pricePerPhoto,
+    stats: {
+      totalPhotos: readStat(statsSources, ['totalPhotos', 'total_photos']),
+      totalSubjects: readStat(statsSources, [
+        'totalSubjects',
+        'total_subjects',
+      ]),
+      totalRevenue: readStat(statsSources, [
+        'totalRevenue',
+        'total_revenue',
+        'revenue',
+      ]),
+      completionRate: readStat(statsSources, [
+        'completionRate',
+        'completion_rate',
+        'completion_rate_percent',
+      ]),
+      totalOrders: readStat(statsSources, ['totalOrders', 'total_orders']),
+      conversionRate: readStat(statsSources, [
+        'conversionRate',
+        'conversion_rate',
+        'conversion_rate_percent',
+      ]),
+    },
+  };
+};
+
+const normalizeEvents = (raw: unknown): AdminEvent[] => {
   if (!Array.isArray(raw)) return [];
 
-  return raw.map((event: any) => {
-    const stats = event?.stats || {};
-    return {
-      id: event.id,
-      name: event.name,
-      school: event.school ?? event.location ?? event.name ?? null,
-      date: event.date,
-      status: event.status,
-      created_at: event.created_at,
-      stats: {
-        totalPhotos: Number(stats.totalPhotos ?? stats.total_photos ?? 0),
-        totalSubjects: Number(stats.totalSubjects ?? stats.total_subjects ?? 0),
-        totalRevenue: Number(
-          stats.totalRevenue ?? stats.revenue ?? stats.total_revenue ?? 0
-        ),
-        completionRate: Number(stats.completionRate ?? 0),
-      },
-    };
-  });
+  const normalized: AdminEvent[] = [];
+  for (const event of raw) {
+    const parsed = normalizeEvent(event);
+    if (parsed) normalized.push(parsed);
+  }
+  return normalized;
 };
 
 const pickFirst = (value?: string | string[]): string | undefined => {
@@ -43,25 +204,89 @@ const buildPaginationMeta = (
   page: number,
   limit: number,
   hasMoreOverride?: boolean
-) => {
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+): EventsPagination => {
+  const safeLimit = Math.max(1, limit);
+  const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+  const hasMore =
+    typeof hasMoreOverride === 'boolean'
+      ? hasMoreOverride
+      : page < totalPages;
+
+  return {
+    page,
+    limit: safeLimit,
+    total,
+    total_pages: totalPages,
+    has_more: hasMore,
+  };
+};
+
+const extractEventList = (payload: unknown): unknown[] => {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!isRecord(payload)) return [];
+
+  if (Array.isArray(payload.events)) {
+    return payload.events;
+  }
+
+  if (isRecord(payload.data)) {
+    const data = payload.data;
+    if (Array.isArray(data.events)) return data.events;
+    if (Array.isArray(data.data)) return data.data;
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  return [];
+};
+
+const normalizePagination = (value: unknown): EventsPagination | null => {
+  if (!isRecord(value)) return null;
+
+  const page = parsePositiveInteger(value.page) ?? 1;
+  const limit = parsePositiveInteger(value.limit) ?? 50;
+  const total = parseNonNegativeInteger(value.total) ?? 0;
+  const totalPages =
+    parsePositiveInteger(value.total_pages ?? value.totalPages) ??
+    Math.max(1, Math.ceil(total / Math.max(limit, 1)));
+  const hasMoreRaw =
+    value.has_more ?? value.hasMore ?? value.hasMorePages ?? undefined;
+  const hasMore =
+    typeof hasMoreRaw === 'boolean' ? hasMoreRaw : page < totalPages;
+
   return {
     page,
     limit,
     total,
     total_pages: totalPages,
-    has_more:
-      typeof hasMoreOverride === 'boolean'
-        ? hasMoreOverride
-        : page < totalPages,
+    has_more: hasMore,
   };
+};
+
+const extractPagination = (payload: unknown): EventsPagination | null => {
+  if (!isRecord(payload)) return null;
+
+  const direct = normalizePagination(payload.pagination);
+  if (direct) return direct;
+
+  if (isRecord(payload.data)) {
+    const nested = normalizePagination(payload.data.pagination);
+    if (nested) return nested;
+  }
+
+  return null;
 };
 
 async function fetchEventsFromApi(
   path: string,
   timeoutMs: number,
   userAgent: string
-) {
+): Promise<{ events: AdminEvent[]; pagination: EventsPagination | null }> {
   const url = path.startsWith('/') ? await absoluteUrl(path) : path;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -80,11 +305,9 @@ async function fetchEventsFromApi(
       throw new Error(`API request failed: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const list = Array.isArray(data)
-      ? data
-      : data.events || data.data?.events || data.data || [];
-    const pagination = Array.isArray(data) ? null : data.pagination || null;
+    const data = (await response.json()) as unknown;
+    const list = extractEventList(data);
+    const pagination = Array.isArray(data) ? null : extractPagination(data);
 
     return { events: normalizeEvents(list), pagination };
   } finally {
@@ -98,7 +321,7 @@ async function fetchEventsDirect(options: {
   offset: number;
   status?: string;
   paginated: boolean;
-}) {
+}): Promise<{ events: AdminEvent[]; pagination: EventsPagination | null }> {
   const { page, limit, offset, status, paginated } = options;
   const supabase = await createServerSupabaseServiceClient();
   const rangeStart = paginated ? offset : 0;
@@ -209,20 +432,16 @@ async function fetchEventsDirect(options: {
 }
 
 // Optimized events fetcher with multi-layer fallbacks
-export async function getEvents(
+async function getEvents(
   searchParams: SearchParams = {}
-): Promise<{
-  events: any[] | null;
-  pagination: any;
-  error: any;
-}> {
+): Promise<EventsResult> {
   const startTime = performance.now();
 
-  const rawPage = pickFirst(searchParams['page']);
-  const rawLimit = pickFirst(searchParams['limit']);
-  const rawStatus = pickFirst(searchParams['status']);
-  const rawSortBy = pickFirst(searchParams['sort_by']);
-  const rawSortOrder = pickFirst(searchParams['sort_order']);
+  const rawPage = pickFirst(searchParams.page);
+  const rawLimit = pickFirst(searchParams.limit);
+  const rawStatus = pickFirst(searchParams.status);
+  const rawSortBy = pickFirst(searchParams.sort_by);
+  const rawSortOrder = pickFirst(searchParams.sort_order);
 
   const page = Math.max(1, Number.parseInt(rawPage ?? '1', 10) || 1);
   const limit = Math.min(
@@ -360,11 +579,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function EventsPage({
-  searchParams = {},
+  searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
-  const { events, pagination, error } = await getEvents(searchParams);
+  const resolvedSearchParams = await searchParams;
+  const { events, pagination, error } = await getEvents(resolvedSearchParams ?? {});
   return (
     <EventsPageClient events={events} pagination={pagination} error={error} />
   );

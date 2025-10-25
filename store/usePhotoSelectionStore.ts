@@ -102,9 +102,12 @@ function ensureEventMap(state: PhotoSelectionState, eventId: string): SelectionM
   return state.selections[eventId] ?? {};
 }
 
-const EMPTY_SELECTION_MAP: SelectionMap = Object.freeze({}) as SelectionMap;
-const EMPTY_SELECTION_ARRAY: PhotoSelectionItem[] = Object.freeze([]) as PhotoSelectionItem[];
-const EMPTY_SELECTION_IDS: string[] = Object.freeze([]) as string[];
+const EMPTY_SELECTION_MAP: SelectionMap = {};
+Object.freeze(EMPTY_SELECTION_MAP);
+const EMPTY_SELECTION_ARRAY: PhotoSelectionItem[] = [];
+Object.freeze(EMPTY_SELECTION_ARRAY);
+const EMPTY_SELECTION_IDS: string[] = [];
+Object.freeze(EMPTY_SELECTION_IDS);
 
 function sortSelectionMap(map: SelectionMap): PhotoSelectionItem[] {
   return Object.values(map).sort((a, b) => {

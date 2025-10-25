@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   galleryService,
@@ -93,9 +94,8 @@ function extractEventId(result: GalleryResult): string | null {
 }
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  request: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   try {
     const { token } = params;
 

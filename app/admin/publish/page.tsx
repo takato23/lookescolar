@@ -6,9 +6,9 @@ import CentralitaPublishClient from '@/components/admin/centralita/centralita-pu
 export default async function PublishPage({
   searchParams,
 }: {
-  searchParams?: { event_id?: string; tab?: string };
+  searchParams?: Promise<{ event_id?: string; tab?: string }>;
 }) {
-  const sp = searchParams ?? {};
+  const sp = searchParams ? await searchParams : {};
   const eventId = sp?.event_id as string | undefined;
   const centralitaEnabled = process.env.NEXT_PUBLIC_CENTRALITA_ENABLED === 'true';
 

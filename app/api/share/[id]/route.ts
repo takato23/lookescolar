@@ -1,10 +1,12 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // PATCH /api/share/[id]
 // Update share options (expiresAt, password, permissions, title/description, is_active)
-export const PATCH = withAdminAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
+export const PATCH = withAdminAuth(async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   try {
     const { id } = params;
     const body = await req.json();
@@ -45,7 +47,8 @@ export const PATCH = withAdminAuth(async (req: NextRequest, { params }: { params
 
 // DELETE /api/share/[id]
 // Revoke share (soft deactivate)
-export const DELETE = withAdminAuth(async (_req: NextRequest, { params }: { params: { id: string } }) => {
+export const DELETE = withAdminAuth(async (_req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
   try {
     const { id } = params;
     const supabase = await createServerSupabaseServiceClient();

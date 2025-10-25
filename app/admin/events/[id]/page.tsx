@@ -27,18 +27,20 @@ function setIfPresent(
   params.set(target, value);
 }
 
-export default function EventDetailPage({
+export default async function EventDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams?: SearchParams;
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<SearchParams>;
 }) {
   const merged = new URLSearchParams();
+  const resolvedParams = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
 
   // Preserve any incoming filters to avoid breaking deep links
-  if (searchParams) {
-    for (const [key, rawValue] of Object.entries(searchParams)) {
+  if (resolvedSearchParams) {
+    for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
       const value = firstValue(rawValue);
       if (value) {
         merged.set(key, value);
@@ -46,7 +48,7 @@ export default function EventDetailPage({
     }
   }
 
-  const eventId = params.id;
+  const eventId = resolvedParams.id;
   if (eventId) {
     merged.set('eventId', eventId);
     merged.set('event_id', eventId);

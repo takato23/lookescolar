@@ -13,6 +13,7 @@ type PremiumGlassButtonVariant =
   | 'info';
 
 type PremiumGlassButtonSize = 'sm' | 'md' | 'lg' | 'xl';
+type Tone = 'accent' | 'muted' | 'success' | 'danger' | 'warning';
 
 interface PremiumGlassButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -22,45 +23,117 @@ interface PremiumGlassButtonProps
   glow?: boolean;
 }
 
-const sizeClasses: Record<PremiumGlassButtonSize, string> = {
-  sm: 'px-2.5 py-1.5 text-xs sm:px-3',
-  md: 'px-3.5 py-2 text-sm sm:px-4',
-  lg: 'px-5 py-2.5 text-base sm:px-6 sm:py-3',
-  xl: 'px-6 py-3 text-lg sm:px-8 sm:py-4',
-};
-
-const variantClasses: Record<PremiumGlassButtonVariant, string> = {
-  default:
-    'bg-white/10 hover:bg-white/20 text-slate-900 dark:text-white border-white/20',
-  primary:
-    'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-700 dark:text-blue-300 border-blue-400/30',
-  secondary:
-    'bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-700 dark:text-purple-300 border-purple-400/30',
-  danger:
-    'bg-gradient-to-r from-red-500/20 to-rose-500/20 hover:from-red-500/30 hover:to-rose-500/30 text-red-700 dark:text-red-300 border-red-400/30',
+const toneHalo: Record<Tone, string> = {
+  accent:
+    'radial-gradient(circle, rgba(91, 111, 255, 0.5) 0%, rgba(91, 111, 255, 0) 62%)',
+  muted:
+    'radial-gradient(circle, rgba(148, 163, 184, 0.34) 0%, rgba(148, 163, 184, 0) 60%)',
   success:
-    'bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-700 dark:text-green-300 border-green-400/30',
+    'radial-gradient(circle, rgba(34, 197, 94, 0.48) 0%, rgba(34, 197, 94, 0) 62%)',
+  danger:
+    'radial-gradient(circle, rgba(239, 68, 68, 0.52) 0%, rgba(239, 68, 68, 0) 63%)',
   warning:
-    'bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-700 dark:text-amber-300 border-amber-400/30',
-  info: 'bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 text-sky-700 dark:text-sky-300 border-sky-400/30',
+    'radial-gradient(circle, rgba(251, 191, 36, 0.48) 0%, rgba(251, 191, 36, 0) 64%)',
 };
 
-const glowClasses: Record<
-  Exclude<PremiumGlassButtonVariant, 'default'>,
-  string
+const glowByTone: Record<Tone, string> = {
+  accent: 'shadow-[0_0_36px_rgba(91,111,255,0.55)]',
+  muted: 'shadow-[0_0_36px_rgba(148,163,184,0.4)]',
+  success: 'shadow-[0_0_36px_rgba(34,197,94,0.5)]',
+  danger: 'shadow-[0_0_36px_rgba(239,68,68,0.5)]',
+  warning: 'shadow-[0_0_36px_rgba(251,191,36,0.48)]',
+};
+
+type LiquidStyle = 'glass' | 'intense';
+
+interface VariantAppearance {
+  liquid: LiquidStyle;
+  tone: Tone;
+  textClass: string;
+  dataVariant?: 'ghost';
+}
+
+const variantAppearance: Record<
+  PremiumGlassButtonVariant,
+  VariantAppearance
 > = {
-  primary:
-    'shadow-[0_0_20px_rgba(59,130,246,0.45)] hover:shadow-[0_0_30px_rgba(59,130,246,0.55)]',
-  secondary:
-    'shadow-[0_0_20px_rgba(168,85,247,0.45)] hover:shadow-[0_0_30px_rgba(168,85,247,0.55)]',
-  danger:
-    'shadow-[0_0_20px_rgba(239,68,68,0.45)] hover:shadow-[0_0_30px_rgba(239,68,68,0.55)]',
-  success:
-    'shadow-[0_0_20px_rgba(34,197,94,0.45)] hover:shadow-[0_0_30px_rgba(34,197,94,0.55)]',
-  warning:
-    'shadow-[0_0_20px_rgba(245,158,11,0.45)] hover:shadow-[0_0_30px_rgba(245,158,11,0.55)]',
-  info: 'shadow-[0_0_20px_rgba(14,165,233,0.45)] hover:shadow-[0_0_30px_rgba(14,165,233,0.55)]',
+  default: {
+    liquid: 'glass',
+    tone: 'muted',
+    textClass: 'text-slate-900 dark:text-slate-100',
+    dataVariant: 'ghost',
+  },
+  primary: {
+    liquid: 'intense',
+    tone: 'accent',
+    textClass: 'text-white',
+  },
+  secondary: {
+    liquid: 'intense',
+    tone: 'accent',
+    textClass: 'text-white',
+  },
+  danger: {
+    liquid: 'intense',
+    tone: 'danger',
+    textClass: 'text-white',
+  },
+  success: {
+    liquid: 'intense',
+    tone: 'success',
+    textClass: 'text-white',
+  },
+  warning: {
+    liquid: 'intense',
+    tone: 'warning',
+    textClass: 'text-slate-900 dark:text-amber-100',
+  },
+  info: {
+    liquid: 'intense',
+    tone: 'accent',
+    textClass: 'text-white',
+  },
 };
+
+const sizeClasses: Record<PremiumGlassButtonSize, string> = {
+  sm: 'px-3 py-1.5 text-xs sm:px-3.5',
+  md: 'px-4 py-2 text-sm sm:px-5',
+  lg: 'px-5 py-2.5 text-base sm:px-6 sm:py-3',
+  xl: 'px-7 py-3 text-lg sm:px-8 sm:py-3.5',
+};
+
+const iconSizes: Record<PremiumGlassButtonSize, string> = {
+  sm: 'p-2 sm:p-1.5',
+  md: 'p-2.5 sm:p-2',
+  lg: 'p-3 sm:p-2.5',
+  xl: 'p-3.5 sm:p-3',
+};
+
+function LiquidLayers({ tone, shimmer }: { tone: Tone; shimmer: boolean }) {
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] opacity-40 transition-opacity duration-300 ease-out group-hover:opacity-90"
+        style={{ backgroundImage: toneHalo[tone] }}
+      />
+      {shimmer && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-[linear-gradient(110deg,transparent_42%,rgba(255,255,255,0.32)_50%,transparent_66%)] bg-[length:220%_120%] opacity-0 transition-[opacity,transform] duration-600 ease-out group-hover:opacity-100 group-hover:translate-x-[6%]"
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-[24%] z-[-1] rounded-[inherit] opacity-0 blur-2xl transition-opacity duration-500 ease-out group-hover:opacity-30"
+        style={{ backgroundImage: toneHalo[tone] }}
+      />
+    </>
+  );
+}
+
+const baseButtonClasses =
+  'group relative inline-flex items-center justify-center rounded-full font-semibold tracking-tight transition-[transform,box-shadow] duration-[250ms] ease-out transform-gpu will-change-transform touch-target overflow-hidden focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60';
 
 const PremiumGlassButton = React.forwardRef<
   HTMLButtonElement,
@@ -79,32 +152,33 @@ const PremiumGlassButton = React.forwardRef<
     },
     ref
   ) => {
+    const appearance = variantAppearance[variant];
+    const liquidClass =
+      appearance.liquid === 'intense'
+        ? 'liquid-glass-intense'
+        : 'liquid-glass';
+
     return (
       <button
         ref={ref}
         type={type}
         className={cn(
-          'group relative inline-flex items-center justify-center rounded-xl font-medium',
-          'border backdrop-blur-xl transition-all duration-300',
-          'touch-manipulation hover:scale-105 active:scale-95',
-          'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100',
-          'min-h-[44px] sm:min-h-0',
+          baseButtonClasses,
+          'liquid-hover liquid-raise',
           sizeClasses[size],
-          variantClasses[variant],
-          glow && variant !== 'default' && glowClasses[variant],
+          liquidClass,
+          appearance.textClass,
+          glow && glowByTone[appearance.tone],
           className
         )}
+        data-liquid-tone={appearance.tone}
+        data-liquid-variant={appearance.dataVariant}
         {...props}
       >
-        <span className="absolute inset-0 rounded-[inherit] bg-gradient-to-b from-white/10 to-white/5" />
-        {shimmer && (
-          <span className="absolute inset-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.3)_50%,transparent_60%)] bg-[length:200%_100%] bg-[position:-100%_0] opacity-0 transition-all duration-500 group-hover:bg-[position:200%_0] group-hover:opacity-100" />
-        )}
-        <span className="absolute inset-[1px] rounded-[inherit] bg-gradient-to-b from-white/5 to-transparent opacity-50" />
+        <LiquidLayers tone={appearance.tone} shimmer={shimmer} />
         <span className="relative z-10 flex items-center gap-2">
           {children}
         </span>
-        <span className="absolute bottom-0 left-1/2 h-px w-3/4 -translate-x-1/2 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
       </button>
     );
   }
@@ -129,36 +203,31 @@ const PremiumIconButton = React.forwardRef<
     },
     ref
   ) => {
-    const iconSizes: Record<PremiumGlassButtonSize, string> = {
-      sm: 'p-2 sm:p-1.5',
-      md: 'p-2.5 sm:p-2',
-      lg: 'p-3 sm:p-3',
-      xl: 'p-3.5 sm:p-4',
-    };
+    const appearance = variantAppearance[variant];
+    const liquidClass =
+      appearance.liquid === 'intense'
+        ? 'liquid-glass-intense'
+        : 'liquid-glass';
 
     return (
       <button
         ref={ref}
         type={type}
         className={cn(
-          'group relative inline-flex items-center justify-center rounded-xl',
-          'border backdrop-blur-xl transition-all duration-300',
-          'touch-manipulation hover:rotate-3 hover:scale-110 active:rotate-0 active:scale-95',
-          'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100',
-          'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0',
+          baseButtonClasses,
+          'liquid-hover liquid-raise',
           iconSizes[size],
-          variantClasses[variant],
-          glow && variant !== 'default' && glowClasses[variant],
+          liquidClass,
+          appearance.textClass,
+          glow && glowByTone[appearance.tone],
           className
         )}
+        data-liquid-tone={appearance.tone}
+        data-liquid-variant={appearance.dataVariant}
         {...props}
       >
-        <span className="absolute inset-0 rounded-[inherit] bg-gradient-to-b from-white/10 to-white/5" />
-        {shimmer && (
-          <span className="absolute inset-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.4)_50%,transparent_60%)] bg-[length:200%_100%] bg-[position:-100%_0] opacity-0 transition-all duration-500 group-hover:bg-[position:200%_0] group-hover:opacity-100" />
-        )}
-        <span className="absolute inset-[1px] rounded-[inherit] bg-gradient-to-b from-white/5 to-transparent opacity-50" />
-        <span className="relative z-10 flex items-center gap-2">
+        <LiquidLayers tone={appearance.tone} shimmer={shimmer} />
+        <span className="relative z-10 flex items-center justify-center gap-2">
           {children}
         </span>
       </button>

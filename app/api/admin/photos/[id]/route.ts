@@ -7,17 +7,19 @@ import {
   SecurityValidator,
   isValidUUID,
 } from '@/lib/security/validation';
+import type { RouteContext } from '@/types/next-route';
 
 // PATCH - Edit photo
 async function handlePATCH(
   request: NextRequest,
-  context: { params: { id: string }; user: any; requestId: string }
+  context: RouteContext<{ id: string }> & { user: any; requestId: string }
 ) {
-  const { params, user, requestId } = context;
+  const { user, requestId } = context;
+  const params = await context.params;
   const userId = user?.id || 'unknown';
+  const { id } = params;
 
   try {
-    const { id } = params;
 
     // Validate photo ID
     if (!isValidUUID(id)) {
@@ -149,13 +151,14 @@ async function handlePATCH(
 // DELETE - Delete photo
 async function handleDELETE(
   request: NextRequest,
-  context: { params: { id: string }; user: any; requestId: string }
+  context: RouteContext<{ id: string }> & { user: any; requestId: string }
 ) {
-  const { params, user, requestId } = context;
+  const { user, requestId } = context;
+  const params = await context.params;
   const userId = user?.id || 'unknown';
+  const { id } = params;
 
   try {
-    const { id } = params;
 
     // Validate photo ID
     if (!isValidUUID(id)) {

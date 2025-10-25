@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
@@ -7,9 +8,8 @@ const urlCache = new Map<string, { url: string; expires: number }>();
 
 // GET /api/public/preview/...path -> serve watermarked preview images publicly
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
+  req: NextRequest, context: RouteContext<{ path: string[] }>) {
+  const params = await context.params;
   try {
     const segments = Array.isArray(params.path) ? params.path : [];
     if (segments.length === 0) {

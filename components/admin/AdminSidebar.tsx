@@ -196,24 +196,26 @@ export default function AdminSidebar({
         </div>
 
         {/* Header */}
-        <div className={clsx(
-          'border-b p-6 transition-all duration-300',
-          theme === 'light' ? 'border-border bg-white/80' : 'border-gray-700 bg-gray-900/80',
-          isCollapsed ? 'px-3' : 'px-6'
-        )}>
+        <div
+          className={clsx(
+            'liquid-glass-intense border-b p-5 transition-all duration-300',
+            isCollapsed ? 'px-3' : 'px-5'
+          )}
+          data-liquid-tone="accent"
+        >
           <div className="mb-6 flex items-center justify-between">
             {/* Logo y título */}
             <div className={clsx(
               'flex items-center gap-3 transition-all duration-300',
               isCollapsed ? 'justify-center' : 'justify-start'
             )}>
-              <div className={clsx(
-                'flex items-center justify-center rounded-xl transition-all duration-300',
-                theme === 'light'
-                  ? 'bg-muted hover:bg-muted'
-                  : 'bg-gray-800 hover:bg-gray-700',
-                isCollapsed ? 'h-10 w-10' : 'h-12 w-12 lg:h-14 lg:w-14'
-              )}>
+              <div
+                className={clsx(
+                  'liquid-glass flex items-center justify-center rounded-xl transition-all duration-300',
+                  isCollapsed ? 'h-9 w-9' : 'h-11 w-11 lg:h-12 lg:w-12'
+                )}
+                data-liquid-tone="muted"
+              >
                 <LookEscolarLogo
                   variant="soft"
                   size={isCollapsed ? "sm" : "lg"}
@@ -222,19 +224,11 @@ export default function AdminSidebar({
               </div>
 
               {!isCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <h1 className={clsx(
-                    'font-bold tracking-tight transition-all duration-300',
-                    theme === 'light' ? 'text-foreground' : 'text-gray-100',
-                    'text-xl lg:text-2xl'
-                  )}>
+                <div className="min-w-0 flex-1">
+                  <h1 className="chromatic-text text-lg font-semibold tracking-[0.25em] text-white transition-all duration-300 lg:text-xl">
                     LookEscolar
                   </h1>
-                  <p className={clsx(
-                    'text-xs font-medium transition-all duration-300',
-                    theme === 'light' ? 'text-gray-500' : 'text-gray-400',
-                    'lg:text-sm'
-                  )}>
+                  <p className="text-[11px] font-medium text-white/65 transition-all duration-300 lg:text-xs">
                     Panel Admin
                   </p>
                 </div>
@@ -263,61 +257,39 @@ export default function AdminSidebar({
 
           {/* Quick stats - hidden when collapsed */}
           {!isCollapsed && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className={clsx(
-                'rounded-lg border p-3 transition-all duration-200',
-                theme === 'light'
-                  ? 'border-border bg-muted hover:border-border hover:bg-muted'
-                  : 'border-gray-700 bg-gray-800 hover:border-gray-600 hover:bg-gray-700'
-              )}>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div
+                className="liquid-glass rounded-xl p-2.5 transition-transform duration-200 hover:-translate-y-0.5"
+                data-liquid-tone="muted"
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className={clsx(
-                      'text-2xl font-bold',
-                      theme === 'light' ? 'text-foreground' : 'text-gray-100'
-                    )}>
+                    <div className="text-xl font-semibold text-white">
                       12
                     </div>
-                    <div className={clsx(
-                      'text-xs font-medium uppercase tracking-wide',
-                      theme === 'light' ? 'text-muted-foreground' : 'text-gray-400'
-                    )}>
+                    <div className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/65">
                       Eventos
                     </div>
                   </div>
-                  <div className={clsx(
-                    'transition-colors duration-200',
-                    theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-                  )}>
+                  <div className="text-white/60 transition-colors duration-200">
                     <Activity className="h-4 w-4" />
                   </div>
                 </div>
               </div>
-              <div className={clsx(
-                'rounded-lg border p-3 transition-all duration-200',
-                theme === 'light'
-                  ? 'border-border bg-muted hover:border-border hover:bg-muted'
-                  : 'border-gray-700 bg-gray-800 hover:border-gray-600 hover:bg-gray-700'
-              )}>
+              <div
+                className="liquid-glass rounded-xl p-2.5 transition-transform duration-200 hover:-translate-y-0.5"
+                data-liquid-tone="muted"
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className={clsx(
-                      'text-2xl font-bold',
-                      theme === 'light' ? 'text-foreground' : 'text-gray-100'
-                    )}>
+                    <div className="text-xl font-semibold text-white">
                       847
                     </div>
-                    <div className={clsx(
-                      'text-xs font-medium uppercase tracking-wide',
-                      theme === 'light' ? 'text-muted-foreground' : 'text-gray-400'
-                    )}>
+                    <div className="text-[11px] font-medium uppercase tracking-[0.24em] text-white/65">
                       Fotos
                     </div>
                   </div>
-                  <div className={clsx(
-                    'transition-colors duration-200',
-                    theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-                  )}>
+                  <div className="text-white/60 transition-colors duration-200">
                     <BarChart3 className="h-4 w-4" />
                   </div>
                 </div>
@@ -335,10 +307,7 @@ export default function AdminSidebar({
           <div className="mb-8">
             {!isCollapsed && (
               <div className="mb-6">
-                <h2 className={clsx(
-                  'text-xs font-semibold uppercase tracking-wide',
-                  theme === 'light' ? 'text-gray-400' : 'text-gray-500'
-                )}>
+                <h2 className="chromatic-text text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">
                   Navegación
                 </h2>
               </div>
@@ -354,123 +323,48 @@ export default function AdminSidebar({
                       href={item.href}
                       onClick={handleLinkClick}
                       className={clsx(
-                        'group relative flex items-center transition-all duration-200 rounded-lg',
-                        isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5',
-                        active
-                          ? theme === 'light'
-                            ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
-                            : 'bg-blue-900/30 text-blue-300 border border-blue-800 shadow-sm'
-                          : theme === 'light'
-                            ? 'text-foreground hover:text-foreground hover:bg-muted'
-                            : 'text-gray-300 hover:text-gray-100 hover:bg-gray-800/50'
+                        'group relative flex items-center rounded-xl transition-transform duration-200 liquid-glass',
+                        isCollapsed ? 'justify-center p-1.5' : 'gap-2.5 px-3 py-2',
+                        'hover:-translate-y-0.5',
+                        active ? 'text-white' : 'text-white/65 hover:text-white'
                       )}
+                      data-liquid-tone={active ? 'accent' : 'muted'}
                       title={isCollapsed ? item.label : undefined}
                     >
-                      {/* Active background glow */}
-                      {active && (
-                        <div className={clsx(
-                          'absolute inset-0 rounded-lg transition-all duration-200',
-                          theme === 'light'
-                            ? 'bg-blue-50/50'
-                            : 'bg-blue-900/20'
-                        )} />
-                      )}
-
-                      {/* Icon container */}
-                      <div className={clsx(
-                        'relative flex-shrink-0 rounded-md transition-all duration-200',
-                        isCollapsed ? 'p-2' : 'p-1.5',
-                        active
-                          ? theme === 'light'
-                            ? 'bg-blue-100'
-                            : 'bg-blue-800/50'
-                          : theme === 'light'
-                            ? 'bg-muted group-hover:bg-muted'
-                            : 'bg-gray-700/50 group-hover:bg-gray-600/70'
-                      )}>
-                        {item.isLiquidIcon ? (
-                          <Icon
-                            size={isCollapsed ? 20 : 16}
-                            className={clsx(
-                              'transition-all duration-200',
-                              active
-                                ? 'text-blue-600 scale-110'
-                                : theme === 'light'
-                                  ? 'text-gray-500 group-hover:text-foreground'
-                                  : 'text-gray-400 group-hover:text-gray-200'
-                            )}
-                          />
-                        ) : (
-                          <Icon
-                            className={clsx(
-                              'transition-all duration-200',
-                              isCollapsed ? 'h-5 w-5' : 'h-4 w-4',
-                              active
-                                ? 'text-blue-600 scale-110'
-                                : theme === 'light'
-                                  ? 'text-gray-500 group-hover:text-foreground'
-                                  : 'text-gray-400 group-hover:text-gray-200'
-                            )}
-                          />
+                      <div
+                        className={clsx(
+                          'flex-shrink-0 rounded-lg transition-all duration-200',
+                          isCollapsed ? 'p-1.5' : 'p-1',
+                          active ? 'bg-white/22' : 'bg-white/10 group-hover:bg-white/16'
                         )}
+                      >
+                        <Icon
+                          className={clsx(
+                            'transition-transform duration-200',
+                            isCollapsed ? 'h-5 w-5' : 'h-4 w-4',
+                            active ? 'text-white scale-110' : 'text-white/70 group-hover:text-white'
+                          )}
+                        />
                       </div>
 
-                      {/* Text content - hidden when collapsed */}
                       {!isCollapsed && (
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span
-                              className={clsx(
-                                'truncate font-medium text-sm',
-                                active
-                                  ? theme === 'light' ? 'text-blue-700' : 'text-blue-300'
-                                  : theme === 'light'
-                                    ? 'text-foreground group-hover:text-foreground'
-                                    : 'text-gray-300 group-hover:text-gray-100'
-                              )}
-                            >
+                        <div className="flex flex-1 items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
                               {item.label}
                             </span>
-                            {item.shortcut && (
-                              <kbd className={clsx(
-                                'hidden items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] lg:inline-flex transition-all duration-200',
-                                theme === 'light'
-                                  ? 'bg-muted text-gray-500'
-                                  : 'bg-gray-700 text-gray-400'
-                              )}>
-                                {item.shortcut}
-                              </kbd>
+                            {item.description && (
+                              <p className="mt-0.5 truncate text-xs text-white/55">
+                                {item.description}
+                              </p>
                             )}
                           </div>
-                          {item.description && (
-                            <p
-                              className={clsx(
-                                'mt-0.5 truncate text-xs transition-all duration-200',
-                                active
-                                  ? theme === 'light' ? 'text-blue-600' : 'text-blue-400'
-                                  : theme === 'light'
-                                    ? 'text-gray-500 group-hover:text-muted-foreground'
-                                    : 'text-gray-400 group-hover:text-gray-300'
-                              )}
-                            >
-                              {item.description}
-                            </p>
+                          {item.badge && (
+                            <span className="flex-shrink-0 rounded-full bg-white/14 px-2 py-0.5 text-xs font-semibold text-white/80">
+                              {item.badge}
+                            </span>
                           )}
                         </div>
-                      )}
-
-                      {/* Active indicator - only when not collapsed */}
-                      {active && !isCollapsed && (
-                        <div className="flex-shrink-0">
-                          <div className="bg-blue-500 h-1.5 w-1.5 rounded-full animate-pulse"></div>
-                        </div>
-                      )}
-
-                      {/* Notification badge */}
-                      {item.badge && !isCollapsed && (
-                        <span className="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs font-medium flex-shrink-0 animate-pulse">
-                          {item.badge}
-                        </span>
                       )}
                     </Link>
                   </li>

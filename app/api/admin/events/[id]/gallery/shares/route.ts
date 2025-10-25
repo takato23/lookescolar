@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -16,8 +17,9 @@ const CreateShareSchema = z.object({
 
 // POST /api/admin/events/[id]/gallery/shares
 export const POST = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const { id: eventId } = params;
       const body = await req.json();
       const userId = req.headers.get('x-user-id');
@@ -138,8 +140,9 @@ const ListSharesSchema = z.object({
 
 // GET /api/admin/events/[id]/gallery/shares
 export const GET = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const { id: eventId } = params;
       const { searchParams } = new URL(req.url);
 

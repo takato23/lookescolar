@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/utils/logger';
 import crypto from 'crypto';
+import type { RouteContext } from '@/types/next-route';
 
 // GET: Get all subjects for an event
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const supabase = await createServerSupabaseServiceClient();
 
     logger.info('Get event subjects request received', {

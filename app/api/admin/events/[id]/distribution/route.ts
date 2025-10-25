@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { RouteContext } from '@/types/next-route';
 import {
   distributionService,
   DistributionMethod,
@@ -53,9 +54,12 @@ const ExpiryWarningsSchema = z.object({
 // GET - Distribution History and Statistics
 // ============================================================
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
     const { searchParams } = new URL(request.url);
 
@@ -322,9 +326,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 // POST - Generate and Distribute Tokens
 // ============================================================
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Distribution request for event:`, {
@@ -491,9 +498,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 // PUT - Bulk Distribute Existing Tokens
 // ============================================================
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Bulk distribution request for event:`, {
@@ -634,9 +644,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 // PATCH - Send Expiry Warnings
 // ============================================================
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const requestId = generateRequestId();
 
     console.log(`[${requestId}] Expiry warnings request for event:`, {

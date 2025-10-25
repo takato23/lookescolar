@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -98,10 +99,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(
     async (
       request: NextRequest,
-      authContext,
-      { params }: { params: { token: string } }
-    ) => {
-      const requestId =
+      authContext, context: RouteContext<{ token: string }>) => {
+  const params = await context.params;
+  const requestId =
         globalThis.crypto && 'randomUUID' in globalThis.crypto
           ? (globalThis.crypto as Crypto).randomUUID()
           : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;

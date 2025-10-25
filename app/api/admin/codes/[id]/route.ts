@@ -1,12 +1,16 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { withAuth } from '@/lib/middleware/auth.middleware';
+import type { RouteContext } from '@/types/next-route';
 import { z } from 'zod';
 
 const ParamsSchema = z.object({ id: z.string().uuid() });
 
-async function handleDELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+async function handleDELETE(
+  _req: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
+  const params = await context.params;
   const parse = ParamsSchema.safeParse(params);
   if (!parse.success) {
     return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 });
@@ -55,4 +59,3 @@ async function handleDELETE(_req: NextRequest, { params }: { params: { id: strin
 
 // Allow unauthenticated in development to simplify local testing
 export const DELETE = handleDELETE;
-

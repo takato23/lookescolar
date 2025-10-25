@@ -1,10 +1,10 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { publicAccessService } from '@/lib/services/public-access.service';
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  _req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const { token } = params;
 
   if (!token || token.length < 6) {

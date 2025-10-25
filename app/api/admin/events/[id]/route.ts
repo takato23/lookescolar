@@ -1,12 +1,62 @@
+import type { RouteContext } from '@/types/next-route';
+import { resolveParams } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { unifiedPhotoService } from '@/lib/services/unified-photo.service';
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 // UUID pattern validation
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type UpdateEventBody = {
+  name?: string;
+  location?: string | null;
+  date?: string | null;
+  photo_price?: number | null;
+  status?: string | null;
+  school_name?: string | null;
+  photographer_name?: string | null;
+  photographer_email?: string | null;
+  photographer_phone?: string | null;
+  description?: string | null;
+  active?: boolean;
+  theme?: 'default' | 'jardin' | 'secundaria' | 'bautismo';
+};
+
+type EventUpdatePayload = Partial<{
+  name: string;
+  location: string | null;
+  date: string | null;
+  photo_price: number | null;
+  status: string | null;
+  school_name: string | null;
+  photographer_name: string | null;
+  photographer_email: string | null;
+  photographer_phone: string | null;
+  description: string | null;
+  theme: 'default' | 'jardin' | 'secundaria' | 'bautismo';
+}>;
+
+const toTrimmedStringOrNull = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : '';
+};
+
+const toNullableNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
 
 // Inline resolution function
 async function resolveFriendlyEventIdInline(identifier: string) {
@@ -17,7 +67,10 @@ async function resolveFriendlyEventIdInline(identifier: string) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseClient = createClient<Database>(
+      supabaseUrl,
+      supabaseServiceKey
+    );
     
     const { data: events, error } = await supabaseClient
       .from('events')
@@ -59,11 +112,10 @@ async function resolveFriendlyEventIdInline(identifier: string) {
 
 // Get a single event with stats
 export const GET = RateLimitMiddleware.withRateLimit(
-  withAuth(async (req: NextRequest, { params }: { params: { id: string } }) => {
+  withAuth(async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+    const { id } = await resolveParams(context);
     try {
       const supabase = await createServerSupabaseServiceClient();
-      const { id } = params;
-      
       // Resolve friendly identifier to UUID if needed
       const eventId = await resolveFriendlyEventIdInline(id);
       
@@ -139,10 +191,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
 export const PATCH = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
-      req: NextRequest,
-      { params }: { params: { id: string } }
-    ) => {
-      const id = (params).id;
+      req: NextRequest, context: RouteContext<{ id: string }>) => {
+      const { id } = await resolveParams(context);
       if (!id) {
         return NextResponse.json(
           { error: 'Falta id de evento' },
@@ -150,41 +200,73 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         );
       }
 
-      let body: {
-        name?: string;
-        location?: string;
-        date?: string;
-        photo_price?: number;
-        status?: string;
-        school_name?: string;
-        photographer_name?: string;
-        photographer_email?: string;
-        photographer_phone?: string;
-        description?: string;
-        active?: boolean;
-        theme?: 'default' | 'jardin' | 'secundaria' | 'bautismo';
-      } = {};
-      try {
-        body = await req.json();
-      } catch {
+      const rawBody = (await req.json().catch(() => null)) as
+        | UpdateEventBody
+        | null;
+      if (!rawBody || typeof rawBody !== 'object') {
         return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
       }
 
-      const updateData: any = {};
-      if (body.name !== undefined) updateData.name = body.name.trim();
-      if (body.location !== undefined) updateData.location = body.location;
-      if (body.date !== undefined) updateData.date = body.date;
-      if (body.photo_price !== undefined)
-        updateData.photo_price = body.photo_price;
-      if (body.status !== undefined) updateData.status = body.status;
-      if (body.school_name !== undefined) updateData.school_name = body.school_name.trim();
-      if (body.photographer_name !== undefined) updateData.photographer_name = body.photographer_name.trim();
-      if (body.photographer_email !== undefined) updateData.photographer_email = body.photographer_email.trim();
-      if (body.photographer_phone !== undefined) updateData.photographer_phone = body.photographer_phone.trim();
-      if (body.description !== undefined) updateData.description = body.description;
-      if (body.active !== undefined) updateData.status = body.active ? 'active' : 'inactive';
+      const body = rawBody;
+      const updateData: EventUpdatePayload = {};
 
-      if (body.theme !== undefined) updateData.theme = body.theme;
+      if (body.name !== undefined) {
+        const value = toTrimmedStringOrNull(body.name);
+        if (value !== null) updateData.name = value;
+      }
+
+      if (body.location !== undefined) {
+        updateData.location =
+          typeof body.location === 'string' ? body.location : body.location ?? null;
+      }
+
+      if (body.date !== undefined) {
+        updateData.date =
+          typeof body.date === 'string' ? body.date : body.date ?? null;
+      }
+
+      if (body.photo_price !== undefined) {
+        const parsed = toNullableNumber(body.photo_price);
+        if (parsed !== null || body.photo_price === null) {
+          updateData.photo_price = parsed;
+        }
+      }
+
+      if (body.status !== undefined && typeof body.status === 'string') {
+        updateData.status = body.status;
+      }
+
+      if (body.school_name !== undefined) {
+        const value = toTrimmedStringOrNull(body.school_name);
+        if (value !== null) updateData.school_name = value;
+      }
+
+      if (body.photographer_name !== undefined) {
+        const value = toTrimmedStringOrNull(body.photographer_name);
+        if (value !== null) updateData.photographer_name = value;
+      }
+
+      if (body.photographer_email !== undefined) {
+        const value = toTrimmedStringOrNull(body.photographer_email);
+        if (value !== null) updateData.photographer_email = value;
+      }
+
+      if (body.photographer_phone !== undefined) {
+        const value = toTrimmedStringOrNull(body.photographer_phone);
+        if (value !== null) updateData.photographer_phone = value;
+      }
+
+      if (typeof body.description === 'string') {
+        updateData.description = body.description;
+      }
+
+      if (body.active !== undefined) {
+        updateData.status = body.active ? 'active' : 'inactive';
+      }
+
+      if (body.theme !== undefined) {
+        updateData.theme = body.theme;
+      }
 
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json(
@@ -224,10 +306,8 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
 export const DELETE = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
-      req: NextRequest,
-      { params }: { params: { id: string } }
-    ) => {
-      const id = (params).id;
+      req: NextRequest, context: RouteContext<{ id: string }>) => {
+      const { id } = await resolveParams(context);
       if (!id) {
         return NextResponse.json(
           { error: 'Falta id de evento' },
@@ -342,7 +422,7 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
         }
 
         const { error: delCodesErr } = await supabase
-          .from('codes' as any)
+          .from('codes' as never)
           .delete()
           .eq('event_id', id);
         if (delCodesErr) {

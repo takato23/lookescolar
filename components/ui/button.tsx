@@ -1,25 +1,122 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { clsx } from 'clsx';
 
+type ButtonVariant =
+  | 'primary'
+  | 'default'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'danger'
+  | 'success'
+  | 'glass'
+  | 'glass-ios26'
+  | 'link'
+  | 'minimal';
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?:
-    | 'primary'
-    | 'default'
-    | 'secondary'
-    | 'outline'
-    | 'ghost'
-    | 'danger'
-    | 'success'
-    | 'glass'
-    | 'glass-ios26' // New iOS 26 liquid glass variant
-    | 'link'
-    | 'minimal';
+  variant?: ButtonVariant;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   fullWidth?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
 }
+
+type LiquidStyle = 'glass' | 'intense';
+
+interface VariantConfig {
+  className: string;
+  liquidStyle?: LiquidStyle;
+  tone?: 'accent' | 'muted' | 'success' | 'danger' | 'warning';
+  dataVariant?: 'ghost';
+  halo?: string;
+}
+
+const variantConfig: Record<ButtonVariant, VariantConfig> = {
+  primary: {
+    liquidStyle: 'intense',
+    tone: 'accent',
+    halo:
+      'radial-gradient(circle, rgba(91, 111, 255, 0.48) 0%, rgba(91, 111, 255, 0) 62%)',
+    className:
+      'text-white shadow-[0_26px_60px_-30px_rgba(72,97,255,0.68)] hover:shadow-[0_36px_88px_-28px_rgba(72,97,255,0.78)]',
+  },
+  default: {
+    liquidStyle: 'intense',
+    tone: 'accent',
+    halo:
+      'radial-gradient(circle, rgba(91, 111, 255, 0.42) 0%, rgba(91, 111, 255, 0) 60%)',
+    className:
+      'text-white/95 shadow-[0_24px_58px_-30px_rgba(64,87,255,0.62)] hover:shadow-[0_34px_82px_-28px_rgba(64,87,255,0.75)]',
+  },
+  secondary: {
+    liquidStyle: 'glass',
+    tone: 'muted',
+    halo:
+      'radial-gradient(circle, rgba(148, 163, 184, 0.35) 0%, rgba(148, 163, 184, 0) 60%)',
+    className:
+      'text-slate-900 dark:text-slate-100 shadow-[0_20px_48px_-28px_rgba(15,23,42,0.32)] hover:shadow-[0_26px_66px_-30px_rgba(15,23,42,0.45)]',
+  },
+  outline: {
+    liquidStyle: 'glass',
+    tone: 'muted',
+    dataVariant: 'ghost',
+    halo:
+      'radial-gradient(circle, rgba(148, 163, 184, 0.28) 0%, rgba(148, 163, 184, 0) 58%)',
+    className:
+      'text-slate-900 dark:text-slate-100 border border-white/20 hover:border-white/35 dark:border-white/10 dark:hover:border-white/20',
+  },
+  ghost: {
+    liquidStyle: 'glass',
+    tone: 'muted',
+    dataVariant: 'ghost',
+    halo:
+      'radial-gradient(circle, rgba(148, 163, 184, 0.22) 0%, rgba(148, 163, 184, 0) 60%)',
+    className:
+      'text-slate-900 dark:text-slate-100 hover:text-slate-950 dark:hover:text-white',
+  },
+  danger: {
+    liquidStyle: 'intense',
+    tone: 'danger',
+    halo:
+      'radial-gradient(circle, rgba(239, 68, 68, 0.5) 0%, rgba(239, 68, 68, 0) 62%)',
+    className:
+      'text-white shadow-[0_26px_60px_-30px_rgba(181,44,85,0.62)] hover:shadow-[0_36px_92px_-28px_rgba(210,60,102,0.74)]',
+  },
+  success: {
+    liquidStyle: 'intense',
+    tone: 'success',
+    halo:
+      'radial-gradient(circle, rgba(34, 197, 94, 0.48) 0%, rgba(34, 197, 94, 0) 62%)',
+    className:
+      'text-white shadow-[0_26px_60px_-30px_rgba(16,145,102,0.58)] hover:shadow-[0_36px_92px_-28px_rgba(22,166,120,0.7)]',
+  },
+  glass: {
+    liquidStyle: 'glass',
+    tone: 'muted',
+    halo:
+      'radial-gradient(circle, rgba(91, 111, 255, 0.32) 0%, rgba(91, 111, 255, 0) 58%)',
+    className:
+      'text-slate-900 dark:text-slate-100 shadow-[0_20px_48px_-30px_rgba(15,23,42,0.32)] hover:shadow-[0_30px_70px_-30px_rgba(64,87,255,0.38)]',
+  },
+  'glass-ios26': {
+    liquidStyle: 'intense',
+    tone: 'accent',
+    halo:
+      'radial-gradient(circle, rgba(91, 111, 255, 0.48) 0%, rgba(91, 111, 255, 0) 60%)',
+    className:
+      'text-white shadow-[0_28px_72px_-30px_rgba(91,111,255,0.68)] hover:shadow-[0_36px_92px_-28px_rgba(99,122,255,0.78)]',
+  },
+  link: {
+    className:
+      'bg-transparent p-0 h-auto min-h-0 text-primary-600 underline underline-offset-6 decoration-transparent hover:decoration-primary-400 hover:text-primary-500 focus-visible:ring-0',
+  },
+  minimal: {
+    className:
+      'bg-transparent border border-transparent text-slate-800 dark:text-slate-200 hover:bg-white/10 hover:text-slate-950 dark:hover:bg-white/5 dark:hover:text-white focus-visible:ring-0',
+  },
+};
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
@@ -37,135 +134,39 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    // Base classes with accessibility and premium styling
+    const config = variantConfig[variant];
+    const isLiquid = Boolean(config.liquidStyle);
+    const liquidClass =
+      config.liquidStyle === 'intense'
+        ? 'liquid-glass-intense'
+        : config.liquidStyle === 'glass'
+          ? 'liquid-glass'
+          : '';
+
     const baseClasses = [
-      // Layout and interaction
-      'inline-flex items-center justify-center gap-2 font-medium transition-all duration-200 ease-out',
-      'relative overflow-hidden group transform-gpu will-change-transform',
-
-      // Accessibility - WCAG AA compliance
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-      'focus-visible:ring-primary-500',
-
-      // Disabled states
-      'disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none',
-      'disabled:shadow-none',
-
-      // Touch target compliance (44px minimum)
+      'group relative inline-flex items-center justify-center gap-2 font-medium',
+      'tracking-tight text-center leading-tight',
+      'select-none whitespace-nowrap',
+      'overflow-hidden transform-gpu will-change-transform',
+      'transition-[transform,box-shadow,background-color,border-color] duration-200 ease-out',
+      'focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0',
+      'disabled:opacity-60 disabled:cursor-not-allowed disabled:pointer-events-none disabled:shadow-none',
       'touch-target',
-
-      // Typography enhancement
-      'text-center leading-tight tracking-normal',
-
-      // Interactive states
-      'active:scale-[0.98] active:transition-transform active:duration-75',
     ].join(' ');
 
-    // Variant styles with AAA compliant colors
-    const variants = {
-      primary: [
-        // Background and colors using AAA compliant values
-        'bg-gradient-to-b from-primary-600 to-primary-700 text-white border border-primary-700',
-        'hover:from-primary-600 hover:to-primary-800 hover:border-primary-800 hover:shadow-3d hover:-translate-y-0.5',
-        'active:from-primary-700 active:to-primary-900 active:translate-y-0 active:shadow-md',
-        'focus-visible:ring-primary-500',
-
-        // Enhanced shadow for depth
-        'shadow-3d-sm hover:shadow-3d active:shadow-sm',
-      ].join(' '),
-
-      default: [
-        // Mirror primary but slightly softer
-        'bg-gradient-to-b from-primary-500 to-primary-600 text-white border border-primary-600',
-        'hover:from-primary-500 hover:to-primary-700 hover:border-primary-700 hover:shadow-3d hover:-translate-y-0.5',
-        'active:from-primary-600 active:to-primary-800 active:translate-y-0 active:shadow-md',
-        'focus-visible:ring-primary-500',
-        'shadow-3d-sm',
-      ].join(' '),
-
-      secondary: [
-        'bg-white/90 text-primary-700 border border-primary-200 backdrop-blur',
-        'hover:bg-white hover:border-primary-300 hover:text-primary-800 hover:shadow-3d-sm',
-        'active:bg-primary-100 active:border-primary-400',
-        'focus-visible:ring-primary-500',
-        'shadow-3d-sm',
-      ].join(' '),
-
-      outline: [
-        'bg-transparent text-neutral-800 dark:text-neutral-200 border border-neutral-300',
-        'hover:bg-neutral-50/70 hover:border-neutral-400 hover:text-neutral-900',
-        'active:bg-neutral-100 active:border-neutral-500',
-        'focus-visible:ring-neutral-500',
-      ].join(' '),
-
-      ghost: [
-        'bg-transparent text-neutral-800 dark:text-neutral-200 border border-transparent',
-        'hover:bg-neutral-100/70 hover:text-neutral-900',
-        'active:bg-neutral-200',
-        'focus-visible:ring-neutral-500',
-      ].join(' '),
-
-      danger: [
-        'bg-error-strong text-white border border-error-strong', // Using AAA compliant error color
-        'hover:bg-error-700 hover:border-error-700 hover:shadow-lg hover:-translate-y-0.5',
-        'active:bg-error-800 active:translate-y-0 active:shadow-md',
-        'focus-visible:ring-error-500',
-        'shadow-md hover:shadow-lg active:shadow-sm',
-      ].join(' '),
-
-      success: [
-        'bg-success-strong text-white border border-success-strong', // Using AAA compliant success color
-        'hover:bg-success-700 hover:border-success-700 hover:shadow-lg hover:-translate-y-0.5',
-        'active:bg-success-800 active:translate-y-0 active:shadow-md',
-        'focus-visible:ring-success-500',
-        'shadow-md hover:shadow-lg active:shadow-sm',
-      ].join(' '),
-
-      glass: [
-        'glass text-neutral-800 border border-white/20',
-        'hover:bg-white/20 hover:border-white/30 hover:shadow-lg hover:-translate-y-1',
-        'active:bg-white/10 active:translate-y-0',
-        'focus-visible:ring-white/50',
-        'backdrop-blur-lg',
-      ].join(' '),
-
-      // New iOS 26 liquid glass variant
-      'glass-ios26': [
-        'liquid-glass-button-ios26 text-foreground',
-        'hover:shadow-lg hover:-translate-y-1',
-        'active:translate-y-0',
-        'focus-visible:ring-white/50',
-        'transition-all duration-300',
-      ].join(' '),
-
-      link: [
-        'bg-transparent text-primary-700 underline underline-offset-4 decoration-primary-300',
-        'hover:text-primary-800 hover:decoration-primary-400',
-        'active:text-primary-900',
-        'focus-visible:ring-primary-500',
-        'p-0 h-auto min-h-0',
-      ].join(' '),
-
-      minimal: [
-        'bg-transparent text-neutral-700 border border-transparent',
-        'hover:bg-neutral-50 hover:text-neutral-900',
-        'active:bg-neutral-100',
-        'focus-visible:ring-neutral-500',
-      ].join(' '),
-    };
-
-    // Size styles with proper touch targets
     const sizes = {
-      xs: 'px-2 py-1.5 text-xs rounded-md gap-1 min-h-[32px] h-8', // Compact controls for móvil
-      sm: 'px-3 py-2 text-sm rounded-md gap-1.5 min-h-[40px]', // Slightly smaller but still accessible
-      md: 'px-4 py-2.5 text-sm rounded-lg gap-2 min-h-[44px]', // WCAG AA minimum
-      lg: 'px-6 py-3 text-base rounded-lg gap-2 min-h-[48px]', // Comfortable
-      xl: 'px-8 py-4 text-lg rounded-xl gap-3 min-h-[52px]', // Desktop optimized
+      xs: 'rounded-full px-3 py-1.5 text-xs min-h-[36px]',
+      sm: 'rounded-full px-3.5 py-2 text-sm min-h-[40px]',
+      md: 'rounded-full px-5 py-2.5 text-sm min-h-[44px]',
+      lg: 'rounded-full px-6 py-3 text-base min-h-[48px]',
+      xl: 'rounded-full px-8 py-3.5 text-lg min-h-[54px]',
     } as const;
 
     const buttonClasses = clsx(
       baseClasses,
-      variants[variant],
+      liquidClass,
+      isLiquid && 'liquid-hover liquid-raise',
+      config.className,
       sizes[size],
       {
         'w-full': fullWidth,
@@ -179,17 +180,38 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={buttonClasses}
+        data-liquid-tone={config.tone}
+        data-liquid-variant={config.dataVariant}
         disabled={disabled || loading}
         {...props}
       >
+        {/* Liquid halo */}
+        {isLiquid && (
+          <>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] opacity-40 transition-opacity duration-300 ease-out group-hover:opacity-80"
+              style={{ backgroundImage: config.halo }}
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_45%,rgba(255,255,255,0.28)_52%,transparent_65%)] bg-[length:220%_120%] opacity-0 transition-[opacity,transform] duration-500 group-hover:opacity-100 group-hover:translate-x-[4%]"
+            />
+          </>
+        )}
+
         {/* Loading spinner */}
         {loading && (
-          <div className="spinner-sm" aria-label="Loading" role="status" />
+          <div
+            className="spinner-sm relative z-10"
+            aria-label="Loading"
+            role="status"
+          />
         )}
 
         {/* Icon */}
         {icon && !loading && (
-          <span className="flex-shrink-0" aria-hidden="true">
+          <span className="relative z-10 flex-shrink-0" aria-hidden="true">
             {icon}
           </span>
         )}
@@ -197,7 +219,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {/* Button content */}
         {children && (
           <span
-            className={clsx('min-w-0 flex-1', {
+            className={clsx('relative z-10 min-w-0 flex-1', {
               truncate: typeof children === 'string',
             })}
           >
@@ -205,12 +227,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           </span>
         )}
 
-        {/* Shine effect for premium feel */}
-        {(variant === 'primary' ||
-          variant === 'danger' ||
-          variant === 'success' ||
-          variant === 'glass-ios26') && (
-          <span className="absolute inset-0 rounded-[inherit] bg-[linear-gradient(105deg,transparent_40%,rgba(255,255,255,0.2)_50%,transparent_60%)] bg-[200%_100%] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {/* Outer refracted halo */}
+        {isLiquid && config.halo && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-[22%] z-[-1] rounded-[inherit] opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-30"
+            style={{ backgroundImage: config.halo }}
+          />
         )}
       </button>
     );

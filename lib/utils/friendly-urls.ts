@@ -6,6 +6,12 @@
  */
 
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
+
+type EventRow = Pick<
+  Database['public']['Tables']['events']['Row'],
+  'id' | 'name' | 'date'
+>;
 
 // UUID pattern validation
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,27 +65,51 @@ export async function resolveFriendlyEventId(identifier: string): Promise<string
     const yearMatch = identifier.match(/-(\d{4})$/);
     let searchName = identifier;
     let year: number | null = null;
-    
+
     if (yearMatch) {
-      year = parseInt(yearMatch[1]);
+      year = Number.parseInt(yearMatch[1], 10);
       searchName = identifier.replace(/-\d{4}$/, '');
     }
 
-    // Build query
-    const query = supabase
+    const normalizedSearchName = searchName.trim();
+    const searchVariants = Array.from(
+      new Set(
+        [
+          normalizedSearchName,
+          normalizedSearchName.replace(/-/g, ' '),
+          normalizedSearchName.replace(/escuela-/g, ''),
+          normalizedSearchName.replace(/-escuela/g, ''),
+        ]
+          .map((value) => value.trim())
+          .filter(Boolean)
+      )
+    );
+
+    let query = supabase
       .from('events')
-      .select('id, name, date');
+      .select('id, name, date')
+      .limit(50);
 
-    // Search for events that could match this friendly identifier
-    const possibleNames = [
-      searchName,
-      searchName.replace(/-/g, ' '),
-      searchName.replace(/escuela-/g, ''),
-      searchName.replace(/-escuela/g, ''),
-    ].filter(Boolean);
+    if (year !== null) {
+      const from = `${year}-01-01`;
+      const to = `${year + 1}-01-01`;
+      query = query.gte('date', from).lt('date', to);
+    }
 
-    // Use OR conditions to find matches
-    const { data: events, error } = await query;
+    if (searchVariants.length > 0) {
+      const orClause = searchVariants
+        .map((value) => {
+          const pattern = value.replace(/[-\s]+/g, '%');
+          return `name.ilike.%${pattern}%`;
+        })
+        .join(',');
+
+      if (orClause.length > 0) {
+        query = query.or(orClause);
+      }
+    }
+
+    const { data: events, error } = await query.returns<EventRow[]>();
 
     if (error || !events || events.length === 0) {
       console.warn(`❌ No events found for identifier: ${identifier}`);
@@ -88,7 +118,10 @@ export async function resolveFriendlyEventId(identifier: string): Promise<string
 
     // Find the best match
     for (const event of events) {
-      const eventIdentifier = generateEventIdentifier({ name: event.name, date: event.date });
+      const eventIdentifier = generateEventIdentifier({
+        name: event.name,
+        date: event.date ?? undefined,
+      });
       
       if (eventIdentifier === identifier) {
         return event.id;
@@ -131,14 +164,20 @@ export async function resolveFriendlyEventId(identifier: string): Promise<string
 export async function getFriendlyEventUrl(eventId: string, path: string = ''): Promise<string> {
   try {
     const supabase = await createServerSupabaseServiceClient();
+    type EventSummary = Pick<EventRow, 'name' | 'date'>;
+
     const { data: event } = await supabase
       .from('events')
       .select('name, date')
       .eq('id', eventId)
+      .returns<EventSummary>()
       .single();
 
     if (event) {
-      const identifier = generateEventIdentifier({ name: event.name, date: event.date });
+      const identifier = generateEventIdentifier({
+        name: event.name,
+        date: event.date ?? undefined,
+      });
       return `/admin/events/${identifier}${path}`;
     }
   } catch (error) {

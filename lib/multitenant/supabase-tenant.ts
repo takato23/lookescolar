@@ -14,6 +14,9 @@ const TENANT_SCOPED_TABLES = new Set<string>([
   'photo_subjects',
   'folder_shares',
   'access_tokens',
+  'tenant_plan_subscriptions',
+  'whatsapp_notifications',
+  'whatsapp_notification_attempts',
 ]);
 
 function applyTenantToPayload<T extends Record<string, unknown> | null>(

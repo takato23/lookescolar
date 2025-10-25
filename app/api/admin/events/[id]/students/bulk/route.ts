@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,8 +20,9 @@ const bulkActionSchema = z.object({
 
 // POST /api/admin/events/[id]/students/bulk
 export const POST = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const body = await req.json();
 

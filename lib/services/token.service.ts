@@ -26,7 +26,9 @@ export interface TokenGenerationResult {
  * Maneja generación, rotación y validación de tokens únicos
  */
 export class TokenService {
-  private supabase = createServerSupabaseClient();
+  private getSupabase() {
+    return createServerSupabaseClient();
+  }
 
   /**
    * Genera o rota un token para un sujeto específico
@@ -36,7 +38,7 @@ export class TokenService {
     options: TokenGenerationOptions = {}
   ): Promise<TokenGenerationResult> {
     const { expiryDays = 30, rotateExisting = false } = options;
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     try {
       // Verificar si ya existe un token válido
@@ -201,7 +203,7 @@ export class TokenService {
     }
 
     try {
-      const supabase = await this.supabase;
+      const supabase = await this.getSupabase();
 
       const { data: tokenInfo } = await supabase
         .from('subject_tokens')
@@ -266,7 +268,7 @@ export class TokenService {
     failed: number;
     errors: Array<{ subjectId: string; error: string }>;
   }> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     const expiryCutoff = new Date();
     expiryCutoff.setDate(expiryCutoff.getDate() + daysBeforeExpiry);
 
@@ -322,7 +324,7 @@ export class TokenService {
     reason: string = 'security_breach'
   ): Promise<boolean> {
     try {
-      const supabase = await this.supabase;
+      const supabase = await this.getSupabase();
 
       // Encontrar el token y actualizarlo para que expire inmediatamente
       const { data: tokenData } = await supabase
@@ -376,7 +378,7 @@ export class TokenService {
     expiringIn24Hours: number;
   }> {
     try {
-      const supabase = await this.supabase;
+      const supabase = await this.getSupabase();
       const now = new Date();
       const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -440,7 +442,7 @@ export class TokenService {
     }[]
   > {
     try {
-      const supabase = await this.supabase;
+      const supabase = await this.getSupabase();
 
       const { data: tokens } = await supabase
         .from('subject_tokens')

@@ -1,10 +1,10 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { orderId: string } }
-) {
+  request: NextRequest, context: RouteContext<{ orderId: string }>) {
+  const params = await context.params;
   try {
     const { orderId } = params;
 

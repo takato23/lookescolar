@@ -14,15 +14,16 @@ function alignParam(params: URLSearchParams, canonical: string, legacy: string) 
   params.set(legacy, value);
 }
 
-export default function UnifiedGalleryRedirect({
+export default async function UnifiedGalleryRedirect({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
   const merged = new URLSearchParams();
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
 
-  if (searchParams) {
-    for (const [key, rawValue] of Object.entries(searchParams)) {
+  if (resolvedSearchParams) {
+    for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
       const value = firstValue(rawValue);
       if (value) {
         merged.set(key, value);

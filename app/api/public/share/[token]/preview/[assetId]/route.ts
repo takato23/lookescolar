@@ -1,12 +1,12 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { shareTokenSecurity } from '@/lib/security/share-token-security';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // GET /api/public/share/[token]/preview/[assetId]
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { token: string; assetId: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string; assetId: string }>) {
+  const params = await context.params;
   try {
     const { token, assetId } = params;
     if (!token || token.length !== 64 || !assetId) {

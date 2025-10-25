@@ -19,7 +19,7 @@ export default function StoreSettingsPage({ searchParams }: PageProps) {
   useEffect(() => {
     const loadParams = async () => {
       try {
-        const params = searchParams;
+        const params = await searchParams;
         const eventIdParam = params.eventId || params.event_id;
         const globalParam = params.global;
 

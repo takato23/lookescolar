@@ -8,20 +8,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hierarchicalGalleryService } from '../../../../../../lib/services/hierarchical-gallery.service';
 import { headers } from 'next/headers';
-
-interface RouteParams {
-  params: {
-    token: string;
-    assetId: string;
-  };
-}
+import type { RouteContext } from '@/types/next-route';
 
 // Preview cache for performance
 const previewCache = new Map<string, { url: string; expiresAt: number }>();
 const PREVIEW_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { token, assetId } = params;
+export async function GET(
+  request: NextRequest,
+  context: RouteContext<{ token: string; assetId: string }>
+) {
+  const { token, assetId } = await context.params;
   const startTime = Date.now();
 
   // Get client info for logging

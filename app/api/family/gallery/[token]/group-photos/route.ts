@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { familyService } from '@/lib/services/family.service';
@@ -26,10 +27,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(
     async (
       request: NextRequest,
-      authContext,
-      { params }: { params: { token: string } }
-    ) => {
-      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      authContext, context: RouteContext<{ token: string }>) => {
+  const params = await context.params;
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const startTime = Date.now();
 
       try {

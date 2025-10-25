@@ -9,13 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { hierarchicalGalleryService } from '../../../../../../lib/services/hierarchical-gallery.service';
 import { headers } from 'next/headers';
-
-interface RouteParams {
-  params: {
-    token: string;
-    assetId: string;
-  };
-}
+import type { RouteContext } from '@/types/next-route';
 
 // Rate limiting for downloads
 const downloadAttempts = new Map<
@@ -42,8 +36,11 @@ function checkRateLimit(key: string): boolean {
   return true;
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { token, assetId } = params;
+export async function GET(
+  request: NextRequest,
+  context: RouteContext<{ token: string; assetId: string }>
+) {
+  const { token, assetId } = await context.params;
   const startTime = Date.now();
 
   // Get client info for logging

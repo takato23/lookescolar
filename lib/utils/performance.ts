@@ -3,7 +3,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
-import { useCallback, useMemo, useRef, useEffect, useState } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+  useState,
+  type RefObject,
+} from 'react';
 
 // Database performance metric interfaces
 export interface DatabasePerformanceMetric {
@@ -377,7 +384,7 @@ export function useMemoizedCalculation<T, R>(
 // Intersection observer hook for lazy loading
 export function useIntersectionObserver(
   options: IntersectionObserverInit = {}
-): [React.RefObject<HTMLDivElement>, boolean] {
+): [RefObject<HTMLDivElement | null>, boolean] {
   const ref = useRef<HTMLDivElement>(null);
   const [isIntersecting, setIsIntersecting] = useState(false);
 

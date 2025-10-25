@@ -10,12 +10,9 @@ import { createClient } from '@supabase/supabase-js';
 import { accessTokenService } from '../../../../../../lib/services/access-token.service';
 import { adminAuthMiddleware } from '../../../../../../lib/security/admin-auth';
 import { z } from 'zod';
+import type { RouteContext } from '@/types/next-route';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
+type RouteParams = RouteContext<{ id: string }>;
 
 const usageQuerySchema = z.object({
   includeLogs: z.string().optional().default('true'),
@@ -29,7 +26,7 @@ const usageQuerySchema = z.object({
 });
 
 // GET /api/admin/tokens/[id]/usage - Get detailed usage statistics
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, context: RouteParams) {
   try {
     // Admin authentication
     const authResult = await adminAuthMiddleware(request);
@@ -40,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+    const { id } = await context.params;
     const { searchParams } = new URL(request.url);
     const query = usageQuerySchema.parse({
       includeLogs: searchParams.get('includeLogs'),

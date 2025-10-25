@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -18,8 +19,9 @@ const ZipDownloadSchema = z.object({
 
 // POST /api/admin/events/[id]/bulk-download/zip
 export const POST = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = params.id;
       const body = await req.json();
 
@@ -132,10 +134,9 @@ export const POST = withAuth(
 // Check the status of a ZIP generation job
 export const GET = withAuth(
   async (
-    req: NextRequest,
-    { params }: { params: { id: string; jobId: string } }
-  ) => {
-    try {
+    req: NextRequest, context: RouteContext<{ id: string; jobId: string }>) => {
+  const params = await context.params;
+  try {
       const jobId = params.jobId;
 
       // In a real implementation, this would check the status of a background job

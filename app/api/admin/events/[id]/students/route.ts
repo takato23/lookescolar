@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -14,8 +15,9 @@ const subjectSchema = z.object({
 
 // GET /api/admin/events/[id]/students
 export const GET = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = (params).id;
       const { searchParams } = new URL(req.url);
 
@@ -144,8 +146,9 @@ export const GET = withAuth(
 
 // POST /api/admin/events/[id]/students
 export const POST = withAuth(
-  async (req: NextRequest, { params }: { params: { id: string } }) => {
-    try {
+  async (req: NextRequest, context: RouteContext<{ id: string }>) => {
+  const params = await context.params;
+  try {
       const eventId = (params).id;
       const body = await req.json();
 

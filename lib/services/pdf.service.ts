@@ -31,7 +31,9 @@ export interface QRPageData {
  */
 export class PDFService {
   private qrService = new QRService();
-  private supabase = createServerSupabaseClient();
+  private getSupabase() {
+    return createServerSupabaseClient();
+  }
 
   private defaultOptions: PDFGenerationOptions = {
     layout: 'portrait',
@@ -92,7 +94,7 @@ export class PDFService {
     event: Event;
     subjects: Subject[];
   }> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     // Obtener evento
     const { data: event, error: eventError } = await supabase
@@ -446,7 +448,7 @@ export class PDFService {
     subjectId: string,
     options: PDFGenerationOptions = {}
   ): Promise<Buffer> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     // Obtener sujeto y evento
     const { data: subject } = await supabase

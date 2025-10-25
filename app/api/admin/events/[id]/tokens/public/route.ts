@@ -5,6 +5,7 @@ import {
   SecurityLogger,
   generateRequestId,
 } from '@/lib/middleware/auth.middleware';
+import type { RouteContext } from '@/types/next-route';
 
 /**
  * POST /api/admin/events/[id]/tokens/public
@@ -13,11 +14,11 @@ import {
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
     const requestId = generateRequestId();
-    const eventId = params.id;
+    const { id: eventId } = await context.params;
 
     console.log(`[${requestId}] Generating public token for event:`, {
       eventId: `${eventId.substring(0, 8)}***`,
@@ -129,7 +130,6 @@ export async function POST(
     );
   }
 }
-
 
 
 

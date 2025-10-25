@@ -3,6 +3,7 @@ import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { logger, generateRequestId } from '@/lib/utils/logger';
+import { whatsappNotificationService } from '@/lib/services/whatsapp-notification.service';
 
 /**
  * MercadoPago Webhook Handler
@@ -277,6 +278,24 @@ export async function POST(request: NextRequest) {
         table: 'orders',
         status: isApproved ? 'paid' : 'pending' 
       });
+    }
+
+    if (isApproved && externalRef) {
+      try {
+        await whatsappNotificationService.handleOrderPaid({
+          supabase,
+          orderId: externalRef,
+          orderSource: updatedUnified ? 'unified_orders' : 'orders',
+          requestId,
+        });
+      } catch (error) {
+        const err =
+          error instanceof Error ? error.message : String(error ?? 'unknown');
+        log.warn('whatsapp_notification_failed', {
+          orderId: externalRef,
+          error: err,
+        });
+      }
     }
 
     const resp = NextResponse.json({ success: true });

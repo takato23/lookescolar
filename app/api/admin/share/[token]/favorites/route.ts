@@ -1,9 +1,11 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 // GET /api/admin/share/[token]/favorites -> JSON list of favorite assets (id, filename)
-export const GET = withAuth(async (req: NextRequest, { params }: { params: { token: string } }) => {
+export const GET = withAuth(async (req: NextRequest, context: RouteContext<{ token: string }>) => {
+  const params = await context.params;
   try {
     const tokenStr = params.token;
     const supabase = await createServerSupabaseServiceClient();

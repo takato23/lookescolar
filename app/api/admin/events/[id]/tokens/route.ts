@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { tokenService } from '@/lib/services/token.service';
@@ -12,9 +13,8 @@ import {
  * Incluye información del estudiante y estado del token
  */
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest, context: RouteContext<{ id: string }>) {
+  const params = await context.params;
   try {
     const requestId = generateRequestId();
     const eventId = params.id;
@@ -157,9 +157,8 @@ export async function GET(
  * O regenera tokens existentes si se especifica
  */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest, context: RouteContext<{ id: string }>) {
+  const params = await context.params;
   try {
     const requestId = generateRequestId();
     const eventId = params.id;
@@ -295,9 +294,8 @@ export async function POST(
  * Invalida todos los tokens de un evento (por seguridad)
  */
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest, context: RouteContext<{ id: string }>) {
+  const params = await context.params;
   try {
     const requestId = generateRequestId();
     const eventId = params.id;

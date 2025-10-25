@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,9 +9,8 @@ const supabase = createClient(
 );
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
+  request: NextRequest, context: RouteContext<{ path: string[] }>) {
+  const params = await context.params;
   try {
     const path = params.path.join('/');
 

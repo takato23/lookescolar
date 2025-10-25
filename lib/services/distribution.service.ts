@@ -345,7 +345,9 @@ Después de la fecha de expiración ya no podrás ver ni comprar las fotos.
 // ============================================================
 
 export class DistributionService {
-  private supabase = createServerSupabaseClient();
+  private getSupabase() {
+    return createServerSupabaseClient();
+  }
 
   /**
    * Send token access links to families via specified method
@@ -354,7 +356,7 @@ export class DistributionService {
     request: DistributionRequest
   ): Promise<DistributionResult> {
     const requestId = generateRequestId();
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
 
     console.log(`[${requestId}] Starting token distribution:`, {
       tokenCount: request.token_ids.length,
@@ -610,7 +612,7 @@ export class DistributionService {
     });
 
     try {
-      const supabase = await this.supabase;
+      const supabase = await this.getSupabase();
 
       // Get event details
       const { data: event } = await supabase

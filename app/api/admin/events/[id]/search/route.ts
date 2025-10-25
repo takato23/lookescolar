@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { RouteContext } from '@/types/next-route';
 
 interface SearchResult {
   id: string;
@@ -26,10 +27,10 @@ interface SearchResult {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const { searchParams } = new URL(request.url);
 
     const query = searchParams.get('q')?.trim();

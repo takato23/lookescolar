@@ -1,5 +1,6 @@
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { SecurityLogger } from '@/lib/middleware/auth.middleware';
+import type { Database } from '@/types/database';
 
 /**
  * Genera URLs firmadas SEGURAS que NUNCA exponen originales
@@ -15,10 +16,16 @@ export async function getSecureImageUrl(
 
   try {
     // Obtener paths de la foto
+    type PhotoRow = Pick<
+      Database['public']['Tables']['photos']['Row'],
+      'id' | 'watermark_path' | 'preview_path' | 'storage_path'
+    >;
+
     const { data: photo, error } = await sb
       .from('photos')
       .select('id, watermark_path, preview_path, storage_path')
       .eq('id', photoId)
+      .returns<PhotoRow>()
       .single();
 
     if (error || !photo) {

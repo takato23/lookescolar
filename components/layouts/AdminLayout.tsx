@@ -23,38 +23,40 @@ interface AdminTopBarProps {
 
 function AdminTopBar({ pageTitle, breadcrumbs }: AdminTopBarProps) {
   return (
-    <header className="liquid-glass sticky top-0 z-50 border-b border-white/10">
-      <div className="container flex h-16 items-center justify-between px-6">
+    <header
+      className="liquid-glass-intense sticky top-4 z-50 mx-auto w-[min(95%,1120px)] rounded-3xl border border-white/15 px-6 py-3 shadow-[0_34px_90px_-40px_rgba(16,24,40,0.55)] backdrop-blur-2xl"
+      data-liquid-tone="accent"
+    >
+      <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <LookEscolarLogo variant="blue" size="lg" />
+          <div className="liquid-glass flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 shadow-[0_18px_42px_-28px_rgba(16,24,40,0.45)]">
+            <LookEscolarLogo variant="blue" size="lg" />
+          </div>
           <div className="leading-tight">
-            <h1 className="liquid-title text-lg font-extrabold tracking-tight">
+            <h1 className="chromatic-text text-base font-semibold uppercase tracking-[0.28em]">
               LookEscolar
             </h1>
-            <p className="liquid-subtitle text-xs text-neutral-500 dark:text-neutral-400">
-              Panel de Administración
+            <p className="text-xs text-white/70 dark:text-white/60">
+              Panel de administración
             </p>
           </div>
 
-          {/* Breadcrumbs */}
           {breadcrumbs && breadcrumbs.length > 0 && (
-            <nav className="ml-6 hidden items-center space-x-2 md:flex">
+            <nav className="ml-6 hidden items-center gap-3 md:flex">
               {breadcrumbs.map((item, index) => (
                 <React.Fragment key={index}>
                   {index > 0 && (
-                    <span className="text-neutral-400 dark:text-neutral-600">
-                      /
-                    </span>
+                    <span className="text-white/30 dark:text-white/40">/</span>
                   )}
                   {item.href ? (
                     <a
                       href={item.href}
-                      className="liquid-nav-text text-sm transition-colors hover:text-primary-500"
+                      className="text-sm text-white/75 transition-colors duration-200 hover:text-white"
                     >
                       {item.label}
                     </a>
                   ) : (
-                    <span className="liquid-nav-text text-sm font-semibold">
+                    <span className="text-sm font-semibold text-white">
                       {item.label}
                     </span>
                   )}
@@ -65,17 +67,16 @@ function AdminTopBar({ pageTitle, breadcrumbs }: AdminTopBarProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Page Title para mobile */}
           {pageTitle && (
-            <h2 className="liquid-nav-text text-sm font-semibold md:hidden">
+            <h2 className="chromatic-text text-xs font-semibold uppercase tracking-[0.24em] md:hidden">
               {pageTitle}
             </h2>
           )}
 
-          {/* Search Button - que podría activar Command Palette en el futuro */}
           <button
-            className="liquid-button hidden items-center gap-2 rounded-xl p-2 text-sm md:flex"
+            className="liquid-glass hidden items-center gap-2 rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.24em] text-white/80 transition-all hover:text-white hover:shadow-[0_20px_48px_-30px_rgba(78,105,255,0.55)] md:flex"
             aria-label="Buscar"
+            data-liquid-tone="muted"
           >
             <svg
               className="h-4 w-4"
@@ -90,16 +91,17 @@ function AdminTopBar({ pageTitle, breadcrumbs }: AdminTopBarProps) {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <span className="hidden lg:inline">Buscar...</span>
-            <span className="hidden rounded bg-black/10 px-1.5 py-0.5 text-xs dark:bg-white/10 lg:inline">
+            <span className="hidden lg:inline">Buscar</span>
+            <span className="hidden rounded-full bg-white/10 px-2 py-0.5 text-[10px] lg:inline">
               ⌘K
             </span>
           </button>
 
-          <LiquidThemeToggle size="md" />
+          <div className="liquid-glass rounded-full p-1.5" data-liquid-tone="muted">
+            <LiquidThemeToggle size="md" />
+          </div>
 
-          {/* User Menu Placeholder - mantener el existente */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 text-sm font-bold text-white">
+          <div className="liquid-glass flex h-9 w-9 items-center justify-center rounded-full border border-white/20 text-xs font-semibold text-white">
             M
           </div>
         </div>
@@ -116,26 +118,31 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   return (
     <div className={`liquid-glass-app min-h-screen ${className}`}>
-      <AdminTopBar pageTitle={pageTitle} breadcrumbs={breadcrumbs} />
+      <div className="flex flex-col gap-6 px-4 pb-12 pt-6 lg:px-10">
+        <AdminTopBar pageTitle={pageTitle} breadcrumbs={breadcrumbs} />
 
-      <div className="flex">
-        {/* Sidebar - mantenemos el existente por ahora */}
-        <aside className="liquid-content hidden w-64 border-r border-white/5 lg:block">
-          {/* El sidebar actual se integraría aquí */}
-          <div className="p-6">
-            <nav className="space-y-2">
-              <div className="liquid-label mb-4 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+        <div className="mx-auto flex w-full max-w-[1200px] gap-6">
+          <aside
+            className="liquid-glass hidden w-72 shrink-0 flex-col rounded-3xl border border-white/12 p-6 shadow-[0_40px_120px_-40px_rgba(16,24,40,0.55)] md:flex"
+            data-liquid-tone="muted"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <span className="chromatic-text text-xs font-semibold uppercase tracking-[0.28em]">
                 Navegación
-              </div>
-              {/* Los items de navegación se agregarían aquí */}
+              </span>
+              <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.26em] text-white/60">
+                Admin
+              </span>
+            </div>
+            <nav className="space-y-2 text-sm text-white/75">
+              {/* Inserta items de navegación concretos aquí */}
             </nav>
-          </div>
-        </aside>
+          </aside>
 
-        {/* Main Content */}
-        <main className="liquid-content min-h-screen flex-1">
-          <div className="liquid-glass-container">{children}</div>
-        </main>
+          <main className="liquid-glass flex-1 rounded-3xl border border-white/10 p-6 shadow-[0_36px_120px_-50px_rgba(16,24,40,0.55)]" data-liquid-tone="muted">
+            <div className="liquid-glass-container">{children}</div>
+          </main>
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  request: NextRequest, context: RouteContext<{ id: string }>) {
+  const params = await context.params;
   try {
     const { id } = params;
     if (!id) {

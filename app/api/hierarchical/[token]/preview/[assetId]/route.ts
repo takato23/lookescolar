@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { shareTokenSecurity } from '@/lib/security/share-token-security';
@@ -8,9 +9,8 @@ import { shareTokenSecurity } from '@/lib/security/share-token-security';
 // - 32-char folder share tokens (folders.share_token)
 // - Dev bypass via ALLOW_DEV_BYPASS
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { token: string; assetId: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string; assetId: string }>) {
+  const params = await context.params;
   try {
     const { token, assetId } = params;
     if (!token || !assetId) {

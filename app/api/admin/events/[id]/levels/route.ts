@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { RouteContext } from '@/types/next-route';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = await context.params;
     const { name } = await request.json();
 
     if (!name || !name.trim()) {
@@ -54,10 +55,10 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext<{ id: string }>
 ) {
   try {
-    const eventId = params.id;
+    const { id: eventId } = await context.params;
     const supabase = await createServerSupabaseServiceClient();
 
     // Get all levels for event

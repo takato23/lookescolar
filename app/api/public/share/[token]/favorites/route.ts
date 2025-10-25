@@ -1,3 +1,4 @@
+import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { shareTokenSecurity } from '@/lib/security/share-token-security';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
@@ -10,9 +11,8 @@ import crypto from 'crypto';
 
 // GET /api/public/share/[token]/favorites
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   try {
     const { token } = params;
@@ -88,9 +88,8 @@ export async function GET(
 
 // POST /api/public/share/[token]/favorites { assetId }
 export async function POST(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   try {
     const { token } = params;
@@ -196,9 +195,8 @@ export async function POST(
 
 // DELETE /api/public/share/[token]/favorites?assetId=...
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { token: string } }
-) {
+  req: NextRequest, context: RouteContext<{ token: string }>) {
+  const params = await context.params;
   const requestId = crypto.randomUUID();
   try {
     const { token } = params;

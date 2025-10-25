@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import type { RouteContext } from '@/types/next-route';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
 import crypto from 'crypto';
@@ -23,12 +24,15 @@ interface AssignmentResult {
 }
 
 // POST: Bulk assign photos from a folder to subjects
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
   try {
-    const { id: eventId } = params;
+    const { id: eventId } = await context.params;
     const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
 

@@ -25,18 +25,6 @@ export interface CreateAliasOptions {
   metadata?: Record<string, unknown>;
 }
 
-const tokenAliasServiceSingleton = new TokenAliasService();
-
-export async function ensureAliasForToken(
-  tokenId: string
-): Promise<TokenAliasRecord> {
-  const existing = await tokenAliasServiceSingleton.findPrimaryAlias(tokenId);
-  if (existing) {
-    return existing;
-  }
-  return tokenAliasServiceSingleton.createAliasForToken(tokenId);
-}
-
 const ALIAS_WORDS = [
   'luz',
   'vida',
@@ -421,6 +409,18 @@ export class TokenAliasService {
 
     return candidate;
   }
+}
+
+const tokenAliasServiceSingleton = new TokenAliasService();
+
+export async function ensureAliasForToken(
+  tokenId: string
+): Promise<TokenAliasRecord> {
+  const existing = await tokenAliasServiceSingleton.findPrimaryAlias(tokenId);
+  if (existing) {
+    return existing;
+  }
+  return tokenAliasServiceSingleton.createAliasForToken(tokenId);
 }
 
 export const tokenAliasService = tokenAliasServiceSingleton;

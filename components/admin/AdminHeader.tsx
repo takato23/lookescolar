@@ -90,25 +90,23 @@ export default function AdminHeader({
   };
 
   return (
-    <header className="liquid-glass sticky top-0 z-50 border-b border-white/10 px-4 py-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
-        {/* Left Section - Mobile Menu + Page Title */}
-        <div className="flex items-center gap-4">
-          {/* Mobile Menu Button */}
+    <header className="sticky top-4 z-50 px-4 sm:px-6 lg:px-8">
+      <div
+        className="liquid-glass-intense flex items-center justify-between gap-4 rounded-3xl border border-white/12 px-4 py-2.5 shadow-[0_32px_90px_-40px_rgba(16,24,40,0.55)] sm:px-5 lg:gap-5"
+        data-liquid-tone="accent"
+      >
+        <div className="flex flex-1 items-center gap-3 sm:gap-4">
           <button
             onClick={onMobileMenuToggle}
-            className="liquid-button rounded-xl p-2 lg:hidden"
+            className="liquid-glass rounded-xl p-1.5 transition-transform duration-200 hover:-translate-y-0.5 lg:hidden"
             aria-label="Abrir menú"
+            data-liquid-tone="muted"
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          {/* Page Title - More prominent */}
-          <div>
-            <h1 className="liquid-nav-text text-xl font-bold tracking-tight sm:text-2xl">
-              {getPageTitle()}
-            </h1>
-            <p className="liquid-description hidden text-xs font-medium sm:block sm:text-sm">
+          <div className="min-w-0">
+            <p className="chromatic-text text-[11px] font-semibold uppercase tracking-[0.32em] text-white/80">
               {new Date().toLocaleDateString('es-AR', {
                 weekday: 'long',
                 year: 'numeric',
@@ -116,97 +114,97 @@ export default function AdminHeader({
                 day: 'numeric',
               })}
             </p>
+            <h1 className="mt-1 text-lg font-semibold text-white sm:text-2xl">
+              {getPageTitle()}
+            </h1>
           </div>
         </div>
 
-        {/* Right Section - Actions & User */}
-        <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-          {/* Search - Hidden on mobile */}
-          <div className="relative hidden lg:block">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 transform text-neutral-500" />
+        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
+          <div
+            className="liquid-glass relative hidden items-center gap-2 rounded-full px-3.5 py-1.5 text-sm text-white/80 transition-all duration-200 hover:text-white lg:flex"
+            data-liquid-tone="muted"
+          >
+            <Search className="h-4 w-4" />
             <input
               type="text"
               placeholder="Buscar..."
-              className="liquid-button w-64 py-2.5 pl-10 pr-4 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500/50 xl:w-72"
+              className="w-44 bg-transparent font-medium placeholder:text-white/50 focus:outline-none xl:w-60"
             />
           </div>
 
-          {/* Theme Toggle - Always visible */}
           <div className="hidden sm:block">
-            <LiquidThemeToggle size="md" />
+            <div
+              className="liquid-glass rounded-xl p-1.5 transition-transform duration-200 hover:-translate-y-0.5"
+              data-liquid-tone="muted"
+            >
+              <LiquidThemeToggle size="md" />
+            </div>
           </div>
 
-          {/* Notifications - Hidden on mobile */}
           <button
-            className="liquid-button group relative hidden rounded-xl p-2 sm:block sm:p-2.5"
+            className="liquid-glass group relative hidden rounded-xl p-1.5 transition-transform duration-200 hover:-translate-y-0.5 sm:flex"
             aria-label="Notificaciones"
+            data-liquid-tone="muted"
           >
-            <Bell className="h-4 w-4 transition-colors sm:h-5 sm:w-5" />
-            <span className="absolute right-1 top-1 h-2 w-2 animate-pulse rounded-full bg-primary-500" />
+            <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="absolute right-2 top-2 h-2.5 w-2.5 animate-pulse rounded-full bg-primary-400" />
           </button>
 
-          {/* Settings - Hidden on mobile */}
           <button
             onClick={() => router.push('/admin/settings')}
-            className="liquid-button group hidden rounded-xl p-2 transition-all duration-200 hover:scale-105 sm:block sm:p-2.5"
+            className="liquid-glass group hidden rounded-xl p-1.5 transition-transform duration-200 hover:-translate-y-0.5 sm:flex"
             title="Configuración"
             aria-label="Configuración"
+            data-liquid-tone="muted"
           >
-            <Settings className="h-4 w-4 transition-all group-hover:rotate-45 sm:h-5 sm:w-5" />
+            <Settings className="h-4 w-4 transition-transform duration-300 group-hover:rotate-45 sm:h-5 sm:w-5" />
           </button>
 
-          {/* User Menu */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="liquid-button group flex items-center gap-2 rounded-xl p-1.5 transition-all duration-200 sm:gap-3 sm:p-2"
+              className="liquid-glass-intense group flex items-center gap-2 rounded-xl px-1.5 py-1 transition-transform duration-200 hover:-translate-y-0.5 sm:gap-3 sm:px-2.5"
               aria-label="Menú de usuario"
               aria-expanded={showUserMenu}
+              data-liquid-tone="accent"
             >
-              {/* Avatar */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 via-primary-500 to-secondary-500 shadow-lg ring-2 ring-primary-500/20 sm:h-10 sm:w-10 sm:rounded-xl">
-                <span className="text-sm font-bold text-white sm:text-base">
-                  {user?.email?.charAt(0).toUpperCase() || 'A'}
-                </span>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 via-primary-400 to-secondary-500 text-sm font-semibold text-white shadow-[0_12px_30px_-16px_rgba(91,111,255,0.6)] sm:h-10 sm:w-10">
+                {user?.email?.charAt(0).toUpperCase() || 'A'}
               </div>
 
-              {/* User info - Hidden on mobile */}
-              <div className="hidden text-left sm:block lg:block">
-                <p className="liquid-nav-text text-xs font-semibold sm:text-sm">
+              <div className="hidden text-left sm:block">
+                <p className="text-xs font-semibold text-white sm:text-sm">
                   {user?.email?.split('@')[0] || 'Admin'}
                 </p>
-                <p className="liquid-description hidden text-xs font-medium lg:block">
-                  Administrador
-                </p>
+                <p className="text-[11px] text-white/60">Administrador</p>
               </div>
 
               <ChevronDown
-                className={`hidden h-3 w-3 transition-transform duration-200 sm:block sm:h-4 sm:w-4 ${showUserMenu ? 'rotate-180' : ''}`}
+                className={`hidden h-4 w-4 text-white/70 transition-transform duration-200 sm:block ${showUserMenu ? 'rotate-180' : ''}`}
               />
             </button>
 
-            {/* Dropdown Menu */}
             {showUserMenu && (
-              <div className="liquid-card animate-slide-down absolute right-0 z-50 mt-3 w-72 rounded-2xl shadow-2xl">
-                <div className="border-b border-white/10 bg-gradient-to-br from-primary-50/10 to-transparent p-5">
-                  <p className="liquid-nav-text text-base font-bold">
+              <div
+                className="liquid-glass-intense absolute right-0 z-50 mt-3 w-72 rounded-3xl border border-white/10 p-2 shadow-[0_24px_80px_-32px_rgba(16,24,40,0.6)]"
+                data-liquid-tone="accent"
+              >
+                <div className="rounded-2xl bg-white/8 p-4 text-white">
+                  <p className="text-sm font-semibold">
                     {user?.email?.split('@')[0] || 'Admin'}
                   </p>
-                  <p className="liquid-description text-sm font-medium">
-                    {user?.email}
-                  </p>
+                  <p className="text-xs text-white/70">{user?.email}</p>
                 </div>
-
-                <div className="p-2">
+                <div className="mt-2">
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
-                    className="liquid-button group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left font-medium transition-all duration-200 hover:bg-red-50/50 disabled:opacity-50 dark:hover:bg-red-900/20"
+                    className="liquid-glass group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition-colors duration-200 hover:text-red-400 disabled:opacity-55"
+                    data-liquid-tone="muted"
                   >
-                    <LogOut className="h-4 w-4 transition-colors group-hover:text-red-600" />
-                    <span className="liquid-button-text text-sm">
-                      {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
-                    </span>
+                    <LogOut className="h-4 w-4 transition-colors group-hover:text-red-400" />
+                    {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
                   </button>
                 </div>
               </div>
