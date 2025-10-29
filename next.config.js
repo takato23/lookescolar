@@ -130,7 +130,6 @@ const nextConfig = {
     };
 
     // Explicitly configure path aliases for webpack (needed for Vercel)
-    const path = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(process.cwd()),
