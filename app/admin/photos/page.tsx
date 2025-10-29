@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
 
 // Dynamic import of PhotoAdmin with client-only rendering and loader
-const PhotoAdmin = dynamic(() => import('../../components/admin/PhotoAdmin'), {
+const PhotoAdmin = dynamic(() => import('@/components/admin/PhotoAdmin'), {
   ssr: false,
   loading: () => <PhotoSystemLoader />,
 });
@@ -20,7 +20,7 @@ const PhotoAdmin = dynamic(() => import('../../components/admin/PhotoAdmin'), {
 // Dynamic import of MobilePhotoGallery
 const MobilePhotoGallery = dynamic<Record<string, never>>(
   () =>
-    import('../../components/admin/mobile/MobilePhotoGallery').then((mod) => ({
+    import('@/components/admin/mobile/MobilePhotoGallery').then((mod) => ({
       default: mod.default,
     })),
   {
