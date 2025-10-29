@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 interface EventPreviewModalProps {
   event: any;

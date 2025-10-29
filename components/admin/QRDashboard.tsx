@@ -39,7 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EnhancedQRScanner } from '@/components/qr/EnhancedQRScanner';
 import { OfflineQRScanner } from '@/components/qr/OfflineQRScanner';
 import { QRPerformanceDashboard } from '@/components/admin/QRPerformanceDashboard';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface QRDashboardProps {

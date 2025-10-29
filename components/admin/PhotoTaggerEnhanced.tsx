@@ -47,7 +47,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccessibleButton } from '@/components/ui/accessible';
 import { LoadingSpinner, StatusBadge } from '@/components/ui/feedback';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 // Enhanced interfaces
 export interface Photo {

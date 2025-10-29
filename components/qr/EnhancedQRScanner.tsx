@@ -22,7 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge, LoadingSpinner } from '@/components/ui/feedback';
 import { AccessibleButton } from '@/components/ui/accessible';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface EnhancedQRScannerProps {

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFolderPublishData } from '@/hooks/useFolderPublishData';
 import { usePublishSuccessToast } from '@/components/admin/PublishSuccessToast';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import {
   RefreshCw,
   BarChart3,

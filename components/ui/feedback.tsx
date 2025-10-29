@@ -11,7 +11,7 @@ import {
   RefreshCw,
   AlertCircle,
 } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { announceToScreenReader } from '@/lib/utils/accessibility';
 
 // Toast notification system

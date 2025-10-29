@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useDashboardStats } from './hooks/useDashboardStats';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 interface SidebarItem {
   id: string;

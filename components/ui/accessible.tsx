@@ -8,7 +8,7 @@ import {
   announceToScreenReader,
   manageFocus,
 } from '@/lib/utils/accessibility';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 // Skip to content link (must be first focusable element)
 export function SkipToContent({

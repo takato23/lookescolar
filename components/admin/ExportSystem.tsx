@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   RefreshCw,
 } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 

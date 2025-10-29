@@ -2,7 +2,7 @@
 'use client';
 
 import React, { Suspense, lazy, ComponentType } from 'react';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 // Loading component
 function ComponentLoader({

@@ -46,7 +46,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { Draggable, DragHandle } from '@/components/ui/DragDrop';
 
 interface Event {

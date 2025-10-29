@@ -13,7 +13,7 @@ import {
   useVirtualScrolling,
   useIntersectionObserver,
 } from '@/lib/utils/performance';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { EventCard } from '@/components/admin/EventCard';
 
 interface VirtualEventGridProps {

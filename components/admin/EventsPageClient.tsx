@@ -75,7 +75,7 @@ import {
   useStaggeredAnimation,
 } from '@/hooks/useAdaptiveGrid';
 import { useNeuralEventsStore } from '@/lib/stores/useNeuralEventsStore';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {

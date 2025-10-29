@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Loader2, Printer, RefreshCcw, Sparkles } from 'lucide-react';
 import QRCode from 'qrcode';

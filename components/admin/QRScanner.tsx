@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatusBadge, LoadingSpinner } from '@/components/ui/feedback';
 import { AccessibleButton } from '@/components/ui/accessible';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 // Type declarations for jsQR since @types/jsqr doesn't exist
 declare module 'jsqr' {

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils/cn';
+import { cn } from '@/lib/utils';
 
 interface Command {
   id: string;
