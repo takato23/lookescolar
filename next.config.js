@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   // Basic configuration
   reactStrictMode: true,
@@ -121,6 +123,12 @@ const nextConfig = {
       fs: false,
       path: false,
       crypto: false,
+    };
+
+    // Explicitly configure path aliases for webpack (needed for Vercel)
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, './'),
     };
 
     return config;
