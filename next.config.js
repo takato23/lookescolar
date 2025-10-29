@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
-const path = require('path');
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   // Basic configuration
@@ -126,9 +130,10 @@ const nextConfig = {
     };
 
     // Explicitly configure path aliases for webpack (needed for Vercel)
+    const path = require('path');
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname, './'),
+      '@': path.resolve(process.cwd()),
     };
 
     return config;
