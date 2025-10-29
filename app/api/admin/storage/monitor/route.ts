@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StorageMonitor } from '@/lib/middleware/storage-monitor';
-import { ImageOptimizationService } from '@/lib/services/image-optimization.service';
+import { withAuth } from '@/lib/middleware/auth.middleware';
+import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 
 /**
  * Storage Monitoring API
@@ -9,7 +10,7 @@ import { ImageOptimizationService } from '@/lib/services/image-optimization.serv
  * POST: Trigger cleanup or optimization actions
  */
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const detailed = searchParams.get('detailed') === 'true';
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action, options = {} } = body;
@@ -90,3 +91,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const GET = RateLimitMiddleware.withRateLimit(withAuth(handleGET));
+export const POST = RateLimitMiddleware.withRateLimit(withAuth(handlePOST));

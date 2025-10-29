@@ -9,6 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 LookEscolar is a comprehensive school photography management system built with Next.js 15, Supabase, and TypeScript. It provides photo upload, tagging with QR codes, family galleries, and payment processing through Mercado Pago.
 
+**Recent Optimizations (2025)**:
+- ✅ Multi-resolution WebP pipeline (300/800/1200px) - 60% storage reduction
+- ✅ React Query caching (30s stale, 5min gc) - Fast refresh cycles
+- ✅ N+1 query elimination - All endpoints optimized with JOINs
+- ✅ Storage monitor & auto-cleanup - Stay within Supabase free tier
+- ✅ Mobile-optimized with virtual scrolling & touch gestures
+
 ## Development Commands
 
 ### Essential Commands
@@ -19,6 +26,10 @@ npm run dev:db          # Start local Supabase instance
 npm run build           # Production build
 npm run typecheck       # Run TypeScript type checking
 npm run lint            # Run ESLint
+
+# Storage Management
+npm run storage:cleanup # Clean up old storage files
+curl http://localhost:3000/api/admin/storage/monitor  # Check storage usage
 
 # Testing - Always run these before marking tasks complete
 npm test                # Run Vitest unit tests

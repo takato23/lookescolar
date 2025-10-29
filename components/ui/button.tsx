@@ -1,26 +1,40 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { clsx } from 'clsx';
 
-type ButtonVariant =
+type ModernTone = 'primary' | 'secondary' | 'ghost';
+
+type ClassicButtonVariant =
   | 'primary'
   | 'default'
   | 'secondary'
   | 'outline'
   | 'ghost'
   | 'danger'
+  | 'destructive'
   | 'success'
   | 'glass'
   | 'glass-ios26'
   | 'link'
   | 'minimal';
 
+type ModernButtonVariant =
+  | 'modern'
+  | 'modern-primary'
+  | 'modern-secondary'
+  | 'modern-ghost';
+
+type ButtonVariant = ClassicButtonVariant | ModernButtonVariant;
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'icon';
   loading?: boolean;
   fullWidth?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
+  modernTone?: ModernTone;
+  asChild?: boolean;
 }
 
 type LiquidStyle = 'glass' | 'intense';
@@ -33,7 +47,7 @@ interface VariantConfig {
   halo?: string;
 }
 
-const variantConfig: Record<ButtonVariant, VariantConfig> = {
+const classicVariantConfig: Record<ClassicButtonVariant, VariantConfig> = {
   primary: {
     liquidStyle: 'intense',
     tone: 'accent',
@@ -41,6 +55,14 @@ const variantConfig: Record<ButtonVariant, VariantConfig> = {
       'radial-gradient(circle, rgba(91, 111, 255, 0.48) 0%, rgba(91, 111, 255, 0) 62%)',
     className:
       'text-white shadow-[0_26px_60px_-30px_rgba(72,97,255,0.68)] hover:shadow-[0_36px_88px_-28px_rgba(72,97,255,0.78)]',
+  },
+  destructive: {
+    liquidStyle: 'intense',
+    tone: 'danger',
+    halo:
+      'radial-gradient(circle, rgba(239, 68, 68, 0.5) 0%, rgba(239, 68, 68, 0) 62%)',
+    className:
+      'text-white shadow-[0_26px_60px_-30px_rgba(181,44,85,0.62)] hover:shadow-[0_36px_92px_-28px_rgba(210,60,102,0.74)]',
   },
   default: {
     liquidStyle: 'intense',
@@ -118,6 +140,45 @@ const variantConfig: Record<ButtonVariant, VariantConfig> = {
   },
 };
 
+const modernVariantConfig: Record<ModernTone, VariantConfig> = {
+  primary: {
+    className:
+      'bg-[#1f2a44] text-white shadow-[0_26px_48px_-26px_rgba(16,24,40,0.58)] hover:bg-[#182136] hover:shadow-[0_32px_60px_-28px_rgba(16,24,40,0.62)] hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#62e2a2]/60 focus-visible:ring-offset-2 ring-offset-[#f5f7fa] active:translate-y-0',
+  },
+  secondary: {
+    className:
+      'bg-[#62e2a2] text-[#101828] shadow-[0_22px_46px_-24px_rgba(98,226,162,0.52)] hover:bg-[#4ed495] hover:shadow-[0_28px_58px_-26px_rgba(78,212,149,0.56)] hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#62e2a2]/50 focus-visible:ring-offset-2 ring-offset-[#f5f7fa] active:translate-y-0',
+  },
+  ghost: {
+    className:
+      'bg-transparent text-[#1f2a44] border border-[#d0d5dd] hover:border-[#1f2a44] hover:bg-[#f5f7fa] focus-visible:ring-2 focus-visible:ring-[#62e2a2]/40 focus-visible:ring-offset-2 ring-offset-white hover:-translate-y-0.5',
+  },
+};
+
+type ModernAliasVariant = Exclude<ModernButtonVariant, 'modern'>;
+
+const modernAliasTone: Record<ModernAliasVariant, ModernTone> = {
+  'modern-primary': 'primary',
+  'modern-secondary': 'secondary',
+  'modern-ghost': 'ghost',
+};
+
+function resolveVariantConfig(
+  variant: ButtonVariant,
+  modernTone: ModernTone
+): VariantConfig {
+  if (variant === 'modern') {
+    return modernVariantConfig[modernTone];
+  }
+
+  if (variant in modernAliasTone) {
+    const tone = modernAliasTone[variant as ModernAliasVariant];
+    return modernVariantConfig[tone];
+  }
+
+  return classicVariantConfig[variant as ClassicButtonVariant];
+}
+
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -130,11 +191,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       iconPosition = 'left',
       children,
       disabled,
+      modernTone = 'primary',
+      asChild = false,
+      type,
       ...props
     },
     ref
   ) => {
-    const config = variantConfig[variant];
+    const config = resolveVariantConfig(variant, modernTone);
     const isLiquid = Boolean(config.liquidStyle);
     const liquidClass =
       config.liquidStyle === 'intense'
@@ -160,6 +224,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       md: 'rounded-full px-5 py-2.5 text-sm min-h-[44px]',
       lg: 'rounded-full px-6 py-3 text-base min-h-[48px]',
       xl: 'rounded-full px-8 py-3.5 text-lg min-h-[54px]',
+      icon: 'rounded-full p-2 min-h-[40px] min-w-[40px]',
     } as const;
 
     const buttonClasses = clsx(
@@ -167,22 +232,32 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       liquidClass,
       isLiquid && 'liquid-hover liquid-raise',
       config.className,
-      sizes[size],
+      size && sizes[size],
       {
         'w-full': fullWidth,
         'cursor-wait pointer-events-none': loading,
         'flex-row-reverse': iconPosition === 'right',
+        'items-center justify-center': size === 'icon',
       },
       className
     );
 
+    const Comp = asChild ? Slot : 'button';
+
     return (
-      <button
+      <Comp
         ref={ref}
         className={buttonClasses}
         data-liquid-tone={config.tone}
         data-liquid-variant={config.dataVariant}
-        disabled={disabled || loading}
+        {...(asChild
+          ? {
+              'aria-disabled': disabled || loading,
+            }
+          : {
+              disabled: disabled || loading,
+              ...(type ? { type } : {}),
+            })}
         {...props}
       >
         {/* Liquid halo */}
@@ -235,11 +310,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             style={{ backgroundImage: config.halo }}
           />
         )}
-      </button>
+      </Comp>
     );
   }
 );
 
 Button.displayName = 'Button';
 
-export { Button, type ButtonProps };
+export { Button, type ButtonProps, type ModernTone };

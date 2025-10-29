@@ -9,15 +9,18 @@ type CardVariant =
   | 'glass-ios26'
   | 'elevated'
   | 'outlined'
-  | 'floating';
+  | 'floating'
+  | 'modern';
 
 type CardTone = 'accent' | 'muted';
+type ModernCardTone = 'neutral' | 'brand' | 'tinted';
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
   interactive?: boolean;
   glow?: boolean;
   noise?: boolean;
+  modernTone?: ModernCardTone;
 }
 
 interface VariantStyle {
@@ -27,7 +30,7 @@ interface VariantStyle {
   hover?: boolean;
 }
 
-const variantStyles: Record<CardVariant, VariantStyle> = {
+const variantStyles: Record<Exclude<CardVariant, 'modern'>, VariantStyle> = {
   default: {
     className:
       'liquid-glass text-foreground shadow-[0_26px_64px_-32px_rgba(16,24,40,0.35)]',
@@ -74,6 +77,25 @@ const variantStyles: Record<CardVariant, VariantStyle> = {
   },
 };
 
+const modernVariantStyles: Record<ModernCardTone, VariantStyle> = {
+  neutral: {
+    className:
+      'bg-white/95 text-[#101828] border border-[#d0d5dd] shadow-[0_24px_48px_-32px_rgba(16,24,40,0.18)] backdrop-blur-sm',
+    tone: 'muted',
+  },
+  brand: {
+    className:
+      'bg-[#1f2a44] text-white shadow-[0_36px_80px_-36px_rgba(16,24,40,0.7)] border border-transparent',
+    tone: 'accent',
+    hover: true,
+  },
+  tinted: {
+    className:
+      'bg-[#f5f7fa] text-[#101828] border border-[#d0d5dd]/70 shadow-[0_30px_60px_-34px_rgba(16,24,40,0.15)]',
+    tone: 'muted',
+  },
+};
+
 const glowByTone: Record<CardTone, string> = {
   accent: 'shadow-[0_0_90px_rgba(91,111,255,0.32)]',
   muted: 'shadow-[0_0_75px_rgba(148,163,184,0.28)]',
@@ -87,12 +109,16 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       interactive,
       glow,
       noise,
+      modernTone = 'neutral',
       children,
       ...props
     },
     ref
   ) => {
-    const config = variantStyles[variant];
+    const config =
+      variant === 'modern'
+        ? modernVariantStyles[modernTone]
+        : variantStyles[variant];
 
     const baseClasses =
       'relative transition-all duration-300 rounded-2xl overflow-hidden';
@@ -380,4 +406,5 @@ export {
   StatsCard,
   type CardProps,
   type StatsCardProps,
+  type ModernCardTone,
 };

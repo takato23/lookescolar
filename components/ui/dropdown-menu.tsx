@@ -74,11 +74,13 @@ export function DropdownMenuTrigger({
   );
 }
 
-interface DropdownMenuContentProps {
+export interface DropdownMenuContentProps {
   children: React.ReactNode;
   className?: string;
   align?: 'start' | 'center' | 'end';
   side?: 'top' | 'right' | 'bottom' | 'left';
+  sideOffset?: number;
+  onClick?: (event: React.MouseEvent) => void;
 }
 
 export function DropdownMenuContent({
@@ -86,6 +88,8 @@ export function DropdownMenuContent({
   className,
   align = 'center',
   side = 'bottom',
+  sideOffset = 0,
+  onClick,
 }: DropdownMenuContentProps) {
   const context = useContext(DropdownMenuContext);
   if (!context)
@@ -148,7 +152,7 @@ export function DropdownMenuContent({
       positionStyles.top = anchorRect.top;
       transform.push('translateY(-100%)');
     } else if (side === 'bottom') {
-      positionStyles.top = anchorRect.bottom + 8; // small offset
+      positionStyles.top = anchorRect.bottom + sideOffset; // configurable offset
     } else if (side === 'left') {
       positionStyles.top = anchorRect.top + anchorRect.height / 2;
       transform.push('translateY(-50%)');
@@ -178,6 +182,7 @@ export function DropdownMenuContent({
         className
       )}
       style={{ transform: transform.join(' '), ...(!usePortal && { position: 'absolute' }) }}
+      onClick={onClick}
     >
       {children}
     </div>
@@ -216,10 +221,11 @@ export function DropdownMenuContent({
   );
 }
 
-interface DropdownMenuItemProps {
+export interface DropdownMenuItemProps {
   children: React.ReactNode;
   className?: string;
   onClick?: (event: React.MouseEvent) => void;
+  onSelect?: (event: React.MouseEvent) => void;
   disabled?: boolean;
   asChild?: boolean;
 }
@@ -228,6 +234,7 @@ export function DropdownMenuItem({
   children,
   className,
   onClick,
+  onSelect,
   disabled = false,
   asChild = false,
 }: DropdownMenuItemProps) {
@@ -241,6 +248,7 @@ export function DropdownMenuItem({
     if (disabled) return;
 
     onClick?.(event);
+    onSelect?.(event);
     setOpen(false);
   };
 

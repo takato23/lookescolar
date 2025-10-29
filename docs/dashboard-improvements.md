@@ -137,3 +137,9 @@ Todos los componentes mantienen soporte completo para dark mode con:
 
 **Nota**: Todos los cambios son compatibles con el sistema liquid-glass existente y mantienen las mejores prácticas de accesibilidad y performance.
 
+
+
+
+
+
+

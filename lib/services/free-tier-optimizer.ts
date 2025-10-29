@@ -60,6 +60,82 @@ export class FreeTierOptimizer {
   };
 
   /**
+   * Generate multiple resolutions: 300px, 800px, 1200px with watermarks
+   * Optimized for free tier (aggregate target ~150-200KB total)
+   */
+  static async generateMultiResolutionWebP(
+    inputBuffer: Buffer,
+    watermarkText: string = 'LOOK ESCOLAR'
+  ): Promise<Array<{ size: number; width: number; buffer: Buffer; path: string }>> {
+    const sharpInstance = await getSharp();
+    const metadata = await sharpInstance(inputBuffer).metadata();
+    
+    if (!metadata.width || !metadata.height) {
+      throw new Error('Invalid image metadata');
+    }
+
+    // Target sizes: 300px (30KB), 800px (60KB), 1200px (80KB)
+    const sizes = [
+      { width: 300, quality: 60, maxKB: 30 },
+      { width: 800, quality: 75, maxKB: 60 },
+      { width: 1200, quality: 80, maxKB: 80, hasWatermark: true },
+    ];
+
+    const results = [];
+
+    for (const sizeConfig of sizes) {
+      try {
+        let image = sharpInstance(inputBuffer).resize(sizeConfig.width, sizeConfig.width, {
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+
+        // Add watermark for 1200px version only
+        if (sizeConfig.hasWatermark) {
+          const watermarkSvg = this.createOptimizedWatermark(
+            sizeConfig.width,
+            sizeConfig.width,
+            watermarkText
+          );
+          image = image.composite([
+            {
+              input: Buffer.from(watermarkSvg),
+              gravity: 'center',
+              blend: 'over',
+            },
+          ]);
+        }
+
+        const buffer = await image.webp({ 
+          quality: sizeConfig.quality,
+          effort: 6 
+        }).toBuffer();
+
+        const sizeKB = Math.round(buffer.length / 1024);
+        console.log(`Generated ${sizeConfig.width}px WebP: ${sizeKB}KB (target: ${sizeConfig.maxKB}KB)`);
+
+        results.push({
+          size: sizeConfig.width,
+          width: sizeConfig.width,
+          buffer,
+          path: `preview_${sizeConfig.width}.webp`,
+        });
+      } catch (error) {
+        console.error(`Failed to generate ${sizeConfig.width}px version:`, error);
+        // Continue with other sizes even if one fails
+      }
+    }
+    
+    if (results.length === 0) {
+      throw new Error('Failed to generate any WebP previews');
+    }
+    
+    console.log(`Successfully generated ${results.length} WebP previews`);
+
+    return results;
+  }
+
+  /**
    * Process image for free tier constraints with anti-theft protection
    * NEVER stores original images to maximize free tier space
    */
@@ -230,8 +306,8 @@ export class FreeTierOptimizer {
    */
   private static async generatePlaceholders(
     inputBuffer: Buffer,
-    targetWidth: number,
-    targetHeight: number
+    _targetWidth: number,
+    _targetHeight: number
   ): Promise<{ blurDataURL: string; avgColor: string }> {
     const sharpInstance = await getSharp();
 

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import {
   Eye,
-  FolderImage,
+  Image,
   Settings,
   Layers3,
   AlertTriangle,
@@ -163,43 +163,29 @@ export const EventQuickActionsDialog = ({
               Acciones rápidas
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Link href={`/admin/events/${event.id}/unified`} className="block">
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-3 transition-transform duration-200 motion-safe:hover:-translate-y-0.5"
-                >
-                  <Eye className="h-4 w-4" /> Ver detalles
-                </Button>
+              <Link 
+                href={`/admin/events/${event.id}/unified`} 
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-secondary/80"
+              >
+                <Eye className="h-4 w-4" /> Ver detalles
               </Link>
               <Link
                 href={`/admin/events/${event.id}/unified#photos`}
-                className="block"
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-secondary/80"
               >
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-3 transition-transform duration-200 motion-safe:hover:-translate-y-0.5"
-                >
-                  <FolderImage className="h-4 w-4" /> Gestionar fotos
-                </Button>
+                <Image className="h-4 w-4" /> Gestionar fotos
               </Link>
               <Link
                 href={`/admin/store-settings?eventId=${event.id}`}
-                className="block"
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-secondary/80"
               >
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-3 transition-transform duration-200 motion-safe:hover:-translate-y-0.5"
-                >
-                  <Settings className="h-4 w-4" /> Configurar tienda
-                </Button>
+                <Settings className="h-4 w-4" /> Configurar tienda
               </Link>
-              <Link href={`/admin/events/${event.id}/duplicate`} className="block">
-                <Button
-                  variant="secondary"
-                  className="w-full justify-start gap-3 transition-transform duration-200 motion-safe:hover:-translate-y-0.5"
-                >
-                  <Layers3 className="h-4 w-4" /> Duplicar evento
-                </Button>
+              <Link 
+                href={`/admin/events/${event.id}/duplicate`} 
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-secondary/80"
+              >
+                <Layers3 className="h-4 w-4" /> Duplicar evento
               </Link>
             </div>
           </section>

@@ -27,7 +27,10 @@ nuevos tokens públicos, tienda unificada y compatibilidad con sistemas legacy.
   ```
   Opciones: `--folder`, `--template`, `--currency`.
 - El endpoint `/api/public/store/config` usa como fallback la fila más reciente
-  de `store_settings` (global/evento/carpeta).
+  de `store_settings` (global/evento/carpeta). Desde octubre 2025 el front
+  consume `/api/store/[token]`, que ya incluye `settings`, `catalog` y banderas
+  de MercadoPago; el endpoint público se mantiene para automatizaciones
+  existentes.
 
 ## 5. Migraciones y compatibilidad
 - La migración `202510070001_public_access_tokens.sql` marcó los tokens
@@ -65,7 +68,9 @@ nuevos tokens públicos, tienda unificada y compatibilidad con sistemas legacy.
 - `lib/services/catalog.service.ts` entrega la lista de precios oficiales por evento/token (incluye overrides activos).
 - `lib/orders/order-pipeline.ts` reemplaza lógica ad-hoc: valida precios, crea órdenes y orquesta MercadoPago.
 - `lib/payments/mercadopago.ts` centraliza la creación de preferencias (logs útiles si faltan credenciales).
-- Catalogo disponible vía `/api/public/store/config` → la respuesta incluye `catalog.items` y overrides para front.
+- Catálogo disponible directamente en la respuesta de `/api/store/[token]`
+  (campo `settings.products` + `catalog` normalizado). El endpoint
+  `/api/public/store/config` se conserva para integraciones externas.
 - Ante error de MP se devuelve fallback sandbox `https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=dev_<orden>`.
 
 ## 8. Próximos pasos (Phases 2-3)

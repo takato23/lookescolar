@@ -332,7 +332,7 @@ export function DesktopNav({
                           action.color === 'orange' && "text-orange-600 dark:text-orange-400"
                         )} />
                       </div>
-                      <span className="text-xs text-center leading-tight">
+                      <span className="text-xs text-center leading-tight text-[#1f2a44] dark:text-gray-200">
                         {action.label}
                       </span>
                     </motion.div>
@@ -385,18 +385,22 @@ export function DesktopNav({
                       className="flex items-center gap-3 flex-1"
                       onClick={(e) => hasSubmenu && e.preventDefault()}
                     >
-                      <div className={cn(
-                        "p-2 rounded-lg relative",
-                        isActive
-                          ? `bg-${item.color}-500/20`
-                          : "bg-white/5 group-hover:bg-white/10"
-                      )}>
-                        <Icon className={cn(
-                          "h-5 w-5",
+                      <div
+                        className={cn(
+                          'p-2 rounded-lg relative transition-colors',
                           isActive
-                            ? `text-${item.color}-600 dark:text-${item.color}-400`
-                            : "text-muted-foreground dark:text-gray-400"
-                        )} />
+                            ? `bg-${item.color}-500/20`
+                            : 'bg-white/10 group-hover:bg-white/20'
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            'h-5 w-5 transition-colors',
+                            isActive
+                              ? `text-${item.color}-600 dark:text-${item.color}-400`
+                              : 'text-[#1f2a44] dark:text-gray-400'
+                          )}
+                        />
                         {item.badge && (
                           <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                             {item.badge}
@@ -404,12 +408,14 @@ export function DesktopNav({
                         )}
                       </div>
                       {!collapsed && (
-                        <span className={cn(
-                          "font-medium",
-                          isActive
-                            ? `text-${item.color}-600 dark:text-${item.color}-400`
-                            : "text-foreground dark:text-gray-300"
-                        )}>
+                        <span
+                          className={cn(
+                            'font-medium transition-colors',
+                            isActive
+                              ? `text-${item.color}-600 dark:text-${item.color}-400`
+                              : 'text-[#1f2a44] dark:text-gray-200'
+                          )}
+                        >
                           {item.label}
                         </span>
                       )}
@@ -448,18 +454,22 @@ export function DesktopNav({
                                       : "glass-button-ios26 hover:bg-white/5"
                                   )}
                                 >
-                                  <SubIcon className={cn(
-                                    "h-4 w-4",
-                                    isSubActive
-                                      ? "text-blue-600 dark:text-blue-400"
-                                      : "text-gray-500 dark:text-gray-400"
-                                  )} />
-                                  <span className={cn(
-                                    "text-sm",
-                                    isSubActive
-                                      ? "text-blue-600 dark:text-blue-400 font-medium"
-                                      : "text-muted-foreground dark:text-gray-300"
-                                  )}>
+                                  <SubIcon
+                                    className={cn(
+                                      'h-4 w-4 transition-colors',
+                                      isSubActive
+                                        ? 'text-blue-600 dark:text-blue-400'
+                                        : 'text-[#475467] dark:text-gray-400'
+                                    )}
+                                  />
+                                  <span
+                                    className={cn(
+                                      'text-sm transition-colors',
+                                      isSubActive
+                                        ? 'text-blue-600 dark:text-blue-400 font-medium'
+                                        : 'text-[#475467] dark:text-gray-300'
+                                    )}
+                                  >
                                     {subItem.label}
                                   </span>
                                 </motion.div>

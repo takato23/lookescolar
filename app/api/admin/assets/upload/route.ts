@@ -11,22 +11,6 @@ import crypto from 'crypto';
 export const runtime = 'nodejs';
 export const maxDuration = 30;
 
-// Dynamic import for Sharp
-let sharp: any;
-async function getSharp() {
-  if (!sharp) {
-    try {
-      sharp = (await import('sharp')).default;
-    } catch (error) {
-      logger.error('Failed to load Sharp', {
-        error: error instanceof Error ? error.message : error,
-      });
-      throw new Error('Image processing unavailable');
-    }
-  }
-  return sharp;
-}
-
 /**
  * POST /api/admin/assets/upload
  * Direct file upload for the new assets system
@@ -122,7 +106,7 @@ async function handlePOST(request: NextRequest) {
         const fileId = nanoid(12);
         const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
         const originalPath = `originals/${fileId}.${fileExt}`;
-        const previewPath = `previews/${fileId}_preview.webp`;
+        let previewPath = `previews/${fileId}_preview.webp`; // Will be updated with multi-res path
 
         // Get file buffer
         const buffer = Buffer.from(await file.arrayBuffer());
@@ -165,20 +149,26 @@ async function handlePOST(request: NextRequest) {
           continue;
         }
 
-        // Generate ultra-low-quality preview with dense watermark for anti-theft
+        // Generate multi-resolution WebP versions: 300px, 800px, 1200px
         try {
-          const optimized = await FreeTierOptimizer.processForFreeTier(buffer, {
-            targetSizeKB: 35, // very low target
-            maxDimension: 500, // small dimensions
-            watermarkText: watermarkLabel || 'LOOK ESCOLAR',
-          });
+          const multiResVersions = await FreeTierOptimizer.generateMultiResolutionWebP(
+            buffer,
+            watermarkLabel || 'LOOK ESCOLAR'
+          );
 
-          await supabase.storage
-            .from('photos')
-            .upload(previewPath, optimized.processedBuffer, {
-              contentType: 'image/webp',
-              upsert: true,
-            });
+          // Upload all versions
+          for (const version of multiResVersions) {
+            const versionPath = version.path.replace('preview_', ''); // e.g., 800.webp, 1200.webp
+            await supabase.storage
+              .from('photos')
+              .upload(`previews/${fileId}_${versionPath}`, version.buffer, {
+                contentType: 'image/webp',
+                upsert: true,
+              });
+          }
+
+          // Store path to 800px preview as primary (for compatibility)
+          previewPath = `previews/${fileId}_800.webp`;
         } catch (previewError) {
           logger.warn('Preview generation failed', {
             filename: file.name,

@@ -1,7 +1,7 @@
 /**
  * API Pública para Acceso a Tiendas
  * GET /api/store/[token] - Obtener datos de tienda pública
- * POST /api/store/[token]/order - Crear orden de compra (futuro)
+ * POST /api/store/[token] - Crear orden de compra
  */
 
 import type { RouteContext } from '@/types/next-route';
@@ -15,6 +15,10 @@ import {
   GalleryServiceError,
   type GalleryResult,
 } from '@/lib/services/gallery.service';
+import {
+  buildPublicConfig,
+  fetchFallbackStoreConfig,
+} from '@/lib/services/store-config-utils';
 
 const QuerySchema = z.object({
   include_assets: z
@@ -59,7 +63,7 @@ export async function GET(
     const supabase = await createServerSupabaseServiceClient();
 
     // Primero intentar buscar en share_tokens (tokens de 64 caracteres)
-    let shareTokenData = null;
+    const shareTokenData = null;
     let storeData = null;
     let selectedPhotoIds: string[] = [];
     
@@ -73,7 +77,7 @@ export async function GET(
         .single();
       
       if (shareToken) {
-        shareTokenData = shareToken;
+        const _shareTokenData = shareToken;
 
         // Validate password if required
         const passwordValidation = await validateShareTokenPassword(
@@ -93,7 +97,7 @@ export async function GET(
         }
 
         // Handle folder navigation for share_token
-        const targetFolderId = folder_id !== undefined ? folder_id : shareToken.folder_id;
+        const _targetFolderId = folder_id !== undefined ? folder_id : shareToken.folder_id;
 
         // If navigating to a different folder, fetch its data
         if (folder_id !== undefined && folder_id !== shareToken.folder_id) {
@@ -226,7 +230,7 @@ export async function GET(
           // Primero intentar con assets usando los IDs específicos
           const assetsResult = await supabase
             .from('assets')
-            .select('*, photos!left(metadata, file_size, created_at)', { count: 'exact' })
+            .select('*', { count: 'exact' })
             .in('id', storeData.selected_photo_ids)
             .eq('status', 'ready')
             .order('created_at', { ascending: false })
@@ -253,7 +257,7 @@ export async function GET(
           // Si no hay photo_ids específicos, buscar por folder_id
           const assetsResult = await supabase
             .from('assets')
-            .select('*, photos!left(metadata, file_size, created_at)', { count: 'exact' })
+            .select('*', { count: 'exact' })
             .eq('folder_id', storeData.folder_id)
             .eq('status', 'ready')
             .order('created_at', { ascending: false })
@@ -309,29 +313,64 @@ export async function GET(
             return `/api/public/preview/previews/${normalized}`;
           };
 
-          // Get photo assignments in batch for better performance
-          const photoIds = assetsData.map(item => item.id);
+        // Get photo assignments in batch for better performance
+        const photoIds = assetsData.map((item) => item.id);
 
-          // Get all photo assignments at once
-          const { data: photoAssignments } = await supabase
-            .from('photo_students')
-            .select('photo_id, student_id')
-            .in('photo_id', photoIds);
+        let studentPhotoMap = new Set<string>();
+        let coursePhotoMap = new Set<string>();
+        let legacyPhotoMap = new Set<string>();
 
-          const { data: courseAssignments } = await supabase
-            .from('photo_courses')
-            .select('photo_id, course_id')
-            .in('photo_id', photoIds);
+        if (photoIds.length > 0) {
+          const [{ data: photoAssignments, error: photoAssignmentsError }, { data: courseAssignments, error: courseAssignmentsError }, { data: legacyAssignments, error: legacyAssignmentsError }] = await Promise.all([
+            supabase
+              .from('photo_students')
+              .select('photo_id, student_id')
+              .in('photo_id', photoIds),
+            supabase
+              .from('photo_courses')
+              .select('photo_id, course_id')
+              .in('photo_id', photoIds),
+            supabase
+              .from('photo_assignments')
+              .select('photo_id, subject_id')
+              .in('photo_id', photoIds),
+          ]);
 
-          const { data: legacyAssignments } = await supabase
-            .from('photo_assignments')
-            .select('photo_id, subject_id')
-            .in('photo_id', photoIds);
+          if (photoAssignmentsError) {
+            console.warn('Error fetching photo_students assignments', photoAssignmentsError);
+          } else if (photoAssignments) {
+            studentPhotoMap = new Set(photoAssignments.map((pa) => pa.photo_id));
+          }
 
-          // Create lookup maps for efficient checking
-          const studentPhotoMap = new Set(photoAssignments?.map(pa => pa.photo_id) || []);
-          const coursePhotoMap = new Set(courseAssignments?.map(ca => ca.photo_id) || []);
-          const legacyPhotoMap = new Set(legacyAssignments?.map(la => la.photo_id) || []);
+          if (courseAssignmentsError) {
+            console.warn('Error fetching photo_courses assignments', courseAssignmentsError);
+          } else if (courseAssignments) {
+            coursePhotoMap = new Set(courseAssignments.map((ca) => ca.photo_id));
+          }
+
+          if (legacyAssignmentsError) {
+            console.warn('Error fetching legacy photo assignments', legacyAssignmentsError);
+          } else if (legacyAssignments) {
+            legacyPhotoMap = new Set(legacyAssignments.map((la) => la.photo_id));
+          }
+        }
+
+        // Load photo metadata for file size / created at details
+        const photoMetaMap = new Map<string, { file_size?: number | null; created_at?: string | null }>();
+        if (photoIds.length > 0) {
+          const { data: photoMeta, error: photoMetaError } = await supabase
+            .from('photos')
+            .select('id, file_size, created_at')
+            .in('id', photoIds);
+
+          if (photoMetaError) {
+            console.warn('Error fetching photo metadata', photoMetaError);
+          } else if (photoMeta) {
+            photoMeta.forEach((meta) => {
+              photoMetaMap.set(meta.id, { file_size: meta.file_size, created_at: meta.created_at });
+            });
+          }
+        }
 
           // Get unassigned photos for AI classification
           const unassignedPhotos = assetsData.filter(item =>
@@ -417,6 +456,8 @@ export async function GET(
               }
             }
 
+            const meta = photoMetaMap.get(item.id);
+
             return {
               id: item.id,
               filename:
@@ -426,8 +467,8 @@ export async function GET(
                 'foto',
               preview_url: previewUrl,
               watermark_url: wmUrl,
-              file_size: item.photos?.file_size || item.file_size || item.file_size_bytes || 0,
-              created_at: item.photos?.created_at || item.created_at || item.uploaded_at || new Date().toISOString(),
+              file_size: meta?.file_size ?? item.file_size ?? item.file_size_bytes ?? 0,
+              created_at: meta?.created_at || item.created_at || item.uploaded_at || new Date().toISOString(),
               storage_path: item.storage_path || null,
               status: item.status || 'ready',
               is_group_photo: isGroupPhoto,
@@ -449,12 +490,29 @@ export async function GET(
       }
     }
 
+    const { data: configData, error: configError } = await supabase
+      .rpc('get_public_store_config', { store_token: token })
+      .single();
+
+    let storeConfig = configData;
+    if (configError || !storeConfig) {
+      const fallback = await fetchFallbackStoreConfig(supabase);
+      storeConfig = fallback;
+    }
+
+    const storeSettings = storeConfig ? buildPublicConfig(storeConfig) : null;
+    const mercadoPagoConnected = Boolean(
+      storeConfig?.mercado_pago_connected ??
+        storeConfig?.mercadoPagoConnected ??
+        true
+    );
+
     // Formatear respuesta con información de jerarquía
-  const storeResponse = {
-    store: {
-      token,
-      name: storeData.folder_name,
-      folder_path: storeData.folder_path || storeData.folder_name,
+    const storeResponse = {
+      store: {
+        token,
+        name: storeData.folder_name,
+        folder_path: storeData.folder_path || storeData.folder_name,
         parent_id: storeData.parent_id || null,
         parent_name: storeData.parent_name || null,
         depth: storeData.depth || 0,
@@ -463,7 +521,9 @@ export async function GET(
         settings: storeData.store_settings || {},
         asset_count: storeData.asset_count,
         share_type: storeData.share_type || 'folder',
-        is_preselected: !!(storeData.selected_photo_ids && storeData.selected_photo_ids.length > 0),
+        is_preselected: !!(
+          storeData.selected_photo_ids && storeData.selected_photo_ids.length > 0
+        ),
         selected_count: storeData.selected_photo_ids?.length || 0,
       },
       event: {
@@ -480,6 +540,9 @@ export async function GET(
         include_assets && galleryPayload
           ? galleryPayload.catalog ?? null
           : undefined,
+      settings: storeSettings,
+      catalog: storeConfig?.catalog ?? null,
+      mercadoPagoConnected,
     };
 
     // Headers para cache público
@@ -506,25 +569,181 @@ export async function GET(
   }
 }
 
-// POST - Crear orden de compra (placeholder para futuro)
+// POST - Crear orden de compra
+const OrderSchema = z.object({
+  contactInfo: z.object({
+    name: z.string().min(2, 'Nombre requerido'),
+    email: z.string().email('Email inválido'),
+    phone: z.string().min(8, 'Teléfono requerido'),
+    street: z.string().min(5, 'Dirección requerida'),
+    city: z.string().min(2, 'Ciudad requerida'),
+    state: z.string().min(2, 'Provincia requerida'),
+    zipCode: z.string().min(4, 'Código postal requerido'),
+  }),
+  items: z
+    .array(
+      z.object({
+        photoId: z.string().min(1, 'ID de foto requerido'),
+        quantity: z.number().min(1, 'Cantidad mínima 1'),
+        priceListItemId: z.string().optional(),
+        priceType: z.string().optional(),
+        price: z.number().optional(),
+      })
+    )
+    .min(1, 'Al menos un item requerido'),
+});
+
 export async function POST(
-  request: NextRequest, context: RouteContext<{ token: string }>) {
+  request: NextRequest,
+  context: RouteContext<{ token: string }>
+) {
   const params = await context.params;
   try {
     const { token } = params;
 
-    // TODO: Implementar sistema de órdenes
-    // - Validar token de tienda
-    // - Validar assets seleccionados
-    // - Crear orden en MercadoPago
-    // - Guardar orden en base de datos
+    // Validar formato del token
+    if (!token || token.length < 8 || !/^[a-z0-9-]+$/.test(token)) {
+      return NextResponse.json(
+        { error: 'Invalid store token format' },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json(
-      { error: 'Order system not implemented yet' },
-      { status: 501 }
-    );
+    const body = await request.json();
+    const validatedData = OrderSchema.parse(body);
+    const { contactInfo, items } = validatedData;
+
+    const supabase = await createServerSupabaseServiceClient();
+
+    // Validar token y obtener folder
+    let folder = null;
+    let folderToken = null;
+
+    // Intentar buscar en share_tokens primero (tokens de 64 caracteres)
+    if (token.length === 64) {
+      const { data: shareToken } = await supabase
+        .from('share_tokens')
+        .select('*, folders(id, event_id, name, view_count)')
+        .eq('token', token)
+        .eq('is_active', true)
+        .single();
+
+      if (shareToken && shareToken.folders) {
+        folder = {
+          id: shareToken.folders.id,
+          event_id: shareToken.folders.event_id,
+          name: shareToken.folders.name,
+          view_count: shareToken.folders.view_count,
+          share_token: token,
+        };
+        folderToken = token;
+      }
+    }
+
+    // Si no se encontró, buscar en folders (tokens de 16 caracteres)
+    if (!folder) {
+      const { data: folderData } = await supabase
+        .from('folders')
+        .select('id, event_id, name, view_count, share_token')
+        .eq('share_token', token)
+        .eq('is_published', true)
+        .single();
+
+      if (folderData) {
+        folder = folderData;
+        folderToken = token;
+      }
+    }
+
+    if (!folder) {
+      return NextResponse.json(
+        { error: 'Store token not found or not published' },
+        { status: 404 }
+      );
+    }
+
+    // Validar que las fotos existen y pertenecen a la carpeta/evento
+    const photoIds = items.map((item) => item.photoId);
+    const { data: photos, error: photosError } = await supabase
+      .from('assets')
+      .select('id, filename, folder_id')
+      .in('id', photoIds)
+      .eq('folder_id', folder.id)
+      .eq('status', 'ready');
+
+    // Fallback a photos si assets está vacío
+    let validPhotos = photos;
+    if ((photosError || !photos || photos.length !== items.length) && token.length !== 64) {
+      const { data: photosData } = await supabase
+        .from('photos')
+        .select('id, filename, folder_id')
+        .in('id', photoIds)
+        .eq('folder_id', folder.id);
+
+      if (photosData && photosData.length === items.length) {
+        validPhotos = photosData as typeof photos;
+      }
+    }
+
+    if (!validPhotos || validPhotos.length !== items.length) {
+      return NextResponse.json(
+        { error: 'Una o más fotos no están disponibles' },
+        { status: 400 }
+      );
+    }
+
+    // Usar orderPipeline para procesar el checkout
+    const { orderPipeline } = await import('@/lib/orders/order-pipeline');
+
+    try {
+      const result = await orderPipeline.processFamilyCheckout({
+        token: folderToken || token,
+        contactInfo,
+        items: items.map((item) => ({
+          photoId: item.photoId,
+          quantity: item.quantity,
+          priceListItemId: item.priceListItemId,
+          priceType: item.priceType,
+          price: item.price,
+        })),
+      });
+
+      // Determinar URL de redirección según ambiente
+      const redirectUrl =
+        process.env.NODE_ENV === 'production'
+          ? result.initPoint
+          : result.sandboxInitPoint || result.fallbackRedirectUrl;
+
+      return NextResponse.json({
+        success: true,
+        order_id: result.orderId,
+        redirectUrl: redirectUrl,
+        preferenceId: result.preferenceId,
+        total: result.totalCents / 100, // Convertir de centavos a pesos
+        currency: result.currency,
+        message: 'Orden creada exitosamente. Redirigiendo a MercadoPago...',
+      });
+    } catch (pipelineError: unknown) {
+      const error = pipelineError as { statusCode?: number; message?: string };
+      console.error('Order pipeline error:', error);
+
+      return NextResponse.json(
+        {
+          error: error.message || 'Error procesando la orden',
+        },
+        { status: error.statusCode || 500 }
+      );
+    }
   } catch (error) {
     console.error('Store order error:', error);
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

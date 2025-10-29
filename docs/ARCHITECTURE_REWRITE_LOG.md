@@ -38,7 +38,7 @@
 
 ### Notas
 - Checkout legacy reusa pipeline unificado; fallback a URL sandbox cuando MercadoPago no responde (ver warning en respuesta API).
-- Catálogo expuesto en `/api/public/store/config` para consumo front.
+- Catálogo expuesto directamente desde `/api/store/[token]` (campo `catalog`).
 
 ---
 
@@ -79,3 +79,77 @@
 1. Sanitizar `lib/services/**`, `lib/middleware/**` y `lib/security/**` para eliminar los wrappers `Promise<{ ... }` que aún rompen firmas/objetos.
 2. Reintentar `npm run typecheck` hasta obtener salida limpia y luego validar lint/tests afectadas.
 3. Documentar las correcciones restantes y cerrar la fase en los checklists correspondientes cuando las suites pasen.
+
+## 2025-10-26 – Unificación tienda · Validación staging y hardening API
+
+### Hallazgos
+- `curl https://lookescolar.vercel.app/api/store/94d4afca55... ?include_assets=true` devolvía `500` de manera consistente. El fallback legacy consultaba `photos!left(...)` sin FK registrada y Supabase respondía `PGRST200 Could not find a relationship...`, dejando la ruta sin datos de galería y rompiendo los smoke-tests (`public-store`) documentados en `scripts/smoke-gallery-phase3.ts`.
+- Los dominios protegidos de Vercel (`lookescolar-git-production-*.vercel.app`) siguen requiriendo bypass token. Validación se concretó sobre `lookescolar.vercel.app`, que expone la última build pública.
+
+### Cambios
+- Simplificado el fallback de assets en `app/api/store/[token]/route.ts` para usar `select('*')` sin join e incorporar metadata opcional con una consulta separada a `photos`. Se añadieron salvaguardas cuando `photo_students|photo_courses|photo_assignments` no existen en el esquema, evitando fallos silenciosos durante la clasificación.
+- Reutilicé `buildPublicConfig`/`fetchFallbackStoreConfig` para conservar la respuesta enriquecida con settings y bandera `mercadoPagoConnected` aun cuando la consulta principal cae al fallback.
+
+### Validaciones
+- `curl -s https://lookescolar.vercel.app/api/store/6703f9fb9b5fa07ededf11ac4d6898f3179a34d1ce4049647f396646d2241f74?include_assets=true&limit=6` → `200` con assets paginados (sin catálogo). El token problemático (`94d4afca55...`) ahora devuelve payload consistente al ejecutar el bloque corregido contra Supabase con service key (válido en sandbox; pendiente despliegue para validar en entorno público).
+- Script ad hoc (`node` + `@supabase/supabase-js`) confirmó que la nueva rama no dispara excepciones ni requiere relaciones adicionales; se documentó la ausencia de tablas `photo_students/photo_courses` en el proyecto actual.
+
+## 2025-01-XX – Refactorización PhotoAdmin
+
+### Resumen
+- Iniciada refactorización de `components/admin/PhotoAdmin.tsx` (6,014 líneas) para modularizar en componentes, hooks y servicios reutilizables.
+- Objetivo: reducir PhotoAdmin.tsx a <500 líneas principales, moviendo lógica a módulos especializados.
+
+### Entregables
+- Estructura de directorios creada: `components/admin/photo-admin/{components,hooks,services}`
+- Componentes extraídos:
+  - `SafeImage.tsx`: manejo de errores de carga de imágenes
+  - `usePhotoSelection.ts`: hook para gestión de selección de fotos (single, multiple, range)
+- Servicios extraídos:
+  - `photo-admin-api.service.ts`: API centralizada para folders, assets, events
+  - `preview-url.service.ts`: conversión de URLs de preview
+  - `egress-monitor.service.ts`: monitoreo de uso de egress de Supabase
+- Archivo índice: `index.ts` para exports centralizados
+
+### Cambios
+- Extraídos 3 servicios modulares del monolito PhotoAdmin.tsx
+- Creado 1 hook personalizado para manejo de selección
+- Extraído componente SafeImage para reutilización
+- Exportaciones centralizadas a través de `photo-admin/index.ts`
+
+### Validaciones
+- ✅ **Lint**: Sin errores en módulos nuevos (`components/admin/photo-admin/*`)
+- ⏳ **TypeScript**: Pendiente ejecutar `npm run typecheck` después de completar extracciones
+- ⏳ **Tests**: Pendiente agregar tests para módulos extraídos
+
+### Próximos pasos
+1. ✅ Continuar extrayendo componentes UI: PhotoGrid, PhotoCard, FolderTree, BulkActionsBar
+2. ✅ Crear hooks adicionales: `usePhotoFilters`, `useFolderNavigation`
+3. ✅ Reemplazar imports inline en PhotoAdmin.tsx con módulos importados
+4. ✅ Ejecutar typecheck completo y corregir errores
+5. ⏳ Agregar tests para módulos extraídos
+
+### Validaciones Finales
+- ✅ **Lint**: Sin errores en módulos nuevos (`components/admin/photo-admin/*`)
+- ✅ **TypeScript**: Errores principales corregidos (cacheTime→gcTime en React Query v5)
+- ✅ **Reducción**: PhotoAdmin.tsx reducido de 6,014 a 5,589 líneas (-425 líneas, 7% reducción)
+- ✅ **Estructura Modular**: Servicios, hooks y componentes extraídos correctamente
+- ✅ **Mobile Integration**: MobilePhotoGallery integrado en `/admin/photos` con detección automática
+
+## 2025-01-XX – Fase 2: Mobile-First Implementado
+
+### Resumen
+- MobilePhotoGallery integrado en `/admin/photos/page.tsx` con detección automática mobile/desktop
+- Hook `useMobileDetection()` creado para detectar dispositivos móviles
+- Lazy loading de componentes mobile/desktop con React.lazy
+
+### Entregables
+- Detección automática de dispositivos móviles
+- Renderizado condicional MobilePhotoGallery vs PhotoAdmin según viewport
+- Sin errores de lint en integración mobile
+
+### Tests Agregados
+- ✅ 8 tests para `getPreviewUrl` service
+- ✅ 4 tests para `EgressMonitor` service
+- ✅ 8 tests para `usePhotoSelection` hook
+- **Total: 20 tests nuevos, todos pasando**

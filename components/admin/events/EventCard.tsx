@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import {
   CalendarDays,
-  FolderImage,
+  Image,
   GraduationCap,
   CircleDollarSign,
   MoreHorizontal,
@@ -83,7 +83,7 @@ export const EventCard = ({
     {
       label: 'Fotos',
       value: (event.stats?.totalPhotos ?? 0).toLocaleString('es-AR'),
-      icon: FolderImage,
+      icon: Image,
       tooltip: 'Fotos totales asociadas al evento',
     },
     {
@@ -131,23 +131,23 @@ export const EventCard = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/events/${event.id}/unified`}>
+              <DropdownMenuItem>
+                <Link href={`/admin/events/${event.id}/unified`} className="flex items-center">
                   <Eye className="mr-2 h-4 w-4" /> Ver detalles
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/events/${event.id}/unified#photos`}>
-                  <FolderImage className="mr-2 h-4 w-4" /> Gestionar fotos
+              <DropdownMenuItem>
+                <Link href={`/admin/events/${event.id}/unified#photos`} className="flex items-center">
+                  <Image className="mr-2 h-4 w-4" /> Gestionar fotos
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/store-settings?eventId=${event.id}`}>
+              <DropdownMenuItem>
+                <Link href={`/admin/store-settings?eventId=${event.id}`} className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" /> Configurar tienda
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/events/${event.id}/duplicate`}>
+              <DropdownMenuItem>
+                <Link href={`/admin/events/${event.id}/duplicate`} className="flex items-center">
                   <Layers3 className="mr-2 h-4 w-4" /> Duplicar evento
                 </Link>
               </DropdownMenuItem>

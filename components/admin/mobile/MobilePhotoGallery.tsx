@@ -52,7 +52,7 @@ interface MobilePhotoGalleryProps {
 type ViewMode = 'grid' | 'list';
 type SortBy = 'date' | 'name' | 'size' | 'event';
 
-export function MobilePhotoGallery({
+export default function MobilePhotoGallery({
   photos,
   onPhotoEdit,
   onPhotoDelete,

@@ -3,7 +3,7 @@
 | Fase | Objetivo | Estado (2025-10-07) | Entregables clave |
 |------|----------|----------------------|--------------------|
 | **1. Servicio de tokens unificado** | Consolida `share_tokens`, `subject/student_tokens`, `folders.share_token` en `public_access_tokens`; expone servicio y endpoint público. | ✅ Completado | Migración `202510070001_public_access_tokens.sql`, `public-access.service.ts`, endpoint `/api/public/access/[token]`, wrappers `/f` `/s`, script `seed-store-config.ts`. |
-| **2. Catálogo y checkout comunes** | Centralizar catálogo (price list + overrides), pipeline de órdenes y MercadoPago en servicios compartidos. | ✅ Completado | `lib/services/catalog.service.ts`, `lib/orders/order-pipeline.ts`, `lib/payments/mercadopago.ts`, `/api/family/checkout` y `/api/public/store/config` refactorizados, store unified consumiendo catálogo. |
+| **2. Catálogo y checkout comunes** | Centralizar catálogo (price list + overrides), pipeline de órdenes y MercadoPago en servicios compartidos. | ✅ Completado | `lib/services/catalog.service.ts`, `lib/orders/order-pipeline.ts`, `lib/payments/mercadopago.ts`, `/api/family/checkout` y `/api/store/[token]` unificados; el front hydration usa `lib/services/unified-store-data.ts`. |
 | **3. Galería unificada** | Servicio unificado para galerías públicas/familiares con rate limiting y signed URLs. | 🚧 En progreso | `lib/services/gallery.service.ts`, `/api/family/gallery`, `/api/public/share/[token]/gallery`, `/api/store/[token]` consumiendo el servicio, front `ShareGalleryClient` y `store-unified` migrados con fallback legacy. |
 
 ## Próximas acciones

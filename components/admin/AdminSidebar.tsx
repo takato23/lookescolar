@@ -316,6 +316,36 @@ export default function AdminSidebar({
               {mainNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
+                const isLight = theme === 'light';
+                const linkColorClass = isLight
+                  ? active
+                    ? 'text-[#0b1120]'
+                    : 'text-[#1f2933] hover:text-[#0b1120]'
+                  : active
+                    ? 'text-white'
+                    : 'text-white/65 hover:text-white';
+                const iconColorClass = isLight
+                  ? active
+                    ? 'text-[#0b1120]'
+                    : 'text-[#1f2933] group-hover:text-[#0b1120]'
+                  : active
+                    ? 'text-white scale-110'
+                    : 'text-white/70 group-hover:text-white';
+                const descriptionColorClass = isLight
+                  ? 'mt-0.5 truncate text-xs text-[#364152]'
+                  : 'mt-0.5 truncate text-xs text-white/55';
+                const linkBackgroundClass = isLight
+                  ? active
+                    ? 'bg-white shadow-[0_20px_40px_-26px_rgba(15,23,42,0.32)]'
+                    : 'bg-white/85 border border-slate-200/80 hover:bg-white hover:border-slate-200'
+                  : '';
+                const iconWrapperBackground = isLight
+                  ? active
+                    ? 'bg-[#edf1f7]'
+                    : 'bg-[#eef2f7] group-hover:bg-white'
+                  : active
+                    ? 'bg-white/22'
+                    : 'bg-white/10 group-hover:bg-white/16';
 
                 return (
                   <li key={item.href}>
@@ -326,7 +356,8 @@ export default function AdminSidebar({
                         'group relative flex items-center rounded-xl transition-transform duration-200 liquid-glass',
                         isCollapsed ? 'justify-center p-1.5' : 'gap-2.5 px-3 py-2',
                         'hover:-translate-y-0.5',
-                        active ? 'text-white' : 'text-white/65 hover:text-white'
+                        linkColorClass,
+                        linkBackgroundClass
                       )}
                       data-liquid-tone={active ? 'accent' : 'muted'}
                       title={isCollapsed ? item.label : undefined}
@@ -335,14 +366,15 @@ export default function AdminSidebar({
                         className={clsx(
                           'flex-shrink-0 rounded-lg transition-all duration-200',
                           isCollapsed ? 'p-1.5' : 'p-1',
-                          active ? 'bg-white/22' : 'bg-white/10 group-hover:bg-white/16'
+                          iconWrapperBackground
                         )}
                       >
                         <Icon
                           className={clsx(
                             'transition-transform duration-200',
                             isCollapsed ? 'h-5 w-5' : 'h-4 w-4',
-                            active ? 'text-white scale-110' : 'text-white/70 group-hover:text-white'
+                            iconColorClass,
+                            active && theme !== 'light' && 'scale-110'
                           )}
                         />
                       </div>
@@ -354,7 +386,7 @@ export default function AdminSidebar({
                               {item.label}
                             </span>
                             {item.description && (
-                              <p className="mt-0.5 truncate text-xs text-white/55">
+                              <p className={descriptionColorClass}>
                                 {item.description}
                               </p>
                             )}

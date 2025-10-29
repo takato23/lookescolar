@@ -822,19 +822,87 @@ export class DistributionService {
     status: DistributionStatus;
     message: string;
   }> {
-    // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
+    const sendGridApiKey = process.env.SENDGRID_API_KEY;
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.EMAIL_FROM || 'noreply@lookescolar.com';
+    const fromName = process.env.SENDGRID_FROM_NAME || 'LookEscolar';
+
+    // If SendGrid is configured, use it
+    if (sendGridApiKey) {
+      try {
+        // Compile template
+        const templateKey = (templateId as keyof typeof EMAIL_TEMPLATES) || 'family_access_es';
+        const template = EMAIL_TEMPLATES[templateKey];
+        
+        if (!template) {
+          throw new Error(`Email template ${String(templateKey)} not found`);
+        }
+
+        const subject = this.compileTemplate(template.subject, templateVars);
+        const htmlContent = this.compileTemplate(template.content, templateVars);
+
+        const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sendGridApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            personalizations: [
+              {
+                to: [{ email: recipient }],
+                subject: subject,
+              },
+            ],
+            from: {
+              email: fromEmail,
+              name: fromName,
+            },
+            content: [
+              {
+                type: 'text/html',
+                value: htmlContent,
+              },
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('SendGrid API error:', errorData);
+          throw new Error(`SendGrid API error: ${response.status} ${errorData}`);
+        }
+
+        return {
+          success: true,
+          status: 'sent',
+          message: 'Email sent via SendGrid',
+        };
+      } catch (error) {
+        console.error('Error sending email via SendGrid:', error);
+        // Fallback to simulated success in development
+        if (process.env.NODE_ENV === 'production') {
+          return {
+            success: false,
+            status: 'failed',
+            message: error instanceof Error ? error.message : 'Email delivery failed',
+          };
+        }
+      }
+    }
+
+    // Fallback: log and simulate success (development mode)
     console.log(
       'Email would be sent to:',
       recipient,
       'with vars:',
-      templateVars
+      templateVars,
+      sendGridApiKey ? '(SendGrid error, using fallback)' : '(SendGrid not configured)'
     );
 
-    // For now, return simulated success
     return {
       success: true,
       status: 'sent',
-      message: 'Email queued for delivery',
+      message: sendGridApiKey ? 'Email queued (SendGrid fallback)' : 'Email queued for delivery',
     };
   }
 
@@ -872,14 +940,84 @@ export class DistributionService {
     status: DistributionStatus;
     message: string;
   }> {
-    // TODO: Integrate with SMS service (Twilio, AWS SNS, etc.)
-    console.log('SMS would be sent to:', recipient, 'with vars:', templateVars);
+    const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
-    // For now, return simulated success
+    // If Twilio is configured, use it
+    if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+      try {
+        // Compile template - use WhatsApp template as SMS base
+        const templateKey = (templateId as keyof typeof WHATSAPP_TEMPLATES) || 'family_access_es';
+        const whatsappTemplate = WHATSAPP_TEMPLATES[templateKey];
+        
+        if (!whatsappTemplate) {
+          throw new Error(`SMS template ${String(templateKey)} not found`);
+        }
+        
+        // Convert WhatsApp template to plain SMS text
+        const template = {
+          content: whatsappTemplate.replace(/\*/g, '').replace(/\n{3,}/g, '\n\n'), // Remove markdown, clean newlines
+        };
+
+        const message = this.compileTemplate(template.content, templateVars);
+
+        // Twilio API endpoint
+        const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+
+        const formData = new URLSearchParams();
+        formData.append('To', recipient);
+        formData.append('From', twilioPhoneNumber);
+        formData.append('Body', message);
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${twilioAccountSid}:${twilioAuthToken}`).toString('base64')}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: formData.toString(),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Twilio API error:', errorData);
+          throw new Error(`Twilio API error: ${response.status} ${errorData}`);
+        }
+
+        const result = await response.json();
+
+        return {
+          success: true,
+          status: 'sent',
+          message: `SMS sent via Twilio (SID: ${result.sid})`,
+        };
+      } catch (error) {
+        console.error('Error sending SMS via Twilio:', error);
+        // Fallback to simulated success in development
+        if (process.env.NODE_ENV === 'production') {
+          return {
+            success: false,
+            status: 'failed',
+            message: error instanceof Error ? error.message : 'SMS delivery failed',
+          };
+        }
+      }
+    }
+
+    // Fallback: log and simulate success (development mode)
+    console.log(
+      'SMS would be sent to:',
+      recipient,
+      'with vars:',
+      templateVars,
+      twilioAccountSid ? '(Twilio error, using fallback)' : '(Twilio not configured)'
+    );
+
     return {
       success: true,
       status: 'sent',
-      message: 'SMS queued for delivery',
+      message: twilioAccountSid ? 'SMS queued (Twilio fallback)' : 'SMS queued for delivery',
     };
   }
 

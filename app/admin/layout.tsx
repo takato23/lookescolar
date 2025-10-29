@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import { AdminFloatingNav } from '@/components/admin/AdminFloatingNav';
 import {
   MobileNavigation,
   adminNavigationItems,
@@ -15,6 +16,8 @@ import {
   useRealTimeNotifications,
 } from '@/components/ui/NotificationSystem';
 import { KeyboardProvider } from '@/components/ui/KeyboardShortcuts';
+import { AdminLayoutProvider, useAdminLayout } from '@/components/admin/admin-layout-context';
+import { cn } from '@/lib/utils';
 import '@/styles/admin-dark-mode-fixes.css';
 import '@/styles/dashboard-animations.css';
 import Script from 'next/script';
@@ -27,11 +30,6 @@ export default function AdminLayout({
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
 
   useEffect(() => {
     const initAuth = async () => {
@@ -147,14 +145,16 @@ export default function AdminLayout({
 
   return (
     <NotificationProvider>
-      <KeyboardProvider>
-        {/* Force dark mode application script */}
-        <Script 
-          src="/scripts/force-dark-mode.js" 
-          strategy="afterInteractive"
-        />
-        <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
-      </KeyboardProvider>
+      <AdminLayoutProvider>
+        <KeyboardProvider>
+          {/* Force dark mode application script */}
+          <Script
+            src="/scripts/force-dark-mode.js"
+            strategy="afterInteractive"
+          />
+          <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
+        </KeyboardProvider>
+      </AdminLayoutProvider>
     </NotificationProvider>
   );
 }
@@ -168,54 +168,104 @@ function AdminLayoutContent({
 }) {
   // Initialize real-time notifications
   useRealTimeNotifications();
+  const { config } = useAdminLayout();
+
+  const isImmersive = config.variant === 'immersive';
+  const wrapperClassName = cn(
+    'liquid-glass-app min-h-screen',
+    config.wrapperClassName
+  );
+
+  const renderFloatingNav = () => {
+    if (!config.showFloatingNav) return null;
+    return (
+      <div
+        className={cn(
+          'sticky top-6 z-30 mb-6 px-4 sm:px-6 lg:px-10 xl:px-16',
+          config.floatingNavWrapperClassName
+        )}
+      >
+        <AdminFloatingNav />
+      </div>
+    );
+  };
 
   return (
     <MobileOptimizations>
-      <div className="liquid-glass-app min-h-screen">
-        {/* Mobile Navigation */}
-        <MobileNavigation
-          items={adminNavigationItems}
-          user={
-            user && user.email
-              ? {
-                  name: user.email.split('@')[0],
-                  email: user.email,
-                }
-              : null
-          }
-          onLogout={async () => {
-            const { authClient } = await import('@/lib/supabase/auth-client');
-            await authClient.logout();
-            window.location.href = '/login';
-          }}
-          className="lg:hidden"
-        />
+      <div className={wrapperClassName}>
+        {config.showMobileNav && (
+          <MobileNavigation
+            items={adminNavigationItems}
+            user={
+              user && user.email
+                ? {
+                    name: user.email.split('@')[0],
+                    email: user.email,
+                  }
+                : null
+            }
+            onLogout={async () => {
+              const { authClient } = await import('@/lib/supabase/auth-client');
+              await authClient.logout();
+              window.location.href = '/login';
+            }}
+            className="lg:hidden"
+          />
+        )}
 
-        <div className="relative flex">
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block">
-            <AdminSidebar isMobileOpen={false} onMobileToggle={() => {}} />
-          </div>
-
-          {/* Main Content */}
-          <div className="flex min-w-0 flex-1 flex-col">
-            {/* Desktop Header */}
-            <div className="hidden lg:block">
-              <AdminHeader user={user} onMobileMenuToggle={() => {}} />
-            </div>
-
-            {/* Page Content - Adjusted for mobile navigation */}
-            <main className="min-h-screen flex-1 overflow-x-hidden">
-              {/* Mobile content with proper spacing */}
-              <div className="min-h-screen overflow-y-auto px-2 pb-20 pt-14 lg:hidden">
-                {children}
-              </div>
-
-              {/* Desktop content */}
-              <div className="hidden lg:block">{children}</div>
+        {isImmersive ? (
+          <div
+            className={cn('flex min-h-screen flex-col', config.contentClassName)}
+          >
+            {renderFloatingNav()}
+            <main
+              className={cn('flex-1 overflow-hidden', config.mainClassName)}
+            >
+              {children}
             </main>
           </div>
-        </div>
+        ) : (
+          <div className={cn('relative flex', config.contentClassName)}>
+            {/* Desktop Sidebar */}
+            {config.showSidebar && (
+              <div className="hidden lg:block">
+                <AdminSidebar isMobileOpen={false} onMobileToggle={() => {}} />
+              </div>
+            )}
+
+            {/* Main Content */}
+            <div className="flex min-w-0 flex-1 flex-col">
+              {/* Desktop Header */}
+              {config.showHeader && (
+                <div className="hidden lg:block">
+                  <AdminHeader user={user} onMobileMenuToggle={() => {}} />
+                </div>
+              )}
+
+              {renderFloatingNav()}
+
+              {/* Page Content - Adjusted for mobile navigation */}
+              <main
+                className={cn(
+                  'min-h-screen flex-1 overflow-x-hidden',
+                  config.mainClassName
+                )}
+              >
+                {config.showMobileNav ? (
+                  <>
+                    <div className="min-h-screen overflow-y-auto px-2 pb-20 pt-14 lg:hidden">
+                      {children}
+                    </div>
+
+                    <div className="hidden lg:block">{children}</div>
+                  </>
+                ) : (
+                  <div className="h-full">{children}</div>
+                )}
+              </main>
+            </div>
+          </div>
+        )}
       </div>
     </MobileOptimizations>
   );

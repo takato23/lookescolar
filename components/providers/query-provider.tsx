@@ -33,7 +33,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
+            staleTime: 30 * 1000, // 30 seconds (optimized for fast refresh)
             gcTime: 5 * 60 * 1000, // 5 minutes (previously cacheTime)
             retry: (failureCount, error) => {
               // Don't retry on 4xx errors except 429

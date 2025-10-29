@@ -21,84 +21,13 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { uploadFiles, createApiUrl } from '@/lib/utils/api-client';
+import { statusLabel } from '@/lib/utils/photo-helpers';
 
-// Enhanced utility function to convert preview path to proxy URL (admin-only access)
-const getPreviewUrl = (
-  previewPath: string | null,
-  originalPath?: string | null
-): string | null => {
-  // Try preview path first
-  if (previewPath) {
-    if (previewPath.startsWith('http')) return previewPath;
-
-    // Normalize to path relative to the previews/ folder
-    let relative = previewPath;
-    const idx = previewPath.indexOf('/previews/');
-    if (idx >= 0) {
-      relative = previewPath.slice(idx + '/previews/'.length);
-    } else if (previewPath.startsWith('previews/')) {
-      relative = previewPath.slice('previews/'.length);
-    }
-
-    // Basic guard: must look like an image path
-    if (/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(relative)) {
-      // Use admin proxy URL which handles multiple storage paths internally
-      return `/admin/previews/${relative}`;
-    }
-  }
-
-  // Fallback to original path if preview not available
-  if (originalPath) {
-    if (originalPath.startsWith('http')) return originalPath;
-
-    // Extract filename from original path for preview lookup
-    const filename = originalPath.split('/').pop();
-    if (filename && /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(filename)) {
-      return `/admin/previews/${filename}`;
-    }
-  }
-
-  return null;
-};
-
-// Component to handle image loading with proper error handling to prevent loops
-const SafeImage: React.FC<{
-  src: string | null;
-  alt: string;
-  className?: string;
-  loading?: 'lazy' | 'eager';
-}> = ({ src, alt, className, loading = 'lazy' }) => {
-  const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(src);
-
-  // Reset error state when src changes
-  useEffect(() => {
-    if (src !== currentSrc) {
-      setHasError(false);
-      setCurrentSrc(src);
-    }
-  }, [src, currentSrc]);
-
-  if (!src || hasError) {
-    return <ImageIcon className="h-8 w-8 text-gray-400" />;
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={className}
-      loading={loading}
-      decoding="async"
-      onError={(e) => {
-        console.warn(`Preview failed to load: ${src}`);
-        setHasError(true);
-        // Prevent browser from retrying the same URL
-        (e.target as HTMLImageElement).src = '';
-      }}
-    />
-  );
-};
+// Import refactored modules
+import { SafeImage } from './photo-admin';
+import { getPreviewUrl } from './photo-admin';
+import { photoAdminApi, egressMonitor, FolderTreePanel as ExtractedFolderTreePanel } from './photo-admin';
+import type { OptimizedFolder, OptimizedAsset } from './photo-admin';
 
 // DND Kit for drag & drop
 import {
@@ -133,11 +62,6 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from '@/components/ui/resizable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -216,35 +140,6 @@ import { ShareManager } from '@/components/admin/share/ShareManager';
 import { AssignFolderPhotos } from '@/app/admin/events/[id]/library/components/AssignFolderPhotos';
 import BatchStudentManagement from '@/components/admin/BatchStudentManagement';
 
-// Types (optimized for minimal egress)
-interface OptimizedFolder {
-  id: string;
-  name: string;
-  parent_id: string | null;
-  depth: number;
-  photo_count: number;
-  has_children: boolean;
-  // New optional fields sent by API; safe non-breaking additions
-  event_id?: string | null;
-  child_folder_count?: number;
-  scope?: 'event' | 'global' | 'legacy' | 'template';
-}
-
-interface OptimizedAsset {
-  id: string;
-  filename: string;
-  preview_path: string | null;
-  // May be provided by server for convenience; optional in payloads
-  preview_url?: string | null;
-  // Some payloads won’t include original_path; keep optional for fallbacks only
-  original_path?: string | null;
-  // Optional watermark path from some payloads
-  watermark_path?: string | null;
-  file_size: number;
-  created_at: string;
-  status?: 'pending' | 'processing' | 'ready' | 'error';
-}
-
 // Enhanced interfaces for complete data when needed
 interface UnifiedFolder extends OptimizedFolder {
   event_id: string | null;
@@ -279,346 +174,8 @@ interface PhotoAdminProps {
   enableBulkOperations?: boolean;
 }
 
-// Helper to translate status labels
-const statusLabel = (s?: string) => {
-  switch (s) {
-    case 'ready':
-      return 'lista';
-    case 'processing':
-      return 'procesando';
-    case 'pending':
-      return 'pendiente';
-    case 'error':
-      return 'error';
-    default:
-      return s || '';
-  }
-};
-
-// Ultra-optimized API functions with egress monitoring
-class EgressMonitor {
-  private static instance: EgressMonitor;
-  private metrics: EgressMetrics = {
-    totalRequests: 0,
-    totalBytes: 0,
-    currentSession: 0,
-    warningThreshold: 50 * 1024 * 1024, // 50MB warning
-    criticalThreshold: 100 * 1024 * 1024, // 100MB critical
-  };
-
-  static getInstance(): EgressMonitor {
-    if (!EgressMonitor.instance) {
-      EgressMonitor.instance = new EgressMonitor();
-    }
-    return EgressMonitor.instance;
-  }
-
-  track(bytes: number) {
-    this.metrics.totalRequests++;
-    this.metrics.totalBytes += bytes;
-    this.metrics.currentSession += bytes;
-
-    if (this.metrics.currentSession > this.metrics.warningThreshold) {
-      console.warn(
-        '⚠️ High egress usage detected:',
-        this.metrics.currentSession / 1024 / 1024,
-        'MB'
-      );
-    }
-
-    if (this.metrics.currentSession > this.metrics.criticalThreshold) {
-      toast.error('Critical egress usage! Consider optimizing queries.');
-    }
-  }
-
-  getMetrics(): EgressMetrics {
-    return { ...this.metrics };
-  }
-
-  resetSession() {
-    this.metrics.currentSession = 0;
-  }
-}
-
-const egressMonitor = EgressMonitor.getInstance();
-
-// Optimized API functions
-const api = {
-  folders: {
-    list: async (options?: {
-      limit?: number;
-      offset?: number;
-      event_id?: string | null;
-      include_global?: boolean;
-      scopes?: string[];
-    }): Promise<OptimizedFolder[]> => {
-      const params = new URLSearchParams();
-      if (options?.limit)
-        params.set('limit', String(Math.min(options.limit, 50))); // Hard limit
-      if (options?.offset) params.set('offset', String(options.offset));
-      if (options?.include_global) params.set('include_global', 'true');
-      if (options?.scopes && options.scopes.length > 0)
-        params.set('scopes', options.scopes.join(','));
-      if (options?.event_id) params.set('event_id', String(options.event_id));
-
-      // Use unified folders endpoint with event filter when provided
-      const ep = '/api/admin/folders';
-      const qs = params.toString();
-      const url = createApiUrl(qs ? `${ep}?${qs}` : ep);
-
-      const response = await fetch(url);
-      const data = await response.json();
-
-      // Track egress
-      egressMonitor.track(JSON.stringify(data).length);
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch folders');
-      }
-
-      return data.folders || [];
-    },
-    create: async (folder: {
-      name: string;
-      parent_id?: string | null;
-      event_id?: string | null;
-    }) => {
-      const response = await fetch(createApiUrl('/api/admin/folders'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(folder),
-      });
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create folder');
-      }
-
-      return data.folder;
-    },
-    update: async (
-      folderId: string,
-      payload: { name?: string; parent_id?: string | null }
-    ) => {
-      const response = await fetch(
-        createApiUrl(`/api/admin/folders/${folderId}`),
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await response.json();
-      if (!data.success)
-        throw new Error(data.error || 'Failed to update folder');
-      return data.folder;
-    },
-    delete: async (
-      folderId: string,
-      options?: { moveContentsTo?: string | null; force?: boolean }
-    ) => {
-      const params = new URLSearchParams();
-      if (options?.moveContentsTo !== undefined)
-        params.set('moveContentsTo', String(options.moveContentsTo));
-      if (options?.force !== undefined)
-        params.set('force', String(options.force));
-      const response = await fetch(
-        createApiUrl(`/api/admin/folders/${folderId}?${params}`),
-        {
-          method: 'DELETE',
-        }
-      );
-      const data = await response.json();
-      if (!data.success)
-        throw new Error(data.error || 'Failed to delete folder');
-      return true;
-    },
-    copy: async (
-      folderId: string,
-      payload: {
-        target_parent_id?: string | null;
-        new_name?: string;
-        include_subfolders?: boolean;
-        duplicate_assets?: boolean;
-      }
-    ) => {
-      const response = await fetch(
-        createApiUrl(`/api/admin/folders/${folderId}/copy`),
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to copy folder');
-      }
-      return data;
-    },
-  },
-  events: {
-    listSimple: async (
-      limit = 100
-    ): Promise<Array<{ id: string; name: string }>> => {
-      const res = await fetch(
-        createApiUrl(`/api/admin/events-simple?limit=${limit}`)
-      );
-      const data = await res.json();
-      return (data.events || []).map((e: any) => ({ id: e.id, name: e.name }));
-    },
-  },
-  assets: {
-    list: async (
-      folderId: string,
-      options?: {
-        offset?: number;
-        limit?: number;
-        q?: string;
-        include_children?: boolean;
-        status?: 'pending' | 'processing' | 'ready' | 'error';
-        min_size?: number;
-        max_size?: number;
-        start_date?: string;
-        end_date?: string;
-        file_type?: string;
-      }
-    ): {
-      assets: OptimizedAsset[];
-      count: number;
-      hasMore: boolean;
-    } => {
-      const params = new URLSearchParams({
-        folder_id: folderId,
-        limit: String(Math.min(options?.limit || 50, 100)), // Allow up to 100
-        offset: String(options?.offset || 0),
-      });
-      if (options?.q) {
-        params.set('q', options.q);
-      }
-      if (options?.include_children) params.set('include_children', 'true');
-      if (options?.status) params.set('status', options.status);
-      if (options?.min_size !== undefined)
-        params.set('min_size', String(options.min_size));
-      if (options?.max_size !== undefined)
-        params.set('max_size', String(options.max_size));
-      if (options?.start_date) params.set('start_date', options.start_date);
-      if (options?.end_date) params.set('end_date', options.end_date);
-      if (options?.file_type) params.set('file_type', options.file_type);
-
-      const response = await fetch(createApiUrl(`/api/admin/assets?${params}`));
-      const data = await response.json();
-
-      // Track egress
-      egressMonitor.track(JSON.stringify(data).length);
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch assets');
-      }
-
-      return {
-        assets: data.assets || [],
-        count: data.count || 0,
-        hasMore: data.hasMore || false,
-      };
-    },
-    listByEvent: async (
-      eventId: string,
-      options?: {
-        offset?: number;
-        limit?: number;
-        folderId?: string | null;
-        includeSignedUrls?: boolean;
-        sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
-      }
-    ): {
-      photos: OptimizedAsset[];
-      count: number;
-      hasMore: boolean;
-    } => {
-      const params = new URLSearchParams({
-        page: String(
-          Math.floor((options?.offset || 0) / (options?.limit || 50)) + 1
-        ),
-        limit: String(Math.min(options?.limit || 50, 100)),
-      });
-      if (options?.folderId) params.set('folderId', options.folderId);
-      if (options?.includeSignedUrls) params.set('includeSignedUrls', 'true');
-      if (options?.sortBy) params.set('sortBy', options.sortBy);
-      if (options?.sortOrder) params.set('sortOrder', options.sortOrder);
-
-      const response = await fetch(
-        createApiUrl(`/api/admin/events/${eventId}/photos?${params}`)
-      );
-      const data = await response.json();
-
-      // Track egress
-      egressMonitor.track(JSON.stringify(data).length);
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch event photos');
-      }
-
-      return {
-        photos: data.photos || [],
-        count: data.pagination?.total || 0,
-        hasMore: data.pagination?.hasMore || false,
-      };
-    },
-    move: async (assetIds: string[], targetFolderId: string) => {
-      const response = await fetch(createApiUrl('/api/admin/assets/bulk'), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          asset_ids: assetIds.slice(0, 100), // Limit for safety
-          target_folder_id: targetFolderId,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        console.error('Bulk move HTTP error', {
-          status: response.status,
-          url: response.url,
-          body: errorText?.slice(0, 1000),
-        });
-        throw new Error('Failed to move assets');
-      }
-
-      const data = await response.json();
-      if (!data.success) {
-        console.error('Bulk move API error', { data });
-        throw new Error(data.error || 'Failed to move assets');
-      }
-      return data;
-    },
-    delete: async (assetIds: string[]) => {
-      const response = await fetch(createApiUrl('/api/admin/assets/bulk'), {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ asset_ids: assetIds.slice(0, 50) }), // Limit for safety
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        console.error('Bulk delete HTTP error', {
-          status: response.status,
-          url: response.url,
-          body: errorText?.slice(0, 1000),
-        });
-        throw new Error('Failed to delete assets');
-      }
-
-      const data = await response.json();
-      if (!data.success) {
-        console.error('Bulk delete API error', { data });
-        throw new Error(data.error || 'Failed to delete assets');
-      }
-      return data;
-    },
-  },
-};
+// Use imported API service instead of inline definition
+const api = photoAdminApi;
 
 // Optimized Folder Tree Panel Component
 const FolderTreePanel: React.FC<{
@@ -641,6 +198,7 @@ const FolderTreePanel: React.FC<{
   };
   onPasteToRoot?: () => void;
   onOpenBatchStudentManagement?: () => void;
+  selectedEventName?: string | null;
 }> = ({
   folders,
   selectedFolderId,
@@ -654,6 +212,7 @@ const FolderTreePanel: React.FC<{
   clipboard,
   onPasteToRoot,
   onOpenBatchStudentManagement,
+  selectedEventName,
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
@@ -971,14 +530,15 @@ const FolderTreePanel: React.FC<{
       <div>
         <div
           className={cn(
-            'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted',
-            isSelected && 'bg-blue-100 text-blue-700',
+            'group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all',
+            isSelected
+              ? 'bg-[#e6f7f0] text-[#0f172a] shadow-sm ring-1 ring-[#62e2a2]/60'
+              : 'text-[#475467] hover:bg-[#ecf2fa]',
             isOver &&
-              'scale-105 transform bg-blue-50 shadow-sm ring-2 ring-inset ring-blue-400',
-            'transition-all duration-200 ease-in-out'
+              'scale-[1.01] transform bg-[#e6f7f0] shadow-sm ring-1 ring-[#62e2a2]/60'
           )}
           ref={setNodeRef}
-          style={{ paddingLeft: `${depth * 16 + 8}px` }}
+          style={{ paddingLeft: `${depth * 14 + 8}px` }}
           onClick={() => onSelect(folder.id)}
         >
           {hasChildren ? (
@@ -999,11 +559,20 @@ const FolderTreePanel: React.FC<{
             <div className="w-4" />
           )}
 
-          {isOver ? (
-            <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          ) : (
-            <Folder className="h-4 w-4 text-gray-500" />
-          )}
+          <span
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-lg border text-sm font-medium',
+              isOver || isSelected
+                ? 'border-[#1f2a44]/20 bg-[#1f2a44]/10 text-[#1f2a44]'
+                : 'border-slate-200 bg-white text-[#475467]'
+            )}
+          >
+            {isOver || isSelected ? (
+              <FolderOpen className="h-4 w-4" />
+            ) : (
+              <Folder className="h-4 w-4" />
+            )}
+          </span>
 
           <span className="flex-1 truncate" title={folder.name}>
             {renderHighlightedName()}
@@ -1251,110 +820,127 @@ const FolderTreePanel: React.FC<{
   }, [folders, eventId, onSelectFolder, expandAll, collapseAll]);
 
   return (
-    <div className={cn('flex h-full flex-col border-r bg-white', className)}>
-      <div className="border-b p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-semibold">Folders</h3>
-          <div className="flex items-center gap-1">
+    <div
+      className={cn(
+        'flex h-full flex-col border-r border-slate-200/80 bg-[#f7f9fc]',
+        className
+      )}
+    >
+      <div className="border-b border-white/60 bg-white/90 px-4 py-5 backdrop-blur">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#1f2a44] to-[#334772] text-base font-semibold text-white shadow-md">
+            {(selectedEventName?.slice(0, 2) || 'LE').toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#4b5563]">
+              Colecciones
+            </p>
+            <h2 className="truncate text-lg font-semibold text-[#0b1120]">
+              {selectedEventName ?? 'Selecciona un evento'}
+            </h2>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            className="rounded-full bg-[#62e2a2] px-4 text-[#0f172a] shadow-sm hover:bg-[#4fd0a0]"
+            onClick={() => setIsCreating(selectedFolderId || 'root')}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo set
+          </Button>
+          {clipboard?.hasData && (
             <Button
               size="sm"
               variant="ghost"
-              onClick={expandAll}
-              className="h-8 shrink-0 px-2"
-              title="Expandir todo"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPasteToRoot?.();
+              }}
+              className="rounded-full px-4 text-[#0f172a]/70 hover:bg-[#e2e8f0]"
+              title={
+                clipboard?.sourceName
+                  ? `Pegar "${clipboard.sourceName}" en la raíz`
+                  : 'Pegar en la raíz'
+              }
+              disabled={!onPasteToRoot}
             >
-              <ChevronDown className="h-4 w-4" />
+              <ClipboardPaste className="mr-2 h-4 w-4" />
+              Pegar
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={collapseAll}
-              className="h-8 shrink-0 px-2"
-              title="Colapsar todo"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setIsCreating(selectedFolderId || 'root')}
-              className="h-8 shrink-0 px-2"
-              title="Nueva carpeta"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            {clipboard?.hasData && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPasteToRoot?.();
-                }}
-                className="h-8 shrink-0 px-2"
-                title={
-                  clipboard?.sourceName
-                    ? `Pegar "${clipboard.sourceName}" en la raíz`
-                    : 'Pegar en la raíz'
-                }
-                disabled={!onPasteToRoot}
-              >
-                <ClipboardPaste className="h-4 w-4" />
-              </Button>
-            )}
-            {/* 🚀 FASE 2: Botón de gestión de estudiantes cuando hay contexto de evento */}
-            {eventId && (
+          )}
+          {eventId && (
+            <>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => onOpenStudentManagement?.()}
-                className="h-8 shrink-0 px-2 text-green-600 hover:text-green-800"
+                className="rounded-full px-4 text-[#0f172a]/80 transition-colors hover:bg-[#e2e8f0]"
                 title="Gestión de estudiantes"
               >
-                <Users className="h-4 w-4" />
+                <Users className="mr-2 h-4 w-4" />
+                Estudiantes
               </Button>
-            )}
-            {eventId && (
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => onOpenBatchStudentManagement?.()}
-                className="h-8 shrink-0 px-2 text-amber-600 hover:text-amber-800"
+                className="rounded-full px-4 text-[#0f172a]/80 transition-colors hover:bg-[#e2e8f0]"
                 title="Importar estudiantes / autogenerar carpetas"
               >
-                <FileUser className="h-4 w-4" />
+                <FileUser className="mr-2 h-4 w-4" />
+                Importar
               </Button>
-            )}
-          </div>
+            </>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={expandAll}
+            className="rounded-full px-4 text-[#0f172a]/70 hover:bg-[#e2e8f0]"
+            title="Expandir todo"
+          >
+            <ChevronDown className="mr-2 h-4 w-4" />
+            Expandir
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={collapseAll}
+            className="rounded-full px-4 text-[#0f172a]/70 hover:bg-[#e2e8f0]"
+            title="Colapsar todo"
+          >
+            <ChevronRight className="mr-2 h-4 w-4" />
+            Colapsar
+          </Button>
         </div>
 
-        {/* Folder Search */}
-        <div className="mb-2 flex items-center gap-2">
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
           <Input
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Buscar carpeta…"
-            className="h-8 bg-white/90 text-sm backdrop-blur"
+            placeholder="Buscar set o carpeta"
+            className="h-9 rounded-full border-none bg-white/90 pl-10 text-sm text-[#1f2937] shadow-sm ring-1 ring-slate-200/70 focus-visible:ring-2 focus-visible:ring-[#62e2a2]"
             ref={searchRef}
           />
           {filterText && (
-            <Button
-              size="sm"
-              variant="ghost"
+            <button
+              type="button"
               onClick={() => setFilterText('')}
-              className="h-8 px-2"
-              title="Limpiar"
+              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-slate-200/70 text-slate-600 hover:bg-slate-300"
+              aria-label="Limpiar búsqueda"
             >
-              <X className="h-4 w-4" />
-            </Button>
+              <X className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
 
-        <div className="mb-3 rounded-lg border border-dashed border-border/70 bg-muted/30 p-3">
-          <div className="mb-2 flex items-center justify-between text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="rounded-xl border border-slate-200/80 bg-white/90 p-3 shadow-sm">
+          <div className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.24em] text-[#475467]">
             <span className="flex items-center gap-1">
               <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-              Atajos de carpetas
+              Destacados
             </span>
             {favoriteFolderIds.size > 0 && (
               <button
@@ -1363,16 +949,16 @@ const FolderTreePanel: React.FC<{
                   event.preventDefault();
                   clearFavorites();
                 }}
-                className="text-[11px] font-normal text-blue-600 hover:underline"
+                className="text-[11px] font-medium text-[#1f8255] hover:underline"
               >
-                Limpiar favoritos
+                Limpiar
               </button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-2">
             {quickAccessNodes.length === 0 ? (
-              <span className="text-xs text-muted-foreground">
-                Destaca carpetas con la estrella para tenerlas aquí.
+              <span className="block rounded-lg bg-slate-100/70 px-3 py-2 text-xs text-[#475467]">
+                Destaca carpetas con la estrella para tenerlas a un toque.
               </span>
             ) : (
               quickAccessNodes.map((node) => {
@@ -1384,14 +970,14 @@ const FolderTreePanel: React.FC<{
                     type="button"
                     onClick={() => onSelectFolder(node.id)}
                     className={cn(
-                      'group flex min-w-[140px] flex-1 items-center justify-between rounded-md border px-3 py-2 text-left text-xs shadow-sm transition',
+                      'group flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-all',
                       selectedFolderId === node.id
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-transparent bg-white hover:border-border hover:bg-white/70'
+                        ? 'bg-[#e6f7f0] text-[#0f172a] shadow-sm ring-1 ring-[#62e2a2]/60'
+                        : 'bg-white/90 text-[#475467] hover:bg-[#ecf2fa]'
                     )}
                   >
                     <span className="flex items-center gap-2 truncate">
-                      <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Folder className="h-4 w-4 text-[#1f2a44]" />
                       <span className="truncate font-medium">{node.name}</span>
                       {favoriteFolderIds.has(node.id) && (
                         <Star className="h-3 w-3 text-amber-500" />
@@ -1415,7 +1001,7 @@ const FolderTreePanel: React.FC<{
                           {node.scope}
                         </span>
                       )}
-                      <span className="rounded bg-muted px-1 py-0.5 text-[10px]">
+                      <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] text-[#475467]">
                         {total}
                       </span>
                     </span>
@@ -1454,7 +1040,7 @@ const FolderTreePanel: React.FC<{
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto px-3 pb-4">
         {folderTree
           .filter((folder) => !filterActive || matchedIds.has(folder.id))
           .map((folder) => (
@@ -2256,7 +1842,7 @@ const InspectorPanel: React.FC<{
     : null;
 
   return (
-    <div className={cn('flex h-full flex-col border-l bg-white', className)}>
+    <div className={cn('flex h-full flex-col bg-white', className)}>
       <div className="border-b px-4 py-3">
         <h3 className="text-lg font-semibold">Inspector</h3>
         <p className="text-xs text-muted-foreground">
@@ -2648,6 +2234,8 @@ export default function PhotoAdmin({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isShareManagerOpen, setShareManagerOpen] = useState(false);
   const [shareRefreshKey, setShareRefreshKey] = useState(0);
+  const [isInspectorCollapsed, setIsInspectorCollapsed] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Event selection state
   const [selectedEventId, setSelectedEventId] = useState<string | null>(() => {
@@ -2990,7 +2578,7 @@ export default function PhotoAdmin({
     data: folders = [],
     isLoading: isLoadingFolders,
     error: foldersError,
-  } = useQuery({
+  } = useQuery<OptimizedFolder[]>({
     queryKey: ['optimized-folders', selectedEventId],
     queryFn: () =>
       api.folders.list({
@@ -2999,15 +2587,18 @@ export default function PhotoAdmin({
         include_global: false,
       }),
     staleTime: 15 * 60 * 1000, // 15 minutes - folders change rarely
-    cacheTime: 30 * 60 * 1000, // 30 minutes cache
+    gcTime: 30 * 60 * 1000, // 30 minutes cache (gcTime replaces cacheTime in React Query v5)
     retry: 2,
-    onError: (error) => {
-      console.error('Failed to load folders:', error);
-      toast.error('Failed to load folders. Please try again.');
-    },
     enabled: !!selectedEventId,
-    suspense: true,
   });
+
+  // Error handling for folders query
+  useEffect(() => {
+    if (foldersError) {
+      console.error('Failed to load folders:', foldersError);
+      toast.error('Failed to load folders. Please try again.');
+    }
+  }, [foldersError]);
 
   // Load events for selector, memoize last event
   useEffect(() => {
@@ -3059,6 +2650,10 @@ export default function PhotoAdmin({
 
         if (!mounted) return;
         setEventsList(finalList);
+
+        if (finalList.length === 0) {
+          toast.warning('No encontramos eventos disponibles para tu cuenta.');
+        }
 
         // Only auto-select first event if no event is selected at all
         if (!selectedEventId && finalList.length > 0) {
@@ -3189,7 +2784,7 @@ export default function PhotoAdmin({
     hasNextPage,
     isFetchingNextPage,
     error: assetsQueryError,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<{ assets: OptimizedAsset[]; count: number; hasMore: boolean }>({
     queryKey: [
       'optimized-assets',
       selectedEventId,
@@ -3281,14 +2876,17 @@ export default function PhotoAdmin({
     },
     enabled: !!selectedFolderId,
     staleTime: 2 * 60 * 1000, // 2 minutes - assets change more frequently
-    cacheTime: 5 * 60 * 1000, // 5 minutes cache
+    gcTime: 5 * 60 * 1000, // 5 minutes cache (gcTime replaces cacheTime in React Query v5)
     retry: 1,
-    onError: (error) => {
-      console.error('Failed to load assets:', error);
-      toast.error('Failed to load photos. Please try again.');
-    },
-    suspense: true,
   });
+
+  // Error handling for assets query
+  useEffect(() => {
+    if (assetsQueryError) {
+      console.error('Failed to load assets:', assetsQueryError);
+      toast.error('Failed to load photos. Please try again.');
+    }
+  }, [assetsQueryError]);
 
   // Flatten assets from infinite query
   const assets = useMemo(
@@ -3361,6 +2959,14 @@ export default function PhotoAdmin({
       }
     });
   }, [searchTerm, studentFilter, syncQueryParams]);
+
+  // Refresh function to invalidate queries
+  const handleRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['optimized-assets'] });
+    await queryClient.invalidateQueries({ queryKey: ['optimized-folders'] });
+    await queryClient.invalidateQueries({ queryKey: ['events'] });
+    toast.success('Caché actualizada');
+  }, [queryClient]);
 
   const moveOptions = useMemo(() => {
     if (!moveState) return [] as OptimizedFolder[];
@@ -3646,6 +3252,12 @@ export default function PhotoAdmin({
     [assets, selectedAssetIds]
   );
 
+  useEffect(() => {
+    if (selectedAssets.length > 0) {
+      setIsInspectorCollapsed(false);
+    }
+  }, [selectedAssets.length]);
+
   // Error state handling
   const hasError = foldersError || assetsError;
   const errorMessage =
@@ -3664,6 +3276,39 @@ export default function PhotoAdmin({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const inspectorAvailable = selectedAssets.length > 0;
+  const inspectorOpen = inspectorAvailable && !isInspectorCollapsed;
+  const sessionEgressMB = useMemo(() => {
+    return Math.round((egressMetrics.currentSession / (1024 * 1024)) * 10) / 10;
+  }, [egressMetrics.currentSession]);
+  const uploadProgressPercent = useMemo(() => {
+    if (!uploadState || uploadState.total === 0) return 0;
+    return Math.min(
+      100,
+      Math.round(
+        ((uploadState.uploaded + uploadState.failed) /
+          Math.max(1, uploadState.total)) *
+          100
+      )
+    );
+  }, [uploadState]);
+  const uploadStatusLabel = useMemo(() => {
+    if (!uploadState) return '';
+    const elapsed = (Date.now() - uploadState.startedAt) / 1000;
+    const done = uploadState.uploaded + uploadState.failed;
+    const rate = elapsed > 0 ? done / elapsed : 0;
+    const remaining = Math.max(0, uploadState.total - done);
+    const etaSec = rate > 0 ? Math.ceil(remaining / rate) : 0;
+    const mm = Math.floor(etaSec / 60).toString();
+    const ss = Math.floor(etaSec % 60)
+      .toString()
+      .padStart(2, '0');
+    const speed = rate > 0 ? `${rate.toFixed(1)}/s` : '';
+    const errorSuffix = uploadState.failed > 0 ? ` • ${uploadState.failed} err` : '';
+    return `${uploadState.uploaded}/${uploadState.total} • ${mm}:${ss} ${speed}${errorSuffix}`.trim();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadState]);
 
   // Handlers
   const handleEventChange = useCallback(
@@ -4468,58 +4113,177 @@ export default function PhotoAdmin({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className={cn('flex h-screen flex-col bg-muted', className)}>
-        {/* Header */}
-        <div className="border-b bg-white px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => window.history.back()}
-                className="flex items-center gap-2 text-gray-500 hover:text-foreground dark:text-gray-400"
-                title="Volver atrás"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Volver</span>
-              </Button>
-              <h1 className="text-2xl font-bold text-foreground">Photos</h1>
-            </div>
+      <div className={cn('relative flex min-h-full flex-1 flex-col', className)}>
+        <div className="flex flex-1 flex-col gap-6 px-4 pb-12 pt-6 sm:px-6 lg:px-10 xl:px-16">
+          <section className="rounded-[32px] border border-white/25 bg-white/85 px-6 py-6 shadow-[0_32px_90px_-45px_rgba(15,23,42,0.55)] backdrop-blur-2xl dark:border-slate-800/60 dark:bg-slate-950/70">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.history.back()}
+                    className="flex items-center gap-2 rounded-full bg-white/70 px-3 text-slate-600 shadow-sm transition hover:bg-white hover:text-foreground dark:bg-slate-900/60 dark:text-slate-200"
+                    title="Volver atrás"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline">Volver</span>
+                  </Button>
+                  <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                    Photos
+                  </h1>
+                  <span className="hidden h-6 w-px rounded bg-slate-200/70 sm:block dark:bg-slate-700/70" />
+                  <EventSelector
+                    value={selectedEventId}
+                    onChange={(id) => handleEventChange(id || null)}
+                    className="h-10 min-w-[220px] rounded-full border-none bg-white/70 px-4 text-sm shadow-inner shadow-white/30 backdrop-blur dark:bg-slate-900/60"
+                    events={eventsList}
+                  />
+                  <Badge className="rounded-full border border-white/50 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-200">
+                    Total: {totalAssetsCount}
+                  </Badge>
+                  {selectedAssetIds.size > 0 && (
+                    <Badge className="rounded-full border border-blue-200/70 bg-blue-50/80 px-3 py-1 text-xs font-medium text-blue-700 shadow-sm dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-100">
+                      Seleccionadas: {selectedAssetIds.size}
+                    </Badge>
+                  )}
+                </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Event selector */}
-              <div className="flex items-center gap-2">
-                <EventSelector
-                  value={selectedEventId}
-                  onChange={(id) => handleEventChange(id || null)}
-                  className="h-9"
-                  events={eventsList}
-                />
+                <div className="flex flex-wrap items-center gap-2">
+                  {enableUpload && (
+                    <PhotoUploadButton
+                      onUpload={handleUpload}
+                      disabled={!selectedFolderId || isLoadingFolders}
+                      showIcon={true}
+                      variant="modern"
+                      modernTone="primary"
+                      size="sm"
+                      className="h-9 rounded-full px-4 text-sm font-medium shadow-[0_18px_36px_-24px_rgba(37,99,235,0.55)]"
+                    >
+                      Subir fotos
+                    </PhotoUploadButton>
+                  )}
+
+                  {uploadState && (
+                    <div className="flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50/80 px-3 py-1 text-xs font-medium text-blue-700 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-100">
+                      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-blue-100 dark:bg-blue-500/20">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all dark:from-blue-400 dark:to-indigo-400"
+                          style={{ width: `${uploadProgressPercent}%` }}
+                        />
+                      </div>
+                      <span className="whitespace-nowrap">{uploadStatusLabel}</span>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 rounded-full border-white/60 px-3 text-xs font-medium text-slate-600 transition hover:bg-white/80 hover:text-slate-900 dark:border-slate-700/80 dark:text-slate-200 dark:hover:bg-slate-900"
+                    onClick={handleRefresh}
+                    title="Actualizar caché"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span className="ml-2 hidden sm:inline">Refrescar</span>
+                  </Button>
+
+                  <div className="hidden items-center gap-2 rounded-full border border-white/50 bg-white/70 px-3 py-1 text-xs font-medium text-slate-600 shadow-sm dark:border-slate-700/70 dark:bg-slate-900/70 dark:text-slate-300 sm:flex">
+                    <Activity className="h-3 w-3" />
+                    <span>{egressMetrics.totalRequests} req</span>
+                    <span className="text-slate-300">•</span>
+                    <span>{sessionEgressMB.toFixed(1)} MB</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full text-slate-500 transition hover:text-foreground"
+                      onClick={() => setShowAssignModal(true)}
+                      disabled={!selectedEventId}
+                      title={
+                        selectedEventId
+                          ? 'Asignar fotos a estudiantes'
+                          : 'Elegí un evento para asignar fotos'
+                      }
+                      aria-label="Abrir asignaciones"
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full text-slate-500 transition hover:text-foreground"
+                      onClick={() => setShowBatchStudentModal(true)}
+                      disabled={!selectedEventId}
+                      title={
+                        selectedEventId
+                          ? 'Importar estudiantes y generar carpetas'
+                          : 'Elegí un evento para importar estudiantes'
+                      }
+                      aria-label="Importar estudiantes"
+                    >
+                      <FileUser className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full text-slate-500 transition hover:text-foreground"
+                      onClick={() => setShareManagerOpen(true)}
+                      disabled={!selectedEventId}
+                      title={
+                        selectedEventId
+                          ? 'Gestor de enlaces del evento'
+                          : 'Elegí un evento para gestionar enlaces'
+                      }
+                      aria-label="Gestor de enlaces"
+                    >
+                      <Package className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full text-slate-500 transition hover:text-foreground"
+                      onClick={() => setShowSettingsModal(true)}
+                      title="Preferencias de la vista"
+                      aria-label="Preferencias"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              <Separator
-                orientation="vertical"
-                className="hidden h-6 md:block"
-              />
+              <div
+                id="photo-filters"
+                className="flex flex-wrap items-center gap-3 rounded-3xl text-xs sm:text-sm transition-shadow"
+              >
+                <Tabs
+                  value={viewMode}
+                  onValueChange={(v) => setViewMode(v as any)}
+                  className="rounded-full bg-white/60 p-0.5 shadow-inner shadow-white/40 dark:bg-slate-900/60"
+                >
+                  <TabsList className="grid h-9 grid-cols-2 rounded-full bg-transparent p-0">
+                    <TabsTrigger value="grid" className="rounded-full text-xs sm:text-sm">
+                      <Grid3X3 className="mr-1 h-4 w-4" /> Grid
+                    </TabsTrigger>
+                    <TabsTrigger value="list" className="rounded-full text-xs sm:text-sm">
+                      <List className="mr-1 h-4 w-4" /> Lista
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
 
-              {/* Filters group */}
-              <div className="flex items-center gap-3">
-                {/* Status filter for desktop */}
+                <div className="hidden h-6 w-px rounded bg-white/50 sm:block dark:bg-slate-700" />
+
                 <div className="hidden items-center gap-2 md:flex">
-                  <Label
-                    htmlFor="desktop-status-filter"
-                    className="whitespace-nowrap text-sm text-foreground"
-                  >
+                  <Label className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-300">
                     Estado
                   </Label>
                   <Select
                     value={statusFilter}
                     onValueChange={(v) => setStatusFilter(v as any)}
                   >
-                    <SelectTrigger
-                      id="desktop-status-filter"
-                      className="h-9 w-[120px]"
-                    >
+                    <SelectTrigger className="h-8 w-[120px] rounded-full border-none bg-white/70 px-3 text-xs shadow-inner shadow-white/40 dark:bg-slate-900/60">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -4532,48 +4296,34 @@ export default function PhotoAdmin({
                   </Select>
                 </div>
 
-                {/* File type filter removed per request */}
-
-                {/* Date range filter */}
                 <div className="hidden items-center gap-2 lg:flex">
-                  <Label className="whitespace-nowrap text-sm text-foreground">
+                  <Label className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-300">
                     Fecha
                   </Label>
                   <Input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="h-9 w-[140px]"
+                    className="h-8 w-[136px] rounded-full border-none bg-white/70 text-xs shadow-inner shadow-white/40 dark:bg-slate-900/60"
                   />
-                  <span className="text-gray-400">-</span>
+                  <span className="text-slate-300">-</span>
                   <Input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="h-9 w-[140px]"
+                    className="h-8 w-[136px] rounded-full border-none bg-white/70 text-xs shadow-inner shadow-white/40 dark:bg-slate-900/60"
                   />
                 </div>
-              </div>
 
-              <Separator
-                orientation="vertical"
-                className="hidden h-6 md:block"
-              />
-
-              {/* Pagination group */}
-              <div className="flex items-center gap-3">
-                {/* Page size selector */}
-                <div className="hidden items-center gap-2 md:flex">
-                  <Label className="whitespace-nowrap text-sm text-foreground">
+                <div className="flex items-center gap-2">
+                  <Label className="hidden text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-300 md:inline">
                     Página
                   </Label>
                   <Select
                     value={String(pageSize)}
-                    onValueChange={(v) =>
-                      setPageSize(Number(v) as 25 | 50 | 100)
-                    }
+                    onValueChange={(v) => setPageSize(Number(v) as 25 | 50 | 100)}
                   >
-                    <SelectTrigger id="page-size" className="h-9 w-[70px]">
+                    <SelectTrigger className="h-8 w-[92px] rounded-full border-none bg-white/70 px-3 text-xs shadow-inner shadow-white/40 dark:bg-slate-900/60">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -4582,179 +4332,26 @@ export default function PhotoAdmin({
                       <SelectItem value="100">100</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
-                    Total: {totalAssetsCount}
-                  </span>
+                </div>
+
+                <div className="ml-auto hidden items-center gap-2 md:flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="rounded-full bg-white/60 px-4 text-xs font-medium text-slate-600 transition hover:bg-white/80 hover:text-slate-900 dark:bg-slate-900/60 dark:text-slate-200"
+                  >
+                    <X className="mr-1 h-4 w-4" /> Reset
+                  </Button>
                 </div>
               </div>
-
-              <Separator
-                orientation="vertical"
-                className="hidden h-6 md:block"
-              />
-
-              {/* Actions group */}
-              <div className="flex items-center gap-2">
-                {/* Reset filters */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hidden h-9 md:inline-flex"
-                  onClick={handleResetFilters}
-                  title="Reset filters"
-                >
-                  <X className="mr-1 h-4 w-4" /> Reset
-                </Button>
-
-                {/* Mobile filters toggle */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 md:hidden"
-                  onClick={() => setShowMobileFilters((v) => !v)}
-                  aria-expanded={showMobileFilters}
-                  aria-controls="mobile-filters"
-                >
-                  <Filter className="mr-1 h-4 w-4" /> Filtros
-                </Button>
-              </div>
-
-              {/* Upload and tools group */}
-              <div className="flex items-center gap-2">
-                <Separator
-                  orientation="vertical"
-                  className="hidden h-6 sm:block"
-                />
-
-                {enableUpload && (
-                  <PhotoUploadButton
-                    onUpload={handleUpload}
-                    disabled={!selectedFolderId || isLoadingFolders}
-                    showIcon={true}
-                  >
-                    Subir
-                  </PhotoUploadButton>
-                )}
-
-                {/* Upload progress (compact with ETA) */}
-                {uploadState && (
-                  <div className="flex min-w-[210px] items-center gap-2">
-                    <div className="h-2 w-28 overflow-hidden rounded bg-muted">
-                      <div
-                        className="h-2 animate-pulse bg-gradient-to-r from-blue-500 to-indigo-500"
-                        style={{
-                          width: `${Math.min(100, Math.round(((uploadState.uploaded + uploadState.failed) / Math.max(1, uploadState.total)) * 100))}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="whitespace-nowrap text-[11px] text-gray-500 dark:text-gray-400">
-                      {uploadState.uploaded}/{uploadState.total}
-                      {(() => {
-                        const elapsed =
-                          (Date.now() - uploadState.startedAt) / 1000;
-                        const done = uploadState.uploaded + uploadState.failed;
-                        const rate = elapsed > 0 ? done / elapsed : 0;
-                        const remaining = Math.max(0, uploadState.total - done);
-                        const etaSec =
-                          rate > 0 ? Math.ceil(remaining / rate) : 0;
-                        const mm = Math.floor(etaSec / 60).toString();
-                        const ss = Math.floor(etaSec % 60)
-                          .toString()
-                          .padStart(2, '0');
-                        const speed = rate > 0 ? `${rate.toFixed(1)}/s` : '';
-                        return ` • ${mm}:${ss} ${speed}`;
-                      })()}
-                      {uploadState.failed > 0 && (
-                        <span className="text-red-500">
-                          {' '}
-                          • {uploadState.failed} err
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Clear Cache - available in all environments */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => {
-                    queryClient.invalidateQueries();
-                    egressMonitor.resetSession();
-                    toast.info('Cache cleared and data refreshed');
-                  }}
-                  title="Clear cache and refresh data"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-
-                {/* Gestor de Escaparates */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => setShowAssignModal(true)}
-                  disabled={!selectedEventId}
-                  title={
-                    selectedEventId
-                      ? 'Asignar fotos a estudiantes'
-                      : 'Elegí un evento para asignar fotos'
-                  }
-                >
-                  <Users className="h-4 w-4" />
-                  <span className="ml-1 hidden sm:inline">Asignar</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => setShowBatchStudentModal(true)}
-                  disabled={!selectedEventId}
-                  title={
-                    selectedEventId
-                      ? 'Importar estudiantes y generar carpetas'
-                      : 'Elegí un evento para importar estudiantes'
-                  }
-                >
-                  <FileUser className="h-4 w-4" />
-                  <span className="ml-1 hidden sm:inline">Importar</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => setShareManagerOpen(true)}
-                  disabled={!selectedEventId}
-                  title={
-                    selectedEventId
-                      ? 'Gestor de enlaces del evento'
-                      : 'Elegí un evento para gestionar enlaces'
-                  }
-                >
-                  <Package className="h-4 w-4" />
-                  <span className="ml-1 hidden sm:inline">Enlaces</span>
-                </Button>
-
-                {/* Settings - photo grid preferences */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => setShowSettingsModal(true)}
-                  title="Photo grid settings and preferences"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
-          </div>
-        </div>
+          </section>
         {/* Mobile filters panel */}
         {showMobileFilters && (
           <div
             id="mobile-filters"
-            className="border-t bg-white px-4 py-3 md:hidden"
+            className="rounded-3xl border border-white/25 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/70 md:hidden"
           >
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -4815,7 +4412,7 @@ export default function PhotoAdmin({
 
         {/* 🚀 FASE 2: Banner de contexto de evento */}
         {selectedEventId && (
-          <div className="px-6 py-3">
+          <div className="rounded-3xl border border-white/20 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/70">
             <EventContextBanner
               eventId={selectedEventId}
               onRemoveContext={handleRemoveEventContext}
@@ -4824,183 +4421,247 @@ export default function PhotoAdmin({
           </div>
         )}
         {!selectedEventId && (
-          <div className="px-6 py-3">
-            <div className="rounded-md border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-              Elegí un evento para gestionar enlaces y sincronizar las carpetas.
-            </div>
+          <div className="rounded-3xl border border-dashed border-white/30 bg-white/70 px-4 py-3 text-sm text-slate-600 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/60 dark:text-slate-300">
+            Elegí un evento para gestionar enlaces y sincronizar las carpetas.
           </div>
         )}
 
-        {/* Main Content - 3 Panel Layout */}
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
-          {/* Left Panel: Folder Tree */}
-          {/* Left: 25% default */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-            <FolderTreePanel
-              folders={folders}
-              selectedFolderId={selectedFolderId}
-              onSelectFolder={handleSelectFolder}
-              onCreateFolder={handleCreateFolder}
-              isLoading={isLoadingFolders}
-              eventId={selectedEventId}
-              className="h-full"
-              onOpenStudentManagement={() => setShowStudentManagement(true)}
-              onFolderAction={handleFolderAction}
-              clipboard={{
-                hasData: Boolean(folderClipboard),
-                sourceFolderId: folderClipboard?.folderId,
-                sourceName: folderClipboard?.folderName,
-              }}
-              onPasteToRoot={() => handlePasteFolder(null)}
-              onOpenBatchStudentManagement={() =>
-                setShowBatchStudentModal(true)
-              }
-            />
-          </ResizablePanel>
+        {/* Main Content Layout */}
+        <div className="flex flex-1 flex-col gap-6 pb-6 pt-4 xl:flex-row xl:items-start xl:gap-10">
+          <aside className="xl:w-[260px] xl:min-w-[250px] 2xl:w-[340px] 2xl:min-w-[320px] xl:shrink-0">
+            <div className="rounded-3xl border border-white/25 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/60 xl:p-4">
+              <FolderTreePanel
+                folders={folders}
+                selectedFolderId={selectedFolderId}
+                onSelectFolder={handleSelectFolder}
+                onCreateFolder={handleCreateFolder}
+                isLoading={isLoadingFolders}
+                eventId={selectedEventId}
+                className="max-h-[calc(100vh-360px)] overflow-hidden xl:pr-1.5"
+                onOpenStudentManagement={() => setShowStudentManagement(true)}
+                onFolderAction={handleFolderAction}
+                clipboard={{
+                  hasData: Boolean(folderClipboard),
+                  sourceFolderId: folderClipboard?.folderId,
+                  sourceName: folderClipboard?.folderName,
+                }}
+                onPasteToRoot={() => handlePasteFolder(null)}
+                onOpenBatchStudentManagement={() =>
+                  setShowBatchStudentModal(true)
+                }
+                selectedEventName={
+                  eventsList.find((ev) => ev.id === selectedEventId)?.name ??
+                  null
+                }
+              />
+            </div>
+          </aside>
 
-          <ResizableHandle />
-
-          {/* Center Panel: Photo Grid (50% default) */}
-          <ResizablePanel defaultSize={50} minSize={30}>
-            {hasError ? (
-              <div className="flex flex-1 flex-col items-center justify-center bg-red-50 text-red-600">
-                <AlertCircle className="mb-4 h-12 w-12" />
-                <h4 className="mb-2 text-lg font-medium">Error Loading Data</h4>
-                <p className="mb-4 max-w-md text-center text-sm">
-                  {errorMessage}
-                </p>
-                <Button
-                  onClick={() => {
-                    queryClient.invalidateQueries({
-                      queryKey: ['optimized-folders'],
-                    });
-                    queryClient.invalidateQueries({
-                      queryKey: ['optimized-assets'],
-                    });
-                    egressMonitor.resetSession();
-                  }}
-                  variant="outline"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Retry
-                </Button>
-              </div>
-            ) : (
-              <div className="flex h-full flex-col">
-                {/* Context bar: current event and folder */}
-                <div className="relative sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-white px-3 py-2 text-[12px] text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <span className="mr-1">Evento:</span>
-                    <span className="mr-3 font-medium">
-                      {eventsList.find((e) => e.id === selectedEventId)?.name ||
-                        '—'}
-                    </span>
+          <div className="relative flex-1">
+            <div
+              className={cn(
+                'flex h-full min-h-[540px] flex-col rounded-3xl border border-white/25 bg-white/90 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.55)] dark:border-slate-800/60 dark:bg-slate-950/70',
+                inspectorOpen ? 'xl:pr-[320px]' : ''
+              )}
+            >
+              {hasError ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-red-50 px-6 text-red-600 dark:bg-red-500/10">
+                  <AlertCircle className="h-12 w-12" />
+                  <div className="text-center">
+                    <h4 className="mb-1 text-lg font-medium">
+                      Error al cargar datos
+                    </h4>
+                    <p className="max-w-md text-sm text-red-700/90 dark:text-red-200">
+                      {errorMessage}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 overflow-x-auto pr-6">
-                    <span className="mr-1">Jerarquía:</span>
-                    {breadcrumbItems.length > 0 ? (
-                      <div className="flex items-center gap-1">
-                        {breadcrumbItems.map((item, idx) => (
-                          <span
-                            key={item.id}
-                            className="flex items-center gap-1"
-                          >
-                            <button
-                              onClick={() => handleSelectFolder(item.id)}
-                              className="text-blue-600 hover:underline dark:text-blue-400"
-                              title={item.name}
-                            >
-                              {item.name}
-                            </button>
-                            {idx < breadcrumbItems.length - 1 && (
-                              <span className="text-gray-400">/</span>
-                            )}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="font-medium">—</span>
-                    )}
-                  </div>
-                  {/* Mobile fade on overflow */}
-                  <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent md:hidden" />
-                  <div className="ml-auto flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        try {
-                          navigator.clipboard.writeText(breadcrumbPath || '');
-                          toast.success('Ruta copiada');
-                        } catch {}
-                      }}
-                      title="Copiar ruta"
-                      className="h-7 px-2"
-                    >
-                      Copiar ruta
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={goUp}
-                      title="Subir un nivel"
-                      className="h-7 px-2"
-                    >
-                      Subir
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={goToRoot}
-                      title="Ir a la raíz del evento"
-                      className="h-7 px-2"
-                    >
-                      Ir a raíz
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => {
+                      queryClient.invalidateQueries({
+                        queryKey: ['optimized-folders'],
+                      });
+                      queryClient.invalidateQueries({
+                        queryKey: ['optimized-assets'],
+                      });
+                      egressMonitor.resetSession();
+                    }}
+                    variant="outline"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Reintentar
+                  </Button>
                 </div>
-                <PhotoGridPanel
-                  assets={assets}
-                  selectedAssetIds={selectedAssetIds}
-                  onSelectionChange={handleAssetSelection}
-                  onSelectAll={handleSelectAll}
-                  onClearSelection={handleClearSelection}
-                  onCreateAlbum={() => setShowCreateShareModal(true)}
-                  onBulkDelete={handleBulkDelete}
-                  onBulkMove={handleBulkMove}
+              ) : (
+                <div className="flex h-full flex-col">
+                  <div className="relative flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white/90 px-4 py-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-700 dark:text-slate-100">
+                        {eventsList.find((e) => e.id === selectedEventId)?.name ||
+                          'Sin evento'}
+                      </span>
+                      <span className="hidden text-slate-400 xl:inline">•</span>
+                      <span className="text-slate-500 dark:text-slate-300">
+                        {totalAssetsCount} fotos en vista
+                      </span>
+                    </div>
+                    <div className="flex flex-1 items-center gap-2 overflow-x-auto pr-8">
+                      <span className="text-slate-400">Jerarquía:</span>
+                      {breadcrumbItems.length > 0 ? (
+                        <div className="flex items-center gap-1">
+                          {breadcrumbItems.map((item, idx) => (
+                            <span
+                              key={item.id}
+                              className="flex items-center gap-1 text-slate-600 dark:text-slate-200"
+                            >
+                              <button
+                                onClick={() => handleSelectFolder(item.id)}
+                                className="text-blue-600 hover:underline dark:text-blue-400"
+                                title={item.name}
+                              >
+                                {item.name}
+                              </button>
+                              {idx < breadcrumbItems.length - 1 && (
+                                <span className="text-slate-400">/</span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="font-medium text-slate-500">—</span>
+                      )}
+                    </div>
+                    <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent dark:from-slate-950 md:hidden" />
+                    <div className="ml-auto flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          try {
+                            navigator.clipboard.writeText(
+                              breadcrumbPath || ''
+                            );
+                            toast.success('Ruta copiada');
+                          } catch {}
+                        }}
+                        title="Copiar ruta"
+                        className="h-7 px-2 text-xs"
+                      >
+                        Copiar ruta
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={goUp}
+                        title="Subir un nivel"
+                        className="h-7 px-2 text-xs"
+                      >
+                        Subir
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={goToRoot}
+                        title="Ir a la raíz del evento"
+                        className="h-7 px-2 text-xs"
+                      >
+                        Ir a raíz
+                      </Button>
+                    </div>
+                  </div>
+
+                  <PhotoGridPanel
+                    assets={assets}
+                    selectedAssetIds={selectedAssetIds}
+                    onSelectionChange={handleAssetSelection}
+                    onSelectAll={handleSelectAll}
+                    onClearSelection={handleClearSelection}
+                    onCreateAlbum={() => setShowCreateShareModal(true)}
+                    onBulkDelete={handleBulkDelete}
+                    onBulkMove={handleBulkMove}
+                    folders={folders}
+                    currentFolderId={selectedFolderId}
+                    onLoadMore={handleLoadMore}
+                    hasMore={hasNextPage}
+                    isLoading={isLoadingAssets}
+                    isLoadingMore={isFetchingNextPage}
+                    albumTargetInfo={albumTargetInfo}
+                    totalCount={totalAssetsCount}
+                    isLoadingAllPages={isLoadingAllPages}
+                    className="h-full"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div
+              className={cn(
+                'pointer-events-none absolute inset-y-4 right-0 z-30 hidden w-[300px] transition-all duration-200 xl:block',
+                inspectorOpen
+                  ? 'pointer-events-auto translate-x-0 opacity-100'
+                  : 'translate-x-6 opacity-0'
+              )}
+            >
+              <div className="flex h-full flex-col gap-3">
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    onClick={() => setIsInspectorCollapsed(true)}
+                    aria-label="Ocultar inspector"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <InspectorPanel
+                  selectedAssets={selectedAssets}
                   folders={folders}
                   currentFolderId={selectedFolderId}
-                  onLoadMore={handleLoadMore}
-                  hasMore={hasNextPage}
-                  isLoading={isLoadingAssets}
-                  isLoadingMore={isFetchingNextPage}
+                  onBulkMove={handleBulkMove}
+                  onBulkDelete={handleBulkDelete}
+                  onCreateAlbum={handleCreateAlbum}
+                  egressMetrics={egressMetrics}
                   albumTargetInfo={albumTargetInfo}
-                  totalCount={totalAssetsCount}
-                  isLoadingAllPages={isLoadingAllPages}
-                  className="h-full"
+                  className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                />
+              </div>
+            </div>
+
+            {inspectorAvailable && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className={cn(
+                  'absolute bottom-6 right-6 hidden items-center gap-2 rounded-full px-4 shadow-sm transition-all duration-200 xl:flex',
+                  inspectorOpen
+                    ? 'pointer-events-none translate-y-6 opacity-0'
+                    : 'translate-y-0 opacity-100'
+                )}
+                onClick={() => setIsInspectorCollapsed(false)}
+              >
+                <Eye className="h-4 w-4" /> Inspector
+              </Button>
+            )}
+
+            {inspectorAvailable && (
+              <div className="mt-4 xl:hidden">
+                <InspectorPanel
+                  selectedAssets={selectedAssets}
+                  folders={folders}
+                  currentFolderId={selectedFolderId}
+                  onBulkMove={handleBulkMove}
+                  onBulkDelete={handleBulkDelete}
+                  onCreateAlbum={handleCreateAlbum}
+                  egressMetrics={egressMetrics}
+                  albumTargetInfo={albumTargetInfo}
+                  className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                 />
               </div>
             )}
-          </ResizablePanel>
-
-          <ResizableHandle />
-
-          {/* Right Panel: Inspector (25% default) */}
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-            <InspectorPanel
-              selectedAssets={selectedAssets}
-              folders={folders}
-              currentFolderId={selectedFolderId}
-              onBulkMove={handleBulkMove}
-              onBulkDelete={handleBulkDelete}
-              onCreateAlbum={handleCreateAlbum}
-              egressMetrics={egressMetrics}
-              albumTargetInfo={albumTargetInfo}
-              className="h-full"
-            />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       </div>
+    </div>
 
       {/* Enhanced Drag Overlay */}
       <DragOverlay>

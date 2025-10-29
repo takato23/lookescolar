@@ -97,6 +97,7 @@ export function EcommerceFlow({ token, onComplete }: EcommerceFlowProps) {
     getTotalPrice,
     createOrder,
     setToken,
+    setCatalog,
   } = useUnifiedStore();
 
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -108,6 +109,29 @@ export function EcommerceFlow({ token, onComplete }: EcommerceFlowProps) {
   useEffect(() => {
     setToken(token);
   }, [token, setToken]);
+
+  useEffect(() => {
+    setCatalog({
+      packages: mockEcommerceData.packages.map((pkg) => ({
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        basePrice: pkg.basePrice,
+        price: pkg.basePrice,
+        type: 'package',
+        enabled: true,
+        contents: pkg.contents,
+        features: pkg.features,
+      })),
+      additionalCopies: mockEcommerceData.additionalCopies,
+      pricing: {
+        currency: mockEcommerceData.pricing.currency,
+        shippingCost: mockEcommerceData.pricing.shippingCost,
+        freeShippingThreshold: mockEcommerceData.pricing.freeShippingThreshold,
+        taxIncluded: mockEcommerceData.pricing.taxIncluded,
+      },
+    });
+  }, [setCatalog]);
 
   // Track completed steps
   useEffect(() => {

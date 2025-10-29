@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
@@ -9,15 +9,37 @@ import '@/styles/admin-dark-mode-fixes.css';
 import { Toaster } from 'sonner';
 import { ErrorBoundaryWrapper } from '@/components/admin/ErrorBoundary';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Layers, ShieldCheck, Sparkles } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 // Dynamic import of PhotoAdmin with client-only rendering and loader
 const PhotoAdmin = dynamic(() => import('@/components/admin/PhotoAdmin'), {
   ssr: false,
   loading: () => <PhotoSystemLoader />,
 });
+
+// Dynamic import of MobilePhotoGallery
+const MobilePhotoGallery = dynamic<Record<string, never>>(() => import('@/components/admin/mobile/MobilePhotoGallery').then(mod => ({ default: mod.default })), {
+  ssr: false,
+  loading: () => <PhotoSystemLoader />,
+});
+
+// Hook for mobile detection
+function useMobileDetection() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
 
 // Loading component for Suspense
 function PhotoSystemLoader() {
@@ -98,6 +120,8 @@ export default function UnifiedPhotosPage() {
   const router = useRouter();
   const eventId = search?.get('event_id') ?? search?.get('eventId');
   const backHref = eventId ? `/admin/events/${eventId}?from=photos` : null;
+  const isMobile = useMobileDetection();
+  
   // Create a query client per mount to avoid cross-session leakage
   const [queryClient] = useState(
     () =>
@@ -120,21 +144,12 @@ export default function UnifiedPhotosPage() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Global Notifications */}
-      <Toaster position="top-right" />
+      <Toaster position="top-right" richColors />
 
-      <div className="admin-photos layout-modern relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-        >
-          <div className="absolute left-[10%] top-[-10%] h-72 w-72 rounded-full bg-blue-400/20 blur-3xl dark:bg-blue-500/20" />
-          <div className="absolute right-[-8%] top-1/4 h-80 w-80 rounded-full bg-emerald-400/15 blur-3xl dark:bg-emerald-500/15" />
-          <div className="absolute bottom-[-12%] left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-400/10 blur-3xl dark:bg-indigo-500/10" />
-        </div>
-
-        <div className="relative mx-auto flex w-full max-w-[1400px] flex-col gap-6 px-4 pb-16 pt-8 sm:px-6 lg:px-10">
+      <div className="admin-photos relative flex h-full flex-1 flex-col bg-transparent">
+        <div className="relative flex flex-1 flex-col gap-6 px-4 pb-12 pt-8 sm:px-6 lg:px-10 xl:px-16">
           {backHref && (
-            <div className="sticky top-6 z-50 flex items-center justify-between rounded-2xl border border-blue-100/60 bg-white/70 px-5 py-3 text-sm text-blue-700 shadow-lg shadow-blue-500/5 backdrop-blur dark:border-blue-400/30 dark:bg-slate-900/80 dark:text-blue-100">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200/60 bg-white/70 px-5 py-3 text-sm text-slate-700 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.55)] backdrop-blur-lg dark:border-emerald-400/40 dark:bg-slate-900/70 dark:text-emerald-100">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4" />
                 <span className="font-medium">Contexto de evento activo</span>
@@ -142,129 +157,38 @@ export default function UnifiedPhotosPage() {
               <Button
                 size="sm"
                 type="button"
-                variant="outline"
+                variant="modern"
+                modernTone="primary"
                 onClick={() => router.push(backHref)}
+                className="rounded-full px-4"
               >
                 Volver al evento
               </Button>
             </div>
           )}
 
-          <section className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/80 px-8 py-8 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/70 dark:shadow-black/40">
-            <div className="absolute right-0 top-0 h-40 w-40 -translate-y-1/3 translate-x-1/3 rounded-full bg-blue-500/10 blur-2xl dark:bg-blue-500/20" />
-            <div className="relative flex flex-wrap items-start justify-between gap-6">
-              <div className="max-w-xl space-y-4">
-                <Badge
-                  variant="outline"
-                  className="border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-400/50 dark:bg-blue-500/10 dark:text-blue-100"
-                >
-                  Nuevo panel unificado
-                </Badge>
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-                    Organiza todas tus fotos con un flujo más claro y luminoso
-                  </h1>
-                  <p className="text-base text-slate-600 dark:text-slate-300">
-                    Gestiona carpetas, sube imágenes y revisa estados de
-                    procesamiento en un entorno diseñado para enfocarte en el
-                    contenido.
-                  </p>
-                </div>
-                <div className="grid gap-3 text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-3">
-                  <div className="flex items-start gap-2 rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-sm shadow-slate-900/5 dark:border-slate-700/60 dark:bg-slate-900/60 dark:shadow-black/30">
-                    <Sparkles className="mt-0.5 h-4 w-4 text-blue-500" />
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">
-                        Interacciones guiadas
-                      </p>
-                      <p>
-                        Selecciones rápidas, arrastra y suelta y accesos
-                        directos visibles.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-sm shadow-slate-900/5 dark:border-slate-700/60 dark:bg-slate-900/60 dark:shadow-black/30">
-                    <Layers className="mt-0.5 h-4 w-4 text-emerald-500" />
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">
-                        Carpetas inteligentes
-                      </p>
-                      <p>
-                        Explora toda la jerarquía con indicadores visuales más
-                        limpios.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 rounded-2xl border border-slate-200/70 bg-white/80 p-3 shadow-sm shadow-slate-900/5 dark:border-slate-700/60 dark:bg-slate-900/60 dark:shadow-black/30">
-                    <ShieldCheck className="mt-0.5 h-4 w-4 text-indigo-500" />
-                    <div>
-                      <p className="font-medium text-slate-900 dark:text-slate-100">
-                        Integridad garantizada
-                      </p>
-                      <p>
-                        Estados de carga claros y alertas cuando algo requiere
-                        tu atención.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/80 p-4 text-sm text-slate-600 shadow-sm shadow-slate-900/5 backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-200 dark:shadow-black/30">
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  Accesos rápidos
-                </p>
-                <Separator className="bg-slate-200 dark:bg-slate-700" />
-                <Button
-                  size="sm"
-                  type="button"
-                  variant="secondary"
-                  className="justify-start gap-2"
-                  onClick={() => router.push('/admin/photos/debug')}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Modo diagnóstico
-                </Button>
-                <Button
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                  className="justify-start gap-2"
-                  onClick={() => router.push('/admin/photos/redirect')}
-                >
-                  <Layers className="h-4 w-4" />
-                  Ir al panel clásico
-                </Button>
-                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  Estos accesos te ayudarán a revisar migraciones, probar cargas
-                  masivas o volver a la versión anterior si necesitas una
-                  referencia rápida.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Main Photo System - New Architecture */}
-          <section className="relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/80 shadow-2xl shadow-slate-900/10 backdrop-blur dark:border-slate-700/60 dark:bg-slate-900/70 dark:shadow-black/40">
-            <div className="border-b border-slate-200/70 bg-white/70 px-6 py-4 text-sm text-slate-600 dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-300">
-              Visualiza, filtra y organiza sin perder de vista el contexto
-              general. El panel inferior se adapta al tamaño de tu pantalla para
-              mantener el foco en las imágenes.
-            </div>
-            <div className="h-[calc(100vh-280px)] min-h-[640px] overflow-hidden rounded-3xl rounded-t-none border-t border-transparent bg-white/60 dark:bg-slate-950/40">
-              <ErrorBoundaryWrapper
-                level="page"
-                name="PhotoAdmin"
-                fallback={<PhotoSystemError />}
-              >
-                <Suspense fallback={<PhotoSystemLoader />}>
+          <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[32px] border border-white/25 bg-white/75 shadow-[0_32px_90px_-45px_rgba(15,23,42,0.85)] backdrop-blur-xl transition-[box-shadow,transform] duration-300 ease-out dark:border-slate-800/70 dark:bg-slate-950/40">
+            <div className="pointer-events-none absolute inset-0 rounded-[32px] border border-white/10 dark:border-slate-800/50" />
+            <ErrorBoundaryWrapper
+              level="page"
+              name="PhotoAdmin"
+              fallback={<PhotoSystemError />}
+            >
+              <Suspense fallback={<PhotoSystemLoader />}>
+                {isMobile ? (
+                  <MobilePhotoGallery
+                    photos={[]} // TODO: Fetch photos from API
+                    className="flex-1 min-h-[720px]"
+                  />
+                ) : (
                   <PhotoAdmin
-                    className="min-h-[640px] lg:!h-[calc(100vh-320px)]"
+                    className="flex-1 min-h-[720px] lg:min-h-[calc(100vh-220px)]"
                     enableUpload={true}
                     enableBulkOperations={true}
                   />
-                </Suspense>
-              </ErrorBoundaryWrapper>
-            </div>
+                )}
+              </Suspense>
+            </ErrorBoundaryWrapper>
           </section>
         </div>
       </div>
