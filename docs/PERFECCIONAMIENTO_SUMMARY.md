@@ -186,3 +186,4 @@ __tests__/unit/photo-admin/
 **Última actualización**: Enero 2025
 
 
+

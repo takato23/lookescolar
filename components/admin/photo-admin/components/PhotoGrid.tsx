@@ -54,22 +54,22 @@ export function PhotoGrid({
   onSelectionChange,
   onSelectAll,
   onClearSelection,
-  onCreateAlbum,
-  onBulkDelete,
-  onBulkMove,
-  folders = [],
-  currentFolderId = null,
+  onCreateAlbum: _onCreateAlbum,
+  onBulkDelete: _onBulkDelete,
+  onBulkMove: _onBulkMove,
+  folders: _folders = [],
+  currentFolderId: _currentFolderId = null,
   onLoadMore,
   hasMore,
   isLoading,
   isLoadingMore,
   className,
-  albumTargetInfo,
+  albumTargetInfo: _albumTargetInfo,
   totalCount,
   isLoadingAllPages,
 }: PhotoGridProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [density, setDensity] = useState<'comfortable' | 'compact'>(() => {
+  const [density, _setDensity] = useState<'comfortable' | 'compact'>(() => {
     if (typeof window === 'undefined') return 'comfortable';
     const saved = localStorage.getItem('le:photoDensity');
     return saved === 'compact' ? 'compact' : 'comfortable';
@@ -399,4 +399,5 @@ export function PhotoGrid({
     </div>
   );
 }
+
 

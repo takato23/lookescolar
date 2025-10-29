@@ -183,3 +183,4 @@ const {
 - La estructura es **compatible con el código existente**
 - Los componentes pueden ser **usados de forma independiente**
 
+
