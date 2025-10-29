@@ -12,16 +12,22 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
 
 // Dynamic import of PhotoAdmin with client-only rendering and loader
-const PhotoAdmin = dynamic(() => import('@/components/admin/PhotoAdmin'), {
+const PhotoAdmin = dynamic(() => import('../../components/admin/PhotoAdmin'), {
   ssr: false,
   loading: () => <PhotoSystemLoader />,
 });
 
 // Dynamic import of MobilePhotoGallery
-const MobilePhotoGallery = dynamic<Record<string, never>>(() => import('@/components/admin/mobile/MobilePhotoGallery').then(mod => ({ default: mod.default })), {
-  ssr: false,
-  loading: () => <PhotoSystemLoader />,
-});
+const MobilePhotoGallery = dynamic<Record<string, never>>(
+  () =>
+    import('../../components/admin/mobile/MobilePhotoGallery').then((mod) => ({
+      default: mod.default,
+    })),
+  {
+    ssr: false,
+    loading: () => <PhotoSystemLoader />,
+  }
+);
 
 // Hook for mobile detection
 function useMobileDetection() {
@@ -29,12 +35,15 @@ function useMobileDetection() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+      setIsMobile(
+        window.innerWidth < 768 ||
+          /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      );
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -121,7 +130,7 @@ export default function UnifiedPhotosPage() {
   const eventId = search?.get('event_id') ?? search?.get('eventId');
   const backHref = eventId ? `/admin/events/${eventId}?from=photos` : null;
   const isMobile = useMobileDetection();
-  
+
   // Create a query client per mount to avoid cross-session leakage
   const [queryClient] = useState(
     () =>
@@ -178,11 +187,11 @@ export default function UnifiedPhotosPage() {
                 {isMobile ? (
                   <MobilePhotoGallery
                     photos={[]} // TODO: Fetch photos from API
-                    className="flex-1 min-h-[720px]"
+                    className="min-h-[720px] flex-1"
                   />
                 ) : (
                   <PhotoAdmin
-                    className="flex-1 min-h-[720px] lg:min-h-[calc(100vh-220px)]"
+                    className="min-h-[720px] flex-1 lg:min-h-[calc(100vh-220px)]"
                     enableUpload={true}
                     enableBulkOperations={true}
                   />
