@@ -4,13 +4,15 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useParams } from 'next/navigation';
 
 // Lazy loading de componentes para bundle splitting
-const PixiesetFlowTemplate = lazy(() => import('@/components/store/templates/PixiesetFlowTemplate').then(module => ({ default: module.PixiesetFlowTemplate })));
+const PixiesetFlowTemplate = lazy(
+  () => import('@/components/store/templates/PixiesetFlowTemplate')
+);
 
 // Componente de loading optimizado para Suspense
 const StoreLoadingFallback = () => (
-  <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
+  <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
     <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+      <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
       <p className="text-muted-foreground">Cargando tienda...</p>
     </div>
   </div>
@@ -40,7 +42,9 @@ interface CatalogForStore {
   };
 }
 
-function buildCatalogFromSettings(settings: StoreSettings | null): CatalogForStore {
+function buildCatalogFromSettings(
+  settings: StoreSettings | null
+): CatalogForStore {
   if (!settings) {
     return {
       packages: [],
@@ -75,7 +79,10 @@ function buildCatalogFromSettings(settings: StoreSettings | null): CatalogForSto
         contents: (product.features as ProductOption['contents']) ?? {},
         features: product.features ?? {},
       } as ProductOption);
-    } else if (normalizedType === 'additional-copy' || normalizedType === 'additional_copy') {
+    } else if (
+      normalizedType === 'additional-copy' ||
+      normalizedType === 'additional_copy'
+    ) {
       additionalCopies.push({
         id,
         name: product.name ?? id,
@@ -112,7 +119,9 @@ export default function UnifiedStorePage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [storeData, setStoreData] = useState<UnifiedStoreData['rawStoreResponse'] | null>(null);
+  const [storeData, setStoreData] = useState<
+    UnifiedStoreData['rawStoreResponse'] | null
+  >(null);
   const [photos, setPhotos] = useState<UnifiedStorePhoto[]>([]);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [_catalog, _setCatalog] = useState<NormalizedCatalog | null>(null);
@@ -120,7 +129,9 @@ export default function UnifiedStorePage() {
   // Estado para paginación
   const [photosPerPage] = useState(20); // Carga inicial reducida
   const [totalPhotos, setTotalPhotos] = useState(0);
-  const [pagination, setPagination] = useState<UnifiedStorePagination | null>(null);
+  const [pagination, setPagination] = useState<UnifiedStorePagination | null>(
+    null
+  );
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
@@ -146,8 +157,14 @@ export default function UnifiedStorePage() {
           });
 
         setPagination(pageInfo);
-        setTotalPhotos((prev) => pageInfo?.total ?? (append ? prev + mappedPhotos.length : mappedPhotos.length));
-        setPhotos((prev) => (append ? [...prev, ...mappedPhotos] : mappedPhotos));
+        setTotalPhotos(
+          (prev) =>
+            pageInfo?.total ??
+            (append ? prev + mappedPhotos.length : mappedPhotos.length)
+        );
+        setPhotos((prev) =>
+          append ? [...prev, ...mappedPhotos] : mappedPhotos
+        );
       } catch (error) {
         console.error('[StoreUnified] Error al cargar fotos:', error);
         setError('Error al cargar las fotos. Intente recargar la página.');
@@ -193,7 +210,8 @@ export default function UnifiedStorePage() {
           ...result.settings.texts,
           hero_title: heroTitle,
           hero_subtitle:
-            result.settings.texts.hero_subtitle || 'Galería Fotográfica Escolar',
+            result.settings.texts.hero_subtitle ||
+            'Galería Fotográfica Escolar',
         },
       };
 
@@ -216,9 +234,9 @@ export default function UnifiedStorePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
           <p className="text-muted-foreground">Cargando galería...</p>
         </div>
       </div>
@@ -227,16 +245,16 @@ export default function UnifiedStorePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="absolute top-4 right-4">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+        <div className="mx-auto max-w-md p-6 text-center">
+          <div className="absolute right-4 top-4">
             <ThemeToggleSimple />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-4">Error</h1>
-          <p className="text-destructive mb-6">{error}</p>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">Error</h1>
+          <p className="mb-6 text-destructive">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
+            className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
           >
             Reintentar
           </button>
@@ -247,13 +265,17 @@ export default function UnifiedStorePage() {
 
   if (!settings || photos.length === 0) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center transition-colors duration-300">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="absolute top-4 right-4">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+        <div className="mx-auto max-w-md p-6 text-center">
+          <div className="absolute right-4 top-4">
             <ThemeToggleSimple />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-4">Galería no disponible</h1>
-          <p className="text-muted-foreground">No se encontraron fotos en esta galería.</p>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">
+            Galería no disponible
+          </h1>
+          <p className="text-muted-foreground">
+            No se encontraron fotos en esta galería.
+          </p>
         </div>
       </div>
     );
@@ -263,7 +285,7 @@ export default function UnifiedStorePage() {
     <StoreErrorBoundary>
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
         {/* Theme Toggle - Fixed position for all states */}
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed right-4 top-4 z-50">
           <ThemeToggleSimple />
         </div>
 
