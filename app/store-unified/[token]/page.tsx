@@ -115,7 +115,7 @@ export default function UnifiedStorePage() {
   const [storeData, setStoreData] = useState<UnifiedStoreData['rawStoreResponse'] | null>(null);
   const [photos, setPhotos] = useState<UnifiedStorePhoto[]>([]);
   const [settings, setSettings] = useState<StoreSettings | null>(null);
-  const [catalog, setCatalog] = useState<NormalizedCatalog | null>(null);
+  const [_catalog, _setCatalog] = useState<NormalizedCatalog | null>(null);
 
   // Estado para paginación
   const [photosPerPage] = useState(20); // Carga inicial reducida
@@ -174,7 +174,7 @@ export default function UnifiedStorePage() {
         includeAssets: true,
       });
 
-      const _catalog = result.catalog;
+      const [_catalogValue] = [result.catalog];
       setStoreData(result.rawStoreResponse);
       setPhotos(result.photos);
       setPagination(result.pagination);

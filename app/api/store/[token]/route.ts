@@ -63,7 +63,7 @@ export async function GET(
     const supabase = await createServerSupabaseServiceClient();
 
     // Primero intentar buscar en share_tokens (tokens de 64 caracteres)
-    const shareTokenData = null;
+    const _shareTokenData = null;
     let storeData = null;
     let selectedPhotoIds: string[] = [];
     
