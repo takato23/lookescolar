@@ -4,18 +4,43 @@ import clsx from 'clsx';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FormEvent, useEffect, useState } from 'react';
-import { BellRing, DownloadCloud, HeartHandshake, MessageSquareHeart, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  BellRing,
+  DownloadCloud,
+  HeartHandshake,
+  MessageSquareHeart,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { HowItWorksSection } from '@/components/landing/how-it-works-section';
 import { PricingSection } from '@/components/landing/pricing-section';
 import { TestimonialsSection } from '@/components/landing/testimonials-section';
 import { FAQSection } from '@/components/landing/faq-section';
 import { FooterCTA } from '@/components/landing/footer-cta';
-import { ProductGrid } from '@/components/ui/product-grid';
+import dynamic from 'next/dynamic';
 import { FamilyAccessCard } from '@/components/ui/family-access-card';
 import { AdminLoginModal } from '@/components/ui/admin-login-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
+
+// Dynamic import to avoid Vercel issues
+const ProductGrid = dynamic(
+  () =>
+    import('@/components/ui/product-grid').then((mod) => ({
+      default: mod.ProductGrid,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="h-64 animate-pulse rounded bg-gray-200" />
+        <div className="h-64 animate-pulse rounded bg-gray-200" />
+        <div className="h-64 animate-pulse rounded bg-gray-200" />
+      </div>
+    ),
+  }
+);
 
 const NAV_ITEMS = [
   { label: 'Ingresar', href: '#ingresar' },
@@ -62,7 +87,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
-      <LandingNavigation isScrolled={isScrolled} onAdminLogin={handleAdminLogin} />
+      <LandingNavigation
+        isScrolled={isScrolled}
+        onAdminLogin={handleAdminLogin}
+      />
 
       <main className="pt-24">
         <HeroAccessSection />
@@ -123,7 +151,11 @@ function LandingNavigation({
               href="/"
               className="flex items-center gap-3 text-slate-900 transition-opacity hover:opacity-90"
             >
-              <LookEscolarLogo size="sm" variant="gradient" className="drop-shadow-sm" />
+              <LookEscolarLogo
+                size="sm"
+                variant="gradient"
+                className="drop-shadow-sm"
+              />
               <span className="chromatic-text font-display text-xs font-semibold uppercase tracking-[0.32em]">
                 LookEscolar
               </span>
@@ -219,7 +251,7 @@ function HeroAccessSection() {
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_60%)]" />
       <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-[#FF80D0]/35 blur-[150px]" />
-      <div className="pointer-events-none absolute bottom-[-120px] left-[-40px] h-96 w-96 rounded-full bg-[#4B64FF]/28 blur-[180px]" />
+      <div className="bg-[#4B64FF]/28 pointer-events-none absolute bottom-[-120px] left-[-40px] h-96 w-96 rounded-full blur-[180px]" />
       <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
           <div
@@ -233,13 +265,12 @@ function HeroAccessSection() {
             <span className="chromatic-text block text-balance">
               Ingresá el código de tu escuela
             </span>
-            <span className="mt-2 block text-white/90">
-              y reviví el evento
-            </span>
+            <span className="mt-2 block text-white/90">y reviví el evento</span>
           </h1>
           <p className="text-lg leading-relaxed text-white/90 sm:text-xl">
-            Cada familia cuenta con un código único. Usalo para entrar a tu galería privada,
-            elegir tus fotos favoritas y descargar recuerdos al instante.
+            Cada familia cuenta con un código único. Usalo para entrar a tu
+            galería privada, elegir tus fotos favoritas y descargar recuerdos al
+            instante.
           </p>
           <dl className="grid gap-4 text-sm text-white/90 sm:grid-cols-3">
             {heroHighlights.map((item) => (
@@ -259,11 +290,11 @@ function HeroAccessSection() {
         </div>
 
         <div
-          className="mx-auto w-full max-w-md liquid-glass-intense rounded-[32px] p-5 shadow-[0_48px_140px_-60px_rgba(9,16,40,0.75)]"
+          className="liquid-glass-intense mx-auto w-full max-w-md rounded-[32px] p-5 shadow-[0_48px_140px_-60px_rgba(9,16,40,0.75)]"
           data-liquid-tone="accent"
         >
           <div
-            className="relative overflow-hidden rounded-[28px] liquid-glass px-6 py-6 shadow-[0_36px_110px_-48px_rgba(12,20,44,0.6)]"
+            className="liquid-glass relative overflow-hidden rounded-[28px] px-6 py-6 shadow-[0_36px_110px_-48px_rgba(12,20,44,0.6)]"
             data-liquid-tone="muted"
           >
             <FamilyAccessCard className="liquid-glass bg-white/70 text-slate-900 shadow-none" />
@@ -275,7 +306,7 @@ function HeroAccessSection() {
               <div
                 key={preview.src}
                 className={clsx(
-                  'absolute h-40 w-40 overflow-hidden rounded-3xl liquid-glass-intense border-0 shadow-[0_36px_80px_-40px_rgba(12,20,44,0.6)]',
+                  'liquid-glass-intense absolute h-40 w-40 overflow-hidden rounded-3xl border-0 shadow-[0_36px_80px_-40px_rgba(12,20,44,0.6)]',
                   preview.position,
                   preview.rotation,
                   preview.zIndex
@@ -320,12 +351,13 @@ function ProductShowcaseSection() {
           >
             Ecosistema completo
           </span>
-          <h2 className="font-display mt-6 text-4xl font-semibold text-[#101428] lg:text-6xl">
+          <h2 className="mt-6 font-display text-4xl font-semibold text-[#101428] lg:text-6xl">
             Todo lo que necesitás para compartir recuerdos
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-lg leading-relaxed text-slate-700">
-            LookEscolar integra herramientas para capturar, organizar y distribuir fotos
-            escolares con un lenguaje visual coherente para familias.
+            LookEscolar integra herramientas para capturar, organizar y
+            distribuir fotos escolares con un lenguaje visual coherente para
+            familias.
           </p>
         </div>
 
@@ -374,8 +406,8 @@ function FamiliesHighlightsSection() {
             Diseñado para que las familias disfruten el proceso
           </h2>
           <p className="mt-4 text-lg text-slate-700">
-            Cada interacción está pensada para que el acceso sea simple, seguro y cálido desde el
-            primer ingreso.
+            Cada interacción está pensada para que el acceso sea simple, seguro
+            y cálido desde el primer ingreso.
           </p>
         </div>
 
@@ -386,7 +418,9 @@ function FamiliesHighlightsSection() {
               className="rounded-3xl border border-[#E3E8FF] bg-white/90 p-8 shadow-[0_25px_70px_-45px_rgba(16,24,40,0.4)] backdrop-blur-sm transition-all hover:-translate-y-1.5 hover:border-[#CBD3FF] hover:shadow-[0_35px_90px_-40px_rgba(16,24,40,0.45)]"
             >
               <item.icon className="mb-4 h-6 w-6 text-[#4B64FF]" />
-              <h3 className="mb-3 text-xl font-semibold text-[#101428]">{item.title}</h3>
+              <h3 className="mb-3 text-xl font-semibold text-[#101428]">
+                {item.title}
+              </h3>
               <p className="text-slate-700">{item.description}</p>
             </div>
           ))}
@@ -409,16 +443,16 @@ function NewsletterSection({
     <section id="newsletter" className="relative overflow-hidden px-6 py-28">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
       <div className="pointer-events-none absolute left-12 top-10 h-64 w-64 rounded-full bg-emerald-400/20 blur-[140px]" />
-      <div className="pointer-events-none absolute right-16 bottom-[-80px] h-72 w-72 rounded-full bg-sky-500/30 blur-[150px]" />
+      <div className="pointer-events-none absolute bottom-[-80px] right-16 h-72 w-72 rounded-full bg-sky-500/30 blur-[150px]" />
 
-      <div className="relative mx-auto max-w-4xl overflow-hidden rounded-[36px] border border-white/15 bg-white/8 p-12 text-white shadow-[0_50px_120px_-45px_rgba(8,47,73,0.8)] backdrop-blur-xl">
+      <div className="bg-white/8 relative mx-auto max-w-4xl overflow-hidden rounded-[36px] border border-white/15 p-12 text-white shadow-[0_50px_120px_-45px_rgba(8,47,73,0.8)] backdrop-blur-xl">
         <div className="mb-8 text-center">
-          <h2 className="font-display mb-4 text-3xl font-semibold lg:text-4xl">
+          <h2 className="mb-4 font-display text-3xl font-semibold lg:text-4xl">
             Mantente al día con <span className="text-white/80">novedades</span>
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-white/80">
-            Historias de familias, nuevas funciones y guías prácticas para aprovechar LookEscolar
-            al máximo.
+            Historias de familias, nuevas funciones y guías prácticas para
+            aprovechar LookEscolar al máximo.
           </p>
         </div>
 
@@ -459,7 +493,8 @@ function LandingFooter() {
         </div>
         <div className="space-y-2">
           <div>
-            © {new Date().getFullYear()} LookEscolar. Todos los derechos reservados.
+            © {new Date().getFullYear()} LookEscolar. Todos los derechos
+            reservados.
           </div>
           <div className="flex justify-center gap-4 text-xs uppercase tracking-[0.25em] text-slate-400 md:justify-end">
             <a href="#ingresar" className="hover:text-slate-600">

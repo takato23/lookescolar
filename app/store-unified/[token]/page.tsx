@@ -4,8 +4,10 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useParams } from 'next/navigation';
 
 // Lazy loading de componentes para bundle splitting
-const PixiesetFlowTemplate = lazy(
-  () => import('@/components/store/templates/PixiesetFlowTemplate')
+// Use direct import + dynamic to avoid Vercel alias resolution issues
+import PixiesetFlowTemplateComponent from '@/components/store/templates/PixiesetFlowTemplate';
+const PixiesetFlowTemplate = lazy(() =>
+  Promise.resolve({ default: PixiesetFlowTemplateComponent })
 );
 
 // Componente de loading optimizado para Suspense
