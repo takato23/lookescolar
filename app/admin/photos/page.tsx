@@ -11,18 +11,22 @@ import { ErrorBoundaryWrapper } from '@/components/admin/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
 
-// Dynamic import of PhotoAdmin with client-only rendering and loader
-const PhotoAdmin = dynamic(() => import('@/components/admin/PhotoAdmin'), {
-  ssr: false,
-  loading: () => <PhotoSystemLoader />,
-});
+// Use direct imports instead of dynamic to avoid Vercel alias resolution issues
+// These will still be code-split by Next.js automatically
+import PhotoAdminComponent from '@/components/admin/PhotoAdmin';
+import MobilePhotoGalleryComponent from '@/components/admin/mobile/MobilePhotoGallery';
 
-// Dynamic import of MobilePhotoGallery
-const MobilePhotoGallery = dynamic<Record<string, never>>(
-  () =>
-    import('@/components/admin/mobile/MobilePhotoGallery').then((mod) => ({
-      default: mod.default,
-    })),
+// Client-only wrapper components
+const PhotoAdmin = dynamic(
+  () => Promise.resolve({ default: PhotoAdminComponent }),
+  {
+    ssr: false,
+    loading: () => <PhotoSystemLoader />,
+  }
+);
+
+const MobilePhotoGallery = dynamic(
+  () => Promise.resolve({ default: MobilePhotoGalleryComponent }),
   {
     ssr: false,
     loading: () => <PhotoSystemLoader />,
