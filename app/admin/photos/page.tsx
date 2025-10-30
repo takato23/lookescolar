@@ -3,7 +3,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import dynamic from 'next/dynamic';
 import '@/styles/admin-photos.css';
 import '@/styles/admin-dark-mode-fixes.css';
 import { Toaster } from 'sonner';
@@ -11,27 +10,10 @@ import { ErrorBoundaryWrapper } from '@/components/admin/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck } from 'lucide-react';
 
-// Use direct imports instead of dynamic to avoid Vercel alias resolution issues
-// These will still be code-split by Next.js automatically
-import PhotoAdminComponent from '@/components/admin/PhotoAdmin';
-import MobilePhotoGalleryComponent from '@/components/admin/mobile/MobilePhotoGallery';
-
-// Client-only wrapper components
-const PhotoAdmin = dynamic(
-  () => Promise.resolve({ default: PhotoAdminComponent }),
-  {
-    ssr: false,
-    loading: () => <PhotoSystemLoader />,
-  }
-);
-
-const MobilePhotoGallery = dynamic(
-  () => Promise.resolve({ default: MobilePhotoGalleryComponent }),
-  {
-    ssr: false,
-    loading: () => <PhotoSystemLoader />,
-  }
-);
+// Direct imports - Next.js handles code splitting automatically
+// SSR is disabled via 'use client' directive at the top
+import PhotoAdmin from '@/components/admin/PhotoAdmin';
+import MobilePhotoGallery from '@/components/admin/mobile/MobilePhotoGallery';
 
 // Hook for mobile detection
 function useMobileDetection() {
