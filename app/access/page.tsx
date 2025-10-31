@@ -2,15 +2,15 @@ import { FamilyAccessCard } from '@/components/ui/family-access-card';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function AccessPage({
-  searchParams,
-}: {
-  searchParams?: Promise<SearchParams> | SearchParams;
-}) {
+export default async function AccessPage(props: any) {
+  const maybePromise = props?.searchParams as
+    | Promise<SearchParams>
+    | SearchParams
+    | undefined;
   const resolvedParams: SearchParams =
-    searchParams && typeof (searchParams as any).then === 'function'
-      ? await (searchParams as Promise<SearchParams>)
-      : ((searchParams as SearchParams) ?? {});
+    maybePromise && typeof (maybePromise as any).then === 'function'
+      ? await (maybePromise as Promise<SearchParams>)
+      : ((maybePromise as SearchParams) ?? {});
   const aliasParam = resolvedParams.alias;
   const tokenParam = resolvedParams.token;
 
