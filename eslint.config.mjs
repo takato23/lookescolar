@@ -1,10 +1,9 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
-import prettierPlugin from 'eslint-plugin-prettier';
 import nextPlugin from '@next/eslint-plugin-next';
-import prettierConfig from 'eslint-config-prettier';
 
+// Nota: Evitamos depender de plugins opcionales (prettier) durante builds en CI/Vercel
 export default [
   { files: ['**/*.{js,mjs,cjs,ts,tsx}'] },
   {
@@ -15,18 +14,16 @@ export default [
   },
   { languageOptions: { globals: { browser: true, es6: true, node: true } } },
   js.configs.recommended,
-  // Note: keeping minimal config to avoid CI noise
-  prettierConfig,
+  // Config mínima para evitar ruido en CI (sin eslint-config-prettier)
   {
     plugins: {
       '@typescript-eslint': tseslint,
-      prettier: prettierPlugin,
       '@next/next': nextPlugin,
     },
   },
   {
     rules: {
-      'prettier/prettier': 'warn', // Changed from error to warn
+      // Reglas básicas (sin integrar prettier como plugin)
       'no-console': 'warn',
       // Rely on @typescript-eslint versions instead
       'no-undef': 'off',

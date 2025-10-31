@@ -1,11 +1,16 @@
 import { FamilyAccessCard } from '@/components/ui/family-access-card';
 
-interface AccessPageProps {
-  searchParams?: Record<string, string | string[] | undefined>;
-}
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function AccessPage({ searchParams }: AccessPageProps) {
-  const resolvedParams = searchParams ?? {};
+export default async function AccessPage({
+  searchParams,
+}: {
+  searchParams?: Promise<SearchParams> | SearchParams;
+}) {
+  const resolvedParams: SearchParams =
+    searchParams && typeof (searchParams as any).then === 'function'
+      ? await (searchParams as Promise<SearchParams>)
+      : ((searchParams as SearchParams) ?? {});
   const aliasParam = resolvedParams.alias;
   const tokenParam = resolvedParams.token;
 
