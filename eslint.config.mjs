@@ -1,7 +1,7 @@
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 
-// Minimal ESLint config for Vercel builds - all rules set to 'off' or 'warn' only
+// Minimal ESLint config for Vercel builds - all rules set to 'off'
 // TypeScript errors are handled by tsc, not ESLint during build
 export default [
   {
@@ -17,15 +17,15 @@ export default [
     plugins: {
       '@typescript-eslint': tseslint,
     },
+    // Flat config format for linter options
+    linterOptions: {
+      reportUnusedDisableDirectives: false,
+    },
     rules: {
       // Disable all strict rules for build - development should use IDE linting
       'no-console': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      // Disable complaint about unused eslint-disable comments
-      'no-unused-disable-comments': 'off',
     },
-    // Completely ignore reports about unused eslint-disable directives
-    reportUnusedDisableDirectives: false,
   },
 ];
