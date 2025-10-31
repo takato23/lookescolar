@@ -5,9 +5,8 @@ import { useParams } from 'next/navigation';
 
 // Lazy loading de componentes para bundle splitting
 // Use direct import + dynamic to avoid Vercel alias resolution issues
-import PixiesetFlowTemplateComponent from '@/components/store/templates/PixiesetFlowTemplate';
-const PixiesetFlowTemplate = lazy(() =>
-  Promise.resolve({ default: PixiesetFlowTemplateComponent })
+const PixiesetFlowTemplate = lazy(
+  () => import('@/components/store/templates/PixiesetFlowTemplate')
 );
 
 // Componente de loading optimizado para Suspense
@@ -66,18 +65,19 @@ function buildCatalogFromSettings(
   Object.entries(settings.products ?? {}).forEach(([id, product]) => {
     if (!product || product.enabled === false) return;
     const normalizedType = (product.type ?? 'package').toLowerCase();
+    const productAny = product as any; // Cast to access additional properties
 
     if (normalizedType === 'package') {
       packages.push({
         id,
         name: product.name ?? id,
         description: product.description ?? '',
-        basePrice: product.basePrice ?? product.price ?? 0,
-        price: product.price ?? product.basePrice ?? 0,
+        basePrice: productAny.basePrice ?? product.price ?? 0,
+        price: product.price ?? productAny.basePrice ?? 0,
         type: 'package',
         enabled: true,
-        highlight: Boolean((product as any).highlight),
-        order: (product as any).order,
+        highlight: Boolean(productAny.highlight),
+        order: productAny.order,
         contents: (product.features as ProductOption['contents']) ?? {},
         features: product.features ?? {},
       } as ProductOption);
@@ -89,12 +89,12 @@ function buildCatalogFromSettings(
         id,
         name: product.name ?? id,
         size:
-          ((product as any).size as string | undefined) ??
+          (productAny.size as string | undefined) ??
           (product.features?.size as string | undefined) ??
           '',
         price: product.price ?? 0,
-        isSet: Boolean(product.setQuantity && product.setQuantity > 1),
-        setQuantity: product.setQuantity,
+        isSet: Boolean(productAny.setQuantity && productAny.setQuantity > 1),
+        setQuantity: productAny.setQuantity,
         description: product.description,
       });
     }
@@ -202,23 +202,41 @@ export default function UnifiedStorePage() {
       const heroTitle =
         result.rawStoreResponse?.store?.name ||
         result.event?.name ||
-        result.settings.texts.hero_title ||
+        result.settings.texts?.hero_title ||
         'Galería Fotográfica';
 
-      const finalSettings: StoreSettings = {
+      // Convert SafeStoreSettings to StoreSettings
+      // We'll use a type assertion since SafeStoreSettings is compatible
+      const finalSettings = {
         ...result.settings,
-        template: 'pixieset',
+        template: 'pixieset' as const,
         texts: {
-          ...result.settings.texts,
           hero_title: heroTitle,
           hero_subtitle:
-            result.settings.texts.hero_subtitle ||
+            result.settings.texts?.hero_subtitle ||
             'Galería Fotográfica Escolar',
+          footer_text: result.settings.texts?.footer_text ?? '',
+          contact_email: result.settings.texts?.contact_email ?? '',
+          contact_phone: result.settings.texts?.contact_phone ?? '',
+          terms_url: result.settings.texts?.terms_url ?? '',
+          privacy_url: result.settings.texts?.privacy_url ?? '',
         },
-      };
+        colors: result.settings.colors ?? {
+          primary: '#1f2937',
+          secondary: '#6b7280',
+          accent: '#3b82f6',
+          background: '#f9fafb',
+          surface: '#ffffff',
+          text: '#111827',
+          text_secondary: '#6b7280',
+        },
+        payment_methods: result.settings.payment_methods ?? {},
+        logo_url: result.settings.logo_url ?? '',
+        banner_url: result.settings.banner_url ?? '',
+      } as StoreSettings;
 
       setSettings(finalSettings);
-      setCatalogInStore(buildCatalogFromSettings(result.settings));
+      setCatalogInStore(buildCatalogFromSettings(finalSettings));
       setEventInfoInStore({
         name: heroTitle,
         schoolName: result.rawStoreResponse?.event?.school_name ?? '',
@@ -294,7 +312,16 @@ export default function UnifiedStorePage() {
         <Suspense fallback={<StoreLoadingFallback />}>
           <PixiesetFlowTemplate
             settings={settings}
-            photos={photos}
+            photos={
+              photos.map((photo) => ({
+                id: photo.id,
+                url: photo.url,
+                preview_url: photo.preview_url ?? photo.url,
+                alt: photo.alt,
+                download_url: photo.download_url,
+                type: photo.type ?? undefined,
+              })) as any
+            }
             token={token}
             subject={storeData?.subject}
             totalPhotos={totalPhotos}

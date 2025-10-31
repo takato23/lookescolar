@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// import { AdvancedAnalyticsDashboard } from '@/components/admin/AdvancedAnalyticsDashboard';
+import { AdvancedAnalyticsDashboard } from '@/components/admin/AdvancedAnalyticsDashboard';
 import { ArrowLeft, Home, ChevronRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
