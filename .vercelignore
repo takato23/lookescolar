@@ -123,14 +123,15 @@ scripts/
 !scripts/deploy.sh
 
 # Additional large directories
-components/admin/mobile/
-components/gallery/
-components/store/
-components/ui/brutalist-typography.tsx
-components/ui/product-grid.tsx
-components/admin/PhotoAdmin.tsx
-lib/qr/decoder.ts
-hooks/useABTestTracking.ts
+# (Keep critical application code. Only ignore truly optional assets.)
+# components/admin/mobile/
+# components/gallery/
+# components/store/
+# components/ui/brutalist-typography.tsx
+# components/ui/product-grid.tsx
+# components/admin/PhotoAdmin.tsx
+# lib/qr/decoder.ts
+# hooks/useABTestTracking.ts
 
 # Development dependencies and cache
 .npm-cache/

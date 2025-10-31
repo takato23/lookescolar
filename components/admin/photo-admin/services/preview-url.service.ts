@@ -43,6 +43,3 @@ export const getPreviewUrl = (
 
   return null;
 };
-
-
-

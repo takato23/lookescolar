@@ -22,14 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Eye,
-  Copy,
-  Star,
-  Download,
-  Trash2,
-  Activity,
-} from 'lucide-react';
+import { Eye, Copy, Star, Download, Trash2, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import type { OptimizedAsset, OptimizedFolder } from '../../photo-admin';
 import { SafeImage, getPreviewUrl } from '../../photo-admin';
@@ -448,5 +441,3 @@ export function InspectorPanel({
     </div>
   );
 }
-
-

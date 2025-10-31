@@ -29,8 +29,8 @@ describe('getPreviewUrl', () => {
 
   it('should handle various image formats', () => {
     const formats = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
-    
-    formats.forEach(format => {
+
+    formats.forEach((format) => {
       const result = getPreviewUrl(`previews/test.${format}`, null);
       expect(result).toBe(`/admin/previews/test.${format}`);
     });
@@ -39,8 +39,14 @@ describe('getPreviewUrl', () => {
   it('should normalize paths correctly', () => {
     const testCases = [
       { input: 'previews/photo.jpg', expected: '/admin/previews/photo.jpg' },
-      { input: 'photos/previews/photo.jpg', expected: '/admin/previews/photo.jpg' },
-      { input: 'uploads/previews/photo.jpg', expected: '/admin/previews/photo.jpg' },
+      {
+        input: 'photos/previews/photo.jpg',
+        expected: '/admin/previews/photo.jpg',
+      },
+      {
+        input: 'uploads/previews/photo.jpg',
+        expected: '/admin/previews/photo.jpg',
+      },
     ];
 
     testCases.forEach(({ input, expected }) => {
@@ -54,6 +60,3 @@ describe('getPreviewUrl', () => {
     expect(getPreviewUrl('', '')).toBeNull();
   });
 });
-
-
-

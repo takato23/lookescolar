@@ -15,7 +15,9 @@ interface SelectionState {
 export function usePhotoSelection() {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
+    null
+  );
 
   const toggleSelection = useCallback((photoId: string, index?: number) => {
     setSelectedPhotos((prev) => {
@@ -59,21 +61,24 @@ export function usePhotoSelection() {
     }
   }, [isSelectionMode, clearSelection]);
 
-  const selectRange = useCallback((startIndex: number, endIndex: number, photos: { id: string }[]) => {
-    const start = Math.min(startIndex, endIndex);
-    const end = Math.max(startIndex, endIndex);
-    
-    setSelectedPhotos((prev) => {
-      const newSet = new Set(prev);
-      for (let i = start; i <= end; i++) {
-        if (photos[i]) {
-          newSet.add(photos[i].id);
+  const selectRange = useCallback(
+    (startIndex: number, endIndex: number, photos: { id: string }[]) => {
+      const start = Math.min(startIndex, endIndex);
+      const end = Math.max(startIndex, endIndex);
+
+      setSelectedPhotos((prev) => {
+        const newSet = new Set(prev);
+        for (let i = start; i <= end; i++) {
+          if (photos[i]) {
+            newSet.add(photos[i].id);
+          }
         }
-      }
-      return newSet;
-    });
-    setLastSelectedIndex(end);
-  }, []);
+        return newSet;
+      });
+      setLastSelectedIndex(end);
+    },
+    []
+  );
 
   const selectionState: SelectionState = {
     selectedPhotos,
@@ -93,6 +98,3 @@ export function usePhotoSelection() {
     setSelectedPhotos,
   };
 }
-
-
-

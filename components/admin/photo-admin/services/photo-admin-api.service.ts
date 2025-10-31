@@ -317,7 +317,10 @@ export const photoAdminApi = {
       };
     },
 
-    move: async (assetIds: string[], targetFolderId: string): Promise<unknown> => {
+    move: async (
+      assetIds: string[],
+      targetFolderId: string
+    ): Promise<unknown> => {
       const response = await fetch(createApiUrl('/api/admin/assets/bulk'), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -373,6 +376,3 @@ export const photoAdminApi = {
     },
   },
 };
-
-
-
