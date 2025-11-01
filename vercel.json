@@ -1,7 +1,12 @@
 {
-  "buildCommand": "next build",
-  "installCommand": "npm install --ignore-scripts",
+  "buildCommand": "SKIP_ENV_VALIDATION=1 next build",
+  "installCommand": "npm install",
   "framework": "nextjs",
+  "build": {
+    "env": {
+      "HUSKY": "0"
+    }
+  },
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
