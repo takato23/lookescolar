@@ -21,7 +21,7 @@
     "cleanup:watermarks": "npx tsx scripts/cleanup-watermarks.ts",
     "dev:mcp": "cross-env NODE_OPTIONS=--conditions=react-server tsx --tsconfig mcp/tsconfig.json mcp/server/index.ts",
     "build:mcp": "tsc -p mcp/tsconfig.json",
-    "prepare": "husky"
+    "prepare": "node -e \"if(!process.env.CI)try{require('child_process').execSync('husky',{stdio:'inherit'})}catch(e){}\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
