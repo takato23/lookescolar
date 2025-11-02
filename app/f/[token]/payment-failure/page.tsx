@@ -3,22 +3,23 @@ import { XCircle, RefreshCw, Home, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     order?: string;
     error?: string;
-  };
+  }>;
 }
 
-export default function PaymentFailurePage({
+export default async function PaymentFailurePage({
   params,
   searchParams,
 }: PageProps) {
-  const { token } = params;
-  const orderId = searchParams.order;
-  const errorMessage = searchParams.error;
+  const { token } = await params;
+  const resolvedSearchParams = await searchParams;
+  const orderId = resolvedSearchParams.order;
+  const errorMessage = resolvedSearchParams.error;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-red-50 to-white p-4">

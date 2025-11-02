@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-export default async function SharePaymentFailure({ params }: { params: { token: string } }) {
-  const { token } = params;
+export default async function SharePaymentFailure({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   return (
     <div className="mx-auto max-w-xl p-6">
       <div className="rounded-lg border border-red-200 bg-red-50 p-6">

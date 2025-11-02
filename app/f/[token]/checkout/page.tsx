@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { GlassCard } from '@/components/ui/glass-card';
@@ -12,11 +12,12 @@ import { formatCurrency } from '@/lib/utils';
 import { ChevronLeft, CreditCard, Package, User, MapPin, Loader2 } from 'lucide-react';
 
 interface PageProps {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
 export default function CheckoutPage({ params }: PageProps) {
   const router = useRouter();
+  const { token } = use(params);
   const [loading, setLoading] = useState(false);
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [formData, setFormData] = useState({

@@ -8,10 +8,10 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
 export default async function SharePage({ params }: PageProps) {
-  const { token } = params;
+  const { token } = await params;
   redirect(`/store-unified/${token}`);
 }

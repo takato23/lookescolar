@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Home } from 'lucide-react';
@@ -9,25 +9,16 @@ import { Button } from '@/components/ui/button';
 import OrderDetail from '@/components/admin/orders/OrderDetail';
 
 interface OrderDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const router = useRouter();
-  const [orderId, setOrderId] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const resolveParams = async () => {
-      const resolvedParams = params;
-      setOrderId(resolvedParams.id);
-      setLoading(false);
-    };
-
-    resolveParams();
-  }, [params]);
+  const resolvedParams = use(params);
+  const orderId = resolvedParams.id;
+  const [loading, setLoading] = useState(false);
 
   const handleStatusUpdate = async (id: string, newStatus: 'delivered') => {
     try {

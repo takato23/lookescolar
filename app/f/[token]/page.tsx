@@ -3,7 +3,7 @@ import { FamilyAccessCard } from '@/components/ui/family-access-card';
 import { EnhancedTokenValidationResponse } from '@/lib/types/family-access';
 
 interface PageProps {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }
 
 interface ValidationErrorPayload {
@@ -44,7 +44,7 @@ function getErrorMessage(payload?: ValidationErrorPayload): string {
 }
 
 export default async function LegacyFamilyPage({ params }: PageProps) {
-  const { token } = params;
+  const { token } = await params;
   const baseUrl = resolveBaseUrl();
 
   let prefetchedResult:

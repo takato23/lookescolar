@@ -4,21 +4,22 @@ import { CheckCircle, Download, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     order?: string;
     payment_id?: string;
-  };
+  }>;
 }
 
-export default function PaymentSuccessPage({
+export default async function PaymentSuccessPage({
   params,
   searchParams,
 }: PageProps) {
-  const { token } = params;
-  const orderId = searchParams.order;
+  const { token } = await params;
+  const resolvedSearchParams = await searchParams;
+  const orderId = resolvedSearchParams.order;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-green-50 to-white p-4">

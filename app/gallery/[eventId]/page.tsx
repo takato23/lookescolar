@@ -3,11 +3,11 @@ import { PublicGallery } from '@/components/gallery/PublicGallery';
 import { Camera } from 'lucide-react';
 
 interface PublicGalleryPageProps {
-  params: { eventId: string };
+  params: Promise<{ eventId: string }>;
 }
 
 export default async function PublicGalleryPage({ params }: PublicGalleryPageProps) {
-  const { eventId } = params;
+  const { eventId } = await params;
 
   // Validación robusta del eventId
   const uuidRegex =

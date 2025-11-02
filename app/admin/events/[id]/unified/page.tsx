@@ -1,17 +1,17 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 /**
  * 🔄 RESTAURADO - Interfaz Unificada del Evento
- * 
- * Redirige a la gestión específica del evento (/library) 
+ *
+ * Redirige a la gestión específica del evento (/library)
  * que proporciona el contexto completo y gestión integrada.
  */
 export default async function UnifiedEventRedirect({ params }: PageProps) {
-  const { id: eventId } = params;
+  const { id: eventId } = await params;
   
   // Redirigir al gestor específico del evento 
   redirect(`/admin/events/${eventId}/library`);

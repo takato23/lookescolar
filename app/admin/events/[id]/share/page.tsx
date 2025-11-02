@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,9 +29,9 @@ import { toast } from 'sonner';
 export default function ShareManagerPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { id: eventId } = params;
+  const { id: eventId } = use(params);
   const [folders, setFolders] = useState<any[]>([]);
   const [levels, setLevels] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);

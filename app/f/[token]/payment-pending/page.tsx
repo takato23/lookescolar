@@ -3,22 +3,23 @@ import { Clock, Home, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
-  searchParams: {
+  }>;
+  searchParams: Promise<{
     order?: string;
     payment_type?: string;
-  };
+  }>;
 }
 
-export default function PaymentPendingPage({
+export default async function PaymentPendingPage({
   params,
   searchParams,
 }: PageProps) {
-  const { token } = params;
-  const orderId = searchParams.order;
-  const paymentType = searchParams.payment_type;
+  const { token } = await params;
+  const resolvedSearchParams = await searchParams;
+  const orderId = resolvedSearchParams.order;
+  const paymentType = resolvedSearchParams.payment_type;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-yellow-50 to-white p-4">
