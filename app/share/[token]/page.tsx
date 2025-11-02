@@ -130,10 +130,10 @@ export default async function SharePage({
   searchParams,
 }: {
   params: { token: string };
-  searchParams: { page?: string; limit?: string };
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { token } = params;
-  const sp = searchParams;
+  const sp = await searchParams;
   const page = Math.max(1, parseInt(sp?.page || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(sp?.limit || '60', 10)));
 
