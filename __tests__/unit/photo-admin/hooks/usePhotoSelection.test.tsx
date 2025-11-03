@@ -97,3 +97,4 @@ describe('usePhotoSelection', () => {
     expect(result.current.selectedPhotos.size).toBe(3);
   });
 });
+

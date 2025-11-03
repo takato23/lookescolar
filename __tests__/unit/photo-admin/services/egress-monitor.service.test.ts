@@ -50,3 +50,4 @@ describe('EgressMonitor', () => {
     expect(metricsAfter.currentSession).toBe(0);
   });
 });
+

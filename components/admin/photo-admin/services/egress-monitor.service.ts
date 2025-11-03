@@ -56,3 +56,4 @@ export class EgressMonitor {
 }
 
 export const egressMonitor = EgressMonitor.getInstance();
+

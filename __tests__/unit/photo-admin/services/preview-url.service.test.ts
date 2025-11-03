@@ -60,3 +60,4 @@ describe('getPreviewUrl', () => {
     expect(getPreviewUrl('', '')).toBeNull();
   });
 });
+

@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
-export default async function EventPhotosRedirect({ params }: PageProps) {
-  const { id } = await params;
+export default function EventPhotosRedirect({ params }: PageProps) {
+  const { id } = params;
   redirect(`/admin/events/${id}/library`);
 }
