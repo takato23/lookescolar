@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     'Monitoreo y configuración de la optimización para el plan gratuito de Supabase',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function OptimizationPage() {
   return (
     <div className="container mx-auto space-y-6 py-6">

@@ -23,7 +23,7 @@ interface ShareGalleryResponse {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function ShareStorePage({ params }: { params: { token: string } }) {
-  const { token } = params;
+export default async function ShareStorePage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
   redirect(`/store-unified/${token}`);
 }

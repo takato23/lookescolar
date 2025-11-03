@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { absoluteUrl } from '@/lib/absoluteUrl';
 
-export async function generateMetadata({ params }: { params: { token: string } }): Promise<Metadata> {
-  const { token } = params;
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params;
   try {
     const url = await absoluteUrl(`/api/store/${token}?include_assets=true&limit=1`);
     const res = await fetch(url, { cache: 'no-store' });

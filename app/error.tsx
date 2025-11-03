@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-
 export default function Error({
   error,
   reset,
@@ -9,12 +7,10 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    // Log the error to an error reporting service
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Global error:', error);
-    }
-  }, [error]);
+  // Log error in development
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.error('Global error:', error);
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">

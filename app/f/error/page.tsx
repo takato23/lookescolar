@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { XCircle, RefreshCw, Home } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 function PaymentErrorContent() {
   const searchParams = useSearchParams();
 

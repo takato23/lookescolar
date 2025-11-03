@@ -2,6 +2,8 @@ import { FamilyAccessCard } from '@/components/ui/family-access-card';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+export const dynamic = 'force-dynamic';
+
 export default async function AccessPage(props: any) {
   const maybePromise = props?.searchParams as
     | Promise<SearchParams>

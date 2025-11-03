@@ -7,6 +7,8 @@ export const metadata = {
   description: 'Panel de control para gestión de fotografía escolar',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminHomePage() {
   return (
     <Suspense fallback={<DashboardSkeleton />}>

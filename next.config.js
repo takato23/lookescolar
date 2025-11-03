@@ -9,6 +9,8 @@ const nextConfig = {
   // Basic configuration
   reactStrictMode: true,
   poweredByHeader: false,
+  // Disable static generation to avoid prerender errors
+  output: 'standalone',
   // Avoid failing the production build due to lint errors in unrelated areas
   eslint: {
     ignoreDuringBuilds: true,
@@ -156,6 +158,8 @@ const nextConfig = {
     optimizeServerReact: true,
     // Remove esmExternals to prevent module format conflicts
     // esmExternals: true,
+    // Disable static optimization to prevent prerendering issues with client components
+    ppr: false,
   },
 
   // Development optimizations (keep dev chunks around longer to avoid 404s)

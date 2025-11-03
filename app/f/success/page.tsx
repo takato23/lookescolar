@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { CheckCircle, Clock, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const [orderStatus, setOrderStatus] = useState<

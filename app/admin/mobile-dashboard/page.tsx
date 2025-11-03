@@ -10,6 +10,8 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { useServiceWorker } from './hooks/useServiceWorker';
 import { motion } from 'framer-motion';
 
+export const dynamic = 'force-dynamic';
+
 export default function MobileDashboardPage() {
   const [activeSection, setActiveSection] = useState<'dashboard' | 'upload' | 'events' | 'orders'>('dashboard');
   const [user] = useState({

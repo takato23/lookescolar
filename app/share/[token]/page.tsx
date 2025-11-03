@@ -67,9 +67,9 @@ interface ShareGalleryResponse {
 export async function generateMetadata({
   params,
 }: {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 }) {
-  const { token } = params;
+  const { token } = await params;
   try {
     const { absoluteUrl } = await import('@/lib/absoluteUrl');
     const apiUrl = absoluteUrl(`/api/public/share/${token}/gallery?page=1&limit=1`);
@@ -129,10 +129,10 @@ export default async function SharePage({
   params,
   searchParams,
 }: {
-  params: { token: string };
+  params: Promise<{ token: string }>;
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
-  const { token } = params;
+  const { token } = await params;
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp?.page || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(sp?.limit || '60', 10)));

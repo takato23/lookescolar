@@ -7,15 +7,16 @@ function firstValue(value: string | string[] | undefined): string | undefined {
   return value ?? undefined;
 }
 
-export default function QuickFlowRedirect({
+export default async function QuickFlowRedirect({
   searchParams,
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const merged = new URLSearchParams();
 
-  if (searchParams) {
-    for (const [key, rawValue] of Object.entries(searchParams)) {
+  if (resolvedSearchParams) {
+    for (const [key, rawValue] of Object.entries(resolvedSearchParams)) {
       const value = firstValue(rawValue);
       if (value) merged.set(key, value);
     }
