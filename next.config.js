@@ -11,6 +11,9 @@ const nextConfig = {
   poweredByHeader: false,
   // Disable static generation to avoid prerender errors
   output: 'standalone',
+  // Skip static generation of error pages
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
   // Avoid failing the production build due to lint errors in unrelated areas
   eslint: {
     ignoreDuringBuilds: true,
