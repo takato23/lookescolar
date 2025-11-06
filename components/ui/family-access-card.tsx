@@ -1,5 +1,6 @@
 'use client';
 
+// Fixed: Force Vercel rebuild - commit c44b0bb
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, AlertTriangle, Shield } from 'lucide-react';
