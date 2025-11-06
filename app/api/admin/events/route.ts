@@ -23,6 +23,7 @@ import {
   prepareEventInsert,
   detectSchemaVersion,
 } from '@/lib/utils/schema-compatibility';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (request: NextRequest, authContext) => {
@@ -52,6 +53,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
       // Log del acceso
       SecurityLogger.logResourceAccess('events_list', authContext, request);
 
+      // Resolve tenant from headers
+      const { tenantId } = resolveTenantFromHeaders(request.headers);
+
       // Usar service client para consultas, con fallback a SSR anon si falla
       let dbClient = await createServerSupabaseServiceClient();
 
@@ -80,7 +84,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
       updated_at
     `,
         { count: 'exact' }
-      );
+      )
+      .eq('tenant_id', tenantId);
 
       // Aplicar filtros
       if (status === 'active') {

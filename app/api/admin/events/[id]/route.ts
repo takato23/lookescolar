@@ -6,6 +6,7 @@ import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 // UUID pattern validation
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -59,7 +60,7 @@ const toNullableNumber = (value: unknown): number | null => {
 };
 
 // Inline resolution function
-async function resolveFriendlyEventIdInline(identifier: string) {
+async function resolveFriendlyEventIdInline(identifier: string, tenantId: string) {
   if (UUID_PATTERN.test(identifier)) {
     return identifier;
   }
@@ -71,10 +72,11 @@ async function resolveFriendlyEventIdInline(identifier: string) {
       supabaseUrl,
       supabaseServiceKey
     );
-    
+
     const { data: events, error } = await supabaseClient
       .from('events')
-      .select('id, name, date');
+      .select('id, name, date')
+      .eq('tenant_id', tenantId);
 
     if (error || !events) return null;
 
@@ -115,22 +117,27 @@ export const GET = RateLimitMiddleware.withRateLimit(
   withAuth(async (req: NextRequest, context: RouteContext<{ id: string }>) => {
     const { id } = await resolveParams(context);
     try {
+      // Resolve tenant from headers
+      const { tenantId } = resolveTenantFromHeaders(req.headers);
+
       const supabase = await createServerSupabaseServiceClient();
       // Resolve friendly identifier to UUID if needed
-      const eventId = await resolveFriendlyEventIdInline(id);
-      
+      const eventId = await resolveFriendlyEventIdInline(id, tenantId);
+
       if (!eventId) {
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
 
-      // Get event details
+      // Get event details with tenant filter
       const { data: event, error: eventError } = await supabase
         .from('events')
         .select('*')
         .eq('id', eventId)
+        .eq('tenant_id', tenantId)
         .single();
 
       if (eventError || !event) {
+        console.error('[events/[id]] Event query failed:', eventError, { eventId, tenantId });
         return NextResponse.json({ error: 'Event not found' }, { status: 404 });
       }
 
@@ -199,6 +206,9 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
           { status: 400 }
         );
       }
+
+      // Resolve tenant from headers
+      const { tenantId } = resolveTenantFromHeaders(req.headers);
 
       const rawBody = (await req.json().catch(() => null)) as
         | UpdateEventBody
@@ -281,6 +291,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         .from('events')
         .update(updateData)
         .eq('id', id)
+        .eq('tenant_id', tenantId)
         .select('id, name, location, date, status, photo_price, created_at, school_name, photographer_name, photographer_email, photographer_phone, description, theme')
         .single();
 
@@ -314,6 +325,9 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
           { status: 400 }
         );
       }
+
+      // Resolve tenant from headers
+      const { tenantId } = resolveTenantFromHeaders(req.headers);
 
       const supabase = await createServerSupabaseServiceClient();
 
@@ -433,7 +447,11 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
         }
       }
 
-      const { error } = await supabase.from('events').delete().eq('id', id);
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', id)
+        .eq('tenant_id', tenantId);
       if (error) {
         return NextResponse.json(
           { error: 'No se pudo eliminar el evento', details: error.message },
