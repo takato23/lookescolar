@@ -74,11 +74,9 @@ function PaymentErrorContent() {
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Reintentar Pago
                 </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/" className="flex items-center">
-                    <Home className="mr-2 h-4 w-4" />
-                    <span>Volver al Inicio</span>
-                  </Link>
+                <Button variant="outline" onClick={() => router.push('/')}>
+                  <Home className="mr-2 h-4 w-4" />
+                  Volver al Inicio
                 </Button>
               </div>
 
