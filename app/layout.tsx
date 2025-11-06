@@ -41,6 +41,10 @@ export const viewport: Viewport = {
   ],
 };
 
+// Disable static optimization to prevent Next.js 15 prerendering issues
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export default function RootLayout({
   children,
 }: {

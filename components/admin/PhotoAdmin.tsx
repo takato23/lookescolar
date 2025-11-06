@@ -26,7 +26,7 @@ import { statusLabel } from '@/lib/utils/photo-helpers';
 // Import refactored modules
 import { SafeImage } from './photo-admin';
 import { getPreviewUrl } from './photo-admin';
-import { photoAdminApi, egressMonitor, FolderTreePanel, InspectorPanel } from './photo-admin';
+import { photoAdminApi, egressMonitor, FolderTreePanel, InspectorPanel, PhotoGrid as PhotoGridPanel } from './photo-admin';
 import type { OptimizedFolder, OptimizedAsset } from './photo-admin';
 
 // DND Kit for drag & drop
