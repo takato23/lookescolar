@@ -85,10 +85,9 @@ docker-compose*
 .eslintrc*
 .eslintcache
 .prettierrc*
-tailwind.config.*
-tsconfig.json
-next.config.js
-vercel.json
+# tsconfig.json  ← MUST BE INCLUDED for TypeScript builds
+# next.config.js ← MUST BE INCLUDED for Next.js builds
+# vercel.json    ← MUST BE INCLUDED for Vercel configuration
 .vercelignore
 
 # Large static files (if any)
@@ -119,7 +118,7 @@ archive/
 # Scripts and tools (reduce size)
 scripts/
 *.sql
-*.js
+# *.js  ← DANGEROUS: Would exclude ALL .js files including configs
 !scripts/deploy.sh
 
 # Additional large directories
