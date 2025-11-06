@@ -85,9 +85,11 @@ docker-compose*
 .eslintrc*
 .eslintcache
 .prettierrc*
-# tsconfig.json  ← MUST BE INCLUDED for TypeScript builds
-# next.config.js ← MUST BE INCLUDED for Next.js builds
-# vercel.json    ← MUST BE INCLUDED for Vercel configuration
+# tsconfig.json     ← MUST BE INCLUDED for TypeScript builds
+# next.config.js    ← MUST BE INCLUDED for Next.js builds
+# vercel.json       ← MUST BE INCLUDED for Vercel configuration
+# postcss.config.js ← MUST BE INCLUDED for Tailwind CSS processing
+# tailwind.config.* ← MUST BE INCLUDED for Tailwind CSS configuration
 .vercelignore
 
 # Large static files (if any)
