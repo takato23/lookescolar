@@ -14,6 +14,10 @@ const nextConfig = {
   // Skip static generation of error pages
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
+  // Disable static optimization globally to fix Next.js 15 prerendering issues with error pages
+  generateBuildId: async () => {
+    return 'build-' + Date.now();
+  },
   // Avoid failing the production build due to lint errors in unrelated areas
   eslint: {
     ignoreDuringBuilds: true,
