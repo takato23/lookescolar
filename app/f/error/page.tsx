@@ -75,9 +75,9 @@ function PaymentErrorContent() {
                   Reintentar Pago
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/">
+                  <Link href="/" className="flex items-center">
                     <Home className="mr-2 h-4 w-4" />
-                    Volver al Inicio
+                    <span>Volver al Inicio</span>
                   </Link>
                 </Button>
               </div>
