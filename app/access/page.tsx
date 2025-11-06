@@ -1,4 +1,4 @@
-import { FamilyAccessCard } from '@/components/ui/family-access-card';
+import { FamilyAccessCard } from '../../components/ui/family-access-card';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
