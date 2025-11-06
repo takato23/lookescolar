@@ -10,7 +10,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // Disable static generation to avoid prerender errors
-  output: 'standalone',
+  // output: 'standalone', // Commented out - causing build issues with App Router error pages
   // Skip static generation of error pages
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,

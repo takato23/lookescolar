@@ -21,9 +21,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "~/components/*": [
-        "./components/*"
       ]
     },
     "plugins": [
