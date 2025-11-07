@@ -178,7 +178,8 @@ function resolveVariantConfig(
     return modernVariantConfig[tone];
   }
 
-  return classicVariantConfig[variant as ClassicButtonVariant];
+  // Safely access classicVariantConfig with fallback
+  return classicVariantConfig[variant as ClassicButtonVariant] || classicVariantConfig.primary;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
