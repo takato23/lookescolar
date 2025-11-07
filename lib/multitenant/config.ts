@@ -1,5 +1,6 @@
+// Allow nil UUIDs (all zeros) in addition to standard UUIDs
 const UUID_REGEX =
-  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 const DEFAULT_FALLBACK_TENANT = '00000000-0000-0000-0000-000000000000';
 
 type DomainMap = Map<string, string>;
