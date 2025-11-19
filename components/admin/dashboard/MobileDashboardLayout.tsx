@@ -14,15 +14,10 @@ import {
   Zap,
 } from 'lucide-react';
 
+import { DashboardStats } from '@/types/dashboard';
+
 interface MobileDashboardLayoutProps {
-  stats: {
-    activeEvents: number;
-    totalPhotos: number;
-    registeredFamilies: number;
-    totalSales: number;
-    todayUploads: number;
-    todayOrders: number;
-  };
+  stats: DashboardStats;
   currentTime: Date;
 }
 
@@ -59,157 +54,191 @@ export function MobileDashboardLayout({
   };
 
   return (
-    <div className="p-4 lg:hidden">
+    <div className="flex min-h-screen flex-col gap-6 p-4 lg:hidden">
       {/* Mobile Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Estudio</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {currentTime.toLocaleDateString('es-ES', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-              })}
-            </p>
-          </div>
-          <div className="rounded-lg bg-primary/10 px-3 py-1">
-            <span className="text-sm font-medium">{formatTime(currentTime)}</span>
-          </div>
+      <div className="liquid-glass-intense sticky top-4 z-30 flex items-center justify-between rounded-2xl border border-white/20 px-5 py-4 shadow-lg backdrop-blur-xl">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Estudio
+          </h1>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            {currentTime.toLocaleDateString('es-ES', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })}
+          </p>
+        </div>
+        <div className="liquid-glass rounded-xl px-3 py-1.5 shadow-sm">
+          <span className="text-xs font-bold tabular-nums text-indigo-600 dark:text-indigo-400">
+            {formatTime(currentTime)}
+          </span>
         </div>
       </div>
 
       {/* Quick Status Cards */}
-      <div className="mb-6 grid grid-cols-2 gap-4">
-        <Card variant="glass-ios26" className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-500/10 p-2">
-              <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+      <div className="grid grid-cols-2 gap-4">
+        <Card variant="glass-ios26" className="p-4 transition-transform active:scale-95">
+          <div className="flex flex-col gap-3">
+            <div className="self-start rounded-xl bg-blue-500/10 p-2.5 text-blue-600 dark:text-blue-400">
+              <Calendar className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xl font-bold">{stats.activeEvents}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Eventos</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats.activeEvents}
+              </div>
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Eventos Activos
+              </div>
             </div>
           </div>
         </Card>
-        
-        <Card variant="glass-ios26" className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-500/10 p-2">
-              <Camera className="h-5 w-5 text-green-600" />
+
+        <Card variant="glass-ios26" className="p-4 transition-transform active:scale-95">
+          <div className="flex flex-col gap-3">
+            <div className="self-start rounded-xl bg-emerald-500/10 p-2.5 text-emerald-600 dark:text-emerald-400">
+              <Camera className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-xl font-bold">{stats.todayUploads}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Hoy</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {stats.todayUploads}
+              </div>
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Fotos Hoy
+              </div>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Quick Actions Mobile */}
-      <Card variant="glass-ios26" className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
+      <Card variant="glass-ios26" className="overflow-hidden">
+        <CardHeader className="border-b border-white/10 pb-3">
+          <CardTitle className="text-base font-bold">Acciones Rápidas</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <div className="grid grid-cols-3 gap-3">
             {quickActions.map((action) => (
-              <Button
+              <a
                 key={action.href}
-                variant="glass-ios26"
-                className="h-20 flex-col gap-2"
+                href={action.href}
+                className="group flex flex-col items-center gap-2 rounded-xl p-2 transition-colors hover:bg-white/5 active:scale-95"
               >
-                <a href={action.href} className="flex flex-col items-center gap-2">
-                  <div className={`rounded-lg p-2 ${action.color}/10`}>
-                    <action.icon className={`h-5 w-5 ${action.color.replace('bg-', 'text-')}`} />
-                  </div>
-                  <span className="text-xs">{action.title}</span>
-                </a>
-              </Button>
+                <div
+                  className={`flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform group-hover:-translate-y-1 ${action.color}/10`}
+                >
+                  <action.icon
+                    className={`h-6 w-6 ${action.color.replace('bg-', 'text-')}`}
+                  />
+                </div>
+                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                  {action.title}
+                </span>
+              </a>
             ))}
           </div>
         </CardContent>
       </Card>
 
       {/* Today's Summary */}
-      <Card variant="glass-ios26" className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5" />
-            Resumen de Hoy
+      <Card variant="glass-ios26">
+        <CardHeader className="border-b border-white/10 pb-3">
+          <CardTitle className="flex items-center gap-2 text-base font-bold">
+            <Clock className="h-4 w-4 text-indigo-500" />
+            Resumen del Día
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Fotos subidas</span>
-              <Badge variant="secondary" className="bg-purple-500/10 text-purple-700">
-                {stats.todayUploads}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Pedidos nuevos</span>
-              <Badge variant="secondary" className="bg-green-500/10 text-green-700">
-                {stats.todayOrders}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Total familias</span>
-              <span className="font-medium">{stats.registeredFamilies}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Ventas totales</span>
-              <span className="font-medium">
-                ${(stats.totalSales / 100).toLocaleString()}
-              </span>
-            </div>
+        <CardContent className="space-y-4 p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-600 dark:text-slate-300">
+              Fotos subidas
+            </span>
+            <Badge
+              variant="secondary"
+              className="bg-purple-500/10 text-purple-700 dark:text-purple-300"
+            >
+              {stats.todayUploads}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-600 dark:text-slate-300">
+              Pedidos nuevos
+            </span>
+            <Badge
+              variant="secondary"
+              className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+            >
+              {stats.todayOrders}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-slate-600 dark:text-slate-300">
+              Total familias
+            </span>
+            <span className="font-bold tabular-nums text-slate-900 dark:text-white">
+              {stats.registeredFamilies}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-t border-white/10 pt-3">
+            <span className="text-sm font-medium text-slate-900 dark:text-white">
+              Ventas totales
+            </span>
+            <span className="text-lg font-bold tabular-nums text-indigo-600 dark:text-indigo-400">
+              ${(stats.totalSales / 100).toLocaleString()}
+            </span>
           </div>
         </CardContent>
       </Card>
 
       {/* Quick Navigation */}
-      <Card variant="glass-ios26">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Navegación</CardTitle>
+      <Card variant="glass-ios26" className="mb-20">
+        <CardHeader className="border-b border-white/10 pb-3">
+          <CardTitle className="text-base font-bold">Navegación</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Button
-              variant="ghost"
-              className="w-full justify-between"
+        <CardContent className="p-2">
+          <div className="space-y-1">
+            <a
+              href="/admin/events"
+              className="flex w-full items-center justify-between rounded-xl p-3 transition-colors hover:bg-white/5 active:bg-white/10"
             >
-              <a href="/admin/events" className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
                   <Calendar className="h-4 w-4" />
-                  <span>Ver todos los eventos</span>
                 </div>
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-between"
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Ver todos los eventos
+                </span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate-400" />
+            </a>
+            <a
+              href="/admin/orders"
+              className="flex w-full items-center justify-between rounded-xl p-3 transition-colors hover:bg-white/5 active:bg-white/10"
             >
-              <a href="/admin/orders" className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                   <DollarSign className="h-4 w-4" />
-                  <span>Gestionar pedidos</span>
                 </div>
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-between"
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Gestionar pedidos
+                </span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate-400" />
+            </a>
+            <a
+              href="/admin/subjects"
+              className="flex w-full items-center justify-between rounded-xl p-3 transition-colors hover:bg-white/5 active:bg-white/10"
             >
-              <a href="/admin/subjects" className="flex w-full items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-purple-500/10 p-2 text-purple-600 dark:text-purple-400">
                   <Users className="h-4 w-4" />
-                  <span>Administrar familias</span>
                 </div>
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </Button>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Administrar familias
+                </span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate-400" />
+            </a>
           </div>
         </CardContent>
       </Card>

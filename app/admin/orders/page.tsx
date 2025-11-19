@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { AdminFloatingNav } from '@/components/admin/AdminFloatingNav';
 import {
   ArrowLeft,
   Home,
@@ -344,6 +345,11 @@ export default function OrdersPage() {
   return (
     <main className="min-h-screen bg-slate-50 pb-16 pt-10 dark:bg-slate-950">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 sm:px-6 lg:px-8">
+        {/* Admin Floating Navigation */}
+        <div className="sticky top-6 z-30">
+          <AdminFloatingNav />
+        </div>
+
         {/* Header */}
         <header className="rounded-3xl border border-slate-200 bg-white/80 p-8 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">

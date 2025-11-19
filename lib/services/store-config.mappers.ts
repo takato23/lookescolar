@@ -3,6 +3,50 @@ import { sanitizeInput, StoreConfig, StoreProduct, validateStoreConfig } from '@
 type RawDbProducts = Record<string, any> | Array<any> | null | undefined;
 type RawPaymentMethods = Record<string, any> | Array<string> | null | undefined;
 
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function coercePrice(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const numeric = Number(value.replace(/[^0-9.-]/g, ''));
+    if (Number.isFinite(numeric)) {
+      return numeric;
+    }
+  }
+  return 0;
+}
+
+function coerceBoolean(value: unknown, fallback = true): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    if (['true', '1', 'yes', 'enabled'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'disabled'].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
+function normalizeProductId(value: unknown, fallback = 'producto'): string {
+  if (typeof value === 'string') {
+    const cleaned = value.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (cleaned.length > 0) {
+      return cleaned;
+    }
+  }
+  return fallback;
+}
+
+function sanitizeProductText(value: string): string {
+  return sanitizeInput(value)
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+}
+
 const BASE_PRODUCTS: StoreProduct[] = [
   {
     id: 'opcionA',
@@ -119,28 +163,93 @@ export function getDefaultConfig(): StoreConfig {
 }
 
 function normalizeProductFromEntry(id: string, product: any): StoreProduct {
+  const fallbackId = normalizeProductId(id);
+  const rawName =
+    product?.name ?? product?.title ?? product?.label ?? fallbackId;
+  const safeName = sanitizeProductText(String(rawName)) || fallbackId;
+  const descriptionSource = product?.description ?? product?.details ?? '';
+  const safeDescription = sanitizeInput(String(descriptionSource));
+  const productType =
+    typeof product?.type === 'string' && product.type.toLowerCase() === 'digital'
+      ? 'digital'
+      : 'physical';
+
+  const rawOptions = product?.features ?? product?.options;
+  let options: StoreProduct['options'] | undefined;
+  if (isPlainObject(rawOptions)) {
+    const sizes = Array.isArray(rawOptions.sizes)
+      ? rawOptions.sizes
+          .map((size: any) => sanitizeProductText(String(size || '')))
+          .filter(Boolean)
+      : undefined;
+    const formats = Array.isArray(rawOptions.formats)
+      ? rawOptions.formats
+          .map((format: any) => sanitizeProductText(String(format || '')))
+          .filter(Boolean)
+      : undefined;
+    const quality = typeof rawOptions.quality === 'string'
+      ? (rawOptions.quality.toLowerCase() === 'premium'
+          ? 'premium'
+          : rawOptions.quality.toLowerCase() === 'standard'
+          ? 'standard'
+          : undefined)
+      : undefined;
+
+    if ((sizes && sizes.length) || (formats && formats.length) || quality) {
+      options = { sizes, formats, quality };
+    }
+  }
+
   return {
-    id,
-    name: sanitizeInput(product?.name ?? ''),
-    type: (product?.type === 'digital' ? 'digital' : 'physical') as StoreProduct['type'],
-    enabled: product?.enabled ?? true,
-    price: typeof product?.price === 'number' ? product.price : 0,
-    description: sanitizeInput(product?.description ?? ''),
-    options: product?.features ?? product?.options ?? {}
+    id: fallbackId,
+    name: safeName,
+    type: productType,
+    enabled: coerceBoolean(product?.enabled, true),
+    price: coercePrice(product?.price),
+    description: safeDescription || undefined,
+    options
   };
 }
 
 function convertArrayProducts(raw: any[]): StoreProduct[] {
   return raw
     .map((product, index) => {
-      const productId = typeof product?.id === 'string' && product.id.trim() !== '' ? product.id : String(index);
+      if (!isPlainObject(product)) {
+        return null;
+      }
+      const productId = normalizeProductId(product.id, `producto_${index}`);
       return normalizeProductFromEntry(productId, product);
     })
-    .filter((product) => product.id);
+    .filter((product): product is StoreProduct => Boolean(product?.id));
 }
 
 function convertMapProducts(raw: Record<string, any>): StoreProduct[] {
-  return Object.entries(raw).map(([id, product]) => normalizeProductFromEntry(id, product));
+  const products: StoreProduct[] = [];
+
+  Object.entries(raw).forEach(([id, value]) => {
+    if (!value) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      products.push(...convertArrayProducts(value));
+      return;
+    }
+
+    if (Array.isArray((value as any).items)) {
+      products.push(...convertArrayProducts((value as any).items));
+      return;
+    }
+
+    if (!isPlainObject(value)) {
+      return;
+    }
+
+    const productId = normalizeProductId(value.id, normalizeProductId(id));
+    products.push(normalizeProductFromEntry(productId, value));
+  });
+
+  return products;
 }
 
 function convertPaymentMethods(raw: RawPaymentMethods): string[] {
@@ -177,9 +286,12 @@ export function convertDbToUiConfig(dbConfig: Record<string, any> | null | undef
     enabled: dbConfig.enabled ?? false,
     products: uiProducts.length > 0 ? uiProducts : getDefaultConfig().products,
     currency: (dbConfig.currency ?? 'ARS') as StoreConfig['currency'],
-    tax_rate: dbConfig.tax_rate ?? 0,
+    tax_rate: typeof dbConfig.tax_rate === 'number' ? dbConfig.tax_rate : Number(dbConfig.tax_rate) || 0,
     shipping_enabled: dbConfig.shipping_enabled !== false,
-    shipping_price: dbConfig.shipping_price ?? 50000,
+    shipping_price:
+      typeof dbConfig.shipping_price === 'number'
+        ? dbConfig.shipping_price
+        : Number(dbConfig.shipping_price) || 50000,
     payment_methods: convertPaymentMethods(dbConfig.payment_methods)
   };
 

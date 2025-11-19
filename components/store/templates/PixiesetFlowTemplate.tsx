@@ -2,9 +2,9 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { StoreSettings } from '@/lib/hooks/useStoreSettings';
-import { Photo } from '@/lib/services/photo.service';
-import { FolderHierarchy } from '@/lib/types/gallery';
+import { Photo as ServicePhoto } from '@/lib/services/photo.service';
 import { getTemplateTheme, getTemplateStyleProps } from '@/lib/utils/template-theming';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import PixiesetGalleryMain from '@/components/store/PixiesetGalleryMain';
 import PixiesetPackageSelector from '@/components/store/PixiesetPackageSelector';
@@ -26,9 +26,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTemplateFavorites } from '@/hooks/useTemplateFavorites';
 
+// Extended Photo interface for the store UI
+interface StorePhoto extends ServicePhoto {
+  url: string;
+  alt: string;
+  isFavorite?: boolean;
+  isGroupPhoto?: boolean;
+  // Add other UI-specific properties if needed
+}
+
 interface PixiesetFlowTemplateProps {
   settings: StoreSettings;
-  photos: Photo[];
+  photos: ServicePhoto[];
   token: string;
   subject?: {
     name: string;
@@ -36,7 +45,7 @@ interface PixiesetFlowTemplateProps {
   };
   totalPhotos?: number;
   isPreselected?: boolean;
-  folderHierarchy?: FolderHierarchy;
+  folderHierarchy?: any; // Relaxed type if not strictly used
   onFolderNavigate?: (folderId: string) => void;
   isNavigatingFolder?: boolean;
   engagementStats?: {
@@ -141,7 +150,7 @@ const CHECKOUT_TOUCHED_INITIAL: Record<CheckoutField, boolean> = {
 
 export function PixiesetFlowTemplate({
   settings,
-  photos,
+  photos: servicePhotos,
   token,
   subject,
   totalPhotos = 0,
@@ -151,13 +160,13 @@ export function PixiesetFlowTemplate({
   isNavigatingFolder: _isNavigatingFolder = false,
   engagementStats,
 }: PixiesetFlowTemplateProps) {
-  
+
   const [currentStep, setCurrentStep] = useState<FlowStep>('gallery');
-  const [_selectedPhoto, _setSelectedPhoto] = useState<Photo | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<StorePhoto | null>(null);
   const {
     favorites,
     toggleFavorite: toggleFavoriteApi,
-  } = useTemplateFavorites(photos, token);
+  } = useTemplateFavorites(servicePhotos, token);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedPackageForPhotoSelection, setSelectedPackageForPhotoSelection] = useState<PackageOption | null>(null);
   const [checkoutForm, setCheckoutForm] = useState<CheckoutFormData>(checkoutInitialValues);
@@ -168,7 +177,7 @@ export function PixiesetFlowTemplate({
   const [showAllCheckoutErrors, setShowAllCheckoutErrors] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
-  
+
   // Navigation history management
   const [navigationHistory, setNavigationHistory] = useState<FlowStep[]>(['gallery']);
   const isCartEmpty = cart.length === 0;
@@ -177,6 +186,18 @@ export function PixiesetFlowTemplate({
   const theme = useMemo(() => getTemplateTheme(settings), [settings]);
   const themeStyles = useMemo(() => getTemplateStyleProps(theme), [theme]);
 
+  // Transform ServicePhoto to StorePhoto
+  const photos: StorePhoto[] = useMemo(() => {
+    return servicePhotos.map(photo => ({
+      ...photo,
+      url: photo.preview_path || photo.storage_path, // Use preview path as URL for now, or signed URL if available
+      alt: photo.original_filename,
+      isFavorite: favorites.includes(photo.id),
+      // Heuristic for group photos if not explicitly marked in metadata
+      isGroupPhoto: photo.metadata?.isGroupPhoto || photo.original_filename.toLowerCase().includes('grupal')
+    }));
+  }, [servicePhotos, favorites]);
+
   const derivedStats = useMemo(() => {
     if (engagementStats) {
       return engagementStats;
@@ -184,9 +205,10 @@ export function PixiesetFlowTemplate({
 
     const totals = photos.reduce(
       (acc, photo) => {
-        if ((photo as any)?.engagement?.is_favorite) {
+        if (photo.isFavorite) {
           acc.totalFavorites += 1;
         }
+        // Mock cart/purchased stats if not available in photo object
         acc.totalInCart += (photo as any)?.engagement?.in_cart_quantity ?? 0;
         acc.totalPurchased += (photo as any)?.engagement?.purchased_quantity ?? 0;
         return acc;
@@ -226,7 +248,7 @@ export function PixiesetFlowTemplate({
   const navigateToStep = useCallback((step: FlowStep) => {
     setNavigationHistory(prev => [...prev, step]);
     setCurrentStep(step);
-    
+
     // Add entry to browser history
     const url = new URL(window.location.href);
     url.searchParams.set('step', step);
@@ -239,15 +261,15 @@ export function PixiesetFlowTemplate({
       // Remove current step from history
       history.pop();
       const previousStep = history[history.length - 1];
-      
+
       setNavigationHistory(history);
       setCurrentStep(previousStep);
-      
+
       // Update browser history
       const url = new URL(window.location.href);
       url.searchParams.set('step', previousStep);
       window.history.replaceState({ step: previousStep, timestamp: Date.now() }, '', url.toString());
-      
+
       // Reset related state based on the step we're going back to
       if (previousStep === 'gallery') {
         setSelectedPhoto(null);
@@ -288,7 +310,7 @@ export function PixiesetFlowTemplate({
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       event.preventDefault();
-      
+
       if (navigationHistory.length > 1) {
         // Navigate back within our app flow
         navigateBack();
@@ -302,7 +324,7 @@ export function PixiesetFlowTemplate({
     };
 
     window.addEventListener('popstate', handlePopState);
-    
+
     // Initialize browser history on mount
     const url = new URL(window.location.href);
     if (!url.searchParams.has('step')) {
@@ -316,7 +338,7 @@ export function PixiesetFlowTemplate({
   // Convert settings to package options 
   const packages: PackageOption[] = useMemo(() => {
     if (!settings?.products) return [];
-    
+
     return Object.entries(settings.products)
       .filter(([id, product]) => {
         // Accept both legacy names (carpetaA/B) and new names (opcionA/B)
@@ -327,18 +349,32 @@ export function PixiesetFlowTemplate({
         // Handle both old (carpetaA/B) and new (opcionA/B) naming
         const isOptionA = id === 'opcionA' || id === 'carpetaA';
         const isOptionB = id === 'opcionB' || id === 'carpetaB';
-        
+
+        // Allow configuration of group photos from settings
+        // Cast product to any to access 'features' or 'contents' which might not be strictly typed in StoreProduct
+        const productAny = product as any;
+        const features = productAny.features || {};
+        const contentsData = productAny.contents || features;
+
+        const defaultContents = {
+          individualPhotos: isOptionA ? 1 : isOptionB ? 2 : 1,
+          groupPhotos: 1, // Default: require 1 group photo
+          copyPhotos: isOptionA ? 4 : isOptionB ? 8 : 4
+        };
+
+        const contents = {
+          individualPhotos: contentsData.individualPhotos ?? defaultContents.individualPhotos,
+          groupPhotos: contentsData.groupPhotos ?? defaultContents.groupPhotos,
+          copyPhotos: contentsData.copyPhotos ?? defaultContents.copyPhotos
+        };
+
         return {
           id,
           name: product.name,
           price: product.price,
           description: product.description || '',
           itemCount: isOptionA ? 6 : isOptionB ? 11 : 6, // Default to 6 if unknown
-          contents: {
-            individualPhotos: isOptionA ? 1 : isOptionB ? 2 : 1,
-            groupPhotos: 1,
-            copyPhotos: isOptionA ? 4 : isOptionB ? 8 : 4
-          }
+          contents
         };
       })
       .sort((a, b) => (a.name < b.name ? -1 : 1));
@@ -349,7 +385,7 @@ export function PixiesetFlowTemplate({
     name: subject?.course || settings.texts?.hero_title || theme.branding.brandName,
     subtitle: settings.texts?.hero_subtitle || theme.branding.brandTagline,
     date: 'SEPTEMBER 1ST, 2025',
-    location: settings.location,
+    location: 'Colegio', // Placeholder as location is not in settings
     photographer: 'BALOSKIER',
     totalPhotos: totalPhotos || photos.length
   };
@@ -360,9 +396,11 @@ export function PixiesetFlowTemplate({
     return entries
       .filter(([, method]) => method && method.enabled !== false)
       .map(([id, method]) => {
-        const title = (method && (method.label || method.name)) || prettifyPaymentTitle(id);
-        const helper = method?.helper || method?.message || method?.notes;
-        const badge = method?.badge || (id.includes('mercado') ? 'Recomendado' : undefined);
+        // Cast method to any to access potential untyped fields
+        const methodAny = method as any;
+        const title = (method && (methodAny.label || method.name)) || prettifyPaymentTitle(id);
+        const helper = methodAny.helper || methodAny.message || methodAny.notes;
+        const badge = methodAny.badge || (id.includes('mercado') ? 'Recomendado' : undefined);
 
         return {
           id,
@@ -370,8 +408,8 @@ export function PixiesetFlowTemplate({
           description: method?.description || defaultPaymentDescription(id),
           helper: helper || undefined,
           badge,
-          tone: determinePaymentTone(id, method?.name || method?.label),
-          fee: typeof method?.fee === 'number' ? method.fee : undefined,
+          tone: determinePaymentTone(id, method?.name || methodAny.label),
+          fee: typeof methodAny.fee === 'number' ? methodAny.fee : undefined,
         } satisfies CheckoutPaymentMethod;
       });
   }, [settings?.payment_methods]);
@@ -397,19 +435,19 @@ export function PixiesetFlowTemplate({
   const hasPaymentMethods = paymentOptions.length > 0;
   const canSubmitCheckout = Boolean(
     hasPaymentMethods &&
-      selectedPaymentMethod &&
-      !isCartEmpty &&
-      checkoutValidationResult.valid &&
-      !checkoutSubmitting
+    selectedPaymentMethod &&
+    !isCartEmpty &&
+    checkoutValidationResult.valid &&
+    !checkoutSubmitting
   );
 
-  const handlePhotoClick = (_photo: Photo) => {
+  const handlePhotoClick = (_photo: StorePhoto) => {
     // Para el nuevo flujo, hacer clic en una foto no hace nada especial
     // Las fotos se seleccionan desde el photo selector
     console.log('Photo clicked:', _photo.id);
   };
 
-  const handleBuyPhoto = (_photo: Photo) => {
+  const handleBuyPhoto = (_photo: StorePhoto) => {
     // Redirigir al usuario a seleccionar un package primero
     navigateToStep('package-selection');
   };
@@ -421,7 +459,7 @@ export function PixiesetFlowTemplate({
   const handleSelectPackage = (packageId: string) => {
     const pkg = packages.find(p => p.id === packageId);
     if (!pkg) return;
-    
+
     setSelectedPackageForPhotoSelection(pkg);
     navigateToStep('photo-selection');
   };
@@ -445,12 +483,12 @@ export function PixiesetFlowTemplate({
 
     setCart(prev => [...prev, cartItem]);
     navigateToStep('cart');
-    
+
     // Show success message
     try {
       const { toast } = require('sonner');
       toast.success(`${selectedPackageForPhotoSelection.name} agregado al carrito`);
-    } catch {}
+    } catch { }
   };
 
   const handleUpdateQuantity = (itemId: string, quantity: number) => {
@@ -458,7 +496,7 @@ export function PixiesetFlowTemplate({
       handleRemoveItem(itemId);
       return;
     }
-    
+
     setCart(prev =>
       prev.map(item =>
         item.id === itemId ? { ...item, quantity } : item
@@ -476,14 +514,14 @@ export function PixiesetFlowTemplate({
     try {
       const { toast } = require('sonner');
       toast.success('Redirigiendo al checkout...');
-    } catch {}
+    } catch { }
   };
 
   const handleContinueShopping = () => {
     // Reset to gallery but clear history to start fresh
     setNavigationHistory(['gallery']);
     setCurrentStep('gallery');
-    
+
     const url = new URL(window.location.href);
     url.searchParams.set('step', 'gallery');
     window.history.replaceState({ step: 'gallery', timestamp: Date.now() }, '', url.toString());
@@ -504,11 +542,6 @@ export function PixiesetFlowTemplate({
     window.history.replaceState({ step: fallbackStep, timestamp: Date.now() }, '', url.toString());
   }, [navigationHistory, navigateBack, isCartEmpty]);
 
-  // Calculate total price of cart
-  const _getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
   const handleToggleFavorite = useCallback(
     (photoId: string) => {
       toggleFavoriteApi(photoId).catch(() => {
@@ -528,7 +561,7 @@ export function PixiesetFlowTemplate({
       try {
         const { toast } = require('sonner');
         toast.error('No se pudo copiar el enlace');
-      } catch {}
+      } catch { }
     }
   };
 
@@ -585,7 +618,7 @@ export function PixiesetFlowTemplate({
       setShowAllCheckoutErrors(true);
       const touchedAll = Object.keys(CHECKOUT_TOUCHED_INITIAL).reduce<Record<CheckoutField, boolean>>(
         (acc, key) => ({ ...acc, [key as CheckoutField]: true }),
-        {}
+        {} as Record<CheckoutField, boolean>
       );
       setCheckoutTouched(touchedAll);
       setCheckoutErrors(validation.errors);
@@ -594,14 +627,14 @@ export function PixiesetFlowTemplate({
         try {
           const { toast } = require('sonner');
           toast.error('Tu carrito está vacío. Volvé al catálogo para elegir una opción.');
-        } catch {}
+        } catch { }
       }
 
       if (!selectedPaymentMethod) {
         try {
           const { toast } = require('sonner');
           toast.error('Elegí un método de pago para continuar.');
-        } catch {}
+        } catch { }
       }
 
       return;
@@ -611,28 +644,67 @@ export function PixiesetFlowTemplate({
     setCheckoutSubmitting(true);
 
     try {
+      const response = await fetch('/api/family/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          cart,
+          customer: checkoutForm,
+          paymentMethod: selectedPaymentMethod,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al procesar el pedido');
+      }
+
       const { toast } = require('sonner');
-      toast.success('¡Listo! Tu pedido está en marcha. En breve recibirás la confirmación por correo.');
-      // TODO: Integrar con POST /api/family/checkout
-    } catch (error) {
+      toast.success('¡Pedido iniciado! Redirigiendo...');
+
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+      } else {
+        // Success but no redirect (e.g. cash/transfer without link)
+        toast.success('¡Pedido confirmado! Te enviamos los detalles por correo.');
+        setCart([]);
+        // Optional: Navigate to a success view or reset
+        navigateToStep('gallery');
+      }
+
+    } catch (error: any) {
       console.error('Checkout submission error', error);
       try {
         const { toast } = require('sonner');
-        toast.error('No pudimos confirmar tu pedido. Intentá nuevamente.');
-      } catch {}
+        toast.error(error.message || 'No pudimos confirmar tu pedido. Intentá nuevamente.');
+      } catch { }
     } finally {
       setCheckoutSubmitting(false);
     }
   }, [checkoutForm, isCartEmpty, selectedPaymentMethod]);
 
-  // Add favorites info to photos
-  const photosWithFavorites = useMemo(() =>
-    photos.map(photo => ({
-      ...photo,
-      isFavorite: favorites.includes(photo.id)
-    })),
-    [photos, favorites]
-  );
+  // Transform cart items for PixiesetShoppingCart
+  const shoppingCartItems = useMemo(() => {
+    return cart.map(item => {
+      // Find the first selected individual photo to use as preview
+      const firstPhotoId = item.selectedPhotos?.individual?.[0];
+      const firstPhoto = photos.find(p => p.id === firstPhotoId);
+
+      return {
+        id: item.id,
+        name: item.packageName,
+        price: item.price,
+        quantity: item.quantity,
+        photoId: firstPhotoId || 'unknown',
+        image: firstPhoto?.url,
+        description: `Incluye ${item.contents.individualPhotos} fotos individuales y ${item.contents.copyPhotos} copias.`
+      };
+    });
+  }, [cart, photos]);
 
   // Render step content based on current step
   const renderStepContent = () => {
@@ -657,7 +729,7 @@ export function PixiesetFlowTemplate({
 
             <PixiesetGalleryMain
               eventInfo={eventInfo}
-              photos={photosWithFavorites}
+              photos={photos}
               packages={packages}
               onPhotoClick={handlePhotoClick}
               onBuyPhoto={handleBuyPhoto}
@@ -677,7 +749,7 @@ export function PixiesetFlowTemplate({
             packages={packages}
             onBack={handleBackToGallery}
             onSelectPackage={handleSelectPackage}
-            onAddToCart={() => {}} // Esta función ya no se usa en el nuevo flujo
+            onAddToCart={() => { }} // Esta función ya no se usa en el nuevo flujo
             settings={settings}
             theme={theme}
           />
@@ -687,7 +759,7 @@ export function PixiesetFlowTemplate({
         return selectedPackageForPhotoSelection ? (
           <PixiesetPhotoSelector
             package={selectedPackageForPhotoSelection}
-            photos={photosWithFavorites}
+            photos={photos}
             onBack={handleBackFromPhotoSelection}
             onAddToCart={handleAddToCartWithPhotos}
             settings={settings}
@@ -700,7 +772,7 @@ export function PixiesetFlowTemplate({
       case 'cart':
         return (
           <PixiesetShoppingCart
-            items={cart}
+            items={shoppingCartItems}
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
             onCheckout={handleCheckout}
@@ -790,42 +862,23 @@ export function PixiesetFlowTemplate({
           </CheckoutLayout>
         );
       default:
-        return <div>Error: Step not found</div>;
+        return null;
     }
   };
 
-  // Apply theme styling and custom CSS
   return (
-    <div
-      className={`pixieset-store-template bg-background text-foreground min-h-screen transition-colors duration-300 ${theme.branding.fontFamily !== 'Inter, sans-serif' ? 'custom-font' : ''}`}
-      style={{
-        ...themeStyles,
-        fontFamily: theme.branding.fontFamily,
-      }}
-    >
-      {/* Custom CSS injection */}
-      {theme.customization.customCss && (
-        <style dangerouslySetInnerHTML={{ __html: theme.customization.customCss }} />
-      )}
-
-      {/* Override liquid-glass-card styles for store - use theme background */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .liquid-glass-card {
-            background: hsl(var(--background)) !important;
-            border: none !important;
-            border-radius: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-          }
-        `
-      }} />
-
-      {renderStepContent()}
+    <div className="min-h-screen bg-background" style={themeStyles as React.CSSProperties}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentStep}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3 }}
+        >
+          {renderStepContent()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
-
-export default PixiesetFlowTemplate;

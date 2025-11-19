@@ -12,7 +12,7 @@ export default function AdminOrdersLayout({ children }: OrdersLayoutProps) {
 
   useEffect(() => {
     setConfig({
-      showHeader: false,
+      showHeader: true, // Mostrar el AdminHeader con perfil, tema, notificaciones
     });
 
     return () => {

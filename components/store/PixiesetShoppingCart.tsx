@@ -15,8 +15,10 @@ import {
   Sparkles,
   MessageCircle,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 import { StoreSettings } from '@/lib/hooks/useStoreSettings';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CartItem {
   id: string;
@@ -69,176 +71,219 @@ export function PixiesetShoppingCart({
   };
 
   return (
-    <div className={cn('looke-store min-h-screen bg-background text-foreground', className)}>
-      <header className="border-b border-border/60 bg-card/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 text-foreground">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+    <div className={cn('looke-store min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-slate-100', className)}>
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-white/20 bg-white/70 backdrop-blur-xl dark:bg-slate-900/70 dark:border-slate-800/50">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
               <ShoppingBag className="h-5 w-5" />
-            </span>
+            </div>
             <div>
-              <p className="text-xl font-semibold">Tu carrito</p>
-              <p className="text-sm text-muted-foreground">
-                Revisá los paquetes elegidos antes de confirmar la compra.
+              <h1 className="text-lg font-bold tracking-tight">Tu Carrito</h1>
+              <p className="text-xs text-muted-foreground">
+                {items.length} {items.length === 1 ? 'item' : 'items'} seleccionados
               </p>
             </div>
           </div>
-          <Button variant="secondary" onClick={onContinueShopping} className="w-full sm:w-auto">
-            <ArrowLeft className="h-4 w-4" /> Seguir viendo fotos
+          <Button
+            variant="ghost"
+            onClick={onContinueShopping}
+            className="group text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Seguir comprando
           </Button>
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
-        <section className="space-y-4">
-          {items.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-border bg-card/70 p-12 text-center shadow-soft">
-              <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Aún no agregaste paquetes</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Volvé a la galería y elegí el paquete que mejor se adapte a tu familia.
-              </p>
-              <Button onClick={onContinueShopping} className="mt-5">
-                Buscar paquetes
-              </Button>
-            </div>
-          ) : (
-            items.map((item) => (
-              <article
-                key={item.id}
-                className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-4 shadow-soft transition-all sm:flex-row sm:items-center"
+      <main className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_380px] lg:px-8">
+        {/* Cart Items List */}
+        <section className="space-y-6">
+          <AnimatePresence mode="popLayout">
+            {items.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white/50 p-16 text-center backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/50"
               >
-                {item.image ? (
-                  <div className="relative h-36 w-full overflow-hidden rounded-2xl sm:h-28 sm:w-28">
-                    <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                <div className="mb-6 rounded-full bg-slate-100 p-6 dark:bg-slate-800">
+                  <ShoppingBag className="h-10 w-10 text-slate-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground">Tu carrito está vacío</h2>
+                <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+                  Explora la galería y selecciona tus fotos favoritas para crear recuerdos únicos.
+                </p>
+                <Button
+                  onClick={onContinueShopping}
+                  className="mt-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                >
+                  Explorar Galería
+                </Button>
+              </motion.div>
+            ) : (
+              items.map((item) => (
+                <motion.article
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                  className="group relative flex flex-col gap-5 rounded-3xl border border-white/40 bg-white/60 p-5 shadow-sm backdrop-blur-md transition-all hover:shadow-md hover:bg-white/80 dark:border-slate-700/50 dark:bg-slate-900/60 dark:hover:bg-slate-900/80 sm:flex-row sm:items-center"
+                >
+                  {/* Image */}
+                  <div className="relative h-48 w-full overflow-hidden rounded-2xl shadow-inner sm:h-32 sm:w-32 flex-shrink-0">
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-slate-400 dark:bg-slate-800">
+                        <ShoppingBag className="h-8 w-8" />
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex h-36 w-full items-center justify-center rounded-2xl bg-muted text-muted-foreground sm:h-28 sm:w-28">
-                    <ShoppingBag className="h-8 w-8" />
-                  </div>
-                )}
 
-                <div className="flex-1 space-y-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  {/* Content */}
+                  <div className="flex flex-1 flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div className="space-y-1">
-                      <h3 className="text-lg font-semibold text-foreground">{item.name}</h3>
-                      {item.description ? (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                      {formatPrice(item.price * item.quantity)}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2 rounded-full border border-border/70 bg-surface px-3 py-1.5">
-                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Cantidad
-                      </span>
-                      <div className="flex items-center overflow-hidden rounded-full border border-border/80">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-none"
-                          onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
-                        >
-                          <Minus className="h-3.5 w-3.5" />
-                        </Button>
-                        <span className="px-4 text-sm font-semibold">{item.quantity}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-none"
-                          onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </Button>
+                      <h3 className="text-lg font-bold text-foreground">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 max-w-md">
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300">
+                          Digital + Impreso
+                        </Badge>
                       </div>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => onRemoveItem(item.id)}
-                    >
-                      <X className="h-4 w-4" /> Quitar
-                    </Button>
+                    <div className="flex items-center justify-between gap-6 sm:justify-end">
+                      {/* Quantity Controls */}
+                      <div className="flex items-center rounded-full border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 rounded-l-full hover:bg-slate-100 dark:hover:bg-slate-700"
+                          onClick={() => onUpdateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 rounded-r-full hover:bg-slate-100 dark:hover:bg-slate-700"
+                          onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      {/* Price & Remove */}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-lg font-bold text-foreground">
+                          {formatPrice(item.price * item.quantity)}
+                        </span>
+                        <button
+                          onClick={() => onRemoveItem(item.id)}
+                          className="flex items-center gap-1 text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 className="h-3 w-3" /> Eliminar
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))
-          )}
+                </motion.article>
+              ))
+            )}
+          </AnimatePresence>
         </section>
 
-        <aside className="space-y-5">
-          <div className="rounded-3xl border border-border bg-card shadow-soft">
-            <div className="border-b border-border/60 bg-primary text-primary-foreground rounded-t-3xl px-6 py-5">
-              <div className="flex items-center gap-3">
+        {/* Summary Sidebar */}
+        <aside className="space-y-6">
+          <div className="sticky top-24 rounded-3xl border border-white/40 bg-white/80 p-6 shadow-xl backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/80">
+            <div className="mb-6 flex items-center gap-3 border-b border-slate-100 pb-6 dark:border-slate-800">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <CreditCard className="h-5 w-5" />
-                <div>
-                  <p className="text-base font-semibold">Resumen del pedido</p>
-                  <p className="text-xs text-primary-foreground/70">Todo listo para confirmar tu compra</p>
-                </div>
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground">Resumen del pedido</h3>
+                <p className="text-xs text-muted-foreground">Calculado en tiempo real</p>
               </div>
             </div>
 
-            <div className="space-y-4 px-6 py-6">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Subtotal</span>
-                <span className="font-semibold text-foreground">{formatPrice(subtotal)}</span>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium text-foreground">{formatPrice(subtotal)}</span>
               </div>
 
-              <div className="rounded-2xl border border-border/60 bg-surface p-4 text-sm text-muted-foreground">
-                <div className="flex items-start gap-3">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="font-semibold text-foreground">Incluye revisión manual</p>
-                    <p>
-                      Nuestro equipo garantiza la calidad de impresión y ajustes necesarios sin costo adicional.
-                    </p>
-                  </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Envío</span>
+                <span className="font-medium text-green-600">Gratis</span>
+              </div>
+
+              <div className="rounded-xl bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-900/20 dark:text-blue-200">
+                <div className="flex gap-3">
+                  <Sparkles className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                  <p className="leading-relaxed">
+                    <span className="font-semibold">Garantía de Calidad:</span> Revisamos cada foto manualmente antes de imprimir.
+                  </p>
                 </div>
               </div>
 
-              <Separator />
+              <Separator className="my-2" />
 
-              <div className="flex items-center justify-between text-base font-semibold text-foreground">
-                <span>Total</span>
-                <span>{formatPrice(total)}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold text-foreground">Total</span>
+                <span className="text-2xl font-bold text-primary">{formatPrice(total)}</span>
               </div>
 
-              <Button onClick={onCheckout} disabled={items.length === 0} className="w-full">
-                Confirmar pedido
+              <Button
+                onClick={onCheckout}
+                disabled={items.length === 0}
+                className="w-full h-12 text-base bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg transition-all hover:scale-[1.02]"
+              >
+                Confirmar Compra
               </Button>
+
+              <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1 mt-2">
+                <ShieldCheck className="h-3 w-3" /> Pago 100% seguro y encriptado
+              </p>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card/70 p-5 shadow-soft">
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <MessageCircle className="h-5 w-5" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-foreground">¿Necesitás ayuda?</p>
-                <p className="text-xs text-muted-foreground">
-                  Estamos disponibles por WhatsApp para acompañarte en el proceso.
-                </p>
+          {/* Support Card */}
+          <div className="rounded-3xl border border-white/40 bg-gradient-to-br from-white/60 to-white/30 p-6 shadow-lg backdrop-blur-md dark:border-slate-700/50 dark:from-slate-900/60 dark:to-slate-900/30">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                <MessageCircle className="h-4 w-4" />
               </div>
+              <h4 className="font-semibold text-sm">¿Tenés dudas?</h4>
             </div>
-            <Button variant="secondary" className="mt-4 w-full" onClick={handleSupport}>
-              Hablar con LookEscolar
+            <p className="text-sm text-muted-foreground mb-4">
+              Estamos en línea para ayudarte con tu compra o selección de fotos.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
+              onClick={handleSupport}
+            >
+              Chat por WhatsApp
             </Button>
           </div>
         </aside>
       </main>
 
-      <footer className="border-t border-border/60 bg-card/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 text-xs text-muted-foreground sm:px-6 lg:px-8">
-          <span className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" /> Pago protegido y control de calidad garantizado
-          </span>
-          <span>© {new Date().getFullYear()} LookEscolar</span>
+      <footer className="mt-auto border-t border-white/20 bg-white/40 py-6 backdrop-blur-md dark:border-slate-800/50 dark:bg-slate-900/40">
+        <div className="mx-auto max-w-7xl px-4 text-center text-xs text-muted-foreground sm:px-6 lg:px-8">
+          <p>© {new Date().getFullYear()} LookEscolar. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

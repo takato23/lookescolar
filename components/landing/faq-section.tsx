@@ -1,5 +1,8 @@
+'use client';
+
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -36,18 +39,33 @@ export function FAQSection() {
     <section id="faq" className="relative px-6 py-32">
       <div className="mx-auto max-w-4xl">
         <div className="mb-20 text-center">
-          <h2 className="mb-6 text-4xl font-bold lg:text-6xl">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-6 text-4xl font-bold lg:text-6xl"
+          >
             Preguntas <span className="text-gradient">frecuentes</span>
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400 text-xl">
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-gray-500 dark:text-gray-400 text-xl"
+          >
             Encuentra respuestas a las preguntas más comunes.
-          </p>
+          </motion.p>
         </div>
 
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div
+            <motion.div
               key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1 }}
               className="overflow-hidden rounded-lg border border-gray-200"
             >
               <button
@@ -56,18 +74,26 @@ export function FAQSection() {
               >
                 <span className="font-semibold">{faq.question}</span>
                 <ChevronDown
-                  className={`h-5 w-5 transition-transform ${
-                    openIndex === index ? 'rotate-180' : ''
-                  }`}
+                  className={`h-5 w-5 transition-transform ${openIndex === index ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
-              {openIndex === index && (
-                <div className="text-gray-500 dark:text-gray-400 px-6 pb-4">
-                  {faq.answer}
-                </div>
-              )}
-            </div>
+              <AnimatePresence>
+                {openIndex === index && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="text-gray-500 dark:text-gray-400 px-6 pb-4">
+                      {faq.answer}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           ))}
         </div>
       </div>

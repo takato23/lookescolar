@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -19,6 +20,7 @@ import {
   Star,
   BookmarkCheck,
   Loader2,
+  Check,
 } from 'lucide-react';
 
 interface Photo {
@@ -68,6 +70,26 @@ interface PixiesetGalleryMainProps {
   theme?: any;
 }
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: 'easeOut' as const },
+  },
+};
+
 // Componente auxiliar para manejar imágenes con loading states y fallbacks
 function PhotoCard({
   photo,
@@ -100,20 +122,28 @@ function PhotoCard({
   const imageSrc = photo.preview_url || photo.url;
 
   return (
-    <div
-      className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 dark:from-slate-800 dark:to-slate-900"
+    <motion.div
+      variants={itemVariants}
+      className="group relative overflow-hidden rounded-3xl bg-white/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 dark:bg-slate-900/50 border border-white/20 dark:border-white/10 backdrop-blur-sm"
     >
       {/* Favorite button */}
-      <button
+      <motion.button
         type="button"
-        className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md transition-all duration-200 hover:bg-white hover:scale-110 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-800"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className={cn(
+          "absolute right-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-all duration-300 backdrop-blur-md border border-white/20",
+          isFavorite
+            ? "bg-red-500 text-white hover:bg-red-600"
+            : "bg-white/80 text-slate-600 hover:bg-white dark:bg-black/50 dark:text-white/80"
+        )}
         onClick={(event) => {
           event.stopPropagation();
           onToggleFavorite?.(photo.id);
         }}
       >
-        <Heart className={cn('h-4 w-4 transition-colors', isFavorite && 'fill-red-500 text-red-500')} />
-      </button>
+        <Heart className={cn('h-5 w-5 transition-colors', isFavorite && 'fill-current')} />
+      </motion.button>
 
       {/* Image container */}
       <button
@@ -122,28 +152,28 @@ function PhotoCard({
         onClick={() => onPhotoClick(photo)}
       >
         {imageLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
           </div>
         )}
 
         {!imageError ? (
-          <img
+          <motion.img
             src={imageSrc}
             alt={photo.alt}
             className={cn(
-              "h-full w-full object-cover transition-all duration-500 group-hover:scale-110",
-              imageLoading && "opacity-0"
+              "h-full w-full object-cover transition-all duration-700 group-hover:scale-105",
+              imageLoading ? "opacity-0" : "opacity-100"
             )}
             loading="lazy"
             onLoad={handleImageLoad}
             onError={handleImageError}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800">
-            <div className="text-center">
-              <ImageIcon className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-              <p className="text-xs text-slate-500">Imagen no disponible</p>
+          <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-800">
+            <div className="text-center p-4">
+              <ImageIcon className="mx-auto h-10 w-10 text-slate-300 mb-2" />
+              <p className="text-xs text-slate-400">Imagen no disponible</p>
             </div>
           </div>
         )}
@@ -151,54 +181,67 @@ function PhotoCard({
         {/* Overlay on hover */}
         <div
           className={cn(
-            'absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 transition-opacity duration-300',
+            'absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-300',
             isHovered && 'opacity-100'
           )}
         />
+
+        {/* Quick action overlay */}
+        <div className={cn(
+          "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 bg-black/20 backdrop-blur-[2px]",
+          isHovered && "opacity-100"
+        )}>
+          <div className="transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-900 shadow-lg backdrop-blur-md">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              Ver detalles
+            </span>
+          </div>
+        </div>
       </button>
 
       {/* Photo info */}
-      <div className="relative bg-white p-4 dark:bg-slate-900">
-        <div className="flex items-start justify-between gap-3">
+      <div className="relative p-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-t border-white/20 dark:border-white/5">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-sm font-semibold text-slate-900 line-clamp-1 dark:text-slate-100">
               {photo.student || 'Foto individual'}
             </p>
-            <p className="text-xs text-slate-600 line-clamp-1 dark:text-slate-400">
+            <p className="text-xs text-slate-500 line-clamp-1 dark:text-slate-400">
               {photo.subject || 'Colección LookEscolar'}
             </p>
           </div>
           {photo.isGroupPhoto ? (
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
+            <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-200/50 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800/50 backdrop-blur-sm">
               Grupal
             </Badge>
           ) : (
-            <Badge variant="secondary" className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            <Badge variant="outline" className="bg-slate-100/50 text-slate-700 border-slate-200/50 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700/50 backdrop-blur-sm">
               Individual
             </Badge>
           )}
         </div>
 
         {/* Action buttons */}
-        <div className="mt-3 flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="h-9 flex-1 border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="w-full border-slate-200 bg-white/50 hover:bg-white hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:text-slate-300 transition-all duration-200"
             onClick={() => onPhotoClick(photo)}
           >
             Ver
           </Button>
           <Button
             size="sm"
-            className="h-9 flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+            className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 shadow-md hover:shadow-lg transition-all duration-200"
             onClick={() => onBuyPhoto(photo)}
           >
             Seleccionar
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -224,10 +267,6 @@ export function PixiesetGalleryMain({
 }: PixiesetGalleryMainProps) {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [hoveredPhoto, setHoveredPhoto] = useState<string | null>(null);
-
-  const primaryColor = theme?.colors?.primary || '#2F6FED';
-  const accentColor = theme?.colors?.accent || '#F7B731';
-  const surfaceColor = theme?.colors?.surface || '#F5F7FB';
 
   const metrics = useMemo(() => {
     const primaryPackage = packages[0];
@@ -282,256 +321,215 @@ export function PixiesetGalleryMain({
   };
 
   return (
-    <div className={cn('looke-store min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-slate-100', className)}>
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        {/* Background - Configurable banner image or default gradient */}
-        {settings?.banner_url ? (
-          <div className="absolute inset-0">
-            <img
-              src={settings.banner_url}
-              alt="Banner personalizado"
-              className="w-full h-full object-cover"
-              loading="eager"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-black/30" />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-800">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.1),transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.05),transparent_50%)]" />
-          </div>
-        )}
+    <div className={cn('looke-store min-h-screen bg-slate-50/50 dark:bg-slate-950', className)}>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden pb-12 pt-20 lg:pt-32">
+        {/* Background Elements */}
+        <div className="absolute inset-0 z-0">
+          {settings?.banner_url ? (
+            <>
+              <img
+                src={settings.banner_url}
+                alt="Banner"
+                className="h-full w-full object-cover opacity-90"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/40 to-slate-50 dark:to-slate-950" />
+            </>
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
+              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-slate-50 dark:to-slate-950" />
+            </div>
+          )}
+        </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-32">
-          <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-20">
-            <div className="max-w-2xl space-y-8">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="max-w-2xl space-y-8"
+            >
               <div className="space-y-4">
-                <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 flex items-center gap-2 text-sm px-4 py-2 shadow-lg">
-                  <Sparkles className="h-4 w-4" /> Experiencia LookEscolar Premium
-                </Badge>
-                <div className="space-y-6">
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
-                    {heroTitle}
-                  </h1>
-                  <p className="text-lg sm:text-xl text-white/90 leading-relaxed max-w-xl">
-                    {heroSubtitle}
-                  </p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Badge className="bg-white/10 text-white backdrop-blur-md border-white/20 hover:bg-white/20 transition-colors px-4 py-1.5 text-sm font-medium">
+                    <Sparkles className="mr-2 h-3.5 w-3.5 text-amber-300" />
+                    Experiencia Premium
+                  </Badge>
+                </motion.div>
+
+                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl drop-shadow-sm">
+                  {heroTitle}
+                </h1>
+                <p className="max-w-xl text-lg text-white/90 sm:text-xl leading-relaxed font-light">
+                  {heroSubtitle}
+                </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-6 text-white/80 text-sm">
-                <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+              <div className="flex flex-wrap gap-4 text-sm text-white/80">
+                <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur-sm border border-white/10">
                   <Calendar className="h-4 w-4" />
-                  <span className="font-medium">{eventInfo.date}</span>
+                  <span>{eventInfo.date}</span>
                 </div>
                 {eventInfo.location && (
-                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                  <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur-sm border border-white/10">
                     <MapPin className="h-4 w-4" />
-                    <span className="font-medium">{eventInfo.location}</span>
-                  </div>
-                )}
-                {eventInfo.photographer && (
-                  <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                    <Users className="h-4 w-4" />
-                    <span className="font-medium">{eventInfo.photographer}</span>
+                    <span>{eventInfo.location}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
                 <Button
+                  size="lg"
                   onClick={handleExplorePackages}
-                  className="group relative px-8 py-6 text-lg font-semibold bg-white text-slate-900 hover:bg-slate-50 shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
+                  className="group relative overflow-hidden bg-white text-slate-900 hover:bg-slate-50 hover:shadow-2xl hover:shadow-white/20 transition-all duration-300"
                 >
-                  Comenzar a elegir
-                  <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
+                  <span className="relative z-10 flex items-center gap-2 font-semibold">
+                    Ver Paquetes
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="outline"
+                  size="lg"
                   onClick={onShareEvent}
-                  className="text-white hover:bg-white/20 backdrop-blur-sm border-white/30 hover:border-white/50 px-6 py-6 text-lg"
+                  className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:border-white/50 backdrop-blur-sm transition-all duration-300"
                 >
-                  Compartir galería
-                  <Share2 className="h-4 w-4 ml-2" />
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Compartir
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Stats Card - Improved design */}
-            <div className="w-full max-w-lg">
-              <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-8 shadow-2xl">
-                <h3 className="text-xl font-semibold text-white mb-6 text-center">Resumen de tu evento</h3>
-                <div className="grid gap-4">
+            {/* Stats Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="w-full max-w-md lg:w-auto"
+            >
+              <div className="rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl shadow-2xl lg:min-w-[320px]">
+                <h3 className="mb-6 text-center text-lg font-medium text-white">Resumen del evento</h3>
+                <div className="space-y-4">
                   {metrics.map((metric, index) => (
-                    <div
+                    <motion.div
                       key={metric.label}
-                      className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 text-white"
-                      style={{
-                        animationDelay: `${index * 100}ms`,
-                        animation: 'fadeInUp 0.6s ease-out forwards'
-                      }}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + index * 0.1 }}
+                      className="flex items-center justify-between rounded-2xl bg-white/5 p-4 border border-white/10 hover:bg-white/10 transition-colors"
                     >
                       <div className="flex items-center gap-4">
-                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white">
                           {metric.icon}
-                        </span>
+                        </div>
                         <div>
-                          <p className="text-xs uppercase tracking-wider text-white/70 font-medium">
+                          <p className="text-xs font-medium uppercase tracking-wider text-white/60">
                             {metric.label}
                           </p>
-                          <p className="text-2xl font-bold">{metric.value}</p>
+                          <p className="text-xl font-bold text-white">{metric.value}</p>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Section */}
+      <section className="relative z-20 -mt-8 pb-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-[2.5rem] border border-white/40 bg-white/80 p-6 shadow-2xl backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/80 sm:p-10">
+
+            {/* Header & Filters */}
+            <div className="mb-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+              <div className="space-y-4 max-w-2xl">
+                <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                  Galería Fotográfica
+                </h2>
+                <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Explora la colección completa. Selecciona tus fotos favoritas para incluirlas en tu paquete personalizado.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="flex flex-wrap items-center gap-2 rounded-full bg-slate-100/80 p-1.5 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700">
+                  {FILTERS.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={cn(
+                        'rounded-full px-4 py-2 text-sm font-medium transition-all duration-200',
+                        activeFilter === filter.id
+                          ? 'bg-white text-slate-900 shadow-md dark:bg-slate-700 dark:text-white'
+                          : 'text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-white'
+                      )}
+                    >
+                      {filter.label}
+                    </button>
                   ))}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-white/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </section>
-
-      {/* Body */}
-      <section className="relative z-10 -mt-16 pb-20 sm:pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl border border-slate-200/60 bg-white/80 backdrop-blur-xl shadow-2xl dark:border-slate-700/60 dark:bg-slate-900/80">
-            <div className="p-6 sm:p-8 lg:p-10">
-              {/* Header with improved design */}
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between mb-8">
-                <div className="space-y-3 max-w-2xl">
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-                    Tu galería fotográfica
-                  </h2>
-                  <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Explora, marca tus favoritas y selecciona las fotografías que acompañarán tus paquetes.
-                    Las vistas previas están optimizadas para cargar rápido en cualquier dispositivo.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 lg:flex-col lg:items-end lg:gap-4">
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
-                    onClick={() => setActiveFilter('favorites')}
-                  >
-                    <Heart className="h-4 w-4" />
-                    Favoritas ({photos.filter((p) => p.isFavorite).length})
-                  </Button>
-                  <Button
-                    className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
-                    onClick={handleExplorePackages}
-                  >
-                    <ShoppingBag className="h-4 w-4" />
-                    Ver paquetes
-                  </Button>
-                </div>
-              </div>
-
-              {/* Filters with improved design */}
-              <div className="flex flex-wrap items-center gap-3 mb-8 p-4 bg-slate-50/50 dark:bg-slate-800/50 rounded-2xl backdrop-blur-sm">
-                <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  <Filter className="h-4 w-4" />
-                  Filtrar por:
-                </span>
-                {FILTERS.map((filter) => (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => setActiveFilter(filter.id)}
-                    className={cn(
-                      'rounded-full px-5 py-2 text-sm font-medium transition-all duration-200 transform hover:scale-105',
-                      activeFilter === filter.id
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600'
-                    )}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Gallery Grid with improved responsive design */}
+            {/* Gallery Grid */}
+            <AnimatePresence mode="wait">
               {filteredPhotos.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-6 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 p-16 text-center">
-                  <div className="rounded-full bg-slate-200 dark:bg-slate-700 p-6">
-                    <BookmarkCheck className="h-12 w-12 text-slate-500 dark:text-slate-400" />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex flex-col items-center justify-center py-24 text-center"
+                >
+                  <div className="mb-6 rounded-full bg-slate-100 p-6 dark:bg-slate-800">
+                    <BookmarkCheck className="h-12 w-12 text-slate-400" />
                   </div>
-                  <div className="space-y-3 max-w-md">
-                    <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                      No encontramos fotos para este filtro
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      Prueba con otra categoría o vuelve a ver todas las imágenes disponibles.
-                    </p>
-                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                    No hay fotos en esta categoría
+                  </h3>
+                  <p className="mt-2 max-w-sm text-slate-500 dark:text-slate-400">
+                    Intenta cambiar el filtro o explora todas las fotos disponibles.
+                  </p>
                   <Button
+                    variant="link"
                     onClick={() => setActiveFilter('all')}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                    className="mt-4 text-indigo-600 dark:text-indigo-400"
                   >
                     Ver todas las fotos
                   </Button>
-                </div>
+                </motion.div>
               ) : (
-                <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {filteredPhotos.map((photo, index) => (
-                    <div
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+                >
+                  {filteredPhotos.map((photo) => (
+                    <PhotoCard
                       key={photo.id}
-                      className="animate-fade-in-up"
-                      style={{
-                        animationDelay: `${index * 50}ms`,
-                        animationFillMode: 'both'
-                      }}
-                    >
-                      <PhotoCard
-                        photo={photo}
-                        isHovered={hoveredPhoto === photo.id}
-                        isFavorite={photo.isFavorite}
-                        onPhotoClick={onPhotoClick}
-                        onToggleFavorite={onToggleFavorite}
-                        onBuyPhoto={onBuyPhoto}
-                      />
-                    </div>
+                      photo={photo}
+                      isHovered={hoveredPhoto === photo.id}
+                      isFavorite={photo.isFavorite}
+                      onPhotoClick={onPhotoClick}
+                      onToggleFavorite={onToggleFavorite}
+                      onBuyPhoto={onBuyPhoto}
+                    />
                   ))}
-                </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
           </div>
         </div>
-
-        {/* Custom CSS for animations */}
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @keyframes fadeInUp {
-              from {
-                opacity: 0;
-                transform: translateY(30px);
-              }
-              to {
-                opacity: 1;
-                transform: translateY(0);
-              }
-            }
-
-            .animate-fade-in-up {
-              animation: fadeInUp 0.6s ease-out;
-              animation-fill-mode: both;
-            }
-
-            .shadow-soft {
-              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            }
-
-            .shadow-3xl {
-              box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
-            }
-          `
-        }} />
       </section>
     </div>
   );

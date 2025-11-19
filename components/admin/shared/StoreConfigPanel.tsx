@@ -14,16 +14,29 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Package,
   DollarSign,
   Settings,
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Copy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StoreConfig, StoreProduct } from '@/lib/validations/store-config';
 import { getDefaultConfig } from '@/lib/services/store-config.mappers';
+import { ProductEditor } from './ProductEditor';
+import { nanoid } from 'nanoid';
 
 type StoreConfigMode = 'event' | 'global';
 
@@ -34,6 +47,51 @@ interface StoreConfigPanelProps {
   onSave?: (config: StoreConfig) => void;
 }
 
+const STANDARD_PRODUCTS: Partial<StoreProduct>[] = [
+  {
+    name: 'Foto Impresa 10x15',
+    type: 'physical',
+    price: 150000,
+    description: 'Impresión en papel fotográfico de alta calidad, tamaño 10x15 cm.',
+    options: { sizes: ['10x15'], formats: ['Brillante', 'Mate'], quality: 'standard' }
+  },
+  {
+    name: 'Foto Impresa 13x18',
+    type: 'physical',
+    price: 200000,
+    description: 'Impresión en papel fotográfico de alta calidad, tamaño 13x18 cm.',
+    options: { sizes: ['13x18'], formats: ['Brillante', 'Mate'], quality: 'standard' }
+  },
+  {
+    name: 'Foto Impresa 15x21',
+    type: 'physical',
+    price: 250000,
+    description: 'Impresión en papel fotográfico de alta calidad, tamaño 15x21 cm.',
+    options: { sizes: ['15x21'], formats: ['Brillante', 'Mate'], quality: 'standard' }
+  },
+  {
+    name: 'Foto Impresa 20x30',
+    type: 'physical',
+    price: 400000,
+    description: 'Ampliación en papel fotográfico de alta calidad, tamaño 20x30 cm.',
+    options: { sizes: ['20x30'], formats: ['Brillante', 'Mate'], quality: 'premium' }
+  },
+  {
+    name: 'Descarga Digital',
+    type: 'digital',
+    price: 100000,
+    description: 'Archivo digital en alta resolución, listo para descargar.',
+    options: { sizes: ['Alta Resolución'], formats: ['JPG'], quality: 'premium' }
+  },
+  {
+    name: 'Pack Digital Completo',
+    type: 'digital',
+    price: 1500000,
+    description: 'Todas las fotos de la galería en formato digital de alta resolución.',
+    options: { sizes: ['Todas las fotos'], formats: ['JPG'], quality: 'premium' }
+  }
+];
+
 export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConfigPanelProps) {
   const [config, setConfig] = useState<StoreConfig>(() => getDefaultConfig());
   const [loading, setLoading] = useState(false);
@@ -41,6 +99,10 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
   const [initialLoading, setInitialLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  // Product Editor State
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<StoreProduct | null>(null);
 
   const isEventMode = mode === 'event';
   const targetEventId = isEventMode ? eventId : undefined;
@@ -67,11 +129,11 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
         }
 
         const data = await response.json();
-      if (data?.success && data?.config) {
-        setConfig(data.config as StoreConfig);
-      } else {
-        setConfig(getDefaultConfig());
-      }
+        if (data?.success && data?.config) {
+          setConfig(data.config as StoreConfig);
+        } else {
+          setConfig(getDefaultConfig());
+        }
         setHasChanges(false);
         setFetchError(null);
       } catch (error) {
@@ -92,11 +154,63 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
     setHasChanges(true);
   };
 
-  const updateProduct = (productId: string, updates: Partial<StoreProduct>) => {
+  const handleAddProduct = () => {
+    setEditingProduct(null);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditProduct = (product: StoreProduct) => {
+    setEditingProduct(product);
+    setIsEditorOpen(true);
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    if (confirm('¿Estás seguro de eliminar este producto?')) {
+      setConfig((prev) => ({
+        ...prev,
+        products: prev.products.filter((p) => p.id !== productId),
+      }));
+      setHasChanges(true);
+    }
+  };
+
+  const handleSaveProduct = (product: StoreProduct) => {
+    setConfig((prev) => {
+      const existingIndex = prev.products.findIndex((p) => p.id === product.id);
+      if (existingIndex >= 0) {
+        const newProducts = [...prev.products];
+        newProducts[existingIndex] = product;
+        return { ...prev, products: newProducts };
+      } else {
+        return { ...prev, products: [...prev.products, product] };
+      }
+    });
+    setHasChanges(true);
+  };
+
+  const handleAddStandardProduct = (template: Partial<StoreProduct>) => {
+    const newProduct: StoreProduct = {
+      id: `prod_${nanoid(8)}`,
+      name: template.name || 'Nuevo Producto',
+      description: template.description,
+      price: template.price || 0,
+      type: template.type || 'physical',
+      enabled: true,
+      options: template.options
+    };
+
     setConfig((prev) => ({
       ...prev,
-      products: prev.products.map((product) =>
-        product.id === productId ? { ...product, ...updates } : product
+      products: [...prev.products, newProduct]
+    }));
+    setHasChanges(true);
+  };
+
+  const toggleProductEnabled = (productId: string, enabled: boolean) => {
+    setConfig((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.id === productId ? { ...p, enabled } : p
       )
     }));
     setHasChanges(true);
@@ -257,62 +371,105 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             Productos Disponibles ({totalEnabledProducts}/{config.products.length})
           </CardTitle>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Copy className="h-4 w-4 mr-2" />
+                  Estándares
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {STANDARD_PRODUCTS.map((prod, idx) => (
+                  <DropdownMenuItem key={idx} onClick={() => handleAddStandardProduct(prod)}>
+                    {prod.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button size="sm" onClick={handleAddProduct}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Producto
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {config.products.map((product) => (
-            <div key={product.id} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {product.enabled ? (
-                    <Eye className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  )}
-                  <div>
-                    <h4 className="font-medium">{product.name}</h4>
-                    <p className="text-sm text-gray-500">{product.description}</p>
-                  </div>
-                  <Badge variant={product.type === 'digital' ? 'secondary' : 'default'}>
-                    {product.type === 'digital' ? 'Digital' : 'Físico'}
-                  </Badge>
-                </div>
-                <Switch checked={product.enabled} onCheckedChange={(enabled) => updateProduct(product.id, { enabled })} />
-              </div>
-
-              {product.enabled && (
-                <div className="grid grid-cols-2 gap-3 pl-7">
-                  <div>
-                    <Label htmlFor={`price-${product.id}`}>Precio ($)</Label>
-                    <Input
-                      id={`price-${product.id}`}
-                      type="number"
-                      value={product.price / 100}
-                      onChange={(event) =>
-                        updateProduct(product.id, {
-                          price: Math.round((parseFloat(event.target.value) || 0) * 100)
-                        })
-                      }
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor={`desc-${product.id}`}>Descripción</Label>
-                    <Input
-                      id={`desc-${product.id}`}
-                      value={product.description || ''}
-                      onChange={(event) => updateProduct(product.id, { description: event.target.value })}
-                      placeholder="Descripción del producto"
-                    />
-                  </div>
-                </div>
-              )}
+          {config.products.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
+              No hay productos configurados. Agrega uno nuevo o usa un estándar.
             </div>
-          ))}
+          ) : (
+            config.products.map((product) => (
+              <div key={product.id} className="border rounded-lg p-4 transition-all hover:border-blue-200 hover:bg-blue-50/30">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="mt-1">
+                      {product.enabled ? (
+                        <Eye className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <EyeOff className="h-5 w-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-base">{product.name}</h4>
+                        <Badge variant={product.type === 'digital' ? 'secondary' : 'outline'}>
+                          {product.type === 'digital' ? 'Digital' : 'Físico'}
+                        </Badge>
+                        {product.options?.sizes && product.options.sizes.length > 0 && (
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {product.options.sizes.join(', ')}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                      <div className="flex items-center gap-4 text-sm font-medium text-gray-700 pt-1">
+                        <span>${(product.price / 100).toLocaleString()}</span>
+                        {product.options?.quality && (
+                          <span className="text-gray-400 text-xs uppercase tracking-wider">
+                            {product.options.quality}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={product.enabled}
+                      onCheckedChange={(enabled) => toggleProductEnabled(product.id, enabled)}
+                    />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEditProduct(product)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600 focus:text-red-600"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Eliminar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -353,6 +510,13 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
           )}
         </CardContent>
       </Card>
+
+      <ProductEditor
+        open={isEditorOpen}
+        onOpenChange={setIsEditorOpen}
+        product={editingProduct}
+        onSave={handleSaveProduct}
+      />
     </div>
   );
 }

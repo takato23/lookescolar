@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { HowItWorksSection } from '@/components/landing/how-it-works-section';
 import { PricingSection } from '@/components/landing/pricing-section';
 import { TestimonialsSection } from '@/components/landing/testimonials-section';
@@ -23,6 +24,7 @@ import { AdminLoginModal } from '@/components/ui/admin-login-modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
+import { MagneticButton } from '@/components/ui/magnetic-button';
 
 // Dynamic import to avoid Vercel issues
 const ProductGrid = dynamic(
@@ -43,13 +45,10 @@ const ProductGrid = dynamic(
 );
 
 const NAV_ITEMS = [
-  { label: 'Ingresar', href: '#ingresar' },
-  { label: 'Ecosistema', href: '#ecosistema' },
+  { label: 'Características', href: '#features' },
   { label: 'Cómo funciona', href: '#how-it-works' },
-  { label: 'Familias', href: '#familias' },
-  { label: 'Testimonios', href: '#testimonials' },
   { label: 'Precios', href: '#pricing' },
-  { label: 'Preguntas', href: '#faq' },
+  { label: 'FAQ', href: '#faq' },
 ];
 
 export default function LandingPage() {
@@ -124,54 +123,56 @@ function LandingNavigation({
     <header
       className={clsx(
         'fixed inset-x-0 top-0 z-50 transition-all duration-500',
-        isScrolled
-          ? 'bg-white/12 shadow-[0_18px_48px_-28px_rgba(16,24,40,0.42)] backdrop-blur-2xl'
-          : 'bg-transparent'
+        isScrolled ? 'py-2' : 'py-4'
       )}
     >
-      <div className="mx-auto max-w-7xl px-6 py-3">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           className={clsx(
-            'relative flex items-center justify-between gap-6 rounded-full border px-6 py-3 transition-all duration-500',
+            'relative flex items-center justify-between gap-6 rounded-full border px-6 transition-all duration-500',
             isScrolled
-              ? 'liquid-glass-intense border-white/25 shadow-[0_26px_60px_-30px_rgba(16,24,40,0.35)]'
-              : 'liquid-glass border-white/18 shadow-[0_36px_82px_-48px_rgba(16,24,40,0.55)]'
+              ? 'liquid-glass-intense border-white/20 py-2.5 shadow-[0_8px_32px_-8px_rgba(16,24,40,0.12)]'
+              : 'liquid-glass border-white/10 py-3 shadow-[0_4px_24px_-4px_rgba(16,24,40,0.08)]'
           )}
         >
+          {/* Background Gradient Overlay */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-full">
             <div
               className={clsx(
-                'h-full w-full bg-gradient-to-r from-white/65 via-white/25 to-transparent mix-blend-screen transition-opacity',
-                isScrolled ? 'opacity-90' : 'opacity-95'
+                'h-full w-full bg-gradient-to-r from-white/40 via-white/10 to-transparent mix-blend-overlay transition-opacity duration-500',
+                isScrolled ? 'opacity-100' : 'opacity-60'
               )}
             />
           </div>
+
+          {/* Logo */}
           <div className="relative flex items-center gap-3">
             <Link
               href="/"
-              className="flex items-center gap-3 text-slate-900 transition-opacity hover:opacity-90"
+              className="group flex items-center gap-3 text-slate-900 transition-opacity hover:opacity-90"
             >
               <LookEscolarLogo
                 size="sm"
                 variant="gradient"
-                className="drop-shadow-sm"
+                className="drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
               />
-              <span className="chromatic-text font-display text-xs font-semibold uppercase tracking-[0.32em]">
+              <span className="chromatic-text font-display text-xs font-bold uppercase tracking-[0.32em] text-slate-800/90">
                 LookEscolar
               </span>
             </Link>
           </div>
 
-          <nav className="relative hidden items-center gap-6 md:flex">
+          {/* Desktop Navigation */}
+          <nav className="relative hidden items-center gap-1 md:flex">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
                 className={clsx(
-                  'font-display text-[11px] uppercase tracking-[0.32em] transition-colors',
+                  'rounded-full px-4 py-1.5 font-display text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300',
                   isScrolled
-                    ? 'text-[#2B3EBF] hover:text-[#101428]'
-                    : 'text-white/80 hover:text-white'
+                    ? 'text-slate-600 hover:bg-slate-100/50 hover:text-slate-900'
+                    : 'text-slate-600 hover:bg-white/20 hover:text-slate-900'
                 )}
               >
                 {item.label}
@@ -179,19 +180,22 @@ function LandingNavigation({
             ))}
           </nav>
 
+          {/* Actions */}
           <div className="relative flex items-center gap-3">
             <Link href="/demo" className="hidden md:block">
-              <Button
-                size="sm"
-                className={clsx(
-                  'rounded-full px-5 text-[11px] font-semibold uppercase tracking-[0.32em] shadow-[0_12px_30px_-20px_rgba(16,24,40,0.38)] backdrop-blur transition-transform hover:-translate-y-0.5',
-                  isScrolled
-                    ? 'border-transparent bg-[#FF9F6A] text-[#101428] hover:bg-[#FF8B4A]'
-                    : 'liquid-glass-intense text-white hover:shadow-[0_18px_40px_-22px_rgba(79,70,229,0.45)]'
-                )}
-              >
-                Ver demo
-              </Button>
+              <MagneticButton>
+                <Button
+                  size="sm"
+                  className={clsx(
+                    'rounded-full px-5 text-[10px] font-bold uppercase tracking-[0.25em] shadow-sm backdrop-blur transition-all hover:-translate-y-0.5',
+                    isScrolled
+                      ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md'
+                      : 'liquid-glass-premium border border-white/20 text-slate-900 hover:bg-white/40'
+                  )}
+                >
+                  Ver demo
+                </Button>
+              </MagneticButton>
             </Link>
             <AdminLoginModal onLogin={onAdminLogin} />
           </div>
@@ -202,24 +206,6 @@ function LandingNavigation({
 }
 
 function HeroAccessSection() {
-  const heroHighlights = [
-    {
-      icon: ShieldCheck,
-      label: 'Acceso privado',
-      description: 'Solo con el código asignado por la escuela.',
-    },
-    {
-      icon: Sparkles,
-      label: 'Experiencia guiada',
-      description: 'Favoritos, compra y descargas en un mismo lugar.',
-    },
-    {
-      icon: DownloadCloud,
-      label: 'Descarga inmediata',
-      description: 'Archivos digitales listos al instante.',
-    },
-  ];
-
   const heroGalleryPreviews = [
     {
       src: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=1000&q=80',
@@ -229,17 +215,17 @@ function HeroAccessSection() {
       zIndex: 'z-30',
     },
     {
-      src: 'https://images.unsplash.com/photo-1522582203244-d0fad7632413?auto=format&fit=crop&w=1000&q=80',
-      alt: 'Alumno sonriendo con su diploma',
-      position: 'top-12 right-2',
-      rotation: 'rotate-4',
+      src: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1000&q=80',
+      alt: 'Niños en graduación sonriendo',
+      position: 'top-12 right-10',
+      rotation: 'rotate-3',
       zIndex: 'z-20',
     },
     {
-      src: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1000&q=80',
-      alt: 'Familia celebrando con cámara en mano',
+      src: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1000&q=80',
+      alt: 'Grupo escolar festejando',
       position: 'bottom-0 left-16',
-      rotation: '-rotate-2',
+      rotation: 'rotate-2',
       zIndex: 'z-10',
     },
   ];
@@ -247,126 +233,249 @@ function HeroAccessSection() {
   return (
     <section
       id="ingresar"
-      className="relative overflow-hidden bg-gradient-to-br from-[#0A1029] via-[#12193A] to-[#101428] px-6 py-24 text-white lg:py-32"
+      className="relative overflow-hidden bg-[#0A1029] px-8 py-32"
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_60%)]" />
-      <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-[#FF80D0]/35 blur-[150px]" />
-      <div className="bg-[#4B64FF]/28 pointer-events-none absolute bottom-[-120px] left-[-40px] h-96 w-96 rounded-full blur-[180px]" />
-      <div className="relative mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-6">
-          <div
-            className="liquid-glass inline-flex items-center gap-3 rounded-full px-5 py-2 text-[11px] uppercase tracking-[0.34em] text-white/85 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.45)]"
-            data-liquid-tone="muted"
+      {/* Premium Animated Background */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-[10%] -top-[10%] h-[50vw] w-[50vw] animate-pulse rounded-full bg-blue-600/20 blur-[120px] duration-[4s]" />
+        <div className="absolute -bottom-[10%] -right-[10%] h-[50vw] w-[50vw] animate-pulse rounded-full bg-purple-600/20 blur-[120px] duration-[5s]" />
+        <div className="absolute left-[20%] top-[20%] h-[30vw] w-[30vw] animate-pulse rounded-full bg-indigo-500/10 blur-[100px] duration-[7s]" />
+      </div>
+
+      {/* Noise Texture Overlay */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("/noise.png")' }} />
+
+      <div className="relative mx-auto max-w-7xl">
+        <div className="relative z-10 mx-auto max-w-5xl text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Acceso familiar LookEscolar
-          </div>
-          <h1 className="font-display text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-            <span className="chromatic-text block text-balance">
-              Ingresá el código de tu escuela
-            </span>
-            <span className="mt-2 block text-white/90">y reviví el evento</span>
-          </h1>
-          <p className="text-lg leading-relaxed text-white/90 sm:text-xl">
-            Cada familia cuenta con un código único. Usalo para entrar a tu
-            galería privada, elegir tus fotos favoritas y descargar recuerdos al
-            instante.
-          </p>
-          <dl className="grid gap-4 text-sm text-white/90 sm:grid-cols-3">
-            {heroHighlights.map((item) => (
-              <div
-                key={item.label}
-                className="liquid-glass flex h-full flex-col gap-2 rounded-2xl px-4 py-5"
-                data-liquid-tone="muted"
-              >
-                <item.icon className="h-5 w-5 text-white/80" />
-                <dt className="chromatic-text text-sm font-semibold">
-                  {item.label}
-                </dt>
-                <dd className="text-sm text-white/80">{item.description}</dd>
-              </div>
-            ))}
-          </dl>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 backdrop-blur-md transition-colors hover:bg-white/10"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
+              </span>
+              <span className="text-xs font-medium tracking-wide text-indigo-200/90">
+                La plataforma para fotógrafos modernos
+              </span>
+            </motion.div>
+
+            <h1 className="mb-8 font-display text-5xl font-bold leading-[1.1] tracking-tight text-white md:text-7xl lg:text-8xl">
+              Tu negocio de fotografía,{' '}
+              <span className="relative inline-block">
+                <span className="relative z-10 bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                  simplificado.
+                </span>
+                <span className="absolute -bottom-2 left-0 h-[10px] w-full bg-indigo-500/20 blur-lg filter" />
+              </span>
+            </h1>
+
+            <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-slate-300/90 md:text-xl">
+              Galerías privadas, ventas automatizadas y distribución sin estrés.
+              <br className="hidden md:block" />
+              Dedicate a sacar fotos, nosotros nos ocupamos del resto.
+            </p>
+
+            <div className="flex flex-col items-center justify-center gap-5 sm:flex-row">
+              <MagneticButton>
+                <Link
+                  href="/register"
+                  className="group relative flex h-14 items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 text-base font-bold tracking-wide text-slate-900 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] transition-all hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] hover:scale-[1.02]"
+                >
+                  <span className="relative z-10">Empezar prueba gratis</span>
+                  <Sparkles className="relative z-10 h-4 w-4 text-indigo-600 transition-transform group-hover:rotate-12" />
+                  <div className="absolute inset-0 -z-0 bg-gradient-to-r from-indigo-50 via-white to-indigo-50 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                </Link>
+              </MagneticButton>
+
+              <MagneticButton>
+                <Link
+                  href="#demo"
+                  className="group flex h-14 items-center justify-center gap-3 rounded-full border border-white/10 bg-white/5 px-8 text-base font-medium text-white backdrop-blur-sm transition-all hover:bg-white/10 hover:border-white/20"
+                >
+                  <span>Ver demo clientes</span>
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition-transform group-hover:translate-x-0.5 group-hover:bg-white/20">
+                    <svg
+                      className="h-3 w-3 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
+                </Link>
+              </MagneticButton>
+            </div>
+          </motion.div>
         </div>
 
-        <div
-          className="liquid-glass-intense mx-auto w-full max-w-md rounded-[32px] p-5 shadow-[0_48px_140px_-60px_rgba(9,16,40,0.75)]"
-          data-liquid-tone="accent"
+        {/* Demo Context Label */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1 }}
+          className="mt-28 mb-10 text-center"
         >
-          <div
-            className="liquid-glass relative overflow-hidden rounded-[28px] px-6 py-6 shadow-[0_36px_110px_-48px_rgba(12,20,44,0.6)]"
-            data-liquid-tone="muted"
-          >
-            <FamilyAccessCard className="liquid-glass bg-white/70 text-slate-900 shadow-none" />
-            <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/0 via-white/20 to-white/0" />
-          </div>
-          <div className="relative mt-6 hidden h-56 w-full md:block">
-            <div className="absolute inset-0 -z-10 rounded-[40px] bg-gradient-to-br from-[#4B64FF]/15 via-[#FF80D0]/20 to-transparent blur-3xl" />
-            {heroGalleryPreviews.map((preview, index) => (
-              <div
-                key={preview.src}
-                className={clsx(
-                  'liquid-glass-intense absolute h-40 w-40 overflow-hidden rounded-3xl border-0 shadow-[0_36px_80px_-40px_rgba(12,20,44,0.6)]',
-                  preview.position,
-                  preview.rotation,
-                  preview.zIndex
-                )}
-                data-liquid-tone="accent"
-              >
-                <Image
-                  src={preview.src}
-                  alt={preview.alt}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 18vw"
-                  className="object-cover"
-                  priority={index === 0}
-                />
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-center text-xs text-white/80">
-            ¿Perdiste tu código? Escribinos a{' '}
-            <a href="mailto:hola@lookescolar.com" className="underline">
-              hola@lookescolar.com
-            </a>{' '}
-            y te ayudamos.
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-200/40">
+            Así ven tus clientes su acceso 👇
           </p>
-        </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mx-auto max-w-2xl perspective-1000"
+        >
+          <div className="relative z-20 transform-gpu transition-transform duration-500 hover:scale-[1.01]">
+            <FamilyAccessCard variant="minimal" />
+          </div>
+
+          {/* Enhanced Glow behind card */}
+          <div className="absolute -inset-1 -z-10 rounded-[32px] bg-gradient-to-b from-white/10 to-transparent blur-xl opacity-50" />
+          <div className="absolute -inset-20 -z-20 rounded-[50%] bg-indigo-500/20 blur-[80px] opacity-40" />
+
+          {/* Floating Preview Images */}
+          {heroGalleryPreviews.map((preview, index) => (
+            <motion.div
+              key={preview.src}
+              initial={{ opacity: 0, y: 40, rotate: 0, scale: 0.8 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                rotate: index === 0 ? -8 : index === 1 ? 6 : -4,
+              }}
+              transition={{
+                duration: 0.8,
+                delay: 0.6 + index * 0.15,
+                ease: [0.34, 1.56, 0.64, 1], // Spring-like ease
+              }}
+              whileHover={{ scale: 1.1, rotate: 0, zIndex: 50 }}
+              className={clsx(
+                'absolute h-32 w-32 overflow-hidden rounded-2xl border-2 border-white/20 shadow-2xl md:h-44 md:w-44',
+                preview.position,
+                preview.zIndex
+              )}
+            >
+              <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/0 to-black/20" />
+              <Image
+                src={preview.src}
+                alt={preview.alt}
+                fill
+                sizes="(max-width: 768px) 50vw, 18vw"
+                className="object-cover transition-transform duration-700 hover:scale-110"
+                priority={index === 0}
+              />
+            </motion.div>
+          ))}
+
+          <p className="mt-6 text-center text-xs font-medium text-indigo-200/40">
+            * Esta es una demostración interactiva de la experiencia de tus clientes.
+          </p>
+        </motion.div>
       </div>
     </section>
   );
 }
 
 function ProductShowcaseSection() {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseX = useSpring(x, { stiffness: 500, damping: 100 });
+  const mouseY = useSpring(y, { stiffness: 500, damping: 100 });
+
+  function onMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+    const { left, top, width, height } = currentTarget.getBoundingClientRect();
+    x.set(clientX - left - width / 2);
+    y.set(clientY - top - height / 2);
+  }
+
+  const rotateX = useTransform(mouseY, [-300, 300], [5, -5]);
+  const rotateY = useTransform(mouseX, [-300, 300], [-5, 5]);
+
   return (
     <section id="ecosistema" className="relative overflow-hidden px-6 py-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(75,100,255,0.22),transparent_65%)]" />
-      <div className="pointer-events-none absolute -bottom-24 right-24 h-72 w-72 rounded-full bg-[#FF9F6A]/25 blur-[140px]" />
+      {/* Background Glows */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(75,100,255,0.15),transparent_70%)]" />
+      <div className="pointer-events-none absolute -bottom-24 right-24 h-96 w-96 rounded-full bg-orange-500/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -left-24 top-48 h-72 w-72 rounded-full bg-blue-500/10 blur-[100px]" />
 
       <div className="relative mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <span
-            className="liquid-glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-[#2B3EBF]"
-            data-liquid-tone="accent"
+        <div className="mb-20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
           >
-            Ecosistema completo
-          </span>
-          <h2 className="mt-6 font-display text-4xl font-semibold text-[#101428] lg:text-6xl">
-            Todo lo que necesitás para compartir recuerdos
-          </h2>
-          <p className="mx-auto mt-4 max-w-3xl text-lg leading-relaxed text-slate-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200/30 bg-blue-50/50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blue-600 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+              Ecosistema completo
+            </span>
+          </motion.div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="mt-8 font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-6xl"
+          >
+            Todo lo que necesitás para <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">compartir recuerdos</span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600"
+          >
             LookEscolar integra herramientas para capturar, organizar y
-            distribuir fotos escolares con un lenguaje visual coherente para
-            familias.
-          </p>
+            distribuir fotos escolares con un lenguaje visual coherente y profesional.
+          </motion.p>
         </div>
 
-        <div
-          className="liquid-glass-intense rounded-[36px] p-6 shadow-[0_40px_120px_-36px_rgba(16,24,40,0.32)]"
-          data-liquid-tone="accent"
+        <motion.div
+          style={{ rotateX, rotateY, perspective: 1000 }}
+          onMouseMove={onMouseMove}
+          onMouseLeave={() => {
+            x.set(0);
+            y.set(0);
+          }}
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="group relative rounded-[40px] border border-white/60 bg-white/40 p-4 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] backdrop-blur-xl transition-shadow hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] md:p-8"
         >
-          <ProductGrid className="overflow-hidden rounded-[28px] border border-[#E3E8FF] shadow-sm" />
-        </div>
+          {/* Inner Border/Glow */}
+          <div className="absolute inset-0 rounded-[40px] border border-white/50 mix-blend-overlay pointer-events-none" />
+          <div className="absolute -inset-px rounded-[40px] bg-gradient-to-b from-white/80 to-transparent opacity-50 pointer-events-none" />
+
+          <div className="relative overflow-hidden rounded-[32px] border border-slate-200/60 bg-white shadow-sm">
+            <ProductGrid />
+
+            {/* Overlay Gradient for depth */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -401,28 +510,53 @@ function FamiliesHighlightsSection() {
       <div className="pointer-events-none absolute -right-16 bottom-[-80px] h-80 w-80 rounded-full bg-sky-200/35 blur-[150px]" />
 
       <div className="relative mx-auto max-w-6xl">
-        <div className="mb-14 text-center">
-          <h2 className="font-display text-3xl font-semibold text-slate-900 lg:text-4xl">
-            Diseñado para que las familias disfruten el proceso
-          </h2>
-          <p className="mt-4 text-lg text-slate-700">
+        <div className="mb-20 text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl"
+          >
+            Diseñado para que las familias <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">disfruten el proceso</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="mx-auto mt-6 max-w-2xl text-lg text-slate-600"
+          >
             Cada interacción está pensada para que el acceso sea simple, seguro
             y cálido desde el primer ingreso.
-          </p>
+          </motion.p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {highlights.map((item) => (
-            <div
+        <div className="grid gap-8 md:grid-cols-3">
+          {highlights.map((item, index) => (
+            <motion.div
               key={item.title}
-              className="rounded-3xl border border-[#E3E8FF] bg-white/90 p-8 shadow-[0_25px_70px_-45px_rgba(16,24,40,0.4)] backdrop-blur-sm transition-all hover:-translate-y-1.5 hover:border-[#CBD3FF] hover:shadow-[0_35px_90px_-40px_rgba(16,24,40,0.45)]"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.15, duration: 0.6 }}
+              className="group relative rounded-3xl border border-white/60 bg-white/40 p-8 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)]"
             >
-              <item.icon className="mb-4 h-6 w-6 text-[#4B64FF]" />
-              <h3 className="mb-3 text-xl font-semibold text-[#101428]">
+              <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 text-rose-500 shadow-inner transition-transform group-hover:scale-110">
+                <item.icon className="h-7 w-7" />
+              </div>
+
+              <h3 className="mb-3 text-xl font-bold text-slate-900">
                 {item.title}
               </h3>
-              <p className="text-slate-700">{item.description}</p>
-            </div>
+
+              <p className="text-slate-600 leading-relaxed">
+                {item.description}
+              </p>
+
+              {/* Warm Glow on Hover */}
+              <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-br from-rose-100/0 via-orange-100/0 to-white/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+            </motion.div>
           ))}
         </div>
       </div>

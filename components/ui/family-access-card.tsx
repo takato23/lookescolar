@@ -56,6 +56,7 @@ interface FamilyAccessCardProps {
   autoResolve?: boolean;
   prefetchedResult?: ResolveFamilyTokenResult | null;
   onResolved?: (result: ResolveFamilyTokenResult) => void;
+  variant?: 'default' | 'minimal';
 }
 
 export function FamilyAccessCard({
@@ -64,6 +65,7 @@ export function FamilyAccessCard({
   autoResolve = false,
   prefetchedResult,
   onResolved,
+  variant = 'default',
 }: FamilyAccessCardProps) {
   const router = useRouter();
   const { status, data, error, resolve, reset } = useFamilyTokenResolver();
@@ -269,35 +271,47 @@ export function FamilyAccessCard({
   return (
     <Card
       className={cn(
-        'relative mx-auto w-full max-w-xl overflow-hidden border border-black/5 bg-white p-8 shadow-xl transition-all hover:shadow-2xl dark:border-white/10 dark:bg-gray-950 dark:text-gray-100',
+        'relative mx-auto w-full max-w-xl overflow-hidden transition-all',
+        variant === 'default' && 'border border-black/5 bg-white p-8 shadow-xl hover:shadow-2xl dark:border-white/10 dark:bg-gray-950 dark:text-gray-100',
+        variant === 'minimal' && 'border-none bg-transparent p-0 shadow-none',
         className
       )}
     >
-      <div className="space-y-6">
-        <header className="space-y-2 text-center">
-          <h3 className="text-2xl font-bold tracking-tight">
-            Acceso familiar a tu galería
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Ingresá el alias corto o el código que recibiste. Validamos el
-            acceso y te mostramos un resumen antes de entrar.
-          </p>
-        </header>
+      <div className={cn("space-y-6", variant === 'minimal' && "space-y-8")}>
+        {variant === 'default' && (
+          <header className="space-y-2 text-center">
+            <h3 className="text-2xl font-bold tracking-tight">
+              Acceso familiar a tu galería
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Ingresá el alias corto o el código que recibiste. Validamos el
+              acceso y te mostramos un resumen antes de entrar.
+            </p>
+          </header>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex gap-3">
-            <Input
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              placeholder="Ej: luna1234 o LES-2024-ABC123XYZ"
-              aria-label="Alias o código de acceso familiar"
-              disabled={isLoading}
-              className="h-12 flex-1 text-base"
-            />
+          <div className={cn("flex gap-3", variant === 'minimal' && "flex-col sm:flex-row")}>
+            <div className="relative flex-1">
+              <Input
+                value={inputValue}
+                onChange={(event) => setInputValue(event.target.value)}
+                placeholder="Ej: luna1234 o LES-2024-ABC123XYZ"
+                aria-label="Alias o código de acceso familiar"
+                disabled={isLoading}
+                className={cn(
+                  "h-12 text-base transition-all",
+                  variant === 'minimal' && "h-14 rounded-2xl border-white/20 bg-white/10 text-white placeholder:text-white/50 focus:border-white/40 focus:bg-white/15 focus:ring-0 backdrop-blur-md shadow-lg"
+                )}
+              />
+            </div>
             <Button
               type="submit"
               disabled={isLoading}
-              className="flex items-center justify-center gap-2 whitespace-nowrap"
+              className={cn(
+                "flex items-center justify-center gap-2 whitespace-nowrap",
+                variant === 'minimal' && "h-14 rounded-2xl bg-white text-indigo-950 hover:bg-white/90 shadow-lg font-bold px-8"
+              )}
             >
               {isLoading ? (
                 <>
@@ -309,10 +323,12 @@ export function FamilyAccessCard({
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Aceptamos alias cortos y códigos largos. Ignoramos mayúsculas,
-            espacios y guiones automáticamente.
-          </p>
+          {variant === 'default' && (
+            <p className="text-xs text-muted-foreground">
+              Aceptamos alias cortos y códigos largos. Ignoramos mayúsculas,
+              espacios y guiones automáticamente.
+            </p>
+          )}
         </form>
 
         {errorMessage && (

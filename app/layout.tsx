@@ -26,8 +26,9 @@ const body = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: 'LookEscolar - Fotografía Escolar Digital',
-  description: 'Sistema de gestión y venta de fotografías escolares',
+  title: 'Lumina | Tu negocio de fotografía, simplificado',
+  description:
+    'La plataforma todo en uno para fotógrafos profesionales. Galerías privadas, venta de fotos, pagos automatizados y distribución física o digital.',
   keywords: 'fotografía escolar, fotos escolares, venta de fotos, Argentina',
   authors: [{ name: 'Melisa Fotografía' }],
 };

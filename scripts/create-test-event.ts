@@ -24,11 +24,12 @@ async function createTestEvent() {
       .from('events')
       .insert({
         name: 'Graduación Primaria',
-        description: 'Ceremonia de graduación de sexto grado', 
+        description: 'Ceremonia de graduación de sexto grado',
         location: 'Salón de actos',
         date: '2024-12-15',
         status: 'active',
-        public_gallery_enabled: true
+        public_gallery_enabled: true,
+        tenant_id: '00000000-0000-0000-0000-000000000001'
       })
       .select()
       .single();
@@ -52,7 +53,8 @@ async function createTestEvent() {
         name: 'Sexto Grado A',
         event_id: event.id,
         depth: 1,
-        parent_id: null
+        parent_id: null,
+        tenant_id: '00000000-0000-0000-0000-000000000001'
       })
       .select()
       .single();
@@ -72,7 +74,8 @@ async function createTestEvent() {
         name: 'Familia González',
         event_id: event.id,
         parent_id: gradeFolder.id,
-        depth: 2
+        depth: 2,
+        tenant_id: '00000000-0000-0000-0000-000000000001'
       })
       .select()
       .single();

@@ -40,6 +40,7 @@ const DialogContent = React.forwardRef<
         "liquid-glass-intense fixed left-1/2 top-1/2 z-[130] grid w-full max-w-xl -translate-x-1/2 -translate-y-1/2 gap-6 rounded-3xl border border-white/10 p-8 shadow-[0_50px_120px_-45px_rgba(16,24,40,0.55)] transition-all duration-300 ease-out",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 data-[state=closed]:slide-out-to-left-1/3 data-[state=closed]:slide-out-to-top-[45%] data-[state=open]:slide-in-from-left-1/3 data-[state=open]:slide-in-from-top-[45%]",
         "sm:max-w-2xl sm:p-10",
+        "dialog-content-fix",
         className
       )}
       {...props}

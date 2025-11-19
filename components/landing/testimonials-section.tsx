@@ -1,81 +1,128 @@
+'use client';
+
 import { Card } from '@/components/ui/card';
 import { Star } from 'lucide-react';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 export function TestimonialsSection() {
   const testimonials = [
     {
-      name: 'María González',
+      content:
+        'Antes pasaba horas organizando pedidos por WhatsApp. Con Lumina, todo es automático y mis ventas aumentaron un 40% el primer mes.',
+      author: 'Sofía M.',
       role: 'Fotógrafa Escolar',
-      company: 'Recuerdos Felices',
-      content:
-        'LookEscolar transformó completamente mi negocio. Ahora puedo manejar 10 veces más eventos con la misma calidad.',
-      rating: 5,
+      company: 'Independiente',
+      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
     },
     {
-      name: 'Carlos Martínez',
+      content:
+        'La plataforma es súper intuitiva. A los padres les encanta poder ver y comprar las fotos desde el celular. El soporte es excelente.',
+      author: 'Martín G.',
       role: 'Director',
-      company: 'Colegio San José',
-      content:
-        'Las familias están encantadas con la facilidad para acceder a las fotos. El sistema es muy intuitivo.',
-      rating: 5,
+      company: 'Estudio Enfoque',
+      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
     },
     {
-      name: 'Ana Rodriguez',
-      role: 'Madre de Familia',
-      company: '',
       content:
-        'Súper fácil encontrar las fotos de mi hijo. El código QR funciona perfectamente y la calidad es excelente.',
-      rating: 5,
+        'Lo que más valoro es la privacidad. Cada familia ve solo sus fotos. Eso me dio mucha confianza con los colegios nuevos.',
+      author: 'Laura R.',
+      role: 'Fotógrafa',
+      company: 'Click Escolar',
+      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
+    },
+    {
+      content:
+        'La integración con Mercado Pago me solucionó la vida. Ya no tengo que perseguir cobros. El dinero entra directo a mi cuenta.',
+      author: 'Pablo D.',
+      role: 'Fotógrafo de Eventos',
+      company: 'PD Fotografía',
+      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
     },
   ];
 
-  return (
-    <section id="testimonials" className="relative overflow-hidden px-6 py-28 text-white">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800" />
-      <div className="pointer-events-none absolute left-12 top-10 h-64 w-64 rounded-full bg-fuchsia-500/25 blur-[140px]" />
-      <div className="pointer-events-none absolute bottom-[-120px] right-24 h-80 w-80 rounded-full bg-cyan-400/25 blur-[160px]" />
+  // Duplicate for marquee effect
+  const marqueeContent = [...testimonials, ...testimonials];
 
-      <div className="relative mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1 text-xs uppercase tracking-[0.3em] text-white/70">
-            Historias reales
-          </span>
-          <h2 className="font-display mt-6 text-4xl font-semibold lg:text-5xl">
-            Familias y escuelas hablan de LookEscolar
-          </h2>
-          <p className="mx-auto mt-4 max-w-3xl text-lg text-white/80">
-            Experiencias que muestran cómo la plataforma simplifica el acceso a recuerdos
-            importantes.
-          </p>
+  return (
+    <section className="relative overflow-hidden bg-[#0A1029] py-32">
+      {/* Background Effects */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-1/4 top-1/4 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-purple-600/10 blur-[120px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-6">
+        <div className="mb-20 text-center">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-display text-4xl font-bold tracking-tight text-white lg:text-5xl"
+          >
+            Confiado por <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">fotógrafos profesionales</span>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="mx-auto mt-6 max-w-2xl text-lg text-slate-400"
+          >
+            Sumate a la comunidad de creadores que están modernizando su negocio.
+          </motion.p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          {testimonials.map((testimonial, index) => (
-            <Card
-              key={index}
-              className="flex h-full flex-col justify-between rounded-3xl border border-white/15 bg-white/10 p-8 text-white shadow-[0_35px_90px_-50px_rgba(15,23,42,0.8)] backdrop-blur-xl"
+        <div className="relative">
+          {/* Gradient Masks for Marquee */}
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-24 bg-gradient-to-r from-[#0A1029] to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-24 bg-gradient-to-l from-[#0A1029] to-transparent" />
+
+          <div className="flex overflow-hidden">
+            <motion.div
+              animate={{ x: ['0%', '-50%'] }}
+              transition={{
+                repeat: Infinity,
+                ease: 'linear',
+                duration: 40,
+              }}
+              className="flex gap-6 py-4"
             >
-              <div>
-                <div className="mb-4 flex gap-1">
-                  {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} className="h-5 w-5 fill-amber-300 text-amber-300" />
-                  ))}
-                </div>
+              {[...testimonials, ...testimonials].map((testimonial, index) => (
+                <div
+                  key={index}
+                  className="group relative w-[400px] flex-shrink-0 rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm transition-colors hover:bg-white/10"
+                >
+                  <div className="mb-6 flex gap-1 text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-current" />
+                    ))}
+                  </div>
 
-                <blockquote className="mb-6 text-white/80">
-                  “{testimonial.content}”
-                </blockquote>
-              </div>
+                  <p className="mb-8 text-lg leading-relaxed text-slate-300">
+                    "{testimonial.content}"
+                  </p>
 
-              <div>
-                <div className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
-                  {testimonial.role}
-                  {testimonial.company && ` • ${testimonial.company}`}
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white/10">
+                      <Image
+                        src={testimonial.image}
+                        alt={testimonial.author}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">{testimonial.author}</div>
+                      <div className="text-sm text-slate-400">
+                        {testimonial.role}, {testimonial.company}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-lg font-semibold text-white">{testimonial.name}</div>
-              </div>
-            </Card>
-          ))}
+              ))}
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>

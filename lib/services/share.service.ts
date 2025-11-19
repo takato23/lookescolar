@@ -232,7 +232,7 @@ class ShareService {
 
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('id, name')
+        .select('id, name, tenant_id')
         .eq('id', resolvedEventId)
         .single();
 
@@ -337,6 +337,7 @@ class ShareService {
 
       const shareData = {
         token,
+        tenant_id: (event as any).tenant_id || null,
         event_id: event.id,
         folder_id: resolvedFolderId,
         subject_id: subjectId ?? null,
@@ -366,6 +367,7 @@ class ShareService {
       const baseSelectColumns = new Set<string>([
         'id',
         'token',
+        'tenant_id',
         'event_id',
         'folder_id',
         'subject_id',

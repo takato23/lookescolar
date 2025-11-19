@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { clsx } from 'clsx';
 
-type ModernTone = 'primary' | 'secondary' | 'ghost';
+type ModernTone = 'primary' | 'secondary' | 'ghost' | 'success';
 
 type ClassicButtonVariant =
   | 'primary'
@@ -154,6 +154,10 @@ const modernVariantConfig: Record<ModernTone, VariantConfig> = {
   ghost: {
     className:
       'bg-transparent text-[#1f2a44] border border-[#d0d5dd] hover:border-[#1f2a44] hover:bg-[#f5f7fa] focus-visible:ring-2 focus-visible:ring-[#62e2a2]/40 focus-visible:ring-offset-2 ring-offset-white hover:-translate-y-0.5',
+  },
+  success: {
+    className:
+      'bg-[#10b981] text-white shadow-[0_26px_48px_-26px_rgba(16,185,129,0.58)] hover:bg-[#059669] hover:shadow-[0_32px_60px_-28px_rgba(5,150,105,0.62)] hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#10b981]/60 focus-visible:ring-offset-2 ring-offset-[#f5f7fa] active:translate-y-0',
   },
 };
 

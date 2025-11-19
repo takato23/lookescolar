@@ -272,12 +272,7 @@ export default function PhotoAdmin({
   const [showBatchStudentModal, setShowBatchStudentModal] = useState(false);
   const [batchCourses, setBatchCourses] = useState<any[]>([]);
   const [isLoadingBatchCourses, setIsLoadingBatchCourses] = useState(false);
-  // Share creation modal state
-  const [showCreateShareModal, setShowCreateShareModal] = useState(false);
-  const [sharePassword, setSharePassword] = useState('');
-  const [shareExpiresAt, setShareExpiresAt] = useState('');
-  const [shareAllowDownload, setShareAllowDownload] = useState(false);
-  const [shareAllowComments, setShareAllowComments] = useState(false);
+  // Share creation state
   const [isCreatingShare, setIsCreatingShare] = useState(false);
   const [renameState, setRenameState] = useState<{ folder: any } | null>(null);
   const [renameName, setRenameName] = useState('');
@@ -1838,14 +1833,12 @@ export default function PhotoAdmin({
       const payload: Record<string, any> = {
         eventId, // el backend puede derivarlo de carpeta/fotos si es necesario
         shareType: isFolder ? 'folder' : 'photos',
-        allowDownload: shareAllowDownload,
-        allowComments: shareAllowComments,
+        allowDownload: false, // Configuración predeterminada: sin descargas
+        allowComments: false, // Configuración predeterminada: sin comentarios
         title: `Escaparate - ${titleBase}`,
       };
 
-      if (shareExpiresAt) {
-        payload.expiresAt = new Date(shareExpiresAt).toISOString();
-      }
+      // No password, no expiration - configuración simple y directa
 
       if (isFolder) payload.folderId = selectedFolderId;
       else payload.photoIds = Array.from(selectedAssetIds);
@@ -1854,10 +1847,7 @@ export default function PhotoAdmin({
       const res = await fetch('/api/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...payload,
-          password: sharePassword || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -1901,24 +1891,19 @@ export default function PhotoAdmin({
         await navigator.clipboard.writeText(shareUrl);
       } catch {}
 
-      toast.success(`🏪 Escaparate "${shareData.title}" creado!`, {
+      toast.success(`🏪 Tienda "${shareData.title}" creada!`, {
         description:
-          '✅ Enlace listo (copiado) — abre el gestor para ver todos',
+          '✅ Enlace copiado al portapapeles — compartilo con tus clientes',
         action: {
           label: 'Ver gestor',
           onClick: () => setShareManagerOpen(true),
         },
       });
       setShareRefreshKey(Date.now());
-      setShowCreateShareModal(false);
-      setSharePassword('');
-      setShareExpiresAt('');
-      setShareAllowDownload(false);
-      setShareAllowComments(false);
     } catch (err) {
       console.error('Create share error:', err);
       toast.error(
-        err instanceof Error ? err.message : 'Error creando escaparate'
+        err instanceof Error ? err.message : 'Error creando tienda'
       );
     } finally {
       setIsCreatingShare(false);
@@ -1930,10 +1915,6 @@ export default function PhotoAdmin({
     searchParams,
     folders,
     assets,
-    shareAllowDownload,
-    shareAllowComments,
-    shareExpiresAt,
-    sharePassword,
   ]);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -2169,6 +2150,24 @@ export default function PhotoAdmin({
                       Subir fotos
                     </PhotoUploadButton>
                   )}
+
+                  {/* Botón de Generar Tienda */}
+                  <Button
+                    variant="modern"
+                    modernTone="success"
+                    size="sm"
+                    onClick={handleCreateAlbum}
+                    disabled={isCreatingShare || (!selectedFolderId && selectedAssetIds.size === 0)}
+                    className="h-9 rounded-full px-4 text-sm font-medium shadow-[0_18px_36px_-24px_rgba(16,185,129,0.55)]"
+                    title={
+                      selectedFolderId || selectedAssetIds.size > 0
+                        ? 'Generar enlace de tienda para compartir con clientes'
+                        : 'Seleccioná una carpeta o fotos para compartir'
+                    }
+                  >
+                    <Link2 className="mr-2 h-4 w-4" />
+                    {isCreatingShare ? 'Generando...' : 'Generar Tienda'}
+                  </Button>
 
                   {uploadState && (
                     <div className="flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50/80 px-3 py-1 text-xs font-medium text-blue-700 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-100">
@@ -3154,90 +3153,6 @@ export default function PhotoAdmin({
       )}
 
       {/* Create Share Modal */}
-      {showCreateShareModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-xl">
-            <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  Crear enlace de galería
-                </h2>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowCreateShareModal(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="space-y-6">
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedFolderId
-                    ? 'Se compartirá la carpeta seleccionada'
-                    : `${selectedAssetIds.size} foto${selectedAssetIds.size !== 1 ? 's' : ''} seleccionada(s)`}
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Contraseña (opcional)</Label>
-                  <Input
-                    placeholder="Dejar vacío para sin contraseña"
-                    value={sharePassword}
-                    onChange={(e) => setSharePassword(e.target.value)}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Expiración (opcional)</Label>
-                  <Input
-                    type="datetime-local"
-                    value={shareExpiresAt}
-                    onChange={(e) => setShareExpiresAt(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Permitir descargas</Label>
-                    <p className="text-xs text-gray-500">
-                      Por defecto desactivado
-                    </p>
-                  </div>
-                  <Switch
-                    checked={shareAllowDownload}
-                    onCheckedChange={setShareAllowDownload}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Permitir comentarios</Label>
-                  </div>
-                  <Switch
-                    checked={shareAllowComments}
-                    onCheckedChange={setShareAllowComments}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 border-t pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowCreateShareModal(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleCreateAlbum}
-                    disabled={isCreatingShare}
-                  >
-                    {isCreatingShare ? 'Creando…' : 'Crear enlace'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <ShareManager
         eventId={selectedEventId}

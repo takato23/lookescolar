@@ -30,7 +30,6 @@ export const StoreProductSchema = z.object({
   name: z.string()
     .min(1, 'El nombre es requerido')
     .max(100, 'Nombre demasiado largo')
-    .regex(/^[a-zA-Z0-9\s\-_]+$/, 'Caracteres inválidos en el nombre')
     .transform(val => sanitizeString(val)),
 
   type: z.enum(['physical', 'digital'], {

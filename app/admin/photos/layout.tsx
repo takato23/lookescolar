@@ -18,6 +18,7 @@ export default function AdminPhotosLayout({ children }: PhotosLayoutProps) {
 
   useEffect(() => {
     setVariant('immersive', {
+      showHeader: true, // Mostrar el AdminHeader con perfil, tema, notificaciones
       wrapperClassName: cn(
         IMMERSIVE_WRAPPER_CLASSES,
         'relative isolate'
