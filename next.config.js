@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// Forcing restart to clear cache
 import path from 'path';
 import { fileURLToPath } from 'url';
 

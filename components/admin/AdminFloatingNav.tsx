@@ -144,7 +144,7 @@ export function AdminFloatingNav() {
 
   return (
     <div className="relative w-full">
-      <div className="relative flex w-full items-center justify-between gap-2 overflow-x-auto rounded-full border border-white/25 bg-white/70 p-2 shadow-[0_32px_90px_-45px_rgba(15,23,42,0.55)] backdrop-blur-2xl dark:border-slate-800/60 dark:bg-slate-950/60">
+      <div className="relative flex w-full items-center justify-between gap-2 overflow-x-auto rounded-full border border-white/10 bg-slate-900/80 p-2 shadow-[0_32px_90px_-45px_rgba(15,23,42,0.55)] backdrop-blur-2xl">
         {navItems.map((item) => {
           const isActive = activeItem?.id === item.id;
           const tone = toneStyles[item.tone];
@@ -157,7 +157,7 @@ export function AdminFloatingNav() {
               className="group relative min-w-[150px] flex-1"
               aria-current={isActive ? 'page' : undefined}
             >
-              <div className="relative flex h-full min-h-[72px] items-center gap-3 overflow-hidden rounded-[28px] border border-white/40 px-4 py-3 transition-transform duration-200 hover:-translate-y-0.5 dark:border-white/10">
+              <div className="relative flex h-full min-h-[72px] items-center gap-3 overflow-hidden rounded-[28px] border border-white/10 px-4 py-3 transition-transform duration-200 hover:-translate-y-0.5">
                 {isActive && (
                   <motion.div
                     layoutId={bubbleLayoutId}
@@ -178,7 +178,7 @@ export function AdminFloatingNav() {
                   <Icon
                     className={cn(
                       'h-5 w-5 transition-colors duration-300',
-                      isActive ? tone.icon : 'text-slate-500 group-hover:text-slate-800'
+                      isActive ? tone.icon : 'text-slate-300 group-hover:text-white'
                     )}
                     strokeWidth={isActive ? 2.4 : 2}
                   />
@@ -188,7 +188,7 @@ export function AdminFloatingNav() {
                   <span
                     className={cn(
                       'block truncate text-sm font-semibold transition-colors duration-200',
-                      isActive ? 'text-white' : 'text-slate-700 group-hover:text-slate-900'
+                      isActive ? 'text-white' : 'text-slate-200 group-hover:text-white'
                     )}
                   >
                     {item.label}
@@ -196,7 +196,7 @@ export function AdminFloatingNav() {
                   <p
                     className={cn(
                       'mt-0.5 truncate text-xs transition-colors duration-200',
-                      isActive ? 'text-white/80' : 'text-slate-500 group-hover:text-slate-600'
+                      isActive ? 'text-white/80' : 'text-slate-400 group-hover:text-slate-200'
                     )}
                   >
                     {item.description}

@@ -5,8 +5,9 @@ import { useParams } from 'next/navigation';
 
 // Lazy loading de componentes para bundle splitting
 // Use direct import + dynamic to avoid Vercel alias resolution issues
+// Extract named export and wrap as default for lazy()
 const PixiesetFlowTemplate = lazy(
-  () => import('@/components/store/templates/PixiesetFlowTemplate')
+  () => import('@/components/store/templates/PixiesetFlowTemplate').then(module => ({ default: module.PixiesetFlowTemplate }))
 );
 
 // Componente de loading optimizado para Suspense

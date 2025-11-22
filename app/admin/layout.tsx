@@ -172,7 +172,7 @@ function AdminLayoutContent({
 
   const isImmersive = config.variant === 'immersive';
   const wrapperClassName = cn(
-    'liquid-glass-app min-h-screen',
+    'liquid-glass-app min-h-screen bg-slate-950 text-slate-100 antialiased relative isolate',
     config.wrapperClassName
   );
 
@@ -193,6 +193,9 @@ function AdminLayoutContent({
   return (
     <MobileOptimizations>
       <div className={wrapperClassName}>
+        {/* Gradiente verde de identidad */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(98,226,162,0.14),_transparent_55%)]" />
+
         {config.showMobileNav && (
           <MobileNavigation
             items={adminNavigationItems}
@@ -215,7 +218,7 @@ function AdminLayoutContent({
 
         {isImmersive ? (
           <div
-            className={cn('flex min-h-screen flex-col', config.contentClassName)}
+            className={cn('relative flex min-h-screen flex-col', config.contentClassName)}
           >
             {renderFloatingNav()}
             <main
