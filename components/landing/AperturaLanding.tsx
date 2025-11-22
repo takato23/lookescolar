@@ -32,6 +32,7 @@ export default function AperturaLanding() {
             />
 
             <Canvas
+                key="apertura-canvas" // Fix: Prevent double createRoot in development
                 camera={{ position: [0, 0, 5], fov: 35 }}
                 gl={{ antialias: false, alpha: true }} // Keep AA off for postprocessing, but enable depth/stencil
                 dpr={[1, 2]}

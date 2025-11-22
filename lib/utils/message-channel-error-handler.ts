@@ -7,6 +7,8 @@ const MESSAGE_CHANNEL_ERROR_PATTERNS = [
   'A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received',
   'message channel closed before a response was received',
   'asynchronous response by returning true',
+  'You are calling ReactDOMClient.createRoot() on a container that has already been passed to createRoot()',
+  'createRoot() on a container that has already been passed',
 ];
 
 export function isMessageChannelError(error: Error | string): boolean {
