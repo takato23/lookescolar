@@ -76,6 +76,7 @@ async function handlePOST(
   request: NextRequest, context: RouteContext<{ id: string }>): Promise<NextResponse> {
   try {
     // Validate params
+    const params = await context.params;
     const { id } = paramsSchema.parse(params);
 
     // Validate request body
@@ -341,6 +342,7 @@ async function handleDELETE(
   request: NextRequest, context: RouteContext<{ id: string }>): Promise<NextResponse> {
   try {
     // Validate params
+    const params = await context.params;
     const { id } = paramsSchema.parse(params);
 
     // Get Supabase client

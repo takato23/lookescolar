@@ -34,17 +34,17 @@ export const GET = withAuth(async (request: NextRequest) => {
     }
 
     // Simplified response - avoid complex stats that may fail
-    const eventsWithStats = (events || []).map((event) => {
+    const eventsWithStats = (events || []).map((event: Record<string, unknown>) => {
       return {
-        id: event.id,
-        name: event.name || 'Sin nombre',
-        school: (event as any).school || event.name || 'Sin nombre',
-        location: (event as any).school || '',
-        date: event.date || event.created_at,
+        id: event.id as string,
+        name: (event.name as string) || 'Sin nombre',
+        school: (event.school as string) || (event.name as string) || 'Sin nombre',
+        location: (event.school as string) || '',
+        date: (event.date as string) || (event.created_at as string),
         // Default to true to keep UI behavior simple across schema variations
         active: true,
         photo_price: 0, // Default value
-        created_at: event.created_at,
+        created_at: event.created_at as string,
         photo_count: 0, // We'll load this separately if needed
       };
     });
@@ -114,12 +114,13 @@ export const POST = withAuth(async (request: NextRequest) => {
     revalidatePath('/admin/events');
     revalidatePath('/admin/events?include_stats=true');
 
+    const eventData = event as Record<string, unknown>;
     return NextResponse.json({
       success: true,
       event: {
-        ...event,
-        school: event.school || event.name, // Map for compatibility
-        location: event.school || '',
+        ...eventData,
+        school: (eventData.school as string) || (eventData.name as string), // Map for compatibility
+        location: (eventData.school as string) || '',
         active: true,
       },
     });

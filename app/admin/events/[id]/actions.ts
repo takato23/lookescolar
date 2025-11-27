@@ -198,7 +198,7 @@ export async function updateEventSettings(
 
   const { error: updateError } = await supabase
     .from('events')
-    .update<Database['public']['Tables']['events']['Update']>(updatePayload)
+    .update(updatePayload as Record<string, unknown>)
     .eq('id', id);
 
   if (updateError) {
@@ -241,7 +241,7 @@ export async function linkRootFolder(
 
   const { error: updateError } = await supabase
     .from('events')
-    .update<Database['public']['Tables']['events']['Update']>(updatePayload)
+    .update(updatePayload as Record<string, unknown>)
     .eq('id', id);
 
   if (updateError) {

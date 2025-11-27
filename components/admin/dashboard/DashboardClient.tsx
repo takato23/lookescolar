@@ -377,8 +377,8 @@ export function DashboardClient() {
     <>
       <MobileDashboardLayout stats={dashboardStats} currentTime={currentTime} />
 
-      <div className="hidden min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-blue-50/40 dark:from-slate-950 dark:via-indigo-950/20 dark:to-blue-950/30 lg:block">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8">
+      <div className="hidden min-h-screen bg-transparent lg:block">
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
           <DashboardWelcome
             currentTime={currentTime}
             isLoading={isLoading}
@@ -429,8 +429,8 @@ export function DashboardClient() {
           {/* Alerts and Recent Activity with enhanced design */}
           <section className="grid gap-5 xl:grid-cols-[1.5fr,1fr]">
             {/* Alerts Panel */}
-            <div className="liquid-glass-intense relative overflow-hidden rounded-2xl p-6 shadow-xl">
-              <div className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-orange-400/20 to-red-400/20 blur-3xl"></div>
+            <div className="liquid-glass-intense relative overflow-hidden rounded-3xl border border-white/10 bg-black/20 p-6 shadow-xl backdrop-blur-xl">
+              <div className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-orange-500/10 to-red-500/10 blur-3xl"></div>
 
               <header className="relative mb-5 flex items-center justify-between">
                 <div>
@@ -477,8 +477,8 @@ export function DashboardClient() {
             </div>
 
             {/* Recent Activity Panel */}
-            <div className="liquid-glass-intense relative overflow-hidden rounded-2xl p-6 shadow-xl">
-              <div className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-blue-400/20 to-purple-400/20 blur-3xl"></div>
+            <div className="liquid-glass-intense relative overflow-hidden rounded-3xl border border-white/10 bg-black/20 p-6 shadow-xl backdrop-blur-xl">
+              <div className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 blur-3xl"></div>
 
               <header className="relative mb-5">
                 <div className="flex items-center justify-between">

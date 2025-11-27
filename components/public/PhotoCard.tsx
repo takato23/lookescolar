@@ -22,11 +22,14 @@ const BLUR_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQ
 export function PhotoCard({ photo, price = 1000, onOpenModal }: PhotoCardProps) {
   const [isLiked, setIsLiked] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
-  const addItem = usePublicCartStore((state) => state.addItem)
-  const removeItem = usePublicCartStore((state) => state.removeItem)
-  const isItemInCart = usePublicCartStore((state) => state.isItemInCart)
-  const getItemQuantity = usePublicCartStore((state) => state.getItemQuantity)
-  
+
+  // usePublicCartStore returns the store directly, not a selector
+  const cartStore = usePublicCartStore()
+  const addItem = cartStore.addItem
+  const removeItem = cartStore.removeItem
+  const isItemInCart = cartStore.isItemInCart
+  const getItemQuantity = cartStore.getItemQuantity
+
   const isSelected = isItemInCart(photo.id)
   const quantity = getItemQuantity(photo.id)
   

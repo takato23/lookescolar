@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
-import { X, Minus, Plus, Trash2, ShoppingCart, Star } from 'lucide-react'
+import { Minus, Plus, Trash2, ShoppingCart, Star } from 'lucide-react'
 import { usePublicCartStore } from '@/lib/stores/unified-cart-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
+import { CouponInput } from '@/components/checkout/CouponInput'
 
 export function CartDrawer() {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
@@ -21,18 +22,23 @@ export function CartDrawer() {
   
   const pathname = usePathname()
 
-  const items = usePublicCartStore((state) => state.items)
-  const isCartOpen = usePublicCartStore((state) => state.isOpen)
-  const openCart = usePublicCartStore((state) => state.openCart)
-  const closeCart = usePublicCartStore((state) => state.closeCart)
-  const removeItem = usePublicCartStore((state) => state.removeItem)
-  const updateQuantity = usePublicCartStore((state) => state.updateQuantity)
-  const clearCart = usePublicCartStore((state) => state.clearCart)
-  const getTotalItems = usePublicCartStore((state) => state.getTotalItems)
-  const getTotalPrice = usePublicCartStore((state) => state.getTotalPrice)
-  const setContactInfo = usePublicCartStore((state) => state.setContactInfo)
-  const getEventId = usePublicCartStore((state) => state.getEventId)
-  const setEventId = usePublicCartStore((state) => state.setEventId)
+  // usePublicCartStore returns the store directly, not a selector
+  const cartStore = usePublicCartStore()
+  const items = cartStore.items
+  const isCartOpen = cartStore.isOpen
+  const openCart = cartStore.openCart
+  const closeCart = cartStore.closeCart
+  const removeItem = cartStore.removeItem
+  const updateQuantity = cartStore.updateQuantity
+  const clearCart = cartStore.clearCart
+  const getTotalItems = cartStore.getTotalItems
+  const getTotalPrice = cartStore.getTotalPrice
+  const getTotalPriceWithDiscount = cartStore.getTotalPriceWithDiscount
+  const getDiscountAmount = cartStore.getDiscountAmount
+  const appliedCoupon = cartStore.appliedCoupon
+  const setContactInfo = cartStore.setContactInfo
+  const getEventId = cartStore.getEventId
+  const setEventId = cartStore.setEventId
   
   // Fallback: extraer eventId de la URL si no está en el store
   const getEventIdFromUrl = () => {
@@ -51,6 +57,8 @@ export function CartDrawer() {
 
   const totalItems = getTotalItems()
   const totalPrice = getTotalPrice()
+  const totalWithDiscount = getTotalPriceWithDiscount()
+  const discountAmount = getDiscountAmount()
 
   const handleCheckout = async () => {
     if (!contactForm.name || !contactForm.email || !contactForm.phone) {
@@ -79,7 +87,13 @@ export function CartDrawer() {
         eventId: finalEventId,
         photoIds: items.map(item => item.photoId),
         contactInfo: contactForm,
-        package: `Selección personalizada (${items.length} fotos)`
+        package: `Selección personalizada (${items.length} fotos)`,
+        // Incluir cupón si hay uno aplicado
+        ...(appliedCoupon && {
+          couponCode: appliedCoupon.code,
+          couponId: appliedCoupon.couponId,
+          discountCents: appliedCoupon.discountCents,
+        }),
       }
 
       // Llamar al endpoint de checkout
@@ -137,11 +151,23 @@ export function CartDrawer() {
           </SheetDescription>
           
           {totalItems > 0 && (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg space-y-2">
+              {discountAmount > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>Subtotal</span>
+                    <span>{totalPrice.toLocaleString()} ARS</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-green-600 font-medium">
+                    <span>Descuento ({appliedCoupon?.code})</span>
+                    <span>-{discountAmount.toLocaleString()} ARS</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold text-gray-900">Total</span>
                 <span className="text-2xl font-bold text-gray-900">
-                  {totalPrice.toLocaleString()} ARS
+                  {totalWithDiscount.toLocaleString()} ARS
                 </span>
               </div>
             </div>
@@ -297,6 +323,9 @@ export function CartDrawer() {
                 </div>
               </div>
             </div>
+
+            {/* Cupón de descuento */}
+            <CouponInput variant="compact" className="bg-white/60 rounded-xl p-3" />
 
             <Separator className="bg-white/20" />
 

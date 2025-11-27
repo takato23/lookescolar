@@ -8,8 +8,10 @@ interface CartInitializerProps {
 }
 
 export function CartInitializer({ eventId }: CartInitializerProps) {
-  const setContext = usePublicCartStore((state) => state.setContext)
-  const setEventId = usePublicCartStore((state) => state.setEventId)
+  // usePublicCartStore returns the store directly, not a selector
+  const cartStore = usePublicCartStore()
+  const setContext = cartStore.setContext
+  const setEventId = cartStore.setEventId
 
   useEffect(() => {
     if (!eventId) return

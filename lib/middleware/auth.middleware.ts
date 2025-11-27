@@ -431,18 +431,18 @@ export async function generateCSRFToken(): Promise<string> {
 
 // Export AuthMiddleware class for compatibility
 export class AuthMiddleware {
-  static withAuth<T extends any[], R>(
+  static withAuth<T extends any[]>(
     handler: (
       request: NextRequest,
       auth: { isAdmin: boolean; user?: any },
       ...args: T
-    ) => Promise<NextResponse<R>>,
+    ) => Promise<NextResponse<any>>,
     _role?: string
   ) {
     return async (
       request: NextRequest,
       ...rawArgs: RouteArgs<T>
-    ): Promise<NextResponse<R | { error: string }>> => {
+    ): Promise<NextResponse<any>> => {
       const args = await normalizeRouteArgs(rawArgs);
       const authResult = await authenticateAdmin(request);
 

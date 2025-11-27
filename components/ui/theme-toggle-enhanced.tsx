@@ -1,54 +1,83 @@
 'use client';
 
-import { useTheme } from '@/components/providers/theme-provider';
+import { useTheme, type Theme } from '@/components/providers/theme-provider';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Sun, Moon, Monitor, Check } from 'lucide-react';
+import { Sun, Moon, Monitor, Star, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function ThemeToggleEnhanced() {
-  const { theme, setTheme } = useTheme();
+const themes = [
+  { value: 'light' as Theme, label: 'Claro', icon: Sun, description: 'Ideal para el día' },
+  { value: 'dark' as Theme, label: 'Oscuro', icon: Moon, description: 'Reduce fatiga visual' },
+  { value: 'night' as Theme, label: 'Noche', icon: Star, description: 'Extra oscuro para dormir' },
+  { value: 'system' as Theme, label: 'Sistema', icon: Monitor, description: 'Sigue tu dispositivo' },
+];
 
-  const themes = [
-    { value: 'light', label: 'Claro', icon: Sun },
-    { value: 'dark', label: 'Oscuro', icon: Moon },
-    { value: 'system', label: 'Sistema', icon: Monitor },
-  ];
+export function ThemeToggleEnhanced() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+
+  const currentTheme = themes.find(t => t.value === theme) || themes[0];
+  const CurrentIcon = currentTheme.icon;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="icon"
-          className="h-9 w-9 rounded-lg border border-border dark:border-gray-700 hover:bg-muted dark:hover:bg-gray-800 transition-all"
+          className={cn(
+            "h-10 w-10 rounded-xl border transition-all duration-300",
+            "bg-background/80 backdrop-blur-sm",
+            "border-border/50 hover:border-border",
+            "hover:bg-muted/80",
+            "focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+          )}
         >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Cambiar tema</span>
+          <Sun className="h-[18px] w-[18px] rotate-0 scale-100 transition-all duration-500 dark:-rotate-90 dark:scale-0 text-amber-500" />
+          <Moon className="absolute h-[18px] w-[18px] rotate-90 scale-0 transition-all duration-500 dark:rotate-0 dark:scale-100 text-blue-400" />
+          <span className="sr-only">Cambiar tema: {currentTheme.label}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
-        {themes.map(({ value, label, icon: Icon }) => (
+      <DropdownMenuContent
+        align="end"
+        className={cn(
+          "w-48 p-1.5",
+          "bg-card/95 backdrop-blur-xl",
+          "border border-border/50",
+          "shadow-lg shadow-black/5 dark:shadow-black/20",
+          "rounded-xl"
+        )}
+      >
+        {themes.map(({ value, label, icon: Icon, description }) => (
           <DropdownMenuItem
             key={value}
-            onClick={() => setTheme(value as any)}
+            onClick={() => setTheme(value)}
             className={cn(
-              "flex items-center justify-between cursor-pointer",
-              theme === value && "bg-muted dark:bg-gray-800"
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200",
+              theme === value
+                ? "bg-primary/10 text-primary"
+                : "hover:bg-muted/80"
             )}
           >
-            <div className="flex items-center space-x-2">
+            <div className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+              theme === value
+                ? "bg-primary/20 text-primary"
+                : "bg-muted/60 text-muted-foreground"
+            )}>
               <Icon className="h-4 w-4" />
-              <span>{label}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium">{label}</div>
+              <div className="text-xs text-muted-foreground truncate">{description}</div>
             </div>
             {theme === value && (
-              <Check className="h-3 w-3 text-primary" />
+              <Check className="h-4 w-4 text-primary flex-shrink-0" />
             )}
           </DropdownMenuItem>
         ))}
@@ -58,119 +87,77 @@ export function ThemeToggleEnhanced() {
 }
 
 export function ThemeToggleSimple() {
-  const { toggleTheme, resolvedTheme, theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme, theme } = useTheme();
 
-  const handleClick = () => {
-    console.log('🔧 Theme toggle clicked - current resolved theme:', resolvedTheme, 'current theme:', theme);
-    console.log('📊 localStorage before:', localStorage.getItem('lookescolar-theme'));
-    console.log('🎨 HTML classes before:', document.documentElement.className);
-
-    // Método directo: manipular las clases CSS directamente
-    const html = document.documentElement;
-    const isCurrentlyDark = html.classList.contains('dark');
-
-    console.log('🎯 Currently dark?', isCurrentlyDark);
-
-    // Remover clases anteriores
-    html.classList.remove('light', 'dark');
-
-    // Aplicar nueva clase
-    const newTheme = isCurrentlyDark ? 'light' : 'dark';
-    html.classList.add(newTheme);
-
-    console.log('🔄 Applied theme directly to DOM:', newTheme);
-    console.log('🎨 HTML classes after direct manipulation:', html.className);
-
-    // LIMPIAR todos los estilos inline previos antes de aplicar nuevos
-    console.log('🧹 Cleaning previous inline styles...');
-
-    // Limpiar estilos del html
-    html.style.removeProperty('background-color');
-    html.style.removeProperty('color');
-
-    // Limpiar estilos del body
-    document.body.style.removeProperty('background-color');
-    document.body.style.removeProperty('color');
-
-    // Limpiar estilos del contenedor store
-    const storeContainer = document.querySelector('.pixieset-store-template');
-    if (storeContainer) {
-      (storeContainer as HTMLElement).style.removeProperty('background-color');
-      (storeContainer as HTMLElement).style.removeProperty('color');
-    }
-
-    // Aplicar estilos según el tema
-    if (newTheme === 'dark') {
-      // Variables CSS para dark
-      html.style.setProperty('--background', '222.2 84% 4.9%');
-      html.style.setProperty('--foreground', '210 40% 98%');
-      html.style.setProperty('--muted', '217.2 32.6% 17.5%');
-      html.style.setProperty('--muted-foreground', '215 20.2% 65.1%');
-      html.style.setProperty('--card', '222.2 84% 4.9%');
-      html.style.setProperty('--border', '217.2 32.6% 17.5%');
-
-      // Aplicar estilos directos con máxima prioridad
-      html.style.setProperty('background-color', '#0f0f23', 'important');
-      html.style.setProperty('color', '#fafaff', 'important');
-
-      document.body.style.setProperty('background-color', '#0f0f23', 'important');
-      document.body.style.setProperty('color', '#fafaff', 'important');
-
-      // Aplicar al contenedor principal
-      if (storeContainer) {
-        (storeContainer as HTMLElement).style.setProperty('background-color', '#0f0f23', 'important');
-        (storeContainer as HTMLElement).style.setProperty('color', '#fafaff', 'important');
-        console.log('🌙 DARK: Applied styles to store container');
-      }
-
-      console.log('🌙 DARK theme applied - background should be dark, text should be light');
-    } else {
-      // Variables CSS para light
-      html.style.setProperty('--background', '0 0% 100%');
-      html.style.setProperty('--foreground', '222.2 84% 4.9%');
-      html.style.setProperty('--muted', '210 40% 96.1%');
-      html.style.setProperty('--muted-foreground', '215.4 16.3% 46.9%');
-      html.style.setProperty('--card', '0 0% 100%');
-      html.style.setProperty('--border', '214.3 31.8% 91.4%');
-
-      // Aplicar estilos directos con máxima prioridad
-      html.style.setProperty('background-color', '#ffffff', 'important');
-      html.style.setProperty('color', '#0f0f23', 'important');
-
-      document.body.style.setProperty('background-color', '#ffffff', 'important');
-      document.body.style.setProperty('color', '#0f0f23', 'important');
-
-      // Aplicar al contenedor principal
-      if (storeContainer) {
-        (storeContainer as HTMLElement).style.setProperty('background-color', '#ffffff', 'important');
-        (storeContainer as HTMLElement).style.setProperty('color', '#0f0f23', 'important');
-        console.log('☀️ LIGHT: Applied styles to store container');
-      }
-
-      console.log('☀️ LIGHT theme applied - background should be white, text should be dark');
-    }
-
-    // También actualizar el estado del componente
-    setTheme(newTheme);
-
-    setTimeout(() => {
-      console.log('📊 localStorage after:', localStorage.getItem('lookescolar-theme'));
-      console.log('🎨 Final HTML classes:', document.documentElement.className);
-      console.log('🎨 Final computed background:', getComputedStyle(document.documentElement).getPropertyValue('--background'));
-      console.log('✅ Theme toggle completed');
-    }, 100);
+  const cycleTheme = () => {
+    // Cycle through: light -> dark -> night -> light
+    const cycle: Theme[] = ['light', 'dark', 'night'];
+    const currentIndex = cycle.indexOf(theme as Theme);
+    const nextIndex = (currentIndex + 1) % cycle.length;
+    const nextTheme = cycle[nextIndex];
+    setTheme(nextTheme);
   };
+
+  const Icon = resolvedTheme === 'dark' ? Sun : Moon;
+  const label = resolvedTheme === 'dark'
+    ? 'Cambiar a modo claro'
+    : 'Cambiar a modo oscuro';
 
   return (
     <button
       type="button"
-      onClick={handleClick}
-      className="relative h-9 w-9 rounded-lg border border-border dark:border-gray-700 hover:bg-muted dark:hover:bg-gray-800 transition-all inline-flex items-center justify-center bg-background"
-      aria-label={resolvedTheme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-      style={{ zIndex: 9999 }}
+      onClick={cycleTheme}
+      className={cn(
+        "relative h-10 w-10 rounded-xl transition-all duration-300",
+        "inline-flex items-center justify-center",
+        "bg-background/80 backdrop-blur-sm",
+        "border border-border/50 hover:border-border",
+        "hover:bg-muted/80",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+        "active:scale-95"
+      )}
+      aria-label={label}
     >
-      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <Sun className={cn(
+        "h-[18px] w-[18px] absolute transition-all duration-500 text-amber-500",
+        resolvedTheme === 'dark'
+          ? "rotate-90 scale-0 opacity-0"
+          : "rotate-0 scale-100 opacity-100"
+      )} />
+      <Moon className={cn(
+        "h-[18px] w-[18px] absolute transition-all duration-500 text-blue-400",
+        resolvedTheme === 'dark'
+          ? "rotate-0 scale-100 opacity-100"
+          : "-rotate-90 scale-0 opacity-0"
+      )} />
+    </button>
+  );
+}
+
+// Compact version for mobile headers
+export function ThemeToggleCompact() {
+  const { resolvedTheme, toggleTheme } = useTheme();
+
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className={cn(
+        "h-8 w-8 rounded-lg transition-all duration-200",
+        "inline-flex items-center justify-center",
+        "hover:bg-muted/80 active:scale-95",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+      )}
+      aria-label={resolvedTheme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+    >
+      <Sun className={cn(
+        "h-4 w-4 transition-all duration-300 text-amber-500",
+        resolvedTheme === 'dark' ? "scale-0 rotate-90" : "scale-100 rotate-0"
+      )} />
+      <Moon className={cn(
+        "h-4 w-4 absolute transition-all duration-300 text-blue-400",
+        resolvedTheme === 'dark' ? "scale-100 rotate-0" : "scale-0 -rotate-90"
+      )} />
     </button>
   );
 }

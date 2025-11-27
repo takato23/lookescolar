@@ -1,11 +1,19 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
-import { ScrollControls, Scroll, Environment, Float } from "@react-three/drei";
-import { Lens } from "./Lens";
-import { OverlayContent } from "./OverlayContent";
-import { Particles } from "./Particles";
+import dynamic from "next/dynamic";
 import { Suspense } from "react";
+
+// Dynamic imports to avoid SSR issues with @react-three
+const Canvas = dynamic(
+    () => import("@react-three/fiber").then(mod => ({ default: mod.Canvas })),
+    { ssr: false }
+);
+
+// Create a wrapper component for the 3D content
+const LandingScene = dynamic(
+    () => import("./LandingScene"),
+    { ssr: false }
+);
 
 export default function LandingPage() {
     return (
@@ -13,34 +21,15 @@ export default function LandingPage() {
             className="h-screen w-full bg-black bg-cover bg-center"
             style={{ backgroundImage: "url('/images/background-texture.png')" }}
         >
-            <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-                <ambientLight intensity={0.5} />
-                <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
-                <pointLight position={[-10, -10, -10]} intensity={0.5} />
-
-                <Environment preset="city" />
-
-                <Suspense fallback={null}>
-                    <ScrollControls pages={4} damping={0.2}>
-                        {/* 3D Content Layer */}
-                        <Scroll>
-                            <Float
-                                speed={2}
-                                rotationIntensity={0.5}
-                                floatIntensity={0.5}
-                            >
-                                <Lens />
-                            </Float>
-                            <Particles count={150} />
-                        </Scroll>
-
-                        {/* HTML Content Layer */}
-                        <Scroll html style={{ width: '100%' }}>
-                            <OverlayContent />
-                        </Scroll>
-                    </ScrollControls>
-                </Suspense>
-            </Canvas>
+            <Suspense fallback={
+                <div className="flex h-full items-center justify-center">
+                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-white"></div>
+                </div>
+            }>
+                <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+                    <LandingScene />
+                </Canvas>
+            </Suspense>
         </div>
     );
 }

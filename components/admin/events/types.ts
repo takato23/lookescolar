@@ -45,3 +45,11 @@ export interface AdminEvent {
 }
 
 export type EventViewMode = 'grid' | 'list';
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  total_pages: number;
+  has_more: boolean;
+}

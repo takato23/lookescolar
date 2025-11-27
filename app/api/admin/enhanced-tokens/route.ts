@@ -1,25 +1,18 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuthMiddleware } from '@/lib/security/admin-auth';
+import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/utils/logger';
 
 const parseIntParam = (value: string | null, fallback: number) => {
   const parsed = Number.parseInt(value ?? '', 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
-export async function GET(request: NextRequest) {
-  const authResult = await adminAuthMiddleware(request);
-  if (
-    !authResult ||
-    ('success' in authResult && !authResult.success) ||
-    ('ok' in authResult && !authResult.ok)
-  ) {
-    return NextResponse.json(
-      { error: 'Unauthorized', message: 'Admin access required' },
-      { status: 401 }
-    );
-  }
+/**
+ * Get enhanced tokens with aliases, stats, and event info
+ */
+export const GET = withAdminAuth(async (request: NextRequest) => {
+  const requestId = crypto.randomUUID();
 
   try {
     const { searchParams } = new URL(request.url);
@@ -53,11 +46,11 @@ export async function GET(request: NextRequest) {
       throw tokensError;
     }
 
-    const tokenIds = (tokens ?? []).map((token) => token.id);
+    const tokenIds = (tokens ?? []).map((token: Record<string, unknown>) => token.id as string);
     const eventIds = Array.from(
       new Set(
         (tokens ?? [])
-          .map((token) => token.event_id)
+          .map((token: Record<string, unknown>) => token.event_id as string | null)
           .filter((value): value is string => Boolean(value))
       )
     );
@@ -86,7 +79,7 @@ export async function GET(request: NextRequest) {
       aliasMap = new Map(
         tokenIds.map((id) => [
           id,
-          (aliases ?? []).filter((alias) => alias.token_id === id),
+          (aliases ?? []).filter((alias: Record<string, unknown>) => alias.token_id === id),
         ])
       );
     }
@@ -112,9 +105,10 @@ export async function GET(request: NextRequest) {
         tokenIds.map((id) => [id, { total: 0, success: 0, failed: 0 }])
       );
 
-      (logs ?? []).forEach((log) => {
+      (logs ?? []).forEach((log: Record<string, unknown>) => {
+        const tokenId = log.token_id as string;
         const bucket =
-          statsMap.get(log.token_id) ||
+          statsMap.get(tokenId) ||
           ({ total: 0, success: 0, failed: 0 } as {
             total: number;
             success: number;
@@ -127,14 +121,15 @@ export async function GET(request: NextRequest) {
         } else {
           bucket.failed += 1;
         }
+        const accessedAt = log.accessed_at as string | null;
         if (
-          log.accessed_at &&
+          accessedAt &&
           (!bucket.last_access ||
-            new Date(log.accessed_at) > new Date(bucket.last_access))
+            new Date(accessedAt) > new Date(bucket.last_access))
         ) {
-          bucket.last_access = log.accessed_at;
+          bucket.last_access = accessedAt;
         }
-        statsMap.set(log.token_id, bucket);
+        statsMap.set(tokenId, bucket);
       });
     }
 
@@ -154,35 +149,41 @@ export async function GET(request: NextRequest) {
       }
 
       eventMap = new Map(
-        (events ?? []).map((event) => [
-          event.id,
+        (events ?? []).map((event: Record<string, unknown>) => [
+          event.id as string,
           {
-            id: event.id,
-            name: event.name,
-            school_name: event.school_name,
-            start_date: event.start_date,
+            id: event.id as string,
+            name: event.name as string,
+            school_name: event.school_name as string | null,
+            start_date: event.start_date as string | null,
           },
         ])
       );
     }
 
-    const responseTokens = (tokens ?? []).map((token) => ({
-      id: token.id,
-      token: token.token,
-      type: token.type,
-      expires_at: token.expires_at,
-      is_active: token.is_active ?? true,
-      created_at: token.created_at,
-      updated_at: token.updated_at,
-      event: token.event_id ? eventMap.get(token.event_id) ?? null : null,
-      aliases: aliasMap.get(token.id) ?? [],
-      stats: statsMap.get(token.id) ?? {
-        total: token.usage_count ?? 0,
-        success: token.usage_count ?? 0,
+    const responseTokens = (tokens ?? []).map((token: Record<string, unknown>) => ({
+      id: token.id as string,
+      token: token.token as string,
+      type: token.type as string,
+      expires_at: token.expires_at as string | null,
+      is_active: (token.is_active as boolean) ?? true,
+      created_at: token.created_at as string,
+      updated_at: token.updated_at as string | null,
+      event: token.event_id ? eventMap.get(token.event_id as string) ?? null : null,
+      aliases: aliasMap.get(token.id as string) ?? [],
+      stats: statsMap.get(token.id as string) ?? {
+        total: (token.usage_count as number) ?? 0,
+        success: (token.usage_count as number) ?? 0,
         failed: 0,
-        last_access: token.last_used_at,
+        last_access: token.last_used_at as string | null,
       },
     }));
+
+    logger.info('Enhanced tokens fetched', {
+      requestId,
+      count: responseTokens.length,
+      total: count,
+    });
 
     return NextResponse.json({
       tokens: responseTokens,
@@ -192,14 +193,20 @@ export async function GET(request: NextRequest) {
         offset,
       },
     });
-  } catch (error: any) {
-    console.error('[EnhancedTokensAdmin] Failed to fetch tokens', error);
+  } catch (error) {
+    logger.error('Enhanced tokens fetch error', {
+      requestId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     return NextResponse.json(
       {
         error: 'Failed to load enhanced tokens',
-        message: error?.message ?? 'Unknown error',
+        code: 'FETCH_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
-}
+});

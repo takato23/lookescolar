@@ -1165,12 +1165,397 @@ export interface Database {
           },
         ];
       };
-    } & {
-      [key: string]: {
-        Row: Record<string, unknown>;
-        Insert: Record<string, unknown>;
-        Update: Record<string, unknown>;
-        Relationships: unknown[];
+      photo_subjects: {
+        Row: {
+          id: string;
+          photo_id: string;
+          subject_id: string;
+          tagged_at: string | null;
+          tagged_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          photo_id: string;
+          subject_id: string;
+          tagged_at?: string | null;
+          tagged_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string;
+          subject_id?: string;
+          tagged_at?: string | null;
+          tagged_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'photo_subjects_photo_id_fkey';
+            columns: ['photo_id'];
+            referencedRelation: 'photos';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'photo_subjects_subject_id_fkey';
+            columns: ['subject_id'];
+            referencedRelation: 'subjects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      photo_courses: {
+        Row: {
+          id: string;
+          photo_id: string;
+          course_id: string;
+          photo_type: string | null;
+          tagged_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          photo_id: string;
+          course_id: string;
+          photo_type?: string | null;
+          tagged_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string;
+          course_id?: string;
+          photo_type?: string | null;
+          tagged_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'photo_courses_photo_id_fkey';
+            columns: ['photo_id'];
+            referencedRelation: 'photos';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'photo_courses_course_id_fkey';
+            columns: ['course_id'];
+            referencedRelation: 'event_courses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      event_levels: {
+        Row: {
+          id: string;
+          event_id: string;
+          name: string;
+          description: string | null;
+          sort_order: number | null;
+          active: boolean | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          name: string;
+          description?: string | null;
+          sort_order?: number | null;
+          active?: boolean | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          name?: string;
+          description?: string | null;
+          sort_order?: number | null;
+          active?: boolean | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'event_levels_event_id_fkey';
+            columns: ['event_id'];
+            referencedRelation: 'events';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      event_courses: {
+        Row: {
+          id: string;
+          event_id: string;
+          level_id: string | null;
+          name: string;
+          grade: string | null;
+          section: string | null;
+          description: string | null;
+          sort_order: number | null;
+          active: boolean | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          level_id?: string | null;
+          name: string;
+          grade?: string | null;
+          section?: string | null;
+          description?: string | null;
+          sort_order?: number | null;
+          active?: boolean | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          level_id?: string | null;
+          name?: string;
+          grade?: string | null;
+          section?: string | null;
+          description?: string | null;
+          sort_order?: number | null;
+          active?: boolean | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'event_courses_event_id_fkey';
+            columns: ['event_id'];
+            referencedRelation: 'events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'event_courses_level_id_fkey';
+            columns: ['level_id'];
+            referencedRelation: 'event_levels';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      students: {
+        Row: {
+          id: string;
+          course_id: string;
+          name: string;
+          code: string | null;
+          qr_code: string | null;
+          active: boolean | null;
+          metadata: Json | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          course_id: string;
+          name: string;
+          code?: string | null;
+          qr_code?: string | null;
+          active?: boolean | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          course_id?: string;
+          name?: string;
+          code?: string | null;
+          qr_code?: string | null;
+          active?: boolean | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'students_course_id_fkey';
+            columns: ['course_id'];
+            referencedRelation: 'event_courses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      store_settings: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          event_id: string | null;
+          folder_id: string | null;
+          settings: Json;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          event_id?: string | null;
+          folder_id?: string | null;
+          settings?: Json;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          event_id?: string | null;
+          folder_id?: string | null;
+          settings?: Json;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      unified_orders: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          event_id: string | null;
+          folder_id: string | null;
+          token_id: string | null;
+          status: string;
+          total_cents: number | null;
+          total_amount: number | null;
+          items: Json | null;
+          metadata: Json | null;
+          contact_name: string | null;
+          contact_email: string | null;
+          contact_phone: string | null;
+          mp_preference_id: string | null;
+          mp_payment_id: string | null;
+          mp_status: string | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          event_id?: string | null;
+          folder_id?: string | null;
+          token_id?: string | null;
+          status?: string;
+          total_cents?: number | null;
+          total_amount?: number | null;
+          items?: Json | null;
+          metadata?: Json | null;
+          contact_name?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          mp_preference_id?: string | null;
+          mp_payment_id?: string | null;
+          mp_status?: string | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          event_id?: string | null;
+          folder_id?: string | null;
+          token_id?: string | null;
+          status?: string;
+          total_cents?: number | null;
+          total_amount?: number | null;
+          items?: Json | null;
+          metadata?: Json | null;
+          contact_name?: string | null;
+          contact_email?: string | null;
+          contact_phone?: string | null;
+          mp_preference_id?: string | null;
+          mp_payment_id?: string | null;
+          mp_status?: string | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      downloads: {
+        Row: {
+          id: string;
+          order_id: string;
+          photo_id: string;
+          download_url: string | null;
+          expires_at: string | null;
+          remaining_downloads: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          photo_id: string;
+          download_url?: string | null;
+          expires_at?: string | null;
+          remaining_downloads?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          photo_id?: string;
+          download_url?: string | null;
+          expires_at?: string | null;
+          remaining_downloads?: number | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      token_access_log: {
+        Row: {
+          id: string;
+          token_id: string;
+          accessed_at: string;
+          ip_address: string | null;
+          user_agent: string | null;
+          action: string | null;
+          metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          token_id: string;
+          accessed_at?: string;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          action?: string | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          token_id?: string;
+          accessed_at?: string;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          action?: string | null;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      event_folders: {
+        Row: {
+          id: string;
+          event_id: string;
+          folder_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          folder_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          folder_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: {

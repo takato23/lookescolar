@@ -117,7 +117,7 @@ export default function EventSelector({
   }, [open, hasMore, loading]);
 
   const displayValue = useMemo(
-    () => items.find((e) => e.id === value)?.name || 'Seleccionar evento',
+    () => (Array.isArray(items) ? items : []).find((e) => e.id === value)?.name || 'Seleccionar evento',
     [items, value]
   );
 
@@ -146,8 +146,9 @@ export default function EventSelector({
     });
   };
 
-  const favoriteItems = items.filter((e) => favorites.includes(e.id));
-  const recentItems = items.filter(
+  const safeItems = Array.isArray(items) ? items : [];
+  const favoriteItems = safeItems.filter((e) => favorites.includes(e.id));
+  const recentItems = safeItems.filter(
     (e) => recents.includes(e.id) && !favorites.includes(e.id)
   );
 
@@ -159,7 +160,7 @@ export default function EventSelector({
       onChange={(e) => onChange(e.target.value)}
     >
       <option value="">Seleccionar evento</option>
-      {items.map((e) => (
+      {safeItems.map((e) => (
         <option key={e.id} value={e.id}>
           {e.name}
         </option>

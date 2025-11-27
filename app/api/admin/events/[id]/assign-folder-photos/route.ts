@@ -97,17 +97,15 @@ export async function POST(
       photosQuery = photosQuery.eq('folder_id', folderId);
     } else {
       // Get photos not yet assigned to any subject if no folder specified
+      const { data: eventPhotos } = await supabase.from('photos').select('id').eq('event_id', eventId);
+      const eventPhotoIds = (eventPhotos || []).map((p: Record<string, unknown>) => p.id as string);
+
       const { data: assignedPhotoIds } = await supabase
         .from('photo_subjects')
         .select('photo_id')
-        .in(
-          'photo_id',
-          (
-            await supabase.from('photos').select('id').eq('event_id', eventId)
-          ).data?.map((p) => p.id) || []
-        );
+        .in('photo_id', eventPhotoIds.length > 0 ? eventPhotoIds : ['__none__']);
 
-      const assignedIds = assignedPhotoIds?.map((p) => p.photo_id) || [];
+      const assignedIds = (assignedPhotoIds || []).map((p: Record<string, unknown>) => p.photo_id as string);
       if (assignedIds.length > 0 && !forceReassign) {
         photosQuery = photosQuery.not('id', 'in', `(${assignedIds.join(',')})`);
       }
@@ -152,19 +150,19 @@ export async function POST(
     switch (assignmentMode) {
       case 'all_to_all':
         // Assign every photo to every subject (many-to-many)
-        for (const photo of photos) {
+        for (const photo of photos as Array<Record<string, unknown>>) {
           for (const subjectId of subjectIds) {
-            assignments.push({ photoId: photo.id, subjectId });
+            assignments.push({ photoId: photo.id as string, subjectId });
           }
         }
         break;
 
       case 'sequential':
         // Distribute photos sequentially across subjects
-        photos.forEach((photo, index) => {
+        (photos as Array<Record<string, unknown>>).forEach((photo, index) => {
           const subjectIndex = index % subjectIds.length;
           assignments.push({
-            photoId: photo.id,
+            photoId: photo.id as string,
             subjectId: subjectIds[subjectIndex],
           });
         });
@@ -173,9 +171,9 @@ export async function POST(
       case 'qr_detection':
         // TODO: Implement QR detection for automatic assignment
         // For now, fall back to all_to_all mode
-        for (const photo of photos) {
+        for (const photo of photos as Array<Record<string, unknown>>) {
           for (const subjectId of subjectIds) {
-            assignments.push({ photoId: photo.id, subjectId });
+            assignments.push({ photoId: photo.id as string, subjectId });
           }
         }
         break;

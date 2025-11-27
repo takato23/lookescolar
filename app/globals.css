@@ -12,6 +12,18 @@
 @import url('../styles/store-enhanced.css');
 @import url('../styles/liquid-glass/liquid-glass-premium.css');
 
+/* Photo Design System - Unified tokens and micro-animations */
+@import url('../styles/photo-design-system.css');
+
+/* Admin Dashboard V2 - Modern Design System */
+@import url('../styles/admin-dashboard-v2.css');
+
+/* Admin Events V2 - Photo Design System */
+@import url('../styles/admin-events-v2.css');
+
+/* Admin Clean Design - Pixieset-inspired */
+@import url('../styles/admin-clean.css');
+
 /* OVERRIDE: Anular estilos liquid-glass-card para la tienda - usar tema actual */
 .pixieset-store-template .liquid-glass-card,
 .store-unified .liquid-glass-card,
@@ -51,113 +63,219 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light Mode - Clean, Professional, Warm Stone Tones */
+    --background: 40 20% 98%;
+    --foreground: 24 10% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 24 10% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --popover-foreground: 24 10% 10%;
+    --primary: 166 76% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 20% 96%;
+    --secondary-foreground: 24 10% 20%;
+    --muted: 40 15% 95%;
+    --muted-foreground: 24 5% 45%;
+    --accent: 166 76% 35%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 10% 90%;
+    --input: 40 10% 90%;
+    --ring: 166 76% 35%;
     --radius: 0.5rem;
+
+    /* Surface variations - warm undertone */
+    --surface: 40 20% 98%;
+    --surface-variant: 40 15% 96%;
+    --surface-elevated: 0 0% 100%;
+
+    /* Status colors */
+    --success: 142 71% 35%;
+    --warning: 43 96% 45%;
+    --info: 199 89% 48%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Dark Mode - Rich Slate Blue, comfortable */
+    --background: 222 47% 6%;
+    --foreground: 213 27% 93%;
+    --card: 222 47% 8%;
+    --card-foreground: 213 27% 93%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 213 27% 93%;
+    --primary: 172 66% 50%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 215 25% 15%;
+    --secondary-foreground: 213 27% 93%;
+    --muted: 215 25% 15%;
+    --muted-foreground: 215 15% 60%;
+    --accent: 172 66% 50%;
+    --accent-foreground: 222 47% 6%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 25% 18%;
+    --input: 215 25% 20%;
+    --ring: 172 66% 50%;
+
+    /* Surface variations */
+    --surface: 222 47% 8%;
+    --surface-variant: 215 25% 12%;
+    --surface-elevated: 222 47% 10%;
+
+    /* Status colors adjusted for dark */
+    --success: 142 71% 45%;
+    --warning: 48 96% 53%;
+    --info: 199 89% 55%;
+  }
+
+  /* Night mode - OLED True Black, cyan accent */
+  .night {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 90%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 90%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 187 85% 53%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 187 85% 53%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --input: 0 0% 18%;
+    --ring: 187 85% 53%;
+
+    /* Surface variations */
+    --surface: 0 0% 4%;
+    --surface-variant: 0 0% 10%;
+    --surface-elevated: 0 0% 6%;
+
+    /* Status colors dimmed for night */
+    --success: 142 50% 50%;
+    --warning: 48 80% 55%;
+    --info: 187 85% 53%;
   }
 
   .looke-store {
-    --looke-primary: 219.8 84.1% 55.7%;
-    --looke-accent: 40.6 92.5% 58%;
-    --looke-surface: 220 42.9% 97.3%;
-    --looke-muted: 225.7 67.7% 87.8%;
-    --looke-success: 145.4 63.2% 49%;
-    --looke-error: 5.6 78.1% 57.1%;
+    /* Light mode store - Clean and modern */
+    --looke-primary: 220 84% 55%;
+    --looke-accent: 38 92% 50%;
+    --looke-surface: 220 30% 98%;
+    --looke-muted: 220 45% 92%;
+    --looke-success: 145 63% 49%;
+    --looke-error: 0 78% 57%;
 
     --background: var(--looke-surface);
-    --foreground: 221.3 47.1% 20%;
+    --foreground: 220 47% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 221.3 47.1% 18%;
+    --card-foreground: 220 47% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 221.3 47.1% 18%;
+    --popover-foreground: 220 47% 16%;
     --primary: var(--looke-primary);
     --primary-foreground: 210 40% 98%;
-    --secondary: 221 36% 92%;
-    --secondary-foreground: 221.3 47.1% 22%;
+    --secondary: 220 30% 94%;
+    --secondary-foreground: 220 47% 20%;
     --muted: var(--looke-muted);
-    --muted-foreground: 221 24% 28%;
+    --muted-foreground: 220 16% 42%;
     --accent: var(--looke-accent);
-    --accent-foreground: 33 82% 21%;
+    --accent-foreground: 220 47% 11%;
     --destructive: var(--looke-error);
     --destructive-foreground: 0 0% 98%;
-    --border: 221 40% 82%;
-    --input: 221 40% 82%;
+    --border: 220 32% 88%;
+    --input: 220 32% 88%;
     --ring: var(--looke-primary);
     --surface: var(--looke-surface);
-    --surface-variant: 221 46% 93%;
-    --subtle: 221 35% 95%;
-    --subtle-foreground: 221 28% 35%;
+    --surface-variant: 220 35% 95%;
+    --subtle: 220 30% 97%;
+    --subtle-foreground: 220 20% 38%;
   }
 
   .dark .looke-store {
-    --background: 221 45% 10%;
-    --foreground: 210 40% 95%;
-    --card: 221 38% 14%;
-    --card-foreground: 210 38% 95%;
-    --popover: 221 38% 14%;
-    --popover-foreground: 210 40% 95%;
-    --primary: 219.8 84.1% 62%;
-    --primary-foreground: 210 40% 15%;
-    --secondary: 221 32% 22%;
-    --secondary-foreground: 210 40% 92%;
-    --muted: 221 32% 24%;
-    --muted-foreground: 218 18% 70%;
-    --accent: 40.6 92.5% 58%;
-    --accent-foreground: 30 82% 18%;
-    --destructive: 5.6 78.1% 57.1%;
+    /* Dark mode store - Rich navy with cyan accents */
+    --background: 224 71% 5%;
+    --foreground: 213 31% 94%;
+    --card: 224 71% 7%;
+    --card-foreground: 213 31% 94%;
+    --popover: 224 71% 7%;
+    --popover-foreground: 213 31% 94%;
+    --primary: 199 89% 48%;
+    --primary-foreground: 224 71% 5%;
+    --secondary: 215 28% 16%;
+    --secondary-foreground: 210 40% 94%;
+    --muted: 215 28% 16%;
+    --muted-foreground: 217 19% 65%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 221 28% 26%;
-    --input: 221 28% 26%;
-    --ring: 219.8 84.1% 62%;
-    --surface: 221 32% 18%;
-    --surface-variant: 221 32% 24%;
-    --subtle: 221 28% 18%;
-    --subtle-foreground: 214 18% 78%;
+    --border: 215 28% 20%;
+    --input: 215 28% 20%;
+    --ring: 199 89% 48%;
+    --surface: 224 71% 7%;
+    --surface-variant: 215 28% 14%;
+    --subtle: 224 71% 9%;
+    --subtle-foreground: 214 18% 76%;
+  }
+
+  /* Night mode for looke-store */
+  .night .looke-store {
+    --background: 230 25% 4%;
+    --foreground: 220 14% 95%;
+    --card: 230 25% 6%;
+    --card-foreground: 220 14% 95%;
+    --popover: 230 25% 6%;
+    --popover-foreground: 220 14% 95%;
+    --primary: 173 80% 40%;
+    --primary-foreground: 230 25% 4%;
+    --secondary: 222 47% 14%;
+    --secondary-foreground: 210 40% 94%;
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 16% 58%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 47% 14%;
+    --input: 222 47% 18%;
+    --ring: 173 80% 40%;
+    --surface: 230 25% 6%;
+    --surface-variant: 222 47% 12%;
+    --subtle: 230 25% 8%;
+    --subtle-foreground: 214 18% 74%;
   }
 }
 
 @layer base {
+  /* Smooth theme transitions */
+  html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Global theme transition for admin elements */
+  .admin-layout,
+  .admin-layout * {
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.2s ease,
+      box-shadow 0.25s ease;
+  }
+
+  /* Opt-out for elements that shouldn't transition (animations, etc) */
+  .no-theme-transition,
+  .no-theme-transition * {
+    transition: none !important;
   }
 }
 
@@ -170,6 +288,328 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+}
+
+/* =============================================================================
+   PREMIUM PHOTO CARD ANIMATIONS - 21st.dev Inspired
+   ============================================================================= */
+
+/* Heart beat animation for favorites */
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Premium card hover glow */
+@keyframes cardGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.4); }
+}
+
+/* Floating animation for featured cards */
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Pulse ring animation for selected items */
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+/* ============================
+   Aurora Background Animations
+   ============================ */
+
+@keyframes aurora-breathe {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1) translateY(-5%);
+    opacity: 1;
+  }
+}
+
+@keyframes aurora-shift {
+  0%, 100% {
+    transform: translateX(0) scale(1);
+    opacity: 0.7;
+  }
+  33% {
+    transform: translateX(5%) scale(1.05);
+    opacity: 0.9;
+  }
+  66% {
+    transform: translateX(-5%) scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+@keyframes aurora-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: blur(50px) saturate(1);
+  }
+  50% {
+    transform: scale(1.2);
+    filter: blur(60px) saturate(1.2);
+  }
+}
+
+@keyframes aurora-wave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes aurora-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Aurora CSS Variables */
+:root {
+  --aurora-primary: #3b82f6;
+  --aurora-secondary: #8b5cf6;
+  --aurora-accent: #06b6d4;
+}
+
+.dark {
+  --aurora-primary: #60a5fa;
+  --aurora-secondary: #a78bfa;
+  --aurora-accent: #22d3ee;
+}
+
+/* Aurora utility classes */
+.aurora-subtle {
+  --aurora-primary: #3b82f620;
+  --aurora-secondary: #8b5cf620;
+  --aurora-accent: #06b6d420;
+}
+
+.aurora-vibrant {
+  --aurora-primary: #3b82f6;
+  --aurora-secondary: #ec4899;
+  --aurora-accent: #10b981;
+}
+
+.aurora-warm {
+  --aurora-primary: #f59e0b;
+  --aurora-secondary: #ef4444;
+  --aurora-accent: #f97316;
+}
+
+.aurora-cool {
+  --aurora-primary: #06b6d4;
+  --aurora-secondary: #3b82f6;
+  --aurora-accent: #8b5cf6;
+}
+
+/* ============================
+   Stats Card Animations
+   ============================ */
+
+@keyframes floatParticle {
+  0%, 100% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translateY(-15px) translateX(5px) scale(1.2);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-25px) translateX(-5px) scale(0.8);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translateY(-10px) translateX(8px) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+@keyframes countUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stats card hover effects */
+.stats-card-premium {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.stats-card-premium:hover {
+  transform: translateY(-4px);
+}
+
+.stats-card-premium:hover .stats-icon {
+  transform: scale(1.1);
+}
+
+.stats-card-premium:hover .stats-glow {
+  opacity: 0.3;
+}
+
+/* ============================
+   Sidebar Premium Animations
+   ============================ */
+
+@keyframes floatOrb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.2;
+  }
+  25% {
+    transform: translate(10%, 5%) scale(1.1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(5%, 10%) scale(0.9);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translate(-5%, 5%) scale(1.05);
+    opacity: 0.2;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.5;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(25px);
+  }
+}
+
+/* Sidebar nav item effects */
+.sidebar-nav-item {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.sidebar-nav-item:hover {
+  transform: translateY(-2px);
+}
+
+.sidebar-nav-item.active {
+  position: relative;
+}
+
+.sidebar-nav-item.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.5;
+  filter: blur(12px);
+  z-index: -1;
+}
+
+/* Stagger children animation utility */
+.stagger-children > * {
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
+.stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
+.stagger-children > *:nth-child(11) { animation-delay: 0.55s; }
+.stagger-children > *:nth-child(12) { animation-delay: 0.6s; }
+
+/* Premium hover effects */
+.photo-card-premium {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.photo-card-premium:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(99, 102, 241, 0.1);
+}
+
+/* Image zoom effect */
+.photo-image-zoom {
+  transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              filter 0.5s ease;
+}
+
+.photo-card-premium:hover .photo-image-zoom {
+  transform: scale(1.1);
+  filter: brightness(1.05);
+}
+
+/* Gradient overlay fade */
+.photo-overlay-gradient {
+  transition: opacity 0.5s ease;
+}
+
+.photo-card-premium:hover .photo-overlay-gradient {
+  opacity: 1;
+}
+
+/* Button slide up animation */
+.photo-action-button {
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.photo-card-premium:hover .photo-action-button {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Badge slide away */
+.photo-badge {
+  transition: all 0.3s ease;
+}
+
+.photo-card-premium:hover .photo-badge {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+/* Price tag slide away */
+.photo-price-tag {
+  transition: all 0.3s ease;
+}
+
+.photo-card-premium:hover .photo-price-tag {
+  transform: translateY(10px);
+  opacity: 0;
 }
 
 /* Theme-aware text color overrides for mockup components */
@@ -254,6 +694,135 @@
   100% {
     transform: scale(1);
   }
+}
+
+/* =============================================================================
+   GALLERY ANIMATIONS - Animaciones sutiles para galerías de fotos
+   ============================================================================= */
+
+/* Fade in up - entrada suave desde abajo */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in simple */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Scale in - entrada con zoom */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Slide in from left */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Cover page text animation */
+@keyframes coverTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+    letter-spacing: 0.1em;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    letter-spacing: 0.2em;
+  }
+}
+
+/* Utility classes for gallery animations */
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.4s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s ease-out forwards;
+}
+
+.animate-cover-text {
+  animation: coverTextIn 1s ease-out forwards;
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+/* Hover scale effect for photos */
+.hover-scale {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+/* Smooth image loading transition */
+.image-load-transition {
+  transition: opacity 0.3s ease-out, transform 0.5s ease-out;
+}
+
+/* Gallery card hover lift effect */
+.gallery-card-lift {
+  transition: transform 0.4s ease-out, box-shadow 0.4s ease-out;
+}
+
+.gallery-card-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 /* Enhanced focus rings for Apple-grade accessibility */

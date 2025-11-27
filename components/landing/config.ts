@@ -20,8 +20,8 @@ export const APERTURA_CONFIG = {
             envMapIntensity: 2,
         },
         glass: {
-            samples: 6, // Balanced for quality/perf
-            resolution: 512, // Balanced resolution
+            samples: 2,
+            resolution: 128,
             thickness: 0.5,
             chromaticAberration: 0.06,
             anisotropy: 0.3,
@@ -36,23 +36,51 @@ export const APERTURA_CONFIG = {
         breathingSpeed: 0.5,
         breathingIntensity: 0.02,
         tiltSensitivity: 0.05,
-        scrollDamping: 0.2,
+        scrollDamping: 0.08, // Responsive yet smooth scrolling
     },
     lighting: {
-        spotIntensity: 12,
-        rimIntensity: 4,
-        fillIntensity: 0.8,
-        sensorIntensity: 3,
+        spotIntensity: 18,    // Optimized for dramatic contrast
+        rimIntensity: 6,      // Subtle cinematic rim lighting
+        fillIntensity: 3,     // Deep shadows for premium feel
+        sensorIntensity: 12,  // Bright focal center
+    },
+    tunnel: {
+        cameraZ: -8,        // Camera travels through aperture
+        fov: 90,            // Moderate FOV for speed sensation
+        scale: 2.5,         // Moderate scale expansion
+        rotations: 0.5,     // Subtle rotation
+        speed: 0.5,         // Progress speed (~2 seconds total)
     },
     postProcessing: {
         bloom: {
-            intensity: 1.0,
-            radius: 0.6,
-            luminanceThreshold: 1,
+            intensity: 0.4, // Balanced bloom for premium quality
+            radius: 0.3,    // Tight radius for precise glow
+            luminanceThreshold: 1.5, // Higher threshold for selective bloom
         },
         vignette: {
-            offset: 0.1,
-            darkness: 1.1,
+            offset: 0.2,    // Subtle edge darkening
+            darkness: 0.9,  // Strong vignette for cinematic feel
+        },
+        chromaticAberration: {
+            offset: 0.0005, // Subtle lens distortion effect
+        }
+    },
+    performance: {
+        mobile: {
+            bladeCount: 7,           // Reduced blade count on mobile
+            particleMultiplier: 0.5, // 50% particles on mobile
+            geometrySegments: 0.75,  // 75% geometry detail
+            lightCount: 0.6,         // 60% of lights
+            shadowsEnabled: false,   // Disable shadows
+            postProcessingQuality: 0.7, // 70% post-processing quality
+        },
+        desktop: {
+            bladeCount: 9,
+            particleMultiplier: 1.0,
+            geometrySegments: 1.0,
+            lightCount: 1.0,
+            shadowsEnabled: true,
+            postProcessingQuality: 1.0,
         }
     }
 };

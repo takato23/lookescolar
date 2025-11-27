@@ -5,7 +5,7 @@ import { withAuth } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import type { Database, Json } from '@/types/database';
 import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 // UUID pattern validation
@@ -24,6 +24,7 @@ type UpdateEventBody = {
   description?: string | null;
   active?: boolean;
   theme?: 'default' | 'jardin' | 'secundaria' | 'bautismo';
+  metadata?: Record<string, unknown> | null;
 };
 
 type EventUpdatePayload = Partial<{
@@ -38,6 +39,7 @@ type EventUpdatePayload = Partial<{
   photographer_phone: string | null;
   description: string | null;
   theme: 'default' | 'jardin' | 'secundaria' | 'bautismo';
+  metadata: Json | null;
 }>;
 
 const toTrimmedStringOrNull = (value: unknown): string | null => {
@@ -278,6 +280,10 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         updateData.theme = body.theme;
       }
 
+      if (body.metadata !== undefined) {
+        updateData.metadata = body.metadata as Json | null;
+      }
+
       if (Object.keys(updateData).length === 0) {
         return NextResponse.json(
           { error: 'No hay campos para actualizar' },
@@ -292,7 +298,7 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
         .update(updateData)
         .eq('id', id)
         .eq('tenant_id', tenantId)
-        .select('id, name, location, date, status, photo_price, created_at, school_name, photographer_name, photographer_email, photographer_phone, description, theme')
+        .select('*')
         .single();
 
       if (error) {

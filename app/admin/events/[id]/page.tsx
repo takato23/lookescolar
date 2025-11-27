@@ -13,7 +13,11 @@ import { Input } from '@/components/ui/input';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { absoluteUrl } from '@/lib/absoluteUrl';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/database';
+import type { Database, Json } from '@/types/database';
+import CleanEventDetailPage from '@/components/admin/events/CleanEventDetailPage';
+
+// Feature flag for clean design
+const USE_CLEAN_DESIGN = true;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -68,16 +72,9 @@ function formatDate(value: string | null): string | null {
 }
 
 function formatDateRange(event: EventRow): string {
-  const start = event.start_date ?? event.date;
-  const end = event.end_date ?? event.date;
-  const formattedStart = formatDate(start);
-  const formattedEnd = formatDate(end);
-
-  if (formattedStart && formattedEnd && formattedStart !== formattedEnd) {
-    return `${formattedStart} – ${formattedEnd}`;
-  }
-
-  return formattedStart ?? formattedEnd ?? 'Sin fecha asignada';
+  // The table only has 'date', no start_date/end_date
+  const formattedDate = formatDate(event.date);
+  return formattedDate ?? 'Sin fecha asignada';
 }
 
 function toNumber(value: unknown): number | null {
@@ -90,29 +87,6 @@ function toNumber(value: unknown): number | null {
     const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
   }
-  return null;
-}
-
-function extractCurrency(settings: EventRow['settings']): string | null {
-  if (!settings || typeof settings !== 'object') {
-    return null;
-  }
-
-  const value = settings as Record<string, unknown>;
-
-  if (typeof value.currency === 'string') {
-    return value.currency;
-  }
-
-  if (
-    value.pricing &&
-    typeof value.pricing === 'object' &&
-    value.pricing !== null &&
-    typeof (value.pricing as Record<string, unknown>).currency === 'string'
-  ) {
-    return (value.pricing as Record<string, unknown>).currency as string;
-  }
-
   return null;
 }
 
@@ -177,8 +151,7 @@ function resolveStatusBadge(event: EventRow): { label: string; className: string
     rawStatus === 'active' ||
     rawStatus === 'published' ||
     rawStatus === 'en vivo' ||
-    rawStatus === 'live' ||
-    Boolean(event.active);
+    rawStatus === 'live';
 
   if (isLive) {
     return {
@@ -206,21 +179,36 @@ async function fetchEventContext(eventId: string): Promise<{
   pricing: PricingTier[];
   currency: string;
 }> {
-  const supabase = await createServerSupabaseClient();
+  // Use service role to bypass RLS for admin page
+  console.log('[fetchEventContext] Creating service role client for event:', eventId);
+  const supabase = await createServerSupabaseClient({ serviceRole: true });
+  console.log('[fetchEventContext] Service role client created successfully');
 
   const { data: event, error } = await supabase
     .from('events')
     .select(
-      'id, name, school_name, location, date, start_date, end_date, status, price_per_photo, published, active, settings, photo_prices, photographer_name, photographer_email, photographer_phone'
+      'id, name, location, date, status, price_per_photo, photo_prices, photographer_name, photographer_email, photographer_phone'
     )
     .eq('id', eventId)
     .maybeSingle();
 
   if (error) {
-    console.error('Error al cargar el evento', error);
+    console.error('Error al cargar el evento', {
+      eventId,
+      errorMessage: error.message,
+      errorCode: error.code,
+      errorHint: error.hint,
+      errorDetails: error.details,
+      fullError: error,
+    });
   }
 
   if (!event) {
+    console.warn('[fetchEventContext] Event not found or query failed', {
+      eventId,
+      hadError: !!error,
+      errorMessage: error?.message,
+    });
     return {
       event: null,
       stats: { photos: 0, subjects: 0, orders: 0, revenue: 0 },
@@ -228,6 +216,11 @@ async function fetchEventContext(eventId: string): Promise<{
       currency: 'USD',
     };
   }
+
+  console.log('[fetchEventContext] Event loaded successfully:', {
+    eventId: event.id,
+    eventName: event.name,
+  });
 
   const [subjectsRes, photosRes, ordersRes] = await Promise.all([
     supabase
@@ -249,7 +242,7 @@ async function fetchEventContext(eventId: string): Promise<{
   const orders = ordersRes?.count ?? (ordersRes?.data?.length ?? 0);
   const ordersData = ordersRes?.data ?? [];
 
-  const revenue = ordersData.reduce((acc, order) => {
+  const revenue = ordersData.reduce((acc, order: Record<string, unknown>) => {
     if (typeof order.total_amount === 'number') {
       return acc + order.total_amount;
     }
@@ -259,8 +252,11 @@ async function fetchEventContext(eventId: string): Promise<{
     return acc;
   }, 0);
 
-  const pricing = parsePricingTiers(event.photo_prices);
-  const currency = extractCurrency(event.settings) ?? 'USD';
+  // photo_prices is a direct column on events table
+  const eventData = event as unknown as Record<string, unknown>;
+  const pricing = parsePricingTiers(eventData.photo_prices as EventRow['photo_prices']);
+  // Settings column doesn't exist in the database, use default currency
+  const currency = 'USD';
 
   return {
     event,
@@ -341,6 +337,17 @@ export default async function EventDetailPage({
     notFound();
   }
 
+  // Use clean design if feature flag is enabled
+  if (USE_CLEAN_DESIGN) {
+    return (
+      <CleanEventDetailPage
+        event={event}
+        stats={stats}
+        currency={currency}
+      />
+    );
+  }
+
   const statusBadge = resolveStatusBadge(event);
   const basePrice = toNumber(event.price_per_photo);
 
@@ -348,7 +355,7 @@ export default async function EventDetailPage({
     { label: 'Fecha', value: formatDateRange(event) },
     {
       label: 'Ubicación',
-      value: event.location ?? event.school_name ?? 'Sin ubicación definida',
+      value: event.location ?? 'Sin ubicación definida',
     },
     {
       label: 'Tarifa base',

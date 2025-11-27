@@ -52,13 +52,15 @@ export function CheckoutOrderSummary({
   className,
   variant = 'desktop',
 }: CheckoutOrderSummaryProps) {
+  // Hook must be called unconditionally at the top level
+  const [open, setOpen] = useState(false);
+
   const totalAmount = formatCurrency(totalCents / 100);
   const savingsAmount = typeof savingsCents === 'number'
     ? formatCurrency(savingsCents / 100)
     : null;
 
   if (variant === 'mobile') {
-    const [open, setOpen] = useState(false);
 
     return (
       <div className={cn('fixed inset-x-4 bottom-5 z-30 rounded-3xl border border-border/80 bg-card/95 shadow-2xl backdrop-blur-lg', className)}>

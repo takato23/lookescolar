@@ -1,0 +1,869 @@
+/* =============================================================================
+   LOOKESCOLAR - PHOTO DESIGN SYSTEM
+   Sistema de diseno unificado inspirado en fotografia
+   Ligero, funcional, con detalles sutiles
+   ============================================================================= */
+
+/* =============================================================================
+   DESIGN TOKENS - Variables globales del sistema
+   ============================================================================= */
+
+:root {
+  /* -------------------------------------------------------------------------
+     COLORES PRIMARIOS - Inspirados en el iris de la landing
+     ------------------------------------------------------------------------- */
+
+  /* Cyan - Color principal de acento (del sensor/luz del iris) */
+  --photo-cyan: #00d4ff;
+  --photo-cyan-soft: rgba(0, 212, 255, 0.8);
+  --photo-cyan-muted: rgba(0, 212, 255, 0.5);
+  --photo-cyan-subtle: rgba(0, 212, 255, 0.15);
+  --photo-cyan-ghost: rgba(0, 212, 255, 0.08);
+
+  /* Gold - Color premium (del anillo dorado del lente) */
+  --photo-gold: #d4af37;
+  --photo-gold-soft: rgba(212, 175, 55, 0.8);
+  --photo-gold-muted: rgba(212, 175, 55, 0.5);
+  --photo-gold-subtle: rgba(212, 175, 55, 0.15);
+  --photo-gold-ghost: rgba(212, 175, 55, 0.08);
+
+  /* Blue - Color secundario (del gradiente de la landing) */
+  --photo-blue: #3B82F6;
+  --photo-blue-soft: rgba(59, 130, 246, 0.8);
+  --photo-blue-muted: rgba(59, 130, 246, 0.5);
+  --photo-blue-subtle: rgba(59, 130, 246, 0.15);
+  --photo-blue-ghost: rgba(59, 130, 246, 0.08);
+
+  /* Purple - Complementario */
+  --photo-purple: #8B5CF6;
+  --photo-purple-subtle: rgba(139, 92, 246, 0.15);
+
+  /* -------------------------------------------------------------------------
+     SUPERFICIES - Escala de grises oscuros premium
+     ------------------------------------------------------------------------- */
+  --photo-surface-deep: #050508;
+  /* Fondo mas profundo */
+  --photo-surface-base: #09090B;
+  /* Fondo base */
+  --photo-surface-raised: #0f0f12;
+  /* Cards, paneles */
+  --photo-surface-overlay: #18181B;
+  /* Overlays, modales */
+  --photo-surface-hover: #1f1f24;
+  /* Estados hover */
+  --photo-surface-active: #27272A;
+  /* Estados activos */
+
+  /* -------------------------------------------------------------------------
+     BORDES - Con opacidad para glassmorphism sutil
+     ------------------------------------------------------------------------- */
+  --photo-border: rgba(255, 255, 255, 0.06);
+  --photo-border-hover: rgba(255, 255, 255, 0.1);
+  --photo-border-active: rgba(255, 255, 255, 0.15);
+  --photo-border-focus: rgba(0, 212, 255, 0.3);
+
+  /* -------------------------------------------------------------------------
+     TEXTO
+     ------------------------------------------------------------------------- */
+  --photo-text-primary: #FAFAFA;
+  --photo-text-secondary: #A1A1AA;
+  --photo-text-muted: #71717A;
+  --photo-text-disabled: #52525B;
+
+  /* -------------------------------------------------------------------------
+     GLOWS - Efectos de luz sutiles (inspirados en lens flare)
+     ------------------------------------------------------------------------- */
+  --photo-glow-cyan: 0 0 20px rgba(0, 212, 255, 0.15);
+  --photo-glow-cyan-strong: 0 0 30px rgba(0, 212, 255, 0.25);
+  --photo-glow-gold: 0 0 20px rgba(212, 175, 55, 0.1);
+  --photo-glow-blue: 0 0 20px rgba(59, 130, 246, 0.15);
+  --photo-glow-white: 0 0 15px rgba(255, 255, 255, 0.1);
+
+  /* -------------------------------------------------------------------------
+     SOMBRAS - Profundidad cinematografica
+     ------------------------------------------------------------------------- */
+  --photo-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --photo-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --photo-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --photo-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  /* -------------------------------------------------------------------------
+     TRANSICIONES - Movimiento cinematografico
+     ------------------------------------------------------------------------- */
+  --photo-ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --photo-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --photo-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --photo-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --photo-ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --photo-duration-instant: 100ms;
+  --photo-duration-fast: 150ms;
+  --photo-duration-normal: 200ms;
+  --photo-duration-slow: 300ms;
+  --photo-duration-slower: 500ms;
+
+  /* -------------------------------------------------------------------------
+     ESPACIADO - Sistema de 4px
+     ------------------------------------------------------------------------- */
+  --photo-space-1: 4px;
+  --photo-space-2: 8px;
+  --photo-space-3: 12px;
+  --photo-space-4: 16px;
+  --photo-space-5: 20px;
+  --photo-space-6: 24px;
+  --photo-space-8: 32px;
+  --photo-space-10: 40px;
+  --photo-space-12: 48px;
+
+  /* -------------------------------------------------------------------------
+     BORDES REDONDEADOS
+     ------------------------------------------------------------------------- */
+  --photo-radius-sm: 6px;
+  --photo-radius-md: 8px;
+  --photo-radius-lg: 12px;
+  --photo-radius-xl: 16px;
+  --photo-radius-2xl: 24px;
+  --photo-radius-full: 9999px;
+}
+
+/* =============================================================================
+   LIGHT MODE OVERRIDES - Warm Stone Palette
+   ============================================================================= */
+.light {
+  /* Cyan adaptado para fondos claros */
+  --photo-cyan: #0D9488;
+  --photo-cyan-soft: rgba(13, 148, 136, 0.8);
+  --photo-cyan-muted: rgba(13, 148, 136, 0.5);
+  --photo-cyan-subtle: rgba(13, 148, 136, 0.12);
+  --photo-cyan-ghost: rgba(13, 148, 136, 0.06);
+
+  /* Gold adaptado */
+  --photo-gold: #B45309;
+  --photo-gold-soft: rgba(180, 83, 9, 0.8);
+  --photo-gold-muted: rgba(180, 83, 9, 0.5);
+  --photo-gold-subtle: rgba(180, 83, 9, 0.12);
+  --photo-gold-ghost: rgba(180, 83, 9, 0.06);
+
+  /* Blue adaptado */
+  --photo-blue: #0284C7;
+  --photo-blue-soft: rgba(2, 132, 199, 0.8);
+  --photo-blue-muted: rgba(2, 132, 199, 0.5);
+  --photo-blue-subtle: rgba(2, 132, 199, 0.12);
+  --photo-blue-ghost: rgba(2, 132, 199, 0.06);
+
+  /* Superficies claras - Warm Stone */
+  --photo-surface-deep: #FFFFFF;
+  --photo-surface-base: #FAFAF9;
+  --photo-surface-raised: #FFFFFF;
+  --photo-surface-overlay: #F5F5F4;
+  --photo-surface-hover: #E7E5E4;
+  --photo-surface-active: #D6D3D1;
+
+  /* Bordes para light mode */
+  --photo-border: rgba(28, 25, 23, 0.08);
+  --photo-border-hover: rgba(28, 25, 23, 0.15);
+  --photo-border-active: rgba(28, 25, 23, 0.2);
+  --photo-border-focus: rgba(13, 148, 136, 0.4);
+
+  /* Texto en light mode */
+  --photo-text-primary: #1C1917;
+  --photo-text-secondary: #57534E;
+  --photo-text-muted: #A8A29E;
+  --photo-text-disabled: #D6D3D1;
+
+  /* Glows suaves para light */
+  --photo-glow-cyan: 0 0 16px rgba(13, 148, 136, 0.12);
+  --photo-glow-cyan-strong: 0 0 24px rgba(13, 148, 136, 0.18);
+  --photo-glow-gold: 0 0 16px rgba(180, 83, 9, 0.08);
+  --photo-glow-blue: 0 0 16px rgba(2, 132, 199, 0.12);
+  --photo-glow-white: none;
+
+  /* Sombras para light mode */
+  --photo-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --photo-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --photo-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --photo-shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* =============================================================================
+   DARK MODE OVERRIDES - Rich Slate Blue
+   ============================================================================= */
+.dark {
+  /* Cyan más brillante para dark */
+  --photo-cyan: #2DD4BF;
+  --photo-cyan-soft: rgba(45, 212, 191, 0.8);
+  --photo-cyan-muted: rgba(45, 212, 191, 0.5);
+  --photo-cyan-subtle: rgba(45, 212, 191, 0.15);
+  --photo-cyan-ghost: rgba(45, 212, 191, 0.08);
+
+  /* Gold adaptado para dark */
+  --photo-gold: #FCD34D;
+  --photo-gold-soft: rgba(252, 211, 77, 0.8);
+  --photo-gold-muted: rgba(252, 211, 77, 0.5);
+  --photo-gold-subtle: rgba(252, 211, 77, 0.15);
+  --photo-gold-ghost: rgba(252, 211, 77, 0.08);
+
+  /* Blue adaptado */
+  --photo-blue: #38BDF8;
+  --photo-blue-soft: rgba(56, 189, 248, 0.8);
+  --photo-blue-muted: rgba(56, 189, 248, 0.5);
+  --photo-blue-subtle: rgba(56, 189, 248, 0.15);
+  --photo-blue-ghost: rgba(56, 189, 248, 0.08);
+
+  /* Superficies - Rich Slate Blue */
+  --photo-surface-deep: #020617;
+  --photo-surface-base: #0F172A;
+  --photo-surface-raised: #1E293B;
+  --photo-surface-overlay: #334155;
+  --photo-surface-hover: #475569;
+  --photo-surface-active: #64748B;
+
+  /* Bordes para dark mode */
+  --photo-border: rgba(148, 163, 184, 0.12);
+  --photo-border-hover: rgba(148, 163, 184, 0.2);
+  --photo-border-active: rgba(148, 163, 184, 0.3);
+  --photo-border-focus: rgba(45, 212, 191, 0.4);
+
+  /* Texto en dark mode */
+  --photo-text-primary: #F1F5F9;
+  --photo-text-secondary: #94A3B8;
+  --photo-text-muted: #64748B;
+  --photo-text-disabled: #475569;
+
+  /* Glows mejorados para dark */
+  --photo-glow-cyan: 0 0 24px rgba(45, 212, 191, 0.2);
+  --photo-glow-cyan-strong: 0 0 36px rgba(45, 212, 191, 0.3);
+  --photo-glow-gold: 0 0 20px rgba(252, 211, 77, 0.15);
+  --photo-glow-blue: 0 0 24px rgba(56, 189, 248, 0.2);
+  --photo-glow-white: 0 0 15px rgba(255, 255, 255, 0.08);
+
+  /* Sombras para dark mode */
+  --photo-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --photo-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --photo-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --photo-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+/* =============================================================================
+   NIGHT MODE OVERRIDES - OLED True Black
+   ============================================================================= */
+.night {
+  /* Cyan con alto contraste para OLED */
+  --photo-cyan: #22D3EE;
+  --photo-cyan-soft: rgba(34, 211, 238, 0.85);
+  --photo-cyan-muted: rgba(34, 211, 238, 0.55);
+  --photo-cyan-subtle: rgba(34, 211, 238, 0.18);
+  --photo-cyan-ghost: rgba(34, 211, 238, 0.1);
+
+  /* Gold para night */
+  --photo-gold: #FACC15;
+  --photo-gold-soft: rgba(250, 204, 21, 0.85);
+  --photo-gold-muted: rgba(250, 204, 21, 0.55);
+  --photo-gold-subtle: rgba(250, 204, 21, 0.18);
+  --photo-gold-ghost: rgba(250, 204, 21, 0.1);
+
+  /* Blue para night */
+  --photo-blue: #38BDF8;
+  --photo-blue-soft: rgba(56, 189, 248, 0.85);
+  --photo-blue-muted: rgba(56, 189, 248, 0.55);
+  --photo-blue-subtle: rgba(56, 189, 248, 0.18);
+  --photo-blue-ghost: rgba(56, 189, 248, 0.1);
+
+  /* Superficies - True Black para OLED */
+  --photo-surface-deep: #000000;
+  --photo-surface-base: #000000;
+  --photo-surface-raised: #0A0A0A;
+  --photo-surface-overlay: #141414;
+  --photo-surface-hover: #1F1F1F;
+  --photo-surface-active: #2A2A2A;
+
+  /* Bordes muy sutiles para night */
+  --photo-border: rgba(255, 255, 255, 0.06);
+  --photo-border-hover: rgba(255, 255, 255, 0.12);
+  --photo-border-active: rgba(255, 255, 255, 0.18);
+  --photo-border-focus: rgba(34, 211, 238, 0.45);
+
+  /* Texto con contraste optimizado para OLED */
+  --photo-text-primary: #E5E5E5;
+  --photo-text-secondary: #A3A3A3;
+  --photo-text-muted: #737373;
+  --photo-text-disabled: #525252;
+
+  /* Glows más intensos en OLED */
+  --photo-glow-cyan: 0 0 30px rgba(34, 211, 238, 0.28);
+  --photo-glow-cyan-strong: 0 0 45px rgba(34, 211, 238, 0.4);
+  --photo-glow-gold: 0 0 25px rgba(250, 204, 21, 0.2);
+  --photo-glow-blue: 0 0 30px rgba(56, 189, 248, 0.25);
+  --photo-glow-white: 0 0 20px rgba(255, 255, 255, 0.1);
+
+  /* Sombras mínimas en OLED (ya es negro) */
+  --photo-shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --photo-shadow-md: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --photo-shadow-lg: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --photo-shadow-xl: 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+
+/* =============================================================================
+   MICRO-ANIMACIONES - Keyframes reutilizables
+   ============================================================================= */
+
+/* Shutter Click - Efecto de obturador para botones */
+@keyframes photo-shutter {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(0.97);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Flash - Destello sutil para feedback */
+@keyframes photo-flash {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Pulse Glow - Pulso de luz para indicadores activos */
+@keyframes photo-pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--photo-cyan-subtle);
+    opacity: 1;
+  }
+
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+    opacity: 0.7;
+  }
+}
+
+/* Iris Open - Apertura suave */
+@keyframes photo-iris-open {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fade In Up - Entrada elegante */
+@keyframes photo-fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade In Scale - Para modales y cards */
+@keyframes photo-fade-in-scale {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Slide In - Para sidebars y paneles */
+@keyframes photo-slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes photo-slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Spinner Iris - Loading con efecto de apertura */
+@keyframes photo-iris-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes photo-iris-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+/* Shimmer - Para skeletons */
+@keyframes photo-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+
+/* =============================================================================
+   CLASES UTILITARIAS - Aplicar animaciones
+   ============================================================================= */
+
+/* Animacion de entrada */
+.photo-animate-in {
+  animation: photo-fade-in-up var(--photo-duration-normal) var(--photo-ease-out);
+}
+
+.photo-animate-scale {
+  animation: photo-fade-in-scale var(--photo-duration-normal) var(--photo-ease-out);
+}
+
+/* Shutter click en botones */
+.photo-shutter-click:active {
+  animation: photo-shutter var(--photo-duration-fast) var(--photo-ease-default);
+}
+
+/* Glow en hover */
+.photo-hover-glow {
+  transition: box-shadow var(--photo-duration-normal) var(--photo-ease-default);
+}
+
+.photo-hover-glow:hover {
+  box-shadow: var(--photo-glow-cyan);
+}
+
+.photo-hover-glow-gold:hover {
+  box-shadow: var(--photo-glow-gold);
+}
+
+/* Indicador activo con pulso */
+.photo-active-indicator {
+  animation: photo-pulse-glow 2s var(--photo-ease-default) infinite;
+}
+
+
+/* =============================================================================
+   COMPONENTES BASE - Estilos reutilizables
+   ============================================================================= */
+
+/* Card con estilo fotografico */
+.photo-card {
+  background: var(--photo-surface-raised);
+  border: 1px solid var(--photo-border);
+  border-radius: var(--photo-radius-lg);
+  transition:
+    border-color var(--photo-duration-fast) var(--photo-ease-default),
+    box-shadow var(--photo-duration-fast) var(--photo-ease-default),
+    transform var(--photo-duration-fast) var(--photo-ease-default);
+}
+
+.photo-card:hover {
+  border-color: var(--photo-border-hover);
+  box-shadow: var(--photo-shadow-md);
+  transform: translateY(-1px);
+}
+
+/* Card con borde gradiente tipo lente */
+.photo-card-lens {
+  background: var(--photo-surface-raised);
+  border-radius: var(--photo-radius-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-card-lens::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg,
+      var(--photo-cyan-subtle) 0%,
+      transparent 50%,
+      var(--photo-gold-ghost) 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.5;
+  transition: opacity var(--photo-duration-fast) var(--photo-ease-default);
+}
+
+.photo-card-lens:hover::before {
+  opacity: 1;
+}
+
+/* Boton primario con efecto shutter */
+.photo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--photo-space-2);
+  padding: var(--photo-space-2) var(--photo-space-4);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--photo-radius-md);
+  cursor: pointer;
+  transition:
+    background-color var(--photo-duration-fast) var(--photo-ease-default),
+    border-color var(--photo-duration-fast) var(--photo-ease-default),
+    box-shadow var(--photo-duration-fast) var(--photo-ease-default),
+    transform var(--photo-duration-instant) var(--photo-ease-default);
+  user-select: none;
+}
+
+.photo-btn:active {
+  transform: scale(0.98);
+}
+
+.photo-btn-primary {
+  background: linear-gradient(135deg, var(--photo-cyan) 0%, var(--photo-blue) 100%);
+  color: white;
+  border: none;
+}
+
+.photo-btn-primary:hover {
+  box-shadow: var(--photo-glow-cyan);
+}
+
+.photo-btn-secondary {
+  background: var(--photo-surface-hover);
+  color: var(--photo-text-primary);
+  border: 1px solid var(--photo-border);
+}
+
+.photo-btn-secondary:hover {
+  background: var(--photo-surface-active);
+  border-color: var(--photo-border-hover);
+}
+
+.photo-btn-ghost {
+  background: transparent;
+  color: var(--photo-text-secondary);
+  border: none;
+}
+
+.photo-btn-ghost:hover {
+  background: var(--photo-surface-hover);
+  color: var(--photo-text-primary);
+}
+
+/* Input con estilo fotografico */
+.photo-input {
+  width: 100%;
+  padding: var(--photo-space-2) var(--photo-space-3);
+  background: var(--photo-surface-base);
+  border: 1px solid var(--photo-border);
+  border-radius: var(--photo-radius-md);
+  color: var(--photo-text-primary);
+  font-size: 14px;
+  transition:
+    border-color var(--photo-duration-fast) var(--photo-ease-default),
+    box-shadow var(--photo-duration-fast) var(--photo-ease-default);
+}
+
+.photo-input::placeholder {
+  color: var(--photo-text-muted);
+}
+
+.photo-input:focus {
+  outline: none;
+  border-color: var(--photo-cyan-muted);
+  box-shadow: 0 0 0 3px var(--photo-cyan-ghost);
+}
+
+/* Badge/Chip */
+.photo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--photo-space-1);
+  padding: 2px var(--photo-space-2);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--photo-radius-full);
+}
+
+.photo-badge-cyan {
+  background: var(--photo-cyan-subtle);
+  color: var(--photo-cyan);
+}
+
+.photo-badge-gold {
+  background: var(--photo-gold-subtle);
+  color: var(--photo-gold);
+}
+
+.photo-badge-success {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+}
+
+.photo-badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+}
+
+.photo-badge-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+}
+
+
+/* =============================================================================
+   LOADING STATES - Spinners y Skeletons
+   ============================================================================= */
+
+/* Spinner Iris - Loading principal */
+.photo-spinner-iris {
+  width: 40px;
+  height: 40px;
+  position: relative;
+}
+
+.photo-spinner-iris::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--photo-surface-active);
+  border-top-color: var(--photo-cyan);
+  border-radius: 50%;
+  animation: photo-iris-spin 0.8s linear infinite;
+}
+
+.photo-spinner-iris::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px solid var(--photo-surface-active);
+  border-bottom-color: var(--photo-gold-muted);
+  border-radius: 50%;
+  animation: photo-iris-spin 1.2s linear infinite reverse;
+}
+
+/* Spinner pequeno */
+.photo-spinner-sm {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--photo-surface-active);
+  border-top-color: var(--photo-cyan);
+  border-radius: 50%;
+  animation: photo-iris-spin 0.6s linear infinite;
+}
+
+/* Skeleton con shimmer */
+.photo-skeleton {
+  background: linear-gradient(90deg,
+      var(--photo-surface-hover) 25%,
+      var(--photo-surface-active) 50%,
+      var(--photo-surface-hover) 75%);
+  background-size: 200% 100%;
+  animation: photo-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--photo-radius-sm);
+}
+
+
+/* =============================================================================
+   NAVEGACION - Sidebar y menu items
+   ============================================================================= */
+
+/* Indicador activo tipo "flash" de camara */
+.photo-nav-active {
+  position: relative;
+}
+
+.photo-nav-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 16px;
+  background: linear-gradient(180deg, var(--photo-cyan) 0%, var(--photo-blue) 100%);
+  border-radius: 0 2px 2px 0;
+  box-shadow: var(--photo-glow-cyan);
+}
+
+/* Nav item hover con glow sutil */
+.photo-nav-item {
+  position: relative;
+  transition:
+    background-color var(--photo-duration-fast) var(--photo-ease-default),
+    color var(--photo-duration-fast) var(--photo-ease-default);
+}
+
+.photo-nav-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      var(--photo-cyan-ghost) 0%,
+      transparent 50%);
+  transition: opacity var(--photo-duration-fast) var(--photo-ease-default);
+  pointer-events: none;
+}
+
+.photo-nav-item:hover::after {
+  opacity: 1;
+}
+
+
+/* =============================================================================
+   GLASSMORPHISM SUTIL - Para overlays y modales
+   ============================================================================= */
+
+/* =============================================================================
+   GLASSMORPHISM SUTIL - Para overlays y modales
+   ============================================================================= */
+
+.photo-glass {
+  background: var(--glass-bg, rgba(9, 9, 11, 0.8));
+  backdrop-filter: blur(var(--glass-blur, 12px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
+  border: 1px solid var(--glass-border, var(--photo-border));
+  box-shadow: var(--glass-shadow, none);
+}
+
+.photo-glass-strong {
+  background: rgba(9, 9, 11, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--photo-border-hover);
+}
+
+.photo-glass-premium {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  background-image: var(--glass-gradient);
+}
+
+
+/* =============================================================================
+   NOTIFICACIONES / TOASTS
+   ============================================================================= */
+
+.photo-toast {
+  background: var(--photo-surface-overlay);
+  border: 1px solid var(--photo-border);
+  border-radius: var(--photo-radius-lg);
+  box-shadow: var(--photo-shadow-lg);
+  animation: photo-slide-in-right var(--photo-duration-slow) var(--photo-ease-out);
+}
+
+.photo-toast-success {
+  border-left: 3px solid #10B981;
+}
+
+.photo-toast-error {
+  border-left: 3px solid #EF4444;
+}
+
+.photo-toast-warning {
+  border-left: 3px solid #F59E0B;
+}
+
+.photo-toast-info {
+  border-left: 3px solid var(--photo-cyan);
+}
+
+
+/* =============================================================================
+   FOCUS STATES - Accesibilidad
+   ============================================================================= */
+
+.photo-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--photo-surface-base), 0 0 0 4px var(--photo-cyan-muted);
+}
+
+
+/* =============================================================================
+   RESPONSIVE - Ajustes para movil
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  :root {
+    --photo-space-4: 12px;
+    --photo-space-6: 16px;
+    --photo-space-8: 24px;
+  }
+
+  .photo-card:hover {
+    transform: none;
+    /* Desactivar lift en mobile */
+  }
+}
+
+
+/* =============================================================================
+   PREFERENCIAS DE MOVIMIENTO REDUCIDO
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

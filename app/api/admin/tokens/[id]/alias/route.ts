@@ -1,8 +1,9 @@
 import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { adminAuthMiddleware } from '@/lib/security/admin-auth';
+import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { tokenAliasService } from '@/lib/services/token-alias.service';
+import { logger } from '@/lib/utils/logger';
 
 const bodySchema = z
   .object({
@@ -16,20 +17,15 @@ interface RouteParams {
   id: string;
 }
 
-export async function POST(
-  request: NextRequest, context: RouteContext<RouteParams>) {
+/**
+ * Create an alias for a token
+ */
+export const POST = withAdminAuth(async (
+  request: NextRequest,
+  context: RouteContext<RouteParams>
+) => {
+  const requestId = crypto.randomUUID();
   const params = await context.params;
-  const authResult = await adminAuthMiddleware(request);
-  if (
-    !authResult ||
-    ('success' in authResult && !authResult.success) ||
-    ('ok' in authResult && !authResult.ok)
-  ) {
-    return NextResponse.json(
-      { error: 'Unauthorized', message: 'Admin access required' },
-      { status: 401 }
-    );
-  }
 
   try {
     const { id } = params;
@@ -45,12 +41,22 @@ export async function POST(
     const alias = await tokenAliasService.createAliasForToken(id, {
       alias: body.alias,
       shortCode: body.shortCode,
-      generatedBy: (authResult as any).userId ?? null,
+      generatedBy: null, // Auth user ID is handled by middleware
+    });
+
+    logger.info('Token alias created', {
+      requestId,
+      tokenId: id,
+      aliasId: alias.id,
     });
 
     return NextResponse.json({ alias });
-  } catch (error: any) {
-    console.error('[AdminAliasCreate] Failed to create alias', error);
+  } catch (error) {
+    logger.error('Token alias creation error', {
+      requestId,
+      tokenId: params.id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -60,10 +66,10 @@ export async function POST(
     }
 
     const message =
-      typeof error?.message === 'string'
+      error instanceof Error
         ? error.message
         : 'No se pudo generar el alias';
 
     return NextResponse.json({ error: message }, { status: 400 });
   }
-}
+});

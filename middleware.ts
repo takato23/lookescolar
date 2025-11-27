@@ -68,21 +68,28 @@ export async function middleware(request: NextRequest) {
   requestHeaders.set('x-tenant-id', tenantResolution.tenantId);
   requestHeaders.set('x-tenant-source', tenantResolution.source);
 
-  if (
-    pathname.startsWith('/api/admin/photos') ||
-    pathname.startsWith('/api/debug/')
-  ) {
-    const bypassResponse = NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
+  // SECURITY FIX: Remove complete bypass for admin photos
+  // Debug endpoints are ONLY allowed in development
+  if (pathname.startsWith('/api/debug/')) {
+    if (process.env.NODE_ENV === 'production') {
+      logger.warn('Debug endpoint blocked in production', { pathname, requestId });
+      return new NextResponse(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    // In development, allow but still apply basic security headers
+    const debugResponse = NextResponse.next({
+      request: { headers: requestHeaders },
     });
-    bypassResponse.headers.set('X-Request-ID', requestId);
-    bypassResponse.headers.set('X-Bypass-Reason', 'admin-photos-debug');
-    bypassResponse.headers.set('X-Tenant-Id', tenantResolution.tenantId);
-    bypassResponse.headers.set('X-Tenant-Source', tenantResolution.source);
-    return bypassResponse;
+    debugResponse.headers.set('X-Request-ID', requestId);
+    debugResponse.headers.set('X-Debug-Mode', 'true');
+    debugResponse.headers.set('X-Tenant-Id', tenantResolution.tenantId);
+    return debugResponse;
   }
+
+  // Admin photos: apply security headers but allow higher rate limits
+  // Note: Authentication is handled by withAdminAuth in the route handlers
 
   // Agregar request ID a headers para tracking
   const response = NextResponse.next({

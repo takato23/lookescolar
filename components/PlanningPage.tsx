@@ -3,9 +3,12 @@
 import dynamic from "next/dynamic";
 import { useRef } from "react";
 import { useScroll } from "framer-motion";
-import { Loader } from "@react-three/drei";
 
 const PlanningScene = dynamic(() => import("./PlanningScene"), { ssr: false });
+const Loader = dynamic(
+    () => import("@react-three/drei").then(mod => ({ default: mod.Loader })),
+    { ssr: false }
+);
 import PlanningOverlay from "./PlanningOverlay";
 
 export default function PlanningPage() {

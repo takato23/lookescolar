@@ -1,4 +1,4 @@
-import { EventsPageClient } from '@/components/admin/EventsPageClean';
+import CleanEventsPage from '@/components/admin/events/CleanEventsPage';
 import { absoluteUrl } from '@/lib/absoluteUrl';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
@@ -24,6 +24,7 @@ type AdminEvent = {
   updated_at: string | null;
   price_per_photo: number | null;
   stats: AdminEventStats;
+  cover_url?: string | null;
 };
 
 type EventsPagination = {
@@ -144,6 +145,11 @@ const normalizeEvent = (raw: unknown): AdminEvent | null => {
       ? null
       : toFiniteNumber(pricePerPhotoValue);
 
+  const coverUrl =
+    toTrimmedString((raw as any).cover_url) ??
+    toTrimmedString((raw as any).cover) ??
+    null;
+
   return {
     id,
     name: toTrimmedString(raw.name),
@@ -157,6 +163,7 @@ const normalizeEvent = (raw: unknown): AdminEvent | null => {
     created_at: toTrimmedString(raw.created_at),
     updated_at: toTrimmedString(raw.updated_at),
     price_per_photo: pricePerPhoto,
+    cover_url: coverUrl,
     stats: {
       totalPhotos: readStat(statsSources, ['totalPhotos', 'total_photos']),
       totalSubjects: readStat(statsSources, [
@@ -349,9 +356,9 @@ async function fetchEventsDirect(options: {
     const { data, error, count } = await query;
     if (error) throw error;
 
-    const events = (data || []).map((event) => ({
+    const events = (data || []).map((event: Record<string, unknown>) => ({
       ...event,
-      school: event.location ?? event.school ?? event.name ?? null,
+      school: (event.location ?? event.name ?? null) as string | null,
     }));
 
     const total =
@@ -397,20 +404,20 @@ async function fetchEventsDirect(options: {
       throw legacyError;
     }
 
-    const events = (legacyData || []).map((event) => ({
-      id: event.id,
-      name: event.name,
-      school: event.school ?? event.name ?? null,
-      location: event.school ?? null,
-      date: event.date,
+    const events = (legacyData || []).map((event: Record<string, unknown>) => ({
+      id: event.id as string,
+      name: event.name as string | null,
+      school: ((event.school ?? event.name ?? null) as string | null),
+      location: (event.school as string | null) ?? null,
+      date: event.date as string | null,
       status:
         typeof event.active === 'boolean'
           ? event.active
             ? 'active'
             : 'inactive'
           : undefined,
-      created_at: event.created_at,
-      updated_at: event.updated_at,
+      created_at: event.created_at as string | null,
+      updated_at: event.updated_at as string | null,
     }));
 
     const total =
@@ -585,7 +592,6 @@ export default async function EventsPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const { events, pagination, error } = await getEvents(resolvedSearchParams ?? {});
-  return (
-    <EventsPageClient events={events} pagination={pagination} error={error} />
-  );
+
+  return <CleanEventsPage events={events} error={error} />;
 }

@@ -31,7 +31,7 @@ export function DashboardWelcome({
     });
 
   return (
-    <section className="liquid-glass-intense group relative overflow-hidden rounded-[2rem] p-8 shadow-2xl transition-all duration-500 hover:shadow-3xl">
+    <section className="liquid-glass-intense group relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/40 p-8 shadow-2xl backdrop-blur-2xl transition-all duration-500 hover:shadow-3xl">
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/5 to-transparent opacity-60 dark:from-blue-500/20 dark:via-purple-500/10"></div>
       <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 blur-3xl"></div>
       <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-gradient-to-tr from-indigo-400/20 to-pink-400/20 blur-2xl"></div>
@@ -41,13 +41,13 @@ export function DashboardWelcome({
           <div className="flex items-center gap-4">
             <div className="liquid-glass group/icon relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:scale-105">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 opacity-10 group-hover/icon:opacity-20"></div>
-              <Sparkles className="relative z-10 h-7 w-7 text-blue-600 dark:text-blue-400" />
+              <Sparkles className="relative z-10 h-7 w-7 text-blue-400" />
             </div>
             <div>
-              <h1 className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-4xl font-bold tracking-tight text-transparent dark:from-white dark:via-blue-100 dark:to-white">
+              <h1 className="bg-gradient-to-r from-white via-blue-100 to-white bg-clip-text text-4xl font-bold tracking-tight text-transparent">
                 ¡Hola de nuevo!
               </h1>
-              <p className="mt-1 text-base text-slate-600 dark:text-slate-300">
+              <p className="mt-1 text-base text-slate-300">
                 Aquí tienes el resumen de tu estudio hoy
               </p>
             </div>

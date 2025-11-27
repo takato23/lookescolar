@@ -80,7 +80,7 @@ export default function LandingPage() {
   };
 
   const handleAdminLogin = (loginEmail: string, password: string) => {
-    console.log('Admin login:', { email: loginEmail, password });
+    // Redirect to admin - actual authentication handled server-side
     window.location.href = '/admin';
   };
 

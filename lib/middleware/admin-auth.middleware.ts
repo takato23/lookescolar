@@ -168,15 +168,21 @@ export async function authenticateAdmin(
     }
 
     // Development bypass with explicit configuration
-    if (
+    // SECURITY: Triple-check this NEVER runs in production
+    const isReallyDevelopment =
       process.env.NODE_ENV === 'development' &&
+      process.env.VERCEL_ENV !== 'production' &&
+      !process.env.VERCEL_URL?.includes('lookescolar.com');
+
+    if (
+      isReallyDevelopment &&
       process.env.ALLOW_DEV_BYPASS === 'true'
     ) {
       const devUser = {
         id: 'dev-admin',
         email: 'admin@lookescolar.dev',
         role: 'admin',
-        metadata: { env: 'development' },
+        metadata: { env: 'development', bypassUsed: true },
       };
 
       // Avoid spamming logs for high-frequency preview requests in dev

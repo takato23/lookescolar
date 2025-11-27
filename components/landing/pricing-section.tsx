@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
+import { useRouter } from 'next/navigation';
 
 export function PricingSection() {
+  const router = useRouter();
   const plans = [
     {
       name: 'Inicial',
@@ -122,6 +124,14 @@ export function PricingSection() {
               </ul>
 
               <Button
+                onClick={() => {
+                  if (plan.cta === 'Empezar Gratis' || plan.cta === 'Prueba de 14 días') {
+                    router.push('/login');
+                  } else if (plan.cta === 'Contactar Ventas') {
+                    // Scroll to contact section or open contact modal
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                  }
+                }}
                 className={clsx(
                   'h-12 w-full rounded-xl text-sm font-bold transition-all hover:-translate-y-1',
                   plan.popular

@@ -22,7 +22,7 @@ export async function GET(
     // Validate event
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, name, location, date, status, created_at, theme, settings')
+      .select('id, name, location, date, status, created_at, theme, metadata')
       .eq('id', eventId)
       .single();
 
@@ -60,7 +60,7 @@ export async function GET(
           photos: [],
           // Include theme and design settings for Pixieset-like runtime
           theme: (event as any).theme || 'default',
-          settings: (event as any).settings || {},
+          metadata: (event as any).metadata || {},
         },
         event: {
           id: event.id,
@@ -161,7 +161,7 @@ export async function GET(
         date: event.date,
         created_at: event.created_at,
         theme: (event as any).theme || 'default',
-        settings: (event as any).settings || {},
+        metadata: (event as any).metadata || {},
       },
       photos: processed,
       pagination,

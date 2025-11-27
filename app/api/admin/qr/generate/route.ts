@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { qrService } from '@/lib/services/qr.service';
-import { adminAuth } from '@/lib/security/admin-auth';
+import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
 
@@ -43,19 +43,10 @@ const batchGenerateQRSchema = z.object({
 /**
  * Generate QR code for a single student
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdminAuth(async (request: NextRequest) => {
   const requestId = crypto.randomUUID();
 
   try {
-    // Check admin authentication
-    const authResult = await adminAuth(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized', code: 'AUTH_REQUIRED' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validation = generateQRSchema.safeParse(body);
 
@@ -84,7 +75,6 @@ export async function POST(request: NextRequest) {
 
     logger.info('QR code generated via API', {
       requestId,
-      adminUserId: authResult.userId,
       eventId,
       studentId: studentId.substring(0, 8) + '***',
       qrCodeId: result.qrCode,
@@ -115,24 +105,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * Generate QR codes for multiple students in batch
  */
-export async function PUT(request: NextRequest) {
+export const PUT = withAdminAuth(async (request: NextRequest) => {
   const requestId = crypto.randomUUID();
 
   try {
-    // Check admin authentication
-    const authResult = await adminAuth(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized', code: 'AUTH_REQUIRED' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validation = batchGenerateQRSchema.safeParse(body);
 
@@ -161,7 +142,6 @@ export async function PUT(request: NextRequest) {
 
     logger.info('Batch QR codes generated via API', {
       requestId,
-      adminUserId: authResult.userId,
       eventId,
       totalStudents: students.length,
       successCount,
@@ -195,4 +175,4 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

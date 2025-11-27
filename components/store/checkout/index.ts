@@ -2,8 +2,10 @@ export { CheckoutLayout } from './CheckoutLayout';
 export { CheckoutCustomerForm } from './CheckoutCustomerForm';
 export { CheckoutOrderSummary } from './CheckoutOrderSummary';
 export { CheckoutPaymentMethods } from './CheckoutPaymentMethods';
+export { CouponInput } from './CouponInput';
 export type { CheckoutOrderItem } from './CheckoutOrderSummary';
 export type { CheckoutPaymentMethod } from './CheckoutPaymentMethods';
+export type { AppliedCoupon, CouponValidationResult } from './CouponInput';
 export {
   checkoutSchema,
   checkoutInitialValues,

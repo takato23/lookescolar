@@ -24,12 +24,23 @@ export interface ContactInfo {
   phone: string;
 }
 
+export interface AppliedCoupon {
+  code: string;
+  discountType: 'percentage' | 'fixed_amount';
+  discountValue: number;
+  discountCents: number; // Calculated discount amount in cents
+  couponId: string;
+}
+
 interface UnifiedCartStore {
   // Estado
   items: CartItem[];
   isOpen: boolean;
   contactInfo: ContactInfo | null;
   context: GalleryContextData | null;
+  appliedCoupon: AppliedCoupon | null;
+  couponError: string | null;
+  isValidatingCoupon: boolean;
 
   // Acciones del carrito
   addItem: (item: Omit<CartItem, 'quantity'>) => void;
@@ -53,9 +64,16 @@ interface UnifiedCartStore {
   // Cálculos
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getTotalPriceWithDiscount: () => number;
+  getDiscountAmount: () => number;
   getItemsCount: () => number;
   isItemInCart: (photoId: string) => boolean;
   getItemQuantity: (photoId: string) => number;
+
+  // Cupones
+  applyCoupon: (code: string) => Promise<boolean>;
+  removeCoupon: () => void;
+  recalculateCouponDiscount: () => void;
 }
 
 export const useUnifiedCartStore = create<UnifiedCartStore>()(
@@ -66,6 +84,9 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
       isOpen: false,
       contactInfo: null,
       context: null,
+      appliedCoupon: null,
+      couponError: null,
+      isValidatingCoupon: false,
 
       // Acciones del carrito
       addItem: (item) =>
@@ -201,6 +222,18 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
         );
       },
 
+      getTotalPriceWithDiscount: () => {
+        const totalPrice = get().getTotalPrice();
+        const discount = get().getDiscountAmount();
+        return Math.max(0, totalPrice - discount);
+      },
+
+      getDiscountAmount: () => {
+        const coupon = get().appliedCoupon;
+        if (!coupon) return 0;
+        return coupon.discountCents;
+      },
+
       getItemsCount: () => {
         return get().items.length;
       },
@@ -213,13 +246,104 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
         const item = get().items.find((item) => item.photoId === photoId);
         return item?.quantity || 0;
       },
+
+      // Cupones
+      applyCoupon: async (code: string) => {
+        const trimmedCode = code.trim().toUpperCase();
+        if (!trimmedCode) {
+          set({ couponError: 'Ingresa un código de cupón' });
+          return false;
+        }
+
+        set({ isValidatingCoupon: true, couponError: null });
+
+        try {
+          const subtotalCents = get().getTotalPrice();
+          const response = await fetch('/api/coupons/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: trimmedCode,
+              subtotalCents,
+              hasPhysicalItems: true,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.valid) {
+            set({
+              couponError: data.error || 'Cupón inválido',
+              isValidatingCoupon: false
+            });
+            return false;
+          }
+
+          const appliedCoupon: AppliedCoupon = {
+            code: data.couponCode || trimmedCode,
+            discountType: data.couponType === 'percentage' ? 'percentage' : 'fixed_amount',
+            discountValue: data.couponType === 'percentage'
+              ? Math.round((data.discountCents / get().getTotalPrice()) * 100)
+              : data.discountCents,
+            discountCents: data.discountCents,
+            couponId: data.couponId,
+          };
+
+          set({
+            appliedCoupon,
+            couponError: null,
+            isValidatingCoupon: false
+          });
+
+          debugMigration('Coupon applied successfully', {
+            code: trimmedCode,
+            discountCents: data.discountCents
+          });
+
+          return true;
+        } catch (error) {
+          console.error('[CartStore] Error validating coupon:', error);
+          set({
+            couponError: 'Error al validar el cupón',
+            isValidatingCoupon: false
+          });
+          return false;
+        }
+      },
+
+      removeCoupon: () => {
+        debugMigration('Removing coupon from cart');
+        set({ appliedCoupon: null, couponError: null });
+      },
+
+      recalculateCouponDiscount: () => {
+        const coupon = get().appliedCoupon;
+        if (!coupon) return;
+
+        const totalCents = get().getTotalPrice();
+        let discountCents = 0;
+
+        if (coupon.discountType === 'percentage') {
+          discountCents = Math.round(totalCents * (coupon.discountValue / 100));
+        } else {
+          discountCents = coupon.discountValue;
+        }
+
+        // Asegurar que el descuento no exceda el total
+        discountCents = Math.min(discountCents, totalCents);
+
+        set({
+          appliedCoupon: { ...coupon, discountCents },
+        });
+      },
     }),
     {
       name: 'unified-lookescolar-cart',
       partialize: (state) => ({
         items: state.items,
         contactInfo: state.contactInfo,
-        // No persistir isOpen ni context - se recalculan en cada sesión
+        appliedCoupon: state.appliedCoupon,
+        // No persistir isOpen, context, couponError, isValidatingCoupon
       }),
     }
   )

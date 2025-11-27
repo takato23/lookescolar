@@ -22,8 +22,10 @@ interface GalleryHeaderProps {
 }
 
 export function GalleryHeader({ event, photoCount, formattedDate }: GalleryHeaderProps) {
-  const getTotalItems = usePublicCartStore((state) => state.getTotalItems)
-  const openCart = usePublicCartStore((state) => state.openCart)
+  // usePublicCartStore returns the store directly, not a selector
+  const cartStore = usePublicCartStore()
+  const getTotalItems = cartStore.getTotalItems
+  const openCart = cartStore.openCart
   const [searchTerm, setSearchTerm] = useState('')
   const totalItems = getTotalItems()
 

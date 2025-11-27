@@ -44,8 +44,9 @@ export function ThemeProvider({
   };
 
   // Aplicar tema al DOM
-  const applyTheme = (resolvedTheme: 'light' | 'dark') => {
+  const applyTheme = (resolvedTheme: 'light' | 'dark', selectedTheme?: Theme) => {
     const html = document.documentElement;
+    const actualTheme = selectedTheme || theme;
 
     // Remover clases anteriores
     html.classList.remove('light', 'dark', 'night');
@@ -54,21 +55,25 @@ export function ThemeProvider({
     html.style.transition = 'background-color 0.3s ease, color 0.3s ease';
     html.classList.add(resolvedTheme);
 
-    // Sincronizar atributo data-theme para estilos que lo consultan (admin)
-    html.setAttribute('data-theme', resolvedTheme);
-
-    // Si el tema seleccionado es "night", agregar clase adicional
-    if (theme === 'night') {
+    // Si el tema seleccionado es "night", agregar clase adicional para estilos específicos
+    if (actualTheme === 'night') {
       html.classList.add('night');
     }
+
+    // Sincronizar atributo data-theme para estilos que lo consultan (admin)
+    html.setAttribute('data-theme', actualTheme === 'night' ? 'night' : resolvedTheme);
 
     // Actualizar meta theme-color para mobile
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      const color = resolvedTheme === 'dark' ? '#0a0a0a' : '#fafaff';
+      let color = '#fafaff'; // light default
+      if (actualTheme === 'night') {
+        color = '#050508'; // very dark for night
+      } else if (resolvedTheme === 'dark') {
+        color = '#0a0f1a'; // dark blue for dark mode
+      }
       metaThemeColor.setAttribute('content', color);
     }
-
   };
 
   // Setear tema con persistencia
@@ -81,7 +86,7 @@ export function ThemeProvider({
 
     const resolved = resolveTheme(newTheme);
     setResolvedTheme(resolved);
-    applyTheme(resolved);
+    applyTheme(resolved, newTheme);
   };
 
   // Toggle entre light y dark (omite system)
@@ -97,7 +102,7 @@ export function ThemeProvider({
     // Recuperar tema guardado
     if (typeof window !== 'undefined') {
       const storedTheme = localStorage.getItem(storageKey) as Theme;
-      if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
+      if (storedTheme && ['light', 'dark', 'system', 'night'].includes(storedTheme)) {
         initialTheme = storedTheme;
       }
     }
@@ -105,7 +110,7 @@ export function ThemeProvider({
     const resolved = resolveTheme(initialTheme);
     setThemeState(initialTheme);
     setResolvedTheme(resolved);
-    applyTheme(resolved);
+    applyTheme(resolved, initialTheme);
   }, [defaultTheme, storageKey]);
 
   // Escuchar cambios en prefers-color-scheme

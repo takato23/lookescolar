@@ -1,7 +1,34 @@
-// Server wrapper for optional SSR hydration on /admin/publish?event_id=...
-import PublishClient from './PublishClient';
+// Server wrapper for /admin/publish with SSR hydration
+import CleanPublishPage from '@/components/admin/publish/CleanPublishPage';
 import { fetchCounter } from '@/lib/services/fetch-counter';
-import CentralitaPublishClient from '@/components/admin/centralita/centralita-publish-client';
+
+// Feature flag for clean design - matches other admin pages
+const USE_CLEAN_DESIGN = true;
+
+// Legacy imports (kept for potential rollback)
+import PublishClient from './PublishClient';
+
+type FolderData = {
+  id: string;
+  name: string;
+  event_id: string | null;
+  photo_count: number;
+  is_published: boolean | null;
+  share_token: string | null;
+  unified_share_token: string | null;
+  store_url: string | null;
+  published_at: string | null;
+  family_url: string | null;
+  qr_url: string | null;
+  event_name: string | null;
+  event_date: string | null;
+};
+
+type EventData = {
+  id: string;
+  name: string;
+  date?: string;
+};
 
 export default async function PublishPage({
   searchParams,
@@ -10,16 +37,10 @@ export default async function PublishPage({
 }) {
   const sp = searchParams ? await searchParams : {};
   const eventId = sp?.event_id as string | undefined;
-  const centralitaEnabled = process.env.NEXT_PUBLIC_CENTRALITA_ENABLED === 'true';
-
-  // If Centralita mode is enabled and no specific event is selected, use Centralita
-  if (centralitaEnabled && !eventId) {
-    return <CentralitaPublishClient />;
-  }
 
   // Fetch event details (best-effort) if eventId is provided
-  let event: { id: string; name: string; date?: string } | null = null;
-  let folders: any[] = [];
+  let event: EventData | null = null;
+  let folders: FolderData[] = [];
 
   if (eventId) {
     try {
@@ -30,7 +51,7 @@ export default async function PublishPage({
       );
       if (eventRes.ok) {
         const ejson = await eventRes.json();
-        const ev = (ejson as any).event || ejson;
+        const ev = (ejson as { event?: { id: string; name: string; date?: string } }).event || ejson;
         if (ev?.id) event = { id: ev.id, name: ev.name, date: ev.date || undefined };
       }
     } catch (e) {
@@ -52,21 +73,24 @@ export default async function PublishPage({
       );
       if (foldersRes.ok) {
         const fjson = await foldersRes.json();
-        folders = (fjson.folders || []).map((f: any) => ({
-          id: String(f.id),
-          name: String(f.name || 'Untitled Folder'),
-          event_id: f.event_id as string | null,
-          photo_count: Number(f.photo_count || f.photos_count || 0),
-          is_published: Boolean(f.is_published),
-          share_token: f.share_token as string | null,
-          unified_share_token: (f.unified_share_token as string | null) ?? null,
-          store_url: (f.store_url as string | null) ?? null,
-          published_at: f.published_at as string | null,
-          family_url: f.family_url as string | null,
-          qr_url: f.qr_url as string | null,
-          event_name: f.event_name as string | null,
-          event_date: f.event_date as string | null,
-        }));
+        folders = ((fjson as { folders?: unknown[] }).folders || []).map((f: unknown) => {
+          const folder = f as Record<string, unknown>;
+          return {
+            id: String(folder.id),
+            name: String(folder.name || 'Untitled Folder'),
+            event_id: (folder.event_id as string | null) ?? null,
+            photo_count: Number(folder.photo_count || folder.photos_count || 0),
+            is_published: Boolean(folder.is_published),
+            share_token: (folder.share_token as string | null) ?? null,
+            unified_share_token: (folder.unified_share_token as string | null) ?? null,
+            store_url: (folder.store_url as string | null) ?? null,
+            published_at: (folder.published_at as string | null) ?? null,
+            family_url: (folder.family_url as string | null) ?? null,
+            qr_url: (folder.qr_url as string | null) ?? null,
+            event_name: (folder.event_name as string | null) ?? null,
+            event_date: (folder.event_date as string | null) ?? null,
+          };
+        });
         if (!event && folders[0]?.event_id) {
           event = {
             id: folders[0].event_id,
@@ -85,17 +109,17 @@ export default async function PublishPage({
 
   const initialData = eventId ? { folders, event } : undefined;
 
-  // If Centralita is enabled and we have an event selected, still use Centralita
-  if (centralitaEnabled) {
+  // Use clean design if feature flag is enabled
+  if (USE_CLEAN_DESIGN) {
     return (
-      <CentralitaPublishClient
+      <CleanPublishPage
         initialSelectedEventId={eventId}
         initialData={initialData}
       />
     );
   }
 
-  // Use the new modern PublishClient
+  // Legacy: Use the old PublishClient
   return (
     <PublishClient
       initialSelectedEventId={eventId}

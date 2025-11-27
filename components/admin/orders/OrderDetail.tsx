@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Download, FileText, Receipt } from 'lucide-react';
 
 interface EnhancedOrder {
   id: string;
@@ -66,6 +66,7 @@ export default function OrderDetail({
   const [order, setOrder] = useState<EnhancedOrder | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<'invoice' | 'receipt' | null>(null);
 
   // Load order details
   useEffect(() => {
@@ -97,6 +98,34 @@ export default function OrderDetail({
       style: 'currency',
       currency: 'ARS',
     }).format(cents / 100);
+  };
+
+  // Download invoice or receipt
+  const downloadPdf = async (type: 'invoice' | 'receipt') => {
+    if (!order) return;
+    setDownloadingPdf(type);
+    try {
+      const response = await fetch(`/api/admin/orders/${order.id}/invoice?type=${type}&download=true`);
+      if (!response.ok) {
+        throw new Error('Error al descargar documento');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = type === 'receipt'
+        ? `recibo-${order.id.slice(-8).toUpperCase()}.pdf`
+        : `factura-${order.id.slice(-8).toUpperCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading PDF:', err);
+      alert('Error al descargar el documento');
+    } finally {
+      setDownloadingPdf(null);
+    }
   };
 
   const header = (
@@ -273,6 +302,41 @@ export default function OrderDetail({
                     </div>
                   </div>
                 )}
+
+                {/* Document Downloads */}
+                <div className="border-t pt-4">
+                  <h4 className="mb-3 font-medium">Documentos</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadPdf('invoice')}
+                      disabled={downloadingPdf !== null}
+                      className="flex items-center gap-2"
+                    >
+                      {downloadingPdf === 'invoice' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="h-4 w-4" />
+                      )}
+                      Descargar Factura
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadPdf('receipt')}
+                      disabled={downloadingPdf !== null}
+                      className="flex items-center gap-2"
+                    >
+                      {downloadingPdf === 'receipt' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Receipt className="h-4 w-4" />
+                      )}
+                      Descargar Recibo
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

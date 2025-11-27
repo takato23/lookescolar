@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="blade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0f0f23"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00d4ff"/>
+      <stop offset="100%" stop-color="#006699" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Fondo -->
+  <circle cx="16" cy="16" r="15" fill="#0a0a12"/>
+
+  <!-- Anillo dorado -->
+  <circle cx="16" cy="16" r="14" fill="none" stroke="#c9956c" stroke-width="1.5"/>
+
+  <!-- Hojas simplificadas (7) -->
+  <g fill="url(#blade)">
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z"/>
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z" transform="rotate(51.43, 16, 16)"/>
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z" transform="rotate(102.86, 16, 16)"/>
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z" transform="rotate(154.29, 16, 16)"/>
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z" transform="rotate(205.71, 16, 16)"/>
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z" transform="rotate(257.14, 16, 16)"/>
+    <path d="M16,4 Q20,7 20,11 Q18,13 16,12 Q14,10 15,6 Z" transform="rotate(308.57, 16, 16)"/>
+  </g>
+
+  <!-- Centro luminoso -->
+  <circle cx="16" cy="16" r="4.5" fill="url(#glow)"/>
+  <circle cx="16" cy="16" r="2" fill="#00d4ff"/>
+  <circle cx="16" cy="16" r="1" fill="#ffffff"/>
+</svg>

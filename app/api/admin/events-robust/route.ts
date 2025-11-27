@@ -269,7 +269,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       };
 
       // Intentar inserción con esquema nuevo
-      let insertResult: any;
+      let insertResult: { data: Record<string, unknown> | null; error: Error | null };
       try {
         insertResult = await serviceClient
           .from('events')
@@ -279,7 +279,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
             date: eventData.date,
             status: eventData.status,
             price_per_photo: eventData.price_per_photo,
-          })
+          } as Record<string, unknown>)
           .select()
           .single();
       } catch (newSchemaError) {
@@ -292,7 +292,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
               school: eventData.school,
               date: eventData.date,
               active: eventData.active,
-            })
+            } as Record<string, unknown>)
             .select()
             .single();
         } catch (legacyError) {

@@ -77,9 +77,9 @@ export const EventQuickActionsDialog = ({
   const normalizedConversionRate =
     typeof conversionRate === 'number'
       ? Math.max(
-          0,
-          Math.min(100, conversionRate <= 1 ? conversionRate * 100 : conversionRate)
-        )
+        0,
+        Math.min(100, conversionRate <= 1 ? conversionRate * 100 : conversionRate)
+      )
       : null;
 
   const hasInventory = totalPhotos > 0 || totalSubjects > 0;
@@ -134,7 +134,8 @@ export const EventQuickActionsDialog = ({
       <SheetContent
         side="right"
         className={cn(
-          'flex h-full flex-col gap-6 overflow-y-auto bg-background/95 p-0 text-left sm:max-w-xl',
+          'flex h-full flex-col gap-6 overflow-y-auto p-0 text-left sm:max-w-xl',
+          'bg-background/80 backdrop-blur-xl border-l border-white/10 shadow-2xl',
           'motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in motion-safe:data-[state=open]:duration-200',
           'motion-safe:data-[state=open]:slide-in-from-right motion-safe:data-[state=closed]:animate-out motion-safe:data-[state=closed]:slide-out-to-right'
         )}
@@ -163,8 +164,8 @@ export const EventQuickActionsDialog = ({
               Acciones rápidas
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Link 
-                href={`/admin/events/${event.id}/unified`} 
+              <Link
+                href={`/admin/events/${event.id}/unified`}
                 className="flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-secondary/80"
               >
                 <Eye className="h-4 w-4" /> Ver detalles
@@ -181,8 +182,8 @@ export const EventQuickActionsDialog = ({
               >
                 <Settings className="h-4 w-4" /> Configurar tienda
               </Link>
-              <Link 
-                href={`/admin/events/${event.id}/duplicate`} 
+              <Link
+                href={`/admin/events/${event.id}/duplicate`}
                 className="flex w-full items-center gap-3 rounded-lg border border-border bg-secondary px-4 py-3 text-left transition-colors hover:bg-secondary/80"
               >
                 <Layers3 className="h-4 w-4" /> Duplicar evento

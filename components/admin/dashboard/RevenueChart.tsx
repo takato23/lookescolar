@@ -29,9 +29,9 @@ export function RevenueChart({ data }: RevenueChartProps) {
     }, [data]);
 
     return (
-        <Card className="liquid-glass-intense border-0 shadow-xl">
+        <Card className="liquid-glass-intense border border-white/10 bg-black/20 shadow-xl backdrop-blur-xl">
             <CardHeader>
-                <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
+                <CardTitle className="text-lg font-medium text-slate-100">
                     Ingresos Recientes
                 </CardTitle>
             </CardHeader>
@@ -44,44 +44,44 @@ export function RevenueChart({ data }: RevenueChartProps) {
                         >
                             <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="#d4af37" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#d4af37" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid
                                 strokeDasharray="3 3"
                                 vertical={false}
-                                stroke="#e2e8f0"
-                                className="dark:stroke-slate-700"
+                                stroke="rgba(255,255,255,0.1)"
                             />
                             <XAxis
                                 dataKey="date"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#64748b', fontSize: 12 }}
+                                tick={{ fill: '#94a3b8', fontSize: 12 }}
                                 dy={10}
                             />
                             <YAxis
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#64748b', fontSize: 12 }}
+                                tick={{ fill: '#94a3b8', fontSize: 12 }}
                                 tickFormatter={(value) => `$${value}`}
                             />
                             <Tooltip
                                 contentStyle={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
                                     backdropFilter: 'blur(12px)',
-                                    border: 'none',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
                                     borderRadius: '12px',
-                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)',
+                                    color: '#f1f5f9'
                                 }}
-                                itemStyle={{ color: '#1e293b' }}
+                                itemStyle={{ color: '#e2e8f0' }}
                                 formatter={(value: number) => [formatCurrency(value), 'Ingresos']}
                             />
                             <Area
                                 type="monotone"
                                 dataKey="formattedRevenue"
-                                stroke="#3b82f6"
+                                stroke="#d4af37"
                                 strokeWidth={3}
                                 fillOpacity={1}
                                 fill="url(#colorRevenue)"

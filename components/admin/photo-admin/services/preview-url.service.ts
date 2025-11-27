@@ -7,11 +7,11 @@
  * Enhanced utility function to convert preview path to proxy URL (admin-only access)
  */
 export const getPreviewUrl = (
-  previewPath: string | null,
+  previewPath: string | null | undefined,
   originalPath?: string | null
 ): string | null => {
-  // Try preview path first
-  if (previewPath) {
+  // Try preview path first - ensure it's a string
+  if (previewPath && typeof previewPath === 'string') {
     if (previewPath.startsWith('http')) return previewPath;
 
     // Normalize to path relative to the previews/ folder
@@ -30,8 +30,8 @@ export const getPreviewUrl = (
     }
   }
 
-  // Fallback to original path if preview not available
-  if (originalPath) {
+  // Fallback to original path if preview not available - ensure it's a string
+  if (originalPath && typeof originalPath === 'string') {
     if (originalPath.startsWith('http')) return originalPath;
 
     // Extract filename from original path for preview lookup

@@ -5,6 +5,10 @@ import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+// Clean Design - Pixieset-inspired (active design)
+import CleanSidebar from '@/components/admin/CleanSidebar';
+import CleanHeader from '@/components/admin/CleanHeader';
+import LiquidGlassNav from '@/components/admin/LiquidGlassNav';
 import { AdminFloatingNav } from '@/components/admin/AdminFloatingNav';
 import {
   MobileNavigation,
@@ -169,12 +173,20 @@ function AdminLayoutContent({
   // Initialize real-time notifications
   useRealTimeNotifications();
   const { config } = useAdminLayout();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Active design system (Clean design is the only active one)
+  const USE_CLEAN_DESIGN = true; // Light mode Pixieset-inspired
 
   const isImmersive = config.variant === 'immersive';
-  const wrapperClassName = cn(
-    'liquid-glass-app min-h-screen bg-slate-950 text-slate-100 antialiased relative isolate',
-    config.wrapperClassName
-  );
+
+  // Wrapper class based on active design system
+  const wrapperClassName = USE_CLEAN_DESIGN
+    ? cn('clean-app min-h-screen', config.wrapperClassName)
+    : cn(
+        'liquid-glass-app min-h-screen bg-[#050505] text-slate-100 antialiased relative isolate',
+        config.wrapperClassName
+      );
 
   const renderFloatingNav = () => {
     if (!config.showFloatingNav) return null;
@@ -193,18 +205,34 @@ function AdminLayoutContent({
   return (
     <MobileOptimizations>
       <div className={wrapperClassName}>
-        {/* Gradiente verde de identidad */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(98,226,162,0.14),_transparent_55%)]" />
+        {/* Background effects - only for dark modes */}
+        {!USE_CLEAN_DESIGN && (
+          <>
+            {/* Background Texture */}
+            <div
+              className="absolute inset-0 opacity-20 pointer-events-none z-0"
+              style={{
+                backgroundImage: "url('/images/background-texture.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
 
-        {config.showMobileNav && (
+            {/* Cinematic Gradient Overlay */}
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(68,170,255,0.08),_transparent_50%)] z-0" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(212,175,55,0.05),_transparent_50%)] z-0" />
+          </>
+        )}
+
+        {config.showMobileNav && !USE_CLEAN_DESIGN && (
           <MobileNavigation
             items={adminNavigationItems}
             user={
               user && user.email
                 ? {
-                    name: user.email.split('@')[0],
-                    email: user.email,
-                  }
+                  name: user.email.split('@')[0],
+                  email: user.email,
+                }
                 : null
             }
             onLogout={async () => {
@@ -227,12 +255,41 @@ function AdminLayoutContent({
               {children}
             </main>
           </div>
+        ) : USE_CLEAN_DESIGN ? (
+          /* Clean Design - Pixieset-inspired Light Mode */
+          <div className="clean-layout">
+            {/* Clean Sidebar - Hidden on mobile, visible on desktop */}
+            <CleanSidebar
+              isOpen={isMobileMenuOpen}
+              onClose={() => setIsMobileMenuOpen(false)}
+            />
+
+            {/* Main Content Area */}
+            <div className="clean-main">
+              {/* Clean Header - Simplified on mobile */}
+              <CleanHeader
+                user={user}
+                onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              />
+
+              {/* Page Content */}
+              <main className="flex-1 overflow-x-hidden">
+                <div className="clean-content">
+                  {children}
+                </div>
+              </main>
+            </div>
+
+            {/* Liquid Glass Floating Navigation */}
+            <LiquidGlassNav />
+          </div>
         ) : (
+          /* Original Layout */
           <div className={cn('relative flex', config.contentClassName)}>
             {/* Desktop Sidebar */}
             {config.showSidebar && (
               <div className="hidden lg:block">
-                <AdminSidebar isMobileOpen={false} onMobileToggle={() => {}} />
+                <AdminSidebar isMobileOpen={false} onMobileToggle={() => { }} />
               </div>
             )}
 
@@ -241,7 +298,7 @@ function AdminLayoutContent({
               {/* Desktop Header */}
               {config.showHeader && (
                 <div className="hidden lg:block">
-                  <AdminHeader user={user} onMobileMenuToggle={() => {}} />
+                  <AdminHeader user={user} onMobileMenuToggle={() => { }} />
                 </div>
               )}
 

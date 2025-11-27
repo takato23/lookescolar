@@ -22,9 +22,9 @@ interface ActivityChartProps {
 
 export function ActivityChart({ data }: ActivityChartProps) {
     return (
-        <Card className="liquid-glass-intense border-0 shadow-xl">
+        <Card className="liquid-glass-intense border border-white/10 bg-black/20 shadow-xl backdrop-blur-xl">
             <CardHeader>
-                <CardTitle className="text-lg font-medium text-slate-900 dark:text-white">
+                <CardTitle className="text-lg font-medium text-slate-100">
                     Actividad Diaria
                 </CardTitle>
             </CardHeader>
@@ -38,31 +38,31 @@ export function ActivityChart({ data }: ActivityChartProps) {
                             <CartesianGrid
                                 strokeDasharray="3 3"
                                 vertical={false}
-                                stroke="#e2e8f0"
-                                className="dark:stroke-slate-700"
+                                stroke="rgba(255,255,255,0.1)"
                             />
                             <XAxis
                                 dataKey="date"
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#64748b', fontSize: 12 }}
+                                tick={{ fill: '#94a3b8', fontSize: 12 }}
                                 dy={10}
                             />
                             <YAxis
                                 axisLine={false}
                                 tickLine={false}
-                                tick={{ fill: '#64748b', fontSize: 12 }}
+                                tick={{ fill: '#94a3b8', fontSize: 12 }}
                             />
                             <Tooltip
-                                cursor={{ fill: 'rgba(148, 163, 184, 0.1)' }}
+                                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                                 contentStyle={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
                                     backdropFilter: 'blur(12px)',
-                                    border: 'none',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
                                     borderRadius: '12px',
-                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.5)',
+                                    color: '#f1f5f9'
                                 }}
-                                itemStyle={{ color: '#1e293b' }}
+                                itemStyle={{ color: '#e2e8f0' }}
                             />
                             <Bar
                                 dataKey="uploads"
@@ -74,7 +74,7 @@ export function ActivityChart({ data }: ActivityChartProps) {
                             <Bar
                                 dataKey="orders"
                                 name="Pedidos"
-                                fill="#10b981"
+                                fill="#44aaff"
                                 radius={[4, 4, 0, 0]}
                                 maxBarSize={40}
                             />

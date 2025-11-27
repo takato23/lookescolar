@@ -3,6 +3,7 @@
 import { useState, useEffect, type ComponentType } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   LucideIcon,
   X,
@@ -23,7 +24,8 @@ import {
   QrIcon,
   SettingsIcon,
 } from '@/components/ui/icons/LiquidIcons';
-import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
+import { AperturaLogo } from '@/components/ui/branding/AperturaLogo';
+import { useBrandingData } from '@/lib/hooks/useTenantBranding';
 import { clsx } from 'clsx';
 
 interface NavItem {
@@ -113,6 +115,7 @@ export default function AdminSidebar({
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const theme = useResolvedTheme();
+  const { branding } = useBrandingData();
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -158,10 +161,10 @@ export default function AdminSidebar({
             'bg-white/95 border-border/60 shadow-2xl shadow-gray-900/10',
             'backdrop-blur-xl',
           ],
-          // Tema oscuro
+          // Tema oscuro (Apertura Style)
           theme === 'dark' && [
-            'bg-gray-900/95 border-gray-700/60 shadow-2xl shadow-black/40',
-            'backdrop-blur-xl',
+            'bg-black/40 border-white/5 shadow-2xl shadow-black/40',
+            'backdrop-blur-2xl',
           ],
           // Ancho dinámico basado en estado de colapso
           isCollapsed ? 'w-20' : 'w-72',
@@ -216,20 +219,30 @@ export default function AdminSidebar({
                 )}
                 data-liquid-tone="muted"
               >
-                <LookEscolarLogo
-                  variant="soft"
-                  size={isCollapsed ? "sm" : "lg"}
-                  className="transition-transform duration-200 hover:scale-105"
-                />
+                {branding.logoUrl ? (
+                  <Image
+                    src={branding.logoUrl}
+                    alt={branding.appName}
+                    width={isCollapsed ? 28 : 40}
+                    height={isCollapsed ? 28 : 40}
+                    className="transition-transform duration-200 hover:scale-105 object-contain"
+                  />
+                ) : (
+                  <AperturaLogo
+                    variant="white"
+                    size={isCollapsed ? "sm" : "lg"}
+                    className="transition-transform duration-200 hover:scale-105"
+                  />
+                )}
               </div>
 
               {!isCollapsed && (
                 <div className="min-w-0 flex-1">
-                  <h1 className="chromatic-text text-lg font-semibold tracking-[0.25em] text-white transition-all duration-300 lg:text-xl">
-                    LookEscolar
+                  <h1 className="chromatic-text text-lg font-semibold tracking-[0.15em] text-white transition-all duration-300 lg:text-xl">
+                    {branding.appName}
                   </h1>
                   <p className="text-[11px] font-medium text-white/65 transition-all duration-300 lg:text-xs">
-                    Panel Admin
+                    {branding.appSubtitle}
                   </p>
                 </div>
               )}
@@ -344,8 +357,8 @@ export default function AdminSidebar({
                     ? 'bg-[#edf1f7]'
                     : 'bg-[#eef2f7] group-hover:bg-white'
                   : active
-                    ? 'bg-white/22'
-                    : 'bg-white/10 group-hover:bg-white/16';
+                    ? 'bg-white/10 border border-white/10'
+                    : 'bg-transparent group-hover:bg-white/5';
 
                 return (
                   <li key={item.href}>
@@ -521,7 +534,7 @@ export default function AdminSidebar({
                           {/* Active indicator */}
                           {active && (
                             <div className="flex-shrink-0">
-                              <div className="bg-indigo-500 h-1.5 w-1.5 rounded-full animate-pulse"></div>
+                              <div className="bg-[#d4af37] h-1.5 w-1.5 rounded-full animate-pulse shadow-[0_0_10px_#d4af37]"></div>
                             </div>
                           )}
                         </Link>
@@ -630,7 +643,7 @@ export default function AdminSidebar({
                         {/* Active indicator */}
                         {active && (
                           <div className="flex-shrink-0">
-                            <div className="bg-gray-500 h-1.5 w-1.5 rounded-full animate-pulse"></div>
+                            <div className="bg-slate-500 h-1.5 w-1.5 rounded-full animate-pulse"></div>
                           </div>
                         )}
                       </Link>
@@ -669,7 +682,7 @@ export default function AdminSidebar({
                 'mb-3 text-xs',
                 theme === 'light' ? 'text-muted-foreground' : 'text-gray-400'
               )}>
-                Fotografía Escolar Premium
+                {branding.tagline}
               </p>
               <div className="flex items-center justify-center gap-2 text-[10px]">
                 <span className={clsx(

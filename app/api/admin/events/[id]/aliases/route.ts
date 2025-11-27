@@ -56,11 +56,14 @@ async function fetchAliasMap(client: SupabaseClient, tokenIds: string[]): Promis
   }
 
   const aliasMap = new Map<string, AliasSummary>();
-  (data ?? []).forEach((record) => {
-    if (record?.token_id && record.alias && record.short_code && !aliasMap.has(record.token_id)) {
-      aliasMap.set(record.token_id, {
-        alias: record.alias,
-        short_code: record.short_code,
+  (data ?? []).forEach((record: Record<string, unknown>) => {
+    const tokenId = record?.token_id as string | undefined;
+    const alias = record?.alias as string | undefined;
+    const shortCode = record?.short_code as string | undefined;
+    if (tokenId && alias && shortCode && !aliasMap.has(tokenId)) {
+      aliasMap.set(tokenId, {
+        alias,
+        short_code: shortCode,
       });
     }
   });

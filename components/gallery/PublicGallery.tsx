@@ -1,12 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { PhotoCard } from '@/components/public/PhotoCard';
-import { PhotoModal } from '@/components/public/PhotoModal';
-import { Button } from '@/components/ui/button';
-import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import Image from 'next/image';
 import { usePublicCartStore } from '@/lib/stores/unified-cart-store';
-import { ImageIcon, RefreshCwIcon, AlertTriangleIcon, HeartIcon, ShoppingCartIcon } from 'lucide-react';
+import { ShoppingCart, Heart, Share2, ChevronLeft, ChevronRight, Check, X, Loader2 } from 'lucide-react';
+import {
+  MagazineStyle,
+  PolaroidStyle,
+  EditorialStyle,
+  MinimalCardsStyle,
+  FilmStripStyle,
+  PixiesetStyle,
+  GalleryStyleType,
+  getStyleColors,
+} from './GalleryStyles';
 
 interface Photo {
   id: string;
@@ -17,6 +24,17 @@ interface Photo {
   signed_url: string;
 }
 
+interface GalleryMetadata {
+  gallery_style?: GalleryStyleType;
+  cover_image?: string;
+  cover_title?: string;
+  cover_subtitle?: string;
+  logo_url?: string;
+  accent_color?: string;
+  show_share_button?: boolean;
+  show_favorites?: boolean;
+}
+
 interface GalleryData {
   event: {
     id: string;
@@ -24,6 +42,7 @@ interface GalleryData {
     school: string;
     date: string;
     created_at: string;
+    metadata?: GalleryMetadata;
   };
   photos: Photo[];
   pagination: {
@@ -39,18 +58,322 @@ interface PublicGalleryProps {
   eventId: string;
 }
 
+// Memoized loading spinner component
+const LoadingSpinner = memo(function LoadingSpinner({ message = 'CARGANDO GALERÍA' }: { message?: string }) {
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+        <p className="text-sm text-gray-400 tracking-wider">{message}</p>
+      </div>
+    </div>
+  );
+});
+
+// Memoized error component
+const ErrorDisplay = memo(function ErrorDisplay({
+  error,
+  onRetry
+}: {
+  error: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={onRetry}
+          className="text-sm text-gray-900 underline hover:no-underline"
+        >
+          Intentar de nuevo
+        </button>
+      </div>
+    </div>
+  );
+});
+
+// Memoized cover component for better performance
+const GalleryCover = memo(function GalleryCover({
+  coverImage,
+  coverTitle,
+  coverSubtitle,
+  logoUrl,
+  photoCount,
+  school,
+  onEnterGallery,
+}: {
+  coverImage: string;
+  coverTitle: string;
+  coverSubtitle?: string;
+  logoUrl?: string;
+  photoCount: number;
+  school?: string;
+  onEnterGallery: () => void;
+}) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* Cover Image with fade-in animation */}
+      <div className="absolute inset-0">
+        <Image
+          src={coverImage}
+          alt={coverTitle}
+          fill
+          className={`object-cover transition-all duration-1000 ${imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+          priority
+          unoptimized
+          onLoad={() => setImageLoaded(true)}
+        />
+        {/* Gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60" />
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+
+      {/* Logo (si existe) */}
+      {logoUrl && (
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+          <Image
+            src={logoUrl}
+            alt="Logo"
+            width={120}
+            height={60}
+            className="object-contain opacity-90"
+            unoptimized
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center text-white text-center px-4">
+        <h1
+          className="text-4xl md:text-6xl lg:text-7xl font-light tracking-[0.15em] md:tracking-[0.2em] mb-4 animate-cover-text"
+          style={{ textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}
+        >
+          {coverTitle.toUpperCase()}
+        </h1>
+
+        {coverSubtitle && (
+          <p
+            className="text-sm md:text-base tracking-[0.3em] text-white/80 mb-4 animate-fade-in"
+            style={{ animationDelay: '0.6s' }}
+          >
+            {coverSubtitle}
+          </p>
+        )}
+
+        <p
+          className="text-xs tracking-[0.2em] text-white/60 mb-12 animate-fade-in"
+          style={{ animationDelay: '0.8s' }}
+        >
+          {photoCount} FOTOGRAFÍAS
+        </p>
+
+        <button
+          onClick={onEnterGallery}
+          className="border border-white/60 px-10 py-4 text-sm tracking-[0.2em] hover:bg-white hover:text-black transition-all duration-500 animate-fade-in-up hover:scale-105"
+          style={{ animationDelay: '1s' }}
+        >
+          VER GALERÍA
+        </button>
+      </div>
+
+      {/* Footer credit */}
+      <div className="absolute bottom-8 left-0 right-0 text-center animate-fade-in" style={{ animationDelay: '1.2s' }}>
+        <p className="text-white/50 text-xs tracking-[0.2em]">
+          {school?.toUpperCase() || 'FOTOGRAFÍA ESCOLAR'}
+        </p>
+      </div>
+
+      {/* Scroll indicator */}
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 animate-bounce" style={{ animationDelay: '1.5s' }}>
+        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2">
+          <div className="w-1 h-2 bg-white/60 rounded-full animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Memoized lightbox component
+const Lightbox = memo(function Lightbox({
+  photos,
+  selectedIndex,
+  showFavorites,
+  showShareButton,
+  isItemInCart,
+  onClose,
+  onPrev,
+  onNext,
+  onToggleSelect,
+  onSelectPhoto,
+}: {
+  photos: Photo[];
+  selectedIndex: number;
+  showFavorites: boolean;
+  showShareButton: boolean;
+  isItemInCart: (id: string) => boolean;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  onToggleSelect: (photo: Photo) => void;
+  onSelectPhoto: (index: number) => void;
+}) {
+  const currentPhoto = photos[selectedIndex];
+
+  // Touch gesture handling for mobile
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) onNext();
+      else onPrev();
+    }
+    setTouchStart(null);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-white animate-fade-in"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Lightbox Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 md:px-8 h-16 bg-white/90 backdrop-blur">
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        <div className="flex items-center gap-2 md:gap-4">
+          {showFavorites && (
+            <button className="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <Heart className="w-5 h-5" />
+            </button>
+          )}
+          {showShareButton && (
+            <button className="p-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <Share2 className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={() => onToggleSelect(currentPhoto)}
+            className={`flex items-center gap-2 px-6 py-2 text-sm tracking-wider transition-all duration-300 ${
+              isItemInCart(currentPhoto.id)
+                ? 'bg-emerald-500 text-white'
+                : 'bg-gray-900 text-white hover:bg-gray-800'
+            }`}
+          >
+            {isItemInCart(currentPhoto.id) ? (
+              <>
+                <Check className="w-4 h-4 animate-scale-in" />
+                SELECCIONADA
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="w-4 h-4" />
+                COMPRAR
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Image */}
+      <div className="absolute inset-0 flex items-center justify-center pt-16 pb-24 px-4 md:px-20">
+        <div className="relative w-full h-full max-w-6xl">
+          <Image
+            src={currentPhoto.signed_url}
+            alt=""
+            fill
+            className="object-contain animate-scale-in"
+            priority
+            unoptimized
+          />
+        </div>
+      </div>
+
+      {/* Navigation Arrows - Hidden on mobile, use swipe instead */}
+      <button
+        onClick={onPrev}
+        className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 p-3 text-gray-400 hover:text-gray-900 transition-all duration-300 hover:scale-110"
+      >
+        <ChevronLeft className="w-8 h-8" />
+      </button>
+      <button
+        onClick={onNext}
+        className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 p-3 text-gray-400 hover:text-gray-900 transition-all duration-300 hover:scale-110"
+      >
+        <ChevronRight className="w-8 h-8" />
+      </button>
+
+      {/* Photo counter */}
+      <div className="absolute bottom-28 left-0 right-0 text-center">
+        <p className="text-sm text-gray-400 tracking-wider">
+          {selectedIndex + 1} / {photos.length}
+        </p>
+      </div>
+
+      {/* Thumbnails strip */}
+      <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 py-4 px-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 justify-center">
+          {photos.slice(Math.max(0, selectedIndex - 5), selectedIndex + 6).map((photo, idx) => {
+            const actualIndex = Math.max(0, selectedIndex - 5) + idx;
+            return (
+              <button
+                key={photo.id}
+                onClick={() => onSelectPhoto(actualIndex)}
+                className={`relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0 overflow-hidden transition-all duration-300 ${
+                  actualIndex === selectedIndex
+                    ? 'ring-2 ring-gray-900 scale-105'
+                    : 'opacity-50 hover:opacity-100 hover:scale-105'
+                }`}
+              >
+                <Image
+                  src={photo.signed_url}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export function PublicGallery({ eventId }: PublicGalleryProps) {
   const [galleryData, setGalleryData] = useState<GalleryData | null>(null);
-  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'todas' | 'tu-hijo' | 'seleccionadas' | 'ordenar'>('todas');
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  const [showCover, setShowCover] = useState(true);
+  const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const items = usePublicCartStore((state) => state.items);
-  const openCart = usePublicCartStore((state) => state.openCart);
-  const setContext = usePublicCartStore((state) => state.setContext);
-  const setEventId = usePublicCartStore((state) => state.setEventId);
+  // Intersection observer for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Cart store
+  const cartStore = usePublicCartStore();
+  const addItem = cartStore.addItem;
+  const removeItem = cartStore.removeItem;
+  const isItemInCart = cartStore.isItemInCart;
+  const openCart = cartStore.openCart;
+  const setContext = cartStore.setContext;
+  const setStoreEventId = cartStore.setEventId;
+  const getTotalItems = cartStore.getTotalItems;
 
   const fetchPhotos = useCallback(
     async (page: number = 1, append: boolean = false) => {
@@ -63,30 +386,21 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
       setError(null);
 
       try {
-        const response = await fetch(
-          `/api/gallery/${eventId}?page=${page}&limit=24`
-        );
+        const response = await fetch(`/api/gallery/${eventId}?page=${page}&limit=50`);
 
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error('Evento no encontrado o no disponible');
-          } else if (response.status === 429) {
-            throw new Error(
-              'Demasiadas solicitudes. Por favor, espera un momento.'
-            );
-          } else {
-            throw new Error('Error al cargar las fotos');
+            throw new Error('Evento no encontrado');
           }
+          throw new Error('Error al cargar las fotos');
         }
 
         const apiResponse = await response.json();
-        
-        // La API devuelve { data: { event, photos }, pagination }
-        // Necesitamos reestructurar para que coincida con GalleryData
+
         const data: GalleryData = {
           event: apiResponse.data.event,
           photos: apiResponse.data.photos || [],
-          pagination: apiResponse.pagination || { page: 1, limit: 24, total: 0, has_more: false, total_pages: 1 }
+          pagination: apiResponse.pagination || { page: 1, limit: 50, total: 0, has_more: false, total_pages: 1 }
         };
 
         setGalleryData((prevData) => {
@@ -100,7 +414,6 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error desconocido');
-        console.error('Error fetching gallery:', err);
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -109,364 +422,329 @@ export function PublicGallery({ eventId }: PublicGalleryProps) {
     [eventId]
   );
 
+  // Initial fetch
   useEffect(() => {
     fetchPhotos(1, false);
   }, [fetchPhotos]);
 
+  // Set cart context
   useEffect(() => {
     if (!eventId) return;
     setContext({ context: 'public', eventId });
-    setEventId(eventId);
-  }, [eventId, setContext, setEventId]);
+    setStoreEventId(eventId);
+  }, [eventId, setContext, setStoreEventId]);
 
-  const handleLoadMore = () => {
-    if (galleryData?.pagination.has_more && !loadingMore) {
-      fetchPhotos(galleryData.pagination.page + 1, true);
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    if (!galleryData?.pagination.has_more || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          fetchPhotos(galleryData.pagination.page + 1, true);
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
-  };
 
-  const openModal = (photoId: string) => {
-    setSelectedPhotoId(photoId);
-  };
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [galleryData?.pagination, loadingMore, fetchPhotos]);
 
-  const closeModal = () => {
-    setSelectedPhotoId(null);
-  };
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (selectedPhotoIndex === null) return;
 
-  // Filtrar fotos basado en el tab activo
-  const getFilteredPhotos = () => {
-    if (!galleryData || !galleryData.photos) return [];
-    
-    switch (activeTab) {
-      case 'seleccionadas':
-        return galleryData.photos.filter(photo => 
-          items.some(item => item.photoId === photo.id)
-        );
-      case 'tu-hijo':
-      case 'ordenar':
-        // Por ahora devolvemos todas, pero se puede implementar filtrado específico
-        return galleryData.photos;
-      default:
-        return galleryData.photos;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') goToPrevPhoto();
+      if (e.key === 'ArrowRight') goToNextPhoto();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPhotoIndex]);
+
+  const openLightbox = useCallback((index: number) => {
+    setSelectedPhotoIndex(index);
+    document.body.style.overflow = 'hidden';
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setSelectedPhotoIndex(null);
+    document.body.style.overflow = '';
+  }, []);
+
+  const goToPrevPhoto = useCallback(() => {
+    if (selectedPhotoIndex !== null && galleryData) {
+      setSelectedPhotoIndex(selectedPhotoIndex > 0 ? selectedPhotoIndex - 1 : galleryData.photos.length - 1);
     }
-  };
+  }, [selectedPhotoIndex, galleryData]);
 
+  const goToNextPhoto = useCallback(() => {
+    if (selectedPhotoIndex !== null && galleryData) {
+      setSelectedPhotoIndex(selectedPhotoIndex < galleryData.photos.length - 1 ? selectedPhotoIndex + 1 : 0);
+    }
+  }, [selectedPhotoIndex, galleryData]);
+
+  const togglePhotoSelection = useCallback((photo: Photo) => {
+    if (isItemInCart(photo.id)) {
+      removeItem(photo.id);
+    } else {
+      addItem({
+        photoId: photo.id,
+        filename: photo.storage_path.split('/').pop() || photo.id,
+        price: 1000,
+        watermarkUrl: photo.signed_url,
+      });
+    }
+  }, [isItemInCart, removeItem, addItem]);
+
+  const handleEnterGallery = useCallback(() => {
+    setShowCover(false);
+  }, []);
+
+  // Loading state
   if (loading && !galleryData) {
-    return <GalleryLoadingSkeleton />;
+    return <LoadingSpinner />;
   }
 
+  // Error state
   if (error) {
+    return <ErrorDisplay error={error} onRetry={() => fetchPhotos(1, false)} />;
+  }
+
+  if (!galleryData || galleryData.photos.length === 0) {
     return (
-      <GalleryErrorState error={error} onRetry={() => fetchPhotos(1, false)} />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-500">No hay fotos disponibles</p>
+      </div>
     );
   }
 
-  if (!galleryData) {
-    return <GalleryEmptyState />;
-  }
+  const { photos, pagination, event } = galleryData;
 
-  const { photos = [], pagination } = galleryData;
-  // Pixieset-like design mapping (grids/nav)
-  const design = ((galleryData as any)?.event?.settings?.design || {
-    grid: { style: 'vertical', thumb: 'regular', spacing: 'regular', nav: 'icons_text' },
-  }) as any;
-  const showNavText = design.grid?.nav !== 'icons';
-  const gapClass = design.grid?.spacing === 'large' ? 'gap-10' : 'gap-8';
-  const gridColsClass = design.grid?.thumb === 'large'
-    ? 'grid-cols-1 sm:grid-cols-1 lg:grid-cols-2'
-    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
-  const eventTheme = ((galleryData as any)?.event?.theme || 'default') as any;
-  const filteredPhotos = getFilteredPhotos();
+  // Configuración del fotógrafo (desde metadata del evento)
+  const metadata = event.metadata || {};
+  const galleryStyle: GalleryStyleType = metadata.gallery_style || 'pixieset';
+  const coverImage = metadata.cover_image || photos[0]?.signed_url;
+  const coverTitle = metadata.cover_title || event.name;
+  const coverSubtitle = metadata.cover_subtitle;
+  const logoUrl = metadata.logo_url;
+  const showShareButton = metadata.show_share_button !== false;
+  const showFavorites = metadata.show_favorites !== false;
 
-  if (!photos || photos.length === 0) {
-    return (
-      <GalleryEmptyState message="Este evento aún no tiene fotos disponibles." />
-    );
-  }
+  const styleColors = getStyleColors(galleryStyle);
 
-  const tabs = [
-    { id: 'todas' as const, label: 'Todas', count: photos.length },
-    { id: 'tu-hijo' as const, label: 'Tu hijo', count: 0 },
-    { id: 'seleccionadas' as const, label: 'Seleccionadas', count: items.length },
-    { id: 'ordenar' as const, label: 'Ordenar ↓', count: null }
+  const formattedDate = new Date(event.date).toLocaleDateString('es-AR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).toUpperCase();
+
+  // Folders (por ahora solo "TODAS")
+  const folders = [
+    { id: 'all', name: 'TODAS', count: photos.length },
   ];
 
-  const coverUrl = photos[0]?.signed_url;
+  // Props for style components
+  const styleProps = {
+    photos,
+    isItemInCart,
+    onPhotoClick: openLightbox,
+    onToggleSelect: togglePhotoSelection,
+  };
 
+  // Render style component
+  const renderGalleryStyle = () => {
+    switch (galleryStyle) {
+      case 'magazine':
+        return <MagazineStyle {...styleProps} />;
+      case 'polaroid':
+        return <PolaroidStyle {...styleProps} />;
+      case 'editorial':
+        return <EditorialStyle {...styleProps} />;
+      case 'cards':
+        return <MinimalCardsStyle {...styleProps} />;
+      case 'film':
+        return <FilmStripStyle {...styleProps} />;
+      case 'pixieset':
+      default:
+        return <PixiesetStyle {...styleProps} />;
+    }
+  };
+
+  // Cover/Hero View
+  if (showCover) {
+    return (
+      <GalleryCover
+        coverImage={coverImage}
+        coverTitle={coverTitle}
+        coverSubtitle={coverSubtitle || formattedDate}
+        logoUrl={logoUrl}
+        photoCount={photos.length}
+        school={event.school}
+        onEnterGallery={handleEnterGallery}
+      />
+    );
+  }
+
+  // Gallery View
   return (
-    <ThemedGalleryWrapper eventTheme={eventTheme}>
-    <div className="space-y-8">
-      {/* Cover - estilos Pixieset (Novel/Vintage/Frame/Stripe/Divider/Journal/Classic/None) */}
-      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className={`grid grid-cols-1 gap-6 md:grid-cols-3 ${design?.cover?.style === 'classic' ? 'md:grid-cols-2' : ''}`}>
-          <div className={`col-span-1 rounded-xl border p-6 ${design?.cover?.style === 'vintage' ? 'bg-amber-50' : ''} ${design?.cover?.style === 'journal' ? 'bg-slate-50' : ''}`}>
-            <div className="text-xs uppercase tracking-wide text-gray-500">{(galleryData?.event?.school || 'Colegio')}</div>
-            <h1 className="mt-2 text-2xl font-bold text-gray-900">{galleryData.event.name}</h1>
-            <div className="mt-1 text-sm text-gray-500">
-              {new Date(galleryData.event.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
-            </div>
-            <Button className="mt-4 theme-button">Ver galería</Button>
-          </div>
-          {design?.cover?.style !== 'none' && (
-            <div className={`col-span-2 overflow-hidden ${design?.cover?.style === 'frame' ? 'rounded-2xl border-4 border-gray-200' : 'rounded-xl border'} ${design?.cover?.style === 'stripe' ? 'bg-gradient-to-br from-gray-50 to-white p-4' : ''}`}>
-              {coverUrl ? (
-                <img src={coverUrl} alt="Cover" className={`h-full w-full ${design?.cover?.style === 'stripe' ? 'rounded-lg' : ''} max-h-[420px] object-cover`} />
-              ) : (
-                <div className="flex h-[280px] w-full items-center justify-center bg-gray-100 text-gray-400">Sin portada</div>
-              )}
-              {design?.cover?.style === 'divider' && (
-                <div className="mt-3 h-1 w-24 rounded bg-gray-200" />
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-      {/* Tabs navegación - Diseño liquid-glass mejorado */}
-      <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
-        <div className="flex space-x-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                relative flex-1 px-6 py-4 rounded-2xl font-bold text-sm transition-all duration-300 transform
-                ${activeTab === tab.id
-                  ? 'bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25 scale-105'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-white/60 hover:scale-102 hover:shadow-md'
-                }
-              `}
-              aria-label={`Filtrar por ${tab.label}`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                {tab.id === 'seleccionadas' && <ShoppingCartIcon className="h-4 w-4" />}
-                {tab.id === 'tu-hijo' && <HeartIcon className="h-4 w-4" />}
-                {showNavText && <span>{tab.label}</span>}
-                {tab.count !== null && (
-                  <span className={`
-                    px-2 py-1 rounded-full text-xs font-bold
-                    ${activeTab === tab.id 
-                      ? 'bg-white/20 text-white' 
-                      : 'bg-gray-100 text-gray-600'
-                    }
-                  `}>
-                    {tab.count}
-                  </span>
+    <div className={`min-h-screen ${styleColors.background}`}>
+      {/* Header */}
+      <header className={`sticky top-0 z-40 border-b ${styleColors.header}`}>
+        <div className="max-w-[1800px] mx-auto px-4 md:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Left: Logo/Event name and folders */}
+            <div className="flex items-center gap-8">
+              {/* Back to cover button */}
+              <button
+                onClick={() => setShowCover(true)}
+                className={`p-2 -ml-2 transition-colors ${styleColors.textMuted} hover:${styleColors.text}`}
+                aria-label="Volver a la portada"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <div>
+                {logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="Logo"
+                    width={100}
+                    height={40}
+                    className="object-contain"
+                    unoptimized
+                  />
+                ) : (
+                  <>
+                    <h1 className={`text-sm font-medium tracking-wide ${styleColors.text}`}>
+                      {event.name.toUpperCase()}
+                    </h1>
+                    <p className={`text-xs ${styleColors.textMuted}`}>
+                      {event.school?.toUpperCase() || 'FOTOGRAFÍA ESCOLAR'}
+                    </p>
+                  </>
                 )}
               </div>
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Grid de fotos - Diseño liquid-glass mejorado */}
-      <div className={`grid ${gapClass} ${gridColsClass}`} role="grid" aria-label="Galería de fotos">
-        {filteredPhotos.map((photo) => (
-          <div key={photo.id} className="group">
-            <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-4 shadow-xl shadow-cyan-500/10 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20 hover:scale-105">
-              <PhotoCard
-                photo={{
-                  id: photo.id,
-                  signed_url: photo.signed_url
-                }}
-                price={1000}
-                onOpenModal={openModal}
-              />
+              {/* Folder tabs */}
+              <nav className="hidden md:flex items-center gap-6">
+                {folders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    onClick={() => setActiveFolder(folder.id)}
+                    className={`text-xs tracking-wider transition-colors ${
+                      activeFolder === folder.id || (!activeFolder && folder.id === 'all')
+                        ? styleColors.accent
+                        : `${styleColors.textMuted} hover:${styleColors.text}`
+                    }`}
+                  >
+                    {folder.name}
+                    <span className="ml-1 opacity-50">({folder.count})</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2 md:gap-4">
+              {/* Cart */}
+              <button
+                onClick={openCart}
+                className={`relative p-2 transition-colors ${styleColors.textMuted} hover:${styleColors.text}`}
+                aria-label={`Carrito (${getTotalItems()} items)`}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {getTotalItems() > 0 && (
+                  <span className={`absolute -top-1 -right-1 w-5 h-5 text-[10px] rounded-full flex items-center justify-center ${styleColors.accentBg} text-white font-medium animate-scale-in`}>
+                    {getTotalItems()}
+                  </span>
+                )}
+              </button>
+
+              {/* Favorites */}
+              {showFavorites && (
+                <button
+                  className={`p-2 transition-colors ${styleColors.textMuted} hover:${styleColors.text}`}
+                  aria-label="Favoritos"
+                >
+                  <Heart className="w-5 h-5" />
+                </button>
+              )}
+
+              {/* Share */}
+              {showShareButton && (
+                <button
+                  className={`p-2 transition-colors ${styleColors.textMuted} hover:${styleColors.text}`}
+                  aria-label="Compartir"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              )}
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Load More Button - Diseño liquid-glass mejorado */}
-      {pagination.has_more && (
-        <div className="flex justify-center pt-12">
-          <Button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 px-12 py-6 font-bold text-white shadow-2xl shadow-blue-500/25 transition-all duration-300 hover:scale-110 hover:shadow-3xl hover:shadow-blue-500/30 disabled:scale-100 disabled:opacity-70"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-            {loadingMore ? (
-              <div className="flex items-center gap-3">
-                <div className="h-6 w-6 animate-spin rounded-full border-3 border-white/30 border-t-white" />
-                <span className="text-lg">Cargando más fotos...</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <ImageIcon className="h-6 w-6" />
-                <span className="text-lg">Ver más fotos</span>
-                <span className="ml-2 bg-white/25 backdrop-blur-sm px-3 py-1 rounded-full text-sm border border-white/20">
-                  {pagination.total - photos.length} más
-                </span>
-              </div>
-            )}
-          </Button>
         </div>
-      )}
+      </header>
 
-      {/* Photo Modal */}
-      {selectedPhotoId && (
-        <PhotoModal
-          isOpen={true}
-          onClose={closeModal}
-          photo={photos.find(p => p.id === selectedPhotoId) || null}
-          photos={photos.map(p => ({ id: p.id, signed_url: p.signed_url }))}
-          price={1000}
-          eventId={eventId}
+      {/* Photo Grid - Style configured by photographer */}
+      <main className="animate-fade-in">
+        {renderGalleryStyle()}
+
+        {/* Infinite scroll trigger */}
+        <div ref={loadMoreRef} className="h-4" />
+
+        {/* Loading more indicator */}
+        {loadingMore && (
+          <div className="flex justify-center py-8">
+            <div className="flex items-center gap-3 text-gray-500">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm tracking-wider">CARGANDO MÁS FOTOS...</span>
+            </div>
+          </div>
+        )}
+
+        {/* End of gallery message */}
+        {!pagination.has_more && photos.length > 50 && (
+          <div className="flex justify-center py-8">
+            <p className={`text-sm tracking-wider ${styleColors.textMuted}`}>
+              FIN DE LA GALERÍA - {photos.length} FOTOS
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className={`py-12 text-center border-t mt-16 ${styleColors.border}`}>
+        <p className={`text-xs tracking-wider ${styleColors.textMuted}`}>
+          Desarrollado por <span className="tracking-[0.3em]">LOOKESCOLAR</span>
+        </p>
+      </footer>
+
+      {/* Lightbox */}
+      {selectedPhotoIndex !== null && (
+        <Lightbox
+          photos={photos}
+          selectedIndex={selectedPhotoIndex}
+          showFavorites={showFavorites}
+          showShareButton={showShareButton}
+          isItemInCart={isItemInCart}
+          onClose={closeLightbox}
+          onPrev={goToPrevPhoto}
+          onNext={goToNextPhoto}
+          onToggleSelect={togglePhotoSelection}
+          onSelectPhoto={setSelectedPhotoIndex}
         />
       )}
-
-      {/* Loading more indicator - Liquid glass design */}
-      {loadingMore && (
-        <div className={`grid ${gapClass} ${gridColsClass}`}>
-          {Array.from({ length: 6 }).map((_, i) => {
-            const gradients = [
-              'from-orange-300 to-yellow-400',
-              'from-cyan-300 to-blue-400', 
-              'from-purple-300 to-pink-400',
-              'from-green-300 to-emerald-400',
-              'from-rose-300 to-red-400',
-              'from-indigo-300 to-purple-400'
-            ];
-            const gradient = gradients[i % gradients.length];
-            return (
-              <div key={`skeleton-${i}`} className="group">
-                <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-4 shadow-xl shadow-cyan-500/10">
-                  <div className={`aspect-square animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
-                  <div className="mt-4 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded-lg animate-pulse" />
-                    <div className="h-3 bg-gray-200 rounded-lg w-2/3 animate-pulse" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-    </ThemedGalleryWrapper>
-  );
-}
-
-function GalleryLoadingSkeleton() {
-  const gradients = [
-    'from-orange-300 to-yellow-400',
-    'from-cyan-300 to-blue-400', 
-    'from-purple-300 to-pink-400',
-    'from-green-300 to-emerald-400',
-    'from-rose-300 to-red-400',
-    'from-indigo-300 to-purple-400'
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Tabs skeleton - Liquid glass design */}
-      <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-3 shadow-xl shadow-cyan-500/10">
-        <div className="flex space-x-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex-1 h-16 animate-pulse rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300" />
-          ))}
-        </div>
-      </div>
-      
-      {/* Grid skeleton - Liquid glass design */}
-      <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => {
-          const gradient = gradients[i % gradients.length];
-          return (
-            <div key={i} className="group">
-              <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-4 shadow-xl shadow-cyan-500/10">
-                <div className={`aspect-square animate-pulse rounded-2xl bg-gradient-to-br ${gradient} shadow-lg`} />
-                <div className="mt-4 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded-lg animate-pulse" />
-                  <div className="h-3 bg-gray-200 rounded-lg w-2/3 animate-pulse" />
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-interface GalleryErrorStateProps {
-  error: string;
-  onRetry: () => void;
-}
-
-function GalleryErrorState({ error, onRetry }: GalleryErrorStateProps) {
-  return (
-    <div className="py-20 text-center">
-      <div className="mx-auto max-w-lg">
-        <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-12 shadow-xl shadow-red-500/10">
-          <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-red-400 via-orange-400 to-yellow-400 shadow-2xl shadow-red-500/20">
-            <AlertTriangleIcon className="h-16 w-16 text-white" />
-          </div>
-          <h3 className="mb-6 text-3xl font-bold text-gray-800">
-            ¡Ups! No pudimos cargar las fotos
-          </h3>
-          <p className="mx-auto mb-8 max-w-md text-gray-600 text-lg leading-relaxed">{error}</p>
-          <div className="bg-gray-50/80 backdrop-blur-sm rounded-2xl p-6 mb-8">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Sugerencias:</p>
-            <ul className="text-sm text-gray-600 space-y-2">
-              <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-cyan-400 rounded-full" />
-                Verifica tu conexión a internet
-              </li>
-              <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full" />
-                Intenta recargar la página
-              </li>
-              <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full" />
-                Si persiste, contacta con el fotógrafo
-              </li>
-            </ul>
-          </div>
-          <Button
-            onClick={onRetry}
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-10 py-4 font-bold text-white shadow-2xl shadow-blue-500/25 transition-all duration-300 hover:scale-110 hover:shadow-3xl hover:shadow-blue-500/30"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-            <div className="flex items-center gap-3">
-              <RefreshCwIcon className="h-5 w-5" />
-              <span>Intentar de nuevo</span>
-            </div>
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface GalleryEmptyStateProps {
-  message?: string;
-}
-
-function GalleryEmptyState({
-  message = 'No se encontraron fotos para este evento.',
-}: GalleryEmptyStateProps) {
-  return (
-    <div className="py-20 text-center">
-      <div className="mx-auto max-w-lg">
-        <div className="bg-white/70 backdrop-blur-md border border-white/30 rounded-3xl p-12 shadow-xl shadow-cyan-500/10">
-          <div className="mx-auto mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-500 shadow-2xl shadow-cyan-500/20">
-            <ImageIcon className="h-16 w-16 text-white" />
-          </div>
-          <h3 className="mb-6 text-3xl font-bold text-gray-800">
-            ¡Aún no hay fotos aquí!
-          </h3>
-          <p className="mx-auto max-w-md text-gray-600 text-lg leading-relaxed mb-6">{message}</p>
-          <div className="bg-gradient-to-br from-cyan-50 to-purple-50 rounded-2xl p-6">
-            <p className="text-sm text-gray-600 mb-2">💡 <strong>Mientras esperas:</strong></p>
-            <ul className="text-sm text-gray-600 space-y-1">
-              <li>• Las fotos aparecerán automáticamente cuando estén listas</li>
-              <li>• Guarda este enlace para volver más tarde</li>
-              <li>• El fotógrafo está procesando las imágenes</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

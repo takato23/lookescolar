@@ -11,26 +11,26 @@ export function HighlightMetric({
 }: HighlightMetricProps) {
     const colors = [
         {
-            bg: 'from-blue-500/20 to-cyan-500/20',
-            icon: 'text-blue-600 dark:text-blue-400',
-            ring: 'ring-blue-500/50',
+            bg: 'from-[#d4af37]/20 to-[#f2d06b]/20',
+            icon: 'text-[#d4af37]',
+            ring: 'ring-[#d4af37]/50',
         },
         {
-            bg: 'from-purple-500/20 to-pink-500/20',
-            icon: 'text-purple-600 dark:text-purple-400',
-            ring: 'ring-purple-500/50',
+            bg: 'from-[#44aaff]/20 to-[#00ffff]/20',
+            icon: 'text-[#44aaff]',
+            ring: 'ring-[#44aaff]/50',
         },
         {
-            bg: 'from-emerald-500/20 to-teal-500/20',
-            icon: 'text-emerald-600 dark:text-emerald-400',
-            ring: 'ring-emerald-500/50',
+            bg: 'from-[#cd7f32]/20 to-[#e69b5c]/20',
+            icon: 'text-[#cd7f32]',
+            ring: 'ring-[#cd7f32]/50',
         },
     ];
     const color = colors[index % colors.length];
 
     return (
         <div
-            className="liquid-glass-intense group relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+            className="liquid-glass-intense group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-6 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
         >
             {/* Animated background gradient */}
             <div
@@ -61,12 +61,12 @@ export function HighlightMetric({
                 </div>
 
                 {/* Metric label */}
-                <p className="mt-6 text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                <p className="mt-6 text-xs font-bold uppercase tracking-wider text-slate-400">
                     {label}
                 </p>
 
                 {/* Metric value with gradient */}
-                <p className="mt-2 bg-gradient-to-br from-slate-900 to-slate-700 bg-clip-text text-4xl font-bold tabular-nums text-transparent dark:from-white dark:to-slate-300">
+                <p className="mt-2 bg-gradient-to-br from-white to-slate-300 bg-clip-text text-4xl font-bold tabular-nums text-transparent">
                     {value}
                 </p>
 

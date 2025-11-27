@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { updateEventSettings, type EventSettings } from '../actions';
 import DesignPanel from '@/components/admin/DesignPanel';
+import GalleryConfigPanel from '@/components/admin/GalleryConfigPanel';
 import { computePhotoAdminUrl } from '@/lib/routes/admin';
 
 const defaults: EventSettings = {
@@ -67,7 +68,7 @@ export default function SettingsPage() {
         <Button
           variant="outline"
           onClick={() => {
-            const url = computePhotoAdminUrl(id, general.rootFolderId ?? null);
+            const url = computePhotoAdminUrl(id, general.rootFolderId ?? undefined);
             window.location.href = url;
           }}
         >
@@ -76,12 +77,13 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full max-w-xl grid-cols-5">
+        <TabsList className="grid w-full max-w-3xl grid-cols-6">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="download">Download</TabsTrigger>
           <TabsTrigger value="store">Store</TabsTrigger>
           <TabsTrigger value="design">Design</TabsTrigger>
+          <TabsTrigger value="gallery">Gallery</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -285,6 +287,15 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="gallery">
+          <GalleryConfigPanel
+            eventId={id}
+            eventName={event?.name || ''}
+            eventDate={event?.date ? new Date(event.date).toLocaleDateString() : undefined}
+            initialMetadata={event?.metadata || null}
+          />
         </TabsContent>
       </Tabs>
 

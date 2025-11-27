@@ -10,15 +10,16 @@ const nextConfig = {
   // Basic configuration
   reactStrictMode: true,
   poweredByHeader: false,
-  // Disable static generation to avoid prerender errors
-  // output: 'standalone', // Commented out - causing build issues with App Router error pages
-  // Skip static generation of error pages
+  // Use standalone output to avoid static page generation issues
+  output: 'standalone',
+  // Skip trailing slash redirect
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
-  // Disable static optimization globally to fix Next.js 15 prerendering issues with error pages
+  // Generate unique build ID
   generateBuildId: async () => {
     return 'build-' + Date.now();
   },
+  trailingSlash: false,
   // Avoid failing the production build due to lint errors in unrelated areas
   eslint: {
     ignoreDuringBuilds: true,
@@ -64,19 +65,37 @@ const nextConfig = {
   },
 
   // External packages that should not be bundled (server-side only)
-  serverExternalPackages: ['sharp', 'pdfkit', 'canvas'],
+  // Note: @react-three packages are NOT externalized - they are aliased to SSR stubs instead
+  serverExternalPackages: [
+    'sharp',
+    'pdfkit',
+    'canvas',
+  ],
 
   // Set output file tracing root to silence workspace warning
   outputFileTracingRoot: process.cwd(),
 
   // Webpack configuration to handle Sharp and worker dependencies
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Handle Sharp worker issues
+    // Handle Sharp worker issues and @react-three packages
     if (isServer) {
+      // Standard externals
       config.externals.push({
         sharp: 'commonjs sharp',
         canvas: 'commonjs canvas',
       });
+
+      // Use resolve.alias to replace @react-three packages with empty stubs on server
+      // This prevents the Html context error during static generation
+      const emptyModulePath = path.resolve(__dirname, 'lib/stubs/empty-module.js');
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@react-three/drei': emptyModulePath,
+        '@react-three/fiber': emptyModulePath,
+        '@react-three/postprocessing': emptyModulePath,
+        'three': emptyModulePath,
+        'postprocessing': emptyModulePath,
+      };
     }
 
     // Development optimizations for Fast Refresh - temporarily disabled
@@ -140,9 +159,12 @@ const nextConfig = {
     };
 
     // Explicitly configure path aliases for webpack (needed for Vercel)
+    // IMPORTANT: Keep existing aliases (including SSR stubs) and add @ alias
+    // We use Object.assign to ensure server-side aliases aren't overwritten
+    const existingAliases = config.resolve.alias || {};
     config.resolve.alias = {
-      ...config.resolve.alias,
       '@': path.resolve(process.cwd()),
+      ...existingAliases,  // SSR stubs come after @ to take precedence
     };
 
     return config;
@@ -151,6 +173,9 @@ const nextConfig = {
   // Experimental features for better performance
   experimental: {
     // Optimize chunk loading for heavy packages
+    // NOTE: @react-three/drei, @react-three/fiber, and three are excluded
+    // because they use dynamic imports with ssr:false and cause build errors
+    // if analyzed statically (Html component conflict with pages/_document)
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-icons',
@@ -168,6 +193,24 @@ const nextConfig = {
     // esmExternals: true,
     // Disable static optimization to prevent prerendering issues with client components
     ppr: false,
+    // Disable static generation for 404 page to avoid Html import conflicts
+    disableOptimizedLoading: false,
+  },
+
+  // Force dynamic rendering for all pages to avoid static generation issues
+  // with @react-three/drei Html component
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, must-revalidate',
+          },
+        ],
+      },
+    ];
   },
 
   // Development optimizations (keep dev chunks around longer to avoid 404s)

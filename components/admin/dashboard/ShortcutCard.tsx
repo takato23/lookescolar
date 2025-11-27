@@ -10,17 +10,17 @@ export function ShortcutCard({
     index = 0,
 }: ShortcutCardProps & { index?: number }) {
     const gradients = [
-        'from-blue-500 to-cyan-500',
-        'from-purple-500 to-pink-500',
-        'from-orange-500 to-red-500',
-        'from-emerald-500 to-teal-500',
+        'from-[#d4af37] to-[#f2d06b]', // Gold
+        'from-[#44aaff] to-[#00ffff]', // Cyan
+        'from-[#cd7f32] to-[#e69b5c]', // Bronze
+        'from-[#a0a0a0] to-[#e0e0e0]', // Silver
     ];
     const gradient = gradients[index % gradients.length];
 
     return (
         <Link
             href={href}
-            className="liquid-glass group relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+            className="liquid-glass group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-6 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] focus-visible:ring-offset-2"
         >
             {/* Animated gradient background */}
             <div
@@ -44,10 +44,10 @@ export function ShortcutCard({
             </div>
 
             <div className="relative">
-                <h3 className="text-lg font-bold text-slate-900 transition-colors duration-300 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                <h3 className="text-lg font-bold text-slate-100 transition-colors duration-300 group-hover:text-[#d4af37]">
                     {title}
                 </h3>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                <p className="mt-1 text-sm text-slate-400">
                     {description}
                 </p>
             </div>

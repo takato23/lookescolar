@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { qrDetectionService } from '@/lib/services/qr-detection.service';
-import { adminAuth } from '@/lib/security/admin-auth';
+import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
 
@@ -28,19 +28,10 @@ const detectQRSchema = z.object({
 /**
  * Detect QR codes in uploaded images
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdminAuth(async (request: NextRequest) => {
   const requestId = crypto.randomUUID();
 
   try {
-    // Check admin authentication
-    const authResult = await adminAuth(request);
-    if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized', code: 'AUTH_REQUIRED' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const validation = detectQRSchema.safeParse(body);
 
@@ -75,7 +66,6 @@ export async function POST(request: NextRequest) {
 
     logger.info('QR detection completed via API', {
       requestId,
-      adminUserId: authResult.userId,
       eventId,
       totalImages: images.length,
       successCount,
@@ -110,4 +100,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
