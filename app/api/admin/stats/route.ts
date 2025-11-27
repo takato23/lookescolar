@@ -6,7 +6,7 @@ import {
 } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 
-// Función para crear estadísticas de excelencia cuando hay problemas con la BD
+// Interfaces para estadísticas
 interface EventSummary {
   id: string;
   name: string;
@@ -59,110 +59,77 @@ interface ActivityLogEntry {
   timestamp: string;
 }
 
-function createExcellenceStats(): GlobalStats {
+// Función para crear estadísticas vacías cuando hay problemas con la BD
+function createEmptyStats(): GlobalStats {
   const now = new Date();
 
   return {
     events: {
-      total: 15,
-      active: 8,
-      completed: 7,
+      total: 0,
+      active: 0,
+      completed: 0,
     },
     photos: {
-      total: 3247,
-      tagged: 3125,
-      untagged: 122,
-      uploaded_today: 78,
+      total: 0,
+      tagged: 0,
+      untagged: 0,
+      uploaded_today: 0,
     },
     subjects: {
-      total: 542,
-      with_tokens: 518,
+      total: 0,
+      with_tokens: 0,
     },
     orders: {
-      total: 189,
-      pending: 12,
-      approved: 156,
-      delivered: 18,
-      failed: 3,
-      total_revenue_cents: 1250000, // $12,500
-      monthly_revenue_cents: 875000, // $8,750
+      total: 0,
+      pending: 0,
+      approved: 0,
+      delivered: 0,
+      failed: 0,
+      total_revenue_cents: 0,
+      monthly_revenue_cents: 0,
     },
     storage: {
-      photos_count: 3247,
-      estimated_size_gb: 4.8,
+      photos_count: 0,
+      estimated_size_gb: 0,
     },
     activity: {
-      recent_uploads: 78,
-      recent_orders: 25,
-      recent_payments: 23,
+      recent_uploads: 0,
+      recent_orders: 0,
+      recent_payments: 0,
     },
     system: {
       health_status: 'healthy',
-      expired_tokens: 5,
+      expired_tokens: 0,
       cache_timestamp: now.toISOString(),
     },
-    events_summary: [
-      {
-        id: 'event-1',
-        name: 'Escuela Primaria San Juan',
-        location: 'Buenos Aires',
-        date: now.toISOString(),
-        totalStudents: 180,
-        photosUploaded: 178,
-        expectedPhotos: 180,
-        status: 'in_progress',
-      },
-      {
-        id: 'event-2',
-        name: 'Jardín Los Peques',
-        location: 'CABA',
-        date: now.toISOString(),
-        totalStudents: 95,
-        photosUploaded: 95,
-        expectedPhotos: 95,
-        status: 'completed',
-      },
-    ],
+    events_summary: [],
     quick_access: {
-      lastEvent: 'Escuela Primaria San Juan',
-      lastEventDate: now.toISOString(),
-      photosToProcess: 12,
-      pendingUploads: 8,
-      recentActivity: '2 familias accedieron a la galería',
+      lastEvent: 'Sin eventos',
+      lastEventDate: null,
+      photosToProcess: 0,
+      pendingUploads: 0,
+      recentActivity: 'Sin actividad reciente',
     },
     photo_management: {
-      totalPhotos: 3247,
-      processedToday: 156,
-      pendingProcessing: 23,
-      publishedGalleries: 8,
-      lastUploadAt: now.toISOString(),
+      totalPhotos: 0,
+      processedToday: 0,
+      pendingProcessing: 0,
+      publishedGalleries: 0,
+      lastUploadAt: null,
     },
     orders_summary: {
-      newOrders: 5,
-      pendingDelivery: 12,
-      totalRevenueCents: 285000,
-      todayOrders: 8,
+      newOrders: 0,
+      pendingDelivery: 0,
+      totalRevenueCents: 0,
+      todayOrders: 0,
     },
     business_metrics: {
-      monthlyRevenueCents: 875000,
-      activeClients: 542,
-      completionRate: 96,
-      avgOrderValueCents: 1800,
+      monthlyRevenueCents: 0,
+      activeClients: 0,
+      completionRate: 0,
+      avgOrderValueCents: 0,
     },
-    recent_activity: [
-      {
-        id: 'activity-1',
-        type: 'photos_uploaded',
-        message: '78 fotos subidas hoy',
-        timestamp: now.toISOString(),
-      },
-      {
-        id: 'activity-2',
-        type: 'order_completed',
-        message: '23 pagos confirmados',
-        timestamp: now.toISOString(),
-      },
-    ],
+    recent_activity: [],
   };
 }
 
@@ -255,11 +222,11 @@ export const GET = RateLimitMiddleware.withRateLimit(
           `📊 [${requestId}] Database connection issue, using fallback data:`,
           dbError
         );
-        // Usar datos de fallback de alta calidad
-        const excellenceStats = createExcellenceStats();
+        // Usar datos vacíos como fallback
+        const emptyStats = createEmptyStats();
         return NextResponse.json({
           success: true,
-          data: excellenceStats,
+          data: emptyStats,
           generated_at: now.toISOString(),
           fallback: true,
         });
@@ -329,25 +296,25 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
         if (hasErrors) {
           console.warn(
-            `📊 [${requestId}] Some queries failed, using excellence fallback`
+            `📊 [${requestId}] Some queries failed, using empty fallback`
           );
-          const excellenceStats = createExcellenceStats();
+          const emptyStats = createEmptyStats();
           return NextResponse.json({
             success: true,
-            data: excellenceStats,
+            data: emptyStats,
             generated_at: now.toISOString(),
             fallback: true,
           });
         }
       } catch (error) {
         console.warn(
-          `📊 [${requestId}] Query execution failed, using excellence fallback:`,
+          `📊 [${requestId}] Query execution failed, using empty fallback:`,
           error
         );
-        const excellenceStats = createExcellenceStats();
+        const emptyStats = createEmptyStats();
         return NextResponse.json({
           success: true,
-          data: excellenceStats,
+          data: emptyStats,
           generated_at: now.toISOString(),
           fallback: true,
         });

@@ -87,6 +87,89 @@ export class AuthClient {
     }
   }
 
+  async signup(credentials: SignUpCredentials): Promise<{ user: User | null; error: AuthError | null }> {
+    // Validate passwords match if confirmPassword provided
+    if (credentials.confirmPassword && credentials.password !== credentials.confirmPassword) {
+      return {
+        user: null,
+        error: { message: 'Las contraseñas no coinciden', code: 'passwords_mismatch' },
+      };
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: credentials.email,
+            password: credentials.password,
+          }),
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok || payload?.error) {
+          return {
+            user: null,
+            error: {
+              message: payload?.error ?? 'Error en el registro',
+              code: 'auth_error',
+            },
+          };
+        }
+
+        const mockUser: User = {
+          id: payload.user.id,
+          email: payload.user.email,
+          aud: 'authenticated',
+          created_at: new Date().toISOString(),
+          role: payload.user.role,
+          app_metadata: {},
+          user_metadata: { name: payload.user.name },
+        } as User;
+
+        return { user: mockUser, error: null };
+      } catch (err) {
+        console.error('[AuthClient] signup error (dev mode)', err);
+        return {
+          user: null,
+          error: { message: 'Error conectando con el servidor' },
+        };
+      }
+    }
+
+    try {
+      const { data, error } = await this.supabase.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        return {
+          user: null,
+          error: {
+            message: this.mapErrorMessage(error.message),
+            code: error.message,
+          },
+        };
+      }
+
+      return { user: data.user, error: null };
+    } catch (err) {
+      console.error('[AuthClient] unexpected signup error', err);
+      return {
+        user: null,
+        error: { message: 'Error inesperado durante el registro' },
+      };
+    }
+  }
+
   async logout(): Promise<{ error: AuthError | null }> {
     try {
       const { error } = await this.supabase.auth.signOut();
@@ -175,6 +258,12 @@ export class AuthClient {
         return 'Email inválido';
       case 'Password should be at least 6 characters':
         return 'La contraseña debe tener al menos 6 caracteres';
+      case 'User already registered':
+        return 'Este email ya está registrado';
+      case 'Email rate limit exceeded':
+        return 'Demasiados intentos. Intenta nuevamente más tarde';
+      case 'Signup disabled':
+        return 'El registro de nuevos usuarios está deshabilitado';
       default:
         return 'Error de autenticación. Intenta nuevamente';
     }

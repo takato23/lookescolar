@@ -245,26 +245,9 @@ export function DashboardClient() {
     return Math.min(100, Math.round(raw));
   }, [dashboardStats.storageLimit, dashboardStats.storageUsed]);
 
-  // Mock data for charts (replace with real API data later)
-  const revenueData = [
-    { date: 'Lun', revenue: 120000 },
-    { date: 'Mar', revenue: 150000 },
-    { date: 'Mie', revenue: 180000 },
-    { date: 'Jue', revenue: 140000 },
-    { date: 'Vie', revenue: 200000 },
-    { date: 'Sab', revenue: 250000 },
-    { date: 'Dom', revenue: 190000 },
-  ];
-
-  const activityData = [
-    { date: 'Lun', uploads: 45, orders: 12 },
-    { date: 'Mar', uploads: 52, orders: 15 },
-    { date: 'Mie', uploads: 38, orders: 18 },
-    { date: 'Jue', uploads: 65, orders: 14 },
-    { date: 'Vie', uploads: 48, orders: 22 },
-    { date: 'Sab', uploads: 25, orders: 28 },
-    { date: 'Dom', uploads: 15, orders: 20 },
-  ];
+  // Use real data from API, or empty arrays if no data available
+  const revenueData = dashboardStats.revenueHistory || [];
+  const activityData = dashboardStats.activityHistory || [];
 
   const shortcuts: ShortcutCardProps[] = [
     {

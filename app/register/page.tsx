@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import LoginForm from '@/components/admin/LoginForm';
+import RegisterForm from '@/components/auth/RegisterForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Dynamic imports for Three.js components to avoid SSR issues
@@ -24,20 +24,15 @@ const Particles = dynamic(
   { ssr: false }
 );
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [showContent, setShowContent] = useState(false);
   const [fadeFromWhite, setFadeFromWhite] = useState(true);
   const [irisReady, setIrisReady] = useState(false);
 
   useEffect(() => {
     // Optimized timing sequence for seamless transition
-    // Phase 1: White flash fade (continues tunnel effect)
     const whiteTimer = setTimeout(() => setFadeFromWhite(false), 400);
-
-    // Phase 2: Iris becomes visible and starts opening
     const irisTimer = setTimeout(() => setIrisReady(true), 200);
-
-    // Phase 3: Content fades in after iris is open
     const contentTimer = setTimeout(() => setShowContent(true), 1000);
 
     return () => {
@@ -48,8 +43,8 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-black overflow-hidden font-sans">
-      {/* Flash blanco de entrada (continuación del túnel) - mejorado */}
+    <div className="relative flex min-h-screen items-center justify-center bg-black overflow-hidden font-sans py-8">
+      {/* White flash entry */}
       <AnimatePresence>
         {fadeFromWhite && (
           <motion.div
@@ -59,26 +54,26 @@ export default function LoginPage() {
             exit={{ opacity: 0 }}
             transition={{
               duration: 0.6,
-              ease: [0.22, 1, 0.36, 1] // Cubic ease out
+              ease: [0.22, 1, 0.36, 1]
             }}
           />
         )}
       </AnimatePresence>
 
-      {/* Premium Background Gradient - mismo que landing */}
+      {/* Premium Background Gradient */}
       <div
         className="absolute inset-0 pointer-events-none z-0"
         style={{
           background: `
-            radial-gradient(ellipse at 30% 20%, rgba(20, 40, 80, 0.4) 0%, transparent 50%),
-            radial-gradient(ellipse at 70% 80%, rgba(60, 20, 80, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 50% 50%, rgba(0, 20, 40, 0.8) 0%, transparent 70%),
-            linear-gradient(180deg, #000000 0%, #050510 50%, #000005 100%)
+            radial-gradient(ellipse at 30% 20%, rgba(6, 95, 70, 0.4) 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 80%, rgba(20, 80, 100, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(0, 30, 30, 0.8) 0%, transparent 70%),
+            linear-gradient(180deg, #000000 0%, #051010 50%, #000505 100%)
           `
         }}
       />
 
-      {/* 3D Background Layer - optimizado */}
+      {/* 3D Background Layer */}
       <div className="absolute inset-0 z-[1]">
         <Canvas
           camera={{ position: [0, 0, 6], fov: 50 }}
@@ -86,36 +81,36 @@ export default function LoginPage() {
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
-            stencil: false, // Optimize - not needed
+            stencil: false,
             depth: true
           }}
           dpr={[1, 2]}
-          frameloop="demand" // Only render when needed
+          frameloop="demand"
         >
           <Suspense fallback={null}>
             <LoginIris isReady={irisReady} />
             <Float speed={0.5} rotationIntensity={0.2} floatIntensity={0.3}>
-              <Particles count={60} /> {/* Reduced for performance */}
+              <Particles count={60} />
             </Float>
           </Suspense>
         </Canvas>
       </div>
 
-      {/* Ambient Glow - mejorado */}
+      {/* Ambient Glow - Teal/Cyan theme for register */}
       <motion.div
-        className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/15 rounded-full blur-[120px] pointer-events-none z-[2]"
+        className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-teal-900/15 rounded-full blur-[120px] pointer-events-none z-[2]"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.5, delay: 0.3 }}
       />
       <motion.div
-        className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none z-[2]"
+        className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-cyan-900/10 rounded-full blur-[120px] pointer-events-none z-[2]"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.5, delay: 0.5 }}
       />
 
-      {/* Content - mejorado con más polish */}
+      {/* Content */}
       <AnimatePresence>
         {showContent && (
           <motion.div
@@ -128,17 +123,17 @@ export default function LoginPage() {
             }}
             className="relative w-full max-w-md z-10 px-4"
           >
-            {/* Glass card con efecto hover sutil */}
+            {/* Glass card */}
             <motion.div
               className="rounded-3xl border border-white/10 bg-black/70 p-8 shadow-2xl backdrop-blur-xl"
               whileHover={{
                 borderColor: "rgba(255,255,255,0.15)",
-                boxShadow: "0 25px 50px -12px rgba(100, 200, 255, 0.15)"
+                boxShadow: "0 25px 50px -12px rgba(6, 182, 212, 0.15)"
               }}
               transition={{ duration: 0.3 }}
             >
               {/* Header */}
-              <div className="mb-8 text-center">
+              <div className="mb-6 text-center">
                 <motion.h1
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -153,7 +148,7 @@ export default function LoginPage() {
                   transition={{ delay: 0.5, duration: 0.6 }}
                   className="text-gray-400 font-light tracking-wide"
                 >
-                  Acceso a tu cuenta
+                  Crea tu cuenta de fotógrafo
                 </motion.p>
               </div>
 
@@ -163,25 +158,7 @@ export default function LoginPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.6 }}
               >
-                <LoginForm />
-              </motion.div>
-
-              {/* Register link */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.9, duration: 0.6 }}
-                className="mt-6 text-center text-sm text-white/70"
-              >
-                <p>
-                  ¿No tienes cuenta?{' '}
-                  <Link
-                    href="/register"
-                    className="text-purple-400 hover:text-purple-300 transition-colors font-medium"
-                  >
-                    Regístrate
-                  </Link>
-                </p>
+                <RegisterForm />
               </motion.div>
 
               {/* Back link */}
@@ -189,7 +166,7 @@ export default function LoginPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1, duration: 0.6 }}
-                className="mt-4 text-center"
+                className="mt-6 text-center"
               >
                 <Link
                   href="/"
