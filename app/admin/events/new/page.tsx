@@ -293,7 +293,7 @@ export default function NewEventPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">Público</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           Todas las familias ven las mismas fotos
                         </p>
                       </div>
@@ -324,14 +324,14 @@ export default function NewEventPage() {
                         <h3 className="font-semibold text-foreground">
                           Personalizado
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           Cada familia ve solo sus fotos específicas
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   💡 Puedes cambiar esto después desde la configuración del
                   evento
                 </p>

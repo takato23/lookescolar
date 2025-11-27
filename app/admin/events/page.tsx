@@ -438,7 +438,7 @@ async function fetchEventsDirect(options: {
   }
 }
 
-// Optimized events fetcher with multi-layer fallbacks
+// Optimized events fetcher - Direct Supabase first (server component)
 async function getEvents(
   searchParams: SearchParams = {}
 ): Promise<EventsResult> {
@@ -447,8 +447,6 @@ async function getEvents(
   const rawPage = pickFirst(searchParams.page);
   const rawLimit = pickFirst(searchParams.limit);
   const rawStatus = pickFirst(searchParams.status);
-  const rawSortBy = pickFirst(searchParams.sort_by);
-  const rawSortOrder = pickFirst(searchParams.sort_order);
 
   const page = Math.max(1, Number.parseInt(rawPage ?? '1', 10) || 1);
   const limit = Math.min(
@@ -458,79 +456,8 @@ async function getEvents(
   const offset = (page - 1) * limit;
   const status =
     rawStatus && rawStatus !== 'all' ? rawStatus.trim() : undefined;
-  const sortBy =
-    rawSortBy && ALLOWED_SORT_FIELDS.has(rawSortBy.trim())
-      ? rawSortBy.trim()
-      : undefined;
-  const sortOrder =
-    rawSortOrder && ['asc', 'desc'].includes(rawSortOrder.trim())
-      ? rawSortOrder.trim()
-      : undefined;
 
-  const qp = new URLSearchParams();
-  qp.set('include_stats', 'true');
-  qp.set('page', page.toString());
-  qp.set('limit', limit.toString());
-  if (status) qp.set('status', status);
-  if (sortBy) qp.set('sort_by', sortBy);
-  if (sortOrder) qp.set('sort_order', sortOrder);
-
-  const primaryPath = `/api/admin/events?${qp.toString()}`;
-  const fallbackParams = new URLSearchParams(qp);
-  fallbackParams.set('include_stats', 'false');
-  const fallbackPath = `/api/admin/events-robust?${fallbackParams.toString()}`;
-
-  let lastError: unknown = null;
-
-  try {
-    const result = await fetchEventsFromApi(
-      primaryPath,
-      PRIMARY_TIMEOUT_MS,
-      'LookEscolar/1.0'
-    );
-    const loadTime = performance.now() - startTime;
-    console.debug(
-      `[Performance] Events loaded in ${loadTime.toFixed(2)}ms via primary API`
-    );
-    return { ...result, error: null };
-  } catch (primaryError) {
-    lastError = primaryError;
-    console.warn(
-      '[Service] Primary events API failed, trying fallback',
-      primaryError
-    );
-  }
-
-  try {
-    const result = await fetchEventsFromApi(
-      fallbackPath,
-      FALLBACK_TIMEOUT_MS,
-      'LookEscolar/1.0-Fallback'
-    );
-    const loadTime = performance.now() - startTime;
-    console.warn(
-      `[Service] Events loaded via robust fallback (sin estadísticas) en ${loadTime.toFixed(2)}ms`
-    );
-    return {
-      ...result,
-      error: {
-        type: 'warning',
-        message:
-          'Mostrando eventos en modo fallback. Algunas métricas pueden no estar disponibles.',
-        details:
-          lastError instanceof Error
-            ? lastError.message
-            : String(lastError ?? 'Primary API unavailable'),
-      },
-    };
-  } catch (fallbackError) {
-    lastError = fallbackError;
-    console.error(
-      '[Service] Fallback events API failed, trying direct Supabase fetch',
-      fallbackError
-    );
-  }
-
+  // Server components should use direct Supabase access (no auth issues)
   try {
     const result = await fetchEventsDirect({
       page,
@@ -540,29 +467,14 @@ async function getEvents(
       paginated: true,
     });
     const loadTime = performance.now() - startTime;
-    console.warn(
-      `[Service] Events loaded via direct Supabase fallback en ${loadTime.toFixed(
-        2
-      )}ms`
+    console.debug(
+      `[Performance] Events loaded in ${loadTime.toFixed(2)}ms via direct Supabase`
     );
-    return {
-      ...result,
-      error: {
-        type: 'warning',
-        message:
-          'Se cargaron los eventos en modo degradado. Algunas estadísticas se muestran como 0.',
-        details:
-          lastError instanceof Error
-            ? lastError.message
-            : String(lastError ?? 'Fallback API unavailable'),
-      },
-    };
+    return { ...result, error: null };
   } catch (directError) {
     const loadTime = performance.now() - startTime;
     console.error(
-      `[Performance] All event fetch strategies failed after ${loadTime.toFixed(
-        2
-      )}ms`,
+      `[Performance] Direct Supabase fetch failed after ${loadTime.toFixed(2)}ms`,
       directError
     );
     return {
@@ -570,7 +482,7 @@ async function getEvents(
       pagination: null,
       error: {
         type: 'error',
-        message: 'Unable to load events. Please try again.',
+        message: 'Error al cargar eventos. Intenta de nuevo.',
         details:
           directError instanceof Error
             ? directError.message
