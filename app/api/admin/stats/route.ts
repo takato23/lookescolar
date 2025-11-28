@@ -6,7 +6,7 @@ import {
 } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 
-// Interfaces para estadísticas
+// Types
 interface EventSummary {
   id: string;
   name: string;
@@ -18,67 +18,81 @@ interface EventSummary {
   status: 'planning' | 'in_progress' | 'processing' | 'completed';
 }
 
-interface QuickAccessSummary {
-  lastEvent: string;
-  lastEventDate: string | null;
-  photosToProcess: number;
-  pendingUploads: number;
-  recentActivity: string;
+interface GlobalStats {
+  events: { total: number; active: number; completed: number };
+  photos: {
+    total: number;
+    tagged: number;
+    untagged: number;
+    uploaded_today: number;
+  };
+  subjects: { total: number; with_tokens: number };
+  orders: {
+    total: number;
+    pending: number;
+    approved: number;
+    delivered: number;
+    failed: number;
+    total_revenue_cents: number;
+    monthly_revenue_cents: number;
+  };
+  storage: { photos_count: number; estimated_size_gb: number };
+  activity: {
+    recent_uploads: number;
+    recent_orders: number;
+    recent_payments: number;
+  };
+  system: {
+    health_status: 'healthy' | 'warning' | 'critical';
+    expired_tokens: number;
+    cache_timestamp: string;
+  };
+  events_summary: EventSummary[];
+  quick_access: {
+    lastEvent: string;
+    lastEventDate: string | null;
+    photosToProcess: number;
+    pendingUploads: number;
+    recentActivity: string;
+  };
+  photo_management: {
+    totalPhotos: number;
+    processedToday: number;
+    pendingProcessing: number;
+    publishedGalleries: number;
+    lastUploadAt: string | null;
+  };
+  orders_summary: {
+    newOrders: number;
+    pendingDelivery: number;
+    totalRevenueCents: number;
+    todayOrders: number;
+  };
+  business_metrics: {
+    monthlyRevenueCents: number;
+    activeClients: number;
+    completionRate: number;
+    avgOrderValueCents: number;
+  };
+  recent_activity: Array<{
+    id: string;
+    type:
+      | 'event_created'
+      | 'photos_uploaded'
+      | 'order_created'
+      | 'order_completed';
+    message: string;
+    timestamp: string;
+  }>;
 }
 
-interface PhotoManagementSummary {
-  totalPhotos: number;
-  processedToday: number;
-  pendingProcessing: number;
-  publishedGalleries: number;
-  lastUploadAt: string | null;
-}
-
-interface OrdersSummary {
-  newOrders: number;
-  pendingDelivery: number;
-  totalRevenueCents: number;
-  todayOrders: number;
-}
-
-interface BusinessMetricsSummary {
-  monthlyRevenueCents: number;
-  activeClients: number;
-  completionRate: number;
-  avgOrderValueCents: number;
-}
-
-interface ActivityLogEntry {
-  id: string;
-  type:
-    | 'event_created'
-    | 'photos_uploaded'
-    | 'order_created'
-    | 'order_completed';
-  message: string;
-  timestamp: string;
-}
-
-// Función para crear estadísticas vacías cuando hay problemas con la BD
-function createEmptyStats(): GlobalStats {
-  const now = new Date();
-
+// Empty stats for fallback
+const createEmptyStats = (): GlobalStats => {
+  const now = new Date().toISOString();
   return {
-    events: {
-      total: 0,
-      active: 0,
-      completed: 0,
-    },
-    photos: {
-      total: 0,
-      tagged: 0,
-      untagged: 0,
-      uploaded_today: 0,
-    },
-    subjects: {
-      total: 0,
-      with_tokens: 0,
-    },
+    events: { total: 0, active: 0, completed: 0 },
+    photos: { total: 0, tagged: 0, untagged: 0, uploaded_today: 0 },
+    subjects: { total: 0, with_tokens: 0 },
     orders: {
       total: 0,
       pending: 0,
@@ -88,19 +102,12 @@ function createEmptyStats(): GlobalStats {
       total_revenue_cents: 0,
       monthly_revenue_cents: 0,
     },
-    storage: {
-      photos_count: 0,
-      estimated_size_gb: 0,
-    },
-    activity: {
-      recent_uploads: 0,
-      recent_orders: 0,
-      recent_payments: 0,
-    },
+    storage: { photos_count: 0, estimated_size_gb: 0 },
+    activity: { recent_uploads: 0, recent_orders: 0, recent_payments: 0 },
     system: {
       health_status: 'healthy',
       expired_tokens: 0,
-      cache_timestamp: now.toISOString(),
+      cache_timestamp: now,
     },
     events_summary: [],
     quick_access: {
@@ -131,54 +138,13 @@ function createEmptyStats(): GlobalStats {
     },
     recent_activity: [],
   };
-}
+};
 
-interface GlobalStats {
-  events: {
-    total: number;
-    active: number;
-    completed: number;
-  };
-  photos: {
-    total: number;
-    tagged: number;
-    untagged: number;
-    uploaded_today: number;
-  };
-  subjects: {
-    total: number;
-    with_tokens: number;
-  };
-  orders: {
-    total: number;
-    pending: number;
-    approved: number;
-    delivered: number;
-    failed: number;
-    total_revenue_cents: number;
-    monthly_revenue_cents: number;
-  };
-  storage: {
-    photos_count: number;
-    estimated_size_gb: number;
-  };
-  activity: {
-    recent_uploads: number;
-    recent_orders: number;
-    recent_payments: number;
-  };
-  system: {
-    health_status: 'healthy' | 'warning' | 'critical';
-    expired_tokens: number;
-    cache_timestamp: string;
-  };
-  events_summary: EventSummary[];
-  quick_access: QuickAccessSummary;
-  photo_management: PhotoManagementSummary;
-  orders_summary: OrdersSummary;
-  business_metrics: BusinessMetricsSummary;
-  recent_activity: ActivityLogEntry[];
-}
+// Utility functions
+const getDateValue = (val?: string | null): number =>
+  val ? Date.parse(val) || 0 : 0;
+const countBy = <T>(arr: T[], predicate: (item: T) => boolean): number =>
+  arr.reduce((n, item) => (predicate(item) ? n + 1 : n), 0);
 
 export const GET = RateLimitMiddleware.withRateLimit(
   AuthMiddleware.withAuth(async (request: NextRequest, authContext) => {
@@ -186,559 +152,366 @@ export const GET = RateLimitMiddleware.withRateLimit(
     const startTime = Date.now();
 
     try {
-      // Verificar que es admin
       if (!authContext.isAdmin) {
         SecurityLogger.logSecurityEvent(
           'unauthorized_stats_access',
-          {
-            requestId,
-            userId: authContext.user?.id || 'unknown',
-            ip: request.headers.get('x-forwarded-for') || 'unknown',
-          },
+          { requestId, userId: authContext.user?.id || 'unknown' },
           'warning'
         );
-
         return NextResponse.json(
           { error: 'Admin access required' },
-          {
-            status: 403,
-            headers: { 'X-Request-Id': requestId },
-          }
+          { status: 403, headers: { 'X-Request-Id': requestId } }
         );
       }
 
-      SecurityLogger.logResourceAccess('admin_stats', authContext, request);
-
-      // Crear stats mejorados con datos de excelencia
       const now = new Date();
       const today = now.toISOString().split('T')[0];
-
-      // Intentar obtener datos reales, pero con fallbacks de excelencia
-      let serviceClient;
-      try {
-        serviceClient = await createServerSupabaseServiceClient();
-      } catch (dbError) {
-        console.warn(
-          `📊 [${requestId}] Database connection issue, using fallback data:`,
-          dbError
-        );
-        // Usar datos vacíos como fallback
-        const emptyStats = createEmptyStats();
-        return NextResponse.json({
-          success: true,
-          data: emptyStats,
-          generated_at: now.toISOString(),
-          fallback: true,
-        });
-      }
-
-      console.log(
-        `📊 [${requestId}] Fetching admin stats for user:`,
-        authContext.user?.email
-      );
-
-      // Ejecutar queries con manejo robusto de errores
-      let eventsStats,
-        photosStats,
-        subjectsStats,
-        ordersStats,
-        paymentsStats,
-        systemHealth;
-
-      try {
-        [
-          eventsStats,
-          photosStats,
-          subjectsStats,
-          ordersStats,
-          paymentsStats,
-          systemHealth,
-        ] = await Promise.allSettled([
-          // Estadísticas de eventos
-          serviceClient
-            .from('events')
-            .select(
-              'id, active, created_at, name, school_name, location, date, start_date, end_date, status, published'
-            ),
-          // Estadísticas de fotos - simplificado
-          serviceClient
-            .from('photos')
-            .select('id, created_at, approved, event_id'),
-          // Estadísticas de sujetos - simplificado
-          serviceClient.from('subjects').select('id, event_id'),
-          // Estadísticas de órdenes - simplificado
-          serviceClient
-            .from('orders')
-            .select('id, status, created_at, total_cents'),
-          // Estadísticas de pagos
-          serviceClient
-            .from('payments')
-            .select('amount_cents, processed_at, mp_status')
-            .gte('processed_at', today),
-          // Health check del sistema
-          serviceClient
-            .from('subject_tokens')
-            .select('id')
-            .lt('expires_at', now.toISOString()),
-        ]);
-
-        // Verificar si alguna query falló y usar fallback
-        const hasErrors = [
-          eventsStats,
-          photosStats,
-          subjectsStats,
-          ordersStats,
-        ].some(
-          (result) =>
-            result.status === 'rejected' ||
-            (result.status === 'fulfilled' && result.value?.error)
-        );
-
-        if (hasErrors) {
-          console.warn(
-            `📊 [${requestId}] Some queries failed, using empty fallback`
-          );
-          const emptyStats = createEmptyStats();
-          return NextResponse.json({
-            success: true,
-            data: emptyStats,
-            generated_at: now.toISOString(),
-            fallback: true,
-          });
-        }
-      } catch (error) {
-        console.warn(
-          `📊 [${requestId}] Query execution failed, using empty fallback:`,
-          error
-        );
-        const emptyStats = createEmptyStats();
-        return NextResponse.json({
-          success: true,
-          data: emptyStats,
-          generated_at: now.toISOString(),
-          fallback: true,
-        });
-      }
-
-      // Procesar resultados de Promise.allSettled
-      const events =
-        eventsStats.status === 'fulfilled' ? eventsStats.value?.data || [] : [];
-      const photos =
-        photosStats.status === 'fulfilled' ? photosStats.value?.data || [] : [];
-      const subjects =
-        subjectsStats.status === 'fulfilled'
-          ? subjectsStats.value?.data || []
-          : [];
-      const orders =
-        ordersStats.status === 'fulfilled' ? ordersStats.value?.data || [] : [];
-      const payments =
-        paymentsStats.status === 'fulfilled'
-          ? paymentsStats.value?.data || []
-          : [];
-      const systemHealthData =
-        systemHealth.status === 'fulfilled'
-          ? systemHealth.value?.data || []
-          : [];
-
-      // Estadísticas de eventos mejoradas
-      const baseActiveEvents = events.filter((e) => e.active).length;
-      const eventStats = {
-        total: events.length,
-        active: baseActiveEvents,
-        completed: events.filter((e) => !e.active).length,
-      };
-
-      // Procesar estadísticas de fotos con excelencia
-      const todayPhotos = photos.filter(
-        (p) =>
-          p.created_at &&
-          typeof p.created_at === 'string' &&
-          p.created_at.startsWith(today)
-      );
-
-      let taggedCount = 0;
-      try {
-        const { data: photoSubjects } = await serviceClient
-          .from('photo_subjects')
-          .select('photo_id');
-        const taggedPhotoIds = new Set(
-          (photoSubjects || []).map((ps) => ps.photo_id)
-        );
-        taggedCount = photos.filter((p) => taggedPhotoIds.has(p.id)).length;
-      } catch {
-        // Si falla, usar un 95% de tagged como excelencia
-        taggedCount = Math.round(photos.length * 0.95);
-      }
-
-      const totalPhotosCount = photos.length;
-      const boundedTagged = Math.min(taggedCount, totalPhotosCount);
-      const computedUntagged = Math.max(0, totalPhotosCount - boundedTagged);
-
-      const photoStats = {
-        total: totalPhotosCount,
-        tagged: boundedTagged,
-        untagged: computedUntagged,
-        uploaded_today: todayPhotos.length,
-      };
-
-      // Estadísticas de sujetos con excelencia
-      let subjectsWithTokensCount = 0;
-      try {
-        const { data: activeTokens } = await serviceClient
-          .from('subject_tokens')
-          .select('subject_id')
-          .gt('expires_at', now.toISOString());
-        subjectsWithTokensCount = new Set(
-          (activeTokens || []).map((t) => t.subject_id)
-        ).size;
-      } catch {
-        // 95% con tokens como excelencia
-        subjectsWithTokensCount = Math.round(subjects.length * 0.95);
-      }
-
-      const subjectStats = {
-        total: subjects.length,
-        with_tokens: subjectsWithTokensCount,
-      };
-
-      // Estadísticas de órdenes con excelencia
-      const baseRevenue = orders
-        .filter((o) => o.status && ['approved', 'delivered'].includes(o.status))
-        .reduce((total, order) => total + (order.total_cents || 0), 0);
-
+      const yesterday = new Date(now.getTime() - 86400000).toISOString();
       const startOfMonth = new Date(
         now.getFullYear(),
         now.getMonth(),
         1
       ).toISOString();
-      const monthlyRevenue = orders
-        .filter(
-          (order) =>
-            order.created_at &&
-            order.created_at >= startOfMonth &&
-            order.status &&
-            ['approved', 'delivered'].includes(order.status)
-        )
-        .reduce((total, order) => total + (order.total_cents || 0), 0);
 
-      const orderStats = {
-        total: orders.length,
-        pending: orders.filter((o) => o.status === 'pending').length,
-        approved: orders.filter((o) => o.status === 'approved').length,
-        delivered: orders.filter((o) => o.status === 'delivered').length,
-        failed: orders.filter((o) => o.status === 'failed').length,
-        total_revenue_cents: baseRevenue,
-        monthly_revenue_cents: monthlyRevenue,
-      };
+      let serviceClient;
+      try {
+        serviceClient = await createServerSupabaseServiceClient();
+      } catch {
+        return NextResponse.json({
+          success: true,
+          data: createEmptyStats(),
+          fallback: true,
+        });
+      }
 
-      // Estadísticas de storage optimizadas
-      const estimatedSizeGb =
-        Math.round(((photoStats.total * 0.5) / 1024) * 100) / 100;
-      const storageStats = {
-        photos_count: photoStats.total,
-        estimated_size_gb: estimatedSizeGb,
-      };
+      // Execute ALL queries in parallel - optimized single batch
+      const [
+        eventsRes,
+        photosRes,
+        subjectsRes,
+        ordersRes,
+        paymentsRes,
+        photoSubjectsRes,
+        activeTokensRes,
+        expiredTokensRes,
+      ] = await Promise.all([
+        serviceClient
+          .from('events')
+          .select(
+            'id, active, created_at, name, school_name, location, date, start_date, status, published'
+          ),
+        serviceClient
+          .from('photos')
+          .select('id, created_at, approved, event_id'),
+        serviceClient.from('subjects').select('id, event_id'),
+        serviceClient
+          .from('orders')
+          .select('id, status, created_at, total_cents'),
+        serviceClient
+          .from('payments')
+          .select('amount_cents, processed_at')
+          .gte('processed_at', today),
+        serviceClient.from('photo_subjects').select('photo_id'),
+        serviceClient
+          .from('subject_tokens')
+          .select('subject_id')
+          .gt('expires_at', now.toISOString()),
+        serviceClient
+          .from('subject_tokens')
+          .select('id')
+          .lt('expires_at', now.toISOString())
+          .limit(10),
+      ]);
 
-      // Actividad reciente mejorada
-      const yesterday = new Date(
-        now.getTime() - 24 * 60 * 60 * 1000
-      ).toISOString();
-      const recentOrdersCount = orders.filter(
-        (o) => o.created_at && o.created_at >= yesterday
-      ).length;
-      const recentPaymentsCount = payments.filter(
-        (p) => p.processed_at && new Date(p.processed_at) >= new Date(yesterday)
-      ).length;
+      // Check for critical errors
+      if (
+        eventsRes.error ||
+        photosRes.error ||
+        subjectsRes.error ||
+        ordersRes.error
+      ) {
+        console.warn(`[${requestId}] Query errors, using fallback`);
+        return NextResponse.json({
+          success: true,
+          data: createEmptyStats(),
+          fallback: true,
+        });
+      }
 
-      const activityData = {
-        recent_uploads: todayPhotos.length,
-        recent_orders: recentOrdersCount,
-        recent_payments: recentPaymentsCount,
-      };
+      const events = eventsRes.data || [];
+      const photos = photosRes.data || [];
+      const subjects = subjectsRes.data || [];
+      const orders = ordersRes.data || [];
+      const payments = paymentsRes.data || [];
+      const taggedPhotoIds = new Set(
+        (photoSubjectsRes.data || []).map((ps) => ps.photo_id)
+      );
+      const subjectsWithTokens = new Set(
+        (activeTokensRes.data || []).map((t) => t.subject_id)
+      ).size;
+      const expiredTokens = (expiredTokensRes.data || []).length;
 
-      // Estado del sistema optimizado
-      const expiredTokens = Math.min(systemHealthData.length || 0, 3);
-      const systemStatus = {
-        health_status: 'healthy' as const,
-        expired_tokens: expiredTokens,
-        cache_timestamp: now.toISOString(),
-      };
-
+      // Process data in single passes with Maps for O(1) lookups
       const subjectsByEvent = new Map<string, number>();
-      subjects.forEach((subject: any) => {
-        if (!subject?.event_id) return;
-        subjectsByEvent.set(
-          subject.event_id,
-          (subjectsByEvent.get(subject.event_id) || 0) + 1
-        );
-      });
-
       const photosByEvent = new Map<
         string,
-        { total: number; approved: number; lastUpload?: string | null }
+        { total: number; lastUpload: string | null }
       >();
-      photos.forEach((photo: any) => {
-        if (!photo?.event_id) return;
-        const entry = photosByEvent.get(photo.event_id) || {
-          total: 0,
-          approved: 0,
-          lastUpload: null,
-        };
-        entry.total += 1;
-        if (photo.approved) {
-          entry.approved += 1;
+
+      // Single pass for subjects
+      for (const s of subjects) {
+        if (s.event_id)
+          subjectsByEvent.set(
+            s.event_id,
+            (subjectsByEvent.get(s.event_id) || 0) + 1
+          );
+      }
+
+      // Single pass for photos - compute all stats at once
+      let todayPhotosCount = 0,
+        taggedCount = 0,
+        pendingCount = 0;
+      let latestUpload: string | null = null;
+
+      for (const p of photos) {
+        // Today's photos
+        if (p.created_at?.startsWith(today)) todayPhotosCount++;
+        // Tagged photos
+        if (taggedPhotoIds.has(p.id)) taggedCount++;
+        // Pending (not approved)
+        if (!p.approved) pendingCount++;
+        // Latest upload
+        if (p.created_at && (!latestUpload || p.created_at > latestUpload))
+          latestUpload = p.created_at;
+        // By event
+        if (p.event_id) {
+          const entry = photosByEvent.get(p.event_id) || {
+            total: 0,
+            lastUpload: null,
+          };
+          entry.total++;
+          if (
+            p.created_at &&
+            (!entry.lastUpload || p.created_at > entry.lastUpload)
+          )
+            entry.lastUpload = p.created_at;
+          photosByEvent.set(p.event_id, entry);
         }
-        if (photo.created_at) {
-          const current = entry.lastUpload
-            ? new Date(entry.lastUpload).getTime()
-            : 0;
-          const candidate = new Date(photo.created_at).getTime();
-          if (candidate > current) {
-            entry.lastUpload = photo.created_at;
-          }
+      }
+
+      // Single pass for orders - compute all stats at once
+      let totalRevenue = 0,
+        monthlyRevenue = 0,
+        pendingOrders = 0,
+        approvedOrders = 0,
+        deliveredOrders = 0,
+        failedOrders = 0,
+        recentOrdersCount = 0;
+
+      for (const o of orders) {
+        const isPaid = o.status === 'approved' || o.status === 'delivered';
+        if (isPaid) totalRevenue += o.total_cents || 0;
+        if (isPaid && o.created_at >= startOfMonth)
+          monthlyRevenue += o.total_cents || 0;
+        if (o.created_at >= yesterday) recentOrdersCount++;
+        switch (o.status) {
+          case 'pending':
+            pendingOrders++;
+            break;
+          case 'approved':
+            approvedOrders++;
+            break;
+          case 'delivered':
+            deliveredOrders++;
+            break;
+          case 'failed':
+            failedOrders++;
+            break;
         }
-        photosByEvent.set(photo.event_id, entry);
-      });
+      }
 
-      const getComparableDate = (value?: string | null) => {
-        if (!value) return 0;
-        const parsed = Date.parse(value);
-        return Number.isNaN(parsed) ? 0 : parsed;
-      };
+      const recentPaymentsCount = countBy(
+        payments,
+        (p) => p.processed_at && p.processed_at >= yesterday
+      );
+      const publishedGalleries = countBy(events, (e) => e.published);
+      const activeEvents = countBy(events, (e) => e.active);
 
-      const toEventSummary = (event: any): EventSummary => {
-        const eventPhotos = photosByEvent.get(event.id) || {
-          total: 0,
-          approved: 0,
-          lastUpload: null,
-        };
-        const totalStudents = subjectsByEvent.get(event.id) || 0;
-        const baseDate =
-          event.start_date || event.date || event.created_at || null;
+      // Build events summary (top 3 by date)
+      const eventsSummary: EventSummary[] = events
+        .map((e) => {
+          const eventPhotos = photosByEvent.get(e.id) || {
+            total: 0,
+            lastUpload: null,
+          };
+          const totalStudents = subjectsByEvent.get(e.id) || 0;
+          const baseDate = e.start_date || e.date || e.created_at;
+          const statusLower = (e.status || '').toLowerCase();
+          let status: EventSummary['status'] = 'planning';
+          if (e.published || !e.active) status = 'completed';
+          else if (statusLower.includes('process')) status = 'processing';
+          else if (e.active && baseDate && new Date(baseDate) <= now)
+            status = 'in_progress';
 
-        let status: EventSummary['status'] = 'planning';
-        const statusValue =
-          typeof event.status === 'string' ? event.status.toLowerCase() : '';
-        const parsedDate = baseDate ? new Date(baseDate) : null;
-        const eventIsFuture = parsedDate
-          ? parsedDate.getTime() > now.getTime()
-          : false;
-
-        if (!eventIsFuture && event.active) {
-          status = 'in_progress';
-        }
-        if (statusValue.includes('process')) {
-          status = 'processing';
-        }
-        if (
-          statusValue.includes('complete') ||
-          statusValue === 'completed' ||
-          event.published ||
-          event.active === false
-        ) {
-          status = 'completed';
-        }
-
-        return {
-          id: event.id,
-          name: event.name || event.school_name || 'Evento sin nombre',
-          location: event.location || event.school_name || null,
-          date: baseDate,
-          totalStudents,
-          photosUploaded: eventPhotos.total,
-          expectedPhotos: Math.max(totalStudents, eventPhotos.total),
-          status,
-        };
-      };
-
-      const eventsSummary = events
-        .map(toEventSummary)
-        .sort((a, b) => getComparableDate(b.date) - getComparableDate(a.date))
+          return {
+            id: e.id,
+            name: e.name || e.school_name || 'Evento sin nombre',
+            location: e.location || e.school_name || null,
+            date: baseDate,
+            totalStudents,
+            photosUploaded: eventPhotos.total,
+            expectedPhotos: Math.max(totalStudents, eventPhotos.total),
+            status,
+          };
+        })
+        .sort((a, b) => getDateValue(b.date) - getDateValue(a.date))
         .slice(0, 3);
 
-      const pendingProcessingCount = photos.filter(
-        (p: any) => !p.approved
-      ).length;
-      const effectivePendingProcessing = Math.max(
-        pendingProcessingCount,
-        computedUntagged
-      );
-      const latestUpload = photos
-        .filter((p: any) => !!p.created_at)
-        .sort(
-          (a: any, b: any) =>
-            getComparableDate(b.created_at) - getComparableDate(a.created_at)
-        )[0]?.created_at;
-      const publishedGalleries = events.filter(
-        (event: any) => event.published
-      ).length;
-
-      const quickAccess: QuickAccessSummary = {
-        lastEvent: eventsSummary[0]?.name || 'Sin eventos activos',
-        lastEventDate: eventsSummary[0]?.date || null,
-        photosToProcess: effectivePendingProcessing,
-        pendingUploads: todayPhotos.length,
-        recentActivity: eventsSummary[0]?.photosUploaded
-          ? `${eventsSummary[0].photosUploaded.toLocaleString('es-AR')} fotos listas en ${eventsSummary[0].name}`
-          : todayPhotos.length
-            ? `${todayPhotos.length.toLocaleString('es-AR')} fotos subidas hoy`
-            : 'Aún no hay actividad registrada.',
-      };
-
-      const ordersLastDay = recentOrdersCount;
-      const pendingDelivery = orderStats.pending;
-      const ordersSummary: OrdersSummary = {
-        newOrders: ordersLastDay,
-        pendingDelivery,
-        totalRevenueCents: orderStats.total_revenue_cents,
-        todayOrders: ordersLastDay,
-      };
-
-      const avgOrderValueCents = orders.length
-        ? Math.round(orderStats.total_revenue_cents / orders.length)
-        : 0;
-      const completionRate = photoStats.total
-        ? Math.min(
-            100,
-            Math.round((photoStats.tagged / photoStats.total) * 100)
-          )
-        : 0;
-
-      const businessMetrics: BusinessMetricsSummary = {
-        monthlyRevenueCents: orderStats.monthly_revenue_cents,
-        activeClients: subjects.length,
-        completionRate,
-        avgOrderValueCents,
-      };
-
-      const activityLog: ActivityLogEntry[] = [];
-
-      events
+      // Build activity log
+      const activityLog: GlobalStats['recent_activity'] = [];
+      const recentEvents = events
         .filter(
-          (event: any) =>
-            event.created_at &&
-            getComparableDate(event.created_at) >= getComparableDate(yesterday)
+          (e) =>
+            e.created_at &&
+            getDateValue(e.created_at) >= getDateValue(yesterday)
         )
-        .slice(0, 3)
-        .forEach((event: any) => {
-          activityLog.push({
-            id: `event-${event.id}`,
-            type: 'event_created',
-            message: `Nuevo evento: ${event.name || 'Sin nombre'}`,
-            timestamp: event.created_at,
-          });
+        .slice(0, 3);
+      for (const e of recentEvents) {
+        activityLog.push({
+          id: `event-${e.id}`,
+          type: 'event_created',
+          message: `Nuevo evento: ${e.name || 'Sin nombre'}`,
+          timestamp: e.created_at,
         });
-
-      if (todayPhotos.length > 0) {
+      }
+      if (todayPhotosCount > 0)
         activityLog.push({
           id: `photos-${requestId}`,
           type: 'photos_uploaded',
-          message: `${todayPhotos.length.toLocaleString('es-AR')} fotos subidas hoy`,
+          message: `${todayPhotosCount} fotos subidas hoy`,
           timestamp: now.toISOString(),
         });
-      }
-
-      if (ordersLastDay > 0) {
+      if (recentOrdersCount > 0)
         activityLog.push({
           id: `orders-${requestId}`,
           type: 'order_created',
-          message: `${ordersLastDay.toLocaleString('es-AR')} pedidos en las últimas 24h`,
+          message: `${recentOrdersCount} pedidos en las últimas 24h`,
           timestamp: now.toISOString(),
         });
-      }
-
-      if (recentPaymentsCount > 0) {
+      if (recentPaymentsCount > 0)
         activityLog.push({
           id: `payments-${requestId}`,
           type: 'order_completed',
-          message: `${recentPaymentsCount.toLocaleString('es-AR')} pagos confirmados hoy`,
+          message: `${recentPaymentsCount} pagos confirmados hoy`,
           timestamp: now.toISOString(),
         });
-      }
-
-      if (!activityLog.length) {
+      if (!activityLog.length)
         activityLog.push({
-          id: `activity-${requestId}`,
+          id: `empty-${requestId}`,
           type: 'event_created',
           message: 'Sin actividad reciente registrada.',
           timestamp: now.toISOString(),
         });
-      }
+
+      const totalPhotos = photos.length;
+      const untaggedCount = Math.max(0, totalPhotos - taggedCount);
+      const completionRate = totalPhotos
+        ? Math.min(100, Math.round((taggedCount / totalPhotos) * 100))
+        : 0;
+      const avgOrderValue = orders.length
+        ? Math.round(totalRevenue / orders.length)
+        : 0;
 
       const stats: GlobalStats = {
-        events: eventStats,
-        photos: photoStats,
-        subjects: subjectStats,
-        orders: orderStats,
-        storage: storageStats,
-        activity: activityData,
-        system: systemStatus,
-        events_summary: eventsSummary,
-        quick_access: quickAccess,
-        photo_management: {
-          totalPhotos: photoStats.total,
-          processedToday: todayPhotos.length,
-          pendingProcessing: effectivePendingProcessing,
-          publishedGalleries,
-          lastUploadAt: latestUpload || null,
+        events: {
+          total: events.length,
+          active: activeEvents,
+          completed: events.length - activeEvents,
         },
-        orders_summary: ordersSummary,
-        business_metrics: businessMetrics,
+        photos: {
+          total: totalPhotos,
+          tagged: taggedCount,
+          untagged: untaggedCount,
+          uploaded_today: todayPhotosCount,
+        },
+        subjects: { total: subjects.length, with_tokens: subjectsWithTokens },
+        orders: {
+          total: orders.length,
+          pending: pendingOrders,
+          approved: approvedOrders,
+          delivered: deliveredOrders,
+          failed: failedOrders,
+          total_revenue_cents: totalRevenue,
+          monthly_revenue_cents: monthlyRevenue,
+        },
+        storage: {
+          photos_count: totalPhotos,
+          estimated_size_gb:
+            Math.round(((totalPhotos * 0.5) / 1024) * 100) / 100,
+        },
+        activity: {
+          recent_uploads: todayPhotosCount,
+          recent_orders: recentOrdersCount,
+          recent_payments: recentPaymentsCount,
+        },
+        system: {
+          health_status: 'healthy',
+          expired_tokens: Math.min(expiredTokens, 10),
+          cache_timestamp: now.toISOString(),
+        },
+        events_summary: eventsSummary,
+        quick_access: {
+          lastEvent: eventsSummary[0]?.name || 'Sin eventos activos',
+          lastEventDate: eventsSummary[0]?.date || null,
+          photosToProcess: Math.max(pendingCount, untaggedCount),
+          pendingUploads: todayPhotosCount,
+          recentActivity: eventsSummary[0]?.photosUploaded
+            ? `${eventsSummary[0].photosUploaded} fotos listas en ${eventsSummary[0].name}`
+            : todayPhotosCount
+              ? `${todayPhotosCount} fotos subidas hoy`
+              : 'Aún no hay actividad registrada.',
+        },
+        photo_management: {
+          totalPhotos,
+          processedToday: todayPhotosCount,
+          pendingProcessing: Math.max(pendingCount, untaggedCount),
+          publishedGalleries,
+          lastUploadAt: latestUpload,
+        },
+        orders_summary: {
+          newOrders: recentOrdersCount,
+          pendingDelivery: pendingOrders,
+          totalRevenueCents: totalRevenue,
+          todayOrders: recentOrdersCount,
+        },
+        business_metrics: {
+          monthlyRevenueCents: monthlyRevenue,
+          activeClients: subjects.length,
+          completionRate,
+          avgOrderValueCents: avgOrderValue,
+        },
         recent_activity: activityLog,
       };
 
       const duration = Date.now() - startTime;
-      console.log(
-        `📊 [${requestId}] Stats generation completed in ${duration}ms`
-      );
+      console.log(`[${requestId}] Stats generated in ${duration}ms`);
 
-      SecurityLogger.logSecurityEvent('admin_stats_success', {
-        requestId,
-        userId: authContext.user?.id,
-        duration,
-        statsGenerated: true,
-      });
-
-      // Cache headers para optimizar performance
       const response = NextResponse.json({
         success: true,
         data: stats,
         generated_at: now.toISOString(),
       });
-
-      // Cache por 5 minutos
-      response.headers.set('Cache-Control', 'public, max-age=300');
+      response.headers.set(
+        'Cache-Control',
+        'public, max-age=300, stale-while-revalidate=60'
+      );
       response.headers.set('X-Request-Id', requestId);
-
       return response;
     } catch (error: any) {
-      const duration = Date.now() - startTime;
-
-      console.error(`📊 [${requestId}] Error en GET /api/admin/stats:`, {
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString(),
-        duration,
-        userId: authContext.user?.id,
-      });
-
-      SecurityLogger.logSecurityEvent(
-        'admin_stats_error',
-        {
-          requestId,
-          error: error.message,
-          duration,
-          userId: authContext.user?.id,
-        },
-        'error'
-      );
-
+      console.error(`[${requestId}] Stats error:`, error.message);
       return NextResponse.json(
         { error: 'Error interno del servidor' },
-        {
-          status: 500,
-          headers: { 'X-Request-Id': requestId },
-        }
+        { status: 500, headers: { 'X-Request-Id': requestId } }
       );
     }
   }, 'admin')
